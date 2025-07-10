@@ -1,0 +1,72 @@
+[package]
+name = "linkml-service"
+version = "0.1.0"
+edition = "2024"
+authors = ["Simon C. Kemper <simon.kemper@kempertech.com>"]
+license = "CC-BY-NC-4.0"
+description = "LinkML schema validation service for RootReal"
+repository = "https://github.com/simonckemper/rootreal"
+keywords = ["linkml", "schema", "validation", "service"]
+categories = ["data-structures", "encoding", "parser-implementations"]
+
+[dependencies]
+# Core dependencies
+linkml-core = { path = "../linkml-core" }
+
+# RootReal service dependencies
+logger-core = { path = "../../logger/logger-core" }
+timestamp-core = { path = "../../timestamp/timestamp-core" }
+task-management-core = { path = "../../task-management/task-management-core" }
+error-handling-core = { path = "../../error-handling/error-handling-core" }
+configuration-core = { path = "../../configuration/configuration-core" }
+cache-core = { path = "../../cache/cache-core" }
+monitoring-core = { path = "../../monitoring/monitoring-core" }
+telemetry-core = { path = "../../telemetry/telemetry-core" }
+
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Pattern matching
+regex = "1.10"
+pcre2 = "0.2"  # For full PCRE2 support with named capture groups
+
+# Collections
+indexmap = { version = "2.2", features = ["serde"] }
+dashmap = "6.0"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Validation compilation
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+
+# Performance
+rayon = "1.8"
+parking_lot = "0.12"
+arc-swap = "1.6"
+
+# File operations
+walkdir = "2.4"
+notify = "7.0"
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tokio = { version = "1.42", features = ["full", "test-util"] }
+pretty_assertions = "1.4"
+proptest = "1.3"
+criterion = "0.5"
+tempfile = "3.8"
+insta = "1.34"
+
