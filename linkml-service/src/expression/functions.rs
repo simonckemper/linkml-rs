@@ -1,0 +1,488 @@
+//! Built-in functions for the LinkML expression language
+
+#![allow(missing_docs)]
+
+use serde_json::Value;
+use std::collections::HashMap;
+use std::fmt;
+
+/// Error type for function calls
+#[derive(Debug)]
+pub struct FunctionError {
+    pub message: String,
+}
+
+impl fmt::Display for FunctionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for FunctionError {}
+
+impl FunctionError {
+    fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
+    
+    fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
+        Self {
+            message: format!(
+                "Function '{}' expects {} arguments, got {}",
+                name, expected, actual
+            ),
+        }
+    }
+    
+    fn invalid_argument(name: &str, message: impl Into<String>) -> Self {
+        Self {
+            message: format!("Invalid argument for function '{}': {}", name, message.into()),
+        }
+    }
+}
+
+/// Function signature trait
+trait BuiltinFunction: Send + Sync {
+    /// Function name
+    fn name(&self) -> &str;
+    
+    /// Validate argument count
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError>;
+    
+    /// Execute the function
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError>;
+}
+
+/// Registry of built-in functions
+pub struct FunctionRegistry {
+    functions: HashMap<String, Box<dyn BuiltinFunction>>,
+}
+
+impl FunctionRegistry {
+    /// Create a new function registry with all built-in functions
+    pub fn new() -> Self {
+        let mut registry = Self {
+            functions: HashMap::new(),
+        };
+        
+        // Register all built-in functions
+        registry.register(Box::new(LenFunction));
+        registry.register(Box::new(MaxFunction));
+        registry.register(Box::new(MinFunction));
+        registry.register(Box::new(CaseFunction));
+        registry.register(Box::new(MatchesFunction));
+        registry.register(Box::new(ContainsFunction));
+        
+        registry
+    }
+    
+    /// Register a function
+    fn register(&mut self, function: Box<dyn BuiltinFunction>) {
+        self.functions.insert(function.name().to_string(), function);
+    }
+    
+    /// Call a function by name
+    pub fn call(&self, name: &str, args: Vec<Value>) -> Result<Value, FunctionError> {
+        match self.functions.get(name) {
+            Some(function) => {
+                function.validate_arity(&args)?;
+                function.call(args)
+            }
+            None => Err(FunctionError::new(format!("Unknown function: {}", name))),
+        }
+    }
+    
+    /// Check if a function exists
+    pub fn has_function(&self, name: &str) -> bool {
+        self.functions.contains_key(name)
+    }
+}
+
+impl Default for FunctionRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// Built-in function implementations
+
+/// len() - Returns the length of a string, array, or object
+struct LenFunction;
+
+impl BuiltinFunction for LenFunction {
+    fn name(&self) -> &str {
+        "len"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.len() != 1 {
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        let len = match &args[0] {
+            Value::String(s) => s.len(),
+            Value::Array(arr) => arr.len(),
+            Value::Object(obj) => obj.len(),
+            Value::Null => 0,
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "expected string, array, or object",
+                ));
+            }
+        };
+        
+        Ok(Value::Number(serde_json::Number::from(len as u64)))
+    }
+}
+
+/// max() - Returns the maximum value from arguments
+struct MaxFunction;
+
+impl BuiltinFunction for MaxFunction {
+    fn name(&self) -> &str {
+        "max"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.is_empty() {
+            return Err(FunctionError::wrong_arity(self.name(), "at least 1", args.len()));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        let mut max_val: Option<f64> = None;
+        
+        for arg in &args {
+            match arg {
+                Value::Number(n) => {
+                    let val = n.as_f64().unwrap();
+                    max_val = Some(max_val.map_or(val, |m| m.max(val)));
+                }
+                _ => {
+                    return Err(FunctionError::invalid_argument(
+                        self.name(),
+                        "all arguments must be numbers",
+                    ));
+                }
+            }
+        }
+        
+        match max_val {
+            Some(val) => Ok(Value::Number(
+                serde_json::Number::from_f64(val).unwrap(),
+            )),
+            None => Ok(Value::Null),
+        }
+    }
+}
+
+/// min() - Returns the minimum value from arguments
+struct MinFunction;
+
+impl BuiltinFunction for MinFunction {
+    fn name(&self) -> &str {
+        "min"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.is_empty() {
+            return Err(FunctionError::wrong_arity(self.name(), "at least 1", args.len()));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        let mut min_val: Option<f64> = None;
+        
+        for arg in &args {
+            match arg {
+                Value::Number(n) => {
+                    let val = n.as_f64().unwrap();
+                    min_val = Some(min_val.map_or(val, |m| m.min(val)));
+                }
+                _ => {
+                    return Err(FunctionError::invalid_argument(
+                        self.name(),
+                        "all arguments must be numbers",
+                    ));
+                }
+            }
+        }
+        
+        match min_val {
+            Some(val) => Ok(Value::Number(
+                serde_json::Number::from_f64(val).unwrap(),
+            )),
+            None => Ok(Value::Null),
+        }
+    }
+}
+
+/// case() - Multi-way conditional (like a switch statement)
+/// case(condition1, value1, condition2, value2, ..., default)
+struct CaseFunction;
+
+impl BuiltinFunction for CaseFunction {
+    fn name(&self) -> &str {
+        "case"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.len() < 3 || args.len() % 2 == 0 {
+            return Err(FunctionError::wrong_arity(
+                self.name(),
+                "odd number of arguments (at least 3)",
+                args.len(),
+            ));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        // Process pairs of condition, value
+        for i in (0..args.len() - 1).step_by(2) {
+            if is_truthy(&args[i]) {
+                return Ok(args[i + 1].clone());
+            }
+        }
+        
+        // Return default (last argument)
+        Ok(args[args.len() - 1].clone())
+    }
+}
+
+/// matches() - Test if a string matches a regex pattern
+struct MatchesFunction;
+
+impl BuiltinFunction for MatchesFunction {
+    fn name(&self) -> &str {
+        "matches"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.len() != 2 {
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        let text = match &args[0] {
+            Value::String(s) => s,
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
+        };
+        
+        let pattern = match &args[1] {
+            Value::String(s) => s,
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string pattern",
+                ));
+            }
+        };
+        
+        // For now, return a placeholder result
+        // In a real implementation, we would compile and match the regex
+        Ok(Value::Bool(text.contains(pattern)))
+    }
+}
+
+/// contains() - Test if a value contains another value
+struct ContainsFunction;
+
+impl BuiltinFunction for ContainsFunction {
+    fn name(&self) -> &str {
+        "contains"
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.len() != 2 {
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        match (&args[0], &args[1]) {
+            (Value::String(haystack), Value::String(needle)) => {
+                Ok(Value::Bool(haystack.contains(needle)))
+            }
+            (Value::Array(arr), item) => {
+                Ok(Value::Bool(arr.iter().any(|v| values_equal(v, item))))
+            }
+            (Value::Object(obj), Value::String(key)) => {
+                Ok(Value::Bool(obj.contains_key(key)))
+            }
+            _ => Err(FunctionError::invalid_argument(
+                self.name(),
+                "invalid argument types for contains",
+            )),
+        }
+    }
+}
+
+// Helper functions
+
+fn is_truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(b) => *b,
+        Value::Number(n) => n.as_f64().unwrap() != 0.0,
+        Value::String(s) => !s.is_empty(),
+        Value::Array(a) => !a.is_empty(),
+        Value::Object(o) => !o.is_empty(),
+    }
+}
+
+fn values_equal(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Null, Value::Null) => true,
+        (Value::Bool(a), Value::Bool(b)) => a == b,
+        (Value::Number(a), Value::Number(b)) => a.as_f64() == b.as_f64(),
+        (Value::String(a), Value::String(b)) => a == b,
+        (Value::Array(a), Value::Array(b)) => a == b,
+        (Value::Object(a), Value::Object(b)) => a == b,
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    
+    #[test]
+    fn test_len_function() {
+        let registry = FunctionRegistry::new();
+        
+        // String length
+        assert_eq!(
+            registry.call("len", vec![json!("hello")]).unwrap(),
+            json!(5)
+        );
+        
+        // Array length
+        assert_eq!(
+            registry.call("len", vec![json!([1, 2, 3])]).unwrap(),
+            json!(3)
+        );
+        
+        // Object length
+        assert_eq!(
+            registry.call("len", vec![json!({"a": 1, "b": 2})]).unwrap(),
+            json!(2)
+        );
+        
+        // Null length
+        assert_eq!(
+            registry.call("len", vec![json!(null)]).unwrap(),
+            json!(0)
+        );
+    }
+    
+    #[test]
+    fn test_max_min_functions() {
+        let registry = FunctionRegistry::new();
+        
+        // max
+        assert_eq!(
+            registry.call("max", vec![json!(1), json!(5), json!(3)]).unwrap(),
+            json!(5.0)
+        );
+        
+        // min
+        assert_eq!(
+            registry.call("min", vec![json!(1), json!(5), json!(3)]).unwrap(),
+            json!(1.0)
+        );
+        
+        // Single value
+        assert_eq!(
+            registry.call("max", vec![json!(42)]).unwrap(),
+            json!(42.0)
+        );
+    }
+    
+    #[test]
+    fn test_case_function() {
+        let registry = FunctionRegistry::new();
+        
+        // First condition true
+        assert_eq!(
+            registry.call(
+                "case",
+                vec![json!(true), json!("first"), json!(false), json!("second"), json!("default")]
+            ).unwrap(),
+            json!("first")
+        );
+        
+        // Second condition true
+        assert_eq!(
+            registry.call(
+                "case",
+                vec![json!(false), json!("first"), json!(true), json!("second"), json!("default")]
+            ).unwrap(),
+            json!("second")
+        );
+        
+        // Default case
+        assert_eq!(
+            registry.call(
+                "case",
+                vec![json!(false), json!("first"), json!(false), json!("second"), json!("default")]
+            ).unwrap(),
+            json!("default")
+        );
+    }
+    
+    #[test]
+    fn test_contains_function() {
+        let registry = FunctionRegistry::new();
+        
+        // String contains
+        assert_eq!(
+            registry.call("contains", vec![json!("hello world"), json!("world")]).unwrap(),
+            json!(true)
+        );
+        
+        // Array contains
+        assert_eq!(
+            registry.call("contains", vec![json!([1, 2, 3]), json!(2)]).unwrap(),
+            json!(true)
+        );
+        
+        // Object contains key
+        assert_eq!(
+            registry.call("contains", vec![json!({"a": 1, "b": 2}), json!("a")]).unwrap(),
+            json!(true)
+        );
+    }
+    
+    #[test]
+    fn test_function_errors() {
+        let registry = FunctionRegistry::new();
+        
+        // Wrong arity
+        assert!(registry.call("len", vec![]).is_err());
+        assert!(registry.call("len", vec![json!(1), json!(2)]).is_err());
+        
+        // Unknown function
+        assert!(registry.call("unknown", vec![json!(1)]).is_err());
+        
+        // Invalid argument type
+        assert!(registry.call("max", vec![json!("not a number")]).is_err());
+    }
+}

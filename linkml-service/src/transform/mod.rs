@@ -1,6 +1,6 @@
 //! Schema transformation module
 
-pub mod schema_merger;
 pub mod inheritance_resolver;
+pub mod schema_merger;
 
 // TODO: Implement schema transformations

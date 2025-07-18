@@ -1,6 +1,6 @@
 //! Parser tests for LinkML service
 
-use linkml_service::parser::{Parser, SchemaParser};
+use linkml_service::parser::Parser;
 use tempfile::TempDir;
 use std::fs;
 

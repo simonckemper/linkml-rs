@@ -1,8 +1,8 @@
-//! Error types for LinkML operations
+//! Error types for `LinkML` operations
 
 use thiserror::Error;
 
-/// Main error type for LinkML operations
+/// Main error type for `LinkML` operations
 #[derive(Error, Debug)]
 pub enum LinkMLError {
     /// Schema parsing errors
@@ -98,7 +98,7 @@ pub enum LinkMLError {
     },
 }
 
-/// Result type alias for LinkML operations
+/// Result type alias for `LinkML` operations
 pub type Result<T> = std::result::Result<T, LinkMLError>;
 
 impl LinkMLError {

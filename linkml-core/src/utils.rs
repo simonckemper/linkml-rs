@@ -166,14 +166,44 @@ pub fn merge_slot_definitions(
             override_def.permissible_values.clone()
         },
         slot_uri: override_def.slot_uri.clone().or_else(|| base.slot_uri.clone()),
-        aliases: override_def.aliases.clone(),
+        aliases: merge_vec(&base.aliases, &override_def.aliases),
         is_a: override_def.is_a.clone().or_else(|| base.is_a.clone()),
         mixins: override_def.mixins.clone(),
         inverse: override_def.inverse.clone().or_else(|| base.inverse.clone()),
         default: override_def.default.clone().or_else(|| base.default.clone()),
         inlined: override_def.inlined.or(base.inlined),
         inlined_as_list: override_def.inlined_as_list.or(base.inlined_as_list),
+        any_of: override_def.any_of.clone().or_else(|| base.any_of.clone()),
+        all_of: override_def.all_of.clone().or_else(|| base.all_of.clone()),
+        exactly_one_of: override_def.exactly_one_of.clone().or_else(|| base.exactly_one_of.clone()),
+        none_of: override_def.none_of.clone().or_else(|| base.none_of.clone()),
+        equals_expression: override_def.equals_expression.clone().or_else(|| base.equals_expression.clone()),
+        rules: override_def.rules.clone().or_else(|| base.rules.clone()),
+        equals_string_in: override_def.equals_string_in.clone().or_else(|| base.equals_string_in.clone()),
+        structured_pattern: override_def.structured_pattern.clone().or_else(|| base.structured_pattern.clone()),
+        annotations: crate::annotations::merge_annotations(
+            base.annotations.as_ref(),
+            override_def.annotations.as_ref(),
+        ),
+        see_also: merge_vec(&base.see_also, &override_def.see_also),
+        examples: merge_vec(&base.examples, &override_def.examples),
+        deprecated: override_def.deprecated.clone().or_else(|| base.deprecated.clone()),
+        todos: merge_vec(&base.todos, &override_def.todos),
+        notes: merge_vec(&base.notes, &override_def.notes),
+        comments: merge_vec(&base.comments, &override_def.comments),
+        rank: override_def.rank.or(base.rank),
     }
+}
+
+/// Helper to merge two vectors, removing duplicates
+fn merge_vec<T: Clone + PartialEq>(base: &[T], override_vec: &[T]) -> Vec<T> {
+    let mut result = base.to_vec();
+    for item in override_vec {
+        if !result.contains(item) {
+            result.push(item.clone());
+        }
+    }
+    result
 }
 
 /// Get the effective slot definition for a class

@@ -1,7 +1,50 @@
 //! Code generation module for LinkML service
 
-pub mod typeql_generator;
-pub mod rust_generator;
+pub mod base;
+pub mod doc;
 pub mod graphql_generator;
+pub mod html;
+pub mod java;
+pub mod javascript;
+pub mod json_ld;
+pub mod json_schema;
+pub mod openapi;
+pub mod options;
+pub mod owl_rdf;
+pub mod plugin;
+pub mod protobuf;
+pub mod pydantic;
+pub mod python_dataclass;
+pub mod registry;
+pub mod rust_generator;
+pub mod shacl;
+pub mod sql;
+pub mod traits;
+pub mod typeql_constraints;
+pub mod typeql_generator;
+pub mod typeql_generator_enhanced;
+pub mod typeql_relation_analyzer;
+pub mod typeql_role_inheritance;
+pub mod typescript;
 
-// TODO: Implement code generation
+pub use graphql_generator::GraphQLGenerator;
+pub use html::HtmlGenerator;
+pub use java::JavaGenerator;
+pub use javascript::JavaScriptGenerator;
+pub use json_ld::JsonLdGenerator;
+pub use json_schema::JsonSchemaGenerator;
+pub use openapi::OpenApiGenerator;
+pub use options::{GeneratorOptions, IndentStyle, OutputFormat};
+pub use owl_rdf::OwlRdfGenerator;
+pub use plugin::{GeneratorPlugin, PluginManager};
+pub use protobuf::ProtobufGenerator;
+pub use pydantic::PydanticGenerator;
+pub use python_dataclass::PythonDataclassGenerator;
+pub use registry::{GeneratorInfo, GeneratorRegistry};
+pub use rust_generator::RustGenerator;
+pub use shacl::ShaclGenerator;
+pub use sql::SQLGenerator;
+pub use traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
+pub use typeql_generator::TypeQLGenerator;
+pub use typeql_generator_enhanced::EnhancedTypeQLGenerator;
+pub use typescript::TypeScriptGenerator;

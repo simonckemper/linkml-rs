@@ -1,0 +1,380 @@
+//! SHACL (Shapes Constraint Language) generator for LinkML schemas
+//!
+//! This module generates SHACL shapes from LinkML schemas for RDF validation.
+//! SHACL is a W3C standard for validating RDF graphs against a set of conditions.
+
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, PermissibleValue};
+use std::collections::HashMap;
+use std::fmt::Write;
+
+use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
+use async_trait::async_trait;
+
+/// SHACL generator for RDF validation
+pub struct ShaclGenerator {
+    /// Generator options
+    options: GeneratorOptions,
+    /// Namespace prefixes
+    prefixes: HashMap<String, String>,
+}
+
+impl ShaclGenerator {
+    /// Create a new SHACL generator
+    #[must_use]
+    pub fn new() -> Self {
+        let mut prefixes = HashMap::new();
+        
+        // Standard prefixes
+        prefixes.insert("sh".to_string(), "http://www.w3.org/ns/shacl#".to_string());
+        prefixes.insert("rdf".to_string(), "http://www.w3.org/1999/02/22-rdf-syntax-ns#".to_string());
+        prefixes.insert("rdfs".to_string(), "http://www.w3.org/2000/01/rdf-schema#".to_string());
+        prefixes.insert("xsd".to_string(), "http://www.w3.org/2001/XMLSchema#".to_string());
+        prefixes.insert("owl".to_string(), "http://www.w3.org/2002/07/owl#".to_string());
+        
+        Self {
+            options: GeneratorOptions::default(),
+            prefixes,
+        }
+    }
+    
+    /// Create with custom options
+    #[must_use]
+    pub fn with_options(options: GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
+    }
+    
+    /// Generate prefixes section
+    fn generate_prefixes(&self, schema: &SchemaDefinition) -> String {
+        let mut output = String::new();
+        
+        // Standard prefixes
+        for (prefix, uri) in &self.prefixes {
+            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri).unwrap();
+        }
+        
+        // Schema-specific prefix
+        let schema_prefix = self.to_snake_case(&schema.name);
+        writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id).unwrap();
+        writeln!(&mut output).unwrap();
+        
+        output
+    }
+    
+    /// Generate header comments
+    fn generate_header(&self, schema: &SchemaDefinition) -> String {
+        let mut output = String::new();
+        
+        writeln!(&mut output, "# SHACL Shapes generated from LinkML schema: {}", schema.name).unwrap();
+        writeln!(&mut output, "# Schema ID: {}", schema.id).unwrap();
+        if let Some(version) = &schema.version {
+            writeln!(&mut output, "# Version: {}", version).unwrap();
+        }
+        if let Some(desc) = &schema.description {
+            writeln!(&mut output, "# Description: {}", desc).unwrap();
+        }
+        writeln!(&mut output).unwrap();
+        
+        output
+    }
+    
+    /// Generate SHACL shape for a class
+    fn generate_class_shape(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        let schema_prefix = self.to_snake_case(&schema.name);
+        let shape_name = format!("{}:{}Shape", schema_prefix, self.to_pascal_case(name));
+        
+        // Shape declaration
+        writeln!(&mut output, "{}", shape_name).unwrap();
+        writeln!(&mut output, "    a sh:NodeShape ;").unwrap();
+        writeln!(&mut output, "    sh:targetClass {}:{} ;", schema_prefix, self.to_pascal_case(name)).unwrap();
+        
+        // Description
+        if let Some(desc) = &class.description {
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+        }
+        
+        // Collect all slots (including inherited)
+        let all_slots = self.collect_all_slots(class, schema);
+        
+        // Generate property shapes
+        let mut property_shapes = Vec::new();
+        for slot_name in &all_slots {
+            if let Some(slot) = schema.slots.get(slot_name) {
+                let prop_shape = self.generate_property_shape(slot_name, slot, schema)?;
+                property_shapes.push(prop_shape);
+            }
+        }
+        
+        // Add property references
+        if !property_shapes.is_empty() {
+            write!(&mut output, "    sh:property").unwrap();
+            for (i, _) in property_shapes.iter().enumerate() {
+                if i == 0 {
+                    writeln!(&mut output, " {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                } else if i < property_shapes.len() - 1 {
+                    writeln!(&mut output, "                {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                } else {
+                    writeln!(&mut output, "                {}-{} .", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                }
+            }
+        } else {
+            writeln!(&mut output, "    .").unwrap();
+        }
+        
+        writeln!(&mut output).unwrap();
+        
+        // Generate the property shapes themselves
+        for (slot_name, prop_shape) in all_slots.iter().zip(property_shapes.iter()) {
+            writeln!(&mut output, "{}-{}", shape_name, self.to_snake_case(slot_name)).unwrap();
+            write!(&mut output, "{}", prop_shape).unwrap();
+            writeln!(&mut output).unwrap();
+        }
+        
+        Ok(output)
+    }
+    
+    /// Generate property shape for a slot
+    fn generate_property_shape(&self, slot_name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        let schema_prefix = self.to_snake_case(&schema.name);
+        
+        writeln!(&mut output, "    a sh:PropertyShape ;").unwrap();
+        writeln!(&mut output, "    sh:path {}:{} ;", schema_prefix, self.to_snake_case(slot_name)).unwrap();
+        
+        // Description
+        if let Some(desc) = &slot.description {
+            writeln!(&mut output, "    sh:description \"{}\" ;", desc).unwrap();
+        }
+        
+        // Datatype or class reference
+        if let Some(range) = &slot.range {
+            if let Some(datatype) = self.get_xsd_datatype(range) {
+                writeln!(&mut output, "    sh:datatype {} ;", datatype).unwrap();
+            } else if schema.classes.contains_key(range) {
+                writeln!(&mut output, "    sh:class {}:{} ;", schema_prefix, self.to_pascal_case(range)).unwrap();
+            } else if schema.enums.contains_key(range) {
+                // For enums, we'll use sh:in constraint
+                if let Some(enum_def) = schema.enums.get(range) {
+                    write!(&mut output, "    sh:in (").unwrap();
+                    for (i, pv) in enum_def.permissible_values.iter().enumerate() {
+                        let value = match pv {
+                            PermissibleValue::Simple(s) => s,
+                            PermissibleValue::Complex { text, .. } => text,
+                        };
+                        if i < enum_def.permissible_values.len() - 1 {
+                            write!(&mut output, "\"{}\" ", value).unwrap();
+                        } else {
+                            write!(&mut output, "\"{}\"", value).unwrap();
+                        }
+                    }
+                    writeln!(&mut output, ") ;").unwrap();
+                }
+            } else if let Some(type_def) = schema.types.get(range) {
+                // Custom type - use base type but merge constraints
+                let mut merged_slot = slot.clone();
+                merged_slot.range = type_def.base_type.clone();
+                
+                // Merge pattern constraint if not already present
+                if merged_slot.pattern.is_none() && type_def.pattern.is_some() {
+                    merged_slot.pattern = type_def.pattern.clone();
+                }
+                
+                // Merge min/max constraints if not already present
+                if merged_slot.minimum_value.is_none() && type_def.minimum_value.is_some() {
+                    merged_slot.minimum_value = type_def.minimum_value.clone();
+                }
+                if merged_slot.maximum_value.is_none() && type_def.maximum_value.is_some() {
+                    merged_slot.maximum_value = type_def.maximum_value.clone();
+                }
+                
+                return self.generate_property_shape(slot_name, &merged_slot, schema);
+            }
+        }
+        
+        // Cardinality constraints
+        if slot.required == Some(true) {
+            writeln!(&mut output, "    sh:minCount 1 ;").unwrap();
+        }
+        
+        if slot.multivalued == Some(true) {
+            // No max count by default for multivalued
+        } else {
+            writeln!(&mut output, "    sh:maxCount 1 ;").unwrap();
+        }
+        
+        // Pattern constraint
+        if let Some(pattern) = &slot.pattern {
+            writeln!(&mut output, "    sh:pattern \"{}\" ;", pattern).unwrap();
+        }
+        
+        // Value constraints
+        if let Some(min) = &slot.minimum_value {
+            if let Some(num) = min.as_f64() {
+                writeln!(&mut output, "    sh:minInclusive {} ;", num).unwrap();
+            }
+        }
+        
+        if let Some(max) = &slot.maximum_value {
+            if let Some(num) = max.as_f64() {
+                writeln!(&mut output, "    sh:maxInclusive {} ;", num).unwrap();
+            }
+        }
+        
+        // Remove trailing semicolon and add period
+        if output.ends_with(" ;\n") {
+            output.truncate(output.len() - 3);
+            writeln!(&mut output, " .").unwrap();
+        }
+        
+        Ok(output)
+    }
+    
+    /// Collect all slots including inherited ones
+    fn collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+        let mut all_slots = Vec::new();
+        
+        // First, get slots from parent if any
+        if let Some(parent_name) = &class.is_a {
+            if let Some(parent_class) = schema.classes.get(parent_name) {
+                all_slots.extend(self.collect_all_slots(parent_class, schema));
+            }
+        }
+        
+        // Then add direct slots
+        all_slots.extend(class.slots.clone());
+        
+        // Remove duplicates while preserving order
+        let mut seen = std::collections::HashSet::new();
+        all_slots.retain(|slot| seen.insert(slot.clone()));
+        
+        all_slots
+    }
+    
+    /// Get XSD datatype for LinkML range
+    fn get_xsd_datatype(&self, range: &str) -> Option<String> {
+        match range {
+            "string" | "str" => Some("xsd:string".to_string()),
+            "integer" | "int" => Some("xsd:integer".to_string()),
+            "float" | "double" => Some("xsd:double".to_string()),
+            "decimal" => Some("xsd:decimal".to_string()),
+            "boolean" | "bool" => Some("xsd:boolean".to_string()),
+            "date" => Some("xsd:date".to_string()),
+            "datetime" => Some("xsd:dateTime".to_string()),
+            "time" => Some("xsd:time".to_string()),
+            "uri" => Some("xsd:anyURI".to_string()),
+            _ => None,
+        }
+    }
+    
+    /// Convert to snake_case
+    fn to_snake_case(&self, s: &str) -> String {
+        let mut result = String::new();
+        let mut prev_upper = false;
+        
+        for (i, ch) in s.chars().enumerate() {
+            if ch.is_uppercase() && i > 0 && !prev_upper {
+                result.push('_');
+            }
+            result.push(ch.to_lowercase().next().unwrap());
+            prev_upper = ch.is_uppercase();
+        }
+        
+        result
+    }
+    
+    /// Convert to PascalCase
+    fn to_pascal_case(&self, s: &str) -> String {
+        s.split(|c| c == '_' || c == '-')
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                }
+            })
+            .collect()
+    }
+}
+
+impl Default for ShaclGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl Generator for ShaclGenerator {
+    fn name(&self) -> &str {
+        "shacl"
+    }
+    
+    fn description(&self) -> &str {
+        "Generates SHACL shapes for RDF validation from LinkML schemas"
+    }
+    
+    fn file_extensions(&self) -> Vec<&str> {
+        vec![".shacl", ".ttl"]
+    }
+    
+    async fn generate(
+        &self,
+        schema: &SchemaDefinition,
+        _options: &GeneratorOptions,
+    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+        let mut output = String::new();
+        
+        // Generate header
+        output.push_str(&self.generate_header(schema));
+        
+        // Generate prefixes
+        output.push_str(&self.generate_prefixes(schema));
+        
+        // Generate shapes for each class
+        for (name, class) in &schema.classes {
+            let shape = self.generate_class_shape(name, class, schema)
+                .map_err(|e| GeneratorError::Generation {
+                    context: format!("class {}", name),
+                    message: e.to_string(),
+                })?;
+            output.push_str(&shape);
+        }
+        
+        // Create output
+        let filename = format!("{}.shacl", self.to_snake_case(&schema.name));
+        let mut metadata = HashMap::new();
+        metadata.insert("format".to_string(), "turtle".to_string());
+        metadata.insert("schema".to_string(), schema.name.clone());
+        
+        Ok(vec![GeneratedOutput {
+            filename,
+            content: output,
+            metadata,
+        }])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_xsd_datatype_mapping() {
+        let generator = ShaclGenerator::new();
+        
+        assert_eq!(generator.get_xsd_datatype("string"), Some("xsd:string".to_string()));
+        assert_eq!(generator.get_xsd_datatype("integer"), Some("xsd:integer".to_string()));
+        assert_eq!(generator.get_xsd_datatype("boolean"), Some("xsd:boolean".to_string()));
+        assert_eq!(generator.get_xsd_datatype("datetime"), Some("xsd:dateTime".to_string()));
+        assert_eq!(generator.get_xsd_datatype("CustomType"), None);
+    }
+    
+    #[test]
+    fn test_case_conversion() {
+        let generator = ShaclGenerator::new();
+        
+        assert_eq!(generator.to_snake_case("PersonName"), "person_name");
+        assert_eq!(generator.to_pascal_case("person_name"), "PersonName");
+    }
+}
