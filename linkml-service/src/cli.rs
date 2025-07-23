@@ -16,6 +16,10 @@ use linkml_core::traits::LinkMLService;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
+use crate::generator::{GeneratorRegistry, GeneratorOptions};
+use crate::loader::{DataLoader, DataDumper};
+use crate::schema::{SchemaDiff, SchemaMerge};
+use std::collections::HashMap;
 
 /// `LinkML` CLI tool for schema validation and operations
 #[derive(Parser, Debug)]

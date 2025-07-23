@@ -44,7 +44,7 @@ impl FunctionError {
 }
 
 /// Function signature trait
-trait BuiltinFunction: Send + Sync {
+pub trait BuiltinFunction: Send + Sync {
     /// Function name
     fn name(&self) -> &str;
     
@@ -55,9 +55,66 @@ trait BuiltinFunction: Send + Sync {
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError>;
 }
 
+/// Custom function implementation wrapper
+pub struct CustomFunction {
+    name: String,
+    min_args: usize,
+    max_args: Option<usize>,
+    handler: Box<dyn Fn(Vec<Value>) -> Result<Value, FunctionError> + Send + Sync>,
+}
+
+impl CustomFunction {
+    /// Create a new custom function
+    pub fn new(
+        name: impl Into<String>,
+        min_args: usize,
+        max_args: Option<usize>,
+        handler: impl Fn(Vec<Value>) -> Result<Value, FunctionError> + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            min_args,
+            max_args,
+            handler: Box::new(handler),
+        }
+    }
+}
+
+impl BuiltinFunction for CustomFunction {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    
+    fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
+        if args.len() < self.min_args {
+            return Err(FunctionError::wrong_arity(
+                &self.name,
+                &format!("at least {}", self.min_args),
+                args.len(),
+            ));
+        }
+        if let Some(max) = self.max_args {
+            if args.len() > max {
+                return Err(FunctionError::wrong_arity(
+                    &self.name,
+                    &format!("at most {}", max),
+                    args.len(),
+                ));
+            }
+        }
+        Ok(())
+    }
+    
+    fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
+        (self.handler)(args)
+    }
+}
+
 /// Registry of built-in functions
 pub struct FunctionRegistry {
     functions: HashMap<String, Box<dyn BuiltinFunction>>,
+    /// Whether the registry is locked to prevent further registrations
+    locked: bool,
 }
 
 impl FunctionRegistry {
@@ -65,6 +122,7 @@ impl FunctionRegistry {
     pub fn new() -> Self {
         let mut registry = Self {
             functions: HashMap::new(),
+            locked: false,
         };
         
         // Register all built-in functions
@@ -75,12 +133,116 @@ impl FunctionRegistry {
         registry.register(Box::new(MatchesFunction));
         registry.register(Box::new(ContainsFunction));
         
+        // Register string functions
+        registry.register(Box::new(crate::expression::string_functions::UpperFunction));
+        registry.register(Box::new(crate::expression::string_functions::LowerFunction));
+        registry.register(Box::new(crate::expression::string_functions::TrimFunction));
+        registry.register(Box::new(crate::expression::string_functions::StartsWithFunction));
+        registry.register(Box::new(crate::expression::string_functions::EndsWithFunction));
+        registry.register(Box::new(crate::expression::string_functions::ReplaceFunction));
+        registry.register(Box::new(crate::expression::string_functions::SplitFunction));
+        registry.register(Box::new(crate::expression::string_functions::JoinFunction));
+        registry.register(Box::new(crate::expression::string_functions::SubstringFunction));
+        
+        // Register date functions
+        registry.register(Box::new(crate::expression::date_functions::NowFunction));
+        registry.register(Box::new(crate::expression::date_functions::TodayFunction));
+        registry.register(Box::new(crate::expression::date_functions::DateParseFunction));
+        registry.register(Box::new(crate::expression::date_functions::DateFormatFunction));
+        registry.register(Box::new(crate::expression::date_functions::DateAddFunction));
+        registry.register(Box::new(crate::expression::date_functions::DateDiffFunction));
+        registry.register(Box::new(crate::expression::date_functions::YearFunction));
+        registry.register(Box::new(crate::expression::date_functions::MonthFunction));
+        registry.register(Box::new(crate::expression::date_functions::DayFunction));
+        
+        // Register math functions
+        registry.register(Box::new(crate::expression::math_functions::AbsFunction));
+        registry.register(Box::new(crate::expression::math_functions::SqrtFunction));
+        registry.register(Box::new(crate::expression::math_functions::PowFunction));
+        registry.register(Box::new(crate::expression::math_functions::SinFunction));
+        registry.register(Box::new(crate::expression::math_functions::CosFunction));
+        registry.register(Box::new(crate::expression::math_functions::TanFunction));
+        registry.register(Box::new(crate::expression::math_functions::LogFunction));
+        registry.register(Box::new(crate::expression::math_functions::ExpFunction));
+        registry.register(Box::new(crate::expression::math_functions::FloorFunction));
+        registry.register(Box::new(crate::expression::math_functions::CeilFunction));
+        registry.register(Box::new(crate::expression::math_functions::RoundFunction));
+        registry.register(Box::new(crate::expression::math_functions::ModFunction));
+        
+        // Register aggregation functions
+        registry.register(Box::new(crate::expression::aggregation_functions::SumFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::AvgFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::CountFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::MedianFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::ModeFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::StdDevFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::VarianceFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::UniqueFunction));
+        registry.register(Box::new(crate::expression::aggregation_functions::GroupByFunction));
+        
         registry
+    }
+    
+    /// Create a registry with security restrictions (no custom functions allowed)
+    pub fn new_restricted() -> Self {
+        let mut registry = Self::new();
+        registry.locked = true;
+        registry
+    }
+    
+    /// Lock the registry to prevent further registrations
+    pub fn lock(&mut self) {
+        self.locked = true;
+    }
+    
+    /// Check if the registry is locked
+    pub fn is_locked(&self) -> bool {
+        self.locked
     }
     
     /// Register a function
     fn register(&mut self, function: Box<dyn BuiltinFunction>) {
+        if self.locked {
+            // Silently ignore registration attempts when locked
+            return;
+        }
         self.functions.insert(function.name().to_string(), function);
+    }
+    
+    /// Register a custom function
+    /// 
+    /// Returns an error if the registry is locked.
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// use linkml_service::expression::functions::{FunctionRegistry, CustomFunction, FunctionError};
+    /// use serde_json::{json, Value};
+    /// 
+    /// let mut registry = FunctionRegistry::new();
+    /// 
+    /// // Register a custom uppercase function
+    /// registry.register_custom(CustomFunction::new(
+    ///     "uppercase",
+    ///     1,
+    ///     Some(1),
+    ///     |args| {
+    ///         match &args[0] {
+    ///             Value::String(s) => Ok(Value::String(s.to_uppercase())),
+    ///             _ => Err(FunctionError::new("Expected string argument")),
+    ///         }
+    ///     }
+    /// )).unwrap();
+    /// 
+    /// let result = registry.call("uppercase", vec![json!("hello")]).unwrap();
+    /// assert_eq!(result, json!("HELLO"));
+    /// ```
+    pub fn register_custom(&mut self, function: CustomFunction) -> Result<(), FunctionError> {
+        if self.locked {
+            return Err(FunctionError::new("Function registry is locked"));
+        }
+        self.register(Box::new(function));
+        Ok(())
     }
     
     /// Call a function by name
@@ -97,6 +259,11 @@ impl FunctionRegistry {
     /// Check if a function exists
     pub fn has_function(&self, name: &str) -> bool {
         self.functions.contains_key(name)
+    }
+    
+    /// Get list of registered function names
+    pub fn function_names(&self) -> Vec<&str> {
+        self.functions.keys().map(|s| s.as_str()).collect()
     }
 }
 

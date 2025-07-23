@@ -276,6 +276,181 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
     });
 }
 
+fn bench_boolean_constraints(c: &mut Criterion) {
+    let mut schema = SchemaDefinition::new("boolean_schema");
+    
+    // Create any_of constraint slot
+    let mut any_of_slot = SlotDefinition::new("flexible_value");
+    any_of_slot.any_of = Some(vec![
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("string".to_string()),
+            pattern: Some(r"^[A-Z]{2}\d{6}$".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(1000)),
+            maximum_value: Some(json!(9999)),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            pattern: Some(r"^\d{3}-\d{2}-\d{4}$".to_string()),
+            ..Default::default()
+        },
+    ]);
+    schema.slots.insert("flexible_value".to_string(), any_of_slot);
+    
+    // Create all_of constraint slot (for parallel evaluation)
+    let mut all_of_slot = SlotDefinition::new("strict_value");
+    all_of_slot.all_of = Some(vec![
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            pattern: Some(r"^[A-Z]".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            pattern: Some(r"\d$".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            minimum_value: Some(json!(5)),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            maximum_value: Some(json!(20)),
+            ..Default::default()
+        },
+    ]);
+    schema.slots.insert("strict_value".to_string(), all_of_slot);
+    
+    // Create none_of constraint slot
+    let mut none_of_slot = SlotDefinition::new("exclusive_value");
+    none_of_slot.none_of = Some(vec![
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("boolean".to_string()),
+            ..Default::default()
+        },
+    ]);
+    schema.slots.insert("exclusive_value".to_string(), none_of_slot);
+    
+    // Create exactly_one_of constraint slot
+    let mut exactly_one_slot = SlotDefinition::new("precise_value");
+    exactly_one_slot.exactly_one_of = Some(vec![
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("string".to_string()),
+            pattern: Some(r"^test_".to_string()),
+            ..Default::default()
+        },
+        linkml_core::types::AnonymousSlotExpression {
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(100)),
+            ..Default::default()
+        },
+    ]);
+    schema.slots.insert("precise_value".to_string(), exactly_one_slot);
+    
+    // Create classes
+    let mut any_of_class = ClassDefinition::new("FlexibleEntity");
+    any_of_class.slots = vec!["flexible_value".to_string()];
+    schema.classes.insert("FlexibleEntity".to_string(), any_of_class);
+    
+    let mut all_of_class = ClassDefinition::new("StrictEntity");
+    all_of_class.slots = vec!["strict_value".to_string()];
+    schema.classes.insert("StrictEntity".to_string(), all_of_class);
+    
+    let mut none_of_class = ClassDefinition::new("ExclusiveEntity");
+    none_of_class.slots = vec!["exclusive_value".to_string()];
+    schema.classes.insert("ExclusiveEntity".to_string(), none_of_class);
+    
+    let mut exactly_one_class = ClassDefinition::new("PreciseEntity");
+    exactly_one_class.slots = vec!["precise_value".to_string()];
+    schema.classes.insert("PreciseEntity".to_string(), exactly_one_class);
+    
+    let engine = ValidationEngine::new(schema);
+    let options = ValidationOptions::default();
+    
+    // Test data
+    let any_of_valid = json!({"flexible_value": "AB123456"});
+    let any_of_invalid = json!({"flexible_value": "invalid"});
+    
+    let all_of_valid = json!({"strict_value": "Hello123"});
+    let all_of_invalid = json!({"strict_value": "hello"});
+    
+    let none_of_valid = json!({"exclusive_value": 3.14});
+    let none_of_invalid = json!({"exclusive_value": "string"});
+    
+    let exactly_one_valid = json!({"precise_value": "test_123"});
+    let exactly_one_invalid = json!({"precise_value": 500}); // Satisfies integer constraint too
+    
+    // Benchmarks
+    c.bench_function("any_of_valid", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&any_of_valid), "FlexibleEntity", &options);
+            assert!(result.is_ok());
+        })
+    });
+    
+    c.bench_function("any_of_invalid", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&any_of_invalid), "FlexibleEntity", &options);
+            assert!(result.is_err());
+        })
+    });
+    
+    c.bench_function("all_of_valid_parallel", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&all_of_valid), "StrictEntity", &options);
+            assert!(result.is_ok());
+        })
+    });
+    
+    c.bench_function("all_of_invalid_parallel", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&all_of_invalid), "StrictEntity", &options);
+            assert!(result.is_err());
+        })
+    });
+    
+    c.bench_function("none_of_valid", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&none_of_valid), "ExclusiveEntity", &options);
+            assert!(result.is_ok());
+        })
+    });
+    
+    c.bench_function("none_of_invalid_early_exit", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&none_of_invalid), "ExclusiveEntity", &options);
+            assert!(result.is_err());
+        })
+    });
+    
+    c.bench_function("exactly_one_of_valid", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&exactly_one_valid), "PreciseEntity", &options);
+            assert!(result.is_ok());
+        })
+    });
+    
+    c.bench_function("exactly_one_of_invalid", |b| {
+        b.iter(|| {
+            let result = engine.validate(black_box(&exactly_one_invalid), "PreciseEntity", &options);
+            assert!(result.is_err());
+        })
+    });
+}
+
 fn bench_conditional_validation(c: &mut Criterion) {
     let mut schema = SchemaDefinition::new("conditional_schema");
     
@@ -338,6 +513,7 @@ criterion_group!(
     bench_pattern_validation,
     bench_enum_validation,
     bench_inheritance_resolution,
+    bench_boolean_constraints,
     bench_conditional_validation
 );
 

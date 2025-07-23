@@ -7,7 +7,12 @@ use super::error::EvaluationError;
 use super::functions::FunctionRegistry;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use lru::LruCache;
+use std::num::NonZeroUsize;
 
 /// Configuration for the evaluator
 #[derive(Debug, Clone)]
@@ -20,6 +25,10 @@ pub struct EvaluatorConfig {
     pub timeout: Duration,
     /// Maximum memory usage (approximate)
     pub max_memory: usize,
+    /// Enable expression result caching
+    pub enable_cache: bool,
+    /// Maximum cache size (number of entries)
+    pub cache_size: usize,
 }
 
 impl Default for EvaluatorConfig {
@@ -29,6 +38,207 @@ impl Default for EvaluatorConfig {
             max_call_depth: 100,
             timeout: Duration::from_secs(1),
             max_memory: 10 * 1024 * 1024, // 10MB
+            enable_cache: true,
+            cache_size: 1000,
+        }
+    }
+}
+
+/// Cache key for expression results
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+struct CacheKey {
+    /// Serialized expression AST
+    expression_hash: u64,
+    /// Serialized context hash
+    context_hash: u64,
+}
+
+impl CacheKey {
+    fn new(expr: &Expression, context: &HashMap<String, Value>) -> Self {
+        let expression_hash = hash_expression(expr);
+        let context_hash = hash_context(context);
+        
+        Self {
+            expression_hash,
+            context_hash,
+        }
+    }
+}
+
+/// Hash an expression securely without string formatting
+fn hash_expression(expr: &Expression) -> u64 {
+    use std::hash::{Hash, Hasher};
+    
+    let mut hasher = DefaultHasher::new();
+    
+    // Hash based on expression type
+    match expr {
+        Expression::Null => 0u8.hash(&mut hasher),
+        Expression::Boolean(b) => {
+            1u8.hash(&mut hasher);
+            b.hash(&mut hasher);
+        }
+        Expression::Number(n) => {
+            2u8.hash(&mut hasher);
+            n.to_bits().hash(&mut hasher);
+        }
+        Expression::String(s) => {
+            3u8.hash(&mut hasher);
+            s.hash(&mut hasher);
+        }
+        Expression::Variable(name) => {
+            4u8.hash(&mut hasher);
+            name.hash(&mut hasher);
+        }
+        Expression::Add(l, r) => {
+            5u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Subtract(l, r) => {
+            6u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Multiply(l, r) => {
+            7u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Divide(l, r) => {
+            8u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Modulo(l, r) => {
+            9u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Negate(e) => {
+            10u8.hash(&mut hasher);
+            hash_expression(e).hash(&mut hasher);
+        }
+        Expression::Equal(l, r) => {
+            11u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::NotEqual(l, r) => {
+            12u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Less(l, r) => {
+            13u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Greater(l, r) => {
+            14u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::LessOrEqual(l, r) => {
+            15u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::GreaterOrEqual(l, r) => {
+            16u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::And(l, r) => {
+            17u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Or(l, r) => {
+            18u8.hash(&mut hasher);
+            hash_expression(l).hash(&mut hasher);
+            hash_expression(r).hash(&mut hasher);
+        }
+        Expression::Not(e) => {
+            19u8.hash(&mut hasher);
+            hash_expression(e).hash(&mut hasher);
+        }
+        Expression::FunctionCall { name, args } => {
+            20u8.hash(&mut hasher);
+            name.hash(&mut hasher);
+            for arg in args {
+                hash_expression(arg).hash(&mut hasher);
+            }
+        }
+        Expression::Conditional { condition, then_expr, else_expr } => {
+            21u8.hash(&mut hasher);
+            hash_expression(condition).hash(&mut hasher);
+            hash_expression(then_expr).hash(&mut hasher);
+            hash_expression(else_expr).hash(&mut hasher);
+        }
+    }
+    
+    hasher.finish()
+}
+
+/// Hash a context securely without string formatting
+fn hash_context(context: &HashMap<String, Value>) -> u64 {
+    use std::hash::{Hash, Hasher};
+    
+    let mut hasher = DefaultHasher::new();
+    
+    // Sort keys for consistent hashing
+    let mut keys: Vec<_> = context.keys().collect();
+    keys.sort();
+    
+    for key in keys {
+        key.hash(&mut hasher);
+        if let Some(value) = context.get(key) {
+            hash_value(value, &mut hasher);
+        }
+    }
+    
+    hasher.finish()
+}
+
+/// Hash a JSON value securely
+fn hash_value<H: Hasher>(value: &Value, hasher: &mut H) {
+    match value {
+        Value::Null => 0u8.hash(hasher),
+        Value::Bool(b) => {
+            1u8.hash(hasher);
+            b.hash(hasher);
+        }
+        Value::Number(n) => {
+            2u8.hash(hasher);
+            if let Some(i) = n.as_i64() {
+                i.hash(hasher);
+            } else if let Some(f) = n.as_f64() {
+                f.to_bits().hash(hasher);
+            }
+        }
+        Value::String(s) => {
+            3u8.hash(hasher);
+            s.hash(hasher);
+        }
+        Value::Array(arr) => {
+            4u8.hash(hasher);
+            arr.len().hash(hasher);
+            for v in arr {
+                hash_value(v, hasher);
+            }
+        }
+        Value::Object(map) => {
+            5u8.hash(hasher);
+            map.len().hash(hasher);
+            let mut keys: Vec<_> = map.keys().collect();
+            keys.sort();
+            for key in keys {
+                key.hash(hasher);
+                if let Some(v) = map.get(key) {
+                    hash_value(v, hasher);
+                }
+            }
         }
     }
 }
@@ -37,22 +247,78 @@ impl Default for EvaluatorConfig {
 pub struct Evaluator {
     config: EvaluatorConfig,
     function_registry: FunctionRegistry,
+    cache: Option<Arc<Mutex<LruCache<CacheKey, Value>>>>,
 }
 
 impl Evaluator {
     /// Create a new evaluator with default configuration
     pub fn new() -> Self {
+        let config = EvaluatorConfig::default();
+        let cache = if config.enable_cache {
+            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+        } else {
+            None
+        };
+        
         Self {
-            config: EvaluatorConfig::default(),
+            config,
             function_registry: FunctionRegistry::new(),
+            cache,
         }
+    }
+    
+    /// Create a new evaluator with custom function registry
+    pub fn with_functions(function_registry: FunctionRegistry) -> Self {
+        let config = EvaluatorConfig::default();
+        let cache = if config.enable_cache {
+            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+        } else {
+            None
+        };
+        
+        Self {
+            config,
+            function_registry,
+            cache,
+        }
+    }
+    
+    /// Get mutable reference to function registry for custom function registration
+    pub fn function_registry_mut(&mut self) -> &mut FunctionRegistry {
+        &mut self.function_registry
+    }
+    
+    /// Clear the expression cache
+    pub fn clear_cache(&self) {
+        if let Some(cache) = &self.cache {
+            if let Ok(mut cache) = cache.lock() {
+                cache.clear();
+            }
+        }
+    }
+    
+    /// Get cache statistics
+    pub fn cache_stats(&self) -> Option<(usize, usize)> {
+        if let Some(cache) = &self.cache {
+            if let Ok(cache) = cache.lock() {
+                return Some((cache.len(), cache.cap().into()));
+            }
+        }
+        None
     }
     
     /// Create an evaluator with custom configuration
     pub fn with_config(config: EvaluatorConfig) -> Self {
+        let cache = if config.enable_cache {
+            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+        } else {
+            None
+        };
+        
         Self {
             config,
             function_registry: FunctionRegistry::new(),
+            cache,
         }
     }
     
@@ -62,17 +328,50 @@ impl Evaluator {
         expr: &Expression,
         context: &HashMap<String, Value>,
     ) -> Result<Value, EvaluationError> {
-        let mut eval_context = EvalContext {
-            variables: context,
-            iterations: 0,
-            call_depth: 0,
-            start_time: Instant::now(),
-            memory_used: 0,
-            config: &self.config,
-            functions: &self.function_registry,
-        };
-        
-        eval_context.evaluate_expr(expr)
+        // Check cache first if enabled
+        if let Some(cache) = &self.cache {
+            let cache_key = CacheKey::new(expr, context);
+            
+            // Try to get from cache
+            if let Ok(mut cache) = cache.lock() {
+                if let Some(cached_value) = cache.get(&cache_key) {
+                    return Ok(cached_value.clone());
+                }
+            }
+            
+            // Evaluate the expression
+            let mut eval_context = EvalContext {
+                variables: context,
+                iterations: 0,
+                call_depth: 0,
+                start_time: Instant::now(),
+                memory_used: 0,
+                config: &self.config,
+                functions: &self.function_registry,
+            };
+            
+            let result = eval_context.evaluate_expr(expr)?;
+            
+            // Cache the result
+            if let Ok(mut cache) = cache.lock() {
+                cache.put(cache_key, result.clone());
+            }
+            
+            Ok(result)
+        } else {
+            // No caching, evaluate directly
+            let mut eval_context = EvalContext {
+                variables: context,
+                iterations: 0,
+                call_depth: 0,
+                start_time: Instant::now(),
+                memory_used: 0,
+                config: &self.config,
+                functions: &self.function_registry,
+            };
+            
+            eval_context.evaluate_expr(expr)
+        }
     }
 }
 

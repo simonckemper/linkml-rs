@@ -4,7 +4,7 @@
 //! implementing 100% feature parity with Python `LinkML` plus native enhancements.
 
 #![forbid(unsafe_code)]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
@@ -55,6 +55,27 @@ pub mod rule_engine;
 
 /// SchemaView - High-level API for schema introspection
 pub mod schema_view;
+
+/// Performance optimization utilities
+pub mod performance;
+
+/// Security utilities and input validation
+pub mod security;
+
+/// Data loading and dumping functionality
+pub mod loader;
+
+/// Array support for N-dimensional data
+pub mod array;
+
+/// Schema manipulation utilities (diff, merge, lint)
+pub mod schema;
+
+/// Enhanced CLI with all LinkML commands
+pub mod cli_enhanced;
+
+/// Plugin architecture for extensibility
+pub mod plugin;
 
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};

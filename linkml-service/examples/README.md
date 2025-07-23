@@ -24,6 +24,11 @@ These examples demonstrate the LinkML API without requiring the full RootReal se
 ### Performance
 - **`batch_processing.rs`** - High-performance batch validation with streaming and concurrency
 - **`typeql_performance_check.rs`** - TypeQL generation performance benchmarks
+- **`performance_summary.rs`** - Comprehensive performance characteristics across all operations
+- **`performance_and_security.rs`** - Performance optimizations with security features
+
+### Complete Demonstrations
+- **`comprehensive_demo.rs`** - The most complete example showcasing ALL LinkML features
 
 Run examples with:
 ```bash
@@ -37,6 +42,10 @@ cargo run --example code_generation_showcase
 
 # Performance
 cargo run --example batch_processing
+cargo run --release --example performance_summary
+
+# Complete feature showcase
+cargo run --release --example comprehensive_demo
 ```
 
 ## Full Integration Examples

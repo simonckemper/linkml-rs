@@ -9,6 +9,17 @@ pub mod evaluator;
 pub mod functions;
 pub mod parser;
 
+// Additional function modules
+pub mod string_functions;
+pub mod date_functions;
+pub mod math_functions;
+pub mod aggregation_functions;
+
+// Performance optimization modules
+pub mod compiler;
+pub mod vm;
+pub mod cache;
+
 use linkml_core::error::Result;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -16,7 +27,8 @@ use std::sync::Arc;
 
 pub use ast::Expression;
 pub use error::{ExpressionError, ParseError, EvaluationError};
-pub use evaluator::Evaluator;
+pub use evaluator::{Evaluator, EvaluatorConfig};
+pub use functions::{CustomFunction, FunctionError, FunctionRegistry};
 pub use parser::Parser;
 
 /// Main expression engine that combines parsing and evaluation

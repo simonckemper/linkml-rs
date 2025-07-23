@@ -8,6 +8,7 @@ use linkml_core::{
 use serde_json::Value;
 use std::sync::Arc;
 use std::time::Instant;
+use crate::performance::profiling::global_profiler;
 
 use super::{
     buffer_pool::ValidationBufferPools,
@@ -164,16 +165,22 @@ impl ValidationEngine {
         data: &Value,
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
+        let profiler = global_profiler();
+        
         // Merge options with schema settings
-        let options = match (options, &self.schema.settings) {
-            (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
-            (Some(opts), None) => opts,
-            (None, Some(settings)) => ValidationOptions::from_settings(settings),
-            (None, None) => ValidationOptions::default(),
-        };
+        let options = profiler.time("validate.merge_options", || {
+            match (options, &self.schema.settings) {
+                (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
+                (Some(opts), None) => opts,
+                (None, Some(settings)) => ValidationOptions::from_settings(settings),
+                (None, None) => ValidationOptions::default(),
+            }
+        });
 
         // Try to determine the target class from the data
-        let target_class = self.infer_target_class(data)?;
+        let target_class = profiler.time("validate.infer_class", || {
+            self.infer_target_class(data)
+        })?;
 
         self.validate_as_class(data, &target_class, Some(options))
             .await
@@ -190,18 +197,24 @@ impl ValidationEngine {
         class_name: &str,
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
+        let profiler = global_profiler();
         let start = Instant::now();
+        
         // Merge options with schema settings
-        let options = match (options, &self.schema.settings) {
-            (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
-            (Some(opts), None) => opts,
-            (None, Some(settings)) => ValidationOptions::from_settings(settings),
-            (None, None) => ValidationOptions::default(),
-        };
+        let options = profiler.time("validate_as_class.merge_options", || {
+            match (options, &self.schema.settings) {
+                (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
+                (Some(opts), None) => opts,
+                (None, Some(settings)) => ValidationOptions::from_settings(settings),
+                (None, None) => ValidationOptions::default(),
+            }
+        });
 
         // Check that the class exists
-        let class_def = self.schema.classes.get(class_name).ok_or_else(|| {
-            LinkMLError::schema_validation(format!("Class '{class_name}' not found in schema"))
+        let class_def = profiler.time("validate_as_class.get_class", || {
+            self.schema.classes.get(class_name).ok_or_else(|| {
+                LinkMLError::schema_validation(format!("Class '{class_name}' not found in schema"))
+            })
         })?;
 
         let mut report = ValidationReport::new(&self.schema.id);
@@ -425,12 +438,20 @@ impl ValidationEngine {
         report: &mut ValidationReport,
         options: &ValidationOptions,
     ) {
+        let profiler = global_profiler();
+        
         // Get validators for this slot
-        let validators = self.registry.get_validators_for_slot(slot_def);
+        let validators = profiler.time("slot_validation.get_validators", || {
+            self.registry.get_validators_for_slot(slot_def)
+        });
 
         // Run each validator
         for validator in validators {
-            let issues = validator.validate(value, slot_def, context);
+            let validator_name = validator.name();
+            let issues = profiler.time(&format!("slot_validation.{}", validator_name), || {
+                validator.validate(value, slot_def, context)
+            });
+            
             for issue in issues {
                 report.add_issue(issue);
                 if options.fail_fast() && !report.valid {

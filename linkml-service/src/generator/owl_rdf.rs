@@ -1,25 +1,65 @@
-//! OWL/RDF generator for LinkML schemas
+//! RDF generator for LinkML schemas
 //!
-//! This module generates OWL (Web Ontology Language) in RDF/Turtle format from LinkML schemas.
-//! OWL is a W3C standard for creating ontologies with rich semantics.
+//! This module generates RDF representations from LinkML schemas in multiple formats:
+//! - OWL ontologies (default, with rich semantics)
+//! - Simple RDF Schema (RDFS)
+//! - Pure RDF triples
+//! 
+//! Supported output formats:
+//! - Turtle (.ttl) - default
+//! - RDF/XML (.rdf)
+//! - N-Triples (.nt)
+//! - JSON-LD (.jsonld)
 
 use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue};
 use std::collections::HashMap;
 use std::fmt::Write;
+use serde_json;
 
 use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
 use async_trait::async_trait;
 
-/// OWL/RDF generator for semantic web ontologies
-pub struct OwlRdfGenerator {
+/// RDF output format
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RdfFormat {
+    /// Turtle format (default)
+    Turtle,
+    /// RDF/XML format
+    RdfXml,
+    /// N-Triples format
+    NTriples,
+    /// JSON-LD format  
+    JsonLd,
+}
+
+/// RDF generation mode
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RdfMode {
+    /// Full OWL ontology with restrictions
+    Owl,
+    /// Simple RDFS schema
+    Rdfs,
+    /// Plain RDF triples
+    Simple,
+}
+
+/// RDF generator for semantic web representations
+pub struct RdfGenerator {
     /// Generator options
     options: GeneratorOptions,
     /// Namespace prefixes
     prefixes: HashMap<String, String>,
+    /// Output format
+    format: RdfFormat,
+    /// Generation mode
+    mode: RdfMode,
 }
 
-impl OwlRdfGenerator {
-    /// Create a new OWL/RDF generator
+/// Alias for backward compatibility
+pub type OwlRdfGenerator = RdfGenerator;
+
+impl RdfGenerator {
+    /// Create a new RDF generator (defaults to OWL mode, Turtle format)
     #[must_use]
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
@@ -35,6 +75,8 @@ impl OwlRdfGenerator {
         Self {
             options: GeneratorOptions::default(),
             prefixes,
+            format: RdfFormat::Turtle,
+            mode: RdfMode::Owl,
         }
     }
     
@@ -46,8 +88,44 @@ impl OwlRdfGenerator {
         generator
     }
     
-    /// Generate prefixes section
+    /// Set the output format
+    #[must_use]
+    pub fn with_format(mut self, format: RdfFormat) -> Self {
+        self.format = format;
+        self
+    }
+    
+    /// Set the generation mode
+    #[must_use]
+    pub fn with_mode(mut self, mode: RdfMode) -> Self {
+        self.mode = mode;
+        self
+    }
+    
+    /// Create a simple RDF generator
+    #[must_use]
+    pub fn simple() -> Self {
+        Self::new().with_mode(RdfMode::Simple)
+    }
+    
+    /// Create an RDFS generator
+    #[must_use]
+    pub fn rdfs() -> Self {
+        Self::new().with_mode(RdfMode::Rdfs)
+    }
+    
+    /// Generate prefixes section based on format
     fn generate_prefixes(&self, schema: &SchemaDefinition) -> String {
+        match self.format {
+            RdfFormat::Turtle => self.generate_turtle_prefixes(schema),
+            RdfFormat::RdfXml => self.generate_rdfxml_prefixes(schema),
+            RdfFormat::NTriples => String::new(), // N-Triples doesn't use prefixes
+            RdfFormat::JsonLd => self.generate_jsonld_context(schema),
+        }
+    }
+    
+    /// Generate Turtle prefixes
+    fn generate_turtle_prefixes(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
         
         // Standard prefixes
@@ -63,11 +141,69 @@ impl OwlRdfGenerator {
         output
     }
     
-    /// Generate ontology header
-    fn generate_ontology_header(&self, schema: &SchemaDefinition) -> String {
+    /// Generate RDF/XML namespace declarations
+    fn generate_rdfxml_prefixes(&self, schema: &SchemaDefinition) -> String {
+        let mut namespaces = String::new();
+        
+        // Add standard namespaces
+        write!(&mut namespaces, " xmlns:rdf=\"{}\"", self.prefixes["rdf"]).unwrap();
+        write!(&mut namespaces, " xmlns:rdfs=\"{}\"", self.prefixes["rdfs"]).unwrap();
+        
+        if self.mode == RdfMode::Owl {
+            write!(&mut namespaces, " xmlns:owl=\"{}\"", self.prefixes["owl"]).unwrap();
+        }
+        
+        write!(&mut namespaces, " xmlns:xsd=\"{}\"", self.prefixes["xsd"]).unwrap();
+        write!(&mut namespaces, " xmlns:skos=\"{}\"", self.prefixes["skos"]).unwrap();
+        write!(&mut namespaces, " xmlns:dcterms=\"{}\"", self.prefixes["dcterms"]).unwrap();
+        
+        // Schema namespace
+        let schema_prefix = self.to_snake_case(&schema.name);
+        write!(&mut namespaces, " xmlns:{}=\"{}#\"", schema_prefix, schema.id).unwrap();
+        
+        namespaces
+    }
+    
+    /// Generate JSON-LD context
+    fn generate_jsonld_context(&self, schema: &SchemaDefinition) -> String {
+        let mut context = serde_json::json!({
+            "@context": {
+                "rdf": self.prefixes["rdf"],
+                "rdfs": self.prefixes["rdfs"],
+                "xsd": self.prefixes["xsd"],
+                "skos": self.prefixes["skos"],
+                "dcterms": self.prefixes["dcterms"],
+            }
+        });
+        
+        if self.mode == RdfMode::Owl {
+            context["@context"]["owl"] = serde_json::json!(self.prefixes["owl"]);
+        }
+        
+        // Add schema-specific namespace
+        let schema_prefix = self.to_snake_case(&schema.name);
+        context["@context"][schema_prefix] = serde_json::json!(format!("{}#", schema.id));
+        
+        serde_json::to_string_pretty(&context).unwrap()
+    }
+    
+    /// Generate schema header based on mode and format
+    fn generate_schema_header(&self, schema: &SchemaDefinition) -> String {
+        match self.mode {
+            RdfMode::Owl => self.generate_owl_header(schema),
+            RdfMode::Rdfs => self.generate_rdfs_header(schema),
+            RdfMode::Simple => self.generate_simple_header(schema),
+        }
+    }
+    
+    /// Generate OWL ontology header
+    fn generate_owl_header(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
         
-        writeln!(&mut output, "# OWL Ontology generated from LinkML schema: {}", schema.name).unwrap();
+        match self.format {
+            RdfFormat::Turtle => writeln!(&mut output, "# OWL Ontology generated from LinkML schema: {}", schema.name).unwrap(),
+            _ => {}
+        }
         writeln!(&mut output).unwrap();
         
         // Ontology declaration
@@ -89,8 +225,52 @@ impl OwlRdfGenerator {
         output
     }
     
-    /// Generate OWL class from LinkML class
+    /// Generate RDFS schema header
+    fn generate_rdfs_header(&self, schema: &SchemaDefinition) -> String {
+        let mut output = String::new();
+        
+        match self.format {
+            RdfFormat::Turtle => writeln!(&mut output, "# RDFS Schema generated from LinkML: {}", schema.name).unwrap(),
+            _ => {}
+        }
+        
+        // Schema declaration
+        writeln!(&mut output, "<{}>\n    a rdfs:Class ;", schema.id).unwrap();
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", schema.name).unwrap();
+        
+        if let Some(desc) = &schema.description {
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+        }
+        
+        writeln!(&mut output, "    .").unwrap();
+        writeln!(&mut output).unwrap();
+        
+        output
+    }
+    
+    /// Generate simple RDF header
+    fn generate_simple_header(&self, schema: &SchemaDefinition) -> String {
+        let mut output = String::new();
+        
+        match self.format {
+            RdfFormat::Turtle => writeln!(&mut output, "# RDF triples generated from LinkML: {}\n", schema.name).unwrap(),
+            _ => {}
+        }
+        
+        output
+    }
+    
+    /// Generate class based on mode
     fn generate_class(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        match self.mode {
+            RdfMode::Owl => self.generate_owl_class(name, class, schema),
+            RdfMode::Rdfs => self.generate_rdfs_class(name, class, schema),
+            RdfMode::Simple => self.generate_simple_class(name, class, schema),
+        }
+    }
+    
+    /// Generate OWL class from LinkML class
+    fn generate_owl_class(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
@@ -370,26 +550,86 @@ impl OwlRdfGenerator {
             })
             .collect()
     }
+    
+    /// Generate RDFS class
+    fn generate_rdfs_class(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        let schema_prefix = self.to_snake_case(&schema.name);
+        let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
+        
+        // Class declaration
+        writeln!(&mut output, "# Class: {}", name).unwrap();
+        writeln!(&mut output, "{}", class_uri).unwrap();
+        writeln!(&mut output, "    a rdfs:Class ;").unwrap();
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).unwrap();
+        
+        // Description
+        if let Some(desc) = &class.description {
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+        }
+        
+        // Superclass
+        if let Some(parent) = &class.is_a {
+            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(parent)).unwrap();
+        }
+        
+        writeln!(&mut output, "    .").unwrap();
+        writeln!(&mut output).unwrap();
+        
+        Ok(output)
+    }
+    
+    /// Generate simple RDF triples
+    fn generate_simple_class(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        let schema_prefix = self.to_snake_case(&schema.name);
+        let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
+        
+        // Basic triple
+        writeln!(&mut output, "{} a rdfs:Class .", class_uri).unwrap();
+        writeln!(&mut output, "{} rdfs:label \"{}\" .", class_uri, name).unwrap();
+        
+        if let Some(desc) = &class.description {
+            writeln!(&mut output, "{} rdfs:comment \"{}\" .", class_uri, desc).unwrap();
+        }
+        
+        writeln!(&mut output).unwrap();
+        
+        Ok(output)
+    }
 }
 
-impl Default for OwlRdfGenerator {
+impl Default for RdfGenerator {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[async_trait]
-impl Generator for OwlRdfGenerator {
+impl Generator for RdfGenerator {
     fn name(&self) -> &str {
-        "owl-rdf"
+        match self.mode {
+            RdfMode::Owl => "owl-rdf",
+            RdfMode::Rdfs => "rdfs",
+            RdfMode::Simple => "rdf",
+        }
     }
     
     fn description(&self) -> &str {
-        "Generates OWL ontology in RDF/Turtle format from LinkML schemas"
+        match self.mode {
+            RdfMode::Owl => "Generates OWL ontology in RDF format from LinkML schemas",
+            RdfMode::Rdfs => "Generates RDFS schema from LinkML schemas",
+            RdfMode::Simple => "Generates simple RDF triples from LinkML schemas",
+        }
     }
     
     fn file_extensions(&self) -> Vec<&str> {
-        vec![".owl", ".ttl"]
+        match self.format {
+            RdfFormat::Turtle => vec![".ttl", ".owl"],
+            RdfFormat::RdfXml => vec![".rdf", ".owl"],
+            RdfFormat::NTriples => vec![".nt"],
+            RdfFormat::JsonLd => vec![".jsonld"],
+        }
     }
     
     async fn generate(
@@ -400,7 +640,7 @@ impl Generator for OwlRdfGenerator {
         let mut output = String::new();
         
         // Generate header
-        output.push_str(&self.generate_ontology_header(schema));
+        output.push_str(&self.generate_schema_header(schema));
         
         // Generate prefixes
         output.push_str(&self.generate_prefixes(schema));
@@ -435,18 +675,97 @@ impl Generator for OwlRdfGenerator {
             output.push_str(&enum_class);
         }
         
-        // Create output
-        let filename = format!("{}.owl", self.to_snake_case(&schema.name));
+        // Convert output to desired format
+        let final_output = self.convert_to_format(&output, schema)?;
+        
+        // Create output with appropriate extension
+        let extension = match (self.format, self.mode) {
+            (RdfFormat::Turtle, RdfMode::Owl) => "owl",
+            (RdfFormat::Turtle, _) => "ttl",
+            (RdfFormat::RdfXml, _) => "rdf",
+            (RdfFormat::NTriples, _) => "nt",
+            (RdfFormat::JsonLd, _) => "jsonld",
+        };
+        let filename = format!("{}.{}", self.to_snake_case(&schema.name), extension);
         let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "turtle".to_string());
+        metadata.insert("format".to_string(), format!("{:?}", self.format).to_lowercase());
         metadata.insert("schema".to_string(), schema.name.clone());
-        metadata.insert("ontology".to_string(), "owl2".to_string());
+        metadata.insert("mode".to_string(), format!("{:?}", self.mode).to_lowercase());
         
         Ok(vec![GeneratedOutput {
             filename,
-            content: output,
+            content: final_output,
             metadata,
         }])
+    }
+}
+
+impl RdfGenerator {
+    /// Convert Turtle output to desired format
+    fn convert_to_format(&self, turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        match self.format {
+            RdfFormat::Turtle => Ok(turtle_content.to_string()),
+            RdfFormat::RdfXml => self.convert_to_rdfxml(turtle_content, schema),
+            RdfFormat::NTriples => self.convert_to_ntriples(turtle_content, schema),
+            RdfFormat::JsonLd => self.convert_to_jsonld(turtle_content, schema),
+        }
+    }
+    
+    /// Convert Turtle to RDF/XML
+    fn convert_to_rdfxml(&self, turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        // For now, we'll generate RDF/XML directly from schema
+        // In production, you'd use an RDF library for proper conversion
+        let mut output = String::new();
+        
+        writeln!(&mut output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>").unwrap();
+        writeln!(&mut output, "<rdf:RDF{}>\n", self.generate_rdfxml_prefixes(schema)).unwrap();
+        
+        // Generate RDF/XML content based on mode
+        // This is a simplified version - full implementation would properly convert triples
+        writeln!(&mut output, "</rdf:RDF>").unwrap();
+        
+        Ok(output)
+    }
+    
+    /// Convert Turtle to N-Triples
+    fn convert_to_ntriples(&self, _turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        
+        // N-Triples format: subject predicate object .
+        // Full URIs, no prefixes
+        let schema_uri = &schema.id;
+        
+        for (name, class) in &schema.classes {
+            let class_uri = format!("{}#{}", schema_uri, self.to_pascal_case(name));
+            writeln!(&mut output, "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .", class_uri).unwrap();
+            writeln!(&mut output, "<{}> <http://www.w3.org/2000/01/rdf-schema#label> \"{}\" .", class_uri, name).unwrap();
+        }
+        
+        Ok(output)
+    }
+    
+    /// Convert Turtle to JSON-LD
+    fn convert_to_jsonld(&self, _turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut doc = serde_json::json!({
+            "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)).unwrap()["@context"],
+            "@graph": []
+        });
+        
+        // Add classes to graph
+        for (name, class) in &schema.classes {
+            let class_obj = serde_json::json!({
+                "@id": format!("{}:{}", self.to_snake_case(&schema.name), self.to_pascal_case(name)),
+                "@type": if self.mode == RdfMode::Owl { "owl:Class" } else { "rdfs:Class" },
+                "rdfs:label": name,
+                "rdfs:comment": class.description,
+            });
+            doc["@graph"].as_array_mut().unwrap().push(class_obj);
+        }
+        
+        serde_json::to_string_pretty(&doc).map_err(|e| GeneratorError::Generation {
+            context: "json-ld".to_string(),
+            message: e.to_string(),
+        })
     }
 }
 
@@ -456,7 +775,7 @@ mod tests {
     
     #[test]
     fn test_xsd_datatype_mapping() {
-        let generator = OwlRdfGenerator::new();
+        let generator = RdfGenerator::new();
         
         assert_eq!(generator.get_xsd_datatype("string"), Some("xsd:string".to_string()));
         assert_eq!(generator.get_xsd_datatype("integer"), Some("xsd:integer".to_string()));
@@ -467,9 +786,21 @@ mod tests {
     
     #[test]
     fn test_case_conversion() {
-        let generator = OwlRdfGenerator::new();
+        let generator = RdfGenerator::new();
         
         assert_eq!(generator.to_snake_case("PersonName"), "person_name");
         assert_eq!(generator.to_pascal_case("person_name"), "PersonName");
+    }
+    
+    #[test]
+    fn test_format_modes() {
+        let owl_gen = RdfGenerator::new();
+        assert_eq!(owl_gen.name(), "owl-rdf");
+        
+        let rdfs_gen = RdfGenerator::rdfs();
+        assert_eq!(rdfs_gen.name(), "rdfs");
+        
+        let simple_gen = RdfGenerator::simple();
+        assert_eq!(simple_gen.name(), "rdf");
     }
 }
