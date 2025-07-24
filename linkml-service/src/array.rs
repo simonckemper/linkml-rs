@@ -3,6 +3,9 @@
 //! This module provides support for N-dimensional arrays in LinkML schemas,
 //! similar to NumPy arrays or scientific data formats.
 
+pub mod operations;
+pub mod validation;
+
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -220,7 +223,7 @@ impl ArraySpec {
     pub fn fixed_shape(&self) -> Option<Vec<usize>> {
         if self.is_fixed_shape() {
             Some(self.dimensions.iter()
-                .map(|d| d.size.unwrap())
+                .map(|d| d.size.expect("is_fixed_shape() guarantees all dimensions have size"))
                 .collect())
         } else {
             None
@@ -449,7 +452,8 @@ impl ArrayData {
             let mut transposed_indices = indices.clone();
             transposed_indices.reverse();
             
-            let new_flat = new_spec.indices_to_flat(&transposed_indices, &new_shape).unwrap();
+            let new_flat = new_spec.indices_to_flat(&transposed_indices, &new_shape)
+                .expect("transposed indices should always be valid");
             new_data[new_flat] = self.data[i].clone();
         }
         
@@ -576,10 +580,14 @@ mod tests {
             .with_dimension(ArrayDimension::fixed("y", 4));
         
         // Row-major indexing
-        assert_eq!(spec.indices_to_flat(&[0, 0], &[3, 4]).unwrap(), 0);
-        assert_eq!(spec.indices_to_flat(&[0, 1], &[3, 4]).unwrap(), 1);
-        assert_eq!(spec.indices_to_flat(&[1, 0], &[3, 4]).unwrap(), 4);
-        assert_eq!(spec.indices_to_flat(&[2, 3], &[3, 4]).unwrap(), 11);
+        assert_eq!(spec.indices_to_flat(&[0, 0], &[3, 4])
+            .expect("valid indices should convert to flat index"), 0);
+        assert_eq!(spec.indices_to_flat(&[0, 1], &[3, 4])
+            .expect("valid indices should convert to flat index"), 1);
+        assert_eq!(spec.indices_to_flat(&[1, 0], &[3, 4])
+            .expect("valid indices should convert to flat index"), 4);
+        assert_eq!(spec.indices_to_flat(&[2, 3], &[3, 4])
+            .expect("valid indices should convert to flat index"), 11);
         
         assert_eq!(spec.flat_to_indices(0, &[3, 4]), vec![0, 0]);
         assert_eq!(spec.flat_to_indices(1, &[3, 4]), vec![0, 1]);
@@ -588,10 +596,14 @@ mod tests {
         
         // Column-major indexing
         let col_spec = spec.clone().column_major();
-        assert_eq!(col_spec.indices_to_flat(&[0, 0], &[3, 4]).unwrap(), 0);
-        assert_eq!(col_spec.indices_to_flat(&[1, 0], &[3, 4]).unwrap(), 1);
-        assert_eq!(col_spec.indices_to_flat(&[0, 1], &[3, 4]).unwrap(), 3);
-        assert_eq!(col_spec.indices_to_flat(&[2, 3], &[3, 4]).unwrap(), 11);
+        assert_eq!(col_spec.indices_to_flat(&[0, 0], &[3, 4])
+            .expect("valid indices should convert to flat index"), 0);
+        assert_eq!(col_spec.indices_to_flat(&[1, 0], &[3, 4])
+            .expect("valid indices should convert to flat index"), 1);
+        assert_eq!(col_spec.indices_to_flat(&[0, 1], &[3, 4])
+            .expect("valid indices should convert to flat index"), 3);
+        assert_eq!(col_spec.indices_to_flat(&[2, 3], &[3, 4])
+            .expect("valid indices should convert to flat index"), 11);
     }
     
     #[test]
@@ -605,23 +617,32 @@ mod tests {
             json!(4), json!(5), json!(6),
         ];
         
-        let array = ArrayData::new(spec, vec![2, 3], data).unwrap();
+        let array = ArrayData::new(spec, vec![2, 3], data)
+            .expect("test data should create valid array");
         
-        assert_eq!(array.get(&[0, 0]).unwrap(), &json!(1));
-        assert_eq!(array.get(&[0, 2]).unwrap(), &json!(3));
-        assert_eq!(array.get(&[1, 1]).unwrap(), &json!(5));
+        assert_eq!(array.get(&[0, 0])
+            .expect("valid indices should return value"), &json!(1));
+        assert_eq!(array.get(&[0, 2])
+            .expect("valid indices should return value"), &json!(3));
+        assert_eq!(array.get(&[1, 1])
+            .expect("valid indices should return value"), &json!(5));
         
         // Test slicing
-        let slice = array.slice(0, 1).unwrap();
+        let slice = array.slice(0, 1)
+            .expect("valid slice operation should succeed");
         assert_eq!(slice.shape, vec![3]);
         assert_eq!(slice.data, vec![json!(4), json!(5), json!(6)]);
         
         // Test reshape
-        let reshaped = array.reshape(vec![3, 2]).unwrap();
+        let reshaped = array.reshape(vec![3, 2])
+            .expect("reshape with same total size should succeed");
         assert_eq!(reshaped.shape, vec![3, 2]);
-        assert_eq!(reshaped.get(&[0, 0]).unwrap(), &json!(1));
-        assert_eq!(reshaped.get(&[0, 1]).unwrap(), &json!(2));
-        assert_eq!(reshaped.get(&[1, 0]).unwrap(), &json!(3));
+        assert_eq!(reshaped.get(&[0, 0])
+            .expect("valid indices should return value"), &json!(1));
+        assert_eq!(reshaped.get(&[0, 1])
+            .expect("valid indices should return value"), &json!(2));
+        assert_eq!(reshaped.get(&[1, 0])
+            .expect("valid indices should return value"), &json!(3));
     }
     
     #[test]
@@ -635,13 +656,18 @@ mod tests {
             json!(4), json!(5), json!(6),
         ];
         
-        let array = ArrayData::new(spec, vec![2, 3], data).unwrap();
+        let array = ArrayData::new(spec, vec![2, 3], data)
+            .expect("test data should create valid array - transpose test");
         let transposed = array.transpose();
         
         assert_eq!(transposed.shape, vec![3, 2]);
-        assert_eq!(transposed.get(&[0, 0]).unwrap(), &json!(1));
-        assert_eq!(transposed.get(&[1, 0]).unwrap(), &json!(2));
-        assert_eq!(transposed.get(&[0, 1]).unwrap(), &json!(4));
-        assert_eq!(transposed.get(&[2, 1]).unwrap(), &json!(6));
+        assert_eq!(transposed.get(&[0, 0])
+            .expect("valid indices should return value"), &json!(1));
+        assert_eq!(transposed.get(&[1, 0])
+            .expect("valid indices should return value"), &json!(2));
+        assert_eq!(transposed.get(&[0, 1])
+            .expect("valid indices should return value"), &json!(4));
+        assert_eq!(transposed.get(&[2, 1])
+            .expect("valid indices should return value"), &json!(6));
     }
 }

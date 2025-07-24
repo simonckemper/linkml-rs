@@ -271,7 +271,8 @@ mod tests {
             role: Some("maintainer".to_string()),
         };
         
-        let json = serde_json::to_string(&contributor).unwrap();
+        let json = serde_json::to_string(&contributor)
+            .expect("Failed to serialize contributor in test - valid test data should always serialize");
         assert!(json.contains("Jane Doe"));
         assert!(json.contains("maintainer"));
     }

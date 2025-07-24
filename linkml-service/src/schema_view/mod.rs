@@ -8,7 +8,7 @@ pub mod analysis;
 pub mod navigation;
 pub mod view;
 
-pub use view::{SchemaView, SchemaViewError};
+pub use view::{SchemaView, SchemaViewError, ElementType};
 
 // Re-export commonly used types
 pub use analysis::{SchemaStatistics, UsageInfo};

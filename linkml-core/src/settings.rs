@@ -391,7 +391,8 @@ mod tests {
     #[test]
     fn test_strict_settings() {
         let settings = SchemaSettings::strict();
-        let validation = settings.validation.unwrap();
+        let validation = settings.validation
+            .expect("validation settings should be present in strict settings - test invariant");
         assert_eq!(validation.strict, Some(true));
         assert_eq!(validation.check_permissibles, Some(true));
         assert_eq!(validation.allow_additional_properties, Some(false));
@@ -400,7 +401,8 @@ mod tests {
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = settings.generation.unwrap();
+        let generation = settings.generation
+            .expect("generation settings should be present in for_generation settings - test invariant");
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
         assert_eq!(generation.generate_docs, Some(true));
@@ -411,7 +413,8 @@ mod tests {
         let mut settings = SchemaSettings::new();
         
         // Set a custom value
-        settings.set_custom("max_items", 100).unwrap();
+        settings.set_custom("max_items", 100)
+            .expect("setting custom value with valid data should not fail in test");
         
         // Get the custom value
         let max_items: Option<i32> = settings.get_custom("max_items");
@@ -440,15 +443,19 @@ mod tests {
         
         assert!(merged.validation.is_some());
         assert!(merged.generation.is_some());
-        assert_eq!(merged.generation.unwrap().generate_builders, Some(false));
+        assert_eq!(merged.generation
+            .expect("generation settings should be present after merge - test invariant")
+            .generate_builders, Some(false));
     }
     
     #[test]
     fn test_serialization() {
         let settings = SchemaSettings::strict();
-        let json = serde_json::to_string_pretty(&settings).unwrap();
+        let json = serde_json::to_string_pretty(&settings)
+            .expect("serialization of valid settings should not fail in test");
         
-        let deserialized: SchemaSettings = serde_json::from_str(&json).unwrap();
+        let deserialized: SchemaSettings = serde_json::from_str(&json)
+            .expect("deserialization of valid JSON should not fail in test");
         assert_eq!(settings, deserialized);
     }
 }

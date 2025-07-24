@@ -19,6 +19,7 @@ pub mod aggregation_functions;
 pub mod compiler;
 pub mod vm;
 pub mod cache;
+pub mod parallel;
 
 use linkml_core::error::Result;
 use serde_json::Value;
@@ -30,6 +31,7 @@ pub use error::{ExpressionError, ParseError, EvaluationError};
 pub use evaluator::{Evaluator, EvaluatorConfig};
 pub use functions::{CustomFunction, FunctionError, FunctionRegistry};
 pub use parser::Parser;
+pub use parallel::{ParallelEvaluator, ParallelOptions, ParallelResult, BatchEvaluator};
 
 /// Main expression engine that combines parsing and evaluation
 #[derive(Clone)]

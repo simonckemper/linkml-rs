@@ -15,6 +15,21 @@ use crate::parser::{SchemaLoader, ImportResolver};
 use super::navigation::{NavigationCache, SlotResolution};
 use super::analysis::UsageIndex;
 
+/// Type of schema element
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ElementType {
+    /// Class definition
+    Class,
+    /// Slot definition
+    Slot,
+    /// Type definition
+    Type,
+    /// Enum definition
+    Enum,
+    /// Subset definition
+    Subset,
+}
+
 /// Error type for SchemaView operations
 #[derive(Debug, thiserror::Error)]
 pub enum SchemaViewError {
@@ -304,6 +319,568 @@ impl SchemaView {
         Ok(false)
     }
     
+    // === Pattern Materialization ===
+    
+    /// Materialize structured patterns to regular expressions
+    /// 
+    /// This expands LinkML structured patterns (e.g., for identifiers)
+    /// into their full regular expression form.
+    pub fn materialize_patterns(&mut self) -> Result<()> {
+        let mut merged = self.merged_schema.write()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire write lock".into()))?;
+        
+        // Process patterns in types
+        for type_def in merged.types.values_mut() {
+            if let Some(structured_pattern) = &type_def.structured_pattern {
+                // Convert structured pattern to regex
+                let regex_pattern = self.structured_pattern_to_regex(structured_pattern)?;
+                type_def.pattern = Some(regex_pattern);
+            }
+        }
+        
+        // Process patterns in slots
+        for slot_def in merged.slots.values_mut() {
+            if let Some(structured_pattern) = &slot_def.structured_pattern {
+                let regex_pattern = self.structured_pattern_to_regex(structured_pattern)?;
+                slot_def.pattern = Some(regex_pattern);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Convert a structured pattern to a regular expression
+    fn structured_pattern_to_regex(&self, pattern: &linkml_core::types::StructuredPattern) -> Result<String> {
+        let mut regex = String::new();
+        
+        // Handle prefix if present
+        if let Some(prefix) = &pattern.prefix {
+            regex.push_str(&regex::escape(prefix));
+        }
+        
+        // Handle the main pattern part
+        if let Some(base) = &pattern.base {
+            regex.push_str(base);
+        } else if pattern.digits.is_some() || pattern.letters.is_some() {
+            // Build character class
+            let mut char_class = String::from("[");
+            if pattern.letters.unwrap_or(false) {
+                char_class.push_str("a-zA-Z");
+            }
+            if pattern.digits.unwrap_or(false) {
+                char_class.push_str("0-9");
+            }
+            char_class.push(']');
+            
+            // Apply length constraints
+            if let (Some(min), Some(max)) = (pattern.min_length, pattern.max_length) {
+                regex.push_str(&format!("{}{{{},{}}}", char_class, min, max));
+            } else if let Some(min) = pattern.min_length {
+                regex.push_str(&format!("{}{{{},}}", char_class, min));
+            } else if let Some(max) = pattern.max_length {
+                regex.push_str(&format!("{}{{0,{}}}", char_class, max));
+            } else {
+                regex.push_str(&format!("{}+", char_class));
+            }
+        }
+        
+        // Handle suffix if present
+        if let Some(suffix) = &pattern.suffix {
+            regex.push_str(&regex::escape(suffix));
+        }
+        
+        // Wrap in anchors if needed
+        if pattern.partial_match.unwrap_or(false) {
+            Ok(regex)
+        } else {
+            Ok(format!("^{}$", regex))
+        }
+    }
+    
+    // === Universal Element Retrieval ===
+    
+    /// Get any element by name (class, slot, type, or enum)
+    /// 
+    /// This searches across all element types and returns the first match.
+    /// Returns the element type and the element itself.
+    pub fn get_element(&self, name: &str) -> Result<Option<(ElementType, serde_json::Value)>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        // Check classes first
+        if let Some(class) = merged.classes.get(name) {
+            return Ok(Some((
+                ElementType::Class,
+                serde_json::to_value(class).map_err(|e| LinkMLError::serialization(e.to_string()))?
+            )));
+        }
+        
+        // Check slots
+        if let Some(slot) = merged.slots.get(name) {
+            return Ok(Some((
+                ElementType::Slot,
+                serde_json::to_value(slot).map_err(|e| LinkMLError::serialization(e.to_string()))?
+            )));
+        }
+        
+        // Check types
+        if let Some(type_def) = merged.types.get(name) {
+            return Ok(Some((
+                ElementType::Type,
+                serde_json::to_value(type_def).map_err(|e| LinkMLError::serialization(e.to_string()))?
+            )));
+        }
+        
+        // Check enums
+        if let Some(enum_def) = merged.enums.get(name) {
+            return Ok(Some((
+                ElementType::Enum,
+                serde_json::to_value(enum_def).map_err(|e| LinkMLError::serialization(e.to_string()))?
+            )));
+        }
+        
+        Ok(None)
+    }
+    
+    // === Class Hierarchy Methods ===
+    
+    /// Get direct parent classes only (not full ancestry)
+    pub fn class_parents(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut parents = Vec::new();
+        
+        if let Some(class_def) = merged.classes.get(name) {
+            // Direct is_a parent
+            if let Some(parent) = &class_def.is_a {
+                parents.push(parent.clone());
+            }
+            
+            // Mixins are also considered parents
+            parents.extend(class_def.mixins.clone());
+        }
+        
+        Ok(parents)
+    }
+    
+    /// Get direct child classes only (not full descendants)
+    pub fn class_children(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut children = Vec::new();
+        
+        for (class_name, class_def) in &merged.classes {
+            // Check if this class has 'name' as direct parent
+            if class_def.is_a.as_ref() == Some(&name.to_string()) {
+                children.push(class_name.clone());
+            }
+            
+            // Check if this class uses 'name' as a mixin
+            if class_def.mixins.contains(&name.to_string()) {
+                children.push(class_name.clone());
+            }
+        }
+        
+        // Deduplicate in case a class uses both is_a and mixins
+        children.sort();
+        children.dedup();
+        
+        Ok(children)
+    }
+    
+    /// Get all root classes (classes with no parents)
+    pub fn class_roots(&self) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut roots = Vec::new();
+        
+        for (name, class_def) in &merged.classes {
+            if class_def.is_a.is_none() && class_def.mixins.is_empty() {
+                roots.push(name.clone());
+            }
+        }
+        
+        roots.sort();
+        Ok(roots)
+    }
+    
+    /// Get all leaf classes (classes with no children)
+    pub fn class_leaves(&self) -> Result<Vec<String>> {
+        let all_classes = self.all_classes()?;
+        let mut leaves = Vec::new();
+        
+        for class_name in all_classes.keys() {
+            let children = self.class_children(class_name)?;
+            if children.is_empty() {
+                leaves.push(class_name.clone());
+            }
+        }
+        
+        leaves.sort();
+        Ok(leaves)
+    }
+    
+    // === URI/CURIE Resolution ===
+    
+    /// Get the URI for an element, expanding CURIEs if needed
+    pub fn get_uri(&self, element_name: &str, expand: bool) -> Result<Option<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        // Check for explicit URIs in different element types
+        let uri = if let Some(class) = merged.classes.get(element_name) {
+            class.class_uri.clone()
+        } else if let Some(slot) = merged.slots.get(element_name) {
+            slot.slot_uri.clone()
+        } else if let Some(type_def) = merged.types.get(element_name) {
+            type_def.uri.clone()
+        } else if let Some(enum_def) = merged.enums.get(element_name) {
+            enum_def.enum_uri.clone()
+        } else {
+            None
+        };
+        
+        // If we have a URI and need to expand it
+        if let Some(uri_str) = uri {
+            if expand && uri_str.contains(':') && !uri_str.starts_with("http") {
+                return Ok(Some(self.expand_curie(&uri_str)?));
+            }
+            Ok(Some(uri_str))
+        } else {
+            // Generate a default URI based on schema ID + element name
+            if let Some(base) = &merged.id {
+                Ok(Some(format!("{}/{}", base.trim_end_matches('/'), element_name)))
+            } else {
+                Ok(None)
+            }
+        }
+    }
+    
+    /// Expand a CURIE to its full URI form
+    pub fn expand_curie(&self, curie: &str) -> Result<String> {
+        if let Some(colon_pos) = curie.find(':') {
+            let prefix = &curie[..colon_pos];
+            let local = &curie[colon_pos + 1..];
+            
+            let merged = self.merged_schema.read()
+                .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+            
+            if let Some(prefix_def) = merged.prefixes.get(prefix) {
+                return Ok(format!("{}{}", prefix_def.prefix_reference, local));
+            }
+        }
+        
+        // If not a CURIE or prefix not found, return as-is
+        Ok(curie.to_string())
+    }
+    
+    // === Type Hierarchy Methods ===
+    
+    /// Get a specific type definition
+    pub fn get_type(&self, name: &str) -> Result<Option<TypeDefinition>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.types.get(name).cloned())
+    }
+    
+    /// Get direct parent types
+    pub fn type_parents(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        if let Some(type_def) = merged.types.get(name) {
+            if let Some(base) = &type_def.base {
+                return Ok(vec![base.clone()]);
+            }
+        }
+        
+        Ok(Vec::new())
+    }
+    
+    /// Get direct child types
+    pub fn type_children(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut children = Vec::new();
+        
+        for (type_name, type_def) in &merged.types {
+            if type_def.base.as_ref() == Some(&name.to_string()) {
+                children.push(type_name.clone());
+            }
+        }
+        
+        children.sort();
+        Ok(children)
+    }
+    
+    /// Get all type ancestors
+    pub fn type_ancestors(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
+        let mut ancestors = Vec::new();
+        if reflexive {
+            ancestors.push(name.to_string());
+        }
+        
+        let mut current = name.to_string();
+        while let Ok(parents) = self.type_parents(&current) {
+            if let Some(parent) = parents.first() {
+                if ancestors.contains(parent) {
+                    return Err(SchemaViewError::CircularDependency(
+                        format!("Circular type inheritance detected at '{}'", parent)
+                    ).into());
+                }
+                ancestors.push(parent.clone());
+                current = parent.clone();
+            } else {
+                break;
+            }
+        }
+        
+        Ok(ancestors)
+    }
+    
+    /// Get all type descendants
+    pub fn type_descendants(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
+        let mut descendants = Vec::new();
+        if reflexive {
+            descendants.push(name.to_string());
+        }
+        
+        // Recursively collect all descendants
+        let direct_children = self.type_children(name)?;
+        for child in direct_children {
+            descendants.push(child.clone());
+            let sub_descendants = self.type_descendants(&child, false)?;
+            descendants.extend(sub_descendants);
+        }
+        
+        // Remove duplicates and sort
+        descendants.sort();
+        descendants.dedup();
+        
+        Ok(descendants)
+    }
+    
+    // === Slot Hierarchy Methods ===
+    
+    /// Get all slot names
+    pub fn all_slot_names(&self) -> Result<Vec<String>> {
+        Ok(self.all_slots()?.keys().cloned().collect())
+    }
+    
+    /// Get direct slot parents
+    pub fn slot_parents(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut parents = Vec::new();
+        
+        if let Some(slot_def) = merged.slots.get(name) {
+            // Direct is_a parent
+            if let Some(parent) = &slot_def.is_a {
+                parents.push(parent.clone());
+            }
+            
+            // Mixins are also considered parents
+            parents.extend(slot_def.mixins.clone());
+        }
+        
+        Ok(parents)
+    }
+    
+    /// Get direct slot children
+    pub fn slot_children(&self, name: &str) -> Result<Vec<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let mut children = Vec::new();
+        
+        for (slot_name, slot_def) in &merged.slots {
+            // Check if this slot has 'name' as direct parent
+            if slot_def.is_a.as_ref() == Some(&name.to_string()) {
+                children.push(slot_name.clone());
+            }
+            
+            // Check if this slot uses 'name' as a mixin
+            if slot_def.mixins.contains(&name.to_string()) {
+                children.push(slot_name.clone());
+            }
+        }
+        
+        // Deduplicate and sort
+        children.sort();
+        children.dedup();
+        
+        Ok(children)
+    }
+    
+    /// Get all slot ancestors
+    pub fn slot_ancestors(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
+        let mut ancestors = Vec::new();
+        if reflexive {
+            ancestors.push(name.to_string());
+        }
+        
+        let mut visited = HashSet::new();
+        self.collect_slot_ancestors(name, &mut ancestors, &mut visited)?;
+        
+        Ok(ancestors)
+    }
+    
+    /// Get all slot descendants
+    pub fn slot_descendants(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
+        let mut descendants = Vec::new();
+        if reflexive {
+            descendants.push(name.to_string());
+        }
+        
+        // Recursively collect all descendants
+        let direct_children = self.slot_children(name)?;
+        for child in direct_children {
+            descendants.push(child.clone());
+            let sub_descendants = self.slot_descendants(&child, false)?;
+            descendants.extend(sub_descendants);
+        }
+        
+        // Remove duplicates and sort
+        descendants.sort();
+        descendants.dedup();
+        
+        Ok(descendants)
+    }
+    
+    // === Enum Methods ===
+    
+    /// Get a specific enum definition
+    pub fn get_enum(&self, name: &str) -> Result<Option<EnumDefinition>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.enums.get(name).cloned())
+    }
+    
+    /// Get all enum names
+    pub fn all_enum_names(&self) -> Result<Vec<String>> {
+        Ok(self.all_enums()?.keys().cloned().collect())
+    }
+    
+    // === Subset Operations ===
+    
+    /// Get all subsets in the schema
+    pub fn all_subsets(&self) -> Result<HashMap<String, linkml_core::types::SubsetDefinition>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.subsets.clone().into_iter().collect())
+    }
+    
+    /// Get a specific subset
+    pub fn get_subset(&self, name: &str) -> Result<Option<linkml_core::types::SubsetDefinition>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.subsets.get(name).cloned())
+    }
+    
+    /// Check if an element is in a subset
+    pub fn in_subset(&self, element_name: &str, subset_name: &str) -> Result<bool> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        // Check if the subset exists
+        if !merged.subsets.contains_key(subset_name) {
+            return Ok(false);
+        }
+        
+        // Check classes
+        if let Some(class) = merged.classes.get(element_name) {
+            return Ok(class.in_subset.contains(&subset_name.to_string()));
+        }
+        
+        // Check slots
+        if let Some(slot) = merged.slots.get(element_name) {
+            return Ok(slot.in_subset.contains(&subset_name.to_string()));
+        }
+        
+        // Check types
+        if let Some(type_def) = merged.types.get(element_name) {
+            return Ok(type_def.in_subset.contains(&subset_name.to_string()));
+        }
+        
+        // Check enums
+        if let Some(enum_def) = merged.enums.get(element_name) {
+            return Ok(enum_def.in_subset.contains(&subset_name.to_string()));
+        }
+        
+        Ok(false)
+    }
+    
+    // === Schema Information ===
+    
+    /// Get the schema name
+    pub fn schema_name(&self) -> Result<String> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.name.clone())
+    }
+    
+    /// Get the schema ID
+    pub fn schema_id(&self) -> Result<Option<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.id.clone())
+    }
+    
+    /// Get all prefixes defined in the schema
+    pub fn get_prefixes(&self) -> Result<HashMap<String, linkml_core::types::PrefixDefinition>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        Ok(merged.prefixes.clone().into_iter().collect())
+    }
+    
+    /// Get a specific prefix expansion
+    pub fn get_prefix(&self, prefix: &str) -> Result<Option<String>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        if let Some(prefix_def) = merged.prefixes.get(prefix) {
+            Ok(Some(prefix_def.prefix_reference.clone()))
+        } else {
+            Ok(None)
+        }
+    }
+    
+    // === Annotation/Metadata Access ===
+    
+    /// Get annotations for an element as a dictionary
+    pub fn annotation_dict(&self, element_name: &str) -> Result<HashMap<String, serde_json::Value>> {
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        let annotations = if let Some(class) = merged.classes.get(element_name) {
+            &class.annotations
+        } else if let Some(slot) = merged.slots.get(element_name) {
+            &slot.annotations
+        } else if let Some(type_def) = merged.types.get(element_name) {
+            &type_def.annotations
+        } else if let Some(enum_def) = merged.enums.get(element_name) {
+            &enum_def.annotations
+        } else {
+            return Ok(HashMap::new());
+        };
+        
+        // Convert annotations to JSON values
+        let mut result = HashMap::new();
+        for (key, annotation) in annotations {
+            result.insert(
+                key.clone(),
+                serde_json::to_value(annotation).map_err(|e| LinkMLError::serialization(e.to_string()))?
+            );
+        }
+        
+        Ok(result)
+    }
+    
     // === Private Helper Methods ===
     
     fn collect_class_ancestors(
@@ -350,6 +927,41 @@ impl SchemaView {
         if target.description.is_none() && source.description.is_some() {
             target.description = source.description.clone();
         }
+    }
+    
+    fn collect_slot_ancestors(
+        &self,
+        name: &str,
+        ancestors: &mut Vec<String>,
+        visited: &mut HashSet<String>,
+    ) -> Result<()> {
+        if visited.contains(name) {
+            return Err(SchemaViewError::CircularDependency(
+                format!("Circular inheritance detected at slot '{}'", name)
+            ).into());
+        }
+        visited.insert(name.to_string());
+        
+        let merged = self.merged_schema.read()
+            .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
+        
+        if let Some(slot_def) = merged.slots.get(name) {
+            // Process is_a parent
+            if let Some(parent) = &slot_def.is_a {
+                ancestors.push(parent.clone());
+                self.collect_slot_ancestors(parent, ancestors, visited)?;
+            }
+            
+            // Process mixins
+            for mixin in &slot_def.mixins {
+                if !ancestors.contains(mixin) {
+                    ancestors.push(mixin.clone());
+                    self.collect_slot_ancestors(mixin, ancestors, visited)?;
+                }
+            }
+        }
+        
+        Ok(())
     }
     
     fn apply_slot_usage(&self, _class: &mut ClassDefinition) -> Result<()> {
