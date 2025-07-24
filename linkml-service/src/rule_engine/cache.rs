@@ -44,6 +44,17 @@ impl Default for CacheConfig {
     }
 }
 
+impl CacheConfig {
+    /// Create cache config from LinkML service configuration
+    pub fn from_service_config(config: &linkml_core::configuration_v2::RuleCacheConfig) -> Self {
+        Self {
+            max_entries: config.max_entries,
+            ttl: Duration::from_secs(config.ttl_seconds),
+            use_lru: true,  // Default to LRU for rule cache
+        }
+    }
+}
+
 /// Cache for compiled rules
 pub struct RuleCache {
     /// The actual cache storage

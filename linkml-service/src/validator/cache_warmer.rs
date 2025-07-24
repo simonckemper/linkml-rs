@@ -54,6 +54,21 @@ impl Default for CacheWarmingConfig {
     }
 }
 
+impl CacheWarmingConfig {
+    /// Create cache warming config from LinkML service configuration
+    pub fn from_service_config(config: &linkml_core::configuration_v2::CacheConfig) -> Self {
+        Self {
+            auto_warm: config.enable_cache_warming,
+            batch_size: 50,  // Could be added to config
+            max_concurrent: 4,  // Could be added to config
+            warming_interval: Duration::from_secs(config.warming_interval_seconds),
+            priority_threshold: 0.5,  // Could be added to config
+            predictive_warming: true,  // Could be added to config
+            history_size: 1000,  // Could be added to config
+        }
+    }
+}
+
 /// Cache access history entry
 #[derive(Debug, Clone)]
 pub struct AccessEntry {

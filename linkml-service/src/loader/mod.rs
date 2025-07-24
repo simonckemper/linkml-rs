@@ -9,12 +9,15 @@ pub mod csv;
 pub mod database;
 pub mod dbms_executor;
 pub mod json;
+pub mod json_v2;
 pub mod rdf;
 pub mod traits;
+pub mod traits_v2;
 pub mod typedb;
 pub mod typedb_integration;
 pub mod xml;
 pub mod yaml;
+pub mod yaml_v2;
 
 pub use api::{ApiLoader, ApiDumper, ApiOptions, AuthConfig, RetryConfig, PaginationConfig, 
               PaginationStyle, EndpointConfig};

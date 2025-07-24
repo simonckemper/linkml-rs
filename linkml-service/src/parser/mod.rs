@@ -13,12 +13,16 @@ pub mod import_resolver;
 pub mod import_resolver_v2;
 pub mod json_parser;
 pub mod yaml_parser;
+pub mod json_parser_v2;
+pub mod yaml_parser_v2;
 pub mod schema_loader;
 
 pub use import_resolver::ImportResolver;
 pub use import_resolver_v2::{ImportResolverV2, ImportSpec};
 pub use json_parser::JsonParser;
 pub use yaml_parser::YamlParser;
+pub use json_parser_v2::JsonParserV2;
+pub use yaml_parser_v2::{YamlParserV2, AsyncSchemaParser};
 pub use schema_loader::SchemaLoader;
 
 /// Trait for schema parsers

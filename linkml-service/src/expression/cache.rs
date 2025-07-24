@@ -75,6 +75,17 @@ impl ExpressionCache {
         }
     }
     
+    /// Create expression cache from LinkML service configuration
+    pub fn from_service_config(config: &linkml_core::configuration_v2::ExpressionCacheConfig) -> Self {
+        let capacity = NonZeroUsize::new(config.max_entries.max(1)).unwrap();
+        Self {
+            cache: Arc::new(RwLock::new(LruCache::new(capacity))),
+            stats: Arc::new(RwLock::new(CacheStats::default())),
+            max_age: Duration::from_secs(config.ttl_seconds),
+            cache_compiled: true,
+        }
+    }
+    
     /// Set maximum age for cache entries
     pub fn with_max_age(mut self, max_age: Duration) -> Self {
         self.max_age = max_age;

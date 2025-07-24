@@ -59,6 +59,20 @@ impl Default for ResourceLimits {
     }
 }
 
+impl ResourceLimits {
+    /// Create resource limits from LinkML service configuration
+    pub fn from_service_config(config: &linkml_core::configuration_v2::SecurityLimitsConfig) -> Self {
+        Self {
+            max_validation_time: Duration::from_millis(config.max_validation_time_ms),
+            max_memory_usage: config.max_memory_usage_bytes,
+            max_parallel_validators: config.max_parallel_validators,
+            max_cache_memory: config.max_cache_memory_bytes,
+            max_expression_time: Duration::from_millis(config.max_expression_time_ms),
+            max_validation_errors: config.max_validation_errors,
+        }
+    }
+}
+
 /// Resource monitor for tracking usage
 #[derive(Debug)]
 pub struct ResourceMonitor {

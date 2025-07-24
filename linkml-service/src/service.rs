@@ -87,7 +87,7 @@ where
             Arc::new(CompiledValidatorCache::new().with_cache_service(cache_adapter));
 
         Ok(Self {
-            _config: config,
+            config,
             parser: Parser::new(),
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
@@ -119,7 +119,7 @@ where
             Arc::new(CompiledValidatorCache::new().with_cache_service(cache_adapter));
 
         Ok(Self {
-            _config: config,
+            config,
             parser: Parser::new(),
             import_resolver,
             schema_cache: Arc::new(RwLock::new(HashMap::new())),
@@ -261,7 +261,7 @@ where
         let task_handle = self._task_manager
             .spawn_periodic(
                 "linkml_cache_cleanup",
-                std::time::Duration::from_secs(3600), // Run every hour
+                std::time::Duration::from_secs(self.config.performance.background_task_interval_secs),
                 move || {
                     let cache = validator_cache.clone();
                     let log = logger.clone();

@@ -32,6 +32,9 @@ pub mod config;
 /// RootReal-compliant configuration structures
 pub mod configuration;
 
+/// Enhanced configuration with full externalization
+pub mod configuration_v2;
+
 /// Utility functions and helpers
 pub mod utils;
 
@@ -44,12 +47,22 @@ pub mod annotations;
 /// Metadata support for schema elements
 pub mod metadata;
 
+/// String interning pool for memory optimization
+pub mod string_pool;
+
+/// Optimized type definitions using string interning
+pub mod types_v2;
+
+/// Optimized utility functions that minimize cloning
+pub mod utils_v2;
+
 // Re-export commonly used types
 pub use error::{LinkMLError, Result};
 pub use traits::{LinkMLService, SchemaOperations, ValidationOperations};
 pub use types::{SchemaDefinition, ClassDefinition, SlotDefinition, StructuredPattern};
 pub use serde_json::Value;
 pub use config::LinkMLConfig;
+pub use configuration_v2::LinkMLServiceConfig;
 pub use settings::SchemaSettings;
 
 /// Prelude module for convenient imports
