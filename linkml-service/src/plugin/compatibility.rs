@@ -34,7 +34,7 @@ impl Default for CompatibilityRules {
             allow_wildcards: true,
             strict_mode: false,
             deprecated_versions: vec![
-                VersionReq::parse("<0.9.0").unwrap(),
+                VersionReq::parse("<0.9.0").expect("valid version requirement"),
             ],
         }
     }
@@ -44,7 +44,8 @@ impl CompatibilityChecker {
     /// Create a new compatibility checker
     pub fn new() -> Self {
         Self {
-            linkml_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
+            linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
+                .expect("CARGO_PKG_VERSION should be a valid semver"),
             rules: CompatibilityRules::default(),
         }
     }
@@ -52,7 +53,8 @@ impl CompatibilityChecker {
     /// Create with custom rules
     pub fn with_rules(rules: CompatibilityRules) -> Self {
         Self {
-            linkml_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
+            linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
+                .expect("CARGO_PKG_VERSION should be a valid semver"),
             rules,
         }
     }

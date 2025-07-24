@@ -298,16 +298,19 @@ mod tests {
     use tempfile::TempDir;
     
     #[test]
-    fn test_plugin_discovery_shallow() {
-        let temp_dir = TempDir::new().unwrap();
+    fn test_plugin_discovery_shallow() -> Result<()> {
+        let temp_dir = TempDir::new()
+            .map_err(|e| LinkMLError::IOError(e.to_string()))?;
         let plugin_file = temp_dir.path().join("plugin.toml");
-        fs::write(&plugin_file, "# Plugin manifest").unwrap();
+        fs::write(&plugin_file, "# Plugin manifest")
+            .map_err(|e| LinkMLError::IOError(e.to_string()))?;
         
         let discovery = PluginDiscovery::new();
-        let plugins = discovery.discover(temp_dir.path(), DiscoveryStrategy::Shallow).unwrap();
+        let plugins = discovery.discover(temp_dir.path(), DiscoveryStrategy::Shallow)?;
         
         assert_eq!(plugins.len(), 1);
         assert_eq!(plugins[0], plugin_file);
+        Ok(())
     }
     
     #[test]

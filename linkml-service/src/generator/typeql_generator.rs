@@ -1,7 +1,7 @@
 //! `TypeQL` generation implementation for `TypeDB` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult};
+use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult, GeneratorError};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -22,6 +22,14 @@ impl TypeQLGenerator {
         }
     }
 
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Formatting error: {}", err),
+        ))
+    }
+
     /// Generate `TypeQL` for a class
     fn generate_class_typeql(
         &self,
@@ -34,7 +42,8 @@ impl TypeQLGenerator {
 
         // Add documentation if requested
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "# {desc}").unwrap();
+            writeln!(&mut output, "# {desc}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine if this is an entity or relation
@@ -61,32 +70,40 @@ impl TypeQLGenerator {
         let type_name = self.convert_identifier(name);
 
         // Entity definition
-        write!(output, "{type_name} sub entity").unwrap();
+        write!(output, "{type_name} sub entity")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add parent if specified
         if let Some(parent) = &class.is_a {
             let parent_name = self.convert_identifier(parent);
-            write!(output, " sub {parent_name}").unwrap();
+            write!(output, " sub {parent_name}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Add attributes
         let attributes = self.collect_class_attributes(class, schema);
         if attributes.is_empty() {
-            writeln!(output, ";").unwrap();
+            writeln!(output, ";")
+                .map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, ",").unwrap();
+            writeln!(output, ",")
+                .map_err(Self::fmt_error_to_generator_error)?;
 
             for (i, attr) in attributes.iter().enumerate() {
-                write!(output, "{}owns {}", indent.single(), attr).unwrap();
+                write!(output, "{}owns {}", indent.single(), attr)
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",")
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";")
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
 
-        writeln!(output).unwrap();
+        writeln!(output)
+            .map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -102,50 +119,63 @@ impl TypeQLGenerator {
         let type_name = self.convert_identifier(name);
 
         // Relation definition
-        write!(output, "{type_name} sub relation").unwrap();
+        write!(output, "{type_name} sub relation")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add parent if specified
         if let Some(parent) = &class.is_a {
             let parent_name = self.convert_identifier(parent);
-            write!(output, " sub {parent_name}").unwrap();
+            write!(output, " sub {parent_name}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, ",").unwrap();
+        writeln!(output, ",")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add roles based on slots
         let roles = self.collect_relation_roles(class, schema)?;
         for (i, (role, _types)) in roles.iter().enumerate() {
-            write!(output, "{}relates {}", indent.single(), role).unwrap();
+            write!(output, "{}relates {}", indent.single(), role)
+                .map_err(Self::fmt_error_to_generator_error)?;
             if i < roles.len() - 1 {
-                writeln!(output, ",").unwrap();
+                writeln!(output, ",")
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Add attributes
         let attributes = self.collect_class_attributes(class, schema);
         if attributes.is_empty() {
-            writeln!(output, ";").unwrap();
+            writeln!(output, ";")
+                .map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, ",").unwrap();
+            writeln!(output, ",")
+                .map_err(Self::fmt_error_to_generator_error)?;
             for (i, attr) in attributes.iter().enumerate() {
-                write!(output, "{}owns {}", indent.single(), attr).unwrap();
+                write!(output, "{}owns {}", indent.single(), attr)
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",")
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";")
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
 
         // Add role players
-        writeln!(output).unwrap();
+        writeln!(output)
+            .map_err(Self::fmt_error_to_generator_error)?;
         for (role, types) in roles {
             for player_type in types {
-                writeln!(output, "{player_type} plays {type_name}:{role};").unwrap();
+                writeln!(output, "{player_type} plays {type_name}:{role};")
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
-        writeln!(output).unwrap();
+        writeln!(output)
+            .map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -189,11 +219,14 @@ impl TypeQLGenerator {
 
         // Add documentation if present
         if let Some(desc) = &slot.description {
-            writeln!(output, "# {desc}").unwrap();
+            writeln!(output, "# {desc}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, "{attr_name} sub attribute, value {value_type};").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "{attr_name} sub attribute, value {value_type};")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output)
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -237,25 +270,30 @@ impl TypeQLGenerator {
             self.convert_identifier(slot_name)
         );
 
-        writeln!(output, "rule {rule_name}:").unwrap();
-        writeln!(output, "when {{").unwrap();
+        writeln!(output, "rule {rule_name}:")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "when {{")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x isa {};",
             indent.single(),
             self.convert_identifier(class_name)
         )
-        .unwrap();
-        writeln!(output, "}} then {{").unwrap();
+        .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}} then {{")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x has {};",
             indent.single(),
             self.convert_identifier(slot_name)
         )
-        .unwrap();
-        writeln!(output, "}};").unwrap();
-        writeln!(output).unwrap();
+        .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}};")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output)
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -374,14 +412,18 @@ impl Generator for TypeQLGenerator {
         let indent = &options.indent;
 
         // Header
-        writeln!(&mut output, "# TypeQL Schema generated from LinkML").unwrap();
+        writeln!(&mut output, "# TypeQL Schema generated from LinkML")
+            .map_err(Self::fmt_error_to_generator_error)?;
         if !schema.name.is_empty() {
-            writeln!(&mut output, "# Schema: {}", schema.name).unwrap();
+            writeln!(&mut output, "# Schema: {}", schema.name)
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "# Description: {desc}").unwrap();
+            writeln!(&mut output, "# Description: {desc}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output, "\ndefine\n").unwrap();
+        writeln!(&mut output, "\ndefine\n")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate attributes first
         self.generate_attributes(&mut output, schema, indent)?;
@@ -396,7 +438,8 @@ impl Generator for TypeQLGenerator {
 
         // Generate rules if requested
         if options.get_custom("generate_rules") == Some("true") {
-            writeln!(&mut output, "# Rules").unwrap();
+            writeln!(&mut output, "# Rules")
+                .map_err(Self::fmt_error_to_generator_error)?;
             self.generate_rules(&mut output, schema, indent)?;
         }
 
@@ -485,7 +528,8 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await
+            .expect("Failed to generate TypeQL");
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("person sub entity"));

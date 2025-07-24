@@ -255,8 +255,8 @@ impl ValidationEngine {
         options: &ValidationOptions,
     ) -> Result<()> {
         // Try to use compiled validator if cache is enabled
-        if options.use_cache() && self.compiled_cache.is_some() {
-            let cache = self.compiled_cache.as_ref().unwrap();
+        if options.use_cache() {
+            if let Some(cache) = self.compiled_cache.as_ref() {
             let compilation_options = CompilationOptions::default();
             let cache_key = ValidatorCacheKey::new(&self.schema, class_name, &compilation_options);
 
@@ -284,7 +284,9 @@ impl ValidationEngine {
                 // Get back the Arc version
                 let cache_key =
                     ValidatorCacheKey::new(&self.schema, class_name, &compilation_options);
-                cache.get(&cache_key).await.unwrap()
+                cache.get(&cache_key).await.ok_or_else(|| {
+                    ValidationError::Internal("Failed to retrieve cached validator".to_string())
+                })?
             };
 
             // Use compiled validator
@@ -299,6 +301,7 @@ impl ValidationEngine {
             report.stats.validators_executed += 1;
             context.pop_class();
             return Ok(());
+            }
         }
         // Push class to context
         context.push_class(class_name);
@@ -318,7 +321,15 @@ impl ValidationEngine {
             return Ok(());
         }
 
-        let obj = data.as_object().unwrap();
+        let obj = match data.as_object() {
+            Some(obj) => obj,
+            None => {
+                // This should not happen as we already checked is_object()
+                return Err(ValidationError::Internal(
+                    "Unexpected non-object after is_object check".to_string()
+                ));
+            }
+        };
         
         // Set the parent context for cross-field validation
         context.set_parent(data.clone());
@@ -544,10 +555,12 @@ impl ValidationEngine {
             context.push_path(&format!("[{index}]"));
             
             // Validate the instance
+            let class_def = self.schema.classes.get(class_name)
+                .ok_or_else(|| ValidationError::ClassNotFound(class_name.to_string()))?;
             self.validate_class_instance(
                 instance,
                 class_name,
-                self.schema.classes.get(class_name).unwrap(),
+                class_def,
                 &mut context,
                 &mut report,
                 &options,

@@ -52,18 +52,21 @@ impl PluginRegistry {
         
         // Check if already registered
         {
-            let plugins = self.plugins.read().unwrap();
+            let plugins = self.plugins.read()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             if plugins.contains_key(&id) {
-                return Err(LinkMLError::PluginError(
-                    format!("Plugin '{}' is already registered", id)
+                return Err(LinkMLError::ServiceError(
+                    format!("Plugin error: Plugin '{}' is already registered", id)
                 ));
             }
         }
         
         // Add to dependency graph
         let node_idx = {
-            let mut graph = self.dep_graph.write().unwrap();
-            let mut node_map = self.node_map.write().unwrap();
+            let mut graph = self.dep_graph.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin dependency graph lock poisoned".to_string()))?;
+            let mut node_map = self.node_map.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin node map lock poisoned".to_string()))?;
             
             let idx = graph.add_node(id.clone());
             node_map.insert(id.clone(), idx);
@@ -73,8 +76,8 @@ impl PluginRegistry {
                 if let Some(&dep_idx) = node_map.get(&dep.id) {
                     graph.add_edge(idx, dep_idx, ());
                 } else if !dep.optional {
-                    return Err(LinkMLError::PluginError(
-                        format!("Required dependency '{}' not found for plugin '{}'", dep.id, id)
+                    return Err(LinkMLError::ServiceError(
+                        format!("Plugin error: Required dependency '{}' not found for plugin '{}'", dep.id, id)
                     ));
                 }
             }
@@ -92,13 +95,15 @@ impl PluginRegistry {
         
         // Register the plugin
         {
-            let mut plugins = self.plugins.write().unwrap();
+            let mut plugins = self.plugins.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             plugins.insert(id.clone(), registration);
         }
         
         // Update type index
         {
-            let mut by_type = self.by_type.write().unwrap();
+            let mut by_type = self.by_type.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin type index lock poisoned".to_string()))?;
             by_type.entry(plugin_type)
                 .or_insert_with(HashSet::new)
                 .insert(id);
@@ -111,16 +116,18 @@ impl PluginRegistry {
     pub fn unregister(&self, id: &str) -> Result<()> {
         // Remove from main registry
         let registration = {
-            let mut plugins = self.plugins.write().unwrap();
+            let mut plugins = self.plugins.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             plugins.remove(id)
-                .ok_or_else(|| LinkMLError::PluginError(
-                    format!("Plugin '{}' not found", id)
+                .ok_or_else(|| LinkMLError::ServiceError(
+                    format!("Plugin error: Plugin '{}' not found", id)
                 ))?
         };
         
         // Remove from type index
         {
-            let mut by_type = self.by_type.write().unwrap();
+            let mut by_type = self.by_type.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin type index lock poisoned".to_string()))?;
             let plugin_type = registration.plugin.info().plugin_type;
             if let Some(type_set) = by_type.get_mut(&plugin_type) {
                 type_set.remove(id);
@@ -132,8 +139,10 @@ impl PluginRegistry {
         
         // Remove from dependency graph
         {
-            let mut graph = self.dep_graph.write().unwrap();
-            let mut node_map = self.node_map.write().unwrap();
+            let mut graph = self.dep_graph.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin dependency graph lock poisoned".to_string()))?;
+            let mut node_map = self.node_map.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin node map lock poisoned".to_string()))?;
             
             if let Some(idx) = node_map.remove(id) {
                 graph.remove_node(idx);
@@ -145,14 +154,18 @@ impl PluginRegistry {
     
     /// Get a plugin by ID
     pub fn get(&self, id: &str) -> Option<Arc<dyn Plugin>> {
-        let plugins = self.plugins.read().unwrap();
+        let plugins = self.plugins.read().ok()?;
         plugins.get(id).map(|reg| Arc::clone(&reg.plugin))
     }
     
     /// Get all plugins of a specific type
     pub fn get_by_type(&self, plugin_type: PluginType) -> Vec<Arc<dyn Plugin>> {
-        let by_type = self.by_type.read().unwrap();
-        let plugins = self.plugins.read().unwrap();
+        let Ok(by_type) = self.by_type.read() else {
+            return Vec::new();
+        };
+        let Ok(plugins) = self.plugins.read() else {
+            return Vec::new();
+        };
         
         by_type.get(&plugin_type)
             .map(|ids| {
@@ -165,7 +178,9 @@ impl PluginRegistry {
     
     /// Get all registered plugins
     pub fn get_all(&self) -> Vec<Arc<dyn Plugin>> {
-        let plugins = self.plugins.read().unwrap();
+        let Ok(plugins) = self.plugins.read() else {
+            return Vec::new();
+        };
         plugins.values()
             .map(|reg| Arc::clone(&reg.plugin))
             .collect()
@@ -173,7 +188,7 @@ impl PluginRegistry {
     
     /// Get plugin registration info
     pub fn get_registration(&self, id: &str) -> Option<PluginRegistrationInfo> {
-        let plugins = self.plugins.read().unwrap();
+        let plugins = self.plugins.read().ok()?;
         plugins.get(id).map(|reg| PluginRegistrationInfo {
             id: id.to_string(),
             plugin_type: reg.plugin.info().plugin_type,
@@ -200,11 +215,12 @@ impl PluginRegistry {
     /// Initialize a specific plugin
     async fn initialize_plugin(&self, id: &str, context: PluginContext) -> Result<()> {
         let plugin = {
-            let plugins = self.plugins.read().unwrap();
+            let plugins = self.plugins.read()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             plugins.get(id)
                 .map(|reg| Arc::clone(&reg.plugin))
-                .ok_or_else(|| LinkMLError::PluginError(
-                    format!("Plugin '{}' not found", id)
+                .ok_or_else(|| LinkMLError::ServiceError(
+                    format!("Plugin error: Plugin '{}' not found", id)
                 ))?
         };
         
@@ -214,7 +230,8 @@ impl PluginRegistry {
         
         // Mark as initialized
         {
-            let mut plugins = self.plugins.write().unwrap();
+            let mut plugins = self.plugins.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             if let Some(reg) = plugins.get_mut(id) {
                 reg.initialized = true;
             }
@@ -240,11 +257,12 @@ impl PluginRegistry {
     /// Shutdown a specific plugin
     async fn shutdown_plugin(&self, id: &str) -> Result<()> {
         let plugin = {
-            let plugins = self.plugins.read().unwrap();
+            let plugins = self.plugins.read()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             plugins.get(id)
                 .map(|reg| Arc::clone(&reg.plugin))
-                .ok_or_else(|| LinkMLError::PluginError(
-                    format!("Plugin '{}' not found", id)
+                .ok_or_else(|| LinkMLError::ServiceError(
+                    format!("Plugin error: Plugin '{}' not found", id)
                 ))?
         };
         
@@ -254,7 +272,8 @@ impl PluginRegistry {
         
         // Mark as not initialized
         {
-            let mut plugins = self.plugins.write().unwrap();
+            let mut plugins = self.plugins.write()
+                .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
             if let Some(reg) = plugins.get_mut(id) {
                 reg.initialized = false;
             }
@@ -265,8 +284,10 @@ impl PluginRegistry {
     
     /// Get plugin initialization order based on dependencies
     fn get_initialization_order(&self) -> Result<Vec<String>> {
-        let graph = self.dep_graph.read().unwrap();
-        let node_map = self.node_map.read().unwrap();
+        let graph = self.dep_graph.read()
+            .map_err(|_| LinkMLError::ServiceError("Plugin dependency graph lock poisoned".to_string()))?;
+        let node_map = self.node_map.read()
+            .map_err(|_| LinkMLError::ServiceError("Plugin node map lock poisoned".to_string()))?;
         
         // Perform topological sort
         match toposort(&*graph, None) {
@@ -283,8 +304,8 @@ impl PluginRegistry {
                 }
                 Ok(id_order)
             }
-            Err(_) => Err(LinkMLError::PluginError(
-                "Circular dependency detected in plugins".to_string()
+            Err(_) => Err(LinkMLError::ServiceError(
+                "Plugin error: Circular dependency detected in plugins".to_string()
             )),
         }
     }
@@ -292,7 +313,8 @@ impl PluginRegistry {
     /// Check if all plugin dependencies are satisfied
     pub fn check_dependencies(&self) -> Result<Vec<DependencyError>> {
         let mut errors = Vec::new();
-        let plugins = self.plugins.read().unwrap();
+        let plugins = self.plugins.read()
+            .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
         
         for (id, reg) in plugins.iter() {
             let info = reg.plugin.info();

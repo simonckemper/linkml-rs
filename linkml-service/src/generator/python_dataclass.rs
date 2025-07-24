@@ -34,6 +34,14 @@ impl PythonDataclassGenerator {
         }
     }
 
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Formatting error: {}", err),
+        ))
+    }
+
     /// Generate code for a single class
     fn generate_class(
         &self,
@@ -50,35 +58,35 @@ impl PythonDataclassGenerator {
 
         // Generate class documentation
         if options.include_docs && (class.description.is_some() || options.include_examples) {
-            writeln!(&mut output, "@dataclass").unwrap();
-            writeln!(&mut output, "class {}:", class_name).unwrap();
-            writeln!(&mut output, "    \"\"\"").unwrap();
+            writeln!(&mut output, "@dataclass").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "class {}:", class_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 72, "    ");
-                writeln!(&mut output, "    {}", wrapped).unwrap();
+                writeln!(&mut output, "    {}", wrapped).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if options.include_examples {
-                writeln!(&mut output).unwrap();
-                writeln!(&mut output, "    Examples:").unwrap();
-                writeln!(&mut output, "        >>> person = {}(", class_name).unwrap();
-                writeln!(&mut output, "        ...     name=\"John Doe\",").unwrap();
-                writeln!(&mut output, "        ...     age=30").unwrap();
-                writeln!(&mut output, "        ... )").unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "    Examples:").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        >>> person = {}(", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        ...     name=\"John Doe\",").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        ...     age=30").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        ... )").map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(&mut output, "    \"\"\"").unwrap();
+            writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, "@dataclass").unwrap();
-            writeln!(&mut output, "class {}:", class_name).unwrap();
+            writeln!(&mut output, "@dataclass").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "class {}:", class_name).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Collect all slots including inherited
         let slots = collect_all_slots(class, schema)?;
 
         if slots.is_empty() {
-            writeln!(&mut output, "    pass").unwrap();
+            writeln!(&mut output, "    pass").map_err(Self::fmt_error_to_generator_error)?;
         } else {
             // Generate fields
             for slot_name in &slots {
@@ -96,7 +104,7 @@ impl PythonDataclassGenerator {
 
             // Generate __post_init__ if we need validation
             if options.get_custom("generate_validation") == Some("true") {
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 self.generate_post_init(&mut output, &slots, schema, &options.indent)?;
             }
         }
@@ -110,9 +118,9 @@ impl PythonDataclassGenerator {
         let mut final_output = String::new();
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_output, "{}", import_block).unwrap();
-            writeln!(&mut final_output).unwrap();
-            writeln!(&mut final_output).unwrap();
+            writeln!(&mut final_output, "{}", import_block).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
         }
         final_output.push_str(&output);
 
@@ -134,7 +142,7 @@ impl PythonDataclassGenerator {
         // Add field documentation
         if options.include_docs {
             if let Some(ref desc) = slot.description {
-                writeln!(output, "    # {}", desc).unwrap();
+                writeln!(output, "    # {}", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -160,13 +168,13 @@ impl PythonDataclassGenerator {
         let default_str = get_default_value_str(slot, "python");
 
         // Write the field
-        write!(output, "{}    {}: {}", "", slot_name, final_type).unwrap();
+        write!(output, "{}    {}: {}", "", slot_name, final_type).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(default) = default_str {
-            write!(output, " = {}", default).unwrap();
+            write!(output, " = {}", default).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -214,8 +222,8 @@ impl PythonDataclassGenerator {
         schema: &SchemaDefinition,
         _indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "    def __post_init__(self):").unwrap();
-        writeln!(output, "        \"\"\"Validate fields after initialization.\"\"\"").unwrap();
+        writeln!(output, "    def __post_init__(self):").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        \"\"\"Validate fields after initialization.\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
 
         let mut has_validation = false;
 
@@ -224,63 +232,63 @@ impl PythonDataclassGenerator {
                 // Pattern validation
                 if let Some(ref pattern) = slot.pattern {
                     if !has_validation {
-                        writeln!(output, "        import re").unwrap();
+                        writeln!(output, "        import re").map_err(Self::fmt_error_to_generator_error)?;
                         has_validation = true;
                     }
-                    writeln!(output).unwrap();
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "        if self.{} is not None and not re.match(r\"{}\", self.{}):",
                         slot_name, pattern, slot_name
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "            raise ValueError(f\"{} does not match pattern: {}\")",
                         slot_name, pattern
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Range validation for numbers
                 if let Some(min) = &slot.minimum_value {
-                    writeln!(output).unwrap();
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "        if self.{} is not None and self.{} < {}:",
                         slot_name, slot_name, min
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "            raise ValueError(f\"{} must be >= {}\")",
                         slot_name, min
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
                 }
 
                 if let Some(max) = &slot.maximum_value {
-                    writeln!(output).unwrap();
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "        if self.{} is not None and self.{} > {}:",
                         slot_name, slot_name, max
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
                         "            raise ValueError(f\"{} must be <= {}\")",
                         slot_name, max
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
                 }
             }
         }
 
         if !has_validation {
-            writeln!(output, "        pass").unwrap();
+            writeln!(output, "        pass").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         Ok(())
@@ -315,13 +323,13 @@ impl Generator for PythonDataclassGenerator {
         let mut imports = ImportManager::new();
 
         // File header
-        writeln!(&mut content, "\"\"\"").unwrap();
-        writeln!(&mut content, "Generated from LinkML schema: {}", schema.name).unwrap();
+        writeln!(&mut content, "\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut content, "Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
-            writeln!(&mut content).unwrap();
-            writeln!(&mut content, "{}", desc).unwrap();
+            writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "{}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut content, "\"\"\"").unwrap();
+        writeln!(&mut content, "\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate enums first
         let mut enum_content = String::new();
@@ -335,8 +343,8 @@ impl Generator for PythonDataclassGenerator {
         let mut class_content = String::new();
         for (class_name, class_def) in &schema.classes {
             let class_code = self.generate_class(class_name, class_def, schema, options)?;
-            writeln!(&mut class_content).unwrap();
-            writeln!(&mut class_content).unwrap();
+            writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
             class_content.push_str(&class_code);
         }
 
@@ -346,18 +354,18 @@ impl Generator for PythonDataclassGenerator {
         // Imports
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_content, "{}", import_block).unwrap();
-            writeln!(&mut final_content).unwrap();
+            writeln!(&mut final_content, "{}", import_block).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Add generated content marker
-        writeln!(&mut final_content, "# Generated by LinkML Python Dataclass Generator").unwrap();
-        writeln!(&mut final_content).unwrap();
+        writeln!(&mut final_content, "# Generated by LinkML Python Dataclass Generator").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
 
         // Enums
         if !enum_content.is_empty() {
             final_content.push_str(&enum_content);
-            writeln!(&mut final_content).unwrap();
+            writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Classes
@@ -406,22 +414,22 @@ impl PythonDataclassGenerator {
         imports.add_import("enum", "Enum");
 
         let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
-        writeln!(output).unwrap();
-        writeln!(output, "class {}(Enum):", enum_name).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "class {}(Enum):", enum_name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(ref desc) = slot.description {
-            writeln!(output, "    \"\"\"{}\"\"\"", desc).unwrap();
+            writeln!(output, "    \"\"\"{}\"\"\"", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         for value in &slot.permissible_values {
             match value {
                 PermissibleValue::Simple(text) => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text).unwrap();
+                    writeln!(output, "    {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text).unwrap();
+                    writeln!(output, "    {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -506,7 +514,7 @@ mod tests {
         let generator = PythonDataclassGenerator::new();
         let options = GeneratorOptions::new();
 
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
         assert_eq!(outputs.len(), 1);
 
         let output = &outputs[0];

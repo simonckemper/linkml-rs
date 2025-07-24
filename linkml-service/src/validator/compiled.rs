@@ -318,25 +318,27 @@ impl CompiledValidator {
 
                         if !valid {
                             let mut context = HashMap::new();
-                            context.insert(
-                                "value".to_string(),
-                                serde_json::Value::Number(serde_json::Number::from_f64(num).unwrap()),
-                            );
-                            if let Some(min_val) = min {
+                            if let Some(json_num) = serde_json::Number::from_f64(num) {
                                 context.insert(
-                                    "min".to_string(),
-                                    serde_json::Value::Number(
-                                        serde_json::Number::from_f64(*min_val).unwrap(),
-                                    ),
+                                    "value".to_string(),
+                                    serde_json::Value::Number(json_num),
                                 );
                             }
+                            if let Some(min_val) = min {
+                                if let Some(json_min) = serde_json::Number::from_f64(*min_val) {
+                                    context.insert(
+                                        "min".to_string(),
+                                        serde_json::Value::Number(json_min),
+                                    );
+                                }
+                            }
                             if let Some(max_val) = max {
-                                context.insert(
-                                    "max".to_string(),
-                                    serde_json::Value::Number(
-                                        serde_json::Number::from_f64(*max_val).unwrap(),
-                                    ),
-                                );
+                                if let Some(json_max) = serde_json::Number::from_f64(*max_val) {
+                                    context.insert(
+                                        "max".to_string(),
+                                        serde_json::Value::Number(json_max),
+                                    );
+                                }
                             }
                             issues.push(ValidationIssue {
                                 severity: Severity::Error,
@@ -874,7 +876,8 @@ mod tests {
         // Compile validator
         let options = CompilationOptions::default();
         let validator =
-            CompiledValidator::compile_class(&schema, "Person", &person_class, &options).unwrap();
+            CompiledValidator::compile_class(&schema, "Person", &person_class, &options)
+                .expect("Failed to compile validator");
 
         // Test valid data
         let valid_data = serde_json::json!({

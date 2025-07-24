@@ -59,7 +59,8 @@ name: test_schema
 ";
 
         let parser = YamlParser::new();
-        let schema = parser.parse_str(yaml).unwrap();
+        let schema = parser.parse_str(yaml)
+            .expect("Failed to parse minimal schema YAML");
 
         assert_eq!(schema.id, "https://example.org/test");
         assert_eq!(schema.name, "test_schema");
@@ -87,7 +88,8 @@ slots:
 ";
 
         let parser = YamlParser::new();
-        let schema = parser.parse_str(yaml).unwrap();
+        let schema = parser.parse_str(yaml)
+            .expect("Failed to parse schema with classes YAML");
 
         assert!(schema.classes.contains_key("Person"));
         assert_eq!(schema.classes["Person"].slots.len(), 2);
