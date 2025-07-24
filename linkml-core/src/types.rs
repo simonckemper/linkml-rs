@@ -858,24 +858,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_schema_serialization() {
+    fn test_schema_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let schema = SchemaDefinition {
             id: "https://example.org/test".to_string(),
             name: "test_schema".to_string(),
             ..Default::default()
         };
         
-        let json = serde_json::to_string(&schema).unwrap();
+        let json = serde_json::to_string(&schema)?;
         assert!(json.contains("test_schema"));
         
-        let parsed: SchemaDefinition = serde_json::from_str(&json).unwrap();
+        let parsed: SchemaDefinition = serde_json::from_str(&json)?;
         assert_eq!(parsed.name, "test_schema");
+        Ok(())
     }
 
     #[test]
-    fn test_permissible_value() {
+    fn test_permissible_value() -> Result<(), Box<dyn std::error::Error>> {
         let simple = PermissibleValue::Simple("test".to_string());
-        let json = serde_json::to_string(&simple).unwrap();
+        let json = serde_json::to_string(&simple)?;
         assert_eq!(json, r#""test""#);
         
         let complex = PermissibleValue::Complex {
@@ -883,7 +884,8 @@ mod tests {
             description: Some("A test value".to_string()),
             meaning: None,
         };
-        let json = serde_json::to_string(&complex).unwrap();
+        let json = serde_json::to_string(&complex)?;
         assert!(json.contains("description"));
+        Ok(())
     }
 }

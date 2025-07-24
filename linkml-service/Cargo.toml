@@ -26,6 +26,8 @@ configuration-core = { path = "../../configuration/configuration-core" }
 cache-core = { path = "../../cache/cache-core" }
 monitoring-core = { path = "../../monitoring/monitoring-core" }
 telemetry-core = { path = "../../telemetry/telemetry-core" }
+dbms-core = { path = "../../dbms/dbms-core" }
+parse-core = { path = "../../parse/parse-core" }
 
 # Async runtime
 tokio = { version = "1.42", features = ["full"] }

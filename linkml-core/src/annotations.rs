@@ -190,20 +190,21 @@ mod tests {
     }
     
     #[test]
-    fn test_json_round_trip() {
+    fn test_json_round_trip() -> Result<(), Box<dyn std::error::Error>> {
         let mut annotations = Annotations::new();
         annotations.insert("author".to_string(), "John Doe".into());
         annotations.insert("version".to_string(), 2.into());
         annotations.insert("deprecated".to_string(), true.into());
         
-        let json = serde_json::to_string(&annotations).unwrap();
-        let parsed: Annotations = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&annotations)?;
+        let parsed: Annotations = serde_json::from_str(&json)?;
         
         assert_eq!(annotations, parsed);
+        Ok(())
     }
     
     #[test]
-    fn test_merge_annotations() {
+    fn test_merge_annotations() -> Result<(), Box<dyn std::error::Error>> {
         let mut base = Annotations::new();
         base.insert("key1".to_string(), "value1".into());
         base.insert("key2".to_string(), "value2".into());
@@ -212,10 +213,21 @@ mod tests {
         override_ann.insert("key2".to_string(), "new_value2".into());
         override_ann.insert("key3".to_string(), "value3".into());
         
-        let merged = merge_annotations(Some(&base), Some(&override_ann)).unwrap();
+        let merged = merge_annotations(Some(&base), Some(&override_ann))
+            .ok_or("Failed to merge annotations")?;
         
-        assert_eq!(merged.get("key1").unwrap(), &AnnotationValue::String("value1".to_string()));
-        assert_eq!(merged.get("key2").unwrap(), &AnnotationValue::String("new_value2".to_string()));
-        assert_eq!(merged.get("key3").unwrap(), &AnnotationValue::String("value3".to_string()));
+        assert_eq!(
+            merged.get("key1").ok_or("key1 not found")?, 
+            &AnnotationValue::String("value1".to_string())
+        );
+        assert_eq!(
+            merged.get("key2").ok_or("key2 not found")?, 
+            &AnnotationValue::String("new_value2".to_string())
+        );
+        assert_eq!(
+            merged.get("key3").ok_or("key3 not found")?, 
+            &AnnotationValue::String("value3".to_string())
+        );
+        Ok(())
     }
 }

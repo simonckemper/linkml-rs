@@ -11,6 +11,12 @@
 /// Service factory and initialization
 pub mod factory;
 
+/// Factory v2 with Configuration Service integration
+pub mod factory_v2;
+
+/// Factory v3 with DBMS Service integration
+pub mod factory_v3;
+
 /// Service implementation
 pub mod service;
 

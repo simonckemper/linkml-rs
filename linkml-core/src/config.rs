@@ -274,12 +274,13 @@ mod tests {
     }
 
     #[test]
-    fn test_config_serialization() {
+    fn test_config_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let config = LinkMLConfig::default();
-        let yaml = serde_yaml::to_string(&config).unwrap();
+        let yaml = serde_yaml::to_string(&config)?;
         assert!(yaml.contains("enable_cache"));
         
-        let parsed: LinkMLConfig = serde_yaml::from_str(&yaml).unwrap();
+        let parsed: LinkMLConfig = serde_yaml::from_str(&yaml)?;
         assert_eq!(parsed.schema.enable_cache, config.schema.enable_cache);
+        Ok(())
     }
 }

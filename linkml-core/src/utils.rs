@@ -12,7 +12,10 @@ pub fn is_valid_identifier(s: &str) -> bool {
     }
     
     // Must start with letter or underscore
-    let first = s.chars().next().unwrap();
+    let first = match s.chars().next() {
+        Some(c) => c,
+        None => return false,  // Empty string case already handled above
+    };
     if !first.is_alphabetic() && first != '_' {
         return false;
     }
@@ -320,10 +323,9 @@ mod tests {
         let mut prefixes = IndexMap::new();
         prefixes.insert("ex".to_string(), "http://example.org/".to_string());
         
-        assert_eq!(
-            expand_curie("ex:Person", &prefixes).unwrap(),
-            "http://example.org/Person"
-        );
+        let result = expand_curie("ex:Person", &prefixes);
+        assert!(result.is_ok());
+        assert_eq!(result.ok(), Some("http://example.org/Person".to_string()));
         
         assert!(expand_curie("unknown:Person", &prefixes).is_err());
     }
