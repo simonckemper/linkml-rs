@@ -28,6 +28,7 @@ A high-performance Rust implementation of the [LinkML](https://linkml.io) (Linke
 - **GraphQL** - Schema generation with resolvers
 - **Rust** - Native Rust structs with serde support
 - **Python** - Dataclasses, Pydantic models, SQLAlchemy
+- **SPARQL** - Query generation from schemas
 - **20+ More** - Java, TypeScript, Go, Protobuf, JSON Schema, etc.
 
 ## 📦 Installation

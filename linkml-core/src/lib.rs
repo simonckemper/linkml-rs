@@ -56,6 +56,12 @@ pub mod types_v2;
 /// Optimized utility functions that minimize cloning
 pub mod utils_v2;
 
+/// Optimized HashMap utilities
+pub mod hashmap_utils;
+
+/// Arc-based schema handling
+pub mod schema_arc;
+
 // Re-export commonly used types
 pub use error::{LinkMLError, Result};
 pub use traits::{LinkMLService, SchemaOperations, ValidationOperations};
