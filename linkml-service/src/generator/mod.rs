@@ -45,6 +45,10 @@ pub mod namespace_manager;
 pub mod sssom;
 pub mod summary;
 pub mod project;
+pub mod yaml;
+pub mod rdf;
+pub mod traits_v2;
+pub mod typeql_rule_generator;
 
 pub use csv::CsvGenerator;
 pub use excel::ExcelGenerator;
@@ -85,3 +89,5 @@ pub use namespace_manager::{NamespaceManagerGenerator, NamespaceManagerGenerator
 pub use sssom::{SssomGenerator, SssomGeneratorConfig, SssomFormat};
 pub use summary::{SummaryGenerator, SummaryGeneratorConfig, SummaryFormat};
 pub use project::{ProjectGenerator, ProjectGeneratorConfig, ProjectTarget, LicenseType};
+pub use yaml::YamlGenerator;
+pub use rdf::RdfGenerator as PlainRdfGenerator;
