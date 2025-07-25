@@ -386,10 +386,10 @@ impl ResourceLimiter {
             return ResourceStats::default();
         }
 
-        let latest = history.last().unwrap();
+        let latest = history.last().expect("just checked history is not empty");
         let window_start = Instant::now()
             .checked_sub(Duration::from_secs(300))
-            .unwrap(); // 5 min window
+            .unwrap_or(Instant::now()); // 5 min window
 
         let window_history: Vec<_> = history
             .iter()
@@ -416,7 +416,7 @@ impl ResourceLimiter {
         let peak_cpu = window_history
             .iter()
             .map(|u| u.cpu_percent)
-            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap_or(0.0);
 
         ResourceStats {

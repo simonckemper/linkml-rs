@@ -244,7 +244,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_import_resolver() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temp dir");
         let base_path = temp_dir.path();
 
         // Create a base schema
@@ -261,7 +261,7 @@ slots:
     range: string
 ";
 
-        fs::write(base_path.join("base.yaml"), base_schema).unwrap();
+        fs::write(base_path.join("base.yaml"), base_schema).expect("should write base schema");
 
         // Create a schema that imports base
         let main_schema = r"
@@ -279,11 +279,11 @@ classes:
         // Parse main schema
         use super::super::yaml_parser::YamlParser;
         let parser = YamlParser::new();
-        let schema = parser.parse_str(main_schema).unwrap();
+        let schema = parser.parse_str(main_schema).expect("should parse main schema");
 
         // Resolve imports
         let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);
-        let merged = resolver.resolve_imports(&schema).unwrap();
+        let merged = resolver.resolve_imports(&schema).expect("should resolve imports");
 
         // Check that base elements were imported
         assert!(merged.classes.contains_key("BaseClass"));

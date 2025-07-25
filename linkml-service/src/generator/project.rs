@@ -1721,7 +1721,7 @@ mod tests {
         };
         
         let generator = ProjectGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate project");
         
         assert!(result.contains("# LinkML Project Generator Manifest"));
         assert!(result.contains("README.md"));

@@ -893,7 +893,8 @@ fn to_snake_case(s: &str) -> String {
         if ch.is_uppercase() && i > 0 && !prev_upper {
             result.push('_');
         }
-        result.push(ch.to_lowercase().next().unwrap());
+        // to_lowercase() for ASCII characters always produces at least one char
+        result.push(ch.to_lowercase().next().expect("to_lowercase() should produce at least one char"));
         prev_upper = ch.is_uppercase();
     }
     

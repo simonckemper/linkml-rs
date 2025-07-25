@@ -32,7 +32,7 @@ impl PatternValidator {
 
     /// Get or compile a regex pattern
     fn get_regex(&self, pattern: &str) -> Result<Regex, regex::Error> {
-        let mut cache = self.pattern_cache.lock().unwrap();
+        let mut cache = self.pattern_cache.lock().expect("pattern cache lock poisoned");
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(regex.clone());

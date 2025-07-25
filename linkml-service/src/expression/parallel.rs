@@ -97,7 +97,7 @@ impl ParallelEvaluator for ExpressionEngine {
             
             let task = tokio::spawn(async move {
                 // Acquire permit for concurrency control
-                let _permit = semaphore.acquire().await.unwrap();
+                let _permit = semaphore.acquire().await.expect("semaphore should not be closed");
                 
                 // Parse and evaluate
                 let result = match engine.parse(&expr) {
@@ -190,7 +190,7 @@ impl ParallelEvaluator for ExpressionEngine {
             let key_clone = key.clone();
             
             let task = tokio::spawn(async move {
-                let _permit = semaphore.acquire().await.unwrap();
+                let _permit = semaphore.acquire().await.expect("semaphore should not be closed");
                 
                 let result = match engine.evaluate_ast(&ast, &context) {
                     Ok(value) => Ok(value),
@@ -256,7 +256,7 @@ impl ParallelEvaluator for ExpressionEngine {
             let semaphore = Arc::clone(&semaphore);
             
             let task = tokio::spawn(async move {
-                let _permit = semaphore.acquire().await.unwrap();
+                let _permit = semaphore.acquire().await.expect("semaphore should not be closed");
                 (idx, engine.evaluate_ast(&ast, &context))
             });
             

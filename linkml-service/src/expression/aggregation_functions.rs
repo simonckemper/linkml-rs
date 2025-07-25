@@ -5,6 +5,15 @@
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
 
+/// Convert f64 to serde_json::Number, returning error for non-finite values
+fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
+    serde_json::Number::from_f64(val)
+        .ok_or_else(|| FunctionError::invalid_result(
+            function_name,
+            "result is not a finite number (NaN or infinity)"
+        ))
+}
+
 /// sum() - Sum of numeric values
 pub struct SumFunction;
 
@@ -33,7 +42,7 @@ impl BuiltinFunction for SumFunction {
                         )),
                     }
                 }
-                Ok(Value::Number(serde_json::Number::from_f64(sum).unwrap()))
+                Ok(Value::Number(f64_to_number(sum, self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -77,7 +86,7 @@ impl BuiltinFunction for AvgFunction {
                 }
                 
                 let avg = sum / arr.len() as f64;
-                Ok(Value::Number(serde_json::Number::from_f64(avg).unwrap()))
+                Ok(Value::Number(f64_to_number(avg, self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -179,7 +188,7 @@ impl BuiltinFunction for MedianFunction {
                     }
                 }
                 
-                numbers.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                numbers.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
                 
                 let median = if numbers.len() % 2 == 0 {
                     // Even number of elements
@@ -190,7 +199,7 @@ impl BuiltinFunction for MedianFunction {
                     numbers[numbers.len() / 2]
                 };
                 
-                Ok(Value::Number(serde_json::Number::from_f64(median).unwrap()))
+                Ok(Value::Number(f64_to_number(median, self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -307,7 +316,7 @@ impl BuiltinFunction for StdDevFunction {
                 // Standard deviation is square root of variance
                 let stddev = variance.sqrt();
                 
-                Ok(Value::Number(serde_json::Number::from_f64(stddev).unwrap()))
+                Ok(Value::Number(f64_to_number(stddev, self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -364,7 +373,7 @@ impl BuiltinFunction for VarianceFunction {
                     .map(|x| (x - mean).powi(2))
                     .sum::<f64>() / (numbers.len() - 1) as f64;
                 
-                Ok(Value::Number(serde_json::Number::from_f64(variance).unwrap()))
+                Ok(Value::Number(f64_to_number(variance, self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),

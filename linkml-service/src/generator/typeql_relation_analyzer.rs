@@ -326,11 +326,11 @@ mod tests {
         let schema = create_test_schema();
         
         // Test employment relation detection
-        let employment_class = schema.classes.get("Employment").unwrap();
+        let employment_class = schema.classes.get("Employment").expect("Employment class should exist");
         let relation_info = analyzer.analyze_relation("Employment", employment_class, &schema);
         
         assert!(relation_info.is_some());
-        let info = relation_info.unwrap();
+        let info = relation_info.expect("relation info should exist");
         assert_eq!(info.roles.len(), 2);
         assert!(!info.is_multiway);
     }
@@ -341,11 +341,11 @@ mod tests {
         let schema = create_multiway_schema();
         
         // Test enrollment relation (student, course, instructor)
-        let enrollment_class = schema.classes.get("Enrollment").unwrap();
+        let enrollment_class = schema.classes.get("Enrollment").expect("Enrollment class should exist");
         let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
         
         assert!(relation_info.is_some());
-        let info = relation_info.unwrap();
+        let info = relation_info.expect("relation info should exist");
         assert_eq!(info.roles.len(), 3);
         assert!(info.is_multiway);
     }

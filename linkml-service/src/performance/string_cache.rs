@@ -159,9 +159,9 @@ mod tests {
     fn test_string_interning() {
         let interner = StringInterner::new();
         
-        let s1 = interner.intern("hello").unwrap();
-        let s2 = interner.intern("hello").unwrap();
-        let s3 = interner.intern("world").unwrap();
+        let s1 = interner.intern("hello").expect("should intern string");
+        let s2 = interner.intern("hello").expect("should intern string");
+        let s3 = interner.intern("world").expect("should intern string");
         
         // Same strings should have same Arc
         assert!(Arc::ptr_eq(&s1, &s2));

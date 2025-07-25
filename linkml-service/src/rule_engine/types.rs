@@ -89,13 +89,18 @@ pub enum CompiledCondition {
 impl CompiledCondition {
     /// Compile conditions from their definition
     pub fn compile(conditions: &RuleConditions) -> Result<Self> {
-        let has_slots = conditions.slot_conditions.is_some() && !conditions.slot_conditions.as_ref().unwrap().is_empty();
-        let has_exprs = conditions.expression_conditions.is_some() && !conditions.expression_conditions.as_ref().unwrap().is_empty();
+        let has_slots = conditions.slot_conditions.as_ref()
+            .map(|sc| !sc.is_empty())
+            .unwrap_or(false);
+        let has_exprs = conditions.expression_conditions.as_ref()
+            .map(|ec| !ec.is_empty())
+            .unwrap_or(false);
         let has_composite = conditions.composite_conditions.is_some();
         
         match (has_slots, has_exprs, has_composite) {
             (true, false, false) => {
-                let slot_conditions = conditions.slot_conditions.as_ref().unwrap();
+                let slot_conditions = conditions.slot_conditions.as_ref()
+                    .ok_or_else(|| LinkMLError::RuleError("Slot conditions expected but not found".to_string()))?;
                 let mut compiled = HashMap::new();
                 for (slot_name, condition) in slot_conditions {
                     compiled.insert(
@@ -106,7 +111,8 @@ impl CompiledCondition {
                 Ok(CompiledCondition::SlotConditions(compiled))
             }
             (false, true, false) => {
-                let expressions = conditions.expression_conditions.as_ref().unwrap();
+                let expressions = conditions.expression_conditions.as_ref()
+                    .ok_or_else(|| LinkMLError::RuleError("Expression conditions expected but not found".to_string()))?;
                 let mut compiled = Vec::new();
                 for expr_str in expressions {
                     let parser = crate::expression::parser::Parser::new();
@@ -120,13 +126,15 @@ impl CompiledCondition {
                 Ok(CompiledCondition::ExpressionConditions(compiled))
             }
             (false, false, true) => {
-                let composite = conditions.composite_conditions.as_ref().unwrap();
+                let composite = conditions.composite_conditions.as_ref()
+                    .ok_or_else(|| LinkMLError::RuleError("Composite conditions expected but not found".to_string()))?;
                 Ok(CompiledCondition::Composite(CompiledCompositeCondition::compile(composite)?))
             }
             _ => {
                 // Combined conditions
                 let slot_conditions = if has_slots {
-                    let slot_conditions = conditions.slot_conditions.as_ref().unwrap();
+                    let slot_conditions = conditions.slot_conditions.as_ref()
+                        .ok_or_else(|| LinkMLError::RuleError("Slot conditions expected but not found".to_string()))?;
                     let mut compiled = HashMap::new();
                     for (slot_name, condition) in slot_conditions {
                         compiled.insert(
@@ -140,7 +148,8 @@ impl CompiledCondition {
                 };
                 
                 let expression_conditions = if has_exprs {
-                    let expressions = conditions.expression_conditions.as_ref().unwrap();
+                    let expressions = conditions.expression_conditions.as_ref()
+                        .ok_or_else(|| LinkMLError::RuleError("Expression conditions expected but not found".to_string()))?;
                     let mut compiled = Vec::new();
                     for expr_str in expressions {
                         let parser = crate::expression::parser::Parser::new();
@@ -157,7 +166,8 @@ impl CompiledCondition {
                 };
                 
                 let composite_conditions = if has_composite {
-                    let composite = conditions.composite_conditions.as_ref().unwrap();
+                    let composite = conditions.composite_conditions.as_ref()
+                        .ok_or_else(|| LinkMLError::RuleError("Composite conditions expected but not found".to_string()))?;
                     Some(Box::new(CompiledCompositeCondition::compile(composite)?))
                 } else {
                     None

@@ -378,13 +378,13 @@ mod tests {
             author: Some("Test Author".to_string()),
             license: Some("MIT".to_string()),
             homepage: None,
-            linkml_version: VersionReq::parse(">=1.0.0").unwrap(),
+            linkml_version: VersionReq::parse(">=1.0.0").expect("valid version requirement"),
             dependencies: vec![],
             capabilities: vec![],
         };
         
-        let json = serde_json::to_string(&info).unwrap();
-        let deserialized: PluginInfo = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&info).expect("should serialize PluginInfo");
+        let deserialized: PluginInfo = serde_json::from_str(&json).expect("should deserialize PluginInfo");
         
         assert_eq!(info.id, deserialized.id);
         assert_eq!(info.version, deserialized.version);

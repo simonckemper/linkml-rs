@@ -663,10 +663,10 @@ mod tests {
         schema2.classes.insert("Car".to_string(), class2);
         
         // Modify existing class
-        schema2.classes.get_mut("Person").unwrap().slots.push("email".to_string());
+        schema2.classes.get_mut("Person").expect("Person class should exist").slots.push("email".to_string());
         
         let differ = SchemaDiff::new(DiffOptions::default());
-        let result = differ.diff(&schema1, &schema2).unwrap();
+        let result = differ.diff(&schema1, &schema2).expect("should diff schemas");
         
         assert_eq!(result.added_classes, vec!["Car"]);
         assert!(result.removed_classes.is_empty());

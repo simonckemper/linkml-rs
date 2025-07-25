@@ -158,7 +158,7 @@ impl MemoryTracker {
     fn cleanup_old_allocations(&self) {
         let cutoff = Instant::now()
             .checked_sub(Duration::from_secs(300))
-            .unwrap(); // 5 minutes
+            .unwrap_or(Instant::now()); // 5 minutes
 
         self.allocations
             .retain(|_, info| info.allocated_at > cutoff);

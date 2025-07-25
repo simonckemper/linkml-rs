@@ -682,10 +682,10 @@ impl YamlValidatorGenerator {
             if ch == '_' {
                 capitalize_next = true;
             } else if capitalize_next {
-                result.push(ch.to_uppercase().next().unwrap());
+                result.push(ch.to_uppercase().next().expect("uppercase char should exist"));
                 capitalize_next = false;
             } else if i == 0 {
-                result.push(ch.to_lowercase().next().unwrap());
+                result.push(ch.to_lowercase().next().expect("lowercase char should exist"));
             } else {
                 result.push(ch);
             }
@@ -749,7 +749,7 @@ mod tests {
         // Test JSON Schema generation
         let config = YamlValidatorGeneratorConfig::default();
         let generator = YamlValidatorGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate YAML validator");
         
         assert!(result.contains("$schema"));
         assert!(result.contains("definitions"));

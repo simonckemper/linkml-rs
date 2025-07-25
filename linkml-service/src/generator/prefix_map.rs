@@ -422,7 +422,7 @@ mod tests {
         // Test simple JSON format
         let config = PrefixMapGeneratorConfig::default();
         let generator = PrefixMapGenerator::new(config);
-        let result = generator.generate(&Schema(schema.clone())).unwrap();
+        let result = generator.generate(&Schema(schema.clone())).expect("should generate prefix map");
         
         assert!(result.contains("\"ex\": \"https://example.com/\""));
         assert!(result.contains("\"test\": \"https://test.org/vocab#\""));
@@ -433,7 +433,7 @@ mod tests {
             ..Default::default()
         };
         let generator_ttl = PrefixMapGenerator::new(config_ttl);
-        let result_ttl = generator_ttl.generate(&Schema(schema)).unwrap();
+        let result_ttl = generator_ttl.generate(&Schema(schema)).expect("should generate turtle prefix map");
         
         assert!(result_ttl.contains("@prefix ex: <https://example.com/> ."));
         assert!(result_ttl.contains("@prefix test: <https://test.org/vocab#> ."));

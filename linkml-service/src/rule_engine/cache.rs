@@ -241,7 +241,7 @@ mod tests {
                 ..Default::default()
             },
             "TestClass".to_string(),
-        ).unwrap()
+        ).expect("should compile rule")
     }
     
     #[test]
@@ -257,7 +257,7 @@ mod tests {
         cache.put("TestClass".to_string(), rules.clone());
         assert_eq!(cache.stats().entries, 1);
         
-        let retrieved = cache.get("TestClass").unwrap();
+        let retrieved = cache.get("TestClass").expect("should retrieve cached rule");
         assert_eq!(retrieved.len(), 1);
         assert_eq!(cache.stats().hits, 1);
     }

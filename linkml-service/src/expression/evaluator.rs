@@ -255,7 +255,10 @@ impl Evaluator {
     pub fn new() -> Self {
         let config = EvaluatorConfig::default();
         let cache = if config.enable_cache {
-            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+            let cache_size = NonZeroUsize::new(config.cache_size)
+                .or_else(|| NonZeroUsize::new(1000))
+                .expect("Cache size of 1000 should always be valid");
+            Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
         };
@@ -271,7 +274,10 @@ impl Evaluator {
     pub fn with_functions(function_registry: FunctionRegistry) -> Self {
         let config = EvaluatorConfig::default();
         let cache = if config.enable_cache {
-            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+            let cache_size = NonZeroUsize::new(config.cache_size)
+                .or_else(|| NonZeroUsize::new(1000))
+                .expect("Cache size of 1000 should always be valid");
+            Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
         };
@@ -310,7 +316,10 @@ impl Evaluator {
     /// Create an evaluator with custom configuration
     pub fn with_config(config: EvaluatorConfig) -> Self {
         let cache = if config.enable_cache {
-            Some(Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(config.cache_size).unwrap_or(NonZeroUsize::new(1000).unwrap())))))
+            let cache_size = NonZeroUsize::new(config.cache_size)
+                .or_else(|| NonZeroUsize::new(1000))
+                .expect("Cache size of 1000 should always be valid");
+            Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
         };
@@ -510,7 +519,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                let result = l.as_f64().unwrap() + r.as_f64().unwrap();
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                let result = left_num + right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -535,7 +548,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                let result = l.as_f64().unwrap() - r.as_f64().unwrap();
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                let result = left_num - right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -555,7 +572,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                let result = l.as_f64().unwrap() * r.as_f64().unwrap();
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                let result = left_num * right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -575,11 +596,14 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                let divisor = r.as_f64().unwrap();
+                let divisor = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
-                let result = l.as_f64().unwrap() / divisor;
+                let dividend = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let result = dividend / divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -599,11 +623,14 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                let divisor = r.as_f64().unwrap();
+                let divisor = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
-                let result = l.as_f64().unwrap() % divisor;
+                let dividend = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let result = dividend % divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -622,7 +649,9 @@ impl<'a> EvalContext<'a> {
         
         match val {
             Value::Number(n) => {
-                let result = -n.as_f64().unwrap();
+                let num = n.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Operand is not a valid number".to_string()))?;
+                let result = -num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
                         .ok_or(EvaluationError::NumericOverflow)?,
@@ -655,7 +684,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                Ok(Value::Bool(l.as_f64().unwrap() < r.as_f64().unwrap()))
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                Ok(Value::Bool(left_num < right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l < r)),
             _ => Err(EvaluationError::binary_type_error(
@@ -672,7 +705,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                Ok(Value::Bool(l.as_f64().unwrap() > r.as_f64().unwrap()))
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                Ok(Value::Bool(left_num > right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l > r)),
             _ => Err(EvaluationError::binary_type_error(
@@ -689,7 +726,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                Ok(Value::Bool(l.as_f64().unwrap() <= r.as_f64().unwrap()))
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                Ok(Value::Bool(left_num <= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l <= r)),
             _ => Err(EvaluationError::binary_type_error(
@@ -706,7 +747,11 @@ impl<'a> EvalContext<'a> {
         
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
-                Ok(Value::Bool(l.as_f64().unwrap() >= r.as_f64().unwrap()))
+                let left_num = l.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                let right_num = r.as_f64()
+                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                Ok(Value::Bool(left_num >= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l >= r)),
             _ => Err(EvaluationError::binary_type_error(
@@ -812,7 +857,7 @@ fn is_truthy(value: &Value) -> bool {
     match value {
         Value::Null => false,
         Value::Bool(b) => *b,
-        Value::Number(n) => n.as_f64().unwrap() != 0.0,
+        Value::Number(n) => n.as_f64().unwrap_or(0.0) != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Array(a) => !a.is_empty(),
         Value::Object(o) => !o.is_empty(),
@@ -831,19 +876,19 @@ mod tests {
         let context = HashMap::new();
         
         assert_eq!(
-            evaluator.evaluate(&Expression::Null, &context).unwrap(),
+            evaluator.evaluate(&Expression::Null, &context).expect("Should evaluate null"),
             Value::Null
         );
         assert_eq!(
-            evaluator.evaluate(&Expression::Boolean(true), &context).unwrap(),
+            evaluator.evaluate(&Expression::Boolean(true), &context).expect("Should evaluate boolean"),
             Value::Bool(true)
         );
         assert_eq!(
-            evaluator.evaluate(&Expression::Number(42.0), &context).unwrap(),
+            evaluator.evaluate(&Expression::Number(42.0), &context).expect("Should evaluate number"),
             json!(42.0)
         );
         assert_eq!(
-            evaluator.evaluate(&Expression::String("hello".to_string()), &context).unwrap(),
+            evaluator.evaluate(&Expression::String("hello".to_string()), &context).expect("Should evaluate string"),
             json!("hello")
         );
     }
@@ -856,11 +901,11 @@ mod tests {
         context.insert("name".to_string(), json!("Alice"));
         
         assert_eq!(
-            evaluator.evaluate(&Expression::Variable("x".to_string()), &context).unwrap(),
+            evaluator.evaluate(&Expression::Variable("x".to_string()), &context).expect("Should evaluate variable x"),
             json!(10)
         );
         assert_eq!(
-            evaluator.evaluate(&Expression::Variable("name".to_string()), &context).unwrap(),
+            evaluator.evaluate(&Expression::Variable("name".to_string()), &context).expect("Should evaluate variable name"),
             json!("Alice")
         );
         
@@ -881,28 +926,28 @@ mod tests {
             Box::new(Expression::Number(2.0)),
             Box::new(Expression::Number(3.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(5.0));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(5.0));
         
         // 10 - 4 = 6
         let expr = Expression::Subtract(
             Box::new(Expression::Number(10.0)),
             Box::new(Expression::Number(4.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(6.0));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(6.0));
         
         // 3 * 4 = 12
         let expr = Expression::Multiply(
             Box::new(Expression::Number(3.0)),
             Box::new(Expression::Number(4.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(12.0));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(12.0));
         
         // 15 / 3 = 5
         let expr = Expression::Divide(
             Box::new(Expression::Number(15.0)),
             Box::new(Expression::Number(3.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(5.0));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(5.0));
         
         // Division by zero
         let expr = Expression::Divide(
@@ -925,21 +970,21 @@ mod tests {
             Box::new(Expression::Number(5.0)),
             Box::new(Expression::Number(3.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(true));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(true));
         
         // 2 < 2 = false
         let expr = Expression::Less(
             Box::new(Expression::Number(2.0)),
             Box::new(Expression::Number(2.0)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(false));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(false));
         
         // "abc" == "abc" = true
         let expr = Expression::Equal(
             Box::new(Expression::String("abc".to_string())),
             Box::new(Expression::String("abc".to_string())),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(true));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(true));
     }
     
     #[test]
@@ -952,18 +997,18 @@ mod tests {
             Box::new(Expression::Boolean(true)),
             Box::new(Expression::Boolean(false)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(false));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(false));
         
         // true or false = true
         let expr = Expression::Or(
             Box::new(Expression::Boolean(true)),
             Box::new(Expression::Boolean(false)),
         );
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(true));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(true));
         
         // not true = false
         let expr = Expression::Not(Box::new(Expression::Boolean(true)));
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!(false));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!(false));
     }
     
     #[test]
@@ -982,10 +1027,10 @@ mod tests {
             else_expr: Box::new(Expression::String("small".to_string())),
         };
         
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!("big"));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!("big"));
         
         // Change x to 3
         context.insert("x".to_string(), json!(3));
-        assert_eq!(evaluator.evaluate(&expr, &context).unwrap(), json!("small"));
+        assert_eq!(evaluator.evaluate(&expr, &context).expect("Test evaluation should succeed"), json!("small"));
     }
 }

@@ -9,7 +9,7 @@
 
 use super::base::{collect_all_slots, is_optional_slot, BaseCodeFormatter};
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult};
+use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult, GeneratorError};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::HashMap;
@@ -33,6 +33,14 @@ impl RustGenerator {
         }
     }
 
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Formatting error: {}", err),
+        ))
+    }
+
     /// Generate Rust code for a class
     fn generate_class_rust(
         &self,
@@ -47,39 +55,39 @@ impl RustGenerator {
         // Documentation
         if options.include_docs {
             if let Some(desc) = &class.description {
-                writeln!(&mut output, "/// {}", desc).unwrap();
+                writeln!(&mut output, "/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
-            writeln!(&mut output, "///").unwrap();
-            writeln!(&mut output, "/// Generated from LinkML class: {}", class_name).unwrap();
+            writeln!(&mut output, "///").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "/// Generated from LinkML class: {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Derive macros
         let derives = self.get_derives(class, options);
-        writeln!(&mut output, "#[derive({})]", derives.join(", ")).unwrap();
+        writeln!(&mut output, "#[derive({})]", derives.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
 
         // Serde attributes if needed
         if derives.contains(&"Serialize".to_string())
             || derives.contains(&"Deserialize".to_string())
         {
-            writeln!(&mut output, "#[serde(rename_all = \"camelCase\")]").unwrap();
+            writeln!(&mut output, "#[serde(rename_all = \"camelCase\")]").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Struct definition
         let struct_name = BaseCodeFormatter::to_pascal_case(class_name);
-        writeln!(&mut output, "pub struct {} {{", struct_name).unwrap();
+        writeln!(&mut output, "pub struct {} {{", struct_name).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate fields
         self.generate_fields(&mut output, class, schema, options, indent)?;
 
-        writeln!(&mut output, "}}").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Always generate new() and validate() methods
         self.generate_impl(&mut output, &struct_name, class, schema, options, indent)?;
 
         // Generate builder if requested
         if options.get_custom("generate_builder") == Some("true") {
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_builder(&mut output, &struct_name, class, schema, options, indent)?;
         }
 
@@ -103,7 +111,7 @@ impl RustGenerator {
                 // Documentation
                 if options.include_docs {
                     if let Some(desc) = &slot.description {
-                        writeln!(output, "{}/// {}", indent.single(), desc).unwrap();
+                        writeln!(output, "{}/// {}", indent.single(), desc).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
@@ -125,7 +133,7 @@ impl RustGenerator {
 
                 // Write attributes
                 for attr in &attrs {
-                    writeln!(output, "{}{}", indent.single(), attr).unwrap();
+                    writeln!(output, "{}{}", indent.single(), attr).map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Field definition
@@ -137,7 +145,7 @@ impl RustGenerator {
                     rust_name,
                     field_type
                 )
-                .unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -154,7 +162,7 @@ impl RustGenerator {
         _options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "impl {} {{", struct_name).unwrap();
+        writeln!(output, "impl {} {{", struct_name).map_err(Self::fmt_error_to_generator_error)?;
 
         // Constructor for required fields only
         let all_slots = collect_all_slots(class, schema)?;
@@ -167,53 +175,53 @@ impl RustGenerator {
             .collect();
 
         if !required_slots.is_empty() {
-            writeln!(output, "{}/// Create a new {} with required fields", indent.single(), struct_name).unwrap();
-            write!(output, "{}pub fn new(", indent.single()).unwrap();
+            writeln!(output, "{}/// Create a new {} with required fields", indent.single(), struct_name).map_err(Self::fmt_error_to_generator_error)?;
+            write!(output, "{}pub fn new(", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
             
             // Parameters
             for (i, slot_name) in required_slots.iter().enumerate() {
                 if let Some(slot) = schema.slots.get(*slot_name) {
                     let field_name = self.convert_field_name(slot_name);
                     let inner_type = self.get_inner_type(slot, schema)?;
-                    write!(output, "{}: impl Into<{}>", field_name, inner_type).unwrap();
+                    write!(output, "{}: impl Into<{}>", field_name, inner_type).map_err(Self::fmt_error_to_generator_error)?;
                     if i < required_slots.len() - 1 {
-                        write!(output, ", ").unwrap();
+                        write!(output, ", ").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
-            writeln!(output, ") -> Self {{").unwrap();
+            writeln!(output, ") -> Self {{").map_err(Self::fmt_error_to_generator_error)?;
             
-            writeln!(output, "{}Self {{", indent.to_string(2)).unwrap();
+            writeln!(output, "{}Self {{", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
             
             // Initialize all fields
             for slot_name in &all_slots {
                 if let Some(slot) = schema.slots.get(slot_name) {
                     let field_name = self.convert_field_name(slot_name);
                     if required_slots.contains(&slot_name) {
-                        writeln!(output, "{}{}: {}.into(),", indent.to_string(3), field_name, field_name).unwrap();
+                        writeln!(output, "{}{}: {}.into(),", indent.to_string(3), field_name, field_name).map_err(Self::fmt_error_to_generator_error)?;
                     } else {
                         let default_value = self.get_default_value(slot, schema)?;
-                        writeln!(output, "{}{}: {},", indent.to_string(3), field_name, default_value).unwrap();
+                        writeln!(output, "{}{}: {},", indent.to_string(3), field_name, default_value).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
             
-            writeln!(output, "{}}}", indent.to_string(2)).unwrap();
-            writeln!(output, "{}}}", indent.single()).unwrap();
+            writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "{}}}", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         } else {
             // Default constructor if no required fields
-            writeln!(output, "{}/// Create a new {} with default values", indent.single(), struct_name).unwrap();
-            writeln!(output, "{}pub fn new() -> Self {{", indent.single()).unwrap();
-            writeln!(output, "{}Self::default()", indent.to_string(2)).unwrap();
-            writeln!(output, "{}}}", indent.single()).unwrap();
+            writeln!(output, "{}/// Create a new {} with default values", indent.single(), struct_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "{}pub fn new() -> Self {{", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "{}Self::default()", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "{}}}", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Always generate validation method
         self.generate_validation_method(output, struct_name, class, schema, indent)?;
 
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -231,24 +239,24 @@ impl RustGenerator {
         let builder_name = format!("{struct_name}Builder");
 
         // Builder struct
-        writeln!(output, "/// Builder for {struct_name}").unwrap();
-        writeln!(output, "#[derive(Default)]").unwrap();
-        writeln!(output, "pub struct {builder_name} {{").unwrap();
+        writeln!(output, "/// Builder for {struct_name}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "#[derive(Default)]").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "pub struct {builder_name} {{").map_err(Self::fmt_error_to_generator_error)?;
 
         let slots = collect_all_slots(class, schema)?;
         for slot_name in &slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field_name = self.convert_field_name(slot_name);
                 let field_type = self.get_rust_type(slot, schema)?;
-                writeln!(output, "{}{}: {},", indent.single(), field_name, field_type).unwrap();
+                writeln!(output, "{}{}: {},", indent.single(), field_name, field_type).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
-        writeln!(output, "}}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Builder implementation
-        writeln!(output, "impl {builder_name} {{").unwrap();
+        writeln!(output, "impl {builder_name} {{").map_err(Self::fmt_error_to_generator_error)?;
 
         // Builder methods for each field
         for slot_name in &slots {
@@ -257,7 +265,7 @@ impl RustGenerator {
                 let _field_type = self.get_rust_type(slot, schema)?;
                 let inner_type = self.get_inner_type(slot, schema)?;
 
-                writeln!(output, "{}/// Set {}", indent.single(), field_name).unwrap();
+                writeln!(output, "{}/// Set {}", indent.single(), field_name).map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
                     "{}pub fn {}(mut self, value: {}) -> Self {{",
@@ -265,7 +273,7 @@ impl RustGenerator {
                     field_name,
                     inner_type
                 )
-                .unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
 
                 if slot.required == Some(true) {
                     writeln!(
@@ -274,7 +282,7 @@ impl RustGenerator {
                         indent.to_string(2),
                         field_name
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
                     writeln!(
                         output,
@@ -282,25 +290,25 @@ impl RustGenerator {
                         indent.to_string(2),
                         field_name
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
-                writeln!(output, "{}self", indent.to_string(2)).unwrap();
-                writeln!(output, "{}}}", indent.single()).unwrap();
-                writeln!(output).unwrap();
+                writeln!(output, "{}self", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output, "{}}}", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Build method
-        writeln!(output, "{}/// Build the {}", indent.single(), struct_name).unwrap();
+        writeln!(output, "{}/// Build the {}", indent.single(), struct_name).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}pub fn build(self) -> {} {{",
             indent.single(),
             struct_name
         )
-        .unwrap();
-        writeln!(output, "{}{} {{", indent.to_string(2), struct_name).unwrap();
+        .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}{} {{", indent.to_string(2), struct_name).map_err(Self::fmt_error_to_generator_error)?;
 
         for slot_name in &slots {
             if let Some(_slot) = schema.slots.get(slot_name) {
@@ -312,13 +320,13 @@ impl RustGenerator {
                     field_name,
                     field_name
                 )
-                .unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
-        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
-        writeln!(output, "{}}}", indent.single()).unwrap();
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}}}", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -332,10 +340,10 @@ impl RustGenerator {
         schema: &SchemaDefinition,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "{}/// Validate this instance against schema constraints", indent.single()).unwrap();
-        writeln!(output, "{}pub fn validate(&self) -> Result<(), Vec<ValidationError>> {{", indent.single()).unwrap();
-        writeln!(output, "{}let mut errors = Vec::new();", indent.to_string(2)).unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "{}/// Validate this instance against schema constraints", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}pub fn validate(&self) -> Result<(), Vec<ValidationError>> {{", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}let mut errors = Vec::new();", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         let all_slots = collect_all_slots(class, schema)?;
         
@@ -346,54 +354,54 @@ impl RustGenerator {
                 // Required field validation
                 if slot.required.unwrap_or(false) {
                     if slot.range.as_deref() == Some("string") {
-                        writeln!(output, "{}// Required field: {}", indent.to_string(2), slot_name).unwrap();
-                        writeln!(output, "{}if self.{}.is_empty() {{", indent.to_string(2), field_name).unwrap();
+                        writeln!(output, "{}// Required field: {}", indent.to_string(2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}if self.{}.is_empty() {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "{}errors.push(ValidationError::RequiredField {{ field: \"{}\" }});", 
-                            indent.to_string(3), slot_name).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
+                            indent.to_string(3), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 // Pattern validation
                 if let Some(pattern) = &slot.pattern {
-                    writeln!(output).unwrap();
-                    writeln!(output, "{}// Pattern validation for {}", indent.to_string(2), slot_name).unwrap();
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "{}// Pattern validation for {}", indent.to_string(2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
                     
                     if slot.multivalued.unwrap_or(false) {
-                        writeln!(output, "{}for value in &self.{} {{", indent.to_string(2), field_name).unwrap();
+                        writeln!(output, "{}for value in &self.{} {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "{}if !PATTERN_{}.is_match(value) {{", 
-                            indent.to_string(3), field_name.to_uppercase()).unwrap();
-                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(4)).unwrap();
-                        writeln!(output, "{}field: \"{}\",", indent.to_string(5), slot_name).unwrap();
-                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(5), pattern.replace('"', "\\\"")).unwrap();
-                        writeln!(output, "{}}});", indent.to_string(4)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(3)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
+                            indent.to_string(3), field_name.to_uppercase()).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(4)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}field: \"{}\",", indent.to_string(5), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(5), pattern.replace('"', "\\\"")).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}});", indent.to_string(4)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                     } else if slot.required.unwrap_or(false) {
                         writeln!(output, "{}if !PATTERN_{}.is_match(&self.{}) {{", 
-                            indent.to_string(2), field_name.to_uppercase(), field_name).unwrap();
-                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(3)).unwrap();
-                        writeln!(output, "{}field: \"{}\",", indent.to_string(4), slot_name).unwrap();
-                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(4), pattern.replace('"', "\\\"")).unwrap();
-                        writeln!(output, "{}}});", indent.to_string(3)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
+                            indent.to_string(2), field_name.to_uppercase(), field_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}field: \"{}\",", indent.to_string(4), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(4), pattern.replace('"', "\\\"")).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}});", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(output, "{}if let Some(ref value) = self.{} {{", indent.to_string(2), field_name).unwrap();
+                        writeln!(output, "{}if let Some(ref value) = self.{} {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "{}if !PATTERN_{}.is_match(value) {{", 
-                            indent.to_string(3), field_name.to_uppercase()).unwrap();
-                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(4)).unwrap();
-                        writeln!(output, "{}field: \"{}\",", indent.to_string(5), slot_name).unwrap();
-                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(5), pattern.replace('"', "\\\"")).unwrap();
-                        writeln!(output, "{}}});", indent.to_string(4)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(3)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
+                            indent.to_string(3), field_name.to_uppercase()).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}errors.push(ValidationError::PatternMismatch {{", indent.to_string(4)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}field: \"{}\",", indent.to_string(5), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}pattern: \"{}\",", indent.to_string(5), pattern.replace('"', "\\\"")).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}});", indent.to_string(4)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 // Range validation
                 if slot.minimum_value.is_some() || slot.maximum_value.is_some() {
-                    writeln!(output).unwrap();
-                    writeln!(output, "{}// Range validation for {}", indent.to_string(2), slot_name).unwrap();
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "{}// Range validation for {}", indent.to_string(2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
                     
                     let check_var = if slot.required.unwrap_or(false) {
                         field_name.clone()
@@ -402,47 +410,47 @@ impl RustGenerator {
                     };
                     
                     if !slot.required.unwrap_or(false) {
-                        writeln!(output, "{}if let Some(value) = self.{} {{", indent.to_string(2), field_name).unwrap();
+                        writeln!(output, "{}if let Some(value) = self.{} {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     let indent_level = if slot.required.unwrap_or(false) { 2 } else { 3 };
                     
                     if let Some(ref min) = slot.minimum_value {
-                        writeln!(output, "{}if {} < {} {{", indent.to_string(indent_level), check_var, min).unwrap();
-                        writeln!(output, "{}errors.push(ValidationError::RangeViolation {{", indent.to_string(indent_level + 1)).unwrap();
-                        writeln!(output, "{}field: \"{}\",", indent.to_string(indent_level + 2), slot_name).unwrap();
-                        writeln!(output, "{}value: {}.to_string(),", indent.to_string(indent_level + 2), check_var).unwrap();
-                        writeln!(output, "{}min: Some(\"{}\".to_string()),", indent.to_string(indent_level + 2), min).unwrap();
-                        writeln!(output, "{}max: None,", indent.to_string(indent_level + 2)).unwrap();
-                        writeln!(output, "{}}});", indent.to_string(indent_level + 1)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(indent_level)).unwrap();
+                        writeln!(output, "{}if {} < {} {{", indent.to_string(indent_level), check_var, min).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}errors.push(ValidationError::RangeViolation {{", indent.to_string(indent_level + 1)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}field: \"{}\",", indent.to_string(indent_level + 2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}value: {}.to_string(),", indent.to_string(indent_level + 2), check_var).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}min: Some(\"{}\".to_string()),", indent.to_string(indent_level + 2), min).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}max: None,", indent.to_string(indent_level + 2)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}});", indent.to_string(indent_level + 1)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(indent_level)).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     if let Some(ref max) = slot.maximum_value {
-                        writeln!(output, "{}if {} > {} {{", indent.to_string(indent_level), check_var, max).unwrap();
-                        writeln!(output, "{}errors.push(ValidationError::RangeViolation {{", indent.to_string(indent_level + 1)).unwrap();
-                        writeln!(output, "{}field: \"{}\",", indent.to_string(indent_level + 2), slot_name).unwrap();
-                        writeln!(output, "{}value: {}.to_string(),", indent.to_string(indent_level + 2), check_var).unwrap();
-                        writeln!(output, "{}min: None,", indent.to_string(indent_level + 2)).unwrap();
-                        writeln!(output, "{}max: Some(\"{}\".to_string()),", indent.to_string(indent_level + 2), max).unwrap();
-                        writeln!(output, "{}}});", indent.to_string(indent_level + 1)).unwrap();
-                        writeln!(output, "{}}}", indent.to_string(indent_level)).unwrap();
+                        writeln!(output, "{}if {} > {} {{", indent.to_string(indent_level), check_var, max).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}errors.push(ValidationError::RangeViolation {{", indent.to_string(indent_level + 1)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}field: \"{}\",", indent.to_string(indent_level + 2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}value: {}.to_string(),", indent.to_string(indent_level + 2), check_var).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}min: None,", indent.to_string(indent_level + 2)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}max: Some(\"{}\".to_string()),", indent.to_string(indent_level + 2), max).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}});", indent.to_string(indent_level + 1)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "{}}}", indent.to_string(indent_level)).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     if !slot.required.unwrap_or(false) {
-                        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
+                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
 
-        writeln!(output).unwrap();
-        writeln!(output, "{}if errors.is_empty() {{", indent.to_string(2)).unwrap();
-        writeln!(output, "{}Ok(())", indent.to_string(3)).unwrap();
-        writeln!(output, "{}}} else {{", indent.to_string(2)).unwrap();
-        writeln!(output, "{}Err(errors)", indent.to_string(3)).unwrap();
-        writeln!(output, "{}}}", indent.to_string(2)).unwrap();
-        writeln!(output, "{}}}", indent.single()).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}if errors.is_empty() {{", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}Ok(())", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}}} else {{", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}Err(errors)", indent.to_string(3)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}}}", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -584,19 +592,19 @@ impl RustGenerator {
         // Documentation
         if options.include_docs {
             if let Some(desc) = &slot.description {
-                writeln!(&mut output, "/// {}", desc).unwrap();
+                writeln!(&mut output, "/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Derive macros
-        writeln!(&mut output, "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]").unwrap();
+        writeln!(&mut output, "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]").map_err(Self::fmt_error_to_generator_error)?;
         if options.get_custom("derive_serde") != Some("false") {
-            writeln!(&mut output, "#[derive(Serialize, Deserialize)]").unwrap();
-            writeln!(&mut output, "#[serde(rename_all = \"lowercase\")]").unwrap();
+            writeln!(&mut output, "#[derive(Serialize, Deserialize)]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "#[serde(rename_all = \"lowercase\")]").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Enum definition
-        writeln!(&mut output, "pub enum {} {{", enum_name).unwrap();
+        writeln!(&mut output, "pub enum {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate variants and collect mappings for Display/FromStr
         let mut variant_mappings = Vec::new();
@@ -608,14 +616,14 @@ impl RustGenerator {
                     variant_mappings.push((variant_name.clone(), text.clone()));
                     
                     if &variant_name != text {
-                        writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).unwrap();
+                        writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).map_err(Self::fmt_error_to_generator_error)?;
                     }
-                    writeln!(&mut output, "    {},", variant_name).unwrap();
+                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, description, .. } => {
                     if options.include_docs {
                         if let Some(desc) = description {
-                            writeln!(&mut output, "    /// {}", desc).unwrap();
+                            writeln!(&mut output, "    /// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                     
@@ -623,45 +631,45 @@ impl RustGenerator {
                     variant_mappings.push((variant_name.clone(), text.clone()));
                     
                     if &variant_name != text {
-                        writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).unwrap();
+                        writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).map_err(Self::fmt_error_to_generator_error)?;
                     }
-                    writeln!(&mut output, "    {},", variant_name).unwrap();
+                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
         
-        writeln!(&mut output, "}}").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate Display implementation
-        writeln!(&mut output, "impl std::fmt::Display for {} {{", enum_name).unwrap();
-        writeln!(&mut output, "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{").unwrap();
-        writeln!(&mut output, "        match self {{").unwrap();
+        writeln!(&mut output, "impl std::fmt::Display for {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        match self {{").map_err(Self::fmt_error_to_generator_error)?;
         
         for (variant, text) in &variant_mappings {
-            writeln!(&mut output, "            {}::{} => write!(f, \"{}\"),", enum_name, variant, text).unwrap();
+            writeln!(&mut output, "            {}::{} => write!(f, \"{}\"),", enum_name, variant, text).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "        }}").unwrap();
-        writeln!(&mut output, "    }}").unwrap();
-        writeln!(&mut output, "}}").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "        }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate FromStr implementation
-        writeln!(&mut output, "impl std::str::FromStr for {} {{", enum_name).unwrap();
-        writeln!(&mut output, "    type Err = String;").unwrap();
-        writeln!(&mut output).unwrap();
-        writeln!(&mut output, "    fn from_str(s: &str) -> Result<Self, Self::Err> {{").unwrap();
-        writeln!(&mut output, "        match s {{").unwrap();
+        writeln!(&mut output, "impl std::str::FromStr for {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    type Err = String;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    fn from_str(s: &str) -> Result<Self, Self::Err> {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        match s {{").map_err(Self::fmt_error_to_generator_error)?;
         
         for (variant, text) in &variant_mappings {
-            writeln!(&mut output, "            \"{}\" => Ok({}::{}),", text, enum_name, variant).unwrap();
+            writeln!(&mut output, "            \"{}\" => Ok({}::{}),", text, enum_name, variant).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "            _ => Err(format!(\"Unknown {}: {{}}\", s)),", slot_name).unwrap();
-        writeln!(&mut output, "        }}").unwrap();
-        writeln!(&mut output, "    }}").unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "            _ => Err(format!(\"Unknown {}: {{}}\", s)),", slot_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -711,16 +719,16 @@ impl Generator for RustGenerator {
                 &schema.name
             }
         )
-        .unwrap();
+        .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(desc) = &schema.description {
-            writeln!(&mut main_output, "//! {desc}").unwrap();
+            writeln!(&mut main_output, "//! {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut main_output, "//!").unwrap();
-        writeln!(&mut main_output, "//! Generated by LinkML Rust Generator").unwrap();
-        writeln!(&mut main_output).unwrap();
+        writeln!(&mut main_output, "//!").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut main_output, "//! Generated by LinkML Rust Generator").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Imports
-        writeln!(&mut main_output, "use serde::{{Deserialize, Serialize}};").unwrap();
+        writeln!(&mut main_output, "use serde::{{Deserialize, Serialize}};").map_err(Self::fmt_error_to_generator_error)?;
         
         // Check if we need chrono imports
         let needs_chrono = schema.slots.values().any(|slot| {
@@ -728,18 +736,18 @@ impl Generator for RustGenerator {
         });
         
         if needs_chrono {
-            writeln!(&mut main_output, "use chrono::{{DateTime, NaiveDate, NaiveTime, Utc}};").unwrap();
+            writeln!(&mut main_output, "use chrono::{{DateTime, NaiveDate, NaiveTime, Utc}};").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Check if we need regex imports
         let needs_regex = schema.slots.values().any(|slot| slot.pattern.is_some());
         
         if needs_regex {
-            writeln!(&mut main_output, "use once_cell::sync::Lazy;").unwrap();
-            writeln!(&mut main_output, "use regex::Regex;").unwrap();
+            writeln!(&mut main_output, "use once_cell::sync::Lazy;").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "use regex::Regex;").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut main_output).unwrap();
+        writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate validation error type first if needed
         let needs_validation = schema.slots.values().any(|slot| {
@@ -748,27 +756,27 @@ impl Generator for RustGenerator {
         });
         
         if needs_validation {
-            writeln!(&mut main_output, "/// Validation errors for this schema").unwrap();
-            writeln!(&mut main_output, "#[derive(Debug, thiserror::Error)]").unwrap();
-            writeln!(&mut main_output, "pub enum ValidationError {{").unwrap();
-            writeln!(&mut main_output, "    #[error(\"Required field missing: {{field}}\")]").unwrap();
-            writeln!(&mut main_output, "    RequiredField {{ field: &'static str }},").unwrap();
-            writeln!(&mut main_output).unwrap();
-            writeln!(&mut main_output, "    #[error(\"Field '{{field}}' does not match pattern: {{pattern}}\")]").unwrap();
-            writeln!(&mut main_output, "    PatternMismatch {{").unwrap();
-            writeln!(&mut main_output, "        field: &'static str,").unwrap();
-            writeln!(&mut main_output, "        pattern: &'static str,").unwrap();
-            writeln!(&mut main_output, "    }},").unwrap();
-            writeln!(&mut main_output).unwrap();
-            writeln!(&mut main_output, "    #[error(\"Field '{{field}}' value {{value}} is outside range [{{min:?}}, {{max:?}}]\")]").unwrap();
-            writeln!(&mut main_output, "    RangeViolation {{").unwrap();
-            writeln!(&mut main_output, "        field: &'static str,").unwrap();
-            writeln!(&mut main_output, "        value: String,").unwrap();
-            writeln!(&mut main_output, "        min: Option<String>,").unwrap();
-            writeln!(&mut main_output, "        max: Option<String>,").unwrap();
-            writeln!(&mut main_output, "    }},").unwrap();
-            writeln!(&mut main_output, "}}").unwrap();
-            writeln!(&mut main_output).unwrap();
+            writeln!(&mut main_output, "/// Validation errors for this schema").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "#[derive(Debug, thiserror::Error)]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "pub enum ValidationError {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    #[error(\"Required field missing: {{field}}\")]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    RequiredField {{ field: &'static str }},").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    #[error(\"Field '{{field}}' does not match pattern: {{pattern}}\")]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    PatternMismatch {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        field: &'static str,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        pattern: &'static str,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    }},").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    #[error(\"Field '{{field}}' value {{value}} is outside range [{{min:?}}, {{max:?}}]\")]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    RangeViolation {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        field: &'static str,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        value: String,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        min: Option<String>,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "        max: Option<String>,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "    }},").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate pattern constants
@@ -777,16 +785,16 @@ impl Generator for RustGenerator {
             .collect();
             
         if !slots_with_patterns.is_empty() {
-            writeln!(&mut main_output, "// Validation patterns").unwrap();
+            writeln!(&mut main_output, "// Validation patterns").map_err(Self::fmt_error_to_generator_error)?;
             for (slot_name, slot) in &slots_with_patterns {
                 if let Some(ref pattern) = slot.pattern {
                     let const_name = format!("PATTERN_{}", slot_name.to_uppercase().replace('-', "_"));
-                    writeln!(&mut main_output, "static {}: Lazy<Regex> = Lazy::new(|| {{", const_name).unwrap();
-                    writeln!(&mut main_output, "    Regex::new(r\"{}\").expect(\"Invalid regex\")", pattern).unwrap();
-                    writeln!(&mut main_output, "}});").unwrap();
+                    writeln!(&mut main_output, "static {}: Lazy<Regex> = Lazy::new(|| {{", const_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut main_output, "    Regex::new(r\"{}\").expect(\"Invalid regex\")", pattern).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut main_output, "}});").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-            writeln!(&mut main_output).unwrap();
+            writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate enums from slots with permissible values
@@ -794,7 +802,7 @@ impl Generator for RustGenerator {
             if !slot.permissible_values.is_empty() {
                 let enum_output = self.generate_enum_from_slot(slot_name, slot, options)?;
                 main_output.push_str(&enum_output);
-                writeln!(&mut main_output).unwrap();
+                writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -804,7 +812,7 @@ impl Generator for RustGenerator {
                 let class_output =
                     self.generate_class_rust(class_name, class, schema, options, indent)?;
                 main_output.push_str(&class_output);
-                writeln!(&mut main_output).unwrap();
+                writeln!(&mut main_output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -964,31 +972,31 @@ impl RustGenerator {
     ) -> GeneratorResult<GeneratedOutput> {
         let mut output = String::new();
 
-        writeln!(&mut output, "#[cfg(test)]").unwrap();
-        writeln!(&mut output, "mod tests {{").unwrap();
-        writeln!(&mut output, "    use super::*;").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "#[cfg(test)]").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "mod tests {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    use super::*;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate basic tests for each class
         if !schema.classes.is_empty() {
             for (class_name, _class) in &schema.classes {
                 let struct_name = self.convert_identifier(class_name);
 
-                writeln!(&mut output, "    #[test]").unwrap();
+                writeln!(&mut output, "    #[test]").map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     &mut output,
                     "    fn test_{}_creation() {{",
                     struct_name.to_lowercase()
                 )
-                .unwrap();
-                writeln!(&mut output, "        let instance = {struct_name}::new();").unwrap();
-                writeln!(&mut output, "        // Add assertions here").unwrap();
-                writeln!(&mut output, "    }}").unwrap();
-                writeln!(&mut output).unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        let instance = {struct_name}::new();").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        // Add assertions here").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         let filename = format!(
             "{}_tests.rs",
@@ -1070,7 +1078,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), person_class);
 
         let options = GeneratorOptions::new().with_docs(true);
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
 
         assert_eq!(outputs.len(), 1);
         let output = &outputs[0].content;

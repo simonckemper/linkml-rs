@@ -109,8 +109,8 @@ impl ExpressionCacheV2 {
         let key = intern(expression);
         let now = Instant::now();
         
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         // Check if we need to evict
         if cache.len() >= self.capacity {
@@ -155,8 +155,8 @@ impl ExpressionCacheV2 {
     
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         cache.clear();
         *stats = CacheStats::default();
@@ -164,13 +164,13 @@ impl ExpressionCacheV2 {
     
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().unwrap().clone()
+        self.stats.read().expect("stats lock poisoned").clone()
     }
     
     /// Clean up old entries (optimized version)
     pub fn cleanup(&self) {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         let now = Instant::now();
         
@@ -229,7 +229,10 @@ impl GlobalExpressionCacheV2 {
         if let Ok(counts) = self.access_counts.read() {
             if let Some(&count) = counts.get(&key) {
                 if count >= self.hot_threshold {
-                    return Ok(self.hot.get_or_compute(&key, || compute().unwrap()));
+                    return match compute() {
+                        Ok(parsed) => Ok(self.hot.get_or_compute(&key, || parsed)),
+                        Err(e) => Err(e),
+                    };
                 }
             }
         }
@@ -248,7 +251,7 @@ impl GlobalExpressionCacheV2 {
     pub fn clear(&mut self) {
         self.primary.clear();
         self.hot.clear();
-        self.access_counts.write().unwrap().clear();
+        self.access_counts.write().expect("access_counts lock poisoned").clear();
     }
 }
 
@@ -279,7 +282,7 @@ impl ThreadSafeGlobalCache {
     {
         self.inner
             .write()
-            .unwrap()
+            .expect("inner cache lock poisoned")
             .get_or_compute(expression, compute)
     }
 }

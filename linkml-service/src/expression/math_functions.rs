@@ -5,6 +5,15 @@
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
 
+/// Convert f64 to serde_json::Number, returning error for non-finite values
+fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
+    serde_json::Number::from_f64(val)
+        .ok_or_else(|| FunctionError::invalid_result(
+            function_name,
+            "result is not a finite number (NaN or infinity)"
+        ))
+}
+
 /// abs() - Absolute value
 pub struct AbsFunction;
 
@@ -24,7 +33,7 @@ impl BuiltinFunction for AbsFunction {
         match &args[0] {
             Value::Number(n) => {
                 let val = n.as_f64().unwrap_or(0.0);
-                Ok(Value::Number(serde_json::Number::from_f64(val.abs()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.abs(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -59,7 +68,7 @@ impl BuiltinFunction for SqrtFunction {
                         "cannot take square root of negative number",
                     ));
                 }
-                Ok(Value::Number(serde_json::Number::from_f64(val.sqrt()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.sqrt(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -101,7 +110,7 @@ impl BuiltinFunction for PowFunction {
             )),
         };
         
-        Ok(Value::Number(serde_json::Number::from_f64(base.powf(exponent)).unwrap()))
+        Ok(Value::Number(f64_to_number(base.powf(exponent), self.name())?))
     }
 }
 
@@ -124,7 +133,7 @@ impl BuiltinFunction for SinFunction {
         match &args[0] {
             Value::Number(n) => {
                 let val = n.as_f64().unwrap_or(0.0);
-                Ok(Value::Number(serde_json::Number::from_f64(val.sin()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.sin(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -153,7 +162,7 @@ impl BuiltinFunction for CosFunction {
         match &args[0] {
             Value::Number(n) => {
                 let val = n.as_f64().unwrap_or(0.0);
-                Ok(Value::Number(serde_json::Number::from_f64(val.cos()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.cos(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -182,7 +191,7 @@ impl BuiltinFunction for TanFunction {
         match &args[0] {
             Value::Number(n) => {
                 let val = n.as_f64().unwrap_or(0.0);
-                Ok(Value::Number(serde_json::Number::from_f64(val.tan()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.tan(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -246,7 +255,7 @@ impl BuiltinFunction for LogFunction {
             val.ln()
         };
         
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(Value::Number(f64_to_number(result, self.name())?))
     }
 }
 
@@ -269,7 +278,7 @@ impl BuiltinFunction for ExpFunction {
         match &args[0] {
             Value::Number(n) => {
                 let val = n.as_f64().unwrap_or(0.0);
-                Ok(Value::Number(serde_json::Number::from_f64(val.exp()).unwrap()))
+                Ok(Value::Number(f64_to_number(val.exp(), self.name())?))
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
@@ -378,7 +387,7 @@ impl BuiltinFunction for RoundFunction {
             val.round()
         };
         
-        Ok(Value::Number(serde_json::Number::from_f64(result).unwrap()))
+        Ok(Value::Number(f64_to_number(result, self.name())?))
     }
 }
 
@@ -421,7 +430,7 @@ impl BuiltinFunction for ModFunction {
             ));
         }
         
-        Ok(Value::Number(serde_json::Number::from_f64(dividend % divisor).unwrap()))
+        Ok(Value::Number(f64_to_number(dividend % divisor, self.name())?))
     }
 }
 

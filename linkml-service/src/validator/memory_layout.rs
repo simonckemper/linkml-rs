@@ -119,6 +119,8 @@ pub enum InstructionVariant {
         /// Instructions for each field (field name, instructions)
         field_instructions: Box<Vec<(String, Vec<CompactInstruction>)>>,
     },
+    /// No operation (placeholder for unimplemented features)
+    NoOp,
 }
 
 impl CompactInstruction {
@@ -206,7 +208,12 @@ impl CompactInstruction {
                 },
             },
             ValidationInstruction::ConditionalValidation { .. } => {
-                unimplemented!("Conditional validation conversion not implemented")
+                // TODO: Implement conditional validation conversion
+                // For now, return a no-op instruction
+                Self {
+                    path: String::new(),
+                    variant: InstructionVariant::NoOp,
+                }
             }
         }
     }

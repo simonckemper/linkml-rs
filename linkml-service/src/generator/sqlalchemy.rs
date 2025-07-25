@@ -485,7 +485,7 @@ impl SQLAlchemyGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("lowercase char should exist"));
             prev_upper = ch.is_uppercase();
         }
         
@@ -664,7 +664,7 @@ mod tests {
         let config = SQLAlchemyGeneratorConfig::default();
         let generator = SQLAlchemyGenerator::new(config);
         
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate SQLAlchemy models");
         
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));

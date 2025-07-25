@@ -437,13 +437,13 @@ mod tests {
 
         let options = GeneratorOptions::new().set_custom("pretty_print", "true");
 
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.expect("should generate JSON schema");
 
         assert_eq!(outputs.len(), 1);
         let json_content = &outputs[0].content;
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(json_content).unwrap();
+        let parsed: JsonValue = serde_json::from_str(json_content).expect("should parse as valid JSON");
 
         // Check basic structure
         assert_eq!(parsed["$schema"], "http://json-schema.org/draft-07/schema#");
@@ -456,7 +456,7 @@ mod tests {
 
         // Check enum values
         let status_enum = &parsed["definitions"]["Status"]["enum"];
-        assert!(status_enum.as_array().unwrap().contains(&json!("ACTIVE")));
-        assert!(status_enum.as_array().unwrap().contains(&json!("INACTIVE")));
+        assert!(status_enum.as_array().expect("enum should be array").contains(&json!("ACTIVE")));
+        assert!(status_enum.as_array().expect("enum should be array").contains(&json!("INACTIVE")));
     }
 }

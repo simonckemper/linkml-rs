@@ -315,7 +315,7 @@ mod tests {
         let schema = create_test_schema();
         let mut resolver = RuleInheritanceResolver::new(&schema);
         
-        let chain = resolver.get_inheritance_chain("Derived").unwrap();
+        let chain = resolver.get_inheritance_chain("Derived").expect("should get inheritance chain");
         assert_eq!(chain.len(), 2);
         assert_eq!(chain[0], "Derived");
         assert_eq!(chain[1], "Base");
@@ -326,7 +326,7 @@ mod tests {
         let schema = create_test_schema();
         let mut resolver = RuleInheritanceResolver::new(&schema);
         
-        let rules = resolver.get_all_rules("Derived").unwrap();
+        let rules = resolver.get_all_rules("Derived").expect("should get all rules");
         assert_eq!(rules.len(), 2);
         
         // Check that derived rule comes first

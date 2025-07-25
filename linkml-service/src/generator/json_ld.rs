@@ -420,7 +420,7 @@ impl JsonLdGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("lowercase char should exist"));
             prev_upper = ch.is_uppercase();
         }
         

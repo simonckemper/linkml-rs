@@ -331,7 +331,7 @@ impl InjectionPrevention {
         ];
 
         for pattern in &dangerous_patterns {
-            let re = regex::Regex::new(pattern).unwrap();
+            let re = regex::Regex::new(pattern).expect("SQL injection pattern should be valid regex");
             if re.is_match(query) {
                 return Err(LinkMLError::service(
                     "Query contains potential SQL injection pattern",
@@ -430,12 +430,12 @@ impl SensitiveDataHandler {
     #[must_use]
     pub fn new(config: SecurityConfig) -> Self {
         let patterns = vec![
-            regex::Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+").unwrap(),
-            regex::Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+").unwrap(),
-            regex::Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+").unwrap(),
-            regex::Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b").unwrap(),
-            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b").unwrap(), // Credit card
-            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").unwrap(),       // SSN
+            regex::Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+").expect("password pattern regex"),
+            regex::Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+").expect("API key pattern regex"),
+            regex::Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+").expect("secret/token pattern regex"),
+            regex::Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b").expect("email pattern regex"),
+            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b").expect("credit card pattern regex"), // Credit card
+            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").expect("SSN pattern regex"),       // SSN
         ];
 
         Self {
@@ -688,7 +688,7 @@ impl SecurityRateLimiter {
             });
 
         let now = Instant::now();
-        let cutoff = now.checked_sub(entry.window).unwrap();
+        let cutoff = now.checked_sub(entry.window).unwrap_or(now);
 
         // Remove old requests
         entry.requests.retain(|&t| t > cutoff);

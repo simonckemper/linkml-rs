@@ -646,7 +646,7 @@ fn to_snake_case(s: &str) -> String {
         if ch.is_uppercase() && i > 0 && !prev_upper {
             result.push('_');
         }
-        result.push(ch.to_lowercase().next().unwrap());
+        result.push(ch.to_lowercase().next().expect("lowercase char should exist"));
         prev_upper = ch.is_uppercase();
     }
     
@@ -709,9 +709,9 @@ mod tests {
     
     #[test]
     fn test_json_to_typeql() {
-        assert_eq!(json_value_to_typeql(&Value::String("test".to_string())).unwrap(), "\"test\"");
-        assert_eq!(json_value_to_typeql(&Value::Number(42.into())).unwrap(), "42");
-        assert_eq!(json_value_to_typeql(&Value::Bool(true)).unwrap(), "true");
+        assert_eq!(json_value_to_typeql(&Value::String("test".to_string())).expect("should convert string"), "\"test\"");
+        assert_eq!(json_value_to_typeql(&Value::Number(42.into())).expect("should convert number"), "42");
+        assert_eq!(json_value_to_typeql(&Value::Bool(true)).expect("should convert bool"), "true");
         assert!(json_value_to_typeql(&Value::Null).is_err());
     }
 }

@@ -288,7 +288,7 @@ mod tests {
             "value": 42
         });
         
-        let result = engine.validate_with_class(&data, "TestClass").await.unwrap();
+        let result = engine.validate_with_class(&data, "TestClass").await.expect("should validate");
         assert!(result.valid || !result.valid); // Just check it runs
     }
 

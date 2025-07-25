@@ -277,7 +277,7 @@ impl YamlGenerator {
         
         if self.inline_simple && map.len() == 1 && subset.description.is_some() {
             // Return just the description for simple subsets
-            serde_yaml::Value::String(subset.description.as_ref().unwrap().clone())
+            serde_yaml::Value::String(subset.description.as_ref().expect("description exists after is_some check").clone())
         } else {
             serde_yaml::Value::Mapping(map.into_iter().collect())
         }
@@ -352,7 +352,7 @@ impl YamlGenerator {
         }
         
         if self.inline_simple && map.len() == 1 && pv.description.is_some() {
-            serde_yaml::Value::String(pv.description.as_ref().unwrap().clone())
+            serde_yaml::Value::String(pv.description.as_ref().expect("description exists after is_some check").clone())
         } else if map.is_empty() {
             serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
         } else {

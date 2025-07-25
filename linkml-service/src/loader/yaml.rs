@@ -162,8 +162,10 @@ impl DataDumper for YamlDumper {
                 }
                 
                 // Convert to YAML value
-                let json_str = serde_json::to_string(&Value::Object(obj)).unwrap();
-                serde_yaml::from_str(&json_str).unwrap()
+                let json_str = serde_json::to_string(&Value::Object(obj))
+                    .expect("valid JSON object should serialize");
+                serde_yaml::from_str(&json_str)
+                    .expect("valid JSON should parse as YAML")
             })
             .collect();
         

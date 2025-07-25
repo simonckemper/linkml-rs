@@ -341,7 +341,7 @@ mod tests {
         let schema = create_test_schema();
         let mut composer = SchemaComposer::new(schema);
 
-        let person = composer.resolve_class("Person").unwrap();
+        let person = composer.resolve_class("Person").expect("should resolve Person class");
 
         // Check inherited slots
         assert_eq!(person.effective_slots.len(), 5);

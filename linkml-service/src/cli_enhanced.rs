@@ -676,7 +676,7 @@ impl LinkMLApp {
         let pb = ProgressBar::new_spinner();
         pb.set_style(ProgressStyle::default_spinner()
             .template("{spinner:.green} {msg}")
-            .unwrap());
+            .expect("progress bar template should be valid"));
         pb.set_message("Processing schema...");
         pb.enable_steady_tick(std::time::Duration::from_millis(100));
         
@@ -940,7 +940,7 @@ impl LinkMLApp {
         let pb = ProgressBar::new_spinner();
         pb.set_style(ProgressStyle::default_spinner()
             .template("{spinner:.green} {msg}")
-            .unwrap());
+            .expect("progress bar template should be valid"));
         pb.set_message("Analyzing schema...");
         pb.enable_steady_tick(std::time::Duration::from_millis(100));
         

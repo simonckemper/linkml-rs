@@ -66,7 +66,7 @@ pub struct ExpressionCache {
 impl ExpressionCache {
     /// Create a new expression cache with given capacity
     pub fn new(capacity: usize) -> Self {
-        let capacity = NonZeroUsize::new(capacity.max(1)).unwrap();
+        let capacity = NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -77,7 +77,7 @@ impl ExpressionCache {
     
     /// Create expression cache from LinkML service configuration
     pub fn from_service_config(config: &linkml_core::configuration_v2::ExpressionCacheConfig) -> Self {
-        let capacity = NonZeroUsize::new(config.max_entries.max(1)).unwrap();
+        let capacity = NonZeroUsize::new(config.max_entries.max(1)).expect("max_entries.max(1) is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -100,8 +100,8 @@ impl ExpressionCache {
     
     /// Get an expression from the cache
     pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         if let Some(entry) = cache.get_mut(key) {
             // Check if entry is too old
@@ -129,8 +129,8 @@ impl ExpressionCache {
     
     /// Insert an expression into the cache
     pub fn insert(&self, key: ExpressionKey, ast: Expression, compiled: Option<Arc<CompiledExpression>>) {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         let entry = CachedExpression {
             ast,
@@ -150,8 +150,8 @@ impl ExpressionCache {
     
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         cache.clear();
         stats.entries = 0;
@@ -160,12 +160,12 @@ impl ExpressionCache {
     
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().unwrap().clone()
+        self.stats.read().expect("stats lock poisoned").clone()
     }
     
     /// Get cache hit rate (0.0 to 1.0)
     pub fn hit_rate(&self) -> f64 {
-        let stats = self.stats.read().unwrap();
+        let stats = self.stats.read().expect("stats lock poisoned");
         let total = stats.hits + stats.misses;
         if total == 0 {
             0.0
@@ -176,8 +176,8 @@ impl ExpressionCache {
     
     /// Prune old entries from the cache
     pub fn prune_old_entries(&self) {
-        let mut cache = self.cache.write().unwrap();
-        let mut stats = self.stats.write().unwrap();
+        let mut cache = self.cache.write().expect("cache lock poisoned");
+        let mut stats = self.stats.write().expect("stats lock poisoned");
         
         let now = Instant::now();
         let mut to_remove = Vec::new();
@@ -340,7 +340,7 @@ mod tests {
         cache.insert(key.clone(), ast.clone(), None);
         
         // Cache hit
-        let cached = cache.get(&key).unwrap();
+        let cached = cache.get(&key).expect("cached entry should exist");
         assert_eq!(cache.stats().hits, 1);
         assert_eq!(cached.hit_count, 1);
     }

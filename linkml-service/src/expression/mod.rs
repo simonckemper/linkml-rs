@@ -99,8 +99,8 @@ mod tests {
     fn test_expression_engine_creation() {
         let engine = ExpressionEngine::new();
         // Test that engine can parse and evaluate
-        let expr = engine.parse("1 + 2").unwrap();
-        let result = engine.evaluate_ast(&expr, &HashMap::new()).unwrap();
+        let expr = engine.parse("1 + 2").expect("should parse simple expression");
+        let result = engine.evaluate_ast(&expr, &HashMap::new()).expect("should evaluate simple expression");
         assert_eq!(result, serde_json::json!(3.0));
     }
 }

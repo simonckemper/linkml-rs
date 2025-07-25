@@ -390,7 +390,7 @@ impl<S: LinkMLService> CliApp<S> {
         spinner.set_style(
             ProgressStyle::default_spinner()
                 .template("{spinner:.green} {msg}")
-                .unwrap(),
+                .expect("progress bar template should be valid"),
         );
         spinner.set_message("Loading schema...");
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
@@ -497,12 +497,14 @@ impl<S: LinkMLService> CliApp<S> {
             }
 
             OutputFormat::Json => {
-                let json = serde_json::to_string_pretty(&report).unwrap();
+                let json = serde_json::to_string_pretty(&report)
+                    .expect("validation report should be serializable to JSON");
                 println!("{json}");
             }
 
             OutputFormat::Yaml => {
-                let yaml = serde_yaml::to_string(&report).unwrap();
+                let yaml = serde_yaml::to_string(&report)
+                    .expect("validation report should be serializable to YAML");
                 println!("{yaml}");
             }
 
@@ -678,7 +680,7 @@ impl<S: LinkMLService> CliApp<S> {
                 .template(
                     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
                 )
-                .unwrap()
+                .expect("progress bar template should be valid")
                 .progress_chars("#>-"),
         );
 

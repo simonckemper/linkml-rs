@@ -41,6 +41,21 @@ impl FunctionError {
             message: format!("Invalid argument for function '{}': {}", name, message.into()),
         }
     }
+    
+    pub fn invalid_result(name: &str, message: impl Into<String>) -> Self {
+        Self {
+            message: format!("Invalid result from function '{}': {}", name, message.into()),
+        }
+    }
+}
+
+/// Convert f64 to serde_json::Number, returning error for non-finite values
+fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
+    serde_json::Number::from_f64(val)
+        .ok_or_else(|| FunctionError::invalid_result(
+            function_name,
+            "result is not a finite number (NaN or infinity)"
+        ))
 }
 
 /// Function signature trait
@@ -329,7 +344,7 @@ impl BuiltinFunction for MaxFunction {
         for arg in &args {
             match arg {
                 Value::Number(n) => {
-                    let val = n.as_f64().unwrap();
+                    let val = n.as_f64().unwrap_or(0.0);
                     max_val = Some(max_val.map_or(val, |m| m.max(val)));
                 }
                 _ => {
@@ -342,9 +357,7 @@ impl BuiltinFunction for MaxFunction {
         }
         
         match max_val {
-            Some(val) => Ok(Value::Number(
-                serde_json::Number::from_f64(val).unwrap(),
-            )),
+            Some(val) => Ok(Value::Number(f64_to_number(val, self.name())?)),
             None => Ok(Value::Null),
         }
     }
@@ -371,7 +384,7 @@ impl BuiltinFunction for MinFunction {
         for arg in &args {
             match arg {
                 Value::Number(n) => {
-                    let val = n.as_f64().unwrap();
+                    let val = n.as_f64().unwrap_or(0.0);
                     min_val = Some(min_val.map_or(val, |m| m.min(val)));
                 }
                 _ => {
@@ -384,9 +397,7 @@ impl BuiltinFunction for MinFunction {
         }
         
         match min_val {
-            Some(val) => Ok(Value::Number(
-                serde_json::Number::from_f64(val).unwrap(),
-            )),
+            Some(val) => Ok(Value::Number(f64_to_number(val, self.name())?)),
             None => Ok(Value::Null),
         }
     }
@@ -507,7 +518,7 @@ fn is_truthy(value: &Value) -> bool {
     match value {
         Value::Null => false,
         Value::Bool(b) => *b,
-        Value::Number(n) => n.as_f64().unwrap() != 0.0,
+        Value::Number(n) => n.as_f64().unwrap_or(0.0) != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Array(a) => !a.is_empty(),
         Value::Object(o) => !o.is_empty(),

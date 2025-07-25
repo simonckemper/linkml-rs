@@ -877,8 +877,8 @@ mod tests {
             }
         });
         
-        let extracted = loader.extract_by_path(&json, "data.users").unwrap();
+        let extracted = loader.extract_by_path(&json, "data.users").expect("should extract data.users");
         assert!(extracted.is_array());
-        assert_eq!(extracted.as_array().unwrap().len(), 2);
+        assert_eq!(extracted.as_array().expect("should be array").len(), 2);
     }
 }

@@ -360,11 +360,11 @@ impl SchemaMerge {
             conflicting_values: vec![
                 ConflictValue {
                     schema_index: 0,
-                    value: serde_json::to_value(existing).unwrap(),
+                    value: serde_json::to_value(existing).expect("should serialize existing element"),
                 },
                 ConflictValue {
                     schema_index,
-                    value: serde_json::to_value(new).unwrap(),
+                    value: serde_json::to_value(new).expect("should serialize new element"),
                 },
             ],
             resolution: format!("{:?}", self.options.conflict_resolution),
@@ -486,7 +486,7 @@ mod tests {
         };
         
         let merger = SchemaMerge::new(options);
-        let merged = merger.merge(&[schema1, schema2]).unwrap();
+        let merged = merger.merge(&[schema1, schema2]).expect("should merge schemas");
         
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
@@ -510,7 +510,7 @@ mod tests {
         };
         
         let merger = SchemaMerge::new(options);
-        let merged = merger.merge(&[schema1, schema2]).unwrap();
+        let merged = merger.merge(&[schema1, schema2]).expect("should merge schemas");
         
         assert_eq!(merged.classes.len(), 1);
         assert!(merged.classes.contains_key("Person"));

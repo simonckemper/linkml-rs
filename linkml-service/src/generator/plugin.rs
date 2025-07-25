@@ -286,7 +286,7 @@ mod tests {
         ));
 
         // Register the plugin
-        manager.register_plugin(plugin).await.unwrap();
+        manager.register_plugin(plugin).await.expect("should register plugin");
 
         // Verify plugin is loaded
         assert_eq!(manager.list_plugins().len(), 1);

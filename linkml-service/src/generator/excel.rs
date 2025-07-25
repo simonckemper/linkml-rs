@@ -948,7 +948,7 @@ mod tests {
         let generator = ExcelGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate Excel");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -959,7 +959,7 @@ mod tests {
         
         // Decode and verify it's valid Excel data
         use base64::Engine;
-        let decoded = base64::engine::general_purpose::STANDARD.decode(&output.content).unwrap();
+        let decoded = base64::engine::general_purpose::STANDARD.decode(&output.content).expect("should decode base64");
         // Excel files start with specific magic bytes
         assert!(decoded.starts_with(&[0x50, 0x4B])); // ZIP format
     }

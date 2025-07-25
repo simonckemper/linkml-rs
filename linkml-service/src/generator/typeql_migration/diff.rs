@@ -427,7 +427,7 @@ mod tests {
     #[test]
     fn test_empty_diff() {
         let schema = SchemaDefinition::default();
-        let diff = SchemaDiffer::compare(&schema, &schema).unwrap();
+        let diff = SchemaDiffer::compare(&schema, &schema).expect("should compare schemas");
         assert!(diff.is_empty());
         assert_eq!(diff.change_count(), 0);
     }
@@ -441,7 +441,7 @@ mod tests {
         person_class.description = Some("A person".to_string());
         new_schema.classes.insert("Person".to_string(), person_class);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas");
         assert_eq!(diff.added_types.len(), 1);
         assert_eq!(diff.added_types[0].name, "Person");
     }
@@ -455,7 +455,7 @@ mod tests {
         person_class.description = Some("A person".to_string());
         old_schema.classes.insert("Person".to_string(), person_class);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas");
         assert_eq!(diff.removed_types.len(), 1);
         assert_eq!(diff.removed_types[0].name, "Person");
     }
@@ -473,7 +473,7 @@ mod tests {
         new_class.abstract_ = Some(true);
         new_schema.classes.insert("Person".to_string(), new_class);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas");
         assert_eq!(diff.modified_types.len(), 1);
         assert_eq!(diff.modified_types[0].name, "Person");
         assert!(matches!(

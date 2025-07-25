@@ -165,8 +165,8 @@ mod tests {
     fn test_basic_interning() {
         let interner = StringInterner::with_defaults();
         
-        let s1 = interner.intern("hello").unwrap();
-        let s2 = interner.intern("hello").unwrap();
+        let s1 = interner.intern("hello").expect("should intern string");
+        let s2 = interner.intern("hello").expect("should intern same string");
         
         // Same string should return same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
@@ -191,8 +191,8 @@ mod tests {
     fn test_cache_full() {
         let interner = StringInterner::new(2, 100);
         
-        interner.intern("a").unwrap();
-        interner.intern("b").unwrap();
+        interner.intern("a").expect("should intern first string");
+        interner.intern("b").expect("should intern second string");
         
         match interner.intern("c") {
             Err(InternError::CacheFull { current, max }) => {

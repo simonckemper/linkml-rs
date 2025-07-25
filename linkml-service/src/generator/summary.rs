@@ -726,7 +726,7 @@ mod tests {
         // Test TSV generation
         let config = SummaryGeneratorConfig::default();
         let generator = SummaryGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate summary");
         
         assert!(result.contains("Total Classes\t2"));
         assert!(result.contains("Total Slots\t2"));

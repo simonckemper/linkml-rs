@@ -149,7 +149,7 @@ impl WarmingStrategy for FrequencyBasedStrategy {
         config: &CacheWarmingConfig,
     ) -> Vec<ValidatorCacheKey> {
         let now = Instant::now();
-        let window_start = now.checked_sub(self.window).unwrap();
+        let window_start = now.checked_sub(self.window).unwrap_or(Instant::now());
 
         // Count accesses per key within window
         let access_counts: DashMap<ValidatorCacheKey, u32> = DashMap::new();
@@ -180,7 +180,7 @@ impl WarmingStrategy for FrequencyBasedStrategy {
 
     fn calculate_priority(&self, key: &ValidatorCacheKey, history: &[AccessEntry]) -> f64 {
         let now = Instant::now();
-        let window_start = now.checked_sub(self.window).unwrap();
+        let window_start = now.checked_sub(self.window).unwrap_or(Instant::now());
 
         let access_count: u32 = history
             .iter()
@@ -586,7 +586,7 @@ mod tests {
                     class_name: format!("Class{}", i % 2),
                     options_hash: "opts".to_string(),
                 },
-                timestamp: now.checked_sub(Duration::from_secs(i * 60)).unwrap(),
+                timestamp: now.checked_sub(Duration::from_secs(i * 60)).unwrap_or(now),
                 count: i as u32 + 1,
             });
         }

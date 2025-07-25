@@ -1018,7 +1018,7 @@ mod tests {
         // Test Python generation
         let config = NamespaceManagerGeneratorConfig::default();
         let generator = NamespaceManagerGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate namespace manager");
         
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));

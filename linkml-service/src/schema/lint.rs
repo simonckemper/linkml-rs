@@ -114,7 +114,7 @@ impl LintOptions {
         // Store rule configurations
         for (key, value) in config {
             if key.starts_with("rule.") {
-                let rule_name = key.strip_prefix("rule.").unwrap();
+                let rule_name = key.strip_prefix("rule.").expect("just checked starts_with");
                 if let Some(rule_config) = value.as_object() {
                     let mut config_map = HashMap::new();
                     for (k, v) in rule_config {
@@ -270,7 +270,7 @@ impl LintRule for NamingConventionRule {
         let mut issues = Vec::new();
         
         // Check class names (should be PascalCase)
-        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").unwrap();
+        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").expect("valid regex pattern");
         for class_name in schema.classes.keys() {
             if !pascal_case.is_match(class_name) {
                 issues.push(LintIssue {
@@ -288,7 +288,7 @@ impl LintRule for NamingConventionRule {
         }
         
         // Check slot names (should be snake_case)
-        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").unwrap();
+        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").expect("valid regex pattern");
         for slot_name in schema.slots.keys() {
             if !snake_case.is_match(slot_name) {
                 issues.push(LintIssue {
@@ -693,7 +693,7 @@ fn to_snake_case(s: &str) -> String {
         if ch.is_uppercase() && i > 0 && !prev_upper {
             result.push('_');
         }
-        result.push(ch.to_lowercase().next().unwrap());
+        result.push(ch.to_lowercase().next().expect("to_lowercase() always produces at least one char"));
         prev_upper = ch.is_uppercase();
     }
     

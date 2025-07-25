@@ -10,6 +10,15 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// Convert f64 to serde_json::Number, returning error for non-finite values
+fn f64_to_number(val: f64) -> Result<serde_json::Number, EvaluationError> {
+    serde_json::Number::from_f64(val)
+        .ok_or_else(|| EvaluationError::InvalidType {
+            expected: "finite number".to_string(),
+            found: "NaN or infinity".to_string(),
+        })
+}
+
 /// Stack-based virtual machine for expression evaluation
 pub struct VirtualMachine {
     /// Function registry for function calls
@@ -239,7 +248,7 @@ impl VirtualMachine {
             (Value::Number(n1), Value::Number(n2)) => {
                 let v1 = n1.as_f64().unwrap_or(0.0);
                 let v2 = n2.as_f64().unwrap_or(0.0);
-                Value::Number(serde_json::Number::from_f64(v1 + v2).unwrap())
+                Value::Number(f64_to_number(v1 + v2)?)
             }
             (Value::String(s1), Value::String(s2)) => {
                 Value::String(format!("{}{}", s1, s2))
@@ -264,7 +273,7 @@ impl VirtualMachine {
             (Value::Number(n1), Value::Number(n2)) => {
                 let v1 = n1.as_f64().unwrap_or(0.0);
                 let v2 = n2.as_f64().unwrap_or(0.0);
-                state.push(Value::Number(serde_json::Number::from_f64(v1 - v2).unwrap()))
+                state.push(Value::Number(f64_to_number(v1 - v2)?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Invalid operands for subtraction")
@@ -284,7 +293,7 @@ impl VirtualMachine {
             (Value::Number(n1), Value::Number(n2)) => {
                 let v1 = n1.as_f64().unwrap_or(0.0);
                 let v2 = n2.as_f64().unwrap_or(0.0);
-                state.push(Value::Number(serde_json::Number::from_f64(v1 * v2).unwrap()))
+                state.push(Value::Number(f64_to_number(v1 * v2)?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Invalid operands for multiplication")
@@ -311,7 +320,7 @@ impl VirtualMachine {
                     ));
                 }
                 
-                state.push(Value::Number(serde_json::Number::from_f64(v1 / v2).unwrap()))
+                state.push(Value::Number(f64_to_number(v1 / v2)?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Invalid operands for division")
@@ -338,7 +347,7 @@ impl VirtualMachine {
                     ));
                 }
                 
-                state.push(Value::Number(serde_json::Number::from_f64(v1 % v2).unwrap()))
+                state.push(Value::Number(f64_to_number(v1 % v2)?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Invalid operands for modulo")
@@ -358,7 +367,7 @@ impl VirtualMachine {
             (Value::Number(n1), Value::Number(n2)) => {
                 let v1 = n1.as_f64().unwrap_or(0.0);
                 let v2 = n2.as_f64().unwrap_or(0.0);
-                state.push(Value::Number(serde_json::Number::from_f64(v1.powf(v2)).unwrap()))
+                state.push(Value::Number(f64_to_number(v1.powf(v2))?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Invalid operands for power")
@@ -508,7 +517,7 @@ impl VirtualMachine {
         match val {
             Value::Number(n) => {
                 let v = n.as_f64().unwrap_or(0.0);
-                state.push(Value::Number(serde_json::Number::from_f64(-v).unwrap()))
+                state.push(Value::Number(f64_to_number(-v)?))
             }
             _ => Err(ExpressionError::Evaluation(
                 EvaluationError::new("Cannot negate non-numeric value")

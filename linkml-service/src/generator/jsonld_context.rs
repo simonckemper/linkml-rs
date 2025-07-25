@@ -391,7 +391,7 @@ mod tests {
         };
         let generator = JsonLdContextGenerator::new(config);
         
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate JSON-LD context");
         
         // Verify key elements
         assert!(result.contains("@context"));

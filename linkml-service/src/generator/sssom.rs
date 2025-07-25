@@ -505,7 +505,7 @@ mod tests {
         // Test TSV generation
         let config = SssomGeneratorConfig::default();
         let generator = SssomGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).unwrap();
+        let result = generator.generate(&Schema(schema)).expect("should generate SSSOM");
         
         assert!(result.contains("subject_id\tsubject_label\tpredicate_id"));
         assert!(result.contains("skos:exactMatch"));

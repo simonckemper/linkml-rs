@@ -212,15 +212,15 @@ mod tests {
                     "age": 25,
                     "active": true,
                     "description": "A person named Alice.\nShe is 25 years old."
-                }"#).unwrap(),
+                }"#).expect("should parse JSON"),
             },
         ];
         
         let schema = SchemaDefinition::default();
         let mut dumper = XmlDumper::new(true);
-        let result = dumper.dump(&instances, &schema).await.unwrap();
+        let result = dumper.dump(&instances, &schema).await.expect("should dump XML");
         
-        let xml_str = String::from_utf8(result).unwrap();
+        let xml_str = String::from_utf8(result).expect("should be valid UTF-8");
         assert!(xml_str.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assert!(xml_str.contains("<data>"));
         assert!(xml_str.contains("<Person id=\"person1\">"));
