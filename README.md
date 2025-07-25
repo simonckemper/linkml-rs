@@ -33,7 +33,7 @@ A high-performance Rust implementation of the [LinkML](https://linkml.io) (Linke
 
 ## 📦 Installation
 
-### NOTE: these crates consume depenencies for task management, event sourcing and other core services that I have not yet published publicly on Github, I will publicly release them soon 
+### NOTE: these crates consume dependencies for task management, error handling, event sourcing and other core services that I have not yet published publicly on Github, I do so soon.
 
 Add to your `Cargo.toml`:
 
