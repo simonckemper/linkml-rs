@@ -251,7 +251,7 @@ mod tests {
             ..Default::default()
         };
         
-        CompiledRule::compile(rule, "Person".to_string()).unwrap()
+        CompiledRule::compile(rule, "Person".to_string()).expect("should compile test rule")
     }
     
     #[test]
@@ -270,7 +270,7 @@ mod tests {
             &mut validation_ctx,
         );
         
-        let issues = executor.execute_single_rule(&rule, &mut context).unwrap();
+        let issues = executor.execute_single_rule(&rule, &mut context).expect("should execute rule");
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("required"));
         
@@ -286,7 +286,7 @@ mod tests {
             &mut validation_ctx2,
         );
         
-        let issues2 = executor.execute_single_rule(&rule, &mut context2).unwrap();
+        let issues2 = executor.execute_single_rule(&rule, &mut context2).expect("should execute rule for adult with ID");
         assert!(issues2.is_empty());
         
         // Test with minor (rule shouldn't apply)
@@ -300,7 +300,7 @@ mod tests {
             &mut validation_ctx3,
         );
         
-        let issues3 = executor.execute_single_rule(&rule, &mut context3).unwrap();
+        let issues3 = executor.execute_single_rule(&rule, &mut context3).expect("should execute rule for minor");
         assert!(issues3.is_empty());
     }
     
@@ -320,7 +320,7 @@ mod tests {
         );
         
         // Test different strategies
-        let sequential_issues = executor.execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential).unwrap();
+        let sequential_issues = executor.execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential).expect("should execute rules sequentially");
         assert_eq!(sequential_issues.len(), 1);
         
         let mut validation_ctx2 = ValidationContext::new(Default::default());
@@ -332,7 +332,7 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx2,
         );
-        let fail_fast_issues = executor.execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast).unwrap();
+        let fail_fast_issues = executor.execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast).expect("should execute rules with fail-fast");
         assert_eq!(fail_fast_issues.len(), 1);
     }
 }

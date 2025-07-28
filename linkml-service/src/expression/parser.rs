@@ -696,13 +696,13 @@ mod tests {
     fn test_parse_literals() {
         let parser = Parser::new();
         
-        assert_eq!(parser.parse("null").unwrap(), Expression::Null);
-        assert_eq!(parser.parse("true").unwrap(), Expression::Boolean(true));
-        assert_eq!(parser.parse("false").unwrap(), Expression::Boolean(false));
-        assert_eq!(parser.parse("42").unwrap(), Expression::Number(42.0));
-        assert_eq!(parser.parse("3.14").unwrap(), Expression::Number(3.14));
+        assert_eq!(parser.parse("null").expect("should parse null"), Expression::Null);
+        assert_eq!(parser.parse("true").expect("should parse true"), Expression::Boolean(true));
+        assert_eq!(parser.parse("false").expect("should parse false"), Expression::Boolean(false));
+        assert_eq!(parser.parse("42").expect("should parse integer"), Expression::Number(42.0));
+        assert_eq!(parser.parse("3.14").expect("should parse float"), Expression::Number(3.14));
         assert_eq!(
-            parser.parse("\"hello\"").unwrap(),
+            parser.parse("\"hello\"").expect("should parse string"),
             Expression::String("hello".to_string())
         );
     }
@@ -712,11 +712,11 @@ mod tests {
         let parser = Parser::new();
         
         assert_eq!(
-            parser.parse("{x}").unwrap(),
+            parser.parse("{x}").expect("should parse variable"),
             Expression::Variable("x".to_string())
         );
         assert_eq!(
-            parser.parse("{user_name}").unwrap(),
+            parser.parse("{user_name}").expect("should parse variable with underscore"),
             Expression::Variable("user_name".to_string())
         );
     }
@@ -725,7 +725,7 @@ mod tests {
     fn test_parse_arithmetic() {
         let parser = Parser::new();
         
-        let expr = parser.parse("1 + 2").unwrap();
+        let expr = parser.parse("1 + 2").expect("should parse binary expression");
         assert_eq!(
             expr,
             Expression::Add(
@@ -734,7 +734,7 @@ mod tests {
             )
         );
         
-        let expr = parser.parse("3 * 4 + 5").unwrap();
+        let expr = parser.parse("3 * 4 + 5").expect("should parse expression with precedence");
         assert_eq!(
             expr,
             Expression::Add(
@@ -751,7 +751,7 @@ mod tests {
     fn test_parse_comparison() {
         let parser = Parser::new();
         
-        let expr = parser.parse("{x} > 5").unwrap();
+        let expr = parser.parse("{x} > 5").expect("should parse comparison");
         assert_eq!(
             expr,
             Expression::Greater(
@@ -760,7 +760,7 @@ mod tests {
             )
         );
         
-        let expr = parser.parse("{age} >= 18 and {age} < 65").unwrap();
+        let expr = parser.parse("{age} >= 18 and {age} < 65").expect("should parse logical expression");
         assert_eq!(
             expr,
             Expression::And(
@@ -780,7 +780,7 @@ mod tests {
     fn test_parse_function_call() {
         let parser = Parser::new();
         
-        let expr = parser.parse("len({items})").unwrap();
+        let expr = parser.parse("len({items})").expect("should parse function call");
         assert_eq!(
             expr,
             Expression::FunctionCall {
@@ -789,7 +789,7 @@ mod tests {
             }
         );
         
-        let expr = parser.parse("max(1, 2, 3)").unwrap();
+        let expr = parser.parse("max(1, 2, 3)").expect("should parse function with multiple args");
         assert_eq!(
             expr,
             Expression::FunctionCall {

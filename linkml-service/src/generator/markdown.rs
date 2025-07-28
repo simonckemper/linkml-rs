@@ -20,6 +20,11 @@ pub struct MarkdownGenerator {
 }
 
 impl MarkdownGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
+        super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new Markdown generator
     #[must_use]
     pub fn new() -> Self {
@@ -52,147 +57,147 @@ impl MarkdownGenerator {
     }
 
     /// Generate the schema header
-    fn generate_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_header(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "# {}", if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "# {}", if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(title) = &schema.title {
-            writeln!(&mut output, "**Title**: {}", title).unwrap();
+            writeln!(&mut output, "**Title**: {}", title).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(description) = &schema.description {
-            writeln!(&mut output, "\n**Description**: {}", description).unwrap();
+            writeln!(&mut output, "\n**Description**: {}", description).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "\n**Version**: {}", version).unwrap();
+            writeln!(&mut output, "\n**Version**: {}", version).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "\n---\n").unwrap();
+        writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
 
     /// Generate table of contents
-    fn generate_toc(&self, schema: &SchemaDefinition) -> String {
+    fn generate_toc(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "## Table of Contents\n").unwrap();
-        writeln!(&mut output, "1. [Overview](#overview)").unwrap();
+        writeln!(&mut output, "## Table of Contents\n").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "1. [Overview](#overview)").map_err(Self::fmt_error_to_generator_error)?;
         
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "2. [Classes](#classes)").unwrap();
+            writeln!(&mut output, "2. [Classes](#classes)").map_err(Self::fmt_error_to_generator_error)?;
             for (i, class_name) in schema.classes.keys().enumerate() {
                 let anchor = class_name.to_lowercase().replace(' ', "-");
-                writeln!(&mut output, "   - [{class_name}](#{anchor})").unwrap();
+                writeln!(&mut output, "   - [{class_name}](#{anchor})").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         if !schema.slots.is_empty() {
-            writeln!(&mut output, "3. [Slots](#slots)").unwrap();
+            writeln!(&mut output, "3. [Slots](#slots)").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if !schema.enums.is_empty() {
-            writeln!(&mut output, "4. [Enumerations](#enumerations)").unwrap();
+            writeln!(&mut output, "4. [Enumerations](#enumerations)").map_err(Self::fmt_error_to_generator_error)?;
             for enum_name in schema.enums.keys() {
                 let anchor = enum_name.to_lowercase().replace(' ', "-");
-                writeln!(&mut output, "   - [{enum_name}](#{anchor})").unwrap();
+                writeln!(&mut output, "   - [{enum_name}](#{anchor})").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         if !schema.types.is_empty() {
-            writeln!(&mut output, "5. [Types](#types)").unwrap();
+            writeln!(&mut output, "5. [Types](#types)").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "\n---\n").unwrap();
+        writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
 
     /// Generate overview section
-    fn generate_overview(&self, schema: &SchemaDefinition) -> String {
+    fn generate_overview(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "## Overview\n").unwrap();
+        writeln!(&mut output, "## Overview\n").map_err(Self::fmt_error_to_generator_error)?;
         
         // Statistics
-        writeln!(&mut output, "### Statistics\n").unwrap();
-        writeln!(&mut output, "| Category | Count |").unwrap();
-        writeln!(&mut output, "|----------|-------|").unwrap();
-        writeln!(&mut output, "| Classes | {} |", schema.classes.len()).unwrap();
-        writeln!(&mut output, "| Slots | {} |", schema.slots.len()).unwrap();
-        writeln!(&mut output, "| Enums | {} |", schema.enums.len()).unwrap();
-        writeln!(&mut output, "| Types | {} |", schema.types.len()).unwrap();
+        writeln!(&mut output, "### Statistics\n").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Category | Count |").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "|----------|-------|").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Classes | {} |", schema.classes.len()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Slots | {} |", schema.slots.len()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Enums | {} |", schema.enums.len()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Types | {} |", schema.types.len()).map_err(Self::fmt_error_to_generator_error)?;
         
         // Prefixes
         if !schema.prefixes.is_empty() {
-            writeln!(&mut output, "\n### Prefixes\n").unwrap();
-            writeln!(&mut output, "| Prefix | URI |").unwrap();
-            writeln!(&mut output, "|--------|-----|").unwrap();
+            writeln!(&mut output, "\n### Prefixes\n").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "| Prefix | URI |").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "|--------|-----|").map_err(Self::fmt_error_to_generator_error)?;
             for (prefix, uri_def) in &schema.prefixes {
                 let uri = match uri_def {
                     linkml_core::types::PrefixDefinition::Simple(s) => s.as_str(),
                     linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix.as_str(),
                 };
-                writeln!(&mut output, "| {} | {} |", prefix, uri).unwrap();
+                writeln!(&mut output, "| {} | {} |", prefix, uri).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
-        writeln!(&mut output, "\n---\n").unwrap();
+        writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
 
     /// Generate class documentation
-    fn generate_classes(&self, schema: &SchemaDefinition) -> String {
+    fn generate_classes(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
         if schema.classes.is_empty() {
-            return output;
+            return Ok(output);
         }
         
-        writeln!(&mut output, "## Classes\n").unwrap();
+        writeln!(&mut output, "## Classes\n").map_err(Self::fmt_error_to_generator_error)?;
         
         // Sort classes for consistent output
         let mut sorted_classes: Vec<_> = schema.classes.iter().collect();
         sorted_classes.sort_by_key(|(name, _)| name.as_str());
         
         for (class_name, class_def) in sorted_classes {
-            writeln!(&mut output, "### {}\n", class_name).unwrap();
+            writeln!(&mut output, "### {}\n", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(description) = &class_def.description {
-                writeln!(&mut output, "{}\n", description).unwrap();
+                writeln!(&mut output, "{}\n", description).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Metadata table
-            writeln!(&mut output, "#### Metadata\n").unwrap();
-            writeln!(&mut output, "| Property | Value |").unwrap();
-            writeln!(&mut output, "|----------|-------|").unwrap();
+            writeln!(&mut output, "#### Metadata\n").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "| Property | Value |").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "|----------|-------|").map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(is_a) = &class_def.is_a {
-                writeln!(&mut output, "| Parent Class | [{}](#{}) |", is_a, is_a.to_lowercase().replace(' ', "-")).unwrap();
+                writeln!(&mut output, "| Parent Class | [{}](#{}) |", is_a, is_a.to_lowercase().replace(' ', "-")).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if let Some(abstract_) = class_def.abstract_ {
-                writeln!(&mut output, "| Abstract | {} |", abstract_).unwrap();
+                writeln!(&mut output, "| Abstract | {} |", abstract_).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if let Some(mixin) = class_def.mixin {
-                writeln!(&mut output, "| Mixin | {} |", mixin).unwrap();
+                writeln!(&mut output, "| Mixin | {} |", mixin).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if !class_def.mixins.is_empty() {
                 let mixins = class_def.mixins.join(", ");
-                writeln!(&mut output, "| Uses Mixins | {} |", mixins).unwrap();
+                writeln!(&mut output, "| Uses Mixins | {} |", mixins).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Slots table
             if !class_def.slots.is_empty() || !class_def.attributes.is_empty() {
-                writeln!(&mut output, "\n#### Slots\n").unwrap();
-                writeln!(&mut output, "| Slot | Required | Type | Description |").unwrap();
-                writeln!(&mut output, "|------|----------|------|-------------|").unwrap();
+                writeln!(&mut output, "\n#### Slots\n").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "| Slot | Required | Type | Description |").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "|------|----------|------|-------------|").map_err(Self::fmt_error_to_generator_error)?;
                 
                 // Collect all slots (direct and inherited)
                 let mut all_slots: BTreeMap<String, SlotDefinition> = BTreeMap::new();
@@ -237,44 +242,44 @@ impl MarkdownGenerator {
                         if required { "✓" } else { "" },
                         range,
                         description
-                    ).unwrap();
+                    ).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             
             // Examples
             if self.include_examples {
-                writeln!(&mut output, "\n#### Example\n").unwrap();
-                writeln!(&mut output, "```yaml").unwrap();
-                writeln!(&mut output, "{}:", class_name).unwrap();
+                writeln!(&mut output, "\n#### Example\n").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "```yaml").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "{}:", class_name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // Generate example values for each slot
                 for slot_name in &class_def.slots {
                     if let Some(slot_def) = schema.slots.get(slot_name) {
                         let example_value = self.generate_example_value(slot_def);
-                        writeln!(&mut output, "  {}: {}", slot_name, example_value).unwrap();
+                        writeln!(&mut output, "  {}: {}", slot_name, example_value).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                writeln!(&mut output, "```\n").unwrap();
+                writeln!(&mut output, "```\n").map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(&mut output, "---\n").unwrap();
+            writeln!(&mut output, "---\n").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         output
     }
 
     /// Generate slot documentation
-    fn generate_slots(&self, schema: &SchemaDefinition) -> String {
+    fn generate_slots(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
         if schema.slots.is_empty() {
-            return output;
+            return Ok(output);
         }
         
-        writeln!(&mut output, "## Slots\n").unwrap();
-        writeln!(&mut output, "| Slot | Type | Required | Description |").unwrap();
-        writeln!(&mut output, "|------|------|----------|-------------|").unwrap();
+        writeln!(&mut output, "## Slots\n").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Slot | Type | Required | Description |").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "|------|------|----------|-------------|").map_err(Self::fmt_error_to_generator_error)?;
         
         let mut sorted_slots: Vec<_> = schema.slots.iter().collect();
         sorted_slots.sort_by_key(|(name, _)| name.as_str());
@@ -289,37 +294,37 @@ impl MarkdownGenerator {
                 range,
                 if required { "✓" } else { "" },
                 description
-            ).unwrap();
+            ).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "\n---\n").unwrap();
+        writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
 
     /// Generate enumeration documentation
-    fn generate_enums(&self, schema: &SchemaDefinition) -> String {
+    fn generate_enums(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
         if schema.enums.is_empty() {
-            return output;
+            return Ok(output);
         }
         
-        writeln!(&mut output, "## Enumerations\n").unwrap();
+        writeln!(&mut output, "## Enumerations\n").map_err(Self::fmt_error_to_generator_error)?;
         
         let mut sorted_enums: Vec<_> = schema.enums.iter().collect();
         sorted_enums.sort_by_key(|(name, _)| name.as_str());
         
         for (enum_name, enum_def) in sorted_enums {
-            writeln!(&mut output, "### {}\n", enum_name).unwrap();
+            writeln!(&mut output, "### {}\n", enum_name).map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(description) = &enum_def.description {
-                writeln!(&mut output, "{}\n", description).unwrap();
+                writeln!(&mut output, "{}\n", description).map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(&mut output, "#### Permissible Values\n").unwrap();
-            writeln!(&mut output, "| Value | Description |").unwrap();
-            writeln!(&mut output, "|-------|-------------|").unwrap();
+            writeln!(&mut output, "#### Permissible Values\n").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "| Value | Description |").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "|-------|-------------|").map_err(Self::fmt_error_to_generator_error)?;
             
             for pv in &enum_def.permissible_values {
                 let (value, description) = match pv {
@@ -328,26 +333,26 @@ impl MarkdownGenerator {
                         (text.as_str(), description.as_deref().unwrap_or(""))
                     }
                 };
-                writeln!(&mut output, "| {} | {} |", value, description).unwrap();
+                writeln!(&mut output, "| {} | {} |", value, description).map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(&mut output, "\n---\n").unwrap();
+            writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         output
     }
 
     /// Generate types documentation
-    fn generate_types(&self, schema: &SchemaDefinition) -> String {
+    fn generate_types(&self, schema: &SchemaDefinition) -> super::traits::GeneratorResult<String> {
         let mut output = String::new();
         
         if schema.types.is_empty() {
-            return output;
+            return Ok(output);
         }
         
-        writeln!(&mut output, "## Types\n").unwrap();
-        writeln!(&mut output, "| Type | Base | Pattern | Description |").unwrap();
-        writeln!(&mut output, "|------|------|---------|-------------|").unwrap();
+        writeln!(&mut output, "## Types\n").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "| Type | Base | Pattern | Description |").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "|------|------|---------|-------------|").map_err(Self::fmt_error_to_generator_error)?;
         
         let mut sorted_types: Vec<_> = schema.types.iter().collect();
         sorted_types.sort_by_key(|(name, _)| name.as_str());
@@ -368,12 +373,12 @@ impl MarkdownGenerator {
                 base,
                 pattern_str,
                 description
-            ).unwrap();
+            ).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "\n---\n").unwrap();
+        writeln!(&mut output, "\n---\n").map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
 
     /// Generate example value for a slot
@@ -419,17 +424,17 @@ impl Generator for MarkdownGenerator {
         let mut content = String::new();
         
         // Generate sections
-        content.push_str(&self.generate_header(schema));
+        content.push_str(&self.generate_header(schema)?);
         
         if self.include_toc {
-            content.push_str(&self.generate_toc(schema));
+            content.push_str(&self.generate_toc(schema)?);
         }
         
-        content.push_str(&self.generate_overview(schema));
-        content.push_str(&self.generate_classes(schema));
-        content.push_str(&self.generate_slots(schema));
-        content.push_str(&self.generate_enums(schema));
-        content.push_str(&self.generate_types(schema));
+        content.push_str(&self.generate_overview(schema)?);
+        content.push_str(&self.generate_classes(schema)?);
+        content.push_str(&self.generate_slots(schema)?);
+        content.push_str(&self.generate_enums(schema)?);
+        content.push_str(&self.generate_types(schema)?);
         
         // Footer
         content.push_str("\n---\n\n");
@@ -495,7 +500,7 @@ mod tests {
         let generator = MarkdownGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate markdown documentation");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];

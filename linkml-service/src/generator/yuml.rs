@@ -58,6 +58,11 @@ pub struct YumlGenerator {
 }
 
 impl YumlGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new yUML generator
     #[must_use]
     pub fn new() -> Self {
@@ -95,46 +100,46 @@ impl YumlGenerator {
         
         // Comment with diagram info
         writeln!(&mut output, "// yUML class diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).unwrap();
+            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "// Paste at: https://yuml.me/diagram/{}/{}/class", 
-            self.options.style, self.options.direction).unwrap();
-        writeln!(&mut output).unwrap();
+            self.options.style, self.options.direction).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate class definitions
         for (name, class_def) in &schema.classes {
             let mut class_str = String::new();
-            write!(&mut class_str, "[{}", name).unwrap();
+            write!(&mut class_str, "[{}", name).map_err(Self::fmt_error_to_generator_error)?;
             
             if self.options.include_slots {
                 // Collect all slots
                 let all_slots = self.collect_all_slots(name, class_def, schema);
                 
                 if !all_slots.is_empty() {
-                    write!(&mut class_str, "|").unwrap();
+                    write!(&mut class_str, "|").map_err(Self::fmt_error_to_generator_error)?;
                     
                     for (i, slot_name) in all_slots.iter().enumerate() {
                         if i > 0 {
-                            write!(&mut class_str, ";").unwrap();
+                            write!(&mut class_str, ";").map_err(Self::fmt_error_to_generator_error)?;
                         }
                         
                         if let Some(slot_def) = schema.slots.get(slot_name) {
                             // Add visibility marker
                             if slot_def.required == Some(true) {
-                                write!(&mut class_str, "+").unwrap();
+                                write!(&mut class_str, "+").map_err(Self::fmt_error_to_generator_error)?;
                             } else {
-                                write!(&mut class_str, "-").unwrap();
+                                write!(&mut class_str, "-").map_err(Self::fmt_error_to_generator_error)?;
                             }
                             
-                            write!(&mut class_str, "{}", slot_name).unwrap();
+                            write!(&mut class_str, "{}", slot_name).map_err(Self::fmt_error_to_generator_error)?;
                             
                             // Add type if available
                             if let Some(range) = &slot_def.range {
-                                write!(&mut class_str, ":{}", range).unwrap();
+                                write!(&mut class_str, ":{}", range).map_err(Self::fmt_error_to_generator_error)?;
                             }
                             
                             // Add multiplicity
                             if slot_def.multivalued == Some(true) {
-                                write!(&mut class_str, " *").unwrap();
+                                write!(&mut class_str, " *").map_err(Self::fmt_error_to_generator_error)?;
                             }
                         }
                     }
@@ -143,11 +148,11 @@ impl YumlGenerator {
             
             // Add stereotype for abstract classes
             if class_def.abstract_ == Some(true) {
-                write!(&mut class_str, "|<<abstract>>").unwrap();
+                write!(&mut class_str, "|<<abstract>>").map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            write!(&mut class_str, "]").unwrap();
-            writeln!(&mut output, "{}", class_str).unwrap();
+            write!(&mut class_str, "]").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "{}", class_str).map_err(Self::fmt_error_to_generator_error)?;
             
             // Collect inheritance relationships
             if self.options.show_inheritance {
@@ -185,16 +190,16 @@ impl YumlGenerator {
         
         // Add relationships
         if !relationships.is_empty() {
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             for rel in relationships {
-                writeln!(&mut output, "{}", rel).unwrap();
+                writeln!(&mut output, "{}", rel).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Add notes about enums if any
         if !schema.enums.is_empty() {
-            writeln!(&mut output).unwrap();
-            writeln!(&mut output, "// Enumerations:").unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "// Enumerations:").map_err(Self::fmt_error_to_generator_error)?;
             for (name, enum_def) in &schema.enums {
                 let values: Vec<String> = enum_def.permissible_values.iter()
                     .map(|pv| match pv {
@@ -202,7 +207,7 @@ impl YumlGenerator {
                         PermissibleValue::Complex { text, .. } => text.clone(),
                     })
                     .collect();
-                writeln!(&mut output, "// {} enum: {}", name, values.join(", ")).unwrap();
+                writeln!(&mut output, "// {} enum: {}", name, values.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -214,10 +219,10 @@ impl YumlGenerator {
         let mut output = String::new();
         
         writeln!(&mut output, "// yUML use case diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).unwrap();
+            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "// Paste at: https://yuml.me/diagram/{}/{}/usecase", 
-            self.options.style, self.options.direction).unwrap();
-        writeln!(&mut output).unwrap();
+            self.options.style, self.options.direction).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Create actors from classes with certain patterns
         let mut actors = Vec::new();
@@ -234,14 +239,14 @@ impl YumlGenerator {
                 
                 // Create relationships
                 for actor in &actors {
-                    writeln!(&mut output, "[{}]-({})", actor, use_case_name).unwrap();
+                    writeln!(&mut output, "[{}]-({})", actor, use_case_name).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
         
         // If no actors found, create a generic one
         if actors.is_empty() && !use_cases.is_empty() {
-            writeln!(&mut output, "[User]-(Manage Schema)").unwrap();
+            writeln!(&mut output, "[User]-(Manage Schema)").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -251,10 +256,10 @@ impl YumlGenerator {
     fn generate_activity_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "// yUML activity diagram").unwrap();
+        writeln!(&mut output, "// yUML activity diagram").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "// Paste at: https://yuml.me/diagram/{}/{}/activity", 
-            self.options.style, self.options.direction).unwrap();
-        writeln!(&mut output).unwrap();
+            self.options.style, self.options.direction).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate a simple workflow based on enums (if they represent states)
         let mut has_workflow = false;
@@ -262,7 +267,7 @@ impl YumlGenerator {
         for (name, enum_def) in &schema.enums {
             if name.to_lowercase().contains("status") || name.to_lowercase().contains("state") {
                 has_workflow = true;
-                writeln!(&mut output, "// Workflow for {}", name).unwrap();
+                writeln!(&mut output, "// Workflow for {}", name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 let states: Vec<String> = enum_def.permissible_values.iter()
                     .map(|pv| match pv {
@@ -272,31 +277,31 @@ impl YumlGenerator {
                     .collect();
                 
                 // Create a simple linear workflow
-                writeln!(&mut output, "(start)").unwrap();
+                writeln!(&mut output, "(start)").map_err(Self::fmt_error_to_generator_error)?;
                 
                 for (i, state) in states.iter().enumerate() {
                     if i == 0 {
-                        writeln!(&mut output, "(start)->|begin|<{}>;", state).unwrap();
+                        writeln!(&mut output, "(start)->|begin|<{}>;", state).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     if i < states.len() - 1 {
-                        writeln!(&mut output, "<{}>->|next|<{}>;", state, states[i + 1]).unwrap();
+                        writeln!(&mut output, "<{}>->|next|<{}>;", state, states[i + 1]).map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(&mut output, "<{}>->|complete|(end)", state).unwrap();
+                        writeln!(&mut output, "<{}>->|complete|(end)", state).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         if !has_workflow {
             // Create a generic workflow
-            writeln!(&mut output, "(start)->|create|<Draft>").unwrap();
-            writeln!(&mut output, "<Draft>->|review|<Review>").unwrap();
-            writeln!(&mut output, "<Review>->|approve|<Approved>").unwrap();
-            writeln!(&mut output, "<Review>->|reject|<Draft>").unwrap();
-            writeln!(&mut output, "<Approved>->|publish|(end)").unwrap();
+            writeln!(&mut output, "(start)->|create|<Draft>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "<Draft>->|review|<Review>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "<Review>->|approve|<Approved>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "<Review>->|reject|<Draft>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "<Approved>->|publish|(end)").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -423,7 +428,7 @@ mod tests {
         let generator = YumlGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -445,7 +450,7 @@ mod tests {
             yuml_options.style = style.to_string();
             
             let generator = YumlGenerator::with_options(yuml_options);
-            let result = generator.generate(&schema, &options).await.unwrap();
+            let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
             
             let output = &result[0];
             assert!(output.content.contains(&format!("diagram/{}/", style)));

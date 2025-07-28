@@ -247,9 +247,9 @@ impl FunctionRegistry {
     ///             _ => Err(FunctionError::new("Expected string argument")),
     ///         }
     ///     }
-    /// )).unwrap();
+    /// )).expect("should register custom function");
     /// 
-    /// let result = registry.call("uppercase", vec![json!("hello")]).unwrap();
+    /// let result = registry.call("uppercase", vec![json!("hello")]).expect("should call custom function");
     /// assert_eq!(result, json!("HELLO"));
     /// ```
     pub fn register_custom(&mut self, function: CustomFunction) -> Result<(), FunctionError> {
@@ -548,25 +548,25 @@ mod tests {
         
         // String length
         assert_eq!(
-            registry.call("len", vec![json!("hello")]).unwrap(),
+            registry.call("len", vec![json!("hello")]).expect("should calculate string length"),
             json!(5)
         );
         
         // Array length
         assert_eq!(
-            registry.call("len", vec![json!([1, 2, 3])]).unwrap(),
+            registry.call("len", vec![json!([1, 2, 3])]).expect("should calculate array length"),
             json!(3)
         );
         
         // Object length
         assert_eq!(
-            registry.call("len", vec![json!({"a": 1, "b": 2})]).unwrap(),
+            registry.call("len", vec![json!({"a": 1, "b": 2})]).expect("should calculate object length"),
             json!(2)
         );
         
         // Null length
         assert_eq!(
-            registry.call("len", vec![json!(null)]).unwrap(),
+            registry.call("len", vec![json!(null)]).expect("should handle null length"),
             json!(0)
         );
     }
@@ -577,19 +577,19 @@ mod tests {
         
         // max
         assert_eq!(
-            registry.call("max", vec![json!(1), json!(5), json!(3)]).unwrap(),
+            registry.call("max", vec![json!(1), json!(5), json!(3)]).expect("should find maximum value"),
             json!(5.0)
         );
         
         // min
         assert_eq!(
-            registry.call("min", vec![json!(1), json!(5), json!(3)]).unwrap(),
+            registry.call("min", vec![json!(1), json!(5), json!(3)]).expect("should find minimum value"),
             json!(1.0)
         );
         
         // Single value
         assert_eq!(
-            registry.call("max", vec![json!(42)]).unwrap(),
+            registry.call("max", vec![json!(42)]).expect("should handle single value max"),
             json!(42.0)
         );
     }
@@ -603,7 +603,7 @@ mod tests {
             registry.call(
                 "case",
                 vec![json!(true), json!("first"), json!(false), json!("second"), json!("default")]
-            ).unwrap(),
+            ).expect("should evaluate case with first condition true"),
             json!("first")
         );
         
@@ -612,7 +612,7 @@ mod tests {
             registry.call(
                 "case",
                 vec![json!(false), json!("first"), json!(true), json!("second"), json!("default")]
-            ).unwrap(),
+            ).expect("should evaluate case with second condition true"),
             json!("second")
         );
         
@@ -621,7 +621,7 @@ mod tests {
             registry.call(
                 "case",
                 vec![json!(false), json!("first"), json!(false), json!("second"), json!("default")]
-            ).unwrap(),
+            ).expect("should evaluate case with default"),
             json!("default")
         );
     }
@@ -632,19 +632,19 @@ mod tests {
         
         // String contains
         assert_eq!(
-            registry.call("contains", vec![json!("hello world"), json!("world")]).unwrap(),
+            registry.call("contains", vec![json!("hello world"), json!("world")]).expect("should check string contains"),
             json!(true)
         );
         
         // Array contains
         assert_eq!(
-            registry.call("contains", vec![json!([1, 2, 3]), json!(2)]).unwrap(),
+            registry.call("contains", vec![json!([1, 2, 3]), json!(2)]).expect("should check array contains"),
             json!(true)
         );
         
         // Object contains key
         assert_eq!(
-            registry.call("contains", vec![json!({"a": 1, "b": 2}), json!("a")]).unwrap(),
+            registry.call("contains", vec![json!({"a": 1, "b": 2}), json!("a")]).expect("should check object contains key"),
             json!(true)
         );
     }

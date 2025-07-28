@@ -368,18 +368,18 @@ mod tests {
         let generator = CsvGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate CSV");
         
         // Should generate summary + person.csv (entity is abstract)
         assert_eq!(result.len(), 2);
         
         // Check summary file
-        let summary = result.iter().find(|o| o.filename.contains("summary")).unwrap();
+        let summary = result.iter().find(|o| o.filename.contains("summary")).expect("should have summary file");
         assert!(summary.content.contains("Class"));
         assert!(summary.content.contains("2")); // 2 classes
         
         // Check person file
-        let person = result.iter().find(|o| o.filename == "person.csv").unwrap();
+        let person = result.iter().find(|o| o.filename == "person.csv").expect("should have person.csv");
         assert!(person.content.contains("id,name,age"));
         assert!(person.content.contains("<string>,<string>,<integer>"));
     }
@@ -390,9 +390,9 @@ mod tests {
         let generator = CsvGenerator::tsv();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate TSV");
         
-        let person = result.iter().find(|o| o.filename == "person.tsv").unwrap();
+        let person = result.iter().find(|o| o.filename == "person.tsv").expect("should have person.tsv");
         assert!(person.content.contains("id\tname\tage"));
     }
 

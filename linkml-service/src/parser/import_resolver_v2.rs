@@ -522,7 +522,7 @@ mod tests {
     #[tokio::test]
     async fn test_enhanced_import_resolver() {
         // Create test schemas
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let base_path = temp_dir.path();
         
         // Base schema
@@ -543,7 +543,7 @@ slots:
     range: string
 "#;
         
-        tokio::fs::write(base_path.join("base.yaml"), base_schema).await.unwrap();
+        tokio::fs::write(base_path.join("base.yaml"), base_schema).await.expect("should write base schema");
         
         // Another schema with conflicts
         let other_schema = r#"
@@ -558,7 +558,7 @@ classes:
     description: Different shared class
 "#;
         
-        tokio::fs::write(base_path.join("other.yaml"), other_schema).await.unwrap();
+        tokio::fs::write(base_path.join("other.yaml"), other_schema).await.expect("should write other schema");
         
         // Main schema with imports
         let main_schema = r#"
@@ -582,17 +582,17 @@ classes:
         // Parse and resolve
         use crate::parser::{SchemaParser, YamlParser};
         let parser = YamlParser::new();
-        let mut schema = parser.parse_str(main_schema).unwrap();
+        let mut schema = parser.parse_str(main_schema).expect("should parse main schema");
         
         // Set base path for resolver
         if let Some(settings) = &mut schema.settings {
             if let Some(imports) = &mut settings.imports {
-                imports.search_paths = vec![base_path.to_str().unwrap().to_string()];
+                imports.search_paths = vec![base_path.to_str().expect("temp dir path should be valid UTF-8").to_string()];
             }
         }
         
         let resolver = ImportResolverV2::new();
-        let resolved = resolver.resolve_imports(&schema).await.unwrap();
+        let resolved = resolver.resolve_imports(&schema).await.expect("should resolve imports");
         
         // Check that all elements were imported
         assert!(resolved.classes.contains_key("BaseClass"));
@@ -609,7 +609,7 @@ classes:
     
     #[tokio::test]
     async fn test_circular_import_detection() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let base_path = temp_dir.path();
         
         // Schema A imports B
@@ -628,13 +628,13 @@ imports:
   - a
 "#;
         
-        tokio::fs::write(base_path.join("a.yaml"), schema_a).await.unwrap();
-        tokio::fs::write(base_path.join("b.yaml"), schema_b).await.unwrap();
+        tokio::fs::write(base_path.join("a.yaml"), schema_a).await.expect("should write schema a");
+        tokio::fs::write(base_path.join("b.yaml"), schema_b).await.expect("should write schema b");
         
         // Try to resolve - should fail
         use crate::parser::{SchemaParser, YamlParser};
         let parser = YamlParser::new();
-        let schema = parser.parse_str(schema_a).unwrap();
+        let schema = parser.parse_str(schema_a).expect("should parse schema a");
         
         let mut settings = ImportSettings::default();
         settings.search_paths = vec![base_path.to_str().unwrap().to_string()];

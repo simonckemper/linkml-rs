@@ -356,19 +356,19 @@ mod tests {
     fn test_upper_lower_trim() {
         let upper = UpperFunction;
         assert_eq!(
-            upper.call(vec![json!("hello")]).unwrap(),
+            upper.call(vec![json!("hello")]).expect("should convert to uppercase"),
             json!("HELLO")
         );
         
         let lower = LowerFunction;
         assert_eq!(
-            lower.call(vec![json!("HELLO")]).unwrap(),
+            lower.call(vec![json!("HELLO")]).expect("should convert to lowercase"),
             json!("hello")
         );
         
         let trim = TrimFunction;
         assert_eq!(
-            trim.call(vec![json!("  hello  ")]).unwrap(),
+            trim.call(vec![json!("  hello  ")]).expect("should trim whitespace"),
             json!("hello")
         );
     }
@@ -377,21 +377,21 @@ mod tests {
     fn test_starts_ends_with() {
         let starts_with = StartsWithFunction;
         assert_eq!(
-            starts_with.call(vec![json!("hello world"), json!("hello")]).unwrap(),
+            starts_with.call(vec![json!("hello world"), json!("hello")]).expect("should check starts_with"),
             json!(true)
         );
         assert_eq!(
-            starts_with.call(vec![json!("hello world"), json!("world")]).unwrap(),
+            starts_with.call(vec![json!("hello world"), json!("world")]).expect("should check starts_with"),
             json!(false)
         );
         
         let ends_with = EndsWithFunction;
         assert_eq!(
-            ends_with.call(vec![json!("hello world"), json!("world")]).unwrap(),
+            ends_with.call(vec![json!("hello world"), json!("world")]).expect("should check ends_with"),
             json!(true)
         );
         assert_eq!(
-            ends_with.call(vec![json!("hello world"), json!("hello")]).unwrap(),
+            ends_with.call(vec![json!("hello world"), json!("hello")]).expect("should check ends_with"),
             json!(false)
         );
     }
@@ -400,7 +400,7 @@ mod tests {
     fn test_replace() {
         let replace = ReplaceFunction;
         assert_eq!(
-            replace.call(vec![json!("hello world"), json!("world"), json!("rust")]).unwrap(),
+            replace.call(vec![json!("hello world"), json!("world"), json!("rust")]).expect("should replace substring"),
             json!("hello rust")
         );
     }
@@ -409,13 +409,13 @@ mod tests {
     fn test_split_join() {
         let split = SplitFunction;
         assert_eq!(
-            split.call(vec![json!("a,b,c"), json!(",")]).unwrap(),
+            split.call(vec![json!("a,b,c"), json!(",")]).expect("should split string"),
             json!(["a", "b", "c"])
         );
         
         let join = JoinFunction;
         assert_eq!(
-            join.call(vec![json!(["a", "b", "c"]), json!("-")]).unwrap(),
+            join.call(vec![json!(["a", "b", "c"]), json!("-")]).expect("should join array"),
             json!("a-b-c")
         );
     }
@@ -426,13 +426,13 @@ mod tests {
         
         // With length
         assert_eq!(
-            substring.call(vec![json!("hello world"), json!(6), json!(5)]).unwrap(),
+            substring.call(vec![json!("hello world"), json!(6), json!(5)]).expect("should extract substring"),
             json!("world")
         );
         
         // Without length
         assert_eq!(
-            substring.call(vec![json!("hello world"), json!(6)]).unwrap(),
+            substring.call(vec![json!("hello world"), json!(6)]).expect("should extract substring to end"),
             json!("world")
         );
     }

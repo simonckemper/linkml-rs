@@ -252,9 +252,9 @@ mod tests {
         });
         
         let generator = ExampleGeneratorV2::new();
-        let result = generator.generate(schema, GeneratorOptions::default()).await.unwrap();
+        let result = generator.generate(schema, GeneratorOptions::default()).await.expect("should generate successfully");
         
-        assert!(result.content.unwrap().contains("TestSchema"));
+        assert!(result.content.expect("should have content").contains("TestSchema"));
     }
 
     #[test]

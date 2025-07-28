@@ -345,10 +345,10 @@ mod tests {
             name: "test".to_string(),
         });
 
-        registry.register(generator.clone()).await.unwrap();
+        registry.register(generator.clone()).await.expect("should register generator");
 
         // Should be able to retrieve it
-        let retrieved = registry.get("test").await.unwrap();
+        let retrieved = registry.get("test").await.expect("should retrieve generator");
         assert_eq!(retrieved.name(), "test");
 
         // List should include it
@@ -356,12 +356,12 @@ mod tests {
         assert!(names.contains(&"test".to_string()));
 
         // Get info
-        let info = registry.get_info("test").await.unwrap();
+        let info = registry.get_info("test").await.expect("should get generator info");
         assert_eq!(info.name, "test");
         assert_eq!(info.description, "Test generator");
 
         // Unregister
-        registry.unregister("test").await.unwrap();
+        registry.unregister("test").await.expect("should unregister generator");
         assert!(registry.get("test").await.is_none());
     }
 
@@ -376,7 +376,7 @@ mod tests {
             name: "test".to_string(),
         });
 
-        registry.register(gen1).await.unwrap();
+        registry.register(gen1).await.expect("should register first generator");
 
         // Second registration should fail
         let result = registry.register(gen2).await;

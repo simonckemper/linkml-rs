@@ -161,9 +161,10 @@ fn process_mixed_content(
     }
     
     // Add child elements
-    for (name, values) in elements_by_name {
+    for (name, mut values) in elements_by_name {
         if values.len() == 1 {
-            data.insert(name, values.into_iter().next().unwrap());
+            // Safe to use expect here because we just checked length is 1
+            data.insert(name, values.into_iter().next().expect("values should have exactly one element"));
         } else {
             data.insert(name, Value::Array(values));
         }

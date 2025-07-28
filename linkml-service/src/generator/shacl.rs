@@ -19,6 +19,11 @@ pub struct ShaclGenerator {
 }
 
 impl ShaclGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new SHACL generator
     #[must_use]
     pub fn new() -> Self {
@@ -46,37 +51,37 @@ impl ShaclGenerator {
     }
     
     /// Generate prefixes section
-    fn generate_prefixes(&self, schema: &SchemaDefinition) -> String {
+    fn generate_prefixes(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         // Standard prefixes
         for (prefix, uri) in &self.prefixes {
-            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri).unwrap();
+            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Schema-specific prefix
         let schema_prefix = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate header comments
-    fn generate_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "# SHACL Shapes generated from LinkML schema: {}", schema.name).unwrap();
-        writeln!(&mut output, "# Schema ID: {}", schema.id).unwrap();
+        writeln!(&mut output, "# SHACL Shapes generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# Schema ID: {}", schema.id).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "# Version: {}", version).unwrap();
+            writeln!(&mut output, "# Version: {}", version).map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "# Description: {}", desc).unwrap();
+            writeln!(&mut output, "# Description: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate SHACL shape for a class
@@ -86,13 +91,13 @@ impl ShaclGenerator {
         let shape_name = format!("{}:{}Shape", schema_prefix, self.to_pascal_case(name));
         
         // Shape declaration
-        writeln!(&mut output, "{}", shape_name).unwrap();
-        writeln!(&mut output, "    a sh:NodeShape ;").unwrap();
-        writeln!(&mut output, "    sh:targetClass {}:{} ;", schema_prefix, self.to_pascal_case(name)).unwrap();
+        writeln!(&mut output, "{}", shape_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    a sh:NodeShape ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    sh:targetClass {}:{} ;", schema_prefix, self.to_pascal_case(name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Description
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Collect all slots (including inherited)
@@ -109,27 +114,27 @@ impl ShaclGenerator {
         
         // Add property references
         if !property_shapes.is_empty() {
-            write!(&mut output, "    sh:property").unwrap();
+            write!(&mut output, "    sh:property").map_err(Self::fmt_error_to_generator_error)?;
             for (i, _) in property_shapes.iter().enumerate() {
                 if i == 0 {
-                    writeln!(&mut output, " {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                    writeln!(&mut output, " {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).map_err(Self::fmt_error_to_generator_error)?;
                 } else if i < property_shapes.len() - 1 {
-                    writeln!(&mut output, "                {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                    writeln!(&mut output, "                {}-{} ,", shape_name, self.to_snake_case(&all_slots[i])).map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(&mut output, "                {}-{} .", shape_name, self.to_snake_case(&all_slots[i])).unwrap();
+                    writeln!(&mut output, "                {}-{} .", shape_name, self.to_snake_case(&all_slots[i])).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         } else {
-            writeln!(&mut output, "    .").unwrap();
+            writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate the property shapes themselves
         for (slot_name, prop_shape) in all_slots.iter().zip(property_shapes.iter()) {
-            writeln!(&mut output, "{}-{}", shape_name, self.to_snake_case(slot_name)).unwrap();
-            write!(&mut output, "{}", prop_shape).unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "{}-{}", shape_name, self.to_snake_case(slot_name)).map_err(Self::fmt_error_to_generator_error)?;
+            write!(&mut output, "{}", prop_shape).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -140,36 +145,36 @@ impl ShaclGenerator {
         let mut output = String::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
-        writeln!(&mut output, "    a sh:PropertyShape ;").unwrap();
-        writeln!(&mut output, "    sh:path {}:{} ;", schema_prefix, self.to_snake_case(slot_name)).unwrap();
+        writeln!(&mut output, "    a sh:PropertyShape ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    sh:path {}:{} ;", schema_prefix, self.to_snake_case(slot_name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Description
         if let Some(desc) = &slot.description {
-            writeln!(&mut output, "    sh:description \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    sh:description \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Datatype or class reference
         if let Some(range) = &slot.range {
             if let Some(datatype) = self.get_xsd_datatype(range) {
-                writeln!(&mut output, "    sh:datatype {} ;", datatype).unwrap();
+                writeln!(&mut output, "    sh:datatype {} ;", datatype).map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.classes.contains_key(range) {
-                writeln!(&mut output, "    sh:class {}:{} ;", schema_prefix, self.to_pascal_case(range)).unwrap();
+                writeln!(&mut output, "    sh:class {}:{} ;", schema_prefix, self.to_pascal_case(range)).map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.enums.contains_key(range) {
                 // For enums, we'll use sh:in constraint
                 if let Some(enum_def) = schema.enums.get(range) {
-                    write!(&mut output, "    sh:in (").unwrap();
+                    write!(&mut output, "    sh:in (").map_err(Self::fmt_error_to_generator_error)?;
                     for (i, pv) in enum_def.permissible_values.iter().enumerate() {
                         let value = match pv {
                             PermissibleValue::Simple(s) => s,
                             PermissibleValue::Complex { text, .. } => text,
                         };
                         if i < enum_def.permissible_values.len() - 1 {
-                            write!(&mut output, "\"{}\" ", value).unwrap();
+                            write!(&mut output, "\"{}\" ", value).map_err(Self::fmt_error_to_generator_error)?;
                         } else {
-                            write!(&mut output, "\"{}\"", value).unwrap();
+                            write!(&mut output, "\"{}\"", value).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
-                    writeln!(&mut output, ") ;").unwrap();
+                    writeln!(&mut output, ") ;").map_err(Self::fmt_error_to_generator_error)?;
                 }
             } else if let Some(type_def) = schema.types.get(range) {
                 // Custom type - use base type but merge constraints
@@ -195,37 +200,37 @@ impl ShaclGenerator {
         
         // Cardinality constraints
         if slot.required == Some(true) {
-            writeln!(&mut output, "    sh:minCount 1 ;").unwrap();
+            writeln!(&mut output, "    sh:minCount 1 ;").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if slot.multivalued == Some(true) {
             // No max count by default for multivalued
         } else {
-            writeln!(&mut output, "    sh:maxCount 1 ;").unwrap();
+            writeln!(&mut output, "    sh:maxCount 1 ;").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Pattern constraint
         if let Some(pattern) = &slot.pattern {
-            writeln!(&mut output, "    sh:pattern \"{}\" ;", pattern).unwrap();
+            writeln!(&mut output, "    sh:pattern \"{}\" ;", pattern).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Value constraints
         if let Some(min) = &slot.minimum_value {
             if let Some(num) = min.as_f64() {
-                writeln!(&mut output, "    sh:minInclusive {} ;", num).unwrap();
+                writeln!(&mut output, "    sh:minInclusive {} ;", num).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         if let Some(max) = &slot.maximum_value {
             if let Some(num) = max.as_f64() {
-                writeln!(&mut output, "    sh:maxInclusive {} ;", num).unwrap();
+                writeln!(&mut output, "    sh:maxInclusive {} ;", num).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Remove trailing semicolon and add period
         if output.ends_with(" ;\n") {
             output.truncate(output.len() - 3);
-            writeln!(&mut output, " .").unwrap();
+            writeln!(&mut output, " .").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -277,7 +282,7 @@ impl ShaclGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
             prev_upper = ch.is_uppercase();
         }
         
@@ -326,10 +331,10 @@ impl Generator for ShaclGenerator {
         let mut output = String::new();
         
         // Generate header
-        output.push_str(&self.generate_header(schema));
+        output.push_str(&self.generate_header(schema)?);
         
         // Generate prefixes
-        output.push_str(&self.generate_prefixes(schema));
+        output.push_str(&self.generate_prefixes(schema)?);
         
         // Generate shapes for each class
         for (name, class) in &schema.classes {

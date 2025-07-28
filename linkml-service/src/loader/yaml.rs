@@ -195,21 +195,21 @@ emails:
 "#;
         
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().unwrap();
-        std::fs::write(temp_file.path(), yaml_content).unwrap();
+        let temp_file = tempfile::NamedTempFile::new().expect("should create temporary file");
+        std::fs::write(temp_file.path(), yaml_content).expect("should write YAML content");
         
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
         class.slots = vec!["name".to_string(), "age".to_string(), "emails".to_string()];
         schema.classes.insert("Person".to_string(), class);
         
-        let mut loader = YamlLoader::new().with_file(temp_file.path().to_str().unwrap());
-        let instances = loader.load(&schema).await.unwrap();
+        let mut loader = YamlLoader::new().with_file(temp_file.path().to_str().expect("temp file path should be valid UTF-8"));
+        let instances = loader.load(&schema).await.expect("should load YAML instances");
         
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
         assert_eq!(instances[0].data.get("name"), Some(&Value::String("John Doe".to_string())));
-        assert!(instances[0].data.get("emails").unwrap().is_array());
+        assert!(instances[0].data.get("emails").expect("should have emails field").is_array());
     }
     
     #[tokio::test]
@@ -221,16 +221,16 @@ emails:
                     "name": "Alice",
                     "age": 25,
                     "active": true
-                }"#).unwrap(),
+                }"#).expect("should parse valid JSON"),
             },
         ];
         
         let schema = SchemaDefinition::default();
         let mut dumper = YamlDumper::new();
-        let result = dumper.dump(&instances, &schema).await.unwrap();
+        let result = dumper.dump(&instances, &schema).await.expect("should dump instances to YAML");
         
-        let yaml_str = String::from_utf8(result).unwrap();
-        let parsed: serde_yaml::Value = serde_yaml::from_str(&yaml_str).unwrap();
+        let yaml_str = String::from_utf8(result).expect("YAML should be valid UTF-8");
+        let parsed: serde_yaml::Value = serde_yaml::from_str(&yaml_str).expect("should parse dumped YAML");
         
         assert_eq!(parsed["@type"], "Person");
         assert_eq!(parsed["name"], "Alice");

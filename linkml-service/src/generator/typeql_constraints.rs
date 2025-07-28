@@ -320,12 +320,12 @@ mod tests {
         let pattern = r"^\d{3}-\d{2}-\d{4}$";
         let result = translator.translate_regex(pattern);
         assert!(result.is_some());
-        assert!(result.unwrap().contains("regex"));
+        assert!(result.expect("should have regex constraint").contains("regex"));
 
         // Test pattern with quotes
         let pattern = r#"^"[A-Z]+"$"#;
         let result = translator.translate_regex(pattern);
         assert!(result.is_some());
-        assert!(result.unwrap().contains(r#"\""#));
+        assert!(result.expect("should have regex constraint with quotes").contains(r#"\""#));
     }
 }

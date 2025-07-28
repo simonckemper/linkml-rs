@@ -37,14 +37,15 @@ pub struct TypeDBIntegrationOptions {
 
 impl Default for TypeDBIntegrationOptions {
     fn default() -> Self {
+        let config = crate::config::get_config();
         Self {
-            database_name: String::new(),
+            database_name: config.typedb.default_database.clone(),
             type_mapping: HashMap::new(),
             attribute_mapping: HashMap::new(),
-            batch_size: 1000,
+            batch_size: config.typedb.batch_size,
             infer_types: true,
-            include_inferred: false,
-            query_timeout_ms: 30000,
+            include_inferred: config.typedb.include_inferred,
+            query_timeout_ms: config.typedb.query_timeout_ms,
         }
     }
 }

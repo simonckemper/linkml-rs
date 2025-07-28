@@ -581,8 +581,8 @@ mod tests {
         let parser = Parser::new();
         
         // Test arithmetic
-        let expr = parser.parse("1 + 2 * 3").unwrap();
-        let compiled = compiler.compile(&expr, "1 + 2 * 3").unwrap();
+        let expr = parser.parse("1 + 2 * 3").expect("should parse expression");
+        let compiled = compiler.compile(&expr, "1 + 2 * 3").expect("should compile expression");
         
         assert!(compiled.instructions.contains(&Instruction::Const(Value::Number(serde_json::Number::from(1)))));
         assert!(compiled.instructions.contains(&Instruction::Add));
@@ -596,8 +596,8 @@ mod tests {
         let parser = Parser::new();
         
         // Constants should be folded
-        let expr = parser.parse("2 + 3").unwrap();
-        let compiled = compiler.compile(&expr, "2 + 3").unwrap();
+        let expr = parser.parse("2 + 3").expect("should parse constant expression");
+        let compiled = compiler.compile(&expr, "2 + 3").expect("should compile constant expression");
         
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
@@ -611,8 +611,8 @@ mod tests {
         let parser = Parser::new();
         
         // Test short-circuit AND
-        let expr = parser.parse("false && expensive_func()").unwrap();
-        let compiled = compiler.compile(&expr, "false && expensive_func()").unwrap();
+        let expr = parser.parse("false && expensive_func()").expect("should parse short-circuit expression");
+        let compiled = compiler.compile(&expr, "false && expensive_func()").expect("should compile short-circuit expression");
         
         // Should have jump instruction for short-circuit
         assert!(compiled.instructions.iter().any(|inst| matches!(inst, Instruction::JumpIfFalse(_))));

@@ -16,6 +16,8 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 thiserror = "2.0"
 indexmap = { version = "2.2", features = ["serde"] }
+dashmap = { workspace = true }
+configuration-core = { path = "../../configuration/configuration-core" }
 
 # Async support
 async-trait = "0.1"

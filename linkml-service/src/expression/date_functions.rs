@@ -451,11 +451,11 @@ mod tests {
     #[test]
     fn test_now_today() {
         let now_fn = NowFunction;
-        let result = now_fn.call(vec![]).unwrap();
+        let result = now_fn.call(vec![]).expect("now() should succeed");
         assert!(matches!(result, Value::String(_)));
         
         let today_fn = TodayFunction;
-        let result = today_fn.call(vec![]).unwrap();
+        let result = today_fn.call(vec![]).expect("today() should succeed");
         assert!(matches!(result, Value::String(_)));
     }
     
@@ -464,11 +464,11 @@ mod tests {
         let parse = DateParseFunction;
         
         // Standard format
-        let result = parse.call(vec![json!("2024-01-15")]).unwrap();
+        let result = parse.call(vec![json!("2024-01-15")]).expect("should parse standard date format");
         assert_eq!(result, json!("2024-01-15"));
         
         // Custom format
-        let result = parse.call(vec![json!("15/01/2024"), json!("%d/%m/%Y")]).unwrap();
+        let result = parse.call(vec![json!("15/01/2024"), json!("%d/%m/%Y")]).expect("should parse custom date format");
         assert_eq!(result, json!("2024-01-15"));
     }
     
@@ -476,10 +476,10 @@ mod tests {
     fn test_date_format() {
         let format = DateFormatFunction;
         
-        let result = format.call(vec![json!("2024-01-15"), json!("%Y/%m/%d")]).unwrap();
+        let result = format.call(vec![json!("2024-01-15"), json!("%Y/%m/%d")]).expect("should format date as Y/m/d");
         assert_eq!(result, json!("2024/01/15"));
         
-        let result = format.call(vec![json!("2024-01-15"), json!("%B %d, %Y")]).unwrap();
+        let result = format.call(vec![json!("2024-01-15"), json!("%B %d, %Y")]).expect("should format date with month name");
         assert_eq!(result, json!("January 15, 2024"));
     }
     
@@ -488,11 +488,11 @@ mod tests {
         let add = DateAddFunction;
         
         // Add days
-        let result = add.call(vec![json!("2024-01-15"), json!(10), json!("days")]).unwrap();
+        let result = add.call(vec![json!("2024-01-15"), json!(10), json!("days")]).expect("should add days to date");
         assert_eq!(result, json!("2024-01-25"));
         
         // Add months
-        let result = add.call(vec![json!("2024-01-15"), json!(2), json!("months")]).unwrap();
+        let result = add.call(vec![json!("2024-01-15"), json!(2), json!("months")]).expect("should add months to date");
         assert_eq!(result, json!("2024-03-15"));
     }
     
@@ -504,7 +504,7 @@ mod tests {
             json!("2024-01-15"),
             json!("2024-01-25"),
             json!("days")
-        ]).unwrap();
+        ]).expect("should calculate date difference");
         assert_eq!(result, json!(10));
     }
     
@@ -516,8 +516,8 @@ mod tests {
         
         let date = json!("2024-03-15");
         
-        assert_eq!(year.call(vec![date.clone()]).unwrap(), json!(2024));
-        assert_eq!(month.call(vec![date.clone()]).unwrap(), json!(3));
-        assert_eq!(day.call(vec![date.clone()]).unwrap(), json!(15));
+        assert_eq!(year.call(vec![date.clone()]).expect("should extract year"), json!(2024));
+        assert_eq!(month.call(vec![date.clone()]).expect("should extract month"), json!(3));
+        assert_eq!(day.call(vec![date.clone()]).expect("should extract day"), json!(15));
     }
 }

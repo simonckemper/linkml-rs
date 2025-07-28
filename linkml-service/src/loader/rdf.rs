@@ -695,7 +695,7 @@ impl RdfDumper {
             JsonValue::Bool(b) => {
                 let literal = Literal::new_typed_literal(
                     &b.to_string(),
-                    NamedNode::new("http://www.w3.org/2001/XMLSchema#boolean").unwrap()
+                    NamedNode::new("http://www.w3.org/2001/XMLSchema#boolean").expect("hardcoded XSD boolean datatype URI is valid")
                 );
                 Ok(Term::Literal(literal))
             }
@@ -704,13 +704,13 @@ impl RdfDumper {
                 if n.is_i64() || n.is_u64() {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
-                        NamedNode::new("http://www.w3.org/2001/XMLSchema#integer").unwrap()
+                        NamedNode::new("http://www.w3.org/2001/XMLSchema#integer").expect("hardcoded XSD integer datatype URI is valid")
                     );
                     Ok(Term::Literal(literal))
                 } else {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
-                        NamedNode::new("http://www.w3.org/2001/XMLSchema#decimal").unwrap()
+                        NamedNode::new("http://www.w3.org/2001/XMLSchema#decimal").expect("hardcoded XSD decimal datatype URI is valid")
                     );
                     Ok(Term::Literal(literal))
                 }
@@ -923,18 +923,18 @@ ex:bob rdf:type ex:Person ;
             ..Default::default()
         };
         
-        let instances = loader.load_string(turtle_content, &schema, &options).await.unwrap();
+        let instances = loader.load_string(turtle_content, &schema, &options).await.expect("should load valid Turtle content");
         assert_eq!(instances.len(), 2);
         
         // Find Alice
-        let alice = instances.iter().find(|i| i.id.as_deref() == Some("http://example.org/alice")).unwrap();
+        let alice = instances.iter().find(|i| i.id.as_deref() == Some("http://example.org/alice")).expect("should find alice instance");
         assert_eq!(alice.class_name, "Person");
         assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
         assert_eq!(alice.data.get("knows"), Some(&json!("http://example.org/bob")));
         
         // Dump back to Turtle
         let dump_options = DumpOptions::default();
-        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.unwrap();
+        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.expect("should dump instances to Turtle");
         
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -953,13 +953,13 @@ ex:bob rdf:type ex:Person ;
 "#;
         
         let options = LoadOptions::default();
-        let instances = loader.load_string(ntriples_content, &schema, &options).await.unwrap();
+        let instances = loader.load_string(ntriples_content, &schema, &options).await.expect("should load valid N-Triples content");
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie")));
         
         // Dump to N-Triples
         let dump_options = DumpOptions::default();
-        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.unwrap();
+        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.expect("should dump instances to N-Triples");
         
         // N-Triples should have one triple per line
         let lines: Vec<&str> = dumped.trim().lines().collect();

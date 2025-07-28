@@ -21,6 +21,11 @@ pub struct ProtobufGenerator {
 }
 
 impl ProtobufGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new Protocol Buffers generator
     #[must_use]
     pub fn new() -> Self {
@@ -59,30 +64,30 @@ impl ProtobufGenerator {
     }
     
     /// Generate proto file header
-    fn generate_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "// Generated from LinkML schema: {}", schema.name).unwrap();
-        writeln!(&mut output, "// Schema ID: {}", schema.id).unwrap();
+        writeln!(&mut output, "// Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "// Schema ID: {}", schema.id).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "// Version: {}", version).unwrap();
+            writeln!(&mut output, "// Version: {}", version).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output).unwrap();
-        writeln!(&mut output, "syntax = \"proto3\";").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "syntax = \"proto3\";").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Package name from schema name
         let package_name = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "package {};", package_name).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "package {};", package_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Import well-known types if needed
         if self.needs_timestamp_import(schema) {
-            writeln!(&mut output, "import \"google/protobuf/timestamp.proto\";").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "import \"google/protobuf/timestamp.proto\";").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        output
+        Ok(output)
     }
     
     /// Check if schema needs timestamp import
@@ -99,13 +104,13 @@ impl ProtobufGenerator {
         
         // Add description as comment
         if let Some(desc) = &enum_def.description {
-            writeln!(&mut output, "// {}", desc).unwrap();
+            writeln!(&mut output, "// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "enum {} {{", self.to_pascal_case(name)).unwrap();
+        writeln!(&mut output, "enum {} {{", self.to_pascal_case(name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Proto3 requires first enum value to be 0
-        writeln!(&mut output, "  {}_UNSPECIFIED = 0;", self.to_screaming_snake_case(name)).unwrap();
+        writeln!(&mut output, "  {}_UNSPECIFIED = 0;", self.to_screaming_snake_case(name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate enum values
         for (index, pv) in enum_def.permissible_values.iter().enumerate() {
@@ -119,10 +124,10 @@ impl ProtobufGenerator {
             } else {
                 self.to_screaming_snake_case(text)
             };
-            writeln!(&mut output, "  {} = {};", enum_value, index + 1).unwrap();
+            writeln!(&mut output, "  {} = {};", enum_value, index + 1).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -133,10 +138,10 @@ impl ProtobufGenerator {
         
         // Add description as comment
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "// {}", desc).unwrap();
+            writeln!(&mut output, "// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "message {} {{", self.to_pascal_case(name)).unwrap();
+        writeln!(&mut output, "message {} {{", self.to_pascal_case(name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Collect all slots (including inherited)
         let all_slots = self.collect_all_slots(class, schema);
@@ -153,12 +158,12 @@ impl ProtobufGenerator {
             
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field = self.generate_field(slot, field_number, schema)?;
-                write!(&mut output, "{}", field).unwrap();
+                write!(&mut output, "{}", field).map_err(Self::fmt_error_to_generator_error)?;
                 field_number += 1;
             }
         }
         
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -186,7 +191,7 @@ impl ProtobufGenerator {
         
         // Add description as comment
         if let Some(desc) = &slot.description {
-            writeln!(&mut output, "  // {}", desc).unwrap();
+            writeln!(&mut output, "  // {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Determine proto type
@@ -201,7 +206,7 @@ impl ProtobufGenerator {
         
         // Generate field
         let field_name = self.to_snake_case(&slot.name);
-        writeln!(&mut output, "  {}{} {} = {};", repeated, proto_type, field_name, field_number).unwrap();
+        writeln!(&mut output, "  {}{} {} = {};", repeated, proto_type, field_name, field_number).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -234,7 +239,7 @@ impl ProtobufGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
             prev_upper = ch.is_uppercase();
         }
         
@@ -278,7 +283,7 @@ impl ProtobufGenerator {
             } else {
                 if ch.is_alphabetic() && prev_upper && !result.is_empty() {
                     // We just transitioned from uppercase to lowercase, insert underscore before last char
-                    let last_char = result.pop().unwrap();
+                    let last_char = result.pop().expect("result should not be empty");
                     if result.len() > 0 {
                         result.push('_');
                     }
@@ -321,7 +326,7 @@ impl Generator for ProtobufGenerator {
         let mut output = String::new();
         
         // Generate header
-        output.push_str(&self.generate_header(schema));
+        output.push_str(&self.generate_header(schema)?);
         
         // Generate enums first
         let mut enum_output = String::new();
@@ -331,12 +336,12 @@ impl Generator for ProtobufGenerator {
                     context: format!("enum {}", name),
                     message: e.to_string(),
                 })?;
-            writeln!(&mut enum_output, "{}", enum_code).unwrap();
+            writeln!(&mut enum_output, "{}", enum_code).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if !enum_output.is_empty() {
             output.push_str(&enum_output);
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate messages
@@ -346,7 +351,7 @@ impl Generator for ProtobufGenerator {
                     context: format!("class {}", name),
                     message: e.to_string(),
                 })?;
-            writeln!(&mut output, "{}", message_code).unwrap();
+            writeln!(&mut output, "{}", message_code).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Create generated output
@@ -424,7 +429,7 @@ mod tests {
         // Generate protobuf
         let generator = ProtobufGenerator::new();
         let options = GeneratorOptions::default();
-        let results = generator.generate(&schema, &options).await.unwrap();
+        let results = generator.generate(&schema, &options).await.expect("should generate protobuf");
         
         assert_eq!(results.len(), 1);
         let proto = &results[0];
@@ -464,10 +469,10 @@ mod tests {
         let generator = ProtobufGenerator::new();
         let schema = SchemaDefinition::new("test");
         
-        assert_eq!(generator.get_proto_type(&Some("string".to_string()), &schema).unwrap(), "string");
-        assert_eq!(generator.get_proto_type(&Some("integer".to_string()), &schema).unwrap(), "int64");
-        assert_eq!(generator.get_proto_type(&Some("boolean".to_string()), &schema).unwrap(), "bool");
-        assert_eq!(generator.get_proto_type(&Some("CustomType".to_string()), &schema).unwrap(), "CustomType");
-        assert_eq!(generator.get_proto_type(&None, &schema).unwrap(), "string");
+        assert_eq!(generator.get_proto_type(&Some("string".to_string()), &schema).expect("should get proto type"), "string");
+        assert_eq!(generator.get_proto_type(&Some("integer".to_string()), &schema).expect("should get proto type"), "int64");
+        assert_eq!(generator.get_proto_type(&Some("boolean".to_string()), &schema).expect("should get proto type"), "bool");
+        assert_eq!(generator.get_proto_type(&Some("CustomType".to_string()), &schema).expect("should get proto type"), "CustomType");
+        assert_eq!(generator.get_proto_type(&None, &schema).expect("should get proto type"), "string");
     }
 }

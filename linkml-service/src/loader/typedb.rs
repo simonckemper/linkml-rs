@@ -63,18 +63,21 @@ pub enum TransactionType {
 
 impl Default for TypeDBOptions {
     fn default() -> Self {
+        // Load configuration
+        let config = crate::config::get_config();
+        
         Self {
-            server_address: "localhost:1729".to_string(),
-            database_name: String::new(),
+            server_address: config.typedb.server_address.clone(),
+            database_name: config.typedb.default_database.clone(),
             type_mapping: HashMap::new(),
             attribute_mapping: HashMap::new(),
-            batch_size: 1000,
+            batch_size: config.typedb.batch_size,
             infer_types: true,
             create_if_not_exists: false,
             use_transactions: true,
             session_type: SessionType::Data,
             transaction_type: TransactionType::Read,
-            include_inferred: false,
+            include_inferred: config.typedb.include_inferred,
         }
     }
 }

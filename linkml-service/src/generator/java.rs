@@ -19,6 +19,11 @@ pub struct JavaGenerator {
 }
 
 impl JavaGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new Java generator
     #[must_use]
     pub fn new() -> Self {
@@ -57,40 +62,40 @@ impl JavaGenerator {
     }
     
     /// Generate package and imports
-    fn generate_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         // Package declaration
         let package_name = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "package com.example.{};", package_name).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "package com.example.{};", package_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Standard imports
-        writeln!(&mut output, "import java.math.BigDecimal;").unwrap();
-        writeln!(&mut output, "import java.net.URI;").unwrap();
-        writeln!(&mut output, "import java.time.LocalDate;").unwrap();
-        writeln!(&mut output, "import java.time.LocalDateTime;").unwrap();
-        writeln!(&mut output, "import java.time.LocalTime;").unwrap();
-        writeln!(&mut output, "import java.util.*;").unwrap();
-        writeln!(&mut output, "import java.util.regex.Pattern;").unwrap();
-        writeln!(&mut output, "import javax.validation.constraints.*;").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "import java.math.BigDecimal;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.net.URI;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.time.LocalDate;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.time.LocalDateTime;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.time.LocalTime;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.util.*;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import java.util.regex.Pattern;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "import javax.validation.constraints.*;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Schema documentation
-        writeln!(&mut output, "/**").unwrap();
-        writeln!(&mut output, " * Generated from LinkML schema: {}", schema.name).unwrap();
-        writeln!(&mut output, " * Schema ID: {}", schema.id).unwrap();
+        writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, " * Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, " * Schema ID: {}", schema.id).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, " * Version: {}", version).unwrap();
+            writeln!(&mut output, " * Version: {}", version).map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, " * ").unwrap();
-            writeln!(&mut output, " * {}", desc).unwrap();
+            writeln!(&mut output, " * ").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output, " */").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate enum class
@@ -98,15 +103,15 @@ impl JavaGenerator {
         let mut output = String::new();
         
         // Javadoc
-        writeln!(&mut output, "/**").unwrap();
+        writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(desc) = &enum_def.description {
-            writeln!(&mut output, " * {}", desc).unwrap();
+            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, " * Enumeration: {}", name).unwrap();
+            writeln!(&mut output, " * Enumeration: {}", name).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output, " */").unwrap();
+        writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
         
-        writeln!(&mut output, "public enum {} {{", self.to_pascal_case(name)).unwrap();
+        writeln!(&mut output, "public enum {} {{", self.to_pascal_case(name)).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate enum values
         let values_count = enum_def.permissible_values.len();
@@ -117,17 +122,17 @@ impl JavaGenerator {
             };
             
             if let Some(desc) = description {
-                writeln!(&mut output, "    /**").unwrap();
-                writeln!(&mut output, "     * {}", desc).unwrap();
-                writeln!(&mut output, "     */").unwrap();
+                writeln!(&mut output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "     * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "     */").map_err(Self::fmt_error_to_generator_error)?;
             }
             
             let enum_name = self.to_screaming_snake_case(text);
             let comma = if index < values_count - 1 { "," } else { ";" };
-            writeln!(&mut output, "    {}{}", enum_name, comma).unwrap();
+            writeln!(&mut output, "    {}{}", enum_name, comma).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -137,13 +142,13 @@ impl JavaGenerator {
         let mut output = String::new();
         
         // Javadoc
-        writeln!(&mut output, "/**").unwrap();
+        writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(desc) = &class_def.description {
-            writeln!(&mut output, " * {}", desc).unwrap();
+            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, " * Class: {}", name).unwrap();
+            writeln!(&mut output, " * Class: {}", name).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output, " */").unwrap();
+        writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
         
         // Class declaration with inheritance
         let extends = if let Some(parent) = &class_def.is_a {
@@ -152,8 +157,8 @@ impl JavaGenerator {
             String::new()
         };
         
-        writeln!(&mut output, "public class {}{} {{", self.to_pascal_case(name), extends).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "public class {}{} {{", self.to_pascal_case(name), extends).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Collect all slots (direct only, parent slots inherited via extends)
         let slots: Vec<_> = class_def.slots.iter()
@@ -163,30 +168,30 @@ impl JavaGenerator {
         // Generate fields
         for (slot_name, slot) in &slots {
             self.write_field(&mut output, slot_name, slot, schema)?;
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Default constructor
-        writeln!(&mut output, "    /**").unwrap();
-        writeln!(&mut output, "     * Default constructor").unwrap();
-        writeln!(&mut output, "     */").unwrap();
-        writeln!(&mut output, "    public {}() {{", self.to_pascal_case(name)).unwrap();
-        writeln!(&mut output, "        // Initialize collections").unwrap();
+        writeln!(&mut output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "     * Default constructor").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "     */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    public {}() {{", self.to_pascal_case(name)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        // Initialize collections").map_err(Self::fmt_error_to_generator_error)?;
         for (slot_name, slot) in &slots {
             if slot.multivalued.unwrap_or(false) {
                 let field_name = self.to_camel_case(slot_name);
-                writeln!(&mut output, "        this.{} = new ArrayList<>();", field_name).unwrap();
+                writeln!(&mut output, "        this.{} = new ArrayList<>();", field_name).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
-        writeln!(&mut output, "    }}").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate getters and setters
         for (slot_name, slot) in &slots {
             self.write_getter(&mut output, slot_name, slot, schema)?;
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.write_setter(&mut output, slot_name, slot, schema)?;
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate builder if requested in options
@@ -194,7 +199,7 @@ impl JavaGenerator {
             self.write_builder(&mut output, name, &slots, schema)?;
         }
         
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -203,36 +208,36 @@ impl JavaGenerator {
     fn write_field(&self, output: &mut String, slot_name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<()> {
         // Javadoc
         if let Some(desc) = &slot.description {
-            writeln!(output, "    /**").unwrap();
-            writeln!(output, "     * {}", desc).unwrap();
-            writeln!(output, "     */").unwrap();
+            writeln!(output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "     * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "     */").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Validation annotations
         if slot.required.unwrap_or(false) {
-            writeln!(output, "    @NotNull").unwrap();
+            writeln!(output, "    @NotNull").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(pattern) = &slot.pattern {
-            writeln!(output, "    @Pattern(regexp = \"{}\")", pattern).unwrap();
+            writeln!(output, "    @Pattern(regexp = \"{}\")", pattern).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(min) = &slot.minimum_value {
             if let Some(num) = min.as_f64() {
-                writeln!(output, "    @Min({})", num as i64).unwrap();
+                writeln!(output, "    @Min({})", num as i64).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         if let Some(max) = &slot.maximum_value {
             if let Some(num) = max.as_f64() {
-                writeln!(output, "    @Max({})", num as i64).unwrap();
+                writeln!(output, "    @Max({})", num as i64).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Field declaration
         let java_type = self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
         let field_name = self.to_camel_case(slot_name);
-        writeln!(output, "    private {} {};", java_type, field_name).unwrap();
+        writeln!(output, "    private {} {};", java_type, field_name).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -243,9 +248,9 @@ impl JavaGenerator {
         let field_name = self.to_camel_case(slot_name);
         let method_name = format!("get{}", self.to_pascal_case(slot_name));
         
-        writeln!(output, "    public {} {}() {{", java_type, method_name).unwrap();
-        writeln!(output, "        return {};", field_name).unwrap();
-        writeln!(output, "    }}").unwrap();
+        writeln!(output, "    public {} {}() {{", java_type, method_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        return {};", field_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -256,9 +261,9 @@ impl JavaGenerator {
         let field_name = self.to_camel_case(slot_name);
         let method_name = format!("set{}", self.to_pascal_case(slot_name));
         
-        writeln!(output, "    public void {}({} {}) {{", method_name, java_type, field_name).unwrap();
-        writeln!(output, "        this.{} = {};", field_name, field_name).unwrap();
-        writeln!(output, "    }}").unwrap();
+        writeln!(output, "    public void {}({} {}) {{", method_name, java_type, field_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        this.{} = {};", field_name, field_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -267,12 +272,12 @@ impl JavaGenerator {
     fn write_builder(&self, output: &mut String, class_name: &str, slots: &[(&String, &SlotDefinition)], schema: &SchemaDefinition) -> GeneratorResult<()> {
         let class_pascal = self.to_pascal_case(class_name);
         
-        writeln!(output, "    /**").unwrap();
-        writeln!(output, "     * Builder for {}", class_pascal).unwrap();
-        writeln!(output, "     */").unwrap();
-        writeln!(output, "    public static class Builder {{").unwrap();
-        writeln!(output, "        private final {} instance = new {}();", class_pascal, class_pascal).unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "     * Builder for {}", class_pascal).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "     */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    public static class Builder {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        private final {} instance = new {}();", class_pascal, class_pascal).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Builder methods for each field
         for (slot_name, slot) in slots {
@@ -280,25 +285,25 @@ impl JavaGenerator {
             let field_name = self.to_camel_case(slot_name);
             let method_name = format!("with{}", self.to_pascal_case(slot_name));
             
-            writeln!(output, "        public Builder {}({} {}) {{", method_name, java_type, field_name).unwrap();
-            writeln!(output, "            instance.set{}({});", self.to_pascal_case(slot_name), field_name).unwrap();
-            writeln!(output, "            return this;").unwrap();
-            writeln!(output, "        }}").unwrap();
-            writeln!(output).unwrap();
+            writeln!(output, "        public Builder {}({} {}) {{", method_name, java_type, field_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "            instance.set{}({});", self.to_pascal_case(slot_name), field_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "            return this;").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "        }}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Build method
-        writeln!(output, "        public {} build() {{", class_pascal).unwrap();
-        writeln!(output, "            // TODO: Add validation").unwrap();
-        writeln!(output, "            return instance;").unwrap();
-        writeln!(output, "        }}").unwrap();
-        writeln!(output, "    }}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "        public {} build() {{", class_pascal).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "            // TODO: Add validation").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "            return instance;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Static builder factory method
-        writeln!(output, "    public static Builder builder() {{").unwrap();
-        writeln!(output, "        return new Builder();").unwrap();
-        writeln!(output, "    }}").unwrap();
+        writeln!(output, "    public static Builder builder() {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "        return new Builder();").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -336,7 +341,7 @@ impl JavaGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
             prev_upper = ch.is_uppercase();
         }
         
@@ -352,10 +357,10 @@ impl JavaGenerator {
             if ch == '_' || ch == '-' {
                 capitalize_next = true;
             } else if capitalize_next {
-                result.push(ch.to_uppercase().next().unwrap());
+                result.push(ch.to_uppercase().next().expect("char to_uppercase always produces at least one char"));
                 capitalize_next = false;
             } else if i == 0 {
-                result.push(ch.to_lowercase().next().unwrap());
+                result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
             } else {
                 result.push(ch);
             }
@@ -411,7 +416,7 @@ impl Generator for JavaGenerator {
         let mut outputs = Vec::new();
         
         // Generate header content (package and imports)
-        let header = self.generate_header(schema);
+        let header = self.generate_header(schema)?;
         
         // Generate enums
         for (name, enum_def) in &schema.enums {

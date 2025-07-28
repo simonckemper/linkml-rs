@@ -80,6 +80,11 @@ struct RelationRole {
 
 
 impl EnhancedTypeQLGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new enhanced TypeQL generator
     #[must_use]
     pub fn new() -> Self {
@@ -98,25 +103,25 @@ impl EnhancedTypeQLGenerator {
         // First pass: identify all types using advanced relation analysis
         for (class_name, class_def) in &schema.classes {
             // Use relation analyzer for better detection
-            if let Some(_relation_info) = self.relation_analyzer.write().unwrap().analyze_relation(class_name, class_def, schema) {
-                self.analyzer.write().unwrap().type_cache.insert(class_name.clone(), TypeQLType::Relation);
+            if let Some(_relation_info) = self.relation_analyzer.write().expect("relation analyzer lock should not be poisoned").analyze_relation(class_name, class_def, schema) {
+                self.analyzer.write().expect("analyzer lock should not be poisoned").type_cache.insert(class_name.clone(), TypeQLType::Relation);
                 
                 // Analyze role inheritance if applicable
                 if let Some(_parent) = &class_def.is_a {
-                    self.role_inheritance_resolver.write().unwrap().analyze_relation_inheritance(
+                    self.role_inheritance_resolver.write().expect("role inheritance resolver lock should not be poisoned").analyze_relation_inheritance(
                         class_name,
                         class_def,
                         schema,
                     );
                 }
             } else {
-                let typeql_type = self.analyzer.read().unwrap().determine_type(class_def, schema)?;
-                self.analyzer.write().unwrap().type_cache.insert(class_name.clone(), typeql_type);
+                let typeql_type = self.analyzer.read().expect("analyzer lock should not be poisoned").determine_type(class_def, schema)?;
+                self.analyzer.write().expect("analyzer lock should not be poisoned").type_cache.insert(class_name.clone(), typeql_type);
             }
         }
         
         // Second pass: validate and optimize structure
-        self.analyzer.read().unwrap().validate_structure(schema)?;
+        self.analyzer.read().expect("analyzer lock should not be poisoned").validate_structure(schema)?;
         
         Ok(())
     }
@@ -134,7 +139,7 @@ impl EnhancedTypeQLGenerator {
         self.write_header(&mut output, schema)?;
         
         // Define section
-        writeln!(&mut output, "\ndefine\n").unwrap();
+        writeln!(&mut output, "\ndefine\n").map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate in dependency order
         let ordered_types = self.get_dependency_order(schema)?;
@@ -154,7 +159,7 @@ impl EnhancedTypeQLGenerator {
         // 3. Generate concrete entities
         for type_name in &ordered_types {
             if let Some(class) = schema.classes.get(type_name) {
-                if let Some(TypeQLType::Entity) = self.analyzer.read().unwrap().type_cache.get(type_name) {
+                if let Some(TypeQLType::Entity) = self.analyzer.read().expect("analyzer lock should not be poisoned").type_cache.get(type_name) {
                     if !class.abstract_.unwrap_or(false) {
                         self.generate_entity(&mut output, type_name, class, schema, indent)?;
                     }
@@ -165,7 +170,7 @@ impl EnhancedTypeQLGenerator {
         // 4. Generate relations
         for type_name in &ordered_types {
             if let Some(class) = schema.classes.get(type_name) {
-                if let Some(TypeQLType::Relation) = self.analyzer.read().unwrap().type_cache.get(type_name) {
+                if let Some(TypeQLType::Relation) = self.analyzer.read().expect("analyzer lock should not be poisoned").type_cache.get(type_name) {
                     self.generate_relation(&mut output, type_name, class, schema, indent)?;
                 }
             }
@@ -173,7 +178,7 @@ impl EnhancedTypeQLGenerator {
         
         // 5. Generate constraints and rules
         if options.get_custom("generate_constraints") != Some("false") {
-            writeln!(&mut output, "\n# Constraints and Validation Rules\n").unwrap();
+            writeln!(&mut output, "\n# Constraints and Validation Rules\n").map_err(Self::fmt_error_to_generator_error)?;
             self.generate_constraints(&mut output, schema, indent)?;
             self.generate_validation_rules(&mut output, schema, indent)?;
         }
@@ -183,24 +188,24 @@ impl EnhancedTypeQLGenerator {
 
     /// Write schema header with metadata
     fn write_header(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# TypeQL Schema generated from LinkML").unwrap();
-        writeln!(output, "# Generator: Enhanced TypeQL Generator v2.0").unwrap();
-        writeln!(output, "# TypeDB Version: 3.0+").unwrap();
+        writeln!(output, "# TypeQL Schema generated from LinkML").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "# Generator: Enhanced TypeQL Generator v2.0").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "# TypeDB Version: 3.0+").map_err(Self::fmt_error_to_generator_error)?;
         
         if !schema.name.is_empty() {
-            writeln!(output, "# Schema: {}", schema.name).unwrap();
+            writeln!(output, "# Schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(version) = &schema.version {
-            writeln!(output, "# Version: {}", version).unwrap();
+            writeln!(output, "# Version: {}", version).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(desc) = &schema.description {
-            writeln!(output, "# Description: {}", desc).unwrap();
+            writeln!(output, "# Description: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add generation timestamp
-        writeln!(output, "# Generated: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")).unwrap();
+        writeln!(output, "# Generated: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -271,7 +276,7 @@ impl EnhancedTypeQLGenerator {
         
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Abstract: {}", desc).unwrap();
+            writeln!(output, "# Abstract: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Determine base type
@@ -281,28 +286,28 @@ impl EnhancedTypeQLGenerator {
             "entity"
         };
         
-        write!(output, "{} sub {}, abstract", type_name, base_type).unwrap();
+        write!(output, "{} sub {}, abstract", type_name, base_type).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add attributes owned by abstract type
         let attributes = self.collect_direct_attributes(class, schema);
         if !attributes.is_empty() {
-            writeln!(output, ",").unwrap();
+            writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             for (i, (attr_name, constraints)) in attributes.iter().enumerate() {
-                write!(output, "{}owns {}", indent.single(), attr_name).unwrap();
+                write!(output, "{}owns {}", indent.single(), attr_name).map_err(Self::fmt_error_to_generator_error)?;
                 if !constraints.is_empty() {
-                    write!(output, " {}", constraints.join(" ")).unwrap();
+                    write!(output, " {}", constraints.join(" ")).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         } else {
-            writeln!(output, ";").unwrap();
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -319,17 +324,17 @@ impl EnhancedTypeQLGenerator {
         
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Entity: {}", desc).unwrap();
+            writeln!(output, "# Entity: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Build inheritance chain
         let inheritance = self.build_inheritance_chain(class, schema)?;
         
-        write!(output, "{} sub", type_name).unwrap();
+        write!(output, "{} sub", type_name).map_err(Self::fmt_error_to_generator_error)?;
         if !inheritance.is_empty() {
-            write!(output, " {}", inheritance.join(", sub ")).unwrap();
+            write!(output, " {}", inheritance.join(", sub ")).map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            write!(output, " entity").unwrap();
+            write!(output, " entity").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Collect all attributes (including constraints)
@@ -339,36 +344,36 @@ impl EnhancedTypeQLGenerator {
         let roles = self.collect_playable_roles(name, schema);
         
         if all_attributes.is_empty() && roles.is_empty() {
-            writeln!(output, ";").unwrap();
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, ",").unwrap();
+            writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             
             // Write attributes with constraints
             for (i, (attr_name, constraints)) in all_attributes.iter().enumerate() {
-                write!(output, "{}owns {}", indent.single(), attr_name).unwrap();
+                write!(output, "{}owns {}", indent.single(), attr_name).map_err(Self::fmt_error_to_generator_error)?;
                 if !constraints.is_empty() {
-                    write!(output, " {}", constraints.join(" ")).unwrap();
+                    write!(output, " {}", constraints.join(" ")).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 if i < all_attributes.len() - 1 || !roles.is_empty() {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             
             // Write roles
             for (i, role) in roles.iter().enumerate() {
-                write!(output, "{}plays {}", indent.single(), role).unwrap();
+                write!(output, "{}plays {}", indent.single(), role).map_err(Self::fmt_error_to_generator_error)?;
                 if i < roles.len() - 1 {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
         
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -384,35 +389,35 @@ impl EnhancedTypeQLGenerator {
         let type_name = self.convert_identifier(name);
         
         // Get advanced relation info
-        let relation_info = self.relation_analyzer.write().unwrap().analyze_relation(name, class, schema)
+        let relation_info = self.relation_analyzer.write().expect("relation analyzer lock should not be poisoned").analyze_relation(name, class, schema)
             .ok_or_else(|| GeneratorError::SchemaValidation(format!("{} is not a valid relation", name)))?;
         
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Relation: {}", desc).unwrap();
+            writeln!(output, "# Relation: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add multi-way relation comment if applicable
         if relation_info.is_multiway {
-            writeln!(output, "# Multi-way relation with {} roles", relation_info.roles.len()).unwrap();
+            writeln!(output, "# Multi-way relation with {} roles", relation_info.roles.len()).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Build inheritance chain
         let inheritance = self.build_inheritance_chain(class, schema)?;
         
-        write!(output, "{} sub", type_name).unwrap();
+        write!(output, "{} sub", type_name).map_err(Self::fmt_error_to_generator_error)?;
         if !inheritance.is_empty() {
-            write!(output, " {}", inheritance.join(", sub ")).unwrap();
+            write!(output, " {}", inheritance.join(", sub ")).map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            write!(output, " relation").unwrap();
+            write!(output, " relation").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Handle abstract relations
         if class.abstract_.unwrap_or(false) {
-            write!(output, ", abstract").unwrap();
+            write!(output, ", abstract").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, ",").unwrap();
+        writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
         
         // Write roles with advanced features
         for (i, role) in relation_info.roles.iter().enumerate() {
@@ -420,34 +425,34 @@ impl EnhancedTypeQLGenerator {
             
             // Check for role inheritance
             let role_key = format!("{}:{}", name, role.name);
-            if let Some(hierarchy) = self.role_inheritance_resolver.read().unwrap().hierarchies.get(name) {
+            if let Some(hierarchy) = self.role_inheritance_resolver.read().expect("role inheritance resolver lock should not be poisoned").hierarchies.get(name) {
                 if let Some(base_role) = hierarchy.specializations.get(&role_key) {
                     // This role specializes another
                     write!(output, "{}relates {} as {}", 
                         indent.single(), 
                         role_name,
                         self.convert_identifier(base_role)
-                    ).unwrap();
+                    ).map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(output, "{}relates {}", indent.single(), role_name).unwrap();
+                    write!(output, "{}relates {}", indent.single(), role_name).map_err(Self::fmt_error_to_generator_error)?;
                 }
             } else {
-                write!(output, "{}relates {}", indent.single(), role_name).unwrap();
+                write!(output, "{}relates {}", indent.single(), role_name).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Add cardinality if specified
             if let Some((min, max)) = &role.cardinality {
-                write!(output, " @card({}", min).unwrap();
+                write!(output, " @card({}", min).map_err(Self::fmt_error_to_generator_error)?;
                 if let Some(max_val) = max {
-                    write!(output, "..{}", max_val).unwrap();
+                    write!(output, "..{}", max_val).map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(output, "..").unwrap();
+                    write!(output, "..").map_err(Self::fmt_error_to_generator_error)?;
                 }
-                write!(output, ")").unwrap();
+                write!(output, ")").map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if i < relation_info.roles.len() - 1 || !relation_info.attributes.is_empty() {
-                writeln!(output, ",").unwrap();
+                writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -455,32 +460,32 @@ impl EnhancedTypeQLGenerator {
         let attributes = self.collect_direct_attributes(class, schema);
         if !attributes.is_empty() {
             if !relation_info.roles.is_empty() {
-                writeln!(output, ",").unwrap();
+                writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             }
             
             for (i, (attr_name, constraints)) in attributes.iter().enumerate() {
-                write!(output, "{}owns {}", indent.single(), attr_name).unwrap();
+                write!(output, "{}owns {}", indent.single(), attr_name).map_err(Self::fmt_error_to_generator_error)?;
                 if !constraints.is_empty() {
-                    write!(output, " {}", constraints.join(" ")).unwrap();
+                    write!(output, " {}", constraints.join(" ")).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",").unwrap();
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";").unwrap();
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         } else {
-            writeln!(output, ";").unwrap();
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate role players
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         for role in &relation_info.roles {
             let player_typeql = self.convert_identifier(&role.player_type);
-            writeln!(output, "{} plays {}:{};", player_typeql, type_name, role.name).unwrap();
+            writeln!(output, "{} plays {}:{};", player_typeql, type_name, role.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -491,7 +496,7 @@ impl EnhancedTypeQLGenerator {
         schema: &SchemaDefinition,
         _indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "# Attributes\n").unwrap();
+        writeln!(output, "# Attributes\n").map_err(Self::fmt_error_to_generator_error)?;
         
         let mut generated_attrs = HashSet::new();
         let mut attr_definitions = BTreeMap::new();
@@ -534,18 +539,18 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<()> {
         // Add documentation
         if let Some(desc) = &slot.description {
-            writeln!(output, "# {}", desc).unwrap();
+            writeln!(output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Determine value type
         let value_type = self.map_range_to_typeql(&slot.range, schema);
         
-        write!(output, "{} sub attribute, value {}", name, value_type).unwrap();
+        write!(output, "{} sub attribute, value {}", name, value_type).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add inline constraints
         let inline_constraints = self.get_inline_constraints(slot);
         if !inline_constraints.is_empty() {
-            write!(output, ", {}", inline_constraints.join(", ")).unwrap();
+            write!(output, ", {}", inline_constraints.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add range constraints for numeric types
@@ -569,12 +574,12 @@ impl EnhancedTypeQLGenerator {
             }
             
             if range_parts.len() > 2 || !range_parts[0].is_empty() {
-                write!(output, ", range [{}]", range_parts.join("")).unwrap();
+                write!(output, ", range [{}]", range_parts.join("")).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
-        writeln!(output, ";").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -605,7 +610,7 @@ impl EnhancedTypeQLGenerator {
         schema: &SchemaDefinition,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "# Validation Rules\n").unwrap();
+        writeln!(output, "# Validation Rules\n").map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate required field rules
         for (class_name, class) in &schema.classes {
@@ -646,24 +651,24 @@ impl EnhancedTypeQLGenerator {
             "key"
         );
         
-        writeln!(output, "rule {}:", rule_name).unwrap();
-        writeln!(output, "when {{").unwrap();
+        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Match two instances with same key values
-        writeln!(output, "{}$x isa {};", indent.single(), self.convert_identifier(class_name)).unwrap();
-        writeln!(output, "{}$y isa {};", indent.single(), self.convert_identifier(class_name)).unwrap();
-        writeln!(output, "{}not {{ $x is $y; }};", indent.single()).unwrap();
+        writeln!(output, "{}$x isa {};", indent.single(), self.convert_identifier(class_name)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}$y isa {};", indent.single(), self.convert_identifier(class_name)).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}not {{ $x is $y; }};", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         
         for slot in &unique_key.unique_key_slots {
             let attr = self.convert_identifier(slot);
-            writeln!(output, "{}$x has {} $val{};", indent.single(), attr, slot).unwrap();
-            writeln!(output, "{}$y has {} $val{};", indent.single(), attr, slot).unwrap();
+            writeln!(output, "{}$x has {} $val{};", indent.single(), attr, slot).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "{}$y has {} $val{};", indent.single(), attr, slot).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "}} then {{").unwrap();
-        writeln!(output, "{}$x has validation-error \"Duplicate unique key\";", indent.single()).unwrap();
-        writeln!(output, "}};").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "}} then {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "{}$x has validation-error \"Duplicate unique key\";", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -682,29 +687,29 @@ impl EnhancedTypeQLGenerator {
             self.convert_identifier(slot_name)
         );
         
-        writeln!(output, "rule {}:", rule_name).unwrap();
-        writeln!(output, "when {{").unwrap();
+        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x isa {};",
             indent.single(),
             self.convert_identifier(class_name)
-        ).unwrap();
+        ).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}not {{ $x has {} $v; }};",
             indent.single(),
             self.convert_identifier(slot_name)
-        ).unwrap();
-        writeln!(output, "}} then {{").unwrap();
+        ).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}} then {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x has validation-error \"Missing required field: {}\";",
             indent.single(),
             slot_name
-        ).unwrap();
-        writeln!(output, "}};").unwrap();
-        writeln!(output).unwrap();
+        ).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -724,9 +729,9 @@ impl EnhancedTypeQLGenerator {
             self.convert_identifier(rule.title.as_ref().unwrap_or(&"unnamed".to_string()))
         );
         
-        writeln!(output, "# Rule: {}", rule.description.as_ref().unwrap_or(&rule.title.as_ref().unwrap_or(&"unnamed".to_string()))).unwrap();
-        writeln!(output, "rule {}:", rule_name).unwrap();
-        writeln!(output, "when {{").unwrap();
+        writeln!(output, "# Rule: {}", rule.description.as_ref().unwrap_or(&rule.title.as_ref().unwrap_or(&"unnamed".to_string()))).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Base entity match
         writeln!(
@@ -734,14 +739,14 @@ impl EnhancedTypeQLGenerator {
             "{}$x isa {};",
             indent.single(),
             self.convert_identifier(class_name)
-        ).unwrap();
+        ).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add preconditions
         if let Some(preconditions) = &rule.preconditions {
             self.generate_rule_conditions(output, "$x", preconditions, schema, indent)?;
         }
         
-        writeln!(output, "}} then {{").unwrap();
+        writeln!(output, "}} then {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Add postconditions or validation error
         if let Some(postconditions) = &rule.postconditions {
@@ -752,11 +757,11 @@ impl EnhancedTypeQLGenerator {
                 "{}$x has validation-error \"Rule {} violated\";",
                 indent.single(),
                 rule.title.as_ref().unwrap_or(&"unnamed".to_string())
-            ).unwrap();
+            ).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "}};").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "}};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -831,12 +836,12 @@ impl EnhancedTypeQLGenerator {
     /// Collect constraints for a slot
     fn collect_slot_constraints(&self, slot: &SlotDefinition) -> Vec<String> {
         // Delegate to the enhanced constraint translator
-        let mut constraints = self.constraint_translator.write().unwrap().translate_slot_constraints(slot);
+        let mut constraints = self.constraint_translator.write().expect("constraint translator lock should not be poisoned").translate_slot_constraints(slot);
         
         // Add range constraints for numeric types
         if let Some(range) = &slot.range {
             if range == "integer" || range == "float" || range == "double" {
-                let range_constraints = self.constraint_translator.write().unwrap().translate_range_constraints(slot);
+                let range_constraints = self.constraint_translator.write().expect("constraint translator lock should not be poisoned").translate_range_constraints(slot);
                 constraints.extend(range_constraints);
             }
         }
@@ -847,7 +852,7 @@ impl EnhancedTypeQLGenerator {
     /// Get inline constraints for attribute definition
     fn get_inline_constraints(&self, slot: &SlotDefinition) -> Vec<String> {
         // Use the public method that handles all constraints
-        self.constraint_translator.write().unwrap().translate_slot_constraints(slot)
+        self.constraint_translator.write().expect("constraint translator lock should not be poisoned").translate_slot_constraints(slot)
             .into_iter()
             .filter(|c| !c.starts_with('@')) // Filter out @ annotations for inline use
             .collect()
@@ -856,7 +861,7 @@ impl EnhancedTypeQLGenerator {
     /// Collect roles this entity can play
     fn collect_playable_roles(&self, entity_name: &str, _schema: &SchemaDefinition) -> Vec<String> {
         // Use the relation analyzer's role player map
-        self.relation_analyzer.write().unwrap().get_playable_roles(entity_name)
+        self.relation_analyzer.write().expect("relation analyzer lock should not be poisoned").get_playable_roles(entity_name)
             .into_iter()
             .map(|role| {
                 let parts: Vec<&str> = role.split(':').collect();
@@ -992,7 +997,7 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<()> {
         // This would translate LinkML rule conditions to TypeQL
         // For now, basic implementation
-        writeln!(output, "{}# TODO: Complex rule conditions", indent.single()).unwrap();
+        writeln!(output, "{}# TODO: Complex rule conditions", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -1007,7 +1012,7 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<()> {
         // This would translate LinkML rule assertions to TypeQL
         // For now, basic implementation
-        writeln!(output, "{}# TODO: Complex rule assertions", indent.single()).unwrap();
+        writeln!(output, "{}# TODO: Complex rule assertions", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 }
@@ -1252,7 +1257,7 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
                         result.push('-');
                     }
                 }
-                result.push(ch.to_lowercase().next().unwrap());
+                result.push(ch.to_lowercase().next().expect("to_lowercase() should always produce at least one character"));
             } else if ch == '_' {
                 result.push('-');
             } else {
@@ -1281,19 +1286,19 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "# TypeQL Migration Script").unwrap();
-        writeln!(&mut output, "# Schema: {}", schema.name).unwrap();
-        writeln!(&mut output, "# Version: {}", schema.version.as_ref().unwrap_or(&"unknown".to_string())).unwrap();
-        writeln!(&mut output, "# Generated: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "# TypeQL Migration Script").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# Schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# Version: {}", schema.version.as_ref().unwrap_or(&"unknown".to_string())).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# Generated: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // TODO: Implement actual migration logic based on schema diff
-        writeln!(&mut output, "# This is a placeholder for migration logic").unwrap();
-        writeln!(&mut output, "# In production, this would:").unwrap();
-        writeln!(&mut output, "# 1. Compare with previous schema version").unwrap();
-        writeln!(&mut output, "# 2. Generate appropriate schema modifications").unwrap();
-        writeln!(&mut output, "# 3. Include data migration queries").unwrap();
-        writeln!(&mut output, "# 4. Handle breaking changes safely").unwrap();
+        writeln!(&mut output, "# This is a placeholder for migration logic").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# In production, this would:").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# 1. Compare with previous schema version").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# 2. Generate appropriate schema modifications").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# 3. Include data migration queries").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "# 4. Handle breaking changes safely").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -1335,7 +1340,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), person_class);
 
         let options = GeneratorOptions::default();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
 
         assert_eq!(outputs.len(), 1);
         let content = &outputs[0].content;
@@ -1386,11 +1391,11 @@ mod tests {
         schema.classes.insert("Employment".to_string(), employment);
 
         // Analyze schema
-        generator.analyze_schema(&schema).unwrap();
+        generator.analyze_schema(&schema).map_err(Self::fmt_error_to_generator_error)?;
 
         // Check that Employment was detected as a relation
         assert_eq!(
-            generator.analyzer.read().unwrap().type_cache.get("Employment"),
+            generator.analyzer.read().expect("analyzer lock should not be poisoned").type_cache.get("Employment"),
             Some(&TypeQLType::Relation)
         );
     }

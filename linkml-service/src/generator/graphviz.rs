@@ -96,6 +96,11 @@ impl GraphvizGenerator {
         }
     }
     
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create with custom options
     #[must_use]
     pub fn with_options(options: GraphvizOptions) -> Self {
@@ -122,19 +127,19 @@ impl GraphvizGenerator {
         
         // Header
         writeln!(&mut output, "// Graphviz diagram generated from LinkML schema: {}", 
-            schema.name.as_deref().unwrap_or("unnamed")).unwrap();
-        writeln!(&mut output, "digraph LinkMLSchema {{").unwrap();
+            schema.name.as_deref().unwrap_or("unnamed")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "digraph LinkMLSchema {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Graph attributes
-        self.write_graph_attributes(&mut output);
+        self.write_graph_attributes(&mut output)?;
         
         // Node attributes
-        self.write_node_attributes(&mut output);
+        self.write_node_attributes(&mut output)?;
         
         // Edge attributes
-        self.write_edge_attributes(&mut output);
+        self.write_edge_attributes(&mut output)?;
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate nodes for classes
         for (name, class_def) in &schema.classes {
@@ -155,60 +160,63 @@ impl GraphvizGenerator {
             }
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate edges
         self.generate_edges(&mut output, schema)?;
         
         // Footer
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
     
     /// Write graph-level attributes
-    fn write_graph_attributes(&self, output: &mut String) {
-        writeln!(output, "    // Graph attributes").unwrap();
-        writeln!(output, "    rankdir={};", self.options.rankdir).unwrap();
-        writeln!(output, "    charset=\"UTF-8\";").unwrap();
+    fn write_graph_attributes(&self, output: &mut String) -> GeneratorResult<()> {
+        writeln!(output, "    // Graph attributes").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    rankdir={};", self.options.rankdir).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    charset=\"UTF-8\";").map_err(Self::fmt_error_to_generator_error)?;
         
         match self.options.layout {
-            GraphvizLayout::Dot => writeln!(output, "    splines=ortho;").unwrap(),
-            GraphvizLayout::Neato => writeln!(output, "    overlap=false;").unwrap(),
-            GraphvizLayout::Fdp => writeln!(output, "    overlap=false; sep=\"+20\";").unwrap(),
+            GraphvizLayout::Dot => writeln!(output, "    splines=ortho;").map_err(Self::fmt_error_to_generator_error)?,
+            GraphvizLayout::Neato => writeln!(output, "    overlap=false;").map_err(Self::fmt_error_to_generator_error)?,
+            GraphvizLayout::Fdp => writeln!(output, "    overlap=false; sep=\"+20\";").map_err(Self::fmt_error_to_generator_error)?,
             _ => {}
         }
         
         if self.options.style == GraphvizStyle::Uml {
-            writeln!(output, "    ranksep=1.0;").unwrap();
-            writeln!(output, "    nodesep=0.5;").unwrap();
+            writeln!(output, "    ranksep=1.0;").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "    nodesep=0.5;").map_err(Self::fmt_error_to_generator_error)?;
         }
+        Ok(())
     }
     
     /// Write default node attributes
-    fn write_node_attributes(&self, output: &mut String) {
-        writeln!(output, "    \n    // Node defaults").unwrap();
+    fn write_node_attributes(&self, output: &mut String) -> GeneratorResult<()> {
+        writeln!(output, "    \n    // Node defaults").map_err(Self::fmt_error_to_generator_error)?;
         
         match self.options.style {
             GraphvizStyle::Simple => {
-                writeln!(output, "    node [shape=box, style=rounded, fontname=\"Arial\"];").unwrap();
+                writeln!(output, "    node [shape=box, style=rounded, fontname=\"Arial\"];").map_err(Self::fmt_error_to_generator_error)?;
             }
             GraphvizStyle::Uml => {
-                writeln!(output, "    node [shape=record, fontname=\"Arial\", fontsize=10];").unwrap();
+                writeln!(output, "    node [shape=record, fontname=\"Arial\", fontsize=10];").map_err(Self::fmt_error_to_generator_error)?;
             }
             GraphvizStyle::EntityRelationship => {
-                writeln!(output, "    node [shape=box, fontname=\"Arial\"];").unwrap();
+                writeln!(output, "    node [shape=box, fontname=\"Arial\"];").map_err(Self::fmt_error_to_generator_error)?;
             }
             GraphvizStyle::Hierarchical => {
-                writeln!(output, "    node [shape=box, style=\"rounded,filled\", fillcolor=lightblue, fontname=\"Arial\"];").unwrap();
+                writeln!(output, "    node [shape=box, style=\"rounded,filled\", fillcolor=lightblue, fontname=\"Arial\"];").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
+        Ok(())
     }
     
     /// Write default edge attributes
-    fn write_edge_attributes(&self, output: &mut String) {
-        writeln!(output, "    \n    // Edge defaults").unwrap();
-        writeln!(output, "    edge [fontname=\"Arial\", fontsize=9];").unwrap();
+    fn write_edge_attributes(&self, output: &mut String) -> GeneratorResult<()> {
+        writeln!(output, "    \n    // Edge defaults").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    edge [fontname=\"Arial\", fontsize=9];").map_err(Self::fmt_error_to_generator_error)?;
+        Ok(())
     }
     
     /// Generate a class node
@@ -217,29 +225,29 @@ impl GraphvizGenerator {
         
         match self.options.style {
             GraphvizStyle::Simple => {
-                write!(output, "    {} [label=\"{}\"]", node_id, name).unwrap();
+                write!(output, "    {} [label=\"{}\"]", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 if self.options.use_colors {
                     if class_def.abstract_.unwrap_or(false) {
-                        write!(output, " [style=\"dashed\"]").unwrap();
+                        write!(output, " [style=\"dashed\"]").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                writeln!(output, ";").unwrap();
+                writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
             }
             GraphvizStyle::Uml => {
-                write!(output, "    {} [label=\"{{", node_id).unwrap();
+                write!(output, "    {} [label=\"{{", node_id).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // Class name compartment
                 if class_def.abstract_.unwrap_or(false) {
-                    write!(output, "\\<\\<abstract\\>\\>\\n{}", name).unwrap();
+                    write!(output, "\\<\\<abstract\\>\\>\\n{}", name).map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(output, "{}", name).unwrap();
+                    write!(output, "{}", name).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 if self.options.include_slots {
                     // Slots compartment
-                    write!(output, "|").unwrap();
+                    write!(output, "|").map_err(Self::fmt_error_to_generator_error)?;
                     
                     let all_slots = self.collect_all_slots(name, class_def, schema);
                     let mut first = true;
@@ -247,45 +255,45 @@ impl GraphvizGenerator {
                     for slot_name in &all_slots {
                         if let Some(slot_def) = schema.slots.get(slot_name) {
                             if !first {
-                                write!(output, "\\l").unwrap(); // left-aligned newline
+                                write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?; // left-aligned newline
                             }
                             first = false;
                             
                             // Slot with type and cardinality
                             write!(output, "{}: {}", slot_name, 
-                                slot_def.range.as_deref().unwrap_or("string")).unwrap();
+                                slot_def.range.as_deref().unwrap_or("string")).map_err(Self::fmt_error_to_generator_error)?;
                             
                             if self.options.show_cardinality {
                                 let cardinality = self.get_cardinality(slot_def);
-                                write!(output, " [{}]", cardinality).unwrap();
+                                write!(output, " [{}]", cardinality).map_err(Self::fmt_error_to_generator_error)?;
                             }
                         }
                     }
                     
                     if !all_slots.is_empty() {
-                        write!(output, "\\l").unwrap();
+                        write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                write!(output, "}}\"").unwrap();
+                write!(output, "}}\"").map_err(Self::fmt_error_to_generator_error)?;
                 
                 if self.options.use_colors && class_def.abstract_.unwrap_or(false) {
-                    write!(output, ", fillcolor=lightgray, style=filled").unwrap();
+                    write!(output, ", fillcolor=lightgray, style=filled").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
-                writeln!(output, "];").unwrap();
+                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
             }
             _ => {
                 // EntityRelationship and Hierarchical styles
-                write!(output, "    {} [label=\"{}\"", node_id, name).unwrap();
+                write!(output, "    {} [label=\"{}\"", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 if self.options.use_colors {
                     if class_def.abstract_.unwrap_or(false) {
-                        write!(output, ", style=\"dashed,filled\", fillcolor=lightgray").unwrap();
+                        write!(output, ", style=\"dashed,filled\", fillcolor=lightgray").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                writeln!(output, "];").unwrap();
+                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -298,13 +306,13 @@ impl GraphvizGenerator {
         
         match self.options.style {
             GraphvizStyle::Uml => {
-                write!(output, "    {} [label=\"{{\\<\\<enumeration\\>\\>\\n{}|", node_id, name).unwrap();
+                write!(output, "    {} [label=\"{{\\<\\<enumeration\\>\\>\\n{}|", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // List enum values
                 let mut first = true;
                 for pv in &enum_def.permissible_values {
                     if !first {
-                        write!(output, "\\l").unwrap();
+                        write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
                     }
                     first = false;
                     
@@ -312,29 +320,29 @@ impl GraphvizGenerator {
                         PermissibleValue::Simple(s) => s,
                         PermissibleValue::Complex { text, .. } => text,
                     };
-                    write!(output, "{}", value).unwrap();
+                    write!(output, "{}", value).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 if !enum_def.permissible_values.is_empty() {
-                    write!(output, "\\l").unwrap();
+                    write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
-                write!(output, "}}\"").unwrap();
+                write!(output, "}}\"").map_err(Self::fmt_error_to_generator_error)?;
                 
                 if self.options.use_colors {
-                    write!(output, ", fillcolor=lightyellow, style=filled").unwrap();
+                    write!(output, ", fillcolor=lightyellow, style=filled").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
-                writeln!(output, "];").unwrap();
+                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
             }
             _ => {
-                write!(output, "    {} [label=\"{} (enum)\"", node_id, name).unwrap();
+                write!(output, "    {} [label=\"{} (enum)\"", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 if self.options.use_colors {
-                    write!(output, ", shape=diamond, fillcolor=lightyellow, style=filled").unwrap();
+                    write!(output, ", shape=diamond, fillcolor=lightyellow, style=filled").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
-                writeln!(output, "];").unwrap();
+                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -345,33 +353,33 @@ impl GraphvizGenerator {
     fn generate_type_node(&self, output: &mut String, name: &str, type_def: &TypeDefinition) -> GeneratorResult<String> {
         let node_id = self.sanitize_id(name);
         
-        write!(output, "    {} [label=\"{}", node_id, name).unwrap();
+        write!(output, "    {} [label=\"{}", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(base) = &type_def.typeof {
-            write!(output, "\\n({})", base).unwrap();
+            write!(output, "\\n({})", base).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        write!(output, "\"").unwrap();
+        write!(output, "\"").map_err(Self::fmt_error_to_generator_error)?;
         
         if self.options.use_colors {
-            write!(output, ", shape=ellipse, fillcolor=lightgreen, style=filled").unwrap();
+            write!(output, ", shape=ellipse, fillcolor=lightgreen, style=filled").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "];").unwrap();
+        writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(String::new())
     }
     
     /// Generate edges for relationships
     fn generate_edges(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "    // Relationships").unwrap();
+        writeln!(output, "    // Relationships").map_err(Self::fmt_error_to_generator_error)?;
         
         // Inheritance edges
         if self.options.show_inheritance {
             for (name, class_def) in &schema.classes {
                 if let Some(parent) = &class_def.is_a {
                     writeln!(output, "    {} -> {} [arrowhead=empty, style=solid];", 
-                        self.sanitize_id(parent), self.sanitize_id(name)).unwrap();
+                        self.sanitize_id(parent), self.sanitize_id(name)).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -381,7 +389,7 @@ impl GraphvizGenerator {
             for (name, class_def) in &schema.classes {
                 for mixin in &class_def.mixins {
                     writeln!(output, "    {} -> {} [arrowhead=empty, style=dashed, label=\"mixin\"];", 
-                        self.sanitize_id(mixin), self.sanitize_id(name)).unwrap();
+                        self.sanitize_id(mixin), self.sanitize_id(name)).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -404,7 +412,7 @@ impl GraphvizGenerator {
                             writeln!(output, "    {} -> {} [arrowhead=open, label=\"{}\"];", 
                                 self.sanitize_id(class_name), 
                                 self.sanitize_id(range),
-                                label).unwrap();
+                                label).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
@@ -557,7 +565,7 @@ mod tests {
         let generator = GraphvizGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate Graphviz output");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];

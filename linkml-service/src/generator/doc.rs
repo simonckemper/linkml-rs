@@ -14,6 +14,11 @@ pub struct DocGenerator {
 }
 
 impl DocGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new documentation generator
     #[must_use]
     pub fn new() -> Self {
@@ -28,45 +33,45 @@ impl DocGenerator {
 
         // Title
         if schema.name.is_empty() {
-            writeln!(&mut output, "# Schema Documentation").unwrap();
+            writeln!(&mut output, "# Schema Documentation").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, "# {}", schema.name).unwrap();
+            writeln!(&mut output, "# {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Description
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "{desc}").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Metadata
-        writeln!(&mut output, "## Metadata").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "## Metadata").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "- **Version**: {version}").unwrap();
+            writeln!(&mut output, "- **Version**: {version}").map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(license) = &schema.license {
-            writeln!(&mut output, "- **License**: {license}").unwrap();
+            writeln!(&mut output, "- **License**: {license}").map_err(Self::fmt_error_to_generator_error)?;
         }
         if !schema.imports.is_empty() {
-            writeln!(&mut output, "- **Imports**: {}", schema.imports.join(", ")).unwrap();
+            writeln!(&mut output, "- **Imports**: {}", schema.imports.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Table of Contents
-        writeln!(&mut output, "## Table of Contents").unwrap();
-        writeln!(&mut output).unwrap();
-        writeln!(&mut output, "- [Classes](#classes)").unwrap();
-        writeln!(&mut output, "- [Slots](#slots)").unwrap();
-        writeln!(&mut output, "- [Types](#types)").unwrap();
-        writeln!(&mut output, "- [Enums](#enums)").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "## Table of Contents").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "- [Classes](#classes)").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "- [Slots](#slots)").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "- [Types](#types)").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "- [Enums](#enums)").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Classes
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "## Classes").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "## Classes").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (class_name, class) in &schema.classes {
                 self.generate_class_doc(&mut output, class_name, class, schema)?;
@@ -75,8 +80,8 @@ impl DocGenerator {
 
         // Slots
         if !schema.slots.is_empty() {
-            writeln!(&mut output, "## Slots").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "## Slots").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (slot_name, slot) in &schema.slots {
                 self.generate_slot_doc(&mut output, slot_name, slot)?;
@@ -85,8 +90,8 @@ impl DocGenerator {
 
         // Types
         if !schema.types.is_empty() {
-            writeln!(&mut output, "## Types").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "## Types").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (type_name, type_def) in &schema.types {
                 self.generate_type_doc(&mut output, type_name, type_def)?;
@@ -95,8 +100,8 @@ impl DocGenerator {
 
         // Enums
         if !schema.enums.is_empty() {
-            writeln!(&mut output, "## Enums").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "## Enums").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (enum_name, enum_def) in &schema.enums {
                 self.generate_enum_doc(&mut output, enum_name, enum_def)?;
@@ -115,42 +120,42 @@ impl DocGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         let _ = self;
-        writeln!(output, "### {class_name}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "### {class_name}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(desc) = &class.description {
-            writeln!(output, "{desc}").unwrap();
-            writeln!(output).unwrap();
+            writeln!(output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Properties table
-        writeln!(output, "**Properties:**").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "**Properties:**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(is_a) = &class.is_a {
-            writeln!(output, "- **Inherits from**: {is_a}").unwrap();
+            writeln!(output, "- **Inherits from**: {is_a}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if !class.mixins.is_empty() {
-            writeln!(output, "- **Mixins**: {}", class.mixins.join(", ")).unwrap();
+            writeln!(output, "- **Mixins**: {}", class.mixins.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if class.abstract_ == Some(true) {
-            writeln!(output, "- **Abstract**: Yes").unwrap();
+            writeln!(output, "- **Abstract**: Yes").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if class.tree_root == Some(true) {
-            writeln!(output, "- **Tree Root**: Yes").unwrap();
+            writeln!(output, "- **Tree Root**: Yes").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Slots table
         if !class.slots.is_empty() {
-            writeln!(output, "**Slots:**").unwrap();
-            writeln!(output).unwrap();
-            writeln!(output, "| Slot | Type | Required | Description |").unwrap();
-            writeln!(output, "|------|------|----------|-------------|").unwrap();
+            writeln!(output, "**Slots:**").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "| Slot | Type | Required | Description |").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "|------|------|----------|-------------|").map_err(Self::fmt_error_to_generator_error)?;
 
             for slot_name in &class.slots {
                 if let Some(slot) = schema.slots.get(slot_name) {
@@ -165,10 +170,10 @@ impl DocGenerator {
                         output,
                         "| {slot_name} | {slot_type} | {required} | {desc} |"
                     )
-                    .unwrap();
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-            writeln!(output).unwrap();
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(())
@@ -182,42 +187,42 @@ impl DocGenerator {
         slot: &SlotDefinition,
     ) -> GeneratorResult<()> {
         let _ = self;
-        writeln!(output, "### {slot_name}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "### {slot_name}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(desc) = &slot.description {
-            writeln!(output, "{desc}").unwrap();
-            writeln!(output).unwrap();
+            writeln!(output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, "**Properties:**").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "**Properties:**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(range) = &slot.range {
-            writeln!(output, "- **Type**: {range}").unwrap();
+            writeln!(output, "- **Type**: {range}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if slot.required == Some(true) {
-            writeln!(output, "- **Required**: Yes").unwrap();
+            writeln!(output, "- **Required**: Yes").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if slot.multivalued == Some(true) {
-            writeln!(output, "- **Multivalued**: Yes").unwrap();
+            writeln!(output, "- **Multivalued**: Yes").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(pattern) = &slot.pattern {
-            writeln!(output, "- **Pattern**: `{pattern}`").unwrap();
+            writeln!(output, "- **Pattern**: `{pattern}`").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(min_val) = &slot.minimum_value {
-            writeln!(output, "- **Minimum**: {min_val}").unwrap();
+            writeln!(output, "- **Minimum**: {min_val}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(max_val) = &slot.maximum_value {
-            writeln!(output, "- **Maximum**: {max_val}").unwrap();
+            writeln!(output, "- **Maximum**: {max_val}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -230,23 +235,23 @@ impl DocGenerator {
         type_def: &TypeDefinition,
     ) -> GeneratorResult<()> {
         let _ = self;
-        writeln!(output, "### {type_name}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "### {type_name}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(desc) = &type_def.description {
-            writeln!(output, "{desc}").unwrap();
-            writeln!(output).unwrap();
+            writeln!(output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(base) = &type_def.base_type {
-            writeln!(output, "- **Base Type**: {base}").unwrap();
+            writeln!(output, "- **Base Type**: {base}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(pattern) = &type_def.pattern {
-            writeln!(output, "- **Pattern**: `{pattern}`").unwrap();
+            writeln!(output, "- **Pattern**: `{pattern}`").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -259,37 +264,37 @@ impl DocGenerator {
         enum_def: &EnumDefinition,
     ) -> GeneratorResult<()> {
         let _ = self;
-        writeln!(output, "### {enum_name}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "### {enum_name}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(desc) = &enum_def.description {
-            writeln!(output, "{desc}").unwrap();
-            writeln!(output).unwrap();
+            writeln!(output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, "**Values:**").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "**Values:**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         if !enum_def.permissible_values.is_empty() {
             for value_def in &enum_def.permissible_values {
                 match value_def {
                     PermissibleValue::Simple(text) => {
-                        writeln!(output, "- **{text}**").unwrap();
+                        writeln!(output, "- **{text}**").map_err(Self::fmt_error_to_generator_error)?;
                     }
                     PermissibleValue::Complex {
                         text, description, ..
                     } => {
-                        write!(output, "- **{text}**").unwrap();
+                        write!(output, "- **{text}**").map_err(Self::fmt_error_to_generator_error)?;
                         if let Some(desc) = description {
-                            write!(output, ": {desc}").unwrap();
+                            write!(output, ": {desc}").map_err(Self::fmt_error_to_generator_error)?;
                         }
-                        writeln!(output).unwrap();
+                        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
 
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -416,7 +421,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("# test_schema"));

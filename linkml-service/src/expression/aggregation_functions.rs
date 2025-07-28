@@ -487,12 +487,12 @@ mod tests {
         
         let numbers = json!([1, 2, 3, 4, 5]);
         
-        assert_eq!(sum_fn.call(vec![numbers.clone()]).unwrap(), json!(15.0));
-        assert_eq!(avg_fn.call(vec![numbers]).unwrap(), json!(3.0));
+        assert_eq!(sum_fn.call(vec![numbers.clone()]).expect("should calculate sum"), json!(15.0));
+        assert_eq!(avg_fn.call(vec![numbers]).expect("should calculate average"), json!(3.0));
         
         // Empty array
-        assert_eq!(sum_fn.call(vec![json!([])]).unwrap(), json!(0.0));
-        assert_eq!(avg_fn.call(vec![json!([])]).unwrap(), json!(null));
+        assert_eq!(sum_fn.call(vec![json!([])]).expect("should handle empty array sum"), json!(0.0));
+        assert_eq!(avg_fn.call(vec![json!([])]).expect("should handle empty array average"), json!(null));
     }
     
     #[test]
@@ -501,19 +501,19 @@ mod tests {
         
         // Simple count
         assert_eq!(
-            count_fn.call(vec![json!([1, 2, 3, 4, 5])]).unwrap(),
+            count_fn.call(vec![json!([1, 2, 3, 4, 5])]).expect("should count array elements"),
             json!(5)
         );
         
         // Count non-null
         assert_eq!(
-            count_fn.call(vec![json!([1, null, 3, null, 5]), json!("non-null")]).unwrap(),
+            count_fn.call(vec![json!([1, null, 3, null, 5]), json!("non-null")]).expect("should count non-null elements"),
             json!(3)
         );
         
         // Count non-empty
         assert_eq!(
-            count_fn.call(vec![json!(["a", "", "c", ""]), json!("non-empty")]).unwrap(),
+            count_fn.call(vec![json!(["a", "", "c", ""]), json!("non-empty")]).expect("should count non-empty elements"),
             json!(2)
         );
     }
@@ -524,19 +524,19 @@ mod tests {
         
         // Odd number of elements
         assert_eq!(
-            median_fn.call(vec![json!([1, 3, 5, 7, 9])]).unwrap(),
+            median_fn.call(vec![json!([1, 3, 5, 7, 9])]).expect("should calculate median of odd elements"),
             json!(5.0)
         );
         
         // Even number of elements
         assert_eq!(
-            median_fn.call(vec![json!([1, 2, 3, 4])]).unwrap(),
+            median_fn.call(vec![json!([1, 2, 3, 4])]).expect("should calculate median of even elements"),
             json!(2.5)
         );
         
         // Unsorted array
         assert_eq!(
-            median_fn.call(vec![json!([5, 1, 3, 9, 7])]).unwrap(),
+            median_fn.call(vec![json!([5, 1, 3, 9, 7])]).expect("should calculate median of unsorted array"),
             json!(5.0)
         );
     }
@@ -547,12 +547,12 @@ mod tests {
         
         // Single mode
         assert_eq!(
-            mode_fn.call(vec![json!([1, 2, 2, 3, 2, 4])]).unwrap(),
+            mode_fn.call(vec![json!([1, 2, 2, 3, 2, 4])]).expect("should find single mode"),
             json!(2)
         );
         
         // Multiple modes
-        let result = mode_fn.call(vec![json!([1, 1, 2, 2, 3])]).unwrap();
+        let result = mode_fn.call(vec![json!([1, 1, 2, 2, 3])]).expect("should find multiple modes");
         match result {
             Value::Array(arr) => {
                 assert_eq!(arr.len(), 2);
@@ -572,13 +572,13 @@ mod tests {
         
         // Variance should be 4.0
         assert_eq!(
-            variance_fn.call(vec![data.clone()]).unwrap(),
+            variance_fn.call(vec![data.clone()]).expect("should calculate variance"),
             json!(4.0)
         );
         
         // Standard deviation should be 2.0
         assert_eq!(
-            stddev_fn.call(vec![data]).unwrap(),
+            stddev_fn.call(vec![data]).expect("should calculate standard deviation"),
             json!(2.0)
         );
     }
@@ -587,11 +587,11 @@ mod tests {
     fn test_unique() {
         let unique_fn = UniqueFunction;
         
-        let result = unique_fn.call(vec![json!([1, 2, 2, 3, 1, 4, 3])]).unwrap();
+        let result = unique_fn.call(vec![json!([1, 2, 2, 3, 1, 4, 3])]).expect("should find unique numbers");
         assert_eq!(result, json!([1, 2, 3, 4]));
         
         // With strings
-        let result = unique_fn.call(vec![json!(["a", "b", "a", "c", "b"])]).unwrap();
+        let result = unique_fn.call(vec![json!(["a", "b", "a", "c", "b"])]).expect("should find unique strings");
         assert_eq!(result, json!(["a", "b", "c"]));
     }
     
@@ -606,7 +606,7 @@ mod tests {
             {"type": "vegetable", "name": "lettuce"}
         ]);
         
-        let result = group_by_fn.call(vec![data, json!("type")]).unwrap();
+        let result = group_by_fn.call(vec![data, json!("type")]).expect("should group by type field");
         
         match result {
             Value::Object(groups) => {

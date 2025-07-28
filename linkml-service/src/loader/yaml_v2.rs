@@ -161,7 +161,7 @@ impl DataDumperV2 for YamlDumperV2 {
         // Convert instances to appropriate format
         let output = if instances.len() == 1 {
             // Single instance - output as object
-            instances.into_iter().next().unwrap().data
+            instances.into_iter().next().expect("should have at least one instance after length check").data
         } else {
             // Multiple instances - output as array
             Value::Array(instances.into_iter().map(|i| i.data).collect())
@@ -188,7 +188,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_yaml_loader_v2() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         
         let yaml_content = r#"
@@ -199,11 +199,11 @@ mod tests {
 "#;
         
         let file_path = temp_dir.path().join("data.yaml");
-        fs.write(&file_path, yaml_content).await.unwrap();
+        fs.write(&file_path, yaml_content).await.expect("should write YAML file");
         
         let mut loader = YamlLoaderV2::new();
         let schema = SchemaDefinition::default();
-        let instances = loader.load_file(&file_path, &schema, fs).await.unwrap();
+        let instances = loader.load_file(&file_path, &schema, fs).await.expect("should load YAML file");
         
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -212,7 +212,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_yaml_dumper_v2() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         
         let instances = vec![
@@ -238,9 +238,9 @@ mod tests {
         let mut dumper = YamlDumperV2::new();
         let schema = SchemaDefinition::default();
         
-        dumper.dump_file(instances, &file_path, &schema, fs.clone()).await.unwrap();
+        dumper.dump_file(instances, &file_path, &schema, fs.clone()).await.expect("should dump instances to YAML");
         
-        let content = fs.read_to_string(&file_path).await.unwrap();
+        let content = fs.read_to_string(&file_path).await.expect("should read YAML file");
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
     }

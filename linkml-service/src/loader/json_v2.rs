@@ -174,7 +174,7 @@ impl DataDumperV2 for JsonDumperV2 {
             // Regular JSON format
             let output = if instances.len() == 1 {
                 // Single instance - output as object
-                instances.into_iter().next().unwrap().data
+                instances.into_iter().next().expect("should have at least one instance after length check").data
             } else {
                 // Multiple instances - output as array
                 Value::Array(instances.into_iter().map(|i| i.data).collect())
@@ -211,7 +211,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_json_loader_v2() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         
         let json_content = r#"[
@@ -220,11 +220,11 @@ mod tests {
 ]"#;
         
         let file_path = temp_dir.path().join("data.json");
-        fs.write(&file_path, json_content).await.unwrap();
+        fs.write(&file_path, json_content).await.expect("should write JSON file");
         
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
-        let instances = loader.load_file(&file_path, &schema, fs).await.unwrap();
+        let instances = loader.load_file(&file_path, &schema, fs).await.expect("should load JSON file");
         
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -233,7 +233,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_json_dumper_v2() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         
         let instances = vec![
@@ -260,9 +260,9 @@ mod tests {
         let mut dumper = JsonDumperV2::new();
         let schema = SchemaDefinition::default();
         
-        dumper.dump_file(instances.clone(), &file_path, &schema, fs.clone()).await.unwrap();
+        dumper.dump_file(instances.clone(), &file_path, &schema, fs.clone()).await.expect("should dump instances to JSON");
         
-        let content = fs.read_to_string(&file_path).await.unwrap();
+        let content = fs.read_to_string(&file_path).await.expect("should read JSON file");
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
         
@@ -270,9 +270,9 @@ mod tests {
         let jsonl_path = temp_dir.path().join("output.jsonl");
         let mut jsonl_dumper = JsonDumperV2::new().with_jsonl(true);
         
-        jsonl_dumper.dump_file(instances, &jsonl_path, &schema, fs.clone()).await.unwrap();
+        jsonl_dumper.dump_file(instances, &jsonl_path, &schema, fs.clone()).await.expect("should dump instances to JSONL");
         
-        let jsonl_content = fs.read_to_string(&jsonl_path).await.unwrap();
+        let jsonl_content = fs.read_to_string(&jsonl_path).await.expect("should read JSONL file");
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
         assert_eq!(lines.len(), 2);
     }

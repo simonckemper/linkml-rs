@@ -1129,7 +1129,7 @@ impl LinkMLApp {
             LoadFormat::TypeDb => {
                 let mut typedb_options = TypeDBOptions::default();
                 typedb_options.server_url = load_options.get("server")
-                    .unwrap_or(&"localhost:1729".to_string())
+                    .unwrap_or(&crate::config::get_config().typedb.server_address)
                     .clone();
                 typedb_options.database = load_options.get("database")
                     .ok_or_else(|| LinkMLError::Configuration("TypeDB database name required".to_string()))?
@@ -1284,7 +1284,7 @@ impl LinkMLApp {
             DumpFormat::TypeDb => {
                 let mut typedb_options = TypeDBOptions::default();
                 typedb_options.server_url = dump_options.get("server")
-                    .unwrap_or(&"localhost:1729".to_string())
+                    .unwrap_or(&crate::config::get_config().typedb.server_address)
                     .clone();
                 typedb_options.database = dump_options.get("database")
                     .ok_or_else(|| LinkMLError::Configuration("TypeDB database name required".to_string()))?

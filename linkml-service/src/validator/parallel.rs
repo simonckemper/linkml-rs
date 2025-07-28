@@ -182,7 +182,7 @@ impl ParallelValidationEngine {
                         report
                     });
 
-                    let mut results = results.lock().unwrap();
+                    let mut results = results.lock().expect("results mutex should not be poisoned");
                     results.add_report(report);
                 }
             });
@@ -191,10 +191,10 @@ impl ParallelValidationEngine {
         // Finalize and extract the result
         let results_clone = results.clone();
         let mut final_result = match Arc::try_unwrap(results) {
-            Ok(mutex) => mutex.into_inner().unwrap(),
+            Ok(mutex) => mutex.into_inner().expect("results mutex should not be poisoned"),
             Err(_) => {
                 // If we can't unwrap the Arc, clone the inner value
-                results_clone.lock().unwrap().clone()
+                results_clone.lock().expect("results mutex should not be poisoned").clone()
             }
         };
 
@@ -374,8 +374,8 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).unwrap();
-        let parallel_engine = ParallelValidationEngine::new(engine).unwrap();
+        let engine = ValidationEngine::new(&schema).expect("should create validation engine");
+        let parallel_engine = ParallelValidationEngine::new(engine).expect("should create parallel engine");
 
         let values = vec![
             json!({"name": "test1"}),
@@ -398,8 +398,8 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).unwrap();
-        let parallel_engine = ParallelValidationEngine::new(engine).unwrap();
+        let engine = ValidationEngine::new(&schema).expect("should create validation engine");
+        let parallel_engine = ParallelValidationEngine::new(engine).expect("should create parallel engine");
 
         let values = vec![
             ("id1".to_string(), json!({"name": "test1"})),

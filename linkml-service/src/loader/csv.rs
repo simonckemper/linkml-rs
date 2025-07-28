@@ -624,7 +624,8 @@ impl DataDumper for CsvDumper {
             ));
         }
         
-        let (class_name, class_instances) = by_class.into_iter().next().unwrap();
+        let (class_name, class_instances) = by_class.into_iter().next()
+            .expect("by_class should have at least one entry after check");
         
         // Apply limit if specified
         let instances_to_dump: Vec<&DataInstance> = if let Some(limit) = options.limit {
@@ -780,7 +781,7 @@ p2,Bob,25,bob@example.com,tag3
             ..Default::default()
         };
         
-        let instances = loader.load_string(csv_content, &schema, &options).await.unwrap();
+        let instances = loader.load_string(csv_content, &schema, &options).await.expect("should load CSV");
         assert_eq!(instances.len(), 2);
         
         // Check first instance
@@ -794,7 +795,7 @@ p2,Bob,25,bob@example.com,tag3
         
         // Dump back to CSV
         let dump_options = DumpOptions::default();
-        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.unwrap();
+        let dumped = dumper.dump_string(&instances, &schema, &dump_options).await.expect("should dump to CSV");
         
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -814,7 +815,7 @@ p2,Bob,25,bob@example.com,tag3
             ..Default::default()
         };
         
-        let instances = loader.load_string(tsv_content, &schema, &options).await.unwrap();
+        let instances = loader.load_string(tsv_content, &schema, &options).await.expect("should load TSV");
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].data.get("name"), Some(&json!("Alice")));
     }
@@ -846,7 +847,7 @@ p2,Bob,not_a_number,bob@example.com,
             ..Default::default()
         };
         
-        let instances = loader.load_string(csv_content, &schema, &options_skip).await.unwrap();
+        let instances = loader.load_string(csv_content, &schema, &options_skip).await.expect("should load with skip_invalid");
         assert_eq!(instances.len(), 1); // Only valid record
     }
 }

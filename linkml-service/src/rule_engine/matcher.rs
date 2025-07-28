@@ -324,8 +324,8 @@ mod tests {
             &mut validation_ctx,
         );
         
-        assert!(matcher.match_slot_condition(&json!(20), &condition, &context).unwrap());
-        assert!(!matcher.match_slot_condition(&json!(16), &condition, &context).unwrap());
+        assert!(matcher.match_slot_condition(&json!(20), &condition, &context).expect("should match age >= 18"));
+        assert!(!matcher.match_slot_condition(&json!(16), &condition, &context).expect("should not match age < 18"));
     }
     
     #[test]
@@ -334,7 +334,7 @@ mod tests {
         
         // Parse expression
         let parser = crate::expression::parser::Parser::new();
-        let expr = parser.parse("{age} >= 18 and {status} == \"active\"").unwrap();
+        let expr = parser.parse("{age} >= 18 and {status} == \"active\"").expect("should parse expression");
         
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
@@ -343,7 +343,7 @@ mod tests {
             &mut validation_ctx,
         );
         
-        assert!(matcher.match_expression_conditions(&[expr.clone()], &context).unwrap());
+        assert!(matcher.match_expression_conditions(&[expr.clone()], &context).expect("should match expression"));
         
         let mut validation_ctx2 = ValidationContext::new(Default::default());
         let context2 = RuleExecutionContext::new(
@@ -352,6 +352,6 @@ mod tests {
             &mut validation_ctx2,
         );
         
-        assert!(!matcher.match_expression_conditions(&[expr], &context2).unwrap());
+        assert!(!matcher.match_expression_conditions(&[expr], &context2).expect("should not match expression"));
     }
 }

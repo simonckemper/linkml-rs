@@ -125,7 +125,7 @@ impl UniqueKeyValidator {
         instance_path: &str,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
-        let mut tracker = self.tracker.lock().unwrap();
+        let mut tracker = self.tracker.lock().expect("tracker mutex should not be poisoned");
         
         // Check identifier slot (if present)
         if let Some(identifier_slot) = class_def.slots.iter()
@@ -215,12 +215,12 @@ impl UniqueKeyValidator {
     
     /// Reset the validator's state (clear all tracked values)
     pub fn reset(&mut self) {
-        self.tracker.lock().unwrap().clear();
+        self.tracker.lock().expect("tracker mutex should not be poisoned").clear();
     }
     
     /// Reset tracking for a specific class
     pub fn reset_class(&mut self, class_name: &str) {
-        self.tracker.lock().unwrap().clear_class(class_name);
+        self.tracker.lock().expect("tracker mutex should not be poisoned").clear_class(class_name);
     }
     
     /// Public method for validating an instance (read-only access)

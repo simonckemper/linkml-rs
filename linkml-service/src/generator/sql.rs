@@ -1,7 +1,7 @@
 //! SQL DDL generation for `LinkML` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult};
+use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -20,6 +20,11 @@ impl SQLGenerator {
         Self {
             name: "sql".to_string(),
         }
+    }
+    
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
     /// Generate SQL table for a class
@@ -44,12 +49,12 @@ impl SQLGenerator {
         // Table comment
         if options.include_docs {
             if let Some(desc) = &class.description {
-                writeln!(&mut output, "-- {desc}").unwrap();
+                writeln!(&mut output, "-- {desc}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // CREATE TABLE statement
-        writeln!(&mut output, "CREATE TABLE {table_name} (").unwrap();
+        writeln!(&mut output, "CREATE TABLE {table_name} (").map_err(Self::fmt_error_to_generator_error)?;
 
         // Primary key (ID column)
         writeln!(
@@ -58,38 +63,38 @@ impl SQLGenerator {
             indent.single(),
             self.get_id_type(options)
         )
-        .unwrap();
+        .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate columns
         let columns = self.generate_columns(class, schema, options, indent)?;
         for (i, column) in columns.iter().enumerate() {
-            write!(&mut output, "{column}").unwrap();
+            write!(&mut output, "{column}").map_err(Self::fmt_error_to_generator_error)?;
             if i < columns.len() - 1 {
-                writeln!(&mut output, ",").unwrap();
+                writeln!(&mut output, ",").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Foreign key constraints
         let fk_constraints = self.generate_foreign_keys(class, schema, indent)?;
         if !fk_constraints.is_empty() {
-            writeln!(&mut output, ",").unwrap();
+            writeln!(&mut output, ",").map_err(Self::fmt_error_to_generator_error)?;
             for (i, constraint) in fk_constraints.iter().enumerate() {
-                write!(&mut output, "{constraint}").unwrap();
+                write!(&mut output, "{constraint}").map_err(Self::fmt_error_to_generator_error)?;
                 if i < fk_constraints.len() - 1 {
-                    writeln!(&mut output, ",").unwrap();
+                    writeln!(&mut output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
 
-        writeln!(&mut output).unwrap();
-        writeln!(&mut output, ");").unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
 
         // Create indexes
         let indexes = self.generate_indexes(&table_name, class, schema, options)?;
         if !indexes.is_empty() {
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             for index in indexes {
-                writeln!(&mut output, "{index}").unwrap();
+                writeln!(&mut output, "{index}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -285,14 +290,14 @@ impl SQLGenerator {
 
                                 // Only generate once
                                 if generated.insert(junction_name.clone()) {
-                                    writeln!(&mut output).unwrap();
+                                    writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                                     writeln!(
                                         &mut output,
                                         "-- Junction table for {class_name} <-> {range}"
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
                                     writeln!(&mut output, "CREATE TABLE {junction_name} (")
-                                        .unwrap();
+                                        .map_err(Self::fmt_error_to_generator_error)?;
 
                                     let id_type = self.get_id_type(options);
 
@@ -303,7 +308,7 @@ impl SQLGenerator {
                                         table1,
                                         id_type
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
                                     writeln!(
                                         &mut output,
                                         "{}{}_id {} NOT NULL,",
@@ -311,7 +316,7 @@ impl SQLGenerator {
                                         table2,
                                         id_type
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
 
                                     writeln!(
                                         &mut output,
@@ -320,7 +325,7 @@ impl SQLGenerator {
                                         table1,
                                         table2
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
 
                                     writeln!(
                                         &mut output,
@@ -329,7 +334,7 @@ impl SQLGenerator {
                                         table1,
                                         table1
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
                                     writeln!(
                                         &mut output,
                                         "{}FOREIGN KEY ({}_id) REFERENCES {}(id)",
@@ -337,13 +342,13 @@ impl SQLGenerator {
                                         table2,
                                         table2
                                     )
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
 
-                                    writeln!(&mut output, ");").unwrap();
+                                    writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
 
                                     // Create indexes
-                                    writeln!(&mut output, "CREATE INDEX idx_{junction_name}_{table1}_id ON {junction_name}({table1}_id);").unwrap();
-                                    writeln!(&mut output, "CREATE INDEX idx_{junction_name}_{table2}_id ON {junction_name}({table2}_id);").unwrap();
+                                    writeln!(&mut output, "CREATE INDEX idx_{junction_name}_{table1}_id ON {junction_name}({table1}_id);").map_err(Self::fmt_error_to_generator_error)?;
+                                    writeln!(&mut output, "CREATE INDEX idx_{junction_name}_{table2}_id ON {junction_name}({table2}_id);").map_err(Self::fmt_error_to_generator_error)?;
                                 }
                             }
                         }
@@ -372,16 +377,16 @@ impl SQLGenerator {
 
         if dialect == "postgresql" {
             // PostgreSQL native ENUM types
-            writeln!(&mut output, "-- Enum Types").unwrap();
+            writeln!(&mut output, "-- Enum Types").map_err(Self::fmt_error_to_generator_error)?;
             for (enum_name, enum_def) in &schema.enums {
                 if options.include_docs {
                     if let Some(desc) = &enum_def.description {
-                        writeln!(&mut output, "-- {desc}").unwrap();
+                        writeln!(&mut output, "-- {desc}").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 let type_name = self.convert_table_name(enum_name);
-                write!(&mut output, "CREATE TYPE {type_name} AS ENUM (").unwrap();
+                write!(&mut output, "CREATE TYPE {type_name} AS ENUM (").map_err(Self::fmt_error_to_generator_error)?;
 
                 let values: Vec<String> = enum_def
                     .permissible_values
@@ -392,44 +397,44 @@ impl SQLGenerator {
                     })
                     .collect();
 
-                write!(&mut output, "{}", values.join(", ")).unwrap();
-                writeln!(&mut output, ");").unwrap();
+                write!(&mut output, "{}", values.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
             }
         } else {
             // Standard SQL - create lookup tables
-            writeln!(&mut output, "-- Enum Lookup Tables").unwrap();
+            writeln!(&mut output, "-- Enum Lookup Tables").map_err(Self::fmt_error_to_generator_error)?;
             for (enum_name, enum_def) in &schema.enums {
                 if options.include_docs {
                     if let Some(desc) = &enum_def.description {
-                        writeln!(&mut output, "-- {desc}").unwrap();
+                        writeln!(&mut output, "-- {desc}").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 let table_name = format!("{}_enum", self.convert_table_name(enum_name));
-                writeln!(&mut output, "CREATE TABLE {table_name} (").unwrap();
+                writeln!(&mut output, "CREATE TABLE {table_name} (").map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     &mut output,
                     "{}code VARCHAR(255) PRIMARY KEY,",
                     indent.single()
                 )
-                .unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     &mut output,
                     "{}label VARCHAR(255) NOT NULL,",
                     indent.single()
                 )
-                .unwrap();
-                writeln!(&mut output, "{}description TEXT", indent.single()).unwrap();
-                writeln!(&mut output, ");").unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "{}description TEXT", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
 
                 // Insert enum values
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 for value in &enum_def.permissible_values {
                     match value {
                         PermissibleValue::Simple(text) => {
                             writeln!(&mut output, 
                                 "INSERT INTO {table_name} (code, label) VALUES ('{text}', '{text}');"
-                            ).unwrap();
+                            ).map_err(Self::fmt_error_to_generator_error)?;
                         }
                         PermissibleValue::Complex {
                             text, description, ..
@@ -441,14 +446,14 @@ impl SQLGenerator {
 
                             writeln!(&mut output,
                                 "INSERT INTO {table_name} (code, label, description) VALUES ('{text}', '{text}', {desc_sql});"
-                            ).unwrap();
+                            ).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
             }
         }
 
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(output)
     }
 
@@ -631,17 +636,17 @@ impl Generator for SQLGenerator {
         let indent = &options.indent;
 
         // Header
-        writeln!(&mut output, "-- SQL DDL generated from LinkML schema").unwrap();
+        writeln!(&mut output, "-- SQL DDL generated from LinkML schema").map_err(Self::fmt_error_to_generator_error)?;
         if !schema.name.is_empty() {
-            writeln!(&mut output, "-- Schema: {}", schema.name).unwrap();
+            writeln!(&mut output, "-- Schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "-- Description: {desc}").unwrap();
+            writeln!(&mut output, "-- Description: {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         let dialect = options.get_custom("dialect").unwrap_or("standard");
-        writeln!(&mut output, "-- Dialect: {dialect}").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "-- Dialect: {dialect}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate enum types/tables first
         let enum_output = self.generate_enums(schema, options, indent)?;
@@ -651,13 +656,13 @@ impl Generator for SQLGenerator {
 
         // Generate tables
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "-- Tables").unwrap();
+            writeln!(&mut output, "-- Tables").map_err(Self::fmt_error_to_generator_error)?;
             for (class_name, class) in &schema.classes {
                 let table_output =
                     self.generate_table(class_name, class, schema, options, indent)?;
                 if !table_output.is_empty() {
                     output.push_str(&table_output);
-                    writeln!(&mut output).unwrap();
+                    writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -665,7 +670,7 @@ impl Generator for SQLGenerator {
         // Generate junction tables for many-to-many relationships
         let junction_output = self.generate_junction_tables(schema, options, indent)?;
         if !junction_output.is_empty() {
-            writeln!(&mut output, "-- Junction Tables").unwrap();
+            writeln!(&mut output, "-- Junction Tables").map_err(Self::fmt_error_to_generator_error)?;
             output.push_str(&junction_output);
         }
 
@@ -753,7 +758,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.expect("should generate SQL output");
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("CREATE TABLE person"));

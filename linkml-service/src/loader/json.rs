@@ -170,16 +170,16 @@ mod tests {
         "#;
         
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().unwrap();
-        std::fs::write(temp_file.path(), json_content).unwrap();
+        let temp_file = tempfile::NamedTempFile::new().expect("should create temporary file");
+        std::fs::write(temp_file.path(), json_content).expect("should write JSON content");
         
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
         class.slots = vec!["name".to_string(), "age".to_string()];
         schema.classes.insert("Person".to_string(), class);
         
-        let mut loader = JsonLoader::new().with_file(temp_file.path().to_str().unwrap());
-        let instances = loader.load(&schema).await.unwrap();
+        let mut loader = JsonLoader::new().with_file(temp_file.path().to_str().expect("temp file path should be valid UTF-8"));
+        let instances = loader.load(&schema).await.expect("should load JSON instances");
         
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -191,20 +191,20 @@ mod tests {
         let instances = vec![
             DataInstance {
                 class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{"name": "Alice", "age": 25}"#).unwrap(),
+                data: serde_json::from_str(r#"{"name": "Alice", "age": 25}"#).expect("should parse valid JSON"),
             },
             DataInstance {
                 class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{"name": "Bob", "age": 30}"#).unwrap(),
+                data: serde_json::from_str(r#"{"name": "Bob", "age": 30}"#).expect("should parse valid JSON"),
             },
         ];
         
         let schema = SchemaDefinition::default();
         let mut dumper = JsonDumper::new(false);
-        let result = dumper.dump(&instances, &schema).await.unwrap();
+        let result = dumper.dump(&instances, &schema).await.expect("should dump instances to JSON");
         
-        let json_str = String::from_utf8(result).unwrap();
-        let parsed: Vec<Value> = serde_json::from_str(&json_str).unwrap();
+        let json_str = String::from_utf8(result).expect("JSON should be valid UTF-8");
+        let parsed: Vec<Value> = serde_json::from_str(&json_str).expect("should parse dumped JSON");
         
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0]["@type"], "Person");

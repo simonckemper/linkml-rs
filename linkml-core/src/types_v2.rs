@@ -11,9 +11,11 @@ use serde_json::Value;
 
 use crate::string_pool::{intern, intern_option, intern_vec};
 use crate::types::{
-    Annotation, StructuredPattern, PatternExpression, AnonymousExpression,
-    PermissibleValue, UniqueKey, LocalName, Example
+    StructuredPattern, AnonymousSlotExpression,
+    PermissibleValue, UniqueKeyDefinition, PrefixDefinition
 };
+use crate::annotations::Annotation;
+use crate::metadata::Example;
 
 /// Memory-optimized Schema Definition using interned strings
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,7 +193,8 @@ pub struct TypeDefinitionV2 {
     pub name: Arc<str>,
     pub uri: Option<Arc<str>>,
     pub base: Option<Arc<str>>,
-    pub typeof: Option<Arc<str>>,
+    #[serde(rename = "typeof")]
+    pub base_type: Option<Arc<str>>,
     pub description: Option<String>,
     pub pattern: Option<Arc<str>>,
     pub minimum_value: Option<Value>,
@@ -433,7 +436,7 @@ impl From<crate::types::TypeDefinition> for TypeDefinitionV2 {
             name: intern(&v1.name),
             uri: intern_option(v1.uri.as_deref()),
             base: intern_option(v1.base.as_deref()),
-            typeof: intern_option(v1.typeof.as_deref()),
+            base_type: intern_option(v1.base_type.as_deref()),
             description: v1.description,
             pattern: intern_option(v1.pattern.as_deref()),
             minimum_value: v1.minimum_value,
@@ -481,11 +484,17 @@ impl From<crate::types::SubsetDefinition> for SubsetDefinitionV2 {
     }
 }
 
-impl From<crate::metadata::PrefixDefinition> for PrefixDefinitionV2 {
-    fn from(v1: crate::metadata::PrefixDefinition) -> Self {
-        Self {
-            prefix_prefix: intern(&v1.prefix_prefix),
-            prefix_reference: intern(&v1.prefix_reference),
+impl From<crate::types::PrefixDefinition> for PrefixDefinitionV2 {
+    fn from(v1: crate::types::PrefixDefinition) -> Self {
+        match v1 {
+            crate::types::PrefixDefinition::Simple(s) => Self {
+                prefix_prefix: intern(&s),
+                prefix_reference: None,
+            },
+            crate::types::PrefixDefinition::Complex { prefix_prefix, prefix_reference } => Self {
+                prefix_prefix: intern(&prefix_prefix),
+                prefix_reference: intern_option(prefix_reference.as_deref()),
+            },
         }
     }
 }

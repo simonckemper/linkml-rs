@@ -4,6 +4,7 @@
 //! computed attributes based on ``LinkML`` schema definitions.
 
 use super::typeql_expression_translator::{ExpressionTranslator, TranslationContext};
+use super::traits::{GeneratorError, GeneratorResult};
 use linkml_core::prelude::*;
 use serde_json::Value;
 use std::fmt::Write;
@@ -40,43 +41,43 @@ pub struct TypeQLRule {
 
 impl TypeQLRule {
     /// Generate `TypeQL` string for this rule
-    #[must_use] pub fn to_typeql(&self) -> String {
+    pub fn to_typeql(&self) -> GeneratorResult<String> {
         let mut output = String::new();
         
         // Add description as comment
         if let Some(desc) = &self.description {
-            writeln!(&mut output, "# {desc}").unwrap();
+            writeln!(&mut output, "# {desc}").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         }
         
         // Rule definition
-        writeln!(&mut output, "rule {}:", self.name).unwrap();
-        writeln!(&mut output, "when {{").unwrap();
+        writeln!(&mut output, "rule {}:", self.name).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+        writeln!(&mut output, "when {{").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         
         // When patterns
         for (i, pattern) in self.when_patterns.iter().enumerate() {
-            write!(&mut output, "    {pattern}").unwrap();
+            write!(&mut output, "    {pattern}").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             if i < self.when_patterns.len() - 1 {
-                writeln!(&mut output, ";").unwrap();
+                writeln!(&mut output, ";").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             } else {
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             }
         }
         
-        writeln!(&mut output, "}} then {{").unwrap();
+        writeln!(&mut output, "}} then {{").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         
         // Then patterns
         for (i, pattern) in self.then_patterns.iter().enumerate() {
-            write!(&mut output, "    {pattern}").unwrap();
+            write!(&mut output, "    {pattern}").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             if i < self.then_patterns.len() - 1 {
-                writeln!(&mut output, ";").unwrap();
+                writeln!(&mut output, ";").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             } else {
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             }
         }
         
-        writeln!(&mut output, "}};").unwrap();
+        writeln!(&mut output, "}};").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
         
-        output
+        Ok(output)
     }
 }
 
@@ -423,11 +424,11 @@ impl RuleGenerator {
     }
     
     /// Generate `TypeQL` string for all rules
-    #[must_use] pub fn generate_typeql(&self) -> String {
+    pub fn generate_typeql(&self) -> GeneratorResult<String> {
         let mut output = String::new();
         
         if !self.rules.is_empty() {
-            writeln!(&mut output, "\n# Generated Rules\n").unwrap();
+            writeln!(&mut output, "\n# Generated Rules\n").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
             
             // Group rules by type
             let mut validation_rules = Vec::new();
@@ -444,30 +445,33 @@ impl RuleGenerator {
             
             // Output validation rules
             if !validation_rules.is_empty() {
-                writeln!(&mut output, "## Validation Rules\n").unwrap();
+                writeln!(&mut output, "## Validation Rules\n").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 for rule in validation_rules {
-                    writeln!(&mut output, "{}", rule.to_typeql()).unwrap();
+                    let typeql = rule.to_typeql()?;
+                    writeln!(&mut output, "{}", typeql).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 }
             }
             
             // Output computation rules
             if !computation_rules.is_empty() {
-                writeln!(&mut output, "## Computed Attributes\n").unwrap();
+                writeln!(&mut output, "## Computed Attributes\n").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 for rule in computation_rules {
-                    writeln!(&mut output, "{}", rule.to_typeql()).unwrap();
+                    let typeql = rule.to_typeql()?;
+                    writeln!(&mut output, "{}", typeql).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 }
             }
             
             // Output inference rules
             if !inference_rules.is_empty() {
-                writeln!(&mut output, "## Inference Rules\n").unwrap();
+                writeln!(&mut output, "## Inference Rules\n").map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 for rule in inference_rules {
-                    writeln!(&mut output, "{}", rule.to_typeql()).unwrap();
+                    let typeql = rule.to_typeql()?;
+                    writeln!(&mut output, "{}", typeql).map_err(|e| GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
                 }
             }
         }
         
-        output
+        Ok(output)
     }
 }
 
@@ -478,7 +482,7 @@ mod tests {
     #[test]
     fn test_required_rule_generation() {
         let mut generator = RuleGenerator::new();
-        let rule = generator.generate_required_rule("Person", "name").unwrap();
+        let rule = generator.generate_required_rule("Person", "name").expect("should generate required rule");
         
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.contains(&"$x isa person".to_string()));
@@ -493,7 +497,7 @@ mod tests {
         slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
         slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
         
-        let rule = generator.generate_range_rule("Person", "age", &slot).unwrap();
+        let rule = generator.generate_range_rule("Person", "age", &slot).expect("should generate range rule");
         
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.iter().any(|p| p.contains("$v < 0")));
@@ -516,7 +520,7 @@ mod tests {
             dependencies: vec![],
         };
         
-        let typeql = rule.to_typeql();
+        let typeql = rule.to_typeql().expect("should generate TypeQL string");
         
         assert!(typeql.contains("# Test rule"));
         assert!(typeql.contains("rule test-rule:"));

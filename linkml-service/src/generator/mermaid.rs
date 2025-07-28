@@ -64,6 +64,11 @@ pub struct MermaidGenerator {
 }
 
 impl MermaidGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new Mermaid generator with default options
     #[must_use]
     pub fn new() -> Self {
@@ -100,10 +105,10 @@ impl MermaidGenerator {
         let mut output = String::new();
         
         // Header
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).unwrap();
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "erDiagram").unwrap();
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "erDiagram").map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate entities (classes)
         for (name, class_def) in &schema.classes {
@@ -112,7 +117,7 @@ impl MermaidGenerator {
                 continue;
             }
             
-            writeln!(&mut output, "    {} {{", self.sanitize_name(name)).unwrap();
+            writeln!(&mut output, "    {} {{", self.sanitize_name(name)).map_err(Self::fmt_error_to_generator_error)?;
             
             // Collect all slots including inherited
             let all_slots = self.collect_all_slots(name, class_def, schema);
@@ -130,19 +135,19 @@ impl MermaidGenerator {
                         slot_def.description.as_deref().unwrap_or("")
                             .replace('"', "'")
                             .chars().take(50).collect::<String>()
-                    ).unwrap();
+                    ).map_err(Self::fmt_error_to_generator_error)?;
                     
                     if required_marker == "*" {
                         // Add comment for required fields
-                        writeln!(&mut output, "        %% {} is required", slot_name).unwrap();
+                        writeln!(&mut output, "        %% {} is required", slot_name).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
             
-            writeln!(&mut output, "    }}").unwrap();
+            writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate relationships
         for (class_name, class_def) in &schema.classes {
@@ -162,7 +167,7 @@ impl MermaidGenerator {
                                 self.sanitize_name(class_name),
                                 cardinality,
                                 self.sanitize_name(range)
-                            ).unwrap();
+                            ).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
@@ -174,7 +179,7 @@ impl MermaidGenerator {
                     writeln!(&mut output, "    {} ||--|| {} : inherits", 
                         self.sanitize_name(parent),
                         self.sanitize_name(class_name)
-                    ).unwrap();
+                    ).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -187,24 +192,24 @@ impl MermaidGenerator {
         let mut output = String::new();
         
         // Header
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).unwrap();
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "classDiagram").unwrap();
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "classDiagram").map_err(Self::fmt_error_to_generator_error)?;
         
         // Add theme directive if not default
         if self.options.theme != "default" {
-            writeln!(&mut output, "    %%{{init: {{'theme':'{}'}}}}%%", self.options.theme).unwrap();
+            writeln!(&mut output, "    %%{{init: {{'theme':'{}'}}}}%%", self.options.theme).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate classes
         for (name, class_def) in &schema.classes {
             let class_name = self.sanitize_name(name);
             
-            writeln!(&mut output, "    class {} {{", class_name).unwrap();
+            writeln!(&mut output, "    class {} {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
             if class_def.abstract_.unwrap_or(false) {
-                writeln!(&mut output, "        <<abstract>>").unwrap();
+                writeln!(&mut output, "        <<abstract>>").map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Collect all slots
@@ -234,14 +239,14 @@ impl MermaidGenerator {
                         data_type,
                         self.sanitize_name(slot_name),
                         multiplicity
-                    ).unwrap();
+                    ).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             
-            writeln!(&mut output, "    }}").unwrap();
+            writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate relationships
         for (class_name, class_def) in &schema.classes {
@@ -250,7 +255,7 @@ impl MermaidGenerator {
                 writeln!(&mut output, "    {} <|-- {}", 
                     self.sanitize_name(parent),
                     self.sanitize_name(class_name)
-                ).unwrap();
+                ).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Mixins
@@ -258,7 +263,7 @@ impl MermaidGenerator {
                 writeln!(&mut output, "    {} <|.. {} : mixin", 
                     self.sanitize_name(mixin),
                     self.sanitize_name(class_name)
-                ).unwrap();
+                ).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Associations
@@ -277,7 +282,7 @@ impl MermaidGenerator {
                                 arrow,
                                 self.sanitize_name(range),
                                 slot_name
-                            ).unwrap();
+                            ).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
@@ -287,18 +292,18 @@ impl MermaidGenerator {
         // Generate enums
         if self.options.include_enums {
             for (name, enum_def) in &schema.enums {
-                writeln!(&mut output, "    class {} {{", self.sanitize_name(name)).unwrap();
-                writeln!(&mut output, "        <<enumeration>>").unwrap();
+                writeln!(&mut output, "    class {} {{", self.sanitize_name(name)).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        <<enumeration>>").map_err(Self::fmt_error_to_generator_error)?;
                 
                 for pv in &enum_def.permissible_values {
                     let value = match pv {
                         PermissibleValue::Simple(s) => s,
                         PermissibleValue::Complex { text, .. } => text,
                     };
-                    writeln!(&mut output, "        {}", value).unwrap();
+                    writeln!(&mut output, "        {}", value).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
-                writeln!(&mut output, "    }}").unwrap();
+                writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -309,15 +314,15 @@ impl MermaidGenerator {
     fn generate_state_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "title: State Transitions").unwrap();
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "stateDiagram-v2").unwrap();
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: State Transitions").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "stateDiagram-v2").map_err(Self::fmt_error_to_generator_error)?;
         
         // For state diagrams, we'll use enums as states if they represent statuses
         for (name, enum_def) in &schema.enums {
             if name.to_lowercase().contains("status") || name.to_lowercase().contains("state") {
-                writeln!(&mut output, "    %% States from {}", name).unwrap();
+                writeln!(&mut output, "    %% States from {}", name).map_err(Self::fmt_error_to_generator_error)?;
                 
                 let states: Vec<String> = enum_def.permissible_values.iter()
                     .map(|pv| match pv {
@@ -329,16 +334,16 @@ impl MermaidGenerator {
                 // Create basic transitions (simplified - in real use, these would be defined)
                 for (i, state) in states.iter().enumerate() {
                     if i == 0 {
-                        writeln!(&mut output, "    [*] --> {}", state).unwrap();
+                        writeln!(&mut output, "    [*] --> {}", state).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     if i < states.len() - 1 {
-                        writeln!(&mut output, "    {} --> {}", state, states[i + 1]).unwrap();
+                        writeln!(&mut output, "    {} --> {}", state, states[i + 1]).map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(&mut output, "    {} --> [*]", state).unwrap();
+                        writeln!(&mut output, "    {} --> [*]", state).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
                 
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -349,14 +354,14 @@ impl MermaidGenerator {
     fn generate_flowchart(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "title: Schema Structure").unwrap();
-        writeln!(&mut output, "---").unwrap();
-        writeln!(&mut output, "flowchart TD").unwrap();
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: Schema Structure").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "flowchart TD").map_err(Self::fmt_error_to_generator_error)?;
         
         // Create a flowchart showing schema structure
         let schema_name = schema.name.as_deref().unwrap_or("Schema");
-        writeln!(&mut output, "    {}[{}]", self.sanitize_name(schema_name), schema_name).unwrap();
+        writeln!(&mut output, "    {}[{}]", self.sanitize_name(schema_name), schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Group classes by inheritance
         let mut roots = Vec::new();
@@ -376,16 +381,16 @@ impl MermaidGenerator {
                 self.sanitize_name(schema_name),
                 self.sanitize_name(root),
                 root
-            ).unwrap();
+            ).map_err(Self::fmt_error_to_generator_error)?;
             
             self.generate_flowchart_children(&mut output, root, &children)?;
         }
         
         // Add enums
         if self.options.include_enums && !schema.enums.is_empty() {
-            writeln!(&mut output, "    {} --> Enums{{Enumerations}}", self.sanitize_name(schema_name)).unwrap();
+            writeln!(&mut output, "    {} --> Enums{{Enumerations}}", self.sanitize_name(schema_name)).map_err(Self::fmt_error_to_generator_error)?;
             for (name, _) in &schema.enums {
-                writeln!(&mut output, "    Enums --> {}[{}]", self.sanitize_name(name), name).unwrap();
+                writeln!(&mut output, "    Enums --> {}[{}]", self.sanitize_name(name), name).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -400,7 +405,7 @@ impl MermaidGenerator {
                     self.sanitize_name(parent),
                     self.sanitize_name(child),
                     child
-                ).unwrap();
+                ).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // Recurse
                 self.generate_flowchart_children(output, child, children)?;
@@ -592,7 +597,7 @@ mod tests {
         let generator = MermaidGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate mermaid diagram");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -612,7 +617,7 @@ mod tests {
             .with_diagram_type(MermaidDiagramType::ClassDiagram);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.expect("should generate mermaid diagram");
         let output = &result[0];
         
         assert!(output.content.contains("classDiagram"));

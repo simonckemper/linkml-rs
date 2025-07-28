@@ -162,7 +162,7 @@ impl ExpressionEngineV2 {
         let (ast, compiled) = if self.config.use_caching {
             if let Some(cached) = self.cache.get(&key) {
                 if let Some(start) = start_time {
-                    let mut metrics = self.metrics.write().unwrap();
+                    let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
                     metrics.cache_hit_rate = self.cache.overall_hit_rate();
                 }
                 (cached.ast, cached.compiled)
@@ -182,14 +182,14 @@ impl ExpressionEngineV2 {
         
         // Decide whether to use compiled or interpreted evaluation
         let result = if self.should_use_compiled(&compiled) {
-            self.evaluate_compiled(compiled.as_ref().unwrap(), context, start_time)?
+            self.evaluate_compiled(compiled.as_ref().expect("should have compiled expression when use_compiled is true"), context, start_time)?
         } else {
             self.evaluate_interpreted(&ast, context, start_time)?
         };
         
         // Update metrics
         if self.config.collect_metrics {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
             metrics.total_evaluations += 1;
         }
         
@@ -208,7 +208,7 @@ impl ExpressionEngineV2 {
             .map_err(|e| ExpressionError::Parse(e.to_string()))?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
             metrics.parse_time_us += parse_start.elapsed().as_micros() as u64;
         }
         
@@ -218,7 +218,7 @@ impl ExpressionEngineV2 {
             let compiled = self.compiler.compile(&ast, expression)?;
             
             if let Some(start) = start_time {
-                let mut metrics = self.metrics.write().unwrap();
+                let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
                 metrics.compile_time_us += compile_start.elapsed().as_micros() as u64;
             }
             
@@ -251,7 +251,7 @@ impl ExpressionEngineV2 {
         let result = self.vm.execute(compiled, context)?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
             metrics.compiled_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
@@ -271,7 +271,7 @@ impl ExpressionEngineV2 {
             .map_err(|e| ExpressionError::Evaluation(e))?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
             metrics.interpreted_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
@@ -281,7 +281,7 @@ impl ExpressionEngineV2 {
     
     /// Get performance metrics
     pub fn metrics(&self) -> PerformanceMetrics {
-        self.metrics.read().unwrap().clone()
+        self.metrics.read().expect("metrics lock should not be poisoned").clone()
     }
     
     /// Clear the expression cache
@@ -406,7 +406,7 @@ mod tests {
         let engine = EngineBuilder::new().build();
         let context = HashMap::new();
         
-        let result = engine.evaluate("1 + 2 * 3", &context).unwrap();
+        let result = engine.evaluate("1 + 2 * 3", &context).expect("should evaluate simple expression");
         assert_eq!(result, Value::Number(serde_json::Number::from(7)));
     }
     
@@ -420,11 +420,11 @@ mod tests {
         let expr = "1 + 2 + 3 + 4 + 5";
         
         // First evaluation - cache miss
-        engine.evaluate(expr, &context).unwrap();
+        engine.evaluate(expr, &context).expect("should evaluate expression on first try");
         
         // Subsequent evaluations - cache hits
         for _ in 0..10 {
-            engine.evaluate(expr, &context).unwrap();
+            engine.evaluate(expr, &context).expect("should evaluate cached expression");
         }
         
         let metrics = engine.metrics();
@@ -442,11 +442,11 @@ mod tests {
         let context = HashMap::new();
         
         // Simple expression - should use interpreter
-        engine.evaluate("1 + 2", &context).unwrap();
+        engine.evaluate("1 + 2", &context).expect("should evaluate simple expression with interpreter");
         
         // Complex expression - should use VM
         let complex = "1 + 2 * 3 - 4 / 5 + 6 * 7 - 8 / 9 + 10";
-        engine.evaluate(complex, &context).unwrap();
+        engine.evaluate(complex, &context).expect("should evaluate complex expression with VM");
         
         let metrics = engine.metrics();
         assert_eq!(metrics.interpreted_evaluations, 1);

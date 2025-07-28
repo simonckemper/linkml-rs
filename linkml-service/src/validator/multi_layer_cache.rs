@@ -650,7 +650,7 @@ mod tests {
     #[tokio::test]
     async fn test_multi_layer_cache_basic() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).unwrap();
+        let cache = MultiLayerCache::new(config, None).expect("should create cache");
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -661,7 +661,7 @@ mod tests {
         let validator = Arc::new(CompiledValidator::new());
 
         // Put and get
-        cache.put(key.clone(), validator.clone()).await.unwrap();
+        cache.put(key.clone(), validator.clone()).await.expect("should put into cache");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
 
@@ -675,7 +675,7 @@ mod tests {
     #[tokio::test]
     async fn test_cache_invalidation() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).unwrap();
+        let cache = MultiLayerCache::new(config, None).expect("should create cache");
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -686,8 +686,8 @@ mod tests {
         let validator = Arc::new(CompiledValidator::new());
 
         // Put, invalidate, and try to get
-        cache.put(key.clone(), validator).await.unwrap();
-        cache.invalidate(&key).await.unwrap();
+        cache.put(key.clone(), validator).await.expect("should put into cache");
+        cache.invalidate(&key).await.expect("should invalidate cache");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
     }

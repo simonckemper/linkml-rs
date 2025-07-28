@@ -25,6 +25,11 @@ impl Default for TypeScriptGenerator {
 }
 
 impl TypeScriptGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new TypeScript generator
     pub fn new() -> Self {
         Self {
@@ -45,13 +50,13 @@ impl TypeScriptGenerator {
 
         // Generate interface documentation
         if options.include_docs && class.description.is_some() {
-            writeln!(&mut output, "/**").unwrap();
+            writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 70, " * ");
-                writeln!(&mut output, " * {}", wrapped).unwrap();
+                writeln!(&mut output, " * {}", wrapped).map_err(Self::fmt_error_to_generator_error)?;
             }
-            writeln!(&mut output, " * @generated from LinkML schema").unwrap();
-            writeln!(&mut output, " */").unwrap();
+            writeln!(&mut output, " * @generated from LinkML schema").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Check if we have inheritance
@@ -61,7 +66,7 @@ impl TypeScriptGenerator {
             String::new()
         };
 
-        writeln!(&mut output, "export interface {}{} {{", class_name, extends_clause).unwrap();
+        writeln!(&mut output, "export interface {}{} {{", class_name, extends_clause).map_err(Self::fmt_error_to_generator_error)?;
 
         // Collect all slots including inherited
         let slots = collect_all_slots(class, schema)?;
@@ -89,17 +94,17 @@ impl TypeScriptGenerator {
             }
         }
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate type guard
         if options.get_custom("generate_type_guards") != Some("false") {
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_type_guard(&mut output, class_name, class, schema)?;
         }
 
         // Generate validator function
         if options.get_custom("generate_validators") == Some("true") {
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_validator(&mut output, class_name, class, schema)?;
         }
 
@@ -117,11 +122,11 @@ impl TypeScriptGenerator {
     ) -> GeneratorResult<()> {
         // Add field documentation
         if options.include_docs && slot.description.is_some() {
-            writeln!(output, "  /**").unwrap();
+            writeln!(output, "  /**").map_err(Self::fmt_error_to_generator_error)?;
             if let Some(ref desc) = slot.description {
-                writeln!(output, "   * {}", desc).unwrap();
+                writeln!(output, "   * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
-            writeln!(output, "   */").unwrap();
+            writeln!(output, "   */").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine the type
@@ -141,7 +146,7 @@ impl TypeScriptGenerator {
             ""
         };
 
-        writeln!(output, "  {}{}: {};", slot_name, optional_marker, field_type).unwrap();
+        writeln!(output, "  {}{}: {};", slot_name, optional_marker, field_type).map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -187,14 +192,14 @@ impl TypeScriptGenerator {
         class: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        writeln!(output, "/**").unwrap();
-        writeln!(output, " * Type guard for {}", class_name).unwrap();
-        writeln!(output, " */").unwrap();
-        writeln!(output, "export function is{}(obj: unknown): obj is {} {{", class_name, class_name).unwrap();
+        writeln!(output, "/**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, " * Type guard for {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, " */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "export function is{}(obj: unknown): obj is {} {{", class_name, class_name).map_err(Self::fmt_error_to_generator_error)?;
         
-        writeln!(output, "  return (").unwrap();
-        writeln!(output, "    typeof obj === 'object' &&").unwrap();
-        writeln!(output, "    obj !== null &&").unwrap();
+        writeln!(output, "  return (").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    typeof obj === 'object' &&").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    obj !== null &&").map_err(Self::fmt_error_to_generator_error)?;
 
         // Get direct slots (not inherited)
         let direct_slots = class.slots.clone();
@@ -203,7 +208,7 @@ impl TypeScriptGenerator {
         for (i, slot_name) in direct_slots.iter().enumerate() {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.required.unwrap_or(false) {
-                    write!(output, "    '{}' in obj", slot_name).unwrap();
+                    write!(output, "    '{}' in obj", slot_name).map_err(Self::fmt_error_to_generator_error)?;
                     
                     // Add type check
                     let expected_type = match self.get_field_type(slot, schema)?.as_str() {
@@ -214,22 +219,22 @@ impl TypeScriptGenerator {
                     };
                     
                     if expected_type != "object" {
-                        write!(output, " &&").unwrap();
-                        writeln!(output).unwrap();
-                        write!(output, "    typeof (obj as any).{} === '{}'", slot_name, expected_type).unwrap();
+                        write!(output, " &&").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                        write!(output, "    typeof (obj as any).{} === '{}'", slot_name, expected_type).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     if i < direct_slots.len() - 1 {
-                        writeln!(output, " &&").unwrap();
+                        writeln!(output, " &&").map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(output).unwrap();
+                        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
 
-        writeln!(output, "  );").unwrap();
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "  );").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -242,18 +247,18 @@ impl TypeScriptGenerator {
         class: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        writeln!(output, "/**").unwrap();
-        writeln!(output, " * Validator for {}", class_name).unwrap();
-        writeln!(output, " */").unwrap();
-        writeln!(output, "export function validate{}(obj: unknown): ValidationResult<{}> {{", class_name, class_name).unwrap();
-        writeln!(output, "  const errors: ValidationError[] = [];").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "/**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, " * Validator for {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, " */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "export function validate{}(obj: unknown): ValidationResult<{}> {{", class_name, class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  const errors: ValidationError[] = [];").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
-        writeln!(output, "  if (!is{}(obj)) {{", class_name).unwrap();
-        writeln!(output, "    errors.push({{ path: '', message: 'Not a valid {} object' }});", class_name).unwrap();
-        writeln!(output, "    return {{ valid: false, errors }};").unwrap();
-        writeln!(output, "  }}").unwrap();
-        writeln!(output).unwrap();
+        writeln!(output, "  if (!is{}(obj)) {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    errors.push({{ path: '', message: 'Not a valid {} object' }});", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    return {{ valid: false, errors }};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Add validation for constraints
         let slots = collect_all_slots(class, schema)?;
@@ -264,35 +269,35 @@ impl TypeScriptGenerator {
                 // Pattern validation
                 if let Some(ref pattern) = slot.pattern {
                     if !has_validations {
-                        writeln!(output, "  // Additional validation").unwrap();
+                        writeln!(output, "  // Additional validation").map_err(Self::fmt_error_to_generator_error)?;
                         has_validations = true;
                     }
-                    writeln!(output, "  if (obj.{} && !/{}/u.test(obj.{})) {{", slot_name, pattern, slot_name).unwrap();
-                    writeln!(output, "    errors.push({{ path: '{}', message: 'Does not match pattern: {}' }});", slot_name, pattern).unwrap();
-                    writeln!(output, "  }}").unwrap();
+                    writeln!(output, "  if (obj.{} && !/{}/u.test(obj.{})) {{", slot_name, pattern, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "    errors.push({{ path: '{}', message: 'Does not match pattern: {}' }});", slot_name, pattern).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Range validation
                 if slot.minimum_value.is_some() || slot.maximum_value.is_some() {
                     if let Some(ref min) = slot.minimum_value {
-                        writeln!(output, "  if (obj.{} !== undefined && obj.{} < {}) {{", slot_name, slot_name, min).unwrap();
-                        writeln!(output, "    errors.push({{ path: '{}', message: 'Must be >= {}' }});", slot_name, min).unwrap();
-                        writeln!(output, "  }}").unwrap();
+                        writeln!(output, "  if (obj.{} !== undefined && obj.{} < {}) {{", slot_name, slot_name, min).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "    errors.push({{ path: '{}', message: 'Must be >= {}' }});", slot_name, min).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
                     }
                     if let Some(ref max) = slot.maximum_value {
-                        writeln!(output, "  if (obj.{} !== undefined && obj.{} > {}) {{", slot_name, slot_name, max).unwrap();
-                        writeln!(output, "    errors.push({{ path: '{}', message: 'Must be <= {}' }});", slot_name, max).unwrap();
-                        writeln!(output, "  }}").unwrap();
+                        writeln!(output, "  if (obj.{} !== undefined && obj.{} > {}) {{", slot_name, slot_name, max).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "    errors.push({{ path: '{}', message: 'Must be <= {}' }});", slot_name, max).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
 
-        writeln!(output).unwrap();
-        writeln!(output, "  return errors.length === 0").unwrap();
-        writeln!(output, "    ? {{ valid: true, data: obj }}").unwrap();
-        writeln!(output, "    : {{ valid: false, errors }};").unwrap();
-        writeln!(output, "}}").unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  return errors.length === 0").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    ? {{ valid: true, data: obj }}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    : {{ valid: false, errors }};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -307,32 +312,32 @@ impl TypeScriptGenerator {
         let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
         
         if let Some(ref desc) = slot.description {
-            writeln!(output, "/**").unwrap();
-            writeln!(output, " * {}", desc).unwrap();
-            writeln!(output, " */").unwrap();
+            writeln!(output, "/**").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, " */").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "export enum {} {{", enum_name).unwrap();
+        writeln!(output, "export enum {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
 
         for (i, value) in slot.permissible_values.iter().enumerate() {
             match value {
                 PermissibleValue::Simple(text) => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    write!(output, "  {} = \"{}\"", const_name, text).unwrap();
+                    write!(output, "  {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    write!(output, "  {} = \"{}\"", const_name, text).unwrap();
+                    write!(output, "  {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             if i < slot.permissible_values.len() - 1 {
-                writeln!(output, ",").unwrap();
+                writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             } else {
-                writeln!(output).unwrap();
+                writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 }
@@ -362,33 +367,33 @@ impl Generator for TypeScriptGenerator {
         let mut content = String::new();
 
         // File header
-        writeln!(&mut content, "/**").unwrap();
-        writeln!(&mut content, " * Generated from LinkML schema: {}", schema.name).unwrap();
+        writeln!(&mut content, "/**").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut content, " * Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
-            writeln!(&mut content, " * {}", desc).unwrap();
+            writeln!(&mut content, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut content, " */").unwrap();
-        writeln!(&mut content).unwrap();
+        writeln!(&mut content, " */").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate validation types if needed
         if options.get_custom("generate_validators") == Some("true") {
-            writeln!(&mut content, "// Validation types").unwrap();
-            writeln!(&mut content, "export interface ValidationError {{").unwrap();
-            writeln!(&mut content, "  path: string;").unwrap();
-            writeln!(&mut content, "  message: string;").unwrap();
-            writeln!(&mut content, "}}").unwrap();
-            writeln!(&mut content).unwrap();
-            writeln!(&mut content, "export type ValidationResult<T> =").unwrap();
-            writeln!(&mut content, "  | {{ valid: true; data: T }}").unwrap();
-            writeln!(&mut content, "  | {{ valid: false; errors: ValidationError[] }};").unwrap();
-            writeln!(&mut content).unwrap();
+            writeln!(&mut content, "// Validation types").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "export interface ValidationError {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "  path: string;").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "  message: string;").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "}}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "export type ValidationResult<T> =").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "  | {{ valid: true; data: T }}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "  | {{ valid: false; errors: ValidationError[] }};").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate enums first
         for (slot_name, slot) in &schema.slots {
             if !slot.permissible_values.is_empty() {
                 self.generate_enum(&mut content, slot_name, slot)?;
-                writeln!(&mut content).unwrap();
+                writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -396,7 +401,7 @@ impl Generator for TypeScriptGenerator {
         for (class_name, class_def) in &schema.classes {
             let interface_code = self.generate_interface(class_name, class_def, schema, options)?;
             content.push_str(&interface_code);
-            writeln!(&mut content).unwrap();
+            writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         outputs.push(GeneratedOutput {
@@ -504,7 +509,7 @@ mod tests {
         let generator = TypeScriptGenerator::new();
         let options = GeneratorOptions::new();
 
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.expect("should generate TypeScript output");
         assert_eq!(outputs.len(), 1);
 
         let output = &outputs[0];

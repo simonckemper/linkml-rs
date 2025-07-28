@@ -100,6 +100,11 @@ pub struct PlantUmlGenerator {
 }
 
 impl PlantUmlGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new PlantUML generator
     #[must_use]
     pub fn new() -> Self {
@@ -137,13 +142,13 @@ impl PlantUmlGenerator {
     fn generate_class_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startuml").unwrap();
+        writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "'PlantUML class diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).unwrap();
+            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add title
         if let Some(name) = &schema.name {
-            writeln!(&mut output, "title {}", name).unwrap();
+            writeln!(&mut output, "title {}", name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Apply skin parameters
@@ -151,40 +156,40 @@ impl PlantUmlGenerator {
         
         // Set direction
         match self.options.direction.as_str() {
-            "left to right" => writeln!(&mut output, "left to right direction").unwrap(),
+            "left to right" => writeln!(&mut output, "left to right direction").map_err(Self::fmt_error_to_generator_error)?,
             "top to bottom" | _ => {}, // default
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Use package if enabled
         if self.options.use_packages {
             if let Some(name) = &schema.name {
-                writeln!(&mut output, "package {} {{", name).unwrap();
+                writeln!(&mut output, "package {} {{", name).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Generate classes
         for (class_name, class_def) in &schema.classes {
             self.generate_class(&mut output, class_name, class_def, schema)?;
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate enums
         for (enum_name, enum_def) in &schema.enums {
             self.generate_enum(&mut output, enum_name, enum_def)?;
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if self.options.use_packages {
-            writeln!(&mut output, "}}").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate relationships
         self.generate_relationships(&mut output, schema)?;
         
-        writeln!(&mut output, "@enduml").unwrap();
+        writeln!(&mut output, "@enduml").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -199,15 +204,15 @@ impl PlantUmlGenerator {
     ) -> GeneratorResult<()> {
         // Class declaration
         if class_def.abstract_.unwrap_or(false) {
-            writeln!(output, "abstract class {} {{", class_name).unwrap();
+            writeln!(output, "abstract class {} {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, "class {} {{", class_name).unwrap();
+            writeln!(output, "class {} {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add description as note
         if self.options.detailed {
             if let Some(desc) = &class_def.description {
-                writeln!(output, "  .. {} ..", desc).unwrap();
+                writeln!(output, "  .. {} ..", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -242,26 +247,26 @@ impl PlantUmlGenerator {
         
         // Add methods if enabled
         if self.options.include_methods {
-            writeln!(output, "  --").unwrap();
-            writeln!(output, "  +validate()").unwrap();
-            writeln!(output, "  +to_json()").unwrap();
+            writeln!(output, "  --").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "  +validate()").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "  +to_json()").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         // Add note with metadata
         if self.options.detailed && (class_def.see_also.is_some() || class_def.notes.is_some()) {
-            writeln!(output, "note right of {}", class_name).unwrap();
+            writeln!(output, "note right of {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(see_also) = &class_def.see_also {
-                writeln!(output, "  See also: {}", see_also.join(", ")).unwrap();
+                writeln!(output, "  See also: {}", see_also.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             if let Some(notes) = &class_def.notes {
-                writeln!(output, "  Notes: {}", notes.join("; ")).unwrap();
+                writeln!(output, "  Notes: {}", notes.join("; ")).map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(output, "end note").unwrap();
+            writeln!(output, "end note").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(())
@@ -276,17 +281,17 @@ impl PlantUmlGenerator {
         visibility: &str,
         schema: &SchemaDefinition
     ) -> GeneratorResult<()> {
-        write!(output, "  {}{}", visibility, slot_name).unwrap();
+        write!(output, "  {}{}", visibility, slot_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add type
         if let Some(range) = &slot_def.range {
-            write!(output, " : {}", range).unwrap();
+            write!(output, " : {}", range).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add multiplicity
         if self.options.show_cardinality {
             let cardinality = self.get_cardinality(slot_def);
-            write!(output, " [{}]", cardinality).unwrap();
+            write!(output, " [{}]", cardinality).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add constraints as stereotypes
@@ -306,28 +311,28 @@ impl PlantUmlGenerator {
             }
             
             if !stereotypes.is_empty() {
-                write!(output, " <<{}>>", stereotypes.join(", ")).unwrap();
+                write!(output, " <<{}>>", stereotypes.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
-        writeln!(output).unwrap();
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
     
     /// Generate relationships
     fn generate_relationships(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "' Relationships").unwrap();
+        writeln!(output, "' Relationships").map_err(Self::fmt_error_to_generator_error)?;
         
         for (class_name, class_def) in &schema.classes {
             // Inheritance
             if let Some(parent) = &class_def.is_a {
-                writeln!(output, "{} --|> {}", class_name, parent).unwrap();
+                writeln!(output, "{} --|> {}", class_name, parent).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Mixins
             for mixin in &class_def.mixins {
-                writeln!(output, "{} ..|> {} : <<mixin>>", class_name, mixin).unwrap();
+                writeln!(output, "{} ..|> {} : <<mixin>>", class_name, mixin).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             // Associations
@@ -345,7 +350,7 @@ impl PlantUmlGenerator {
                             };
                             
                             writeln!(output, "{} {} {} : {}", 
-                                class_name, arrow, range, slot_name).unwrap();
+                                class_name, arrow, range, slot_name).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
@@ -357,11 +362,11 @@ impl PlantUmlGenerator {
     
     /// Generate enum
     fn generate_enum(&self, output: &mut String, enum_name: &str, enum_def: &EnumDefinition) -> GeneratorResult<()> {
-        writeln!(output, "enum {} {{", enum_name).unwrap();
+        writeln!(output, "enum {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
         
         if self.options.detailed {
             if let Some(desc) = &enum_def.description {
-                writeln!(output, "  .. {} ..", desc).unwrap();
+                writeln!(output, "  .. {} ..", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -371,16 +376,18 @@ impl PlantUmlGenerator {
                 PermissibleValue::Complex { text, description, .. } => (text.clone(), description.clone()),
             };
             
-            write!(output, "  {}", value).unwrap();
+            write!(output, "  {}", value).map_err(Self::fmt_error_to_generator_error)?;
             
-            if self.options.detailed && desc.is_some() {
-                write!(output, " -- {}", desc.unwrap()).unwrap();
+            if self.options.detailed {
+                if let Some(description) = desc {
+                    write!(output, " -- {}", description).map_err(Self::fmt_error_to_generator_error)?;
+                }
             }
             
-            writeln!(output).unwrap();
+            writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(output, "}}").unwrap();
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -389,13 +396,13 @@ impl PlantUmlGenerator {
     fn generate_object_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startuml").unwrap();
-        writeln!(&mut output, "'PlantUML object diagram").unwrap();
-        writeln!(&mut output, "title Example Instances").unwrap();
+        writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "'PlantUML object diagram").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title Example Instances").map_err(Self::fmt_error_to_generator_error)?;
         
         self.apply_skin(&mut output);
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate example objects
         let mut instance_count = 0;
@@ -407,23 +414,23 @@ impl PlantUmlGenerator {
             instance_count += 1;
             let instance_name = format!("{}_{}", class_name.to_lowercase(), instance_count);
             
-            writeln!(&mut output, "object {} {{", instance_name).unwrap();
-            writeln!(&mut output, "  = {} =", class_name).unwrap();
+            writeln!(&mut output, "object {} {{", instance_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  = {} =", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
             // Add example slot values
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots.iter().take(3).cloned().collect::<Vec<_>>() {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     let example_value = self.get_example_value(&slot_def.range);
-                    writeln!(&mut output, "  {} = {}", slot_name, example_value).unwrap();
+                    writeln!(&mut output, "  {} = {}", slot_name, example_value).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             
-            writeln!(&mut output, "}}").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "@enduml").unwrap();
+        writeln!(&mut output, "@enduml").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -432,11 +439,11 @@ impl PlantUmlGenerator {
     fn generate_er_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startuml").unwrap();
-        writeln!(&mut output, "'PlantUML Entity-Relationship diagram").unwrap();
-        writeln!(&mut output, "!define ENTITY entity").unwrap();
-        writeln!(&mut output, "!define TABLE(x) entity x <<table>>").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "'PlantUML Entity-Relationship diagram").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "!define ENTITY entity").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "!define TABLE(x) entity x <<table>>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate entities
         for (class_name, class_def) in &schema.classes {
@@ -444,7 +451,7 @@ impl PlantUmlGenerator {
                 continue;
             }
             
-            writeln!(&mut output, "TABLE({}) {{", class_name).unwrap();
+            writeln!(&mut output, "TABLE({}) {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
@@ -458,12 +465,12 @@ impl PlantUmlGenerator {
                     };
                     
                     let type_str = slot_def.range.as_deref().unwrap_or("string");
-                    writeln!(&mut output, "  {}{} : {}", key_marker, slot_name, type_str).unwrap();
+                    writeln!(&mut output, "  {}{} : {}", key_marker, slot_name, type_str).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
             
-            writeln!(&mut output, "}}").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate relationships
@@ -481,14 +488,14 @@ impl PlantUmlGenerator {
                             };
                             
                             writeln!(&mut output, "{} {} {} : has", 
-                                class_name, rel, range).unwrap();
+                                class_name, rel, range).map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
             }
         }
         
-        writeln!(&mut output, "@enduml").unwrap();
+        writeln!(&mut output, "@enduml").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -497,14 +504,14 @@ impl PlantUmlGenerator {
     fn generate_state_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startuml").unwrap();
-        writeln!(&mut output, "'PlantUML state diagram").unwrap();
+        writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "'PlantUML state diagram").map_err(Self::fmt_error_to_generator_error)?;
         
         // Find enums that represent states
         for (enum_name, enum_def) in &schema.enums {
             if enum_name.to_lowercase().contains("state") || enum_name.to_lowercase().contains("status") {
-                writeln!(&mut output, "title {} State Diagram", enum_name).unwrap();
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output, "title {} State Diagram", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 
                 let states: Vec<String> = enum_def.permissible_values.iter()
                     .map(|pv| match pv {
@@ -514,28 +521,28 @@ impl PlantUmlGenerator {
                     .collect();
                 
                 // Initial state
-                writeln!(&mut output, "[*] --> {}", states[0]).unwrap();
+                writeln!(&mut output, "[*] --> {}", states[0]).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // State transitions (simplified)
                 for i in 0..states.len() {
                     if i < states.len() - 1 {
-                        writeln!(&mut output, "{} --> {}", states[i], states[i + 1]).unwrap();
+                        writeln!(&mut output, "{} --> {}", states[i], states[i + 1]).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     
                     // Add state details
-                    writeln!(&mut output, "{} : {}", states[i], states[i]).unwrap();
+                    writeln!(&mut output, "{} : {}", states[i], states[i]).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 // Final state
                 if !states.is_empty() {
-                    writeln!(&mut output, "{} --> [*]", states.last().unwrap()).unwrap();
+                    writeln!(&mut output, "{} --> [*]", states.last().expect("checked states is not empty")).map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 break; // Only do first state enum
             }
         }
         
-        writeln!(&mut output, "@enduml").unwrap();
+        writeln!(&mut output, "@enduml").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -544,51 +551,51 @@ impl PlantUmlGenerator {
     fn generate_mindmap(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startmindmap").unwrap();
-        writeln!(&mut output, "'PlantUML mind map for schema structure").unwrap();
+        writeln!(&mut output, "@startmindmap").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "'PlantUML mind map for schema structure").map_err(Self::fmt_error_to_generator_error)?;
         
         let schema_name = schema.name.as_deref().unwrap_or("Schema");
-        writeln!(&mut output, "* {}", schema_name).unwrap();
+        writeln!(&mut output, "* {}", schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Classes branch
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "** Classes").unwrap();
+            writeln!(&mut output, "** Classes").map_err(Self::fmt_error_to_generator_error)?;
             for (class_name, class_def) in &schema.classes {
                 let abstract_marker = if class_def.abstract_.unwrap_or(false) { " <<abstract>>" } else { "" };
-                writeln!(&mut output, "*** {}{}", class_name, abstract_marker).unwrap();
+                writeln!(&mut output, "*** {}{}", class_name, abstract_marker).map_err(Self::fmt_error_to_generator_error)?;
                 
                 // Show a few slots
                 let all_slots = self.collect_all_slots(class_name, class_def, schema);
                 for slot in all_slots.iter().take(3) {
-                    writeln!(&mut output, "**** {}", slot).unwrap();
+                    writeln!(&mut output, "**** {}", slot).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
         
         // Enums branch
         if !schema.enums.is_empty() {
-            writeln!(&mut output, "** Enumerations").unwrap();
+            writeln!(&mut output, "** Enumerations").map_err(Self::fmt_error_to_generator_error)?;
             for (enum_name, enum_def) in &schema.enums {
-                writeln!(&mut output, "*** {}", enum_name).unwrap();
+                writeln!(&mut output, "*** {}", enum_name).map_err(Self::fmt_error_to_generator_error)?;
                 for pv in enum_def.permissible_values.iter().take(3) {
                     let value = match pv {
                         PermissibleValue::Simple(s) => s,
                         PermissibleValue::Complex { text, .. } => text,
                     };
-                    writeln!(&mut output, "**** {}", value).unwrap();
+                    writeln!(&mut output, "**** {}", value).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
         
         // Types branch
         if !schema.types.is_empty() {
-            writeln!(&mut output, "** Types").unwrap();
+            writeln!(&mut output, "** Types").map_err(Self::fmt_error_to_generator_error)?;
             for (type_name, _) in schema.types.iter().take(5) {
-                writeln!(&mut output, "*** {}", type_name).unwrap();
+                writeln!(&mut output, "*** {}", type_name).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
-        writeln!(&mut output, "@endmindmap").unwrap();
+        writeln!(&mut output, "@endmindmap").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -597,60 +604,60 @@ impl PlantUmlGenerator {
     fn generate_component_diagram(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
-        writeln!(&mut output, "@startuml").unwrap();
-        writeln!(&mut output, "'PlantUML component diagram").unwrap();
-        writeln!(&mut output, "title Schema Components").unwrap();
+        writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "'PlantUML component diagram").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title Schema Components").map_err(Self::fmt_error_to_generator_error)?;
         
         // Main schema component
         let schema_name = schema.name.as_deref().unwrap_or("Schema");
-        writeln!(&mut output, "package \"{}\" {{", schema_name).unwrap();
+        writeln!(&mut output, "package \"{}\" {{", schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Classes component
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "  component [Classes] as classes").unwrap();
+            writeln!(&mut output, "  component [Classes] as classes").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Enums component
         if !schema.enums.is_empty() {
-            writeln!(&mut output, "  component [Enumerations] as enums").unwrap();
+            writeln!(&mut output, "  component [Enumerations] as enums").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Types component
         if !schema.types.is_empty() {
-            writeln!(&mut output, "  component [Types] as types").unwrap();
+            writeln!(&mut output, "  component [Types] as types").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Slots component
         if !schema.slots.is_empty() {
-            writeln!(&mut output, "  component [Slots] as slots").unwrap();
+            writeln!(&mut output, "  component [Slots] as slots").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         // Show dependencies
         if !schema.classes.is_empty() && !schema.slots.is_empty() {
-            writeln!(&mut output, "classes --> slots : uses").unwrap();
+            writeln!(&mut output, "classes --> slots : uses").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if !schema.classes.is_empty() && !schema.types.is_empty() {
-            writeln!(&mut output, "classes --> types : references").unwrap();
+            writeln!(&mut output, "classes --> types : references").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "@enduml").unwrap();
+        writeln!(&mut output, "@enduml").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
     
     /// Apply skin parameters
     fn apply_skin(&self, output: &mut String) {
-        writeln!(output, "skinparam backgroundColor {}", self.options.skin.background_color).unwrap();
-        writeln!(output, "skinparam class {{").unwrap();
-        writeln!(output, "  BackgroundColor {}", self.options.skin.class_background_color).unwrap();
-        writeln!(output, "  BorderColor {}", self.options.skin.class_border_color).unwrap();
-        writeln!(output, "  FontName {}", self.options.skin.font_name).unwrap();
-        writeln!(output, "  FontSize {}", self.options.skin.font_size).unwrap();
-        writeln!(output, "}}").unwrap();
-        writeln!(output, "skinparam ArrowColor {}", self.options.skin.arrow_color).unwrap();
+        writeln!(output, "skinparam backgroundColor {}", self.options.skin.background_color).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "skinparam class {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  BackgroundColor {}", self.options.skin.class_background_color).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  BorderColor {}", self.options.skin.class_border_color).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  FontName {}", self.options.skin.font_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "  FontSize {}", self.options.skin.font_size).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "skinparam ArrowColor {}", self.options.skin.arrow_color).map_err(Self::fmt_error_to_generator_error)?;
     }
     
     /// Get cardinality string
@@ -819,7 +826,7 @@ mod tests {
         let generator = PlantUmlGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -840,7 +847,7 @@ mod tests {
             .with_diagram_type(PlantUmlDiagramType::EntityRelationship);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
         let output = &result[0];
         
         assert!(output.content.contains("!define ENTITY"));
@@ -854,7 +861,7 @@ mod tests {
             .with_diagram_type(PlantUmlDiagramType::MindMap);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.unwrap();
+        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
         let output = &result[0];
         
         assert!(output.content.contains("@startmindmap"));

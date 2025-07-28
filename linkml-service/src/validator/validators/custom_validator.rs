@@ -346,7 +346,7 @@ mod tests {
                 issues
             })
             .build()
-            .unwrap();
+            .expect("should build custom validator");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -383,7 +383,7 @@ mod tests {
                 issues
             })
             .build()
-            .unwrap();
+            .expect("should build custom validator");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -410,7 +410,7 @@ mod tests {
                 s.chars().filter(|c| c.is_numeric()).count() >= 10
             },
         )
-        .unwrap();
+        .expect("should build format validator");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -433,7 +433,7 @@ mod tests {
             "priority_validator",
             vec!["low".to_string(), "medium".to_string(), "high".to_string()],
         )
-        .unwrap();
+        .expect("should build custom enum validator");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -470,7 +470,7 @@ mod tests {
                 issues
             })
             .build()
-            .unwrap();
+            .expect("should build custom validator");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -479,7 +479,7 @@ mod tests {
         let mut int_slot = SlotDefinition::new("count");
         int_slot.range = Some("integer".to_string());
         
-        let value = Value::Number(serde_json::Number::from_f64(3.14).unwrap());
+        let value = Value::Number(serde_json::Number::from_f64(3.14).expect("should create number from f64"));
         let issues = validator.validate(&value, &int_slot, &mut context);
         assert_eq!(issues.len(), 1);
 

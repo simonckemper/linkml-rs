@@ -217,18 +217,18 @@ mod tests {
     
     #[tokio::test]
     async fn test_sandboxed_operations() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = sandboxed_fs(temp_dir.path());
         
         // Test write and read
         let test_path = Path::new("test.txt");
-        fs.write(test_path, "Hello, World!").await.unwrap();
-        let content = fs.read_to_string(test_path).await.unwrap();
+        fs.write(test_path, "Hello, World!").await.expect("should write file");
+        let content = fs.read_to_string(test_path).await.expect("should read file");
         assert_eq!(content, "Hello, World!");
         
         // Test exists
-        assert!(fs.exists(test_path).await.unwrap());
-        assert!(!fs.exists(Path::new("nonexistent.txt")).await.unwrap());
+        assert!(fs.exists(test_path).await.expect("should check existence"));
+        assert!(!fs.exists(Path::new("nonexistent.txt")).await.expect("should check non-existence"));
         
         // Test sandbox escape prevention
         let escape_path = Path::new("../escape.txt");
@@ -237,19 +237,19 @@ mod tests {
     
     #[tokio::test]
     async fn test_directory_operations() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("should create temporary directory");
         let fs = sandboxed_fs(temp_dir.path());
         
         // Create nested directories
         let dir_path = Path::new("a/b/c");
-        fs.create_dir_all(dir_path).await.unwrap();
+        fs.create_dir_all(dir_path).await.expect("should create nested directories");
         
         // Write file in nested directory
         let file_path = Path::new("a/b/c/file.txt");
-        fs.write(file_path, "nested content").await.unwrap();
+        fs.write(file_path, "nested content").await.expect("should write file in nested directory");
         
         // Read directory
-        let entries = fs.read_dir(Path::new("a/b/c")).await.unwrap();
+        let entries = fs.read_dir(Path::new("a/b/c")).await.expect("should read directory");
         assert_eq!(entries.len(), 1);
     }
 }

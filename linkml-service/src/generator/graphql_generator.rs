@@ -14,6 +14,11 @@ pub struct GraphQLGenerator {
 }
 
 impl GraphQLGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
+        super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new GraphQL generator
     #[must_use]
     pub fn new() -> Self {
@@ -36,7 +41,7 @@ impl GraphQLGenerator {
         // Documentation
         if options.include_docs {
             if let Some(desc) = &class.description {
-                writeln!(&mut output, "\"\"\"{desc}\n\"\"\"").unwrap();
+                writeln!(&mut output, "\"\"\"{desc}\n\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -48,20 +53,20 @@ impl GraphQLGenerator {
             "type"
         };
 
-        write!(&mut output, "{type_keyword} {type_name}").unwrap();
+        write!(&mut output, "{type_keyword} {type_name}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Implements interfaces
         let interfaces = self.collect_interfaces(class, schema)?;
         if !interfaces.is_empty() {
-            write!(&mut output, " implements {}", interfaces.join(" & ")).unwrap();
+            write!(&mut output, " implements {}", interfaces.join(" & ")).map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(&mut output, " {{").unwrap();
+        writeln!(&mut output, " {{").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate fields
         self.generate_fields(&mut output, class, schema, options, indent)?;
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(output)
     }
@@ -77,7 +82,7 @@ impl GraphQLGenerator {
     ) -> GeneratorResult<()> {
         // Add ID field if this is a root type
         if class.tree_root == Some(true) || options.get_custom("add_id_field") == Some("true") {
-            writeln!(output, "{}id: ID!", indent.single()).unwrap();
+            writeln!(output, "{}id: ID!", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Collect all slots including inherited ones
@@ -88,7 +93,7 @@ impl GraphQLGenerator {
                 // Documentation
                 if options.include_docs {
                     if let Some(desc) = &slot.description {
-                        writeln!(output, "{}\"\"\"{}\"\"\"", indent.single(), desc).unwrap();
+                        writeln!(output, "{}\"\"\"{}\"\"\"", indent.single(), desc).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
@@ -105,7 +110,7 @@ impl GraphQLGenerator {
                     field_type,
                     nullable
                 )
-                .unwrap();
+                .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -119,19 +124,19 @@ impl GraphQLGenerator {
         enum_def: &EnumDefinition,
         options: &GeneratorOptions,
         indent: &IndentStyle,
-    ) -> String {
+    ) -> GeneratorResult<String> {
         let mut output = String::new();
 
         // Documentation
         if options.include_docs {
             if let Some(desc) = &enum_def.description {
-                writeln!(&mut output, "\"\"\"{desc}\n\"\"\"").unwrap();
+                writeln!(&mut output, "\"\"\"{desc}\n\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Enum definition
         let enum_type_name = self.convert_identifier(enum_name);
-        writeln!(&mut output, "enum {enum_type_name} {{").unwrap();
+        writeln!(&mut output, "enum {enum_type_name} {{").map_err(Self::fmt_error_to_generator_error)?;
 
         // Enum values
         if !enum_def.permissible_values.is_empty() {
@@ -139,7 +144,7 @@ impl GraphQLGenerator {
                 match value_def {
                     PermissibleValue::Simple(text) => {
                         let value_name = self.convert_enum_value(text);
-                        writeln!(&mut output, "{}{}", indent.single(), value_name).unwrap();
+                        writeln!(&mut output, "{}{}", indent.single(), value_name).map_err(Self::fmt_error_to_generator_error)?;
                     }
                     PermissibleValue::Complex {
                         text, description, ..
@@ -147,19 +152,19 @@ impl GraphQLGenerator {
                         if options.include_docs {
                             if let Some(desc) = description {
                                 writeln!(&mut output, "{}\"\"\"{}\"\"\"", indent.single(), desc)
-                                    .unwrap();
+                                    .map_err(Self::fmt_error_to_generator_error)?;
                             }
                         }
                         let value_name = self.convert_enum_value(text);
-                        writeln!(&mut output, "{}{}", indent.single(), value_name).unwrap();
+                        writeln!(&mut output, "{}{}", indent.single(), value_name).map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        output
+        Ok(output)
     }
 
     /// Generate input types for mutations
@@ -172,7 +177,7 @@ impl GraphQLGenerator {
         let mut output = String::new();
 
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "\n# Input Types for Mutations").unwrap();
+            writeln!(&mut output, "\n# Input Types for Mutations").map_err(Self::fmt_error_to_generator_error)?;
 
             for (class_name, class) in &schema.classes {
                 // Skip abstract classes for input types
@@ -183,7 +188,7 @@ impl GraphQLGenerator {
                 let type_name = self.convert_identifier(class_name);
 
                 // Create input type
-                writeln!(&mut output, "\ninput {type_name}Input {{").unwrap();
+                writeln!(&mut output, "\ninput {type_name}Input {{").map_err(Self::fmt_error_to_generator_error)?;
 
                 // Generate input fields (excluding ID for create operations)
                 let slots = self.collect_all_slots(class, schema)?;
@@ -194,15 +199,15 @@ impl GraphQLGenerator {
 
                         // Make all fields optional in input types
                         writeln!(output, "{}{}: {}", indent.single(), field_name, field_type)
-                            .unwrap();
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
-                writeln!(&mut output, "}}").unwrap();
+                writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
                 // Create update input type (with ID)
-                writeln!(&mut output, "\ninput {type_name}UpdateInput {{").unwrap();
-                writeln!(&mut output, "{}id: ID!", indent.single()).unwrap();
+                writeln!(&mut output, "\ninput {type_name}UpdateInput {{").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "{}id: ID!", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
 
                 for slot_name in &slots {
                     if let Some(slot) = schema.slots.get(slot_name) {
@@ -210,11 +215,11 @@ impl GraphQLGenerator {
                         let field_type = self.get_graphql_type(slot, schema)?;
 
                         writeln!(output, "{}{}: {}", indent.single(), field_name, field_type)
-                            .unwrap();
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
-                writeln!(&mut output, "}}").unwrap();
+                writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -226,10 +231,10 @@ impl GraphQLGenerator {
         &self,
         schema: &SchemaDefinition,
         indent: &IndentStyle,
-    ) -> String {
+    ) -> GeneratorResult<String> {
         let mut output = String::new();
 
-        writeln!(&mut output, "\ntype Query {{").unwrap();
+        writeln!(&mut output, "\ntype Query {{").map_err(Self::fmt_error_to_generator_error)?;
 
         for (class_name, class) in &schema.classes {
             // Skip abstract classes
@@ -249,7 +254,7 @@ impl GraphQLGenerator {
                 field_name,
                 type_name
             )
-            .unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
 
             // List query with pagination
             writeln!(
@@ -260,12 +265,12 @@ impl GraphQLGenerator {
                 type_name,
                 type_name
             )
-            .unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        output
+        Ok(output)
     }
 
     /// Generate root Mutation type
@@ -273,10 +278,10 @@ impl GraphQLGenerator {
         &self,
         schema: &SchemaDefinition,
         indent: &IndentStyle,
-    ) -> String {
+    ) -> GeneratorResult<String> {
         let mut output = String::new();
 
-        writeln!(&mut output, "\ntype Mutation {{").unwrap();
+        writeln!(&mut output, "\ntype Mutation {{").map_err(Self::fmt_error_to_generator_error)?;
 
         for (class_name, class) in &schema.classes {
             // Skip abstract classes
@@ -296,7 +301,7 @@ impl GraphQLGenerator {
                 type_name,
                 type_name
             )
-            .unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
 
             // Update mutation
             writeln!(
@@ -307,7 +312,7 @@ impl GraphQLGenerator {
                 type_name,
                 type_name
             )
-            .unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
 
             // Delete mutation
             writeln!(
@@ -316,12 +321,12 @@ impl GraphQLGenerator {
                 indent.single(),
                 type_name
             )
-            .unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        output
+        Ok(output)
     }
 
     /// Generate connection types for pagination
@@ -329,18 +334,18 @@ impl GraphQLGenerator {
         &self,
         schema: &SchemaDefinition,
         _indent: &IndentStyle,
-    ) -> String {
+    ) -> GeneratorResult<String> {
         let mut output = String::new();
 
-        writeln!(&mut output, "\n# Connection Types for Pagination").unwrap();
+        writeln!(&mut output, "\n# Connection Types for Pagination").map_err(Self::fmt_error_to_generator_error)?;
 
         // PageInfo type
-        writeln!(&mut output, "\ntype PageInfo {{").unwrap();
-        writeln!(&mut output, "  hasNextPage: Boolean!").unwrap();
-        writeln!(&mut output, "  hasPreviousPage: Boolean!").unwrap();
-        writeln!(&mut output, "  startCursor: String").unwrap();
-        writeln!(&mut output, "  endCursor: String").unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "\ntype PageInfo {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "  hasNextPage: Boolean!").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "  hasPreviousPage: Boolean!").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "  startCursor: String").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "  endCursor: String").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate connection and edge types for each non-abstract class
         for (class_name, class) in &schema.classes {
@@ -351,20 +356,20 @@ impl GraphQLGenerator {
             let type_name = self.convert_identifier(class_name);
 
             // Edge type
-            writeln!(&mut output, "\ntype {type_name}Edge {{").unwrap();
-            writeln!(&mut output, "  node: {type_name}!").unwrap();
-            writeln!(&mut output, "  cursor: String!").unwrap();
-            writeln!(&mut output, "}}").unwrap();
+            writeln!(&mut output, "\ntype {type_name}Edge {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  node: {type_name}!").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  cursor: String!").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
             // Connection type
-            writeln!(&mut output, "\ntype {type_name}Connection {{").unwrap();
-            writeln!(&mut output, "  edges: [{type_name}Edge!]!").unwrap();
-            writeln!(&mut output, "  pageInfo: PageInfo!").unwrap();
-            writeln!(&mut output, "  totalCount: Int!").unwrap();
-            writeln!(&mut output, "}}").unwrap();
+            writeln!(&mut output, "\ntype {type_name}Connection {{").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  edges: [{type_name}Edge!]!").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  pageInfo: PageInfo!").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  totalCount: Int!").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        output
+        Ok(output)
     }
 
     /// Generate filter types
@@ -375,7 +380,7 @@ impl GraphQLGenerator {
     ) -> GeneratorResult<String> {
         let mut output = String::new();
 
-        writeln!(&mut output, "\n# Filter Types").unwrap();
+        writeln!(&mut output, "\n# Filter Types").map_err(Self::fmt_error_to_generator_error)?;
 
         for (class_name, class) in &schema.classes {
             if class.abstract_ == Some(true) {
@@ -383,7 +388,7 @@ impl GraphQLGenerator {
             }
 
             let type_name = self.convert_identifier(class_name);
-            writeln!(&mut output, "\ninput {type_name}Filter {{").unwrap();
+            writeln!(&mut output, "\ninput {type_name}Filter {{").map_err(Self::fmt_error_to_generator_error)?;
 
             // Add standard filters
             writeln!(
@@ -392,9 +397,9 @@ impl GraphQLGenerator {
                 indent.single(),
                 type_name
             )
-            .unwrap();
-            writeln!(&mut output, "{}OR: [{}Filter!]", indent.single(), type_name).unwrap();
-            writeln!(&mut output, "{}NOT: {}Filter", indent.single(), type_name).unwrap();
+            .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "{}OR: [{}Filter!]", indent.single(), type_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "{}NOT: {}Filter", indent.single(), type_name).map_err(Self::fmt_error_to_generator_error)?;
 
             // Add field-specific filters
             let slots = self.collect_all_slots(class, schema)?;
@@ -411,7 +416,7 @@ impl GraphQLGenerator {
                                 indent.single(),
                                 field_name
                             )
-                            .unwrap();
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         }
                         "Int" | "Float" => {
                             writeln!(
@@ -420,7 +425,7 @@ impl GraphQLGenerator {
                                 indent.single(),
                                 field_name
                             )
-                            .unwrap();
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         }
                         "Boolean" => {
                             writeln!(
@@ -429,52 +434,52 @@ impl GraphQLGenerator {
                                 indent.single(),
                                 field_name
                             )
-                            .unwrap();
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         }
                         _ => {
                             writeln!(&mut output, "{}{}: IDFilter", indent.single(), field_name)
-                                .unwrap();
+                                .map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
                 }
             }
 
-            writeln!(&mut output, "}}").unwrap();
+            writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate common filter types
-        writeln!(&mut output, "\ninput StringFilter {{").unwrap();
-        writeln!(&mut output, "{}eq: String", indent.single()).unwrap();
-        writeln!(&mut output, "{}ne: String", indent.single()).unwrap();
-        writeln!(&mut output, "{}contains: String", indent.single()).unwrap();
-        writeln!(&mut output, "{}startsWith: String", indent.single()).unwrap();
-        writeln!(&mut output, "{}endsWith: String", indent.single()).unwrap();
-        writeln!(&mut output, "{}in: [String!]", indent.single()).unwrap();
-        writeln!(&mut output, "{}notIn: [String!]", indent.single()).unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "\ninput StringFilter {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}eq: String", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}ne: String", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}contains: String", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}startsWith: String", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}endsWith: String", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}in: [String!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}notIn: [String!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(&mut output, "\ninput NumberFilter {{").unwrap();
-        writeln!(&mut output, "{}eq: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}ne: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}gt: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}gte: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}lt: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}lte: Float", indent.single()).unwrap();
-        writeln!(&mut output, "{}in: [Float!]", indent.single()).unwrap();
-        writeln!(&mut output, "{}notIn: [Float!]", indent.single()).unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "\ninput NumberFilter {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}eq: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}ne: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}gt: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}gte: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}lt: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}lte: Float", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}in: [Float!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}notIn: [Float!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(&mut output, "\ninput BooleanFilter {{").unwrap();
-        writeln!(&mut output, "{}eq: Boolean", indent.single()).unwrap();
-        writeln!(&mut output, "{}ne: Boolean", indent.single()).unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "\ninput BooleanFilter {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}eq: Boolean", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}ne: Boolean", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(&mut output, "\ninput IDFilter {{").unwrap();
-        writeln!(&mut output, "{}eq: ID", indent.single()).unwrap();
-        writeln!(&mut output, "{}ne: ID", indent.single()).unwrap();
-        writeln!(&mut output, "{}in: [ID!]", indent.single()).unwrap();
-        writeln!(&mut output, "{}notIn: [ID!]", indent.single()).unwrap();
-        writeln!(&mut output, "}}").unwrap();
+        writeln!(&mut output, "\ninput IDFilter {{").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}eq: ID", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}ne: ID", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}in: [ID!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}notIn: [ID!]", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(output)
     }
@@ -642,37 +647,37 @@ impl Generator for GraphQLGenerator {
         let indent = &options.indent;
 
         // Header
-        writeln!(&mut output, "# GraphQL Schema generated from LinkML").unwrap();
+        writeln!(&mut output, "# GraphQL Schema generated from LinkML").map_err(Self::fmt_error_to_generator_error)?;
         if !schema.name.is_empty() {
-            writeln!(&mut output, "# Schema: {}", schema.name).unwrap();
+            writeln!(&mut output, "# Schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "# Description: {desc}").unwrap();
+            writeln!(&mut output, "# Description: {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate scalar types if needed
         if options.get_custom("include_scalars") == Some("true") {
-            writeln!(&mut output, "# Custom Scalar Types").unwrap();
-            writeln!(&mut output, "scalar DateTime").unwrap();
-            writeln!(&mut output, "scalar Date").unwrap();
-            writeln!(&mut output, "scalar URI").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "# Custom Scalar Types").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "scalar DateTime").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "scalar Date").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "scalar URI").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate enums
         if !schema.enums.is_empty() {
-            writeln!(&mut output, "# Enums").unwrap();
+            writeln!(&mut output, "# Enums").map_err(Self::fmt_error_to_generator_error)?;
             for (enum_name, enum_def) in &schema.enums {
-                let enum_output = self.generate_enum(enum_name, enum_def, options, indent);
+                let enum_output = self.generate_enum(enum_name, enum_def, options, indent)?;
                 output.push_str(&enum_output);
-                writeln!(&mut output).unwrap();
+                writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Generate types and interfaces
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "# Types and Interfaces").unwrap();
+            writeln!(&mut output, "# Types and Interfaces").map_err(Self::fmt_error_to_generator_error)?;
 
             // First generate interfaces (abstract classes)
             for (class_name, class) in &schema.classes {
@@ -680,7 +685,7 @@ impl Generator for GraphQLGenerator {
                     let class_output =
                         self.generate_class_graphql(class_name, class, schema, options, indent)?;
                     output.push_str(&class_output);
-                    writeln!(&mut output).unwrap();
+                    writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
 
@@ -690,7 +695,7 @@ impl Generator for GraphQLGenerator {
                     let class_output =
                         self.generate_class_graphql(class_name, class, schema, options, indent)?;
                     output.push_str(&class_output);
-                    writeln!(&mut output).unwrap();
+                    writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -703,7 +708,7 @@ impl Generator for GraphQLGenerator {
 
         // Generate connection types if requested
         if options.get_custom("generate_connections") != Some("false") {
-            let connection_types = self.generate_connection_types(schema, indent);
+            let connection_types = self.generate_connection_types(schema, indent)?;
             output.push_str(&connection_types);
         }
 
@@ -715,10 +720,10 @@ impl Generator for GraphQLGenerator {
 
         // Generate root types if requested
         if options.get_custom("generate_root_types") != Some("false") {
-            let query_type = self.generate_query_type(schema, indent);
+            let query_type = self.generate_query_type(schema, indent)?;
             output.push_str(&query_type);
 
-            let mutation_type = self.generate_mutation_type(schema, indent);
+            let mutation_type = self.generate_mutation_type(schema, indent)?;
             output.push_str(&mutation_type);
         }
 
@@ -762,7 +767,7 @@ impl CodeFormatter for GraphQLGenerator {
         indent: &IndentStyle,
         level: usize,
         separator: &str,
-    ) -> String {
+    ) -> GeneratorResult<String> {
         let prefix = indent.to_string(level);
         items
             .iter()
@@ -834,7 +839,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.expect("should generate GraphQL output");
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("type Person"));

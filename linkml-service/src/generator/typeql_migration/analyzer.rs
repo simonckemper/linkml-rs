@@ -341,8 +341,8 @@ mod tests {
         slot.required = Some(false);
         new_schema.slots.insert("new_field".to_string(), slot);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
-        let impact = MigrationAnalyzer::analyze_impact(&diff).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for safe changes");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for safe changes");
         
         assert_eq!(impact.category, ChangeCategory::Safe);
         assert!(!impact.has_breaking_changes());
@@ -358,8 +358,8 @@ mod tests {
         let class = ClassDefinition::default();
         old_schema.classes.insert("RemovedClass".to_string(), class);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
-        let impact = MigrationAnalyzer::analyze_impact(&diff).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for breaking changes");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for breaking changes");
         
         assert_eq!(impact.category, ChangeCategory::Breaking);
         assert!(impact.has_breaking_changes());
@@ -377,8 +377,8 @@ mod tests {
         slot.required = Some(true);
         new_schema.slots.insert("required_field".to_string(), slot);
         
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).unwrap();
-        let impact = MigrationAnalyzer::analyze_impact(&diff).unwrap();
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for warning changes");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for warning changes");
         
         assert_eq!(impact.category, ChangeCategory::Warning);
         assert!(impact.has_warnings());

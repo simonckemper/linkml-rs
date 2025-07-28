@@ -63,7 +63,7 @@ impl JsonPath {
                         if next_ch == '.' || next_ch == '[' {
                             break;
                         }
-                        property.push(chars.next().unwrap());
+                        property.push(chars.next().expect("peek() ensured character exists"));
                     }
                     if property.is_empty() {
                         return Err(LinkMLError::parse(format!(
@@ -357,17 +357,17 @@ mod tests {
             ]
         });
 
-        let path = JsonPath::parse("$.name").unwrap();
+        let path = JsonPath::parse("$.name").expect("should parse valid path");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("John"));
 
-        let path = JsonPath::parse("$.items[0].name").unwrap();
+        let path = JsonPath::parse("$.items[0].name").expect("should parse valid path with index");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("Item 1"));
 
-        let path = JsonPath::parse("$.items[*].name").unwrap();
+        let path = JsonPath::parse("$.items[*].name").expect("should parse valid path with wildcard");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].0, &json!("Item 1"));
@@ -391,11 +391,11 @@ mod tests {
         let mut navigator = JsonNavigator::new();
 
         // First call parses the path
-        let result1 = navigator.navigate(&data, "$.name").unwrap();
+        let result1 = navigator.navigate(&data, "$.name").expect("should navigate to name");
         assert_eq!(result1.len(), 1);
 
         // Second call uses cached path
-        let result2 = navigator.navigate(&data, "$.name").unwrap();
+        let result2 = navigator.navigate(&data, "$.name").expect("should navigate to name (cached)");
         assert_eq!(result2.len(), 1);
 
         // Verify cache contains the path

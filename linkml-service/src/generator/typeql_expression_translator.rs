@@ -391,7 +391,7 @@ mod tests {
         let mut ctx = TranslationContext::new("$p".to_string());
         
         let expr = Expression::Variable("age".to_string());
-        let result = translator.translate(&expr, &mut ctx).unwrap();
+        let result = translator.translate(&expr, &mut ctx).expect("should translate simple variable");
         
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$p has age $v1"));
@@ -408,7 +408,7 @@ mod tests {
             Box::new(Expression::Number(18.0)),
         );
         
-        let result = translator.translate(&expr, &mut ctx).unwrap();
+        let result = translator.translate(&expr, &mut ctx).expect("should translate comparison");
         
         assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1")));
         assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18")));
@@ -427,7 +427,7 @@ mod tests {
             ],
         };
         
-        let result = translator.translate(&expr, &mut ctx).unwrap();
+        let result = translator.translate(&expr, &mut ctx).expect("should translate contains function");
         
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$doc has tags \"important\""));

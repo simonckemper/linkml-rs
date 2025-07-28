@@ -89,6 +89,9 @@ pub mod file_system_adapter;
 /// CLI file system adapter wrapper
 pub mod cli_fs_adapter;
 
+/// Configuration loading and management
+pub mod config;
+
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
 pub use linkml_core::prelude::*;

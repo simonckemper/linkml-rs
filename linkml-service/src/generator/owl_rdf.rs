@@ -59,6 +59,11 @@ pub struct RdfGenerator {
 pub type OwlRdfGenerator = RdfGenerator;
 
 impl RdfGenerator {
+    /// Convert fmt::Error to GeneratorError
+    fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
+        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+    }
+    
     /// Create a new RDF generator (defaults to OWL mode, Turtle format)
     #[must_use]
     pub fn new() -> Self {
@@ -115,57 +120,57 @@ impl RdfGenerator {
     }
     
     /// Generate prefixes section based on format
-    fn generate_prefixes(&self, schema: &SchemaDefinition) -> String {
+    fn generate_prefixes(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         match self.format {
             RdfFormat::Turtle => self.generate_turtle_prefixes(schema),
             RdfFormat::RdfXml => self.generate_rdfxml_prefixes(schema),
-            RdfFormat::NTriples => String::new(), // N-Triples doesn't use prefixes
+            RdfFormat::NTriples => Ok(String::new()), // N-Triples doesn't use prefixes
             RdfFormat::JsonLd => self.generate_jsonld_context(schema),
         }
     }
     
     /// Generate Turtle prefixes
-    fn generate_turtle_prefixes(&self, schema: &SchemaDefinition) -> String {
+    fn generate_turtle_prefixes(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         // Standard prefixes
         for (prefix, uri) in &self.prefixes {
-            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri).unwrap();
+            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Schema-specific prefix
         let schema_prefix = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id).unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate RDF/XML namespace declarations
-    fn generate_rdfxml_prefixes(&self, schema: &SchemaDefinition) -> String {
+    fn generate_rdfxml_prefixes(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut namespaces = String::new();
         
         // Add standard namespaces
-        write!(&mut namespaces, " xmlns:rdf=\"{}\"", self.prefixes["rdf"]).unwrap();
-        write!(&mut namespaces, " xmlns:rdfs=\"{}\"", self.prefixes["rdfs"]).unwrap();
+        write!(&mut namespaces, " xmlns:rdf=\"{}\"", self.prefixes["rdf"]).map_err(Self::fmt_error_to_generator_error)?;
+        write!(&mut namespaces, " xmlns:rdfs=\"{}\"", self.prefixes["rdfs"]).map_err(Self::fmt_error_to_generator_error)?;
         
         if self.mode == RdfMode::Owl {
-            write!(&mut namespaces, " xmlns:owl=\"{}\"", self.prefixes["owl"]).unwrap();
+            write!(&mut namespaces, " xmlns:owl=\"{}\"", self.prefixes["owl"]).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        write!(&mut namespaces, " xmlns:xsd=\"{}\"", self.prefixes["xsd"]).unwrap();
-        write!(&mut namespaces, " xmlns:skos=\"{}\"", self.prefixes["skos"]).unwrap();
-        write!(&mut namespaces, " xmlns:dcterms=\"{}\"", self.prefixes["dcterms"]).unwrap();
+        write!(&mut namespaces, " xmlns:xsd=\"{}\"", self.prefixes["xsd"]).map_err(Self::fmt_error_to_generator_error)?;
+        write!(&mut namespaces, " xmlns:skos=\"{}\"", self.prefixes["skos"]).map_err(Self::fmt_error_to_generator_error)?;
+        write!(&mut namespaces, " xmlns:dcterms=\"{}\"", self.prefixes["dcterms"]).map_err(Self::fmt_error_to_generator_error)?;
         
         // Schema namespace
         let schema_prefix = self.to_snake_case(&schema.name);
-        write!(&mut namespaces, " xmlns:{}=\"{}#\"", schema_prefix, schema.id).unwrap();
+        write!(&mut namespaces, " xmlns:{}=\"{}#\"", schema_prefix, schema.id).map_err(Self::fmt_error_to_generator_error)?;
         
         namespaces
     }
     
     /// Generate JSON-LD context
-    fn generate_jsonld_context(&self, schema: &SchemaDefinition) -> String {
+    fn generate_jsonld_context(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut context = serde_json::json!({
             "@context": {
                 "rdf": self.prefixes["rdf"],
@@ -184,11 +189,14 @@ impl RdfGenerator {
         let schema_prefix = self.to_snake_case(&schema.name);
         context["@context"][schema_prefix] = serde_json::json!(format!("{}#", schema.id));
         
-        serde_json::to_string_pretty(&context).unwrap()
+        Ok(serde_json::to_string_pretty(&context).map_err(|e| GeneratorError::Generation {
+            context: "json-ld context".to_string(),
+            message: e.to_string(),
+        })?)
     }
     
     /// Generate schema header based on mode and format
-    fn generate_schema_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_schema_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         match self.mode {
             RdfMode::Owl => self.generate_owl_header(schema),
             RdfMode::Rdfs => self.generate_rdfs_header(schema),
@@ -197,67 +205,67 @@ impl RdfGenerator {
     }
     
     /// Generate OWL ontology header
-    fn generate_owl_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_owl_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         match self.format {
-            RdfFormat::Turtle => writeln!(&mut output, "# OWL Ontology generated from LinkML schema: {}", schema.name).unwrap(),
+            RdfFormat::Turtle => writeln!(&mut output, "# OWL Ontology generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?,
             _ => {}
         }
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Ontology declaration
-        writeln!(&mut output, "<{}>", schema.id).unwrap();
-        writeln!(&mut output, "    a owl:Ontology ;").unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", schema.name).unwrap();
+        writeln!(&mut output, "<{}>", schema.id).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    a owl:Ontology ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "    owl:versionInfo \"{}\" ;", version).unwrap();
+            writeln!(&mut output, "    owl:versionInfo \"{}\" ;", version).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "    dcterms:description \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    dcterms:description \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "    .").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate RDFS schema header
-    fn generate_rdfs_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_rdfs_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         match self.format {
-            RdfFormat::Turtle => writeln!(&mut output, "# RDFS Schema generated from LinkML: {}", schema.name).unwrap(),
+            RdfFormat::Turtle => writeln!(&mut output, "# RDFS Schema generated from LinkML: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?,
             _ => {}
         }
         
         // Schema declaration
-        writeln!(&mut output, "<{}>\n    a rdfs:Class ;", schema.id).unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", schema.name).unwrap();
+        writeln!(&mut output, "<{}>\n    a rdfs:Class ;", schema.id).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "    .").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
-        output
+        Ok(output)
     }
     
     /// Generate simple RDF header
-    fn generate_simple_header(&self, schema: &SchemaDefinition) -> String {
+    fn generate_simple_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         match self.format {
-            RdfFormat::Turtle => writeln!(&mut output, "# RDF triples generated from LinkML: {}\n", schema.name).unwrap(),
+            RdfFormat::Turtle => writeln!(&mut output, "# RDF triples generated from LinkML: {}\n", schema.name).map_err(Self::fmt_error_to_generator_error)?,
             _ => {}
         }
         
-        output
+        Ok(output)
     }
     
     /// Generate class based on mode
@@ -276,24 +284,24 @@ impl RdfGenerator {
         let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
         
         // Class declaration
-        writeln!(&mut output, "# Class: {}", name).unwrap();
-        writeln!(&mut output, "{}", class_uri).unwrap();
-        writeln!(&mut output, "    a owl:Class ;").unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).unwrap();
+        writeln!(&mut output, "# Class: {}", name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}", class_uri).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    a owl:Class ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Description
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Superclass (is_a)
         if let Some(parent) = &class.is_a {
-            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(parent)).unwrap();
+            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(parent)).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Mixins as additional superclasses
         for mixin in &class.mixins {
-            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(mixin)).unwrap();
+            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(mixin)).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Collect all slots (including inherited)
@@ -304,19 +312,19 @@ impl RdfGenerator {
             for (i, slot_name) in all_slots.iter().enumerate() {
                 if let Some(slot) = schema.slots.get(slot_name) {
                     let restriction = self.generate_property_restriction(slot_name, slot, schema)?;
-                    write!(&mut output, "    rdfs:subClassOf {}", restriction).unwrap();
+                    write!(&mut output, "    rdfs:subClassOf {}", restriction).map_err(Self::fmt_error_to_generator_error)?;
                     if i < all_slots.len() - 1 {
-                        writeln!(&mut output, " ,").unwrap();
+                        writeln!(&mut output, " ,").map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(&mut output, " .").unwrap();
+                        writeln!(&mut output, " .").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         } else {
-            writeln!(&mut output, "    .").unwrap();
+            writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -327,22 +335,22 @@ impl RdfGenerator {
         let property_uri = format!("{}:{}", schema_prefix, self.to_snake_case(slot_name));
         
         let mut restriction = String::new();
-        writeln!(&mut restriction, "[").unwrap();
-        writeln!(&mut restriction, "        a owl:Restriction ;").unwrap();
-        writeln!(&mut restriction, "        owl:onProperty {} ;", property_uri).unwrap();
+        writeln!(&mut restriction, "[").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut restriction, "        a owl:Restriction ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut restriction, "        owl:onProperty {} ;", property_uri).map_err(Self::fmt_error_to_generator_error)?;
         
         // Cardinality constraints
         if slot.required == Some(true) {
             if slot.multivalued == Some(true) {
-                writeln!(&mut restriction, "        owl:minCardinality 1").unwrap();
+                writeln!(&mut restriction, "        owl:minCardinality 1").map_err(Self::fmt_error_to_generator_error)?;
             } else {
-                writeln!(&mut restriction, "        owl:cardinality 1").unwrap();
+                writeln!(&mut restriction, "        owl:cardinality 1").map_err(Self::fmt_error_to_generator_error)?;
             }
         } else if slot.multivalued != Some(true) {
-            writeln!(&mut restriction, "        owl:maxCardinality 1").unwrap();
+            writeln!(&mut restriction, "        owl:maxCardinality 1").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        write!(&mut restriction, "    ]").unwrap();
+        write!(&mut restriction, "    ]").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(restriction)
     }
@@ -353,8 +361,8 @@ impl RdfGenerator {
         let schema_prefix = self.to_snake_case(&schema.name);
         let property_uri = format!("{}:{}", schema_prefix, self.to_snake_case(name));
         
-        writeln!(&mut output, "# Property: {}", name).unwrap();
-        writeln!(&mut output, "{}", property_uri).unwrap();
+        writeln!(&mut output, "# Property: {}", name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}", property_uri).map_err(Self::fmt_error_to_generator_error)?;
         
         // Determine property type
         let property_type = if let Some(range) = &slot.range {
@@ -367,12 +375,12 @@ impl RdfGenerator {
             "owl:DatatypeProperty"
         };
         
-        writeln!(&mut output, "    a {} ;", property_type).unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).unwrap();
+        writeln!(&mut output, "    a {} ;", property_type).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Description
         if let Some(desc) = &slot.description {
-            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Domain (classes that use this property)
@@ -386,45 +394,45 @@ impl RdfGenerator {
         
         if !using_classes.is_empty() {
             if using_classes.len() == 1 {
-                writeln!(&mut output, "    rdfs:domain {} ;", using_classes[0]).unwrap();
+                writeln!(&mut output, "    rdfs:domain {} ;", using_classes[0]).map_err(Self::fmt_error_to_generator_error)?;
             } else {
-                writeln!(&mut output, "    rdfs:domain [").unwrap();
-                writeln!(&mut output, "        a owl:Class ;").unwrap();
-                writeln!(&mut output, "        owl:unionOf ({})", using_classes.join(" ")).unwrap();
-                writeln!(&mut output, "    ] ;").unwrap();
+                writeln!(&mut output, "    rdfs:domain [").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        a owl:Class ;").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "        owl:unionOf ({})", using_classes.join(" ")).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "    ] ;").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Range
         if let Some(range) = &slot.range {
             if let Some(datatype) = self.get_xsd_datatype(range) {
-                writeln!(&mut output, "    rdfs:range {} ;", datatype).unwrap();
+                writeln!(&mut output, "    rdfs:range {} ;", datatype).map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.classes.contains_key(range) {
-                writeln!(&mut output, "    rdfs:range {}:{} ;", schema_prefix, self.to_pascal_case(range)).unwrap();
+                writeln!(&mut output, "    rdfs:range {}:{} ;", schema_prefix, self.to_pascal_case(range)).map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.enums.contains_key(range) {
-                writeln!(&mut output, "    rdfs:range {}:{} ;", schema_prefix, self.to_pascal_case(range)).unwrap();
+                writeln!(&mut output, "    rdfs:range {}:{} ;", schema_prefix, self.to_pascal_case(range)).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
         // Functional property (not multivalued)
         if slot.multivalued != Some(true) {
-            writeln!(&mut output, "    a owl:FunctionalProperty ;").unwrap();
+            writeln!(&mut output, "    a owl:FunctionalProperty ;").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Pattern as OWL restriction
         if let Some(pattern) = &slot.pattern {
-            writeln!(&mut output, "    owl:withRestrictions ([").unwrap();
-            writeln!(&mut output, "        xsd:pattern \"{}\"", pattern).unwrap();
-            writeln!(&mut output, "    ]) ;").unwrap();
+            writeln!(&mut output, "    owl:withRestrictions ([").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "        xsd:pattern \"{}\"", pattern).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    ]) ;").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Remove trailing semicolon and add period
         if output.ends_with(" ;\n") {
             output.truncate(output.len() - 3);
-            writeln!(&mut output, " .").unwrap();
+            writeln!(&mut output, " .").map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -435,13 +443,13 @@ impl RdfGenerator {
         let schema_prefix = self.to_snake_case(&schema.name);
         let enum_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
         
-        writeln!(&mut output, "# Enumeration: {}", name).unwrap();
-        writeln!(&mut output, "{}", enum_uri).unwrap();
-        writeln!(&mut output, "    a owl:Class ;").unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).unwrap();
+        writeln!(&mut output, "# Enumeration: {}", name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}", enum_uri).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    a owl:Class ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(desc) = &enum_def.description {
-            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    skos:definition \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Create individuals for each permissible value
@@ -455,11 +463,11 @@ impl RdfGenerator {
             })
             .collect();
         
-        writeln!(&mut output, "    owl:equivalentClass [").unwrap();
-        writeln!(&mut output, "        a owl:Class ;").unwrap();
-        writeln!(&mut output, "        owl:oneOf ({})", individuals.join(" ")).unwrap();
-        writeln!(&mut output, "    ] .").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "    owl:equivalentClass [").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        a owl:Class ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        owl:oneOf ({})", individuals.join(" ")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    ] .").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate individuals
         for pv in &enum_def.permissible_values {
@@ -470,16 +478,16 @@ impl RdfGenerator {
             
             let individual_uri = format!("{}:{}_{}", schema_prefix, self.to_pascal_case(name), self.to_pascal_case(&value));
             
-            writeln!(&mut output, "{}", individual_uri).unwrap();
-            writeln!(&mut output, "    a {} ;", enum_uri).unwrap();
-            writeln!(&mut output, "    rdfs:label \"{}\" ;", value).unwrap();
+            writeln!(&mut output, "{}", individual_uri).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    a {} ;", enum_uri).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    rdfs:label \"{}\" ;", value).map_err(Self::fmt_error_to_generator_error)?;
             
             if let Some(desc) = desc {
-                writeln!(&mut output, "    skos:definition \"{}\" ;", desc).unwrap();
+                writeln!(&mut output, "    skos:definition \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            writeln!(&mut output, "    .").unwrap();
-            writeln!(&mut output).unwrap();
+            writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -531,7 +539,7 @@ impl RdfGenerator {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().unwrap());
+            result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
             prev_upper = ch.is_uppercase();
         }
         
@@ -558,23 +566,23 @@ impl RdfGenerator {
         let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
         
         // Class declaration
-        writeln!(&mut output, "# Class: {}", name).unwrap();
-        writeln!(&mut output, "{}", class_uri).unwrap();
-        writeln!(&mut output, "    a rdfs:Class ;").unwrap();
-        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).unwrap();
+        writeln!(&mut output, "# Class: {}", name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}", class_uri).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    a rdfs:Class ;").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    rdfs:label \"{}\" ;", name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Description
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).unwrap();
+            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Superclass
         if let Some(parent) = &class.is_a {
-            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(parent)).unwrap();
+            writeln!(&mut output, "    rdfs:subClassOf {}:{} ;", schema_prefix, self.to_pascal_case(parent)).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output, "    .").unwrap();
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -586,14 +594,14 @@ impl RdfGenerator {
         let class_uri = format!("{}:{}", schema_prefix, self.to_pascal_case(name));
         
         // Basic triple
-        writeln!(&mut output, "{} a rdfs:Class .", class_uri).unwrap();
-        writeln!(&mut output, "{} rdfs:label \"{}\" .", class_uri, name).unwrap();
+        writeln!(&mut output, "{} a rdfs:Class .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{} rdfs:label \"{}\" .", class_uri, name).map_err(Self::fmt_error_to_generator_error)?;
         
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "{} rdfs:comment \"{}\" .", class_uri, desc).unwrap();
+            writeln!(&mut output, "{} rdfs:comment \"{}\" .", class_uri, desc).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        writeln!(&mut output).unwrap();
+        writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -640,10 +648,10 @@ impl Generator for RdfGenerator {
         let mut output = String::new();
         
         // Generate header
-        output.push_str(&self.generate_schema_header(schema));
+        output.push_str(&self.generate_schema_header(schema)?);
         
         // Generate prefixes
-        output.push_str(&self.generate_prefixes(schema));
+        output.push_str(&self.generate_prefixes(schema)?);
         
         // Generate classes
         for (name, class) in &schema.classes {
@@ -717,12 +725,12 @@ impl RdfGenerator {
         // In production, you'd use an RDF library for proper conversion
         let mut output = String::new();
         
-        writeln!(&mut output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>").unwrap();
-        writeln!(&mut output, "<rdf:RDF{}>\n", self.generate_rdfxml_prefixes(schema)).unwrap();
+        writeln!(&mut output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "<rdf:RDF{}>\n", self.generate_rdfxml_prefixes(schema)?).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate RDF/XML content based on mode
         // This is a simplified version - full implementation would properly convert triples
-        writeln!(&mut output, "</rdf:RDF>").unwrap();
+        writeln!(&mut output, "</rdf:RDF>").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(output)
     }
@@ -737,8 +745,8 @@ impl RdfGenerator {
         
         for (name, class) in &schema.classes {
             let class_uri = format!("{}#{}", schema_uri, self.to_pascal_case(name));
-            writeln!(&mut output, "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .", class_uri).unwrap();
-            writeln!(&mut output, "<{}> <http://www.w3.org/2000/01/rdf-schema#label> \"{}\" .", class_uri, name).unwrap();
+            writeln!(&mut output, "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "<{}> <http://www.w3.org/2000/01/rdf-schema#label> \"{}\" .", class_uri, name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         Ok(output)
@@ -747,7 +755,10 @@ impl RdfGenerator {
     /// Convert Turtle to JSON-LD
     fn convert_to_jsonld(&self, _turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut doc = serde_json::json!({
-            "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)).unwrap()["@context"],
+            "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)?).map_err(|e| GeneratorError::Generation {
+                context: "json-ld".to_string(),
+                message: e.to_string(),
+            })?["@context"].clone(),
             "@graph": []
         });
         
@@ -759,7 +770,7 @@ impl RdfGenerator {
                 "rdfs:label": name,
                 "rdfs:comment": class.description,
             });
-            doc["@graph"].as_array_mut().unwrap().push(class_obj);
+            doc["@graph"].as_array_mut().expect("@graph should be an array").push(class_obj);
         }
         
         serde_json::to_string_pretty(&doc).map_err(|e| GeneratorError::Generation {
