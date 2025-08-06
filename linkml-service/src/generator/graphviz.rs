@@ -5,11 +5,10 @@
 //! multiple diagram styles and customization options.
 
 use linkml_core::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult};
 
 /// Graphviz diagram style
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -127,7 +126,7 @@ impl GraphvizGenerator {
         
         // Header
         writeln!(&mut output, "// Graphviz diagram generated from LinkML schema: {}", 
-            schema.name.as_deref().unwrap_or("unnamed")).map_err(Self::fmt_error_to_generator_error)?;
+            if schema.name.is_empty() { "unnamed" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "digraph LinkMLSchema {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Graph attributes
@@ -355,7 +354,7 @@ impl GraphvizGenerator {
         
         write!(output, "    {} [label=\"{}", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
         
-        if let Some(base) = &type_def.typeof {
+        if let Some(base) = &type_def.base_type {
             write!(output, "\\n({})", base).map_err(Self::fmt_error_to_generator_error)?;
         }
         
@@ -489,40 +488,30 @@ impl Default for GraphvizGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for GraphvizGenerator {
     fn name(&self) -> &str {
         "graphviz"
     }
     
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates Graphviz DOT format diagrams from LinkML schemas"
     }
     
-    fn file_extensions(&self) -> Vec<&str> {
-        vec![".dot", ".gv"]
-    }
-    
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        let content = self.generate_dot(schema)?;
-        
-        let filename = format!("{}.dot", 
-            schema.name.as_deref().unwrap_or("schema"));
-        
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "dot".to_string());
-        metadata.insert("layout".to_string(), format!("{:?}", self.options.layout).to_lowercase());
-        metadata.insert("style".to_string(), format!("{:?}", self.options.style).to_lowercase());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content,
-            metadata,
-        }])
+    ) -> std::result::Result<String, LinkMLError> {
+        let content = self.generate_dot(schema)
+            .map_err(|e| LinkMLError::other(e.to_string()))?;
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "dot"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -559,23 +548,18 @@ mod tests {
         schema
     }
     
-    #[tokio::test]
-    async fn test_graphviz_generation() {
+    #[test]
+    fn test_graphviz_generation() {
         let schema = create_test_schema();
         let generator = GraphvizGenerator::new();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate Graphviz output");
-        assert_eq!(result.len(), 1);
-        
-        let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.dot");
+        let result = generator.generate(&schema).expect("should generate Graphviz output");
         
         // Check content includes basic structure
-        assert!(output.content.contains("digraph LinkMLSchema"));
-        assert!(output.content.contains("Animal"));
-        assert!(output.content.contains("Dog"));
-        assert!(output.content.contains("->"));
+        assert!(result.contains("digraph LinkMLSchema"));
+        assert!(result.contains("Animal"));
+        assert!(result.contains("Dog"));
+        assert!(result.contains("->"));
     }
     
     #[test]

@@ -3,8 +3,7 @@
 //! This module provides utilities for generating array-aware code
 //! in various programming languages.
 
-use crate::array::{ArraySpec, ArrayDimension};
-use linkml_core::prelude::*;
+use crate::array::ArraySpec;
 use std::fmt::Write;
 
 /// Language-specific array code generation
@@ -28,13 +27,13 @@ pub struct PythonArrayGenerator;
 impl PythonArrayGenerator {
     /// Convert fmt::Error to a panic message
     /// Note: This is used because the trait methods must return String, not Result
-    fn handle_fmt_error(e: std::fmt::Error) -> ! {
+    fn _handle_fmt_error(e: std::fmt::Error) -> ! {
         panic!("Failed to format string: {}", e)
     }
 }
 
 impl ArrayCodeGenerator for PythonArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
         let dtype = match spec.element_type.as_str() {
             "integer" => "np.int64",
             "float" | "double" => "np.float64",
@@ -131,7 +130,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             .join(", ");
         
         let index_args = spec.dimensions.iter()
-            .map(|d| &d.name)
+            .map(|d| d.name.as_str())
             .collect::<Vec<_>>()
             .join(", ");
         
@@ -368,7 +367,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
             .join(", ");
         
         let indices = spec.dimensions.iter()
-            .map(|d| &d.name)
+            .map(|d| d.name.as_str())
             .collect::<Vec<_>>()
             .join(", ");
         
@@ -427,13 +426,13 @@ mod tests {
             .with_dimension(ArrayDimension::fixed("x", 10))
             .with_dimension(ArrayDimension::fixed("y", 20));
         
-        let gen = PythonArrayGenerator;
+        let generator = PythonArrayGenerator;
         
-        let type_code = gen.generate_array_type(&spec, "MyArray");
+        let type_code = generator.generate_array_type(&spec, "MyArray");
         assert!(type_code.contains("NDArray"));
         assert!(type_code.contains("10, 20"));
         
-        let init_code = gen.generate_array_init(&spec, "data");
+        let init_code = generator.generate_array_init(&spec, "data");
         assert!(init_code.contains("np.zeros"));
         assert!(init_code.contains("(10, 20)"));
     }
@@ -444,12 +443,12 @@ mod tests {
             .with_dimension(ArrayDimension::fixed("rows", 3))
             .with_dimension(ArrayDimension::fixed("cols", 4));
         
-        let gen = TypeScriptArrayGenerator;
+        let generator = TypeScriptArrayGenerator;
         
-        let type_code = gen.generate_array_type(&spec, "Matrix");
+        let type_code = generator.generate_array_type(&spec, "Matrix");
         assert_eq!(type_code, "number[][]");
         
-        let validation = gen.generate_array_validation(&spec, "matrix");
+        let validation = generator.generate_array_validation(&spec, "matrix");
         assert!(validation.contains("validateMatrixArray"));
         assert!(validation.contains("length !== 3"));
     }
@@ -460,12 +459,12 @@ mod tests {
             .with_dimension(ArrayDimension::fixed("x", 100))
             .with_dimension(ArrayDimension::fixed("y", 200));
         
-        let gen = RustArrayGenerator;
+        let generator = RustArrayGenerator;
         
-        let type_code = gen.generate_array_type(&spec, "Grid");
+        let type_code = generator.generate_array_type(&spec, "Grid");
         assert!(type_code.contains("ndarray::Array2<f64>"));
         
-        let init_code = gen.generate_array_init(&spec, "grid");
+        let init_code = generator.generate_array_init(&spec, "grid");
         assert!(init_code.contains("Array::zeros"));
         assert!(init_code.contains("[100, 200]"));
     }

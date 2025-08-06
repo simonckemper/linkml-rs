@@ -5,7 +5,8 @@
 
 use async_trait::async_trait;
 use linkml_core::prelude::*;
-use serde_json::{Value, Map};
+use serde_json::Value;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -78,18 +79,26 @@ impl DataLoaderV2 for YamlLoaderV2 {
         let instances = match json_value {
             Value::Array(items) => {
                 items.into_iter()
-                    .map(|item| DataInstance {
-                        data: item,
-                        class_name: None,
-                        metadata: Map::new(),
+                    .filter_map(|item| {
+                        if let Value::Object(obj) = item {
+                            Some(DataInstance {
+                                class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                                data: obj.into_iter().collect(),
+                                id: None,
+                                metadata: HashMap::new(),
+                            })
+                        } else {
+                            None
+                        }
                     })
                     .collect()
             }
-            Value::Object(_) => {
+            Value::Object(obj) => {
                 vec![DataInstance {
-                    data: json_value,
-                    class_name: None,
-                    metadata: Map::new(),
+                    class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                    data: obj.into_iter().collect(),
+                    id: None,
+                    metadata: HashMap::new(),
                 }]
             }
             _ => {
@@ -159,15 +168,23 @@ impl DataDumperV2 for YamlDumperV2 {
         _schema: &SchemaDefinition,
     ) -> DumperResult<String> {
         // Convert instances to appropriate format
-        let output = if instances.len() == 1 {
+        let json_output = if instances.len() == 1 {
             // Single instance - output as object
-            instances.into_iter().next().expect("should have at least one instance after length check").data
+            let instance = instances.into_iter().next().expect("should have at least one instance after length check");
+            let mut obj = instance.data;
+            obj.insert("@type".to_string(), serde_json::Value::String(instance.class_name));
+            serde_json::Value::Object(serde_json::Map::from_iter(obj))
         } else {
             // Multiple instances - output as array
-            Value::Array(instances.into_iter().map(|i| i.data).collect())
+            let json_instances: Vec<serde_json::Value> = instances.into_iter().map(|instance| {
+                let mut obj = instance.data;
+                obj.insert("@type".to_string(), serde_json::Value::String(instance.class_name));
+                serde_json::Value::Object(serde_json::Map::from_iter(obj))
+            }).collect();
+            serde_json::Value::Array(json_instances)
         };
         
-        serde_yaml::to_string(&output)
+        serde_yaml::to_string(&json_output)
             .map_err(|e| DumperError::Serialization(e.to_string()))
     }
     
@@ -222,7 +239,7 @@ mod tests {
                     "age": 30
                 }),
                 class_name: None,
-                metadata: Map::new(),
+                metadata: HashMap::new(),
             },
             DataInstance {
                 data: serde_json::json!({
@@ -230,7 +247,7 @@ mod tests {
                     "age": 25
                 }),
                 class_name: None,
-                metadata: Map::new(),
+                metadata: HashMap::new(),
             },
         ];
         

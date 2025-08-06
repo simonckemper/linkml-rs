@@ -2,13 +2,12 @@
 //!
 //! This module provides automatic configuration reloading when files change.
 
-use super::{LinkMLConfig, load_config, validation::{validate_config, validate_values}};
+use super::{LinkMLConfig, load_config, validation::validate_values};
 use linkml_core::error::{LinkMLError, Result};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
 use tokio::sync::watch;
-use notify::{Watcher, RecursiveMode, Config as NotifyConfig, Event, EventKind};
+use notify::{Watcher, RecursiveMode, Event, EventKind};
 use tracing::{info, warn, error};
 
 /// Configuration hot-reload manager
@@ -53,7 +52,7 @@ impl ConfigHotReloader {
         let config = Arc::clone(&self.config);
         
         // Create watcher
-        let mut watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
+        let mut watcher = notify::recommended_watcher(move |res: std::result::Result<Event, notify::Error>| {
             match res {
                 Ok(event) => {
                     if matches!(event.kind, EventKind::Modify(_)) {
@@ -73,17 +72,15 @@ impl ConfigHotReloader {
                 }
                 Err(e) => error!("File watch error: {}", e),
             }
-        }).map_err(|e| LinkMLError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        }).map_err(|e| LinkMLError::other(
             format!("Failed to create file watcher: {}", e)
-        )))?;
+        ))?;
         
         // Watch the configuration file
         watcher.watch(&self.config_path, RecursiveMode::NonRecursive)
-            .map_err(|e| LinkMLError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            .map_err(|e| LinkMLError::other(
                 format!("Failed to watch config file: {}", e)
-            )))?;
+            ))?;
             
         self.watcher = Some(watcher);
         info!("Configuration hot-reload started for: {}", self.config_path.display());
@@ -134,7 +131,7 @@ impl ConfigHotReloader {
     /// Wait for next configuration update
     pub async fn wait_for_update(&mut self) -> Result<Arc<LinkMLConfig>> {
         self.rx.changed().await
-            .map_err(|_| LinkMLError::configuration("Configuration update channel closed".to_string()))?;
+            .map_err(|_| LinkMLError::ConfigError("Configuration update channel closed".to_string()))?;
         Ok(self.rx.borrow().clone())
     }
 }
@@ -149,7 +146,7 @@ pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> Result<()> {
     reloader.start_watching().await?;
     
     HOT_RELOADER.set(Arc::new(tokio::sync::Mutex::new(reloader)))
-        .map_err(|_| LinkMLError::configuration("Hot-reloader already initialized".to_string()))?;
+        .map_err(|_| LinkMLError::ConfigError("Hot-reloader already initialized".to_string()))?;
         
     Ok(())
 }
@@ -157,7 +154,7 @@ pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> Result<()> {
 /// Get hot-reloaded configuration
 pub async fn get_hot_config() -> Result<Arc<LinkMLConfig>> {
     let reloader = HOT_RELOADER.get()
-        .ok_or_else(|| LinkMLError::configuration("Hot-reloader not initialized".to_string()))?;
+        .ok_or_else(|| LinkMLError::ConfigError("Hot-reloader not initialized".to_string()))?;
         
     let reloader_guard = reloader.lock().await;
     Ok(reloader_guard.get_config())
@@ -166,7 +163,7 @@ pub async fn get_hot_config() -> Result<Arc<LinkMLConfig>> {
 /// Subscribe to configuration updates
 pub async fn subscribe_to_updates() -> Result<watch::Receiver<Arc<LinkMLConfig>>> {
     let reloader = HOT_RELOADER.get()
-        .ok_or_else(|| LinkMLError::configuration("Hot-reloader not initialized".to_string()))?;
+        .ok_or_else(|| LinkMLError::ConfigError("Hot-reloader not initialized".to_string()))?;
         
     let reloader_guard = reloader.lock().await;
     Ok(reloader_guard.subscribe())
@@ -184,7 +181,7 @@ mod tests {
         let temp_file = NamedTempFile::new().expect("should create temp file");
         let config_content = fs::read_to_string("config/default.yaml")
             .expect("should read default config");
-        fs::write(temp_file.path(), config_content)
+        fs::write(temp_file.path(), &config_content)
             .expect("should write temp config");
             
         // Create hot reloader
@@ -202,7 +199,7 @@ mod tests {
         let temp_file = NamedTempFile::new().expect("should create temp file");
         let config_content = fs::read_to_string("config/default.yaml")
             .expect("should read default config");
-        fs::write(temp_file.path(), config_content)
+        fs::write(temp_file.path(), &config_content)
             .expect("should write temp config");
             
         // Create and start hot reloader
@@ -225,7 +222,7 @@ mod tests {
             .expect("should write modified config");
             
         // Wait a bit for file system events
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         
         // Check if update was received
         // Note: In real tests, file watching might not work reliably

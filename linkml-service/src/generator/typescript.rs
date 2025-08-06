@@ -3,11 +3,10 @@
 use super::base::{
     collect_all_slots, is_optional_slot, BaseCodeFormatter, TypeMapper,
 };
-use super::traits::{
-    CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
-};
+use super::traits::{AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use super::options::{GeneratorOptions, IndentStyle};
 use async_trait::async_trait;
+use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -21,6 +20,33 @@ pub struct TypeScriptGenerator {
 impl Default for TypeScriptGenerator {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// Implement the synchronous Generator trait for backward compatibility
+impl Generator for TypeScriptGenerator {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        // Use tokio to run the async version
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+        
+        let options = GeneratorOptions::new();
+        let outputs = runtime.block_on(AsyncGenerator::generate(self, schema, &options))
+            .map_err(|e| LinkMLError::service(e.to_string()))?;
+        
+        // Concatenate all outputs into a single string
+        Ok(outputs.into_iter()
+            .map(|output| output.content)
+            .collect::<Vec<_>>()
+            .join("\n"))
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "ts"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "generated.ts"
     }
 }
 
@@ -343,7 +369,7 @@ impl TypeScriptGenerator {
 }
 
 #[async_trait]
-impl Generator for TypeScriptGenerator {
+impl AsyncGenerator for TypeScriptGenerator {
     fn name(&self) -> &str {
         &self.name
     }
@@ -361,7 +387,7 @@ impl Generator for TypeScriptGenerator {
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        self.validate_schema(schema).await?;
+        AsyncGenerator::validate_schema(self, schema).await?;
 
         let mut outputs = Vec::new();
         let mut content = String::new();

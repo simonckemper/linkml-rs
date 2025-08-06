@@ -3,12 +3,12 @@
 //! This generator serializes LinkML schemas back to YAML format,
 //! preserving structure and optionally comments.
 
-use super::traits::{Generator, GeneratorOptions, GeneratorResult, GeneratedOutput};
+use super::traits::Generator;
 use linkml_core::prelude::*;
-use async_trait::async_trait;
+use linkml_core::metadata::Contributor;
+use linkml_core::types::PrefixDefinition;
 use indexmap::IndexMap;
 use serde_yaml;
-use std::collections::BTreeMap;
 
 /// YAML schema generator
 pub struct YamlGenerator {
@@ -19,7 +19,7 @@ pub struct YamlGenerator {
     /// Whether to inline simple definitions
     inline_simple: bool,
     /// Whether to include null values
-    include_nulls: bool,
+    _include_nulls: bool,
 }
 
 impl Default for YamlGenerator {
@@ -36,7 +36,7 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            include_nulls: false,
+            _include_nulls: false,
         }
     }
 
@@ -88,21 +88,9 @@ impl YamlGenerator {
         }
 
         if self.include_metadata {
-            if let Some(created_by) = &schema.created_by {
-                root.insert("created_by".to_string(), serde_yaml::Value::String(created_by.clone()));
-            }
-            if let Some(created_on) = &schema.created_on {
-                root.insert("created_on".to_string(), serde_yaml::Value::String(created_on.clone()));
-            }
-            if let Some(modified_by) = &schema.modified_by {
-                root.insert("modified_by".to_string(), serde_yaml::Value::String(modified_by.clone()));
-            }
-            if let Some(last_updated_on) = &schema.last_updated_on {
-                root.insert("last_updated_on".to_string(), serde_yaml::Value::String(last_updated_on.clone()));
-            }
-            if let Some(generation_date) = &schema.generation_date {
-                root.insert("generation_date".to_string(), serde_yaml::Value::String(generation_date.clone()));
-            }
+            // TODO: These fields don't exist on SchemaDefinition
+            // created_by, created_on, modified_by, last_updated_on, generation_date
+            // Need to check if they should be added to core or removed from generator
         }
 
         // Contributors
@@ -156,17 +144,27 @@ impl YamlGenerator {
         if !schema.prefixes.is_empty() {
             let mut prefixes = IndexMap::new();
             for (name, def) in &schema.prefixes {
-                let mut prefix_map = IndexMap::new();
-                prefix_map.insert("prefix_prefix".to_string(), 
-                    serde_yaml::Value::String(def.prefix_prefix.clone()));
-                prefix_map.insert("prefix_reference".to_string(), 
-                    serde_yaml::Value::String(def.prefix_reference.clone()));
-                prefixes.insert(name.clone(), serde_yaml::Value::Mapping(
-                    prefix_map.into_iter().collect()
-                ));
+                let value = match def {
+                    PrefixDefinition::Simple(url) => serde_yaml::Value::String(url.clone()),
+                    PrefixDefinition::Complex { prefix_prefix, prefix_reference } => {
+                        let mut prefix_map = IndexMap::new();
+                        prefix_map.insert("prefix_prefix".to_string(), 
+                            serde_yaml::Value::String(prefix_prefix.clone()));
+                        if let Some(reference) = prefix_reference {
+                            prefix_map.insert("prefix_reference".to_string(), 
+                                serde_yaml::Value::String(reference.clone()));
+                        }
+                        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                            prefix_map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        ))
+                    }
+                };
+                prefixes.insert(name.clone(), value);
             }
             root.insert("prefixes".to_string(), serde_yaml::Value::Mapping(
-                prefixes.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    prefixes.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -187,7 +185,9 @@ impl YamlGenerator {
                 subsets.insert(name.clone(), self.subset_to_yaml(def));
             }
             root.insert("subsets".to_string(), serde_yaml::Value::Mapping(
-                subsets.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    subsets.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -198,7 +198,9 @@ impl YamlGenerator {
                 types.insert(name.clone(), self.type_to_yaml(def));
             }
             root.insert("types".to_string(), serde_yaml::Value::Mapping(
-                types.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    types.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -209,7 +211,9 @@ impl YamlGenerator {
                 enums.insert(name.clone(), self.enum_to_yaml(def));
             }
             root.insert("enums".to_string(), serde_yaml::Value::Mapping(
-                enums.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    enums.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -220,7 +224,9 @@ impl YamlGenerator {
                 slots.insert(name.clone(), self.slot_to_yaml(def));
             }
             root.insert("slots".to_string(), serde_yaml::Value::Mapping(
-                slots.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    slots.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -231,7 +237,9 @@ impl YamlGenerator {
                 classes.insert(name.clone(), self.class_to_yaml(def));
             }
             root.insert("classes".to_string(), serde_yaml::Value::Mapping(
-                classes.into_iter().collect()
+                serde_yaml::Mapping::from_iter(
+                    classes.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )
             ));
         }
 
@@ -241,7 +249,9 @@ impl YamlGenerator {
         }
 
         // Convert to YAML string
-        let yaml_value = serde_yaml::Value::Mapping(root.into_iter().collect());
+        let yaml_value = serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            root.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ));
         serde_yaml::to_string(&yaml_value)
             .map_err(|e| LinkMLError::SerializationError(format!("YAML generation failed: {}", e)))
     }
@@ -264,7 +274,9 @@ impl YamlGenerator {
             map.insert("role".to_string(), serde_yaml::Value::String(role.clone()));
         }
 
-        serde_yaml::Value::Mapping(map.into_iter().collect())
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
     }
 
     /// Convert subset to YAML
@@ -279,7 +291,9 @@ impl YamlGenerator {
             // Return just the description for simple subsets
             serde_yaml::Value::String(subset.description.as_ref().expect("description exists after is_some check").clone())
         } else {
-            serde_yaml::Value::Mapping(map.into_iter().collect())
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
         }
     }
 
@@ -290,11 +304,8 @@ impl YamlGenerator {
         if let Some(uri) = &type_def.uri {
             map.insert("uri".to_string(), serde_yaml::Value::String(uri.clone()));
         }
-        if let Some(base) = &type_def.base {
-            map.insert("base".to_string(), serde_yaml::Value::String(base.clone()));
-        }
-        if let Some(typeof) = &type_def.typeof {
-            map.insert("typeof".to_string(), serde_yaml::Value::String(typeof.clone()));
+        if let Some(base_type) = &type_def.base_type {
+            map.insert("typeof".to_string(), serde_yaml::Value::String(base_type.clone()));
         }
         if let Some(description) = &type_def.description {
             map.insert("description".to_string(), serde_yaml::Value::String(description.clone()));
@@ -313,7 +324,9 @@ impl YamlGenerator {
                 serde_yaml::to_value(max_val).unwrap_or(serde_yaml::Value::Null));
         }
 
-        serde_yaml::Value::Mapping(map.into_iter().collect())
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
     }
 
     /// Convert enum to YAML
@@ -323,40 +336,55 @@ impl YamlGenerator {
         if let Some(description) = &enum_def.description {
             map.insert("description".to_string(), serde_yaml::Value::String(description.clone()));
         }
-        if let Some(title) = &enum_def.title {
-            map.insert("title".to_string(), serde_yaml::Value::String(title.clone()));
-        }
         
         // Permissible values
         if !enum_def.permissible_values.is_empty() {
             let mut pv_map = IndexMap::new();
-            for (text, pv) in &enum_def.permissible_values {
-                pv_map.insert(text.clone(), self.permissible_value_to_yaml(pv));
+            for pv in &enum_def.permissible_values {
+                let text = match pv {
+                    PermissibleValue::Simple(s) => s.clone(),
+                    PermissibleValue::Complex { text, .. } => text.clone(),
+                };
+                pv_map.insert(text, self.permissible_value_to_yaml(pv));
             }
             map.insert("permissible_values".to_string(), 
-                serde_yaml::Value::Mapping(pv_map.into_iter().collect()));
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                    pv_map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )));
         }
 
-        serde_yaml::Value::Mapping(map.into_iter().collect())
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
     }
 
     /// Convert permissible value to YAML
     fn permissible_value_to_yaml(&self, pv: &PermissibleValue) -> serde_yaml::Value {
-        let mut map = IndexMap::new();
-        
-        if let Some(description) = &pv.description {
-            map.insert("description".to_string(), serde_yaml::Value::String(description.clone()));
-        }
-        if let Some(meaning) = &pv.meaning {
-            map.insert("meaning".to_string(), serde_yaml::Value::String(meaning.clone()));
-        }
-        
-        if self.inline_simple && map.len() == 1 && pv.description.is_some() {
-            serde_yaml::Value::String(pv.description.as_ref().expect("description exists after is_some check").clone())
-        } else if map.is_empty() {
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
-        } else {
-            serde_yaml::Value::Mapping(map.into_iter().collect())
+        match pv {
+            PermissibleValue::Simple(_) => {
+                // For simple values, return empty mapping or null
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+            }
+            PermissibleValue::Complex { description, meaning, .. } => {
+                let mut map = IndexMap::new();
+                
+                if let Some(desc) = description {
+                    map.insert("description".to_string(), serde_yaml::Value::String(desc.clone()));
+                }
+                if let Some(mean) = meaning {
+                    map.insert("meaning".to_string(), serde_yaml::Value::String(mean.clone()));
+                }
+                
+                if self.inline_simple && map.len() == 1 && description.is_some() {
+                    serde_yaml::Value::String(description.as_ref().expect("description exists after is_some check").clone())
+                } else if map.is_empty() {
+                    serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+                } else {
+                    serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                        map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                    ))
+                }
+            }
         }
     }
 
@@ -367,9 +395,6 @@ impl YamlGenerator {
         // Basic properties
         if let Some(description) = &slot.description {
             map.insert("description".to_string(), serde_yaml::Value::String(description.clone()));
-        }
-        if let Some(title) = &slot.title {
-            map.insert("title".to_string(), serde_yaml::Value::String(title.clone()));
         }
         if let Some(range) = &slot.range {
             map.insert("range".to_string(), serde_yaml::Value::String(range.clone()));
@@ -416,7 +441,9 @@ impl YamlGenerator {
             ));
         }
 
-        serde_yaml::Value::Mapping(map.into_iter().collect())
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
     }
 
     /// Convert class to YAML
@@ -426,9 +453,6 @@ impl YamlGenerator {
         // Basic properties
         if let Some(description) = &class.description {
             map.insert("description".to_string(), serde_yaml::Value::String(description.clone()));
-        }
-        if let Some(title) = &class.title {
-            map.insert("title".to_string(), serde_yaml::Value::String(title.clone()));
         }
         
         // Inheritance
@@ -453,7 +477,9 @@ impl YamlGenerator {
                 attrs.insert(name.clone(), self.slot_to_yaml(slot));
             }
             map.insert("attributes".to_string(), 
-                serde_yaml::Value::Mapping(attrs.into_iter().collect()));
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                    attrs.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )));
         }
         
         // Slot usage
@@ -463,7 +489,9 @@ impl YamlGenerator {
                 usage.insert(name.clone(), self.slot_to_yaml(slot));
             }
             map.insert("slot_usage".to_string(), 
-                serde_yaml::Value::Mapping(usage.into_iter().collect()));
+                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                    usage.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+                )));
         }
         
         // Class properties
@@ -477,7 +505,9 @@ impl YamlGenerator {
             map.insert("class_uri".to_string(), serde_yaml::Value::String(class_uri.clone()));
         }
 
-        serde_yaml::Value::Mapping(map.into_iter().collect())
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+            map.into_iter().map(|(k, v)| (serde_yaml::Value::String(k), v))
+        ))
     }
 
     /// Convert settings to YAML
@@ -487,24 +517,24 @@ impl YamlGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for YamlGenerator {
-    async fn generate(&self, schema: &SchemaDefinition, _options: &GeneratorOptions) -> Result<GeneratorResult> {
-        let yaml_content = self.generate_yaml(schema)?;
-        
-        Ok(GeneratorResult {
-            outputs: vec![GeneratedOutput {
-                filename: format!("{}.yaml", schema.name),
-                content: yaml_content,
-            }],
-        })
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        self.generate_yaml(schema)
     }
 
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         "yaml"
     }
 
-    fn description(&self) -> &'static str {
+    fn description(&self) -> &str {
         "Generate YAML representation of LinkML schema"
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "yaml"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema.yaml"
     }
 }

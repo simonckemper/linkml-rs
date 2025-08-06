@@ -4,12 +4,11 @@
 //! data instances and dump instances back to CSV/TSV format.
 
 use async_trait::async_trait;
-use csv::{ReaderBuilder, WriterBuilder, StringRecord, ByteRecord};
+use csv::{ReaderBuilder, WriterBuilder, StringRecord};
 use linkml_core::prelude::*;
-use serde_json::{Value as JsonValue, json};
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::path::Path;
-use std::io::Write;
 
 use super::traits::{
     DataLoader, DataDumper, DataInstance, LoadOptions, DumpOptions,
@@ -111,7 +110,7 @@ impl CsvLoader {
         let mut id = None;
         
         // Get class definition
-        let class_def = schema.classes.get(class_name)
+        let _class_def = schema.classes.get(class_name)
             .ok_or_else(|| LoaderError::SchemaValidation(
                 format!("Class '{}' not found in schema", class_name)
             ))?;
@@ -196,7 +195,7 @@ impl CsvLoader {
                 vec![trimmed]
             };
             
-            let json_values: Result<Vec<_>, _> = values.into_iter()
+            let json_values: std::result::Result<Vec<_>, _> = values.into_iter()
                 .map(|v| self.convert_single_value(v, type_name))
                 .collect();
             
@@ -634,8 +633,9 @@ impl DataDumper for CsvDumper {
             class_instances
         };
         
-        // Get headers
-        let mut headers = self.get_headers(&class_name, schema, &instances_to_dump);
+        // Get headers - convert Vec<&DataInstance> to Vec<DataInstance> for the method
+        let instances_for_headers: Vec<DataInstance> = instances_to_dump.iter().map(|&i| i.clone()).collect();
+        let mut headers = self.get_headers(&class_name, schema, &instances_for_headers);
         
         // Apply field mappings in reverse
         let reverse_mappings: HashMap<String, String> = options.field_mappings
@@ -787,11 +787,14 @@ p2,Bob,25,bob@example.com,tag3
         // Check first instance
         assert_eq!(instances[0].class_name, "Person");
         assert_eq!(instances[0].id, Some("p1".to_string()));
-        assert_eq!(instances[0].data.get("name"), Some(&json!("Alice")));
-        assert_eq!(instances[0].data.get("age"), Some(&json!(30)));
+        assert_eq!(instances[0].data.get("name"), Some(&JsonValue::String("Alice".to_string())));
+        assert_eq!(instances[0].data.get("age"), Some(&JsonValue::Number(serde_json::Number::from(30))));
         
         // Check multivalued field
-        assert_eq!(instances[0].data.get("tags"), Some(&json!(["tag1", "tag2"])));
+        assert_eq!(instances[0].data.get("tags"), Some(&JsonValue::Array(vec![
+            JsonValue::String("tag1".to_string()),
+            JsonValue::String("tag2".to_string())
+        ])));
         
         // Dump back to CSV
         let dump_options = DumpOptions::default();
@@ -817,7 +820,7 @@ p2,Bob,25,bob@example.com,tag3
         
         let instances = loader.load_string(tsv_content, &schema, &options).await.expect("should load TSV");
         assert_eq!(instances.len(), 1);
-        assert_eq!(instances[0].data.get("name"), Some(&json!("Alice")));
+        assert_eq!(instances[0].data.get("name"), Some(&JsonValue::String("Alice".to_string())));
     }
     
     #[tokio::test]

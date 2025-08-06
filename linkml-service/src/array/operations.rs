@@ -3,7 +3,7 @@
 //! This module provides common operations on arrays like map, reduce, filter,
 //! and mathematical operations.
 
-use super::{ArrayData, ArrayError, ArrayResult, ArraySpec};
+use super::{ArrayData, ArrayError, ArrayResult};
 use serde_json::Value;
 use std::cmp::Ordering;
 
@@ -212,7 +212,7 @@ impl ArrayOperations for ArrayData {
     }
     
     fn min(&self) -> ArrayResult<f64> {
-        let mut min_val = None;
+        let mut min_val: Option<f64> = None;
         
         for value in &self.data {
             if let Value::Number(n) = value {
@@ -230,7 +230,7 @@ impl ArrayOperations for ArrayData {
     }
     
     fn max(&self) -> ArrayResult<f64> {
-        let mut max_val = None;
+        let mut max_val: Option<f64> = None;
         
         for value in &self.data {
             if let Value::Number(n) = value {

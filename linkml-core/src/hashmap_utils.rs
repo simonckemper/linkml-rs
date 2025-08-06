@@ -3,14 +3,13 @@
 //! This module provides efficient HashMap operations that minimize cloning
 //! and leverage the Entry API for better performance.
 
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
 use indexmap::IndexMap;
 
 /// Extension trait for HashMap with optimization utilities
-pub trait HashMapExt<K, V> {
+pub trait HashMapExt<K: Clone, V> {
     /// Get or insert with a closure, avoiding unnecessary clones
     fn get_or_insert_with<F>(&mut self, key: K, f: F) -> &mut V
     where
@@ -28,7 +27,7 @@ pub trait HashMapExt<K, V> {
         F: FnOnce(Option<V>) -> V;
 }
 
-impl<K: Eq + Hash, V> HashMapExt<K, V> for HashMap<K, V> {
+impl<K: Eq + Hash + Clone, V> HashMapExt<K, V> for HashMap<K, V> {
     fn get_or_insert_with<F>(&mut self, key: K, f: F) -> &mut V
     where
         F: FnOnce() -> V,
@@ -54,15 +53,11 @@ impl<K: Eq + Hash, V> HashMapExt<K, V> for HashMap<K, V> {
     where
         F: FnOnce(Option<V>) -> V,
     {
-        match self.entry(key) {
-            std::collections::hash_map::Entry::Occupied(mut e) => {
-                let old = e.insert(f(Some(e.remove())));
-                e.insert(old)
-            }
-            std::collections::hash_map::Entry::Vacant(e) => {
-                e.insert(f(None))
-            }
-        }
+        let key_for_lookup = key.clone();
+        let old_value = self.remove(&key);
+        let new_value = f(old_value);
+        self.insert(key_for_lookup.clone(), new_value);
+        self.get_mut(&key_for_lookup).unwrap()
     }
 }
 

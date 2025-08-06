@@ -11,13 +11,15 @@
 //! - N-Triples (.nt)
 //! - JSON-LD (.jsonld)
 
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue};
+use linkml_core::{
+    error::LinkMLError,
+    types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue}
+};
 use std::collections::HashMap;
 use std::fmt::Write;
 use serde_json;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
 
 /// RDF output format
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -166,7 +168,7 @@ impl RdfGenerator {
         let schema_prefix = self.to_snake_case(&schema.name);
         write!(&mut namespaces, " xmlns:{}=\"{}#\"", schema_prefix, schema.id).map_err(Self::fmt_error_to_generator_error)?;
         
-        namespaces
+        Ok(namespaces)
     }
     
     /// Generate JSON-LD context
@@ -613,7 +615,6 @@ impl Default for RdfGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for RdfGenerator {
     fn name(&self) -> &str {
         match self.mode {
@@ -640,11 +641,10 @@ impl Generator for RdfGenerator {
         }
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let mut output = String::new();
         
         // Generate header
@@ -686,25 +686,21 @@ impl Generator for RdfGenerator {
         // Convert output to desired format
         let final_output = self.convert_to_format(&output, schema)?;
         
-        // Create output with appropriate extension
-        let extension = match (self.format, self.mode) {
+        Ok(final_output)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        match (self.format, self.mode) {
             (RdfFormat::Turtle, RdfMode::Owl) => "owl",
             (RdfFormat::Turtle, _) => "ttl",
             (RdfFormat::RdfXml, _) => "rdf",
             (RdfFormat::NTriples, _) => "nt",
             (RdfFormat::JsonLd, _) => "jsonld",
-        };
-        let filename = format!("{}.{}", self.to_snake_case(&schema.name), extension);
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), format!("{:?}", self.format).to_lowercase());
-        metadata.insert("schema".to_string(), schema.name.clone());
-        metadata.insert("mode".to_string(), format!("{:?}", self.mode).to_lowercase());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content: final_output,
-            metadata,
-        }])
+        }
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -720,7 +716,7 @@ impl RdfGenerator {
     }
     
     /// Convert Turtle to RDF/XML
-    fn convert_to_rdfxml(&self, turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
+    fn convert_to_rdfxml(&self, _turtle_content: &str, schema: &SchemaDefinition) -> GeneratorResult<String> {
         // For now, we'll generate RDF/XML directly from schema
         // In production, you'd use an RDF library for proper conversion
         let mut output = String::new();
@@ -743,7 +739,7 @@ impl RdfGenerator {
         // Full URIs, no prefixes
         let schema_uri = &schema.id;
         
-        for (name, class) in &schema.classes {
+        for (name, _class) in &schema.classes {
             let class_uri = format!("{}#{}", schema_uri, self.to_pascal_case(name));
             writeln!(&mut output, "<{}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Class> .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "<{}> <http://www.w3.org/2000/01/rdf-schema#label> \"{}\" .", class_uri, name).map_err(Self::fmt_error_to_generator_error)?;

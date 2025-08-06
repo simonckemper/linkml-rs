@@ -8,7 +8,6 @@ use async_trait::async_trait;
 
 use linkml_core::{
     error::Result,
-    types::SchemaDefinition,
     schema_arc::ArcSchema,
 };
 
@@ -43,11 +42,17 @@ pub struct GenerationResult {
 /// Statistics about the generation process
 #[derive(Debug, Default)]
 pub struct GenerationStats {
+    /// Number of classes generated
     pub classes_generated: usize,
+    /// Number of slots generated
     pub slots_generated: usize,
+    /// Number of types generated
     pub types_generated: usize,
+    /// Number of enums generated
     pub enums_generated: usize,
+    /// Number of files created
     pub files_created: usize,
+    /// Number of bytes written
     pub bytes_written: usize,
 }
 
@@ -68,7 +73,7 @@ pub trait CodeGeneratorV2: Send + Sync {
     fn file_extensions(&self) -> Vec<&'static str>;
     
     /// Check if generator supports a particular feature
-    fn supports_feature(&self, feature: &str) -> bool {
+    fn supports_feature(&self, _feature: &str) -> bool {
         false
     }
 }
@@ -95,13 +100,14 @@ pub trait IncrementalGenerator: CodeGeneratorV2 {
 
 /// Base implementation helper for generators
 pub struct GeneratorBase {
-    name: &'static str,
-    extensions: Vec<&'static str>,
+    _name: &'static str,
+    _extensions: Vec<&'static str>,
 }
 
 impl GeneratorBase {
+    /// Create a new generator base with name and supported extensions
     pub fn new(name: &'static str, extensions: Vec<&'static str>) -> Self {
-        Self { name, extensions }
+        Self { _name: name, _extensions: extensions }
     }
 }
 
@@ -162,20 +168,21 @@ macro_rules! impl_generator_v2 {
 
 /// Example of a generator implementation using Arc
 pub struct ExampleGeneratorV2 {
-    base: GeneratorBase,
+    _base: GeneratorBase,
 }
 
 impl ExampleGeneratorV2 {
+    /// Create a new example generator
     pub fn new() -> Self {
         Self {
-            base: GeneratorBase::new("example", vec!["ex", "example"]),
+            _base: GeneratorBase::new("example", vec!["ex", "example"]),
         }
     }
     
     async fn generate_impl(
         &self,
         schema: ArcSchema,
-        options: GeneratorOptions,
+        _options: GeneratorOptions,
     ) -> Result<GenerationResult> {
         // Schema is already Arc, no cloning needed
         let mut result = GenerationResult {
@@ -227,8 +234,8 @@ impl ParallelGeneratorExecutor {
                         (name, result)
                     }
                     None => {
-                        (name.clone(), Err(linkml_core::error::LinkMLError::not_found(
-                            &format!("Generator '{}' not found", name)
+                        (name.clone(), Err(linkml_core::error::LinkMLError::other(
+                            format!("Generator '{}' not found", name)
                         )))
                     }
                 }
@@ -242,6 +249,7 @@ impl ParallelGeneratorExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use linkml_core::prelude::*;
 
     #[tokio::test]
     async fn test_example_generator() {

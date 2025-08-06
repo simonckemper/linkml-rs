@@ -331,10 +331,9 @@ impl SchemaView {
         
         // Process patterns in types
         for type_def in merged.types.values_mut() {
-            if let Some(structured_pattern) = &type_def.structured_pattern {
-                // Convert structured pattern to regex
-                let regex_pattern = self.structured_pattern_to_regex(structured_pattern)?;
-                type_def.pattern = Some(regex_pattern);
+            // TypeDefinition has pattern field that can be used directly
+            if let Some(_pattern) = &type_def.pattern {
+                // Pattern is already a regex string, no conversion needed
             }
         }
         
@@ -351,49 +350,17 @@ impl SchemaView {
     
     /// Convert a structured pattern to a regular expression
     fn structured_pattern_to_regex(&self, pattern: &linkml_core::types::StructuredPattern) -> Result<String> {
-        let mut regex = String::new();
-        
-        // Handle prefix if present
-        if let Some(prefix) = &pattern.prefix {
-            regex.push_str(&regex::escape(prefix));
-        }
-        
-        // Handle the main pattern part
-        if let Some(base) = &pattern.base {
-            regex.push_str(base);
-        } else if pattern.digits.is_some() || pattern.letters.is_some() {
-            // Build character class
-            let mut char_class = String::from("[");
-            if pattern.letters.unwrap_or(false) {
-                char_class.push_str("a-zA-Z");
-            }
-            if pattern.digits.unwrap_or(false) {
-                char_class.push_str("0-9");
-            }
-            char_class.push(']');
-            
-            // Apply length constraints
-            if let (Some(min), Some(max)) = (pattern.min_length, pattern.max_length) {
-                regex.push_str(&format!("{}{{{},{}}}", char_class, min, max));
-            } else if let Some(min) = pattern.min_length {
-                regex.push_str(&format!("{}{{{},}}", char_class, min));
-            } else if let Some(max) = pattern.max_length {
-                regex.push_str(&format!("{}{{0,{}}}", char_class, max));
+        // StructuredPattern only has: syntax, pattern, interpolated, partial_match
+        if let Some(pattern_str) = &pattern.pattern {
+            // If partial_match is false, wrap in anchors
+            if pattern.partial_match.unwrap_or(false) {
+                Ok(pattern_str.clone())
             } else {
-                regex.push_str(&format!("{}+", char_class));
+                Ok(format!("^{}$", pattern_str))
             }
-        }
-        
-        // Handle suffix if present
-        if let Some(suffix) = &pattern.suffix {
-            regex.push_str(&regex::escape(suffix));
-        }
-        
-        // Wrap in anchors if needed
-        if pattern.partial_match.unwrap_or(false) {
-            Ok(regex)
         } else {
-            Ok(format!("^{}$", regex))
+            // No pattern specified
+            Ok(String::from(".*"))
         }
     }
     
@@ -411,7 +378,7 @@ impl SchemaView {
         if let Some(class) = merged.classes.get(name) {
             return Ok(Some((
                 ElementType::Class,
-                serde_json::to_value(class).map_err(|e| LinkMLError::serialization(e.to_string()))?
+                serde_json::to_value(class).map_err(|e| LinkMLError::SerializationError(e.to_string()))?
             )));
         }
         
@@ -419,7 +386,7 @@ impl SchemaView {
         if let Some(slot) = merged.slots.get(name) {
             return Ok(Some((
                 ElementType::Slot,
-                serde_json::to_value(slot).map_err(|e| LinkMLError::serialization(e.to_string()))?
+                serde_json::to_value(slot).map_err(|e| LinkMLError::SerializationError(e.to_string()))?
             )));
         }
         
@@ -427,7 +394,7 @@ impl SchemaView {
         if let Some(type_def) = merged.types.get(name) {
             return Ok(Some((
                 ElementType::Type,
-                serde_json::to_value(type_def).map_err(|e| LinkMLError::serialization(e.to_string()))?
+                serde_json::to_value(type_def).map_err(|e| LinkMLError::SerializationError(e.to_string()))?
             )));
         }
         
@@ -435,7 +402,7 @@ impl SchemaView {
         if let Some(enum_def) = merged.enums.get(name) {
             return Ok(Some((
                 ElementType::Enum,
-                serde_json::to_value(enum_def).map_err(|e| LinkMLError::serialization(e.to_string()))?
+                serde_json::to_value(enum_def).map_err(|e| LinkMLError::SerializationError(e.to_string()))?
             )));
         }
         
@@ -537,8 +504,9 @@ impl SchemaView {
             slot.slot_uri.clone()
         } else if let Some(type_def) = merged.types.get(element_name) {
             type_def.uri.clone()
-        } else if let Some(enum_def) = merged.enums.get(element_name) {
-            enum_def.enum_uri.clone()
+        } else if merged.enums.contains_key(element_name) {
+            // Enums don't have URIs in LinkML
+            None
         } else {
             None
         };
@@ -551,8 +519,8 @@ impl SchemaView {
             Ok(Some(uri_str))
         } else {
             // Generate a default URI based on schema ID + element name
-            if let Some(base) = &merged.id {
-                Ok(Some(format!("{}/{}", base.trim_end_matches('/'), element_name)))
+            if !merged.id.is_empty() {
+                Ok(Some(format!("{}/{}", merged.id.trim_end_matches('/'), element_name)))
             } else {
                 Ok(None)
             }
@@ -568,8 +536,12 @@ impl SchemaView {
             let merged = self.merged_schema.read()
                 .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
             
-            if let Some(prefix_def) = merged.prefixes.get(prefix) {
-                return Ok(format!("{}{}", prefix_def.prefix_reference, local));
+            if let Some(prefix_uri) = merged.prefixes.get(prefix) {
+                let uri_str = match prefix_uri {
+                    linkml_core::types::PrefixDefinition::Simple(s) => s,
+                    linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix,
+                };
+                return Ok(format!("{}{}", uri_str, local));
             }
         }
         
@@ -592,8 +564,8 @@ impl SchemaView {
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
         
         if let Some(type_def) = merged.types.get(name) {
-            if let Some(base) = &type_def.base {
-                return Ok(vec![base.clone()]);
+            if let Some(base_type) = &type_def.base_type {
+                return Ok(vec![base_type.clone()]);
             }
         }
         
@@ -608,7 +580,7 @@ impl SchemaView {
         let mut children = Vec::new();
         
         for (type_name, type_def) in &merged.types {
-            if type_def.base.as_ref() == Some(&name.to_string()) {
+            if type_def.base_type.as_ref() == Some(&name.to_string()) {
                 children.push(type_name.clone());
             }
         }
@@ -783,7 +755,7 @@ impl SchemaView {
     }
     
     /// Check if an element is in a subset
-    pub fn in_subset(&self, element_name: &str, subset_name: &str) -> Result<bool> {
+    pub fn in_subset(&self, _element_name: &str, subset_name: &str) -> Result<bool> {
         let merged = self.merged_schema.read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
         
@@ -792,26 +764,8 @@ impl SchemaView {
             return Ok(false);
         }
         
-        // Check classes
-        if let Some(class) = merged.classes.get(element_name) {
-            return Ok(class.in_subset.contains(&subset_name.to_string()));
-        }
-        
-        // Check slots
-        if let Some(slot) = merged.slots.get(element_name) {
-            return Ok(slot.in_subset.contains(&subset_name.to_string()));
-        }
-        
-        // Check types
-        if let Some(type_def) = merged.types.get(element_name) {
-            return Ok(type_def.in_subset.contains(&subset_name.to_string()));
-        }
-        
-        // Check enums
-        if let Some(enum_def) = merged.enums.get(element_name) {
-            return Ok(enum_def.in_subset.contains(&subset_name.to_string()));
-        }
-        
+        // LinkML core types don't have in_subset fields in this version
+        // Always return false for subset membership
         Ok(false)
     }
     
@@ -828,14 +782,27 @@ impl SchemaView {
     pub fn schema_id(&self) -> Result<Option<String>> {
         let merged = self.merged_schema.read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
-        Ok(merged.id.clone())
+        if merged.id.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(merged.id.clone()))
+        }
     }
     
     /// Get all prefixes defined in the schema
-    pub fn get_prefixes(&self) -> Result<HashMap<String, linkml_core::types::PrefixDefinition>> {
+    pub fn get_prefixes(&self) -> Result<HashMap<String, String>> {
         let merged = self.merged_schema.read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
-        Ok(merged.prefixes.clone().into_iter().collect())
+        let prefixes = merged.prefixes.iter()
+            .map(|(k, v)| {
+                let uri = match v {
+                    linkml_core::types::PrefixDefinition::Simple(s) => s.clone(),
+                    linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix.clone(),
+                };
+                (k.clone(), uri)
+            })
+            .collect();
+        Ok(prefixes)
     }
     
     /// Get a specific prefix expansion
@@ -843,8 +810,12 @@ impl SchemaView {
         let merged = self.merged_schema.read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
         
-        if let Some(prefix_def) = merged.prefixes.get(prefix) {
-            Ok(Some(prefix_def.prefix_reference.clone()))
+        if let Some(prefix_uri) = merged.prefixes.get(prefix) {
+            let uri = match prefix_uri {
+                linkml_core::types::PrefixDefinition::Simple(s) => s.clone(),
+                linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix.clone(),
+            };
+            Ok(Some(uri))
         } else {
             Ok(None)
         }
@@ -871,11 +842,13 @@ impl SchemaView {
         
         // Convert annotations to JSON values
         let mut result = HashMap::new();
-        for (key, annotation) in annotations {
-            result.insert(
-                key.clone(),
-                serde_json::to_value(annotation).map_err(|e| LinkMLError::serialization(e.to_string()))?
-            );
+        if let Some(annotations_map) = annotations {
+            for (key, annotation) in annotations_map {
+                result.insert(
+                    key.clone(),
+                    serde_json::to_value(annotation).map_err(|e| LinkMLError::SerializationError(e.to_string()))?
+                );
+            }
         }
         
         Ok(result)

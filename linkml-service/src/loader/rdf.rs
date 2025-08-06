@@ -6,12 +6,12 @@
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
-use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Subject, Term};
+use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, Quad, Subject, Term};
 use oxigraph::store::Store;
-use serde_json::{Value as JsonValue, json};
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::path::Path;
-use std::io::{Cursor, Write};
+use std::io::Cursor;
 
 use super::traits::{
     DataLoader, DataDumper, DataInstance, LoadOptions, DumpOptions,
@@ -140,14 +140,10 @@ impl RdfLoader {
         };
         
         let cursor = Cursor::new(data);
-        let quads = parser.read_quads(cursor).map_err(|e| LoaderError::Parse(
-            format!("Failed to parse RDF: {}", e)
-        ))?;
+        let quads: Vec<_> = parser.for_reader(cursor).collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse RDF: {}", e)))?;
         
-        for quad_result in quads {
-            let quad = quad_result.map_err(|e| LoaderError::Parse(
-                format!("Failed to read quad: {}", e)
-            ))?;
+        for quad in quads {
             
             store.insert(&quad).map_err(|e| LoaderError::Io(
                 std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to insert quad: {}", e))
@@ -189,7 +185,7 @@ impl RdfLoader {
             
             // Get the type(s) of this subject
             let types: Vec<String> = store
-                .quads_for_pattern(Some(&subject), Some((&type_predicate).into()), None, None)
+                .quads_for_pattern(Some((&subject).into()), Some((&type_predicate).into()), None, None)
                 .filter_map(|quad| quad.ok())
                 .filter_map(|quad| match &quad.object {
                     Term::NamedNode(n) => Some(n.as_str().to_string()),
@@ -210,7 +206,7 @@ impl RdfLoader {
             let mut data = HashMap::new();
             
             // Get all properties for this subject
-            for quad_result in store.quads_for_pattern(Some(&subject), None, None, None) {
+            for quad_result in store.quads_for_pattern(Some((&subject).into()), None, None, None) {
                 let quad = quad_result.map_err(|e| LoaderError::Parse(
                     format!("Failed to read quad: {}", e)
                 ))?;
@@ -266,7 +262,7 @@ impl RdfLoader {
                     let mut data = HashMap::new();
                     
                     // Get all properties
-                    for prop_quad_result in store.quads_for_pattern(Some(&quad.subject), None, None, None) {
+                    for prop_quad_result in store.quads_for_pattern(Some((&quad.subject).into()), None, None, None) {
                         let prop_quad = prop_quad_result.map_err(|e| LoaderError::Parse(
                             format!("Failed to read quad: {}", e)
                         ))?;
@@ -304,6 +300,25 @@ impl RdfLoader {
         match subject {
             Subject::NamedNode(n) => n.as_str().to_string(),
             Subject::BlankNode(b) => format!("_:{}", b.as_str()),
+            Subject::Triple(t) => format!("<<{} {} {}>>", 
+                self.subject_to_string(&t.subject),
+                t.predicate.as_str(),
+                self.term_to_string(&t.object)
+            ),
+        }
+    }
+
+    /// Convert term to string
+    fn term_to_string(&self, term: &Term) -> String {
+        match term {
+            Term::NamedNode(n) => n.as_str().to_string(),
+            Term::BlankNode(b) => format!("_:{}", b.as_str()),
+            Term::Literal(l) => l.value().to_string(),
+            Term::Triple(t) => format!("<<{} {} {}>>", 
+                self.subject_to_string(&t.subject),
+                t.predicate.as_str(),
+                self.term_to_string(&t.object)
+            ),
         }
     }
     
@@ -367,6 +382,11 @@ impl RdfLoader {
                     _ => Ok(JsonValue::String(value.to_string())),
                 }
             }
+            Term::Triple(t) => Ok(JsonValue::String(format!("<<{} {} {}>>", 
+                self.subject_to_string(&t.subject),
+                t.predicate.as_str(),
+                self.term_to_string(&t.object)
+            ))),
         }
     }
     
@@ -401,7 +421,7 @@ impl RdfLoader {
     ) -> Option<String> {
         // Get all properties
         let properties: Vec<String> = store
-            .quads_for_pattern(Some(subject), None, None, None)
+            .quads_for_pattern(Some(subject.into()), None, None, None)
             .filter_map(|quad| quad.ok())
             .map(|quad| self.predicate_to_property(&quad.predicate))
             .collect();
@@ -765,20 +785,17 @@ impl RdfDumper {
         let serializer = RdfSerializer::from_format(format);
         
         // Serialize all quads
-        let mut writer = serializer.serialize_to_write(&mut buffer);
-        
+        let mut writer = serializer.for_writer(&mut buffer);
         for quad_result in store.iter() {
             let quad = quad_result.map_err(|e| DumperError::Io(
-                std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to read quad: {}", e))
+                std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to read quad from store: {}", e))
             ))?;
-            
-            writer.write_quad(&quad).map_err(|e| DumperError::Io(
-                std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to write quad: {}", e))
+            writer.serialize_quad(&quad).map_err(|e| DumperError::Io(
+                std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to serialize quad: {}", e))
             ))?;
         }
-        
         writer.finish().map_err(|e| DumperError::Io(
-            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to finish serialization: {}", e))
+            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to finish RDF serialization: {}", e))
         ))?;
         
         Ok(buffer)
@@ -854,7 +871,8 @@ impl DataDumper for RdfDumper {
             instances.iter().collect()
         };
         
-        let store = self.create_store(&instances_to_dump, schema)?;
+        let instances_slice: Vec<DataInstance> = instances_to_dump.into_iter().cloned().collect();
+        let store = self.create_store(&instances_slice, schema)?;
         self.serialize_store(&store)
     }
     
@@ -867,6 +885,7 @@ impl DataDumper for RdfDumper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
     
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

@@ -9,7 +9,6 @@ use async_trait::async_trait;
 use linkml_core::error::{LinkMLError, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;
-use tokio::io::AsyncReadExt;
 
 /// File system operations trait
 #[async_trait]
@@ -80,8 +79,8 @@ impl TokioFileSystemAdapter {
             // Ensure path doesn't escape sandbox
             let resolved = root.join(path);
             if !resolved.starts_with(root) {
-                return Err(LinkMLError::io(
-                    "Path escapes sandbox".to_string()
+                return Err(LinkMLError::IoError(
+                    std::io::Error::new(std::io::ErrorKind::PermissionDenied, "Path escapes sandbox")
                 ));
             }
             Ok(resolved)
@@ -97,7 +96,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let resolved = self.resolve_path(path)?;
         fs::read_to_string(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to read {}: {}", resolved.display(), e)))
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to read {}: {}", resolved.display(), e))))
     }
     
     async fn write(&self, path: &Path, contents: &str) -> Result<()> {
@@ -107,12 +106,12 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         if let Some(parent) = resolved.parent() {
             fs::create_dir_all(parent)
                 .await
-                .map_err(|e| LinkMLError::io(format!("Failed to create parent directory: {}", e)))?;
+                .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to create parent directory: {}", e))))?;
         }
         
         fs::write(&resolved, contents)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to write {}: {}", resolved.display(), e)))
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to write {}: {}", resolved.display(), e))))
     }
     
     async fn exists(&self, path: &Path) -> Result<bool> {
@@ -120,7 +119,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         match fs::metadata(&resolved).await {
             Ok(_) => Ok(true),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
-            Err(e) => Err(LinkMLError::io(format!("Failed to check existence: {}", e))),
+            Err(e) => Err(LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to check existence: {}", e)))),
         }
     }
     
@@ -128,7 +127,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let resolved = self.resolve_path(path)?;
         fs::create_dir_all(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to create directory: {}", e)))
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to create directory: {}", e))))
     }
     
     async fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
@@ -136,10 +135,10 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let mut entries = Vec::new();
         let mut dir = fs::read_dir(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to read directory: {}", e)))?;
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to read directory: {}", e))))?;
         
         while let Some(entry) = dir.next_entry().await
-            .map_err(|e| LinkMLError::io(format!("Failed to read directory entry: {}", e)))? 
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to read directory entry: {}", e))))? 
         {
             entries.push(entry.path());
         }
@@ -151,7 +150,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let resolved = self.resolve_path(path)?;
         let meta = fs::metadata(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to get metadata: {}", e)))?;
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to get metadata: {}", e))))?;
         
         let modified = meta.modified()
             .ok()
@@ -175,12 +174,12 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         if let Some(parent) = to_resolved.parent() {
             fs::create_dir_all(parent)
                 .await
-                .map_err(|e| LinkMLError::io(format!("Failed to create parent directory: {}", e)))?;
+                .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to create parent directory: {}", e))))?;
         }
         
         fs::copy(&from_resolved, &to_resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to copy file: {}", e)))?;
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to copy file: {}", e))))?;
         
         Ok(())
     }
@@ -189,14 +188,14 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let resolved = self.resolve_path(path)?;
         fs::remove_file(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to remove file: {}", e)))
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to remove file: {}", e))))
     }
     
     async fn remove_dir(&self, path: &Path) -> Result<()> {
         let resolved = self.resolve_path(path)?;
         fs::remove_dir(&resolved)
             .await
-            .map_err(|e| LinkMLError::io(format!("Failed to remove directory: {}", e)))
+            .map_err(|e| LinkMLError::IoError(std::io::Error::new(e.kind(), format!("Failed to remove directory: {}", e))))
     }
 }
 

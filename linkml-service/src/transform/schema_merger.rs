@@ -4,7 +4,7 @@
 //! handling conflicts and preserving semantics.
 
 use linkml_core::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use thiserror::Error;
 
 /// Error type for schema merging operations
@@ -13,8 +13,11 @@ pub enum MergeError {
     /// Conflicting definitions
     #[error("Conflicting definitions for {element_type} '{name}': {details}")]
     ConflictingDefinition {
+        /// Type of element with conflict (class, slot, etc)
         element_type: String,
+        /// Name of the conflicting element
         name: String,
+        /// Details about the conflict
         details: String,
     },
     
@@ -32,7 +35,7 @@ pub enum MergeError {
 }
 
 /// Result type for merge operations
-pub type MergeResult<T> = Result<T, MergeError>;
+pub type MergeResult<T> = std::result::Result<T, MergeError>;
 
 /// Merge strategy for handling conflicts
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -121,10 +124,11 @@ impl SchemaMerger {
                 .expect("checked that schemas has one element"));
         }
         
-        let mut result = schemas.into_iter().next()
+        let mut schemas_iter = schemas.into_iter();
+        let mut result = schemas_iter.next()
             .expect("checked that schemas is not empty");
         
-        for schema in schemas.into_iter().skip(1) {
+        for schema in schemas_iter {
             result = self.merge_two(result, schema)?;
         }
         
@@ -172,7 +176,7 @@ impl SchemaMerger {
     
     /// Merge schema metadata
     fn merge_metadata(
-        &self,
+        &mut self,
         target: &mut SchemaDefinition,
         source: &SchemaDefinition,
     ) -> MergeResult<()> {
@@ -196,22 +200,29 @@ impl SchemaMerger {
         }
         
         // Merge annotations
-        for (key, value) in &source.annotations {
-            match self.config.strategy {
-                MergeStrategy::Override => {
-                    target.annotations.insert(key.clone(), value.clone());
-                }
-                MergeStrategy::Preserve => {
-                    target.annotations.entry(key.clone())
-                        .or_insert_with(|| value.clone());
-                }
-                _ => {
-                    if let Some(existing) = target.annotations.get(key) {
-                        if existing != value {
-                            self.handle_conflict("annotation", key, existing, value)?;
+        if let Some(source_annotations) = &source.annotations {
+            if target.annotations.is_none() {
+                target.annotations = Some(indexmap::IndexMap::new());
+            }
+            if let Some(target_annotations) = &mut target.annotations {
+                for (key, value) in source_annotations {
+                    match self.config.strategy {
+                        MergeStrategy::Override => {
+                            target_annotations.insert(key.clone(), value.clone());
                         }
-                    } else {
-                        target.annotations.insert(key.clone(), value.clone());
+                        MergeStrategy::Preserve => {
+                            target_annotations.entry(key.clone())
+                                .or_insert_with(|| value.clone());
+                        }
+                        _ => {
+                            if let Some(existing) = target_annotations.get(key) {
+                                if existing != value {
+                                    self.handle_conflict("annotation", key, &format!("{:?}", existing), &format!("{:?}", value))?;
+                                }
+                            } else {
+                                target_annotations.insert(key.clone(), value.clone());
+                            }
+                        }
                     }
                 }
             }
@@ -240,7 +251,15 @@ impl SchemaMerger {
         for (prefix, uri) in &source.prefixes {
             if let Some(existing_uri) = target.prefixes.get(prefix) {
                 if existing_uri != uri {
-                    self.handle_conflict("prefix", prefix, existing_uri, uri)?;
+                    let existing_str = match existing_uri {
+                        linkml_core::types::PrefixDefinition::Simple(s) => s.as_str(),
+                        linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix.as_str(),
+                    };
+                    let new_str = match uri {
+                        linkml_core::types::PrefixDefinition::Simple(s) => s.as_str(),
+                        linkml_core::types::PrefixDefinition::Complex { prefix_prefix, .. } => prefix_prefix.as_str(),
+                    };
+                    self.handle_conflict("prefix", prefix, existing_str, new_str)?;
                 }
             } else {
                 target.prefixes.insert(prefix.clone(), uri.clone());
@@ -352,10 +371,9 @@ impl SchemaMerger {
         }
         
         // Merge attributes
-        let existing_attrs: HashSet<_> = merged.attributes.iter().cloned().collect();
-        for attr in &source.attributes {
-            if !existing_attrs.contains(attr) {
-                merged.attributes.push(attr.clone());
+        for (attr_name, attr_def) in &source.attributes {
+            if !merged.attributes.contains_key(attr_name) {
+                merged.attributes.insert(attr_name.clone(), attr_def.clone());
             }
         }
         
@@ -367,9 +385,16 @@ impl SchemaMerger {
         }
         
         // Merge annotations
-        for (key, value) in &source.annotations {
-            merged.annotations.entry(key.clone())
-                .or_insert_with(|| value.clone());
+        if let Some(source_annotations) = &source.annotations {
+            if merged.annotations.is_none() {
+                merged.annotations = Some(indexmap::IndexMap::new());
+            }
+            if let Some(merged_annotations) = &mut merged.annotations {
+                for (key, value) in source_annotations {
+                    merged_annotations.entry(key.clone())
+                        .or_insert_with(|| value.clone());
+                }
+            }
         }
         
         Ok(merged)
@@ -436,9 +461,16 @@ impl SchemaMerger {
         }
         
         // Merge annotations
-        for (key, value) in &source.annotations {
-            merged.annotations.entry(key.clone())
-                .or_insert_with(|| value.clone());
+        if let Some(source_annotations) = &source.annotations {
+            if merged.annotations.is_none() {
+                merged.annotations = Some(indexmap::IndexMap::new());
+            }
+            if let Some(merged_annotations) = &mut merged.annotations {
+                for (key, value) in source_annotations {
+                    merged_annotations.entry(key.clone())
+                        .or_insert_with(|| value.clone());
+                }
+            }
         }
         
         Ok(merged)
@@ -527,17 +559,21 @@ impl SchemaMerger {
         }
         
         // Merge permissible values
-        let existing_values: HashSet<_> = merged.permissible_values
+        let existing_values: HashSet<String> = merged.permissible_values
             .iter()
-            .filter_map(|pv| pv.text.as_ref())
-            .cloned()
+            .map(|pv| match pv {
+                PermissibleValue::Simple(s) => s.clone(),
+                PermissibleValue::Complex { text, .. } => text.clone(),
+            })
             .collect();
         
         for pv in &source.permissible_values {
-            if let Some(text) = &pv.text {
-                if !existing_values.contains(text) {
-                    merged.permissible_values.push(pv.clone());
-                }
+            let text = match pv {
+                PermissibleValue::Simple(s) => s,
+                PermissibleValue::Complex { text, .. } => text,
+            };
+            if !existing_values.contains(text) {
+                merged.permissible_values.push(pv.clone());
             }
         }
         

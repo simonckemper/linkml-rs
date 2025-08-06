@@ -1,11 +1,12 @@
 //! `OpenAPI` schema generation for `LinkML` schemas
 
-use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
-use async_trait::async_trait;
-use linkml_core::prelude::*;
+use super::options::IndentStyle;
+use super::traits::{CodeFormatter, Generator, GeneratorResult};
+use linkml_core::{
+    error::LinkMLError,
+    prelude::*,
+};
 use serde_json::{Value as JsonValue, json};
-use std::collections::HashMap;
 
 /// `OpenAPI` schema generator for `LinkML` schemas
 pub struct OpenApiGenerator {
@@ -569,7 +570,6 @@ impl Default for OpenApiGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for OpenApiGenerator {
     fn name(&self) -> &str {
         &self.name
@@ -583,13 +583,12 @@ impl Generator for OpenApiGenerator {
         vec![".openapi.json", ".openapi.yaml"]
     }
 
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         // Validate schema
-        self.validate_schema(schema).await?;
+        self.validate_schema(schema)?;
 
         let mut components = serde_json::Map::new();
         let mut schemas = serde_json::Map::new();
@@ -672,43 +671,19 @@ impl Generator for OpenApiGenerator {
             openapi["info"]["description"] = json!(desc);
         }
 
-        // Add servers if specified
-        if let Some(server_url) = options.get_custom("server_url") {
-            openapi["servers"] = json!([{
-                "url": server_url,
-                "description": "API server"
-            }]);
-        }
-
         // Format output
-        let content = if options.get_custom("pretty_print") == Some("true") {
-            serde_json::to_string_pretty(&openapi)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        } else {
-            serde_json::to_string(&openapi)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        };
+        let content = serde_json::to_string_pretty(&openapi)
+            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
 
-        // Create output
-        let filename = format!(
-            "{}.openapi.json",
-            if schema.name.is_empty() {
-                "api"
-            } else {
-                &schema.name
-            }
-        );
-
-        let mut metadata = HashMap::new();
-        metadata.insert("generator".to_string(), self.name.clone());
-        metadata.insert("schema_name".to_string(), schema.name.clone());
-        metadata.insert("openapi_version".to_string(), "3.0.3".to_string());
-
-        Ok(vec![GeneratedOutput {
-            content,
-            filename,
-            metadata,
-        }])
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "json"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "openapi"
     }
 }
 
@@ -744,8 +719,8 @@ impl CodeFormatter for OpenApiGenerator {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_openapi_generation() {
+    #[test]
+    fn test_openapi_generation() {
         let generator = OpenApiGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -760,12 +735,8 @@ mod tests {
 
         schema.classes.insert("User".to_string(), class);
 
-        let options = GeneratorOptions::new().set_custom("pretty_print", "true");
 
-        let outputs = generator.generate(&schema, &options).await.expect("should generate OpenAPI");
-
-        assert_eq!(outputs.len(), 1);
-        let content = &outputs[0].content;
+        let content = generator.generate(&schema).expect("should generate OpenAPI");
 
         // Parse to verify it's valid JSON
         let parsed: JsonValue = serde_json::from_str(content).expect("should parse as valid JSON");

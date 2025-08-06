@@ -5,12 +5,10 @@
 
 use std::borrow::Cow;
 use std::collections::HashSet;
-use indexmap::{IndexMap, IndexSet};
 
 use crate::error::{LinkMLError, Result};
 use crate::types::{
-    SchemaDefinition, ClassDefinition, SlotDefinition, TypeDefinition,
-    EnumDefinition, SubsetDefinition
+    SchemaDefinition, ClassDefinition, SlotDefinition
 };
 
 /// Check if a given name is a built-in type (no clone)
@@ -179,7 +177,7 @@ pub fn merge_slot_definitions_cow<'a>(
 }
 
 /// Merge two vectors efficiently
-fn merge_vec_cow<T: Clone + PartialEq>(base: &[T], override_vec: &[T]) -> Vec<T> {
+fn merge_vec_cow<T: Clone + PartialEq + Eq + std::hash::Hash>(base: &[T], override_vec: &[T]) -> Vec<T> {
     if override_vec.is_empty() {
         return base.to_vec();
     }
@@ -238,7 +236,10 @@ pub fn get_slot_definition<'a>(
         }
     }
     
-    Err(LinkMLError::NotFound(format!("Slot '{}' not found", slot_name)))
+    Err(LinkMLError::Other { 
+        message: format!("Slot '{}' not found", slot_name),
+        source: None
+    })
 }
 
 /// Check if a type is valid (no clone needed)
@@ -271,7 +272,7 @@ pub fn get_all_imports<'a>(
 /// Get class hierarchy (returns references)
 pub fn get_class_hierarchy<'a>(
     schema: &'a SchemaDefinition,
-    class_name: &str,
+    class_name: &'a str,
 ) -> Result<Vec<&'a str>> {
     let mut hierarchy = vec![class_name];
     let mut current = class_name;
@@ -280,9 +281,10 @@ pub fn get_class_hierarchy<'a>(
     while let Some(class) = schema.classes.get(current) {
         if let Some(parent) = &class.is_a {
             if !seen.insert(parent.as_str()) {
-                return Err(LinkMLError::ValidationError(
-                    format!("Circular inheritance detected at class '{}'", parent)
-                ));
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!("Circular inheritance detected at class '{}'", parent),
+                    element: Some(parent.to_string()),
+                });
             }
             hierarchy.push(parent.as_str());
             current = parent.as_str();
@@ -351,7 +353,7 @@ pub fn is_abstract_class(class: &ClassDefinition) -> bool {
 
 /// Get URI for a given element efficiently
 pub fn get_element_uri<'a>(
-    element_name: &str,
+    element_name: &'a str,
     uri_field: Option<&'a str>,
     schema: &'a SchemaDefinition,
 ) -> Cow<'a, str> {

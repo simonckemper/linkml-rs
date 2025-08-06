@@ -10,7 +10,8 @@ use serde_json::{Value, Map};
 use reqwest::{Client, Method, header::{HeaderMap, HeaderName, HeaderValue}};
 use std::collections::HashMap;
 use std::time::Duration;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
+use regex::Regex;
 
 /// Options for API loading and dumping
 #[derive(Debug, Clone)]
@@ -56,16 +57,30 @@ pub enum AuthConfig {
     Bearer(String),
     
     /// Basic authentication
-    Basic { username: String, password: String },
+    Basic { 
+        /// Username for authentication
+        username: String, 
+        /// Password for authentication
+        password: String 
+    },
     
     /// API key authentication
-    ApiKey { header_name: String, key: String },
+    ApiKey { 
+        /// HTTP header name for API key
+        header_name: String, 
+        /// API key value
+        key: String 
+    },
     
     /// OAuth2 configuration
     OAuth2 {
+        /// Token endpoint URL
         token_url: String,
+        /// OAuth2 client ID
         client_id: String,
+        /// OAuth2 client secret
         client_secret: String,
+        /// Required scopes
         scopes: Vec<String>,
     },
 }
@@ -192,7 +207,7 @@ impl Default for RetryConfig {
 pub struct ApiLoader {
     options: ApiOptions,
     client: Client,
-    last_request_time: Option<std::time::Instant>,
+    last_request_time: std::sync::Mutex<Option<std::time::Instant>>,
 }
 
 impl ApiLoader {
@@ -225,24 +240,39 @@ impl ApiLoader {
         Self {
             options,
             client,
-            last_request_time: None,
+            last_request_time: std::sync::Mutex::new(None),
         }
     }
     
     /// Apply rate limiting
-    async fn apply_rate_limit(&mut self) {
+    async fn apply_rate_limit(&self) {
         if let Some(rate_limit) = self.options.rate_limit {
-            if let Some(last_time) = self.last_request_time {
-                let elapsed = last_time.elapsed().as_secs_f64();
-                let min_interval = 1.0 / rate_limit;
+            // Calculate sleep duration if needed
+            let sleep_duration = {
+                let last_time = self.last_request_time.lock().unwrap();
                 
-                if elapsed < min_interval {
-                    let sleep_duration = Duration::from_secs_f64(min_interval - elapsed);
-                    tokio::time::sleep(sleep_duration).await;
+                if let Some(last) = *last_time {
+                    let elapsed = last.elapsed().as_secs_f64();
+                    let min_interval = 1.0 / rate_limit;
+                    
+                    if elapsed < min_interval {
+                        Some(Duration::from_secs_f64(min_interval - elapsed))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
                 }
+            }; // MutexGuard is dropped here
+            
+            // Sleep if needed
+            if let Some(duration) = sleep_duration {
+                tokio::time::sleep(duration).await;
             }
             
-            self.last_request_time = Some(std::time::Instant::now());
+            // Update last request time
+            let mut last_time = self.last_request_time.lock().unwrap();
+            *last_time = Some(std::time::Instant::now());
         }
     }
     
@@ -335,8 +365,9 @@ impl ApiLoader {
     }
     
     /// Load data from a single endpoint
-    async fn load_endpoint(&mut self, endpoint_name: &str, endpoint_config: &EndpointConfig, 
+    async fn load_endpoint(&self, endpoint_name: &str, endpoint_config: &EndpointConfig, 
                           schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
+        tracing::debug!("Loading data from endpoint: {}", endpoint_name);
         let mut all_instances = Vec::new();
         
         // Build initial URL
@@ -345,7 +376,7 @@ impl ApiLoader {
         // Add query parameters
         if !endpoint_config.query_params.is_empty() {
             let query = serde_urlencoded::to_string(&endpoint_config.query_params)
-                .map_err(|e| LoaderError::ParseError(format!("Failed to encode query params: {}", e)))?;
+                .map_err(|e| LoaderError::Parse(format!("Failed to encode query params: {}", e)))?;
             url.push('?');
             url.push_str(&query);
         }
@@ -410,7 +441,7 @@ impl ApiLoader {
     }
     
     /// Fetch a single page of data
-    async fn fetch_page(&mut self, url: &str, endpoint_config: &EndpointConfig, 
+    async fn fetch_page(&self, url: &str, endpoint_config: &EndpointConfig, 
                        schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
         // Apply rate limiting
         self.apply_rate_limit().await;
@@ -421,7 +452,7 @@ impl ApiLoader {
         
         // Parse response
         let json: Value = response.json().await
-            .map_err(|e| LoaderError::ParseError(format!("Failed to parse JSON response: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON response: {}", e)))?;
         
         // Extract data based on response path
         let data = if let Some(path) = &endpoint_config.response_data_path {
@@ -443,24 +474,24 @@ impl ApiLoader {
             match current {
                 Value::Object(obj) => {
                     current = obj.get(part)
-                        .ok_or_else(|| LoaderError::ParseError(
+                        .ok_or_else(|| LoaderError::Parse(
                             format!("Path '{}' not found in response", part)
                         ))?;
                 }
                 Value::Array(arr) => {
                     if let Ok(index) = part.parse::<usize>() {
                         current = arr.get(index)
-                            .ok_or_else(|| LoaderError::ParseError(
+                            .ok_or_else(|| LoaderError::Parse(
                                 format!("Array index {} out of bounds", index)
                             ))?;
                     } else {
-                        return Err(LoaderError::ParseError(
+                        return Err(LoaderError::Parse(
                             format!("Invalid array index: {}", part)
                         ));
                     }
                 }
                 _ => {
-                    return Err(LoaderError::ParseError(
+                    return Err(LoaderError::Parse(
                         format!("Cannot navigate path '{}' in non-object/array", part)
                     ));
                 }
@@ -475,21 +506,44 @@ impl ApiLoader {
                         schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
         let mut instances = Vec::new();
         
+        // Check if the class exists in the schema
+        if !schema.classes.contains_key(class_name) {
+            return Err(LoaderError::Parse(
+                format!("Class '{}' not found in schema", class_name)
+            ));
+        }
+        
         match json {
             Value::Array(items) => {
-                for item in items {
+                for (index, item) in items.into_iter().enumerate() {
                     if let Value::Object(obj) = item {
                         let instance = self.object_to_instance(obj, class_name, endpoint_config)?;
+                        
+                        // Validate the instance against the schema
+                        if let Err(e) = self.validate_instance(&instance, class_name, schema) {
+                            return Err(LoaderError::Parse(
+                                format!("Instance at index {} failed validation: {}", index, e)
+                            ));
+                        }
+                        
                         instances.push(instance);
                     }
                 }
             }
             Value::Object(obj) => {
                 let instance = self.object_to_instance(obj, class_name, endpoint_config)?;
+                
+                // Validate the instance against the schema
+                if let Err(e) = self.validate_instance(&instance, class_name, schema) {
+                    return Err(LoaderError::Parse(
+                        format!("Instance failed validation: {}", e)
+                    ));
+                }
+                
                 instances.push(instance);
             }
             _ => {
-                return Err(LoaderError::ParseError(
+                return Err(LoaderError::Parse(
                     "Expected array or object in API response".to_string()
                 ));
             }
@@ -498,9 +552,143 @@ impl ApiLoader {
         Ok(instances)
     }
     
+    /// Validate an instance against the schema
+    fn validate_instance(&self, instance: &DataInstance, class_name: &str, 
+                        schema: &SchemaDefinition) -> LoaderResult<()> {
+        // Get the class definition
+        let class_def = schema.classes.get(class_name)
+            .ok_or_else(|| LoaderError::Parse(
+                format!("Class '{}' not found in schema", class_name)
+            ))?;
+        
+        // Validate required fields
+        for (slot_name, slot_def) in &class_def.attributes {
+            if slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
+                return Err(LoaderError::Parse(
+                    format!("Required field '{}' missing in class '{}'", slot_name, class_name)
+                ));
+            }
+        }
+        
+        // Validate slot definitions if referenced
+        for slot_name in &class_def.slots {
+            if let Some(slot_def) = schema.slots.get(slot_name) {
+                if slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
+                    return Err(LoaderError::Parse(
+                        format!("Required slot '{}' missing in class '{}'", slot_name, class_name)
+                    ));
+                }
+            }
+        }
+        
+        // Validate data types and constraints for each field
+        for (field_name, field_value) in &instance.data {
+            // Check if field is defined as attribute
+            if let Some(slot_def) = class_def.attributes.get(field_name) {
+                self.validate_field(field_name, field_value, slot_def)?;
+            } 
+            // Check if field is defined as a slot reference
+            else if class_def.slots.contains(field_name) {
+                if let Some(slot_def) = schema.slots.get(field_name) {
+                    self.validate_field(field_name, field_value, slot_def)?;
+                }
+            }
+            // Field not defined in schema - this might be allowed depending on schema settings
+            // For now, we'll allow extra fields but could make this configurable
+        }
+        
+        Ok(())
+    }
+    
+    /// Validate a field value against its slot definition
+    fn validate_field(&self, field_name: &str, value: &Value, 
+                     slot_def: &SlotDefinition) -> LoaderResult<()> {
+        // Check pattern if defined
+        if let Some(pattern) = &slot_def.pattern {
+            if let Value::String(s) = value {
+                match Regex::new(pattern) {
+                    Ok(re) => {
+                        if !re.is_match(s) {
+                            return Err(LoaderError::Parse(
+                                format!("Field '{}' value '{}' does not match pattern '{}'", 
+                                        field_name, s, pattern)
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Invalid regex pattern '{}' in slot '{}': {}", pattern, field_name, e);
+                        // Continue validation without pattern check
+                    }
+                }
+            }
+        }
+        
+        // Check minimum value
+        if let Some(min_val) = &slot_def.minimum_value {
+            match (value, min_val) {
+                (Value::Number(n), Value::Number(min_n)) => {
+                    if let (Some(v), Some(min_v)) = (n.as_f64(), min_n.as_f64()) {
+                        if v < min_v {
+                            return Err(LoaderError::Parse(
+                                format!("Field '{}' value {} is less than minimum {}", 
+                                        field_name, v, min_v)
+                            ));
+                        }
+                    }
+                }
+                _ => {
+                    // Skip validation if types don't match
+                }
+            }
+        }
+        
+        // Check maximum value
+        if let Some(max_val) = &slot_def.maximum_value {
+            match (value, max_val) {
+                (Value::Number(n), Value::Number(max_n)) => {
+                    if let (Some(v), Some(max_v)) = (n.as_f64(), max_n.as_f64()) {
+                        if v > max_v {
+                            return Err(LoaderError::Parse(
+                                format!("Field '{}' value {} is greater than maximum {}", 
+                                        field_name, v, max_v)
+                            ));
+                        }
+                    }
+                }
+                _ => {
+                    // Skip validation if types don't match
+                }
+            }
+        }
+        
+        // Check multivalued constraint
+        if let Some(multivalued) = slot_def.multivalued {
+            match (value, multivalued) {
+                (Value::Array(_), false) => {
+                    return Err(LoaderError::Parse(
+                        format!("Field '{}' should not be multivalued but is an array", field_name)
+                    ));
+                }
+                (Value::Array(arr), true) if arr.is_empty() && slot_def.required.unwrap_or(false) => {
+                    return Err(LoaderError::Parse(
+                        format!("Field '{}' is required and multivalued but is empty", field_name)
+                    ));
+                }
+                (v, true) if !matches!(v, Value::Array(_)) && slot_def.required.unwrap_or(false) => {
+                    return Err(LoaderError::Parse(
+                        format!("Field '{}' should be multivalued (array) but is not", field_name)
+                    ));
+                }
+                _ => {}
+            }
+        }
+        
+        Ok(())
+    }
+    
     /// Convert JSON object to instance
-    fn object_to_instance(&self, mut obj: Map<String, Value>, class_name: &str, 
-                         endpoint_config: &EndpointConfig) -> LoaderResult<DataInstance> {
+    fn object_to_instance(&self, mut obj: Map<String, Value>, class_name: &str,
+                         _endpoint_config: &EndpointConfig) -> LoaderResult<DataInstance> {
         // Apply field mapping if configured
         if let Some(mapping) = self.options.field_mapping.get(class_name) {
             let mut mapped_obj = Map::new();
@@ -523,18 +711,46 @@ impl ApiLoader {
         
         Ok(DataInstance {
             class_name: class_name.to_string(),
-            data: obj,
+            data: obj.into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
         })
     }
 }
 
 #[async_trait]
 impl DataLoader for ApiLoader {
-    async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
+    fn name(&self) -> &str {
+        "api"
+    }
+    
+    fn description(&self) -> &str {
+        "Load data from REST APIs"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec![] // API loader doesn't use file extensions
+    }
+    
+    async fn load_file(
+        &self,
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &super::traits::LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        Err(LoaderError::InvalidFormat("API loader does not support file loading".to_string()))
+    }
+    
+    async fn load_string(
+        &self,
+        _content: &str,
+        schema: &SchemaDefinition,
+        _options: &super::traits::LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        // Load from all configured endpoints
         let mut all_instances = Vec::new();
         
-        // Load from each configured endpoint
-        for (endpoint_name, endpoint_config) in &self.options.endpoint_mapping.clone() {
+        for (endpoint_name, endpoint_config) in &self.options.endpoint_mapping {
             info!("Loading data from endpoint: {}", endpoint_name);
             
             let instances = self.load_endpoint(endpoint_name, endpoint_config, schema).await?;
@@ -545,13 +761,27 @@ impl DataLoader for ApiLoader {
         
         Ok(all_instances)
     }
+    
+    async fn load_bytes(
+        &self,
+        _data: &[u8],
+        _schema: &SchemaDefinition,
+        _options: &super::traits::LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        Err(LoaderError::InvalidFormat("API loader does not support raw bytes loading".to_string()))
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+        // Could validate that schema classes match endpoint configurations
+        Ok(())
+    }
 }
 
 /// API dumper for LinkML data
 pub struct ApiDumper {
     options: ApiOptions,
     client: Client,
-    last_request_time: Option<std::time::Instant>,
+    last_request_time: std::sync::Mutex<Option<std::time::Instant>>,
 }
 
 impl ApiDumper {
@@ -579,24 +809,39 @@ impl ApiDumper {
         Self {
             options,
             client,
-            last_request_time: None,
+            last_request_time: std::sync::Mutex::new(None),
         }
     }
     
     /// Apply rate limiting
-    async fn apply_rate_limit(&mut self) {
+    async fn apply_rate_limit(&self) {
         if let Some(rate_limit) = self.options.rate_limit {
-            if let Some(last_time) = self.last_request_time {
-                let elapsed = last_time.elapsed().as_secs_f64();
-                let min_interval = 1.0 / rate_limit;
+            // Calculate sleep duration if needed
+            let sleep_duration = {
+                let last_time = self.last_request_time.lock().unwrap();
                 
-                if elapsed < min_interval {
-                    let sleep_duration = Duration::from_secs_f64(min_interval - elapsed);
-                    tokio::time::sleep(sleep_duration).await;
+                if let Some(last) = *last_time {
+                    let elapsed = last.elapsed().as_secs_f64();
+                    let min_interval = 1.0 / rate_limit;
+                    
+                    if elapsed < min_interval {
+                        Some(Duration::from_secs_f64(min_interval - elapsed))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
                 }
+            }; // MutexGuard is dropped here
+            
+            // Sleep if needed
+            if let Some(duration) = sleep_duration {
+                tokio::time::sleep(duration).await;
             }
             
-            self.last_request_time = Some(std::time::Instant::now());
+            // Update last request time
+            let mut last_time = self.last_request_time.lock().unwrap();
+            *last_time = Some(std::time::Instant::now());
         }
     }
     
@@ -626,7 +871,7 @@ impl ApiDumper {
     }
     
     /// Dump a single instance
-    async fn dump_instance(&mut self, instance: &DataInstance, endpoint_config: &EndpointConfig) 
+    async fn dump_instance(&self, instance: &DataInstance, endpoint_config: &EndpointConfig) 
         -> DumperResult<()> {
         // Build URL
         let url = format!("{}{}", self.options.base_url, endpoint_config.path);
@@ -651,7 +896,7 @@ impl ApiDumper {
                 }
             }
             
-            data = unmapped_data;
+            data = unmapped_data.into_iter().collect();
         }
         
         // Apply rate limiting
@@ -686,7 +931,7 @@ impl ApiDumper {
                 }
             }
             _ => {
-                return Err(DumperError::UnsupportedFormat(
+                return Err(DumperError::Configuration(
                     format!("Unsupported HTTP method for dumping: {}", endpoint_config.method)
                 ));
             }
@@ -711,7 +956,34 @@ impl ApiDumper {
 
 #[async_trait]
 impl DataDumper for ApiDumper {
-    async fn dump(&mut self, instances: &[DataInstance], schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    fn name(&self) -> &str {
+        "api"
+    }
+    
+    fn description(&self) -> &str {
+        "Dump data to REST APIs"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec![] // API dumper doesn't use file extensions
+    }
+    
+    async fn dump_file(
+        &self,
+        _instances: &[DataInstance],
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &super::traits::DumpOptions,
+    ) -> DumperResult<()> {
+        Err(DumperError::Configuration("API dumper does not support file dumping".to_string()))
+    }
+    
+    async fn dump_string(
+        &self,
+        instances: &[DataInstance],
+        _schema: &SchemaDefinition,
+        _options: &super::traits::DumpOptions,
+    ) -> DumperResult<String> {
         let mut success_count = 0;
         let mut error_count = 0;
         
@@ -751,10 +1023,33 @@ impl DataDumper for ApiDumper {
         );
         
         if error_count > 0 {
-            Err(DumperError::ValidationFailed(summary))
+            Err(DumperError::Serialization(summary))
         } else {
-            Ok(summary.into_bytes())
+            Ok(summary)
         }
+    }
+    
+    async fn dump_bytes(
+        &self,
+        instances: &[DataInstance],
+        _schema: &SchemaDefinition,
+        options: &super::traits::DumpOptions,
+    ) -> DumperResult<Vec<u8>> {
+        let result = self.dump_string(instances, _schema, options).await?;
+        Ok(result.into_bytes())
+    }
+    
+    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+        // Validate that schema classes match endpoint configurations
+        for (_, endpoint_config) in &self.options.endpoint_mapping {
+            if !schema.classes.contains_key(&endpoint_config.class_name) {
+                return Err(DumperError::Configuration(
+                    format!("Class '{}' referenced in endpoint configuration not found in schema", 
+                            endpoint_config.class_name)
+                ));
+            }
+        }
+        Ok(())
     }
 }
 
@@ -880,5 +1175,101 @@ mod tests {
         let extracted = loader.extract_by_path(&json, "data.users").expect("should extract data.users");
         assert!(extracted.is_array());
         assert_eq!(extracted.as_array().expect("should be array").len(), 2);
+    }
+    
+    #[test]
+    fn test_validate_instance() {
+        use linkml_core::prelude::*;
+        use indexmap::IndexMap;
+        
+        // Create test schema
+        let mut schema = SchemaDefinition::default();
+        
+        // Create Person class with required fields
+        let mut person_class = ClassDefinition::default();
+        let mut attributes = IndexMap::new();
+        
+        // Add required name field
+        let mut name_slot = SlotDefinition::default();
+        name_slot.required = Some(true);
+        name_slot.range = Some("string".to_string());
+        attributes.insert("name".to_string(), name_slot);
+        
+        // Add age field with min/max constraints
+        let mut age_slot = SlotDefinition::default();
+        age_slot.minimum_value = Some(serde_json::json!(0));
+        age_slot.maximum_value = Some(serde_json::json!(150));
+        age_slot.range = Some("integer".to_string());
+        attributes.insert("age".to_string(), age_slot);
+        
+        // Add email field with pattern
+        let mut email_slot = SlotDefinition::default();
+        email_slot.pattern = Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".to_string());
+        email_slot.range = Some("string".to_string());
+        attributes.insert("email".to_string(), email_slot);
+        
+        person_class.attributes = attributes;
+        schema.classes.insert("Person".to_string(), person_class);
+        
+        let options = ApiOptions::default();
+        let loader = ApiLoader::new(options);
+        
+        // Test valid instance
+        let valid_instance = DataInstance {
+            class_name: "Person".to_string(),
+            data: vec![
+                ("name".to_string(), serde_json::json!("Alice")),
+                ("age".to_string(), serde_json::json!(30)),
+                ("email".to_string(), serde_json::json!("alice@example.com")),
+            ].into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
+        };
+        
+        assert!(loader.validate_instance(&valid_instance, "Person", &schema).is_ok());
+        
+        // Test missing required field
+        let missing_name = DataInstance {
+            class_name: "Person".to_string(),
+            data: vec![
+                ("age".to_string(), serde_json::json!(30)),
+            ].into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
+        };
+        
+        let result = loader.validate_instance(&missing_name, "Person", &schema);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Required field 'name' missing"));
+        
+        // Test invalid age
+        let invalid_age = DataInstance {
+            class_name: "Person".to_string(),
+            data: vec![
+                ("name".to_string(), serde_json::json!("Bob")),
+                ("age".to_string(), serde_json::json!(200)),
+            ].into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
+        };
+        
+        let result = loader.validate_instance(&invalid_age, "Person", &schema);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("greater than maximum"));
+        
+        // Test invalid email pattern
+        let invalid_email = DataInstance {
+            class_name: "Person".to_string(),
+            data: vec![
+                ("name".to_string(), serde_json::json!("Charlie")),
+                ("email".to_string(), serde_json::json!("not-an-email")),
+            ].into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
+        };
+        
+        let result = loader.validate_instance(&invalid_email, "Person", &schema);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("does not match pattern"));
     }
 }

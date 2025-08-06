@@ -11,7 +11,8 @@ categories = ["data-structures", "encoding", "parser-implementations", "developm
 
 [features]
 default = []
-# database = ["dep:sqlx"]  # Temporarily disabled due to SQLite conflicts
+database = []  # Feature flag for database support (temporarily without sqlx dependency due to SQLite conflicts)
+# database = ["dep:sqlx"]  # Full database support - temporarily disabled due to SQLite conflicts
 
 [dependencies]
 # Core dependencies
@@ -28,6 +29,7 @@ monitoring-core = { path = "../../monitoring/monitoring-core" }
 telemetry-core = { path = "../../telemetry/telemetry-core" }
 dbms-core = { path = "../../dbms/dbms-core" }
 parse-core = { path = "../../parse/parse-core" }
+timeout-core = { path = "../../timeout/timeout-core" }
 
 # Async runtime
 tokio = { version = "1.42", features = ["full"] }
@@ -57,6 +59,9 @@ once_cell = "1.19"
 
 # Excel generation
 rust_xlsxwriter = "0.89.1"
+
+# TypeDB integration
+typedb-driver = "2.28"
 base64 = "0.22"
 
 # String case conversion

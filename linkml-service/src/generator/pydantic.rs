@@ -5,12 +5,11 @@ use super::base::{
     TypeMapper,
 };
 use super::traits::{
-    CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
+    CodeFormatter, Generator, GeneratorError, GeneratorResult,
 };
 use super::options::{GeneratorOptions, IndentStyle};
-use async_trait::async_trait;
+use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
-use std::collections::HashMap;
 use std::fmt::Write;
 
 /// Pydantic v2 generator
@@ -372,7 +371,6 @@ impl PydanticGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for PydanticGenerator {
     fn name(&self) -> &str {
         &self.name
@@ -386,14 +384,11 @@ impl Generator for PydanticGenerator {
         vec!["py"]
     }
 
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        self.validate_schema(schema).await?;
-
-        let mut outputs = Vec::new();
+    ) -> std::result::Result<String, LinkMLError> {
+        self.validate_schema(schema)?;
 
         // Generate a single file with all classes
         let mut content = String::new();
@@ -419,7 +414,7 @@ impl Generator for PydanticGenerator {
         // Generate classes
         let mut class_content = String::new();
         for (class_name, class_def) in &schema.classes {
-            let class_code = self.generate_class(class_name, class_def, schema, options)?;
+            let class_code = self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
             writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
             class_content.push_str(&class_code);
@@ -448,35 +443,31 @@ impl Generator for PydanticGenerator {
         // Classes
         final_content.push_str(&class_content);
 
-        outputs.push(GeneratedOutput {
-            content: final_content,
-            filename: format!("{}_pydantic.py", schema.name.to_lowercase().replace('-', "_")),
-            metadata: {
-                let mut meta = HashMap::new();
-                meta.insert("generator".to_string(), self.name.clone());
-                meta.insert("schema".to_string(), schema.name.clone());
-                meta.insert("pydantic_version".to_string(), "2.0".to_string());
-                meta
-            },
-        });
-
-        Ok(outputs)
+        Ok(final_content)
     }
 
-    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(GeneratorError::SchemaValidation(
+            return Err(LinkMLError::service(
                 "Schema must have a name".to_string(),
             ));
         }
 
         if schema.classes.is_empty() {
-            return Err(GeneratorError::SchemaValidation(
+            return Err(LinkMLError::service(
                 "Schema must have at least one class".to_string(),
             ));
         }
 
         Ok(())
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "py"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema_pydantic"
     }
 }
 
@@ -565,8 +556,8 @@ impl CodeFormatter for PydanticGenerator {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_basic_generation() {
+    #[test]
+    fn test_basic_generation() {
         let mut schema = SchemaDefinition::default();
         schema.name = "test_schema".to_string();
 
@@ -590,16 +581,12 @@ mod tests {
         schema.slots.insert("age".to_string(), age_slot);
 
         let generator = PydanticGenerator::new();
-        let options = GeneratorOptions::new();
 
-        let outputs = generator.generate(&schema, &options).await.expect("should generate Pydantic output");
-        assert_eq!(outputs.len(), 1);
-
-        let output = &outputs[0];
-        assert!(output.content.contains("from pydantic import BaseModel"));
-        assert!(output.content.contains("class Person(BaseModel):"));
-        assert!(output.content.contains("name: str = Field(...)"));
-        assert!(output.content.contains("age: Optional[int] = Field(None)"));
-        assert!(output.content.contains("model_config ="));
+        let output = generator.generate(&schema).expect("should generate Pydantic output");
+        assert!(output.contains("from pydantic import BaseModel"));
+        assert!(output.contains("class Person(BaseModel):"));
+        assert!(output.contains("name: str = Field(...)"));
+        assert!(output.contains("age: Optional[int] = Field(None)"));
+        assert!(output.contains("model_config ="));
     }
 }

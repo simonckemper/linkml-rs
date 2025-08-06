@@ -42,15 +42,16 @@ pub struct RoleInheritanceResolver {
 
 /// Definition of a role
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct RoleDefinition {
     /// Role name
-    name: String,
+    _name: String,
     /// Relation it belongs to
-    relation: String,
+    _relation: String,
     /// Whether it's abstract
-    is_abstract: bool,
+    _is_abstract: bool,
     /// Base role if specialized
-    base_role: Option<String>,
+    _base_role: Option<String>,
     /// Allowed player types
     allowed_players: Vec<String>,
 }

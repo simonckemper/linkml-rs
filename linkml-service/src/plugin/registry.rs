@@ -5,7 +5,7 @@
 
 use super::*;
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Mutex};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::algo::toposort;
 
@@ -23,8 +23,8 @@ pub struct PluginRegistry {
 
 /// Plugin registration entry
 pub struct PluginRegistration {
-    /// The plugin instance
-    pub plugin: Arc<dyn Plugin>,
+    /// The plugin instance (wrapped in Mutex for interior mutability)
+    pub plugin: Arc<Mutex<Box<dyn Plugin>>>,
     /// Registration timestamp
     pub registered_at: chrono::DateTime<chrono::Utc>,
     /// Initialization status
@@ -62,7 +62,7 @@ impl PluginRegistry {
         }
         
         // Add to dependency graph
-        let node_idx = {
+        let _node_idx = {
             let mut graph = self.dep_graph.write()
                 .map_err(|_| LinkMLError::ServiceError("Plugin dependency graph lock poisoned".to_string()))?;
             let mut node_map = self.node_map.write()
@@ -87,7 +87,7 @@ impl PluginRegistry {
         
         // Create registration
         let registration = PluginRegistration {
-            plugin: Arc::from(plugin),
+            plugin: Arc::new(Mutex::new(plugin)),
             registered_at: chrono::Utc::now(),
             initialized: false,
             metadata: PluginSDK::metadata(),
@@ -128,7 +128,9 @@ impl PluginRegistry {
         {
             let mut by_type = self.by_type.write()
                 .map_err(|_| LinkMLError::ServiceError("Plugin type index lock poisoned".to_string()))?;
-            let plugin_type = registration.plugin.info().plugin_type;
+            let plugin = registration.plugin.lock()
+                .map_err(|_| LinkMLError::ServiceError("Plugin mutex poisoned".to_string()))?;
+            let plugin_type = plugin.info().plugin_type;
             if let Some(type_set) = by_type.get_mut(&plugin_type) {
                 type_set.remove(id);
                 if type_set.is_empty() {
@@ -153,13 +155,13 @@ impl PluginRegistry {
     }
     
     /// Get a plugin by ID
-    pub fn get(&self, id: &str) -> Option<Arc<dyn Plugin>> {
+    pub fn get(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
         let plugins = self.plugins.read().ok()?;
         plugins.get(id).map(|reg| Arc::clone(&reg.plugin))
     }
     
     /// Get all plugins of a specific type
-    pub fn get_by_type(&self, plugin_type: PluginType) -> Vec<Arc<dyn Plugin>> {
+    pub fn get_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         let Ok(by_type) = self.by_type.read() else {
             return Vec::new();
         };
@@ -177,7 +179,7 @@ impl PluginRegistry {
     }
     
     /// Get all registered plugins
-    pub fn get_all(&self) -> Vec<Arc<dyn Plugin>> {
+    pub fn get_all(&self) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         let Ok(plugins) = self.plugins.read() else {
             return Vec::new();
         };
@@ -189,13 +191,16 @@ impl PluginRegistry {
     /// Get plugin registration info
     pub fn get_registration(&self, id: &str) -> Option<PluginRegistrationInfo> {
         let plugins = self.plugins.read().ok()?;
-        plugins.get(id).map(|reg| PluginRegistrationInfo {
-            id: id.to_string(),
-            plugin_type: reg.plugin.info().plugin_type,
-            version: reg.plugin.info().version.clone(),
-            registered_at: reg.registered_at,
-            initialized: reg.initialized,
-            status: reg.plugin.status(),
+        plugins.get(id).and_then(|reg| {
+            let plugin = reg.plugin.lock().ok()?;
+            Some(PluginRegistrationInfo {
+                id: id.to_string(),
+                plugin_type: plugin.info().plugin_type,
+                version: plugin.info().version.clone(),
+                registered_at: reg.registered_at,
+                initialized: reg.initialized,
+                status: plugin.status(),
+            })
         })
     }
     
@@ -225,8 +230,11 @@ impl PluginRegistry {
         };
         
         // Initialize the plugin
-        // Note: This requires a mutable reference, so we need to handle this differently
-        // In a real implementation, plugins would need interior mutability
+        {
+            let mut plugin_guard = plugin.lock()
+                .map_err(|_| LinkMLError::ServiceError("Plugin mutex poisoned".to_string()))?;
+            plugin_guard.initialize(context).await?;
+        }
         
         // Mark as initialized
         {
@@ -267,8 +275,11 @@ impl PluginRegistry {
         };
         
         // Shutdown the plugin
-        // Note: This requires a mutable reference, so we need to handle this differently
-        // In a real implementation, plugins would need interior mutability
+        {
+            let mut plugin_guard = plugin.lock()
+                .map_err(|_| LinkMLError::ServiceError("Plugin mutex poisoned".to_string()))?;
+            plugin_guard.shutdown().await?;
+        }
         
         // Mark as not initialized
         {
@@ -296,7 +307,7 @@ impl PluginRegistry {
                 let mut id_order = Vec::new();
                 for idx in order {
                     if let Some(id) = node_map.iter()
-                        .find(|(_, &i)| i == idx)
+                        .find(|&(_, &i)| i == idx)
                         .map(|(id, _)| id.clone())
                     {
                         id_order.push(id);
@@ -317,7 +328,11 @@ impl PluginRegistry {
             .map_err(|_| LinkMLError::ServiceError("Plugin registry lock poisoned".to_string()))?;
         
         for (id, reg) in plugins.iter() {
-            let info = reg.plugin.info();
+            let plugin = match reg.plugin.lock() {
+                Ok(p) => p,
+                Err(_) => continue, // Skip if mutex is poisoned
+            };
+            let info = plugin.info();
             
             for dep in &info.dependencies {
                 if !dep.optional && !plugins.contains_key(&dep.id) {
@@ -329,15 +344,17 @@ impl PluginRegistry {
                         reason: "Dependency not found".to_string(),
                     });
                 } else if let Some(dep_reg) = plugins.get(&dep.id) {
-                    let dep_version = &dep_reg.plugin.info().version;
-                    if !dep.version.matches(dep_version) {
-                        errors.push(DependencyError {
-                            plugin_id: id.clone(),
-                            dependency_id: dep.id.clone(),
-                            required_version: dep.version.clone(),
-                            found_version: Some(dep_version.clone()),
-                            reason: "Version mismatch".to_string(),
-                        });
+                    if let Ok(dep_plugin) = dep_reg.plugin.lock() {
+                        let dep_version = &dep_plugin.info().version;
+                        if !dep.version.matches(dep_version) {
+                            errors.push(DependencyError {
+                                plugin_id: id.clone(),
+                                dependency_id: dep.id.clone(),
+                                required_version: dep.version.clone(),
+                                found_version: Some(dep_version.clone()),
+                                reason: "Version mismatch".to_string(),
+                            });
+                        }
                     }
                 }
             }
@@ -435,5 +452,89 @@ mod tests {
         
         assert!(registry.get("test-plugin").is_some());
         assert_eq!(registry.get_by_type(PluginType::Generator).len(), 1);
+        
+        // Test that we can access the plugin through the mutex
+        if let Some(plugin_mutex) = registry.get("test-plugin") {
+            let plugin = plugin_mutex.lock().unwrap();
+            assert_eq!(plugin.info().id, "test-plugin");
+        }
+    }
+    
+    #[tokio::test]
+    async fn test_plugin_lifecycle() {
+        let registry = PluginRegistry::new();
+        
+        let plugin = Box::new(MockPlugin {
+            info: PluginInfo {
+                id: "lifecycle-test".to_string(),
+                name: "Lifecycle Test Plugin".to_string(),
+                description: "Test".to_string(),
+                version: Version::new(1, 0, 0),
+                plugin_type: PluginType::Generator,
+                author: None,
+                license: None,
+                homepage: None,
+                linkml_version: VersionReq::parse("*").unwrap(),
+                dependencies: vec![],
+                capabilities: vec![],
+            },
+        });
+        
+        registry.register(plugin).unwrap();
+        
+        // Create a test context
+        let context = PluginContext {
+            config: HashMap::new(),
+            working_dir: std::env::current_dir().unwrap(),
+            temp_dir: std::env::temp_dir(),
+            logger: Arc::new(MockLogger),
+        };
+        
+        // Test initialization
+        registry.initialize_all(context.clone()).await.unwrap();
+        
+        // Verify plugin is initialized
+        let reg_info = registry.get_registration("lifecycle-test").unwrap();
+        assert!(reg_info.initialized);
+        
+        // Test shutdown
+        registry.shutdown_all().await.unwrap();
+        
+        // Verify plugin is shutdown
+        let reg_info = registry.get_registration("lifecycle-test").unwrap();
+        assert!(!reg_info.initialized);
+    }
+}
+
+// Mock logger for testing
+#[allow(dead_code)]
+struct MockLogger;
+
+#[async_trait]
+impl LoggerService for MockLogger {
+    type Error = LoggerError;
+    
+    async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+    
+    async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+    
+    async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+    
+    async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+    
+    async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
+        Ok(())
+    }
+    
+    async fn log_entry(&self, _entry: &logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
+        Ok(())
     }
 }

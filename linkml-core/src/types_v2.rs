@@ -11,10 +11,9 @@ use serde_json::Value;
 
 use crate::string_pool::{intern, intern_option, intern_vec};
 use crate::types::{
-    StructuredPattern, AnonymousSlotExpression,
-    PermissibleValue, UniqueKeyDefinition, PrefixDefinition
+    StructuredPattern, PermissibleValue
 };
-use crate::annotations::Annotation;
+use crate::annotations::{Annotation, AnnotationValue};
 use crate::metadata::Example;
 
 /// Memory-optimized Schema Definition using interned strings
@@ -54,17 +53,8 @@ pub struct SchemaDefinitionV2 {
     
     // Settings and metadata
     pub settings: Option<SchemaSettingsV2>,
-    pub annotations: Option<HashMap<String, Annotation>>,
+    pub annotations: Option<IndexMap<String, AnnotationValue>>,
     pub contributors: Vec<ContributorV2>,
-    
-    // Other fields
-    pub created_by: Option<Arc<str>>,
-    pub created_on: Option<String>,
-    pub last_updated_on: Option<String>,
-    pub modified_by: Option<Arc<str>>,
-    pub rank: Option<i32>,
-    pub extensions: HashMap<String, Value>,
-    pub from_schema: Option<Arc<str>>,
 }
 
 /// Memory-optimized Class Definition
@@ -79,12 +69,9 @@ pub struct ClassDefinitionV2 {
     pub mixins: Vec<Arc<str>>,
     pub slots: Vec<Arc<str>>,
     pub subclass_of: Vec<Arc<str>>,
-    pub union_of: Vec<Arc<str>>,
-    pub disjoint_with: Vec<Arc<str>>,
     
     // Potentially unique strings
     pub description: Option<String>,
-    pub title: Option<String>,
     pub deprecated: Option<String>,
     
     // Lists that might be unique
@@ -101,7 +88,7 @@ pub struct ClassDefinitionV2 {
     
     // Other fields
     pub see_also: Vec<Arc<str>>,
-    pub annotations: Option<HashMap<String, Annotation>>,
+    pub annotations: Option<IndexMap<String, AnnotationValue>>,
     pub extensions: HashMap<String, Value>,
     pub from_schema: Option<Arc<str>>,
     pub imported_from: Option<Arc<str>>,
@@ -312,14 +299,6 @@ impl From<crate::types::SchemaDefinition> for SchemaDefinitionV2 {
             settings: v1.settings.map(Into::into),
             annotations: v1.annotations,
             contributors: v1.contributors.into_iter().map(Into::into).collect(),
-            
-            created_by: intern_option(v1.created_by.as_deref()),
-            created_on: v1.created_on,
-            last_updated_on: v1.last_updated_on,
-            modified_by: intern_option(v1.modified_by.as_deref()),
-            rank: v1.rank,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
         }
     }
 }
@@ -333,11 +312,8 @@ impl From<crate::types::ClassDefinition> for ClassDefinitionV2 {
             mixins: intern_vec(v1.mixins),
             slots: intern_vec(v1.slots),
             subclass_of: intern_vec(v1.subclass_of),
-            union_of: intern_vec(v1.union_of),
-            disjoint_with: intern_vec(v1.disjoint_with),
             
             description: v1.description,
-            title: v1.title,
             deprecated: v1.deprecated,
             aliases: v1.aliases,
             notes: v1.notes,
@@ -346,17 +322,17 @@ impl From<crate::types::ClassDefinition> for ClassDefinitionV2 {
             
             abstract_: v1.abstract_,
             mixin: v1.mixin,
-            values_from: intern_vec(v1.values_from),
-            id_prefixes: intern_vec(v1.id_prefixes),
+            values_from: vec![], // Not present in v1
+            id_prefixes: vec![], // Not present in v1
             see_also: intern_vec(v1.see_also),
             
             annotations: v1.annotations,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
-            imported_from: intern_option(v1.imported_from.as_deref()),
-            source: intern_option(v1.source.as_deref()),
-            in_language: intern_option(v1.in_language.as_deref()),
-            rank: v1.rank,
+            extensions: HashMap::new(), // Not present in v1
+            from_schema: None, // Not present in v1
+            imported_from: None, // Not present in v1
+            source: None, // Not present in v1
+            in_language: None, // Not present in v1
+            rank: None, // Not present in v1
         }
     }
 }
@@ -365,65 +341,75 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
     fn from(v1: crate::types::SlotDefinition) -> Self {
         Self {
             name: intern(&v1.name),
-            slot_uri: intern_option(v1.slot_uri.as_deref()),
+            slot_uri: None, // Not in v1
             range: intern_option(v1.range.as_deref()),
             is_a: intern_option(v1.is_a.as_deref()),
             mixins: intern_vec(v1.mixins),
             inverse: intern_option(v1.inverse.as_deref()),
-            domain: intern_option(v1.domain.as_deref()),
-            subproperty_of: intern_option(v1.subproperty_of.as_deref()),
-            symmetric: intern_option(v1.symmetric.as_deref()),
+            domain: None, // Not in v1
+            subproperty_of: None, // Not in v1
+            symmetric: None, // Not in v1
             
             pattern: intern_option(v1.pattern.as_deref()),
             equals_expression: intern_option(v1.equals_expression.as_deref()),
             equals_string_in: v1.equals_string_in.map(intern_vec),
             
             description: v1.description,
-            title: v1.title,
+            title: None, // Not in v1
             deprecated: v1.deprecated,
-            aliases: v1.aliases,
+            aliases: vec![], // Not in v1 as aliases
             notes: v1.notes,
             comments: v1.comments,
             todos: v1.todos,
             
             required: v1.required,
-            recommended: v1.recommended,
+            recommended: None, // Not in v1
             multivalued: v1.multivalued,
             inlined: v1.inlined,
             inlined_as_list: v1.inlined_as_list,
-            key: v1.key,
+            key: None, // Not in v1
             identifier: v1.identifier,
-            designates_type: v1.designates_type,
-            alias: v1.alias,
-            owner: intern_option(v1.owner.as_deref()),
-            readonly: v1.readonly,
-            ifabsent: v1.ifabsent,
-            list_elements_unique: v1.list_elements_unique,
-            list_elements_ordered: v1.list_elements_ordered,
-            shared: v1.shared,
-            locally_defined: v1.locally_defined,
-            asymmetric: v1.asymmetric,
-            reflexive: v1.reflexive,
-            irreflexive: v1.irreflexive,
-            transitive: v1.transitive,
+            designates_type: None, // Not in v1
+            alias: None, // Not in v1
+            owner: None, // Not in v1
+            readonly: None, // Not in v1
+            ifabsent: None, // Not in v1
+            list_elements_unique: None, // Not in v1
+            list_elements_ordered: None, // Not in v1
+            shared: None, // Not in v1
+            locally_defined: None, // Not in v1
+            asymmetric: None, // Not in v1
+            reflexive: None, // Not in v1
+            irreflexive: None, // Not in v1
+            transitive: None, // Not in v1
             
             minimum_value: v1.minimum_value,
             maximum_value: v1.maximum_value,
-            minimum_cardinality: v1.minimum_cardinality,
-            maximum_cardinality: v1.maximum_cardinality,
+            minimum_cardinality: None, // Not in v1 SlotDefinition 
+            maximum_cardinality: None, // Not in v1 SlotDefinition
             
             see_also: intern_vec(v1.see_also),
-            values_from: intern_vec(v1.values_from),
-            id_prefixes: intern_vec(v1.id_prefixes),
+            values_from: vec![], // Not in v1
+            id_prefixes: vec![], // Not in v1
             
             structured_pattern: v1.structured_pattern,
             examples: v1.examples,
-            annotations: v1.annotations,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
-            imported_from: intern_option(v1.imported_from.as_deref()),
-            source: intern_option(v1.source.as_deref()),
-            in_language: intern_option(v1.in_language.as_deref()),
+            annotations: v1.annotations.map(|a| {
+                // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
+                a.into_iter().map(|(k, v)| {
+                    // Create simple annotation since Annotation is an enum
+                    let annotation = Annotation::Complex {
+                        tag: k.clone(),
+                        value: v,
+                    };
+                    (k, annotation)
+                }).collect()
+            }),
+            extensions: HashMap::new(), // Not in v1
+            from_schema: None, // Not in v1
+            imported_from: None, // Not in v1
+            source: None, // Not in v1
+            in_language: None, // Not in v1
             rank: v1.rank,
         }
     }
@@ -435,17 +421,27 @@ impl From<crate::types::TypeDefinition> for TypeDefinitionV2 {
         Self {
             name: intern(&v1.name),
             uri: intern_option(v1.uri.as_deref()),
-            base: intern_option(v1.base.as_deref()),
+            base: None, // Not in v1
             base_type: intern_option(v1.base_type.as_deref()),
             description: v1.description,
             pattern: intern_option(v1.pattern.as_deref()),
             minimum_value: v1.minimum_value,
             maximum_value: v1.maximum_value,
-            annotations: v1.annotations,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
-            imported_from: intern_option(v1.imported_from.as_deref()),
-            rank: v1.rank,
+            annotations: v1.annotations.map(|a| {
+                // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
+                a.into_iter().map(|(k, v)| {
+                    // Create simple annotation since Annotation is an enum
+                    let annotation = Annotation::Complex {
+                        tag: k.clone(),
+                        value: v,
+                    };
+                    (k, annotation)
+                }).collect()
+            }),
+            extensions: HashMap::new(), // Not in v1
+            from_schema: None, // Not in v1
+            imported_from: None, // Not in v1
+            rank: None, // Not in v1
         }
     }
 }
@@ -454,19 +450,36 @@ impl From<crate::types::EnumDefinition> for EnumDefinitionV2 {
     fn from(v1: crate::types::EnumDefinition) -> Self {
         Self {
             name: intern(&v1.name),
-            enum_uri: intern_option(v1.enum_uri.as_deref()),
+            enum_uri: None, // Not in v1
             code_set: intern_option(v1.code_set.as_deref()),
             code_set_tag: intern_option(v1.code_set_tag.as_deref()),
             code_set_version: intern_option(v1.code_set_version.as_deref()),
-            pv_formula: intern_option(v1.pv_formula.as_deref()),
+            pv_formula: None, // Not in v1
             description: v1.description,
-            title: v1.title,
-            deprecated: v1.deprecated,
-            permissible_values: v1.permissible_values,
-            annotations: v1.annotations,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
-            rank: v1.rank,
+            title: None, // Not in v1
+            deprecated: None, // Not in v1
+            permissible_values: v1.permissible_values.into_iter().map(|pv| {
+                match pv {
+                    crate::types::PermissibleValue::Simple(s) => (s.clone(), PermissibleValue::Simple(s)),
+                    crate::types::PermissibleValue::Complex { text, description, meaning } => {
+                        (text.clone(), PermissibleValue::Complex { text, description, meaning })
+                    }
+                }
+            }).collect(),
+            annotations: v1.annotations.map(|a| {
+                // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
+                a.into_iter().map(|(k, v)| {
+                    // Create simple annotation since Annotation is an enum
+                    let annotation = Annotation::Complex {
+                        tag: k.clone(),
+                        value: v,
+                    };
+                    (k, annotation)
+                }).collect()
+            }),
+            extensions: HashMap::new(), // Not in v1
+            from_schema: None, // Not in v1
+            rank: None, // Not in v1
         }
     }
 }
@@ -476,10 +489,10 @@ impl From<crate::types::SubsetDefinition> for SubsetDefinitionV2 {
         Self {
             name: intern(&v1.name),
             description: v1.description,
-            annotations: v1.annotations,
-            extensions: v1.extensions,
-            from_schema: intern_option(v1.from_schema.as_deref()),
-            rank: v1.rank,
+            annotations: None, // v1 doesn't have annotations 
+            extensions: HashMap::new(), // Not in v1
+            from_schema: None, // Not in v1
+            rank: None, // Not in v1
         }
     }
 }
@@ -489,31 +502,29 @@ impl From<crate::types::PrefixDefinition> for PrefixDefinitionV2 {
         match v1 {
             crate::types::PrefixDefinition::Simple(s) => Self {
                 prefix_prefix: intern(&s),
-                prefix_reference: None,
+                prefix_reference: intern(&s), // PrefixDefinitionV2 requires Arc<str>, not Option
             },
             crate::types::PrefixDefinition::Complex { prefix_prefix, prefix_reference } => Self {
                 prefix_prefix: intern(&prefix_prefix),
-                prefix_reference: intern_option(prefix_reference.as_deref()),
+                prefix_reference: intern(&prefix_reference.unwrap_or_else(|| prefix_prefix.clone())),
             },
         }
     }
 }
 
 impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
-    fn from(v1: crate::settings::SchemaSettings) -> Self {
+    fn from(_v1: crate::settings::SchemaSettings) -> Self {
+        // v1 SchemaSettings has completely different structure
+        // Return default v2 settings
         Self {
-            search_paths: intern_vec(v1.search_paths),
-            base_url: intern_option(v1.base_url.as_deref()),
-            aliases: v1.aliases.into_iter()
-                .map(|(k, v)| (intern(&k), intern(&v)))
-                .collect(),
-            slot_range: intern_option(v1.slot_range.as_deref()),
-            package_name: intern_option(v1.package_name.as_deref()),
-            imports: intern_vec(v1.imports),
-            type_mappings: v1.type_mappings.into_iter()
-                .map(|(k, v)| (intern(&k), intern(&v)))
-                .collect(),
-            features: intern_vec(v1.features),
+            search_paths: vec![],
+            base_url: None,
+            aliases: HashMap::new(),
+            slot_range: None,
+            package_name: None,
+            imports: vec![],
+            type_mappings: HashMap::new(),
+            features: vec![],
         }
     }
 }

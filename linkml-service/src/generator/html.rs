@@ -1,10 +1,8 @@
 //! HTML documentation generation for `LinkML` schemas
 
-use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult};
-use async_trait::async_trait;
+use super::options::IndentStyle;
+use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::prelude::*;
-use std::collections::HashMap;
 use std::fmt::Write;
 
 /// HTML documentation generator for `LinkML` schemas
@@ -734,7 +732,6 @@ impl Default for HtmlGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for HtmlGenerator {
     fn name(&self) -> &str {
         &self.name
@@ -748,13 +745,12 @@ impl Generator for HtmlGenerator {
         vec![".html", ".htm"]
     }
 
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         // Validate schema
-        self.validate_schema(schema).await?;
+        self.validate_schema(schema)?;
 
         let mut output = String::new();
         let title = if schema.name.is_empty() {
@@ -764,36 +760,33 @@ impl Generator for HtmlGenerator {
         };
 
         // Generate HTML document
-        output.push_str(&self.generate_header(title, schema)?);
-        output.push_str(&self.generate_overview(schema)?);
-        output.push_str(&self.generate_classes(schema)?);
-        output.push_str(&self.generate_slots(schema)?);
-        output.push_str(&self.generate_enums(schema)?);
+        output.push_str(&self.generate_header(title, schema)
+?);
+        output.push_str(&self.generate_overview(schema)
+?);
+        output.push_str(&self.generate_classes(schema)
+?);
+        output.push_str(&self.generate_slots(schema)
+?);
+        output.push_str(&self.generate_enums(schema)
+?);
 
         // Add types section if implemented
         // output.push_str(&self.generate_types(schema)?);
 
-        output.push_str(&self.generate_footer()?);
+        output.push_str(&self.generate_footer()
+?);
 
-        // Create output
-        let filename = format!(
-            "{}.html",
-            if schema.name.is_empty() {
-                "schema"
-            } else {
-                &schema.name
-            }
-        );
-
-        let mut metadata = HashMap::new();
-        metadata.insert("generator".to_string(), self.name.clone());
-        metadata.insert("schema_name".to_string(), schema.name.clone());
-
-        Ok(vec![GeneratedOutput {
-            content: output,
-            filename,
-            metadata,
-        }])
+        // Return the generated HTML content
+        Ok(output)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "html"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -828,6 +821,7 @@ impl CodeFormatter for HtmlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generator::GeneratorOptions;
 
     #[tokio::test]
     async fn test_html_generation() {

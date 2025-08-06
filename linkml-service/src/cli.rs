@@ -16,10 +16,6 @@ use linkml_core::traits::LinkMLService;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
-use crate::generator::{GeneratorRegistry, GeneratorOptions};
-use crate::loader::{DataLoader, DataDumper};
-use crate::schema::{SchemaDiff, SchemaMerge};
-use std::collections::HashMap;
 
 /// `LinkML` CLI tool for schema validation and operations
 #[derive(Parser, Debug)]
@@ -378,12 +374,16 @@ impl<S: LinkMLService> CliApp<S> {
         schema_path: &Path,
         data_path: &Path,
         class_name: Option<&str>,
-        _strict: bool,
+        strict: bool,
         max_errors: usize,
         show_stats: bool,
     ) -> Result<()> {
         println!("{}", "LinkML Validation".bold().blue());
         println!("{}", "=================".blue());
+        
+        if strict {
+            println!("{}", "Running in STRICT mode".yellow());
+        }
 
         // Load schema
         let spinner = ProgressBar::new_spinner();
@@ -434,15 +434,23 @@ impl<S: LinkMLService> CliApp<S> {
         spinner.finish_and_clear();
 
         // Display results
-        self.display_validation_results(&report, max_errors, duration, show_stats);
+        self.display_validation_results(&report, max_errors, duration, show_stats, strict);
 
         // Exit code based on validation result
         if report.valid {
+            Ok(())
+        } else if strict {
+            // In strict mode, exit with error if there are any warnings
+            if !report.warnings.is_empty() {
+                println!("\n{}", "Strict mode: treating warnings as errors".red());
+                std::process::exit(1);
+            }
             Ok(())
         } else {
             std::process::exit(1);
         }
     }
+
 
     /// Display validation results
     fn display_validation_results(
@@ -451,11 +459,15 @@ impl<S: LinkMLService> CliApp<S> {
         max_errors: usize,
         duration: std::time::Duration,
         show_stats: bool,
+        strict: bool,
     ) {
         match self.cli.format {
             OutputFormat::Pretty => {
                 if report.valid {
                     println!("{}", "✓ Validation PASSED".green().bold());
+                    if strict {
+                        println!("{}", "  (strict mode)".cyan());
+                    }
                 } else {
                     println!("{}", "✗ Validation FAILED".red().bold());
                 }
@@ -465,7 +477,7 @@ impl<S: LinkMLService> CliApp<S> {
                     duration.as_secs_f64() * 1000.0
                 );
 
-                if !report.valid {
+                if !report.valid || (strict && !report.warnings.is_empty()) {
                     println!("\n{}", "Issues found:".yellow());
 
                     for (i, error) in report.errors.iter().take(max_errors).enumerate() {
@@ -485,7 +497,28 @@ impl<S: LinkMLService> CliApp<S> {
                     }
 
                     if report.errors.len() > max_errors {
-                        println!("\n... and {} more issues", report.errors.len() - max_errors);
+                        println!("\n... and {} more errors", report.errors.len() - max_errors);
+                    }
+                    
+                    // Show warnings in strict mode
+                    if strict && !report.warnings.is_empty() {
+                        println!("\n{}", "Warnings (treated as errors in strict mode):".yellow());
+                        for (i, warning) in report.warnings.iter().take(max_errors).enumerate() {
+                            println!(
+                                "{:4}. [WARNING] {}: {}",
+                                i + 1,
+                                warning.path.as_deref().unwrap_or(""),
+                                warning.message
+                            );
+                            
+                            if let Some(suggestion) = &warning.suggestion {
+                                println!("      {} {}", "Suggestion:".cyan(), suggestion);
+                            }
+                        }
+                        
+                        if report.warnings.len() > max_errors {
+                            println!("\n... and {} more warnings", report.warnings.len() - max_errors);
+                        }
                     }
                 }
 
@@ -493,6 +526,9 @@ impl<S: LinkMLService> CliApp<S> {
                     println!("\n{}", "Statistics:".bold());
                     println!("  Total errors: {}", report.errors.len());
                     println!("  Warnings: {}", report.warnings.len());
+                    if strict {
+                        println!("  Strict mode: enabled");
+                    }
                 }
             }
 

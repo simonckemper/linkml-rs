@@ -50,7 +50,7 @@ impl GeneratorRegistry {
             YumlGenerator, YamlValidatorGenerator, YamlValidatorGeneratorConfig, ValidationFramework,
             NamespaceManagerGenerator, NamespaceManagerGeneratorConfig, TargetLanguage as NsTargetLanguage,
             SssomGenerator, SssomGeneratorConfig, SssomFormat, SummaryGenerator, SummaryGeneratorConfig,
-            SummaryFormat, ProjectGenerator, ProjectGeneratorConfig, ProjectTarget, LicenseType,
+            SummaryFormat,
         };
 
         // Register all available generators
@@ -133,15 +133,16 @@ impl GeneratorRegistry {
                 complexity_metrics: true,
                 ..Default::default()
             })), // Summary JSON format
-            Arc::new(ProjectGenerator::new(Default::default())), // Project generator (Python)
-            Arc::new(ProjectGenerator::new(ProjectGeneratorConfig {
-                target: ProjectTarget::TypeScript,
-                ..Default::default()
-            })), // Project generator (TypeScript)
-            Arc::new(ProjectGenerator::new(ProjectGeneratorConfig {
-                target: ProjectTarget::Rust,
-                ..Default::default()
-            })), // Project generator (Rust)
+            // ProjectGenerator is not implemented yet
+            // Arc::new(ProjectGenerator::new(Default::default())), // Project generator (Python)
+            // Arc::new(ProjectGenerator::new(ProjectGeneratorConfig {
+            //     target: ProjectTarget::TypeScript,
+            //     ..Default::default()
+            // })), // Project generator (TypeScript)
+            // Arc::new(ProjectGenerator::new(ProjectGeneratorConfig {
+            //     target: ProjectTarget::Rust,
+            //     ..Default::default()
+            // })), // Project generator (Rust)
         ];
 
         for generator in generators {
@@ -234,7 +235,7 @@ impl GeneratorRegistry {
             let generator_plugins = manager.get_plugins_by_type(PluginType::Generator);
             
             let mut count = 0;
-            for plugin in generator_plugins {
+            for _plugin in generator_plugins {
                 // In a real implementation, we would properly cast to GeneratorPlugin
                 // For now, we'll skip the actual registration
                 count += 1;

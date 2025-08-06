@@ -5,19 +5,17 @@
 
 use async_trait::async_trait;
 use linkml_core::prelude::*;
-use serde_json::Value;
 use std::path::Path;
 use std::sync::Arc;
-use thiserror::Error;
 
 use crate::file_system_adapter::FileSystemOperations;
 use super::traits::{DataInstance, LoaderError, DumperError};
 
 /// Result type for loader operations
-pub type LoaderResult<T> = Result<T, LoaderError>;
+pub type LoaderResult<T> = std::result::Result<T, LoaderError>;
 
 /// Result type for dumper operations  
-pub type DumperResult<T> = Result<T, DumperError>;
+pub type DumperResult<T> = std::result::Result<T, DumperError>;
 
 /// Trait for data loaders that use file system adapter
 #[async_trait]

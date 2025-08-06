@@ -3,8 +3,8 @@
 //! This module validates configuration files against the LinkML configuration schema.
 
 use super::{LinkMLConfig, load_config};
-use crate::validator::{ValidatorBuilder, ValidationMode};
-use crate::parser::YamlParser;
+use crate::validator::{ValidationEngine, ValidationOptions};
+use crate::parser::{YamlParser, SchemaParser};
 use linkml_core::error::{LinkMLError, Result};
 use std::path::Path;
 
@@ -12,29 +12,28 @@ use std::path::Path;
 pub async fn validate_config(config: &LinkMLConfig) -> Result<()> {
     // Load the configuration schema
     let schema_path = Path::new("config/schema/linkml-config-schema.yaml");
-    let mut parser = YamlParser::new();
+    let parser = YamlParser::new();
     let schema = parser.parse_file(schema_path)?;
     
     // Build validator
-    let validator = ValidatorBuilder::new()
-        .with_mode(ValidationMode::Strict)
-        .build(&schema)?;
+    let validator = ValidationEngine::new(&schema)?;
     
     // Convert config to JSON for validation
     let config_json = serde_json::to_value(config)
-        .map_err(|e| LinkMLError::configuration(format!("Failed to serialize config: {}", e)))?;
+        .map_err(|e| LinkMLError::ConfigError(format!("Failed to serialize config: {}", e)))?;
     
     // Validate
-    let report = validator.validate(&config_json, Some("LinkMLConfig"))?;
+    let options = ValidationOptions::default();
+    let report = validator.validate(&config_json, Some(options)).await?;
     
-    if report.has_errors() {
+    if !report.valid {
         let errors: Vec<_> = report.issues
             .iter()
             .filter(|i| i.severity == crate::validator::report::Severity::Error)
             .map(|i| format!("- {}", i.message))
             .collect();
             
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             format!("Configuration validation failed:\n{}", errors.join("\n"))
         ));
     }
@@ -55,47 +54,47 @@ pub fn validate_values(config: &LinkMLConfig) -> Result<()> {
     
     // Ensure L1 < L2 < L3 cache TTLs
     if config.performance.cache_ttl_levels.l1_seconds >= config.performance.cache_ttl_levels.l2_seconds {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "L1 cache TTL must be less than L2 cache TTL".to_string()
         ));
     }
     
     if config.performance.cache_ttl_levels.l2_seconds >= config.performance.cache_ttl_levels.l3_seconds {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "L2 cache TTL must be less than L3 cache TTL".to_string()
         ));
     }
     
     // Ensure min < max TTL
     if config.performance.cache_ttl_levels.min_ttl_seconds >= config.performance.cache_ttl_levels.max_ttl_seconds {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "Minimum TTL must be less than maximum TTL".to_string()
         ));
     }
     
     // Ensure memory limits are reasonable
     if config.performance.memory_pool.max_size_bytes > config.performance.memory_limit_bytes {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "Memory pool size cannot exceed total memory limit".to_string()
         ));
     }
     
     if config.security_limits.max_cache_memory_bytes > config.performance.memory_limit_bytes {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "Cache memory limit cannot exceed total memory limit".to_string()
         ));
     }
     
     // Validate thread count
     if config.validator.enable_parallel && config.validator.thread_count == 0 {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "Thread count must be > 0 when parallel validation is enabled".to_string()
         ));
     }
     
     // Validate network settings
     if config.network.default_host.is_empty() {
-        return Err(LinkMLError::configuration(
+        return Err(LinkMLError::ConfigError(
             "Default host cannot be empty".to_string()
         ));
     }

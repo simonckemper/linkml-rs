@@ -3,11 +3,10 @@
 //! This module generates JSON-LD @context definitions from LinkML schemas,
 //! enabling semantic web integration and linked data capabilities.
 
-use crate::error::LinkMLError;
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::schema::{ClassDefinition, Schema, SlotDefinition};
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition, PrefixDefinition};
 use serde_json::{json, Map, Value};
-use std::collections::HashMap;
 
 /// JSON-LD Context generator configuration
 #[derive(Debug, Clone)]
@@ -54,7 +53,7 @@ impl JsonLdContextGenerator {
     }
     
     /// Generate the context object
-    fn generate_context(&self, schema: &Schema) -> Result<Value, LinkMLError> {
+    fn generate_context(&self, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         let mut context = Map::new();
         
         // Add base URI if provided
@@ -68,33 +67,43 @@ impl JsonLdContextGenerator {
         }
         
         // Add prefix mappings
-        if let Some(prefixes) = &schema.prefixes {
-            for (prefix, expansion) in prefixes {
+        if !schema.prefixes.is_empty() {
+            for (prefix, expansion) in &schema.prefixes {
                 if prefix != "@base" && prefix != "@language" {
-                    context.insert(prefix.clone(), json!(expansion.prefix_reference));
+                    let reference = match expansion {
+                        PrefixDefinition::Simple(url) => url.clone(),
+                        PrefixDefinition::Complex { prefix_reference, .. } => {
+                            prefix_reference.as_ref().cloned().unwrap_or_default()
+                        }
+                    };
+                    context.insert(prefix.clone(), json!(reference));
                 }
             }
         }
         
         // Add default prefix if available
         if let Some(default_prefix) = &schema.default_prefix {
-            if let Some(prefixes) = &schema.prefixes {
-                if let Some(expansion) = prefixes.get(default_prefix) {
-                    context.insert("@vocab".to_string(), json!(expansion.prefix_reference));
-                }
+            if let Some(expansion) = schema.prefixes.get(default_prefix) {
+                let reference = match expansion {
+                    PrefixDefinition::Simple(url) => url.clone(),
+                    PrefixDefinition::Complex { prefix_reference, .. } => {
+                        prefix_reference.as_ref().cloned().unwrap_or_default()
+                    }
+                };
+                context.insert("@vocab".to_string(), json!(reference));
             }
         }
         
         // Add class mappings
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 self.add_class_to_context(class_name, class_def, &mut context, schema)?;
             }
         }
         
         // Add slot mappings
-        if let Some(slots) = &schema.slots {
-            for (slot_name, slot_def) in slots {
+        if !schema.slots.is_empty() {
+            for (slot_name, slot_def) in &schema.slots {
                 self.add_slot_to_context(slot_name, slot_def, &mut context, schema)?;
             }
         }
@@ -108,12 +117,12 @@ impl JsonLdContextGenerator {
         class_name: &str,
         class_def: &ClassDefinition,
         context: &mut Map<String, Value>,
-        schema: &Schema,
+        schema: &SchemaDefinition,
     ) -> Result<(), LinkMLError> {
         let mut class_mapping = Map::new();
         
         // Determine the IRI for the class
-        let class_iri = self.get_iri_for_element(class_name, &class_def.id_prefixes, schema);
+        let class_iri = self.get_iri_for_element(class_name, &None, schema);
         class_mapping.insert("@id".to_string(), json!(class_iri));
         
         // Add type if this represents an RDF type
@@ -122,17 +131,17 @@ impl JsonLdContextGenerator {
         }
         
         // Process class-specific slots
-        if let Some(slots) = &class_def.slots {
-            for slot_name in slots {
-                if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
+        if !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
                     self.add_slot_to_context(slot_name, slot_def, context, schema)?;
                 }
             }
         }
         
         // Process attributes
-        if let Some(attributes) = &class_def.attributes {
-            for (attr_name, attr_def) in attributes {
+        if !class_def.attributes.is_empty() {
+            for (attr_name, attr_def) in &class_def.attributes {
                 self.add_slot_to_context(attr_name, attr_def, context, schema)?;
             }
         }
@@ -151,7 +160,7 @@ impl JsonLdContextGenerator {
         slot_name: &str,
         slot_def: &SlotDefinition,
         context: &mut Map<String, Value>,
-        schema: &Schema,
+        schema: &SchemaDefinition,
     ) -> Result<(), LinkMLError> {
         // Skip if already added
         if context.contains_key(slot_name) {
@@ -164,7 +173,7 @@ impl JsonLdContextGenerator {
         let slot_iri = if let Some(uri) = &slot_def.slot_uri {
             uri.clone()
         } else {
-            self.get_iri_for_element(slot_name, &slot_def.id_prefixes, schema)
+            self.get_iri_for_element(slot_name, &None, schema)
         };
         
         // Simple string mapping if no special handling needed
@@ -198,7 +207,7 @@ impl JsonLdContextGenerator {
     }
     
     /// Determine if a slot needs complex mapping
-    fn needs_complex_mapping(&self, slot_def: &SlotDefinition, schema: &Schema) -> bool {
+    fn needs_complex_mapping(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> bool {
         // Needs complex mapping if:
         // - Type coercion is enabled and slot has a specific type
         // - It's multivalued and containers are enabled
@@ -221,18 +230,18 @@ impl JsonLdContextGenerator {
     }
     
     /// Get type coercion for a slot
-    fn get_type_coercion(&self, slot_def: &SlotDefinition, schema: &Schema) -> Option<Value> {
+    fn get_type_coercion(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Option<Value> {
         if let Some(range) = &slot_def.range {
             // Check if it's a class reference
-            if schema.classes.as_ref().and_then(|c| c.get(range)).is_some() {
+            if schema.classes.contains_key(range) {
                 return Some(json!("@id"));
             }
             
             // Check if it's a type
-            if let Some(types) = &schema.types {
-                if let Some(type_def) = types.get(range) {
+            if !schema.types.is_empty() {
+                if let Some(type_def) = schema.types.get(range) {
                     // Map to XSD types
-                    return match type_def.typeof.as_deref() {
+                    return match type_def.base_type.as_deref() {
                         Some("string") => None, // Default type
                         Some("integer") => Some(json!("xsd:integer")),
                         Some("float") => Some(json!("xsd:float")),
@@ -281,15 +290,19 @@ impl JsonLdContextGenerator {
         &self,
         name: &str,
         id_prefixes: &Option<Vec<String>>,
-        schema: &Schema,
+        schema: &SchemaDefinition,
     ) -> String {
         // Check if there's a specific prefix for this element
         if let Some(prefixes) = id_prefixes {
             if let Some(prefix) = prefixes.first() {
-                if let Some(prefix_map) = &schema.prefixes {
-                    if let Some(expansion) = prefix_map.get(prefix) {
-                        return format!("{}{}", expansion.prefix_reference, name);
-                    }
+                if let Some(expansion) = schema.prefixes.get(prefix) {
+                    let reference = match expansion {
+                        PrefixDefinition::Simple(url) => url.clone(),
+                        PrefixDefinition::Complex { prefix_reference, .. } => {
+                            prefix_reference.as_ref().cloned().unwrap_or_default()
+                        }
+                    };
+                    return format!("{}{}", reference, name);
                 }
             }
         }
@@ -312,7 +325,7 @@ impl JsonLdContextGenerator {
 }
 
 impl Generator for JsonLdContextGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let context = self.generate_context(schema)?;
         
         let output = json!({
@@ -321,7 +334,7 @@ impl Generator for JsonLdContextGenerator {
         
         // Pretty print the JSON
         serde_json::to_string_pretty(&output)
-            .map_err(|e| LinkMLError::GeneratorError(format!("Failed to serialize JSON-LD context: {}", e)))
+            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize JSON-LD context: {}", e)))
     }
     
     fn get_file_extension(&self) -> &str {
@@ -336,7 +349,8 @@ impl Generator for JsonLdContextGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::schema::{Prefix, SchemaDefinition};
+    use linkml_core::types::{PrefixDefinition, SchemaDefinition, ClassDefinition, SlotDefinition};
+    use indexmap::IndexMap;
     
     #[test]
     fn test_jsonld_context_generation() {
@@ -344,22 +358,16 @@ mod tests {
         schema.name = Some("TestSchema".to_string());
         
         // Add prefixes
-        let mut prefixes = HashMap::new();
+        let mut prefixes = IndexMap::new();
         prefixes.insert(
             "ex".to_string(),
-            Prefix {
-                prefix_prefix: "ex".to_string(),
-                prefix_reference: "https://example.com/".to_string(),
-            },
+            PrefixDefinition::Simple("https://example.com/".to_string()),
         );
         prefixes.insert(
             "schema".to_string(),
-            Prefix {
-                prefix_prefix: "schema".to_string(),
-                prefix_reference: "https://schema.org/".to_string(),
-            },
+            PrefixDefinition::Simple("https://schema.org/".to_string()),
         );
-        schema.prefixes = Some(prefixes);
+        schema.prefixes = prefixes;
         schema.default_prefix = Some("ex".to_string());
         
         // Add a class
@@ -367,9 +375,9 @@ mod tests {
         person_class.description = Some("A person".to_string());
         person_class.slots = Some(vec!["name".to_string(), "age".to_string()]);
         
-        schema.classes = Some(HashMap::from([
-            ("Person".to_string(), person_class),
-        ]));
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
+        schema.classes = classes;
         
         // Add slots
         let mut name_slot = SlotDefinition::default();
@@ -380,10 +388,10 @@ mod tests {
         age_slot.description = Some("The person's age".to_string());
         age_slot.range = Some("integer".to_string());
         
-        schema.slots = Some(HashMap::from([
-            ("name".to_string(), name_slot),
-            ("age".to_string(), age_slot),
-        ]));
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+        schema.slots = slots;
         
         let config = JsonLdContextGeneratorConfig {
             base_uri: Some("https://example.com/".to_string()),
@@ -391,7 +399,7 @@ mod tests {
         };
         let generator = JsonLdContextGenerator::new(config);
         
-        let result = generator.generate(&Schema(schema)).expect("should generate JSON-LD context");
+        let result = generator.generate(&schema).expect("should generate JSON-LD context");
         
         // Verify key elements
         assert!(result.contains("@context"));

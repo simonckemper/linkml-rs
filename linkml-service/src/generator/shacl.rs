@@ -7,8 +7,8 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Perm
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
+use linkml_core::error::LinkMLError;
 
 /// SHACL generator for RDF validation
 pub struct ShaclGenerator {
@@ -309,7 +309,6 @@ impl Default for ShaclGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for ShaclGenerator {
     fn name(&self) -> &str {
         "shacl"
@@ -323,11 +322,10 @@ impl Generator for ShaclGenerator {
         vec![".shacl", ".ttl"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let mut output = String::new();
         
         // Generate header
@@ -347,16 +345,15 @@ impl Generator for ShaclGenerator {
         }
         
         // Create output
-        let filename = format!("{}.shacl", self.to_snake_case(&schema.name));
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "turtle".to_string());
-        metadata.insert("schema".to_string(), schema.name.clone());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content: output,
-            metadata,
-        }])
+        Ok(output)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "ttl"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "shapes"
     }
 }
 

@@ -3,12 +3,14 @@
 //! This module generates PlantUML diagrams from LinkML schemas. PlantUML is a
 //! text-based UML diagramming tool that supports multiple diagram types.
 
-use linkml_core::prelude::*;
-use std::collections::{HashMap, HashSet};
+use linkml_core::{
+    error::LinkMLError,
+    prelude::*,
+};
+use std::collections::HashSet;
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult};
 
 /// PlantUML diagram type
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -144,15 +146,15 @@ impl PlantUmlGenerator {
         
         writeln!(&mut output, "@startuml").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "'PlantUML class diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+            if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         
         // Add title
-        if let Some(name) = &schema.name {
-            writeln!(&mut output, "title {}", name).map_err(Self::fmt_error_to_generator_error)?;
+        if !schema.name.is_empty() {
+            writeln!(&mut output, "title {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Apply skin parameters
-        self.apply_skin(&mut output);
+        self.apply_skin(&mut output)?;
         
         // Set direction
         match self.options.direction.as_str() {
@@ -164,8 +166,8 @@ impl PlantUmlGenerator {
         
         // Use package if enabled
         if self.options.use_packages {
-            if let Some(name) = &schema.name {
-                writeln!(&mut output, "package {} {{", name).map_err(Self::fmt_error_to_generator_error)?;
+            if !schema.name.is_empty() {
+                writeln!(&mut output, "package {} {{", schema.name).map_err(Self::fmt_error_to_generator_error)?;
             }
         }
         
@@ -255,15 +257,15 @@ impl PlantUmlGenerator {
         writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         
         // Add note with metadata
-        if self.options.detailed && (class_def.see_also.is_some() || class_def.notes.is_some()) {
+        if self.options.detailed && (!class_def.see_also.is_empty() || !class_def.notes.is_empty()) {
             writeln!(output, "note right of {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
             
-            if let Some(see_also) = &class_def.see_also {
-                writeln!(output, "  See also: {}", see_also.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
+            if !class_def.see_also.is_empty() {
+                writeln!(output, "  See also: {}", class_def.see_also.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
             }
             
-            if let Some(notes) = &class_def.notes {
-                writeln!(output, "  Notes: {}", notes.join("; ")).map_err(Self::fmt_error_to_generator_error)?;
+            if !class_def.notes.is_empty() {
+                writeln!(output, "  Notes: {}", class_def.notes.join("; ")).map_err(Self::fmt_error_to_generator_error)?;
             }
             
             writeln!(output, "end note").map_err(Self::fmt_error_to_generator_error)?;
@@ -279,7 +281,7 @@ impl PlantUmlGenerator {
         slot_name: &str,
         slot_def: &SlotDefinition,
         visibility: &str,
-        schema: &SchemaDefinition
+        _schema: &SchemaDefinition
     ) -> GeneratorResult<()> {
         write!(output, "  {}{}", visibility, slot_name).map_err(Self::fmt_error_to_generator_error)?;
         
@@ -302,13 +304,14 @@ impl PlantUmlGenerator {
                 stereotypes.push("id");
             }
             
-            if slot_def.key == Some(true) {
-                stereotypes.push("key");
-            }
+            // TODO: key and readonly fields not available in current SlotDefinition
+            // if slot_def.key == Some(true) {
+            //     stereotypes.push("key");
+            // }
             
-            if slot_def.readonly == Some(true) {
-                stereotypes.push("readonly");
-            }
+            // if slot_def.readonly == Some(true) {
+            //     stereotypes.push("readonly");
+            // }
             
             if !stereotypes.is_empty() {
                 write!(output, " <<{}>>", stereotypes.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
@@ -400,7 +403,7 @@ impl PlantUmlGenerator {
         writeln!(&mut output, "'PlantUML object diagram").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "title Example Instances").map_err(Self::fmt_error_to_generator_error)?;
         
-        self.apply_skin(&mut output);
+        self.apply_skin(&mut output)?;
         
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
@@ -554,7 +557,7 @@ impl PlantUmlGenerator {
         writeln!(&mut output, "@startmindmap").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "'PlantUML mind map for schema structure").map_err(Self::fmt_error_to_generator_error)?;
         
-        let schema_name = schema.name.as_deref().unwrap_or("Schema");
+        let schema_name = if schema.name.is_empty() { "Schema" } else { &schema.name };
         writeln!(&mut output, "* {}", schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Classes branch
@@ -609,7 +612,7 @@ impl PlantUmlGenerator {
         writeln!(&mut output, "title Schema Components").map_err(Self::fmt_error_to_generator_error)?;
         
         // Main schema component
-        let schema_name = schema.name.as_deref().unwrap_or("Schema");
+        let schema_name = if schema.name.is_empty() { "Schema" } else { &schema.name };
         writeln!(&mut output, "package \"{}\" {{", schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Classes component
@@ -649,7 +652,7 @@ impl PlantUmlGenerator {
     }
     
     /// Apply skin parameters
-    fn apply_skin(&self, output: &mut String) {
+    fn apply_skin(&self, output: &mut String) -> GeneratorResult<()> {
         writeln!(output, "skinparam backgroundColor {}", self.options.skin.background_color).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "skinparam class {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "  BackgroundColor {}", self.options.skin.class_background_color).map_err(Self::fmt_error_to_generator_error)?;
@@ -658,6 +661,7 @@ impl PlantUmlGenerator {
         writeln!(output, "  FontSize {}", self.options.skin.font_size).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "skinparam ArrowColor {}", self.options.skin.arrow_color).map_err(Self::fmt_error_to_generator_error)?;
+        Ok(())
     }
     
     /// Get cardinality string
@@ -731,7 +735,6 @@ impl Default for PlantUmlGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for PlantUmlGenerator {
     fn name(&self) -> &str {
         match self.options.diagram_type {
@@ -752,31 +755,27 @@ impl Generator for PlantUmlGenerator {
         vec![".puml", ".plantuml", ".pu"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_plantuml(schema)?;
-        
-        let filename = format!("{}.puml", 
-            schema.name.as_deref().unwrap_or("schema"));
-        
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "plantuml".to_string());
-        metadata.insert("diagram_type".to_string(), format!("{:?}", self.options.diagram_type).to_lowercase());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content,
-            metadata,
-        }])
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "puml"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generator::GeneratorOptions;
     
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

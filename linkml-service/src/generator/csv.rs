@@ -3,9 +3,8 @@
 //! This generator creates CSV or TSV files from LinkML schemas,
 //! flattening the class hierarchy into tabular format.
 
-use super::traits::{Generator, GeneratorOptions, GeneratorResult, GeneratedOutput};
+use super::traits::{Generator, GeneratorResult};
 use linkml_core::prelude::*;
-use async_trait::async_trait;
 use std::collections::BTreeMap;
 
 /// CSV/TSV generator
@@ -93,14 +92,14 @@ impl CsvGenerator {
         
         // Generate example row with constraints
         let constraint_row: Vec<String> = slots.iter()
-            .map(|(name, slot)| {
+            .map(|(_name, slot)| {
                 let mut constraints = Vec::new();
                 
                 if slot.required.unwrap_or(false) {
                     constraints.push("required");
                 }
                 
-                if let Some(pattern) = &slot.pattern {
+                if let Some(_pattern) = &slot.pattern {
                     constraints.push("pattern");
                 }
                 
@@ -130,7 +129,7 @@ impl CsvGenerator {
 
     /// Collect all slots for a class including inherited ones
     fn collect_class_slots(&self, 
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition, 
         schema: &SchemaDefinition
     ) -> GeneratorResult<Vec<(String, SlotDefinition)>> {
@@ -257,7 +256,6 @@ impl Default for CsvGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for CsvGenerator {
     fn name(&self) -> &str {
         if self.use_tabs {
@@ -267,7 +265,7 @@ impl Generator for CsvGenerator {
         }
     }
 
-    fn description(&self) -> &'static str {
+    fn description(&self) -> &str {
         if self.use_tabs {
             "Generate TSV (Tab-Separated Values) files from LinkML schemas"
         } else {
@@ -275,52 +273,49 @@ impl Generator for CsvGenerator {
         }
     }
 
-    fn file_extensions(&self) -> Vec<&str> {
-        if self.use_tabs {
-            vec![".tsv", ".txt"]
-        } else {
-            vec![".csv"]
-        }
-    }
-
-    async fn generate(
-        &self,
-        schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        let mut outputs = Vec::new();
+    // Sync Generator trait method
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        let mut result = String::new();
         
-        // Generate summary file
-        outputs.push(GeneratedOutput {
-            filename: format!("{}_summary.{}", 
-                if schema.name.is_empty() { "schema" } else { &schema.name },
-                if self.use_tabs { "tsv" } else { "csv" }
-            ),
-            content: self.generate_schema_summary(schema),
-            metadata: std::collections::HashMap::new(),
-        });
+        // Generate summary
+        result.push_str(&self.generate_schema_summary(schema));
+        result.push_str("\n\n");
         
-        // Generate file for each non-abstract class
+        // Generate content for each class
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
             
-            let content = self.generate_class_csv(class_name, class_def, schema)?;
-            
-            if !content.is_empty() {
-                outputs.push(GeneratedOutput {
-                    filename: format!("{}.{}", 
-                        class_name.to_lowercase(),
-                        if self.use_tabs { "tsv" } else { "csv" }
-                    ),
-                    content,
-                    metadata: std::collections::HashMap::new(),
-                });
+            match self.generate_class_csv(class_name, class_def, schema) {
+                Ok(content) => {
+                    if !content.is_empty() {
+                        result.push_str(&format!("=== {} ===\n", class_name));
+                        result.push_str(&content);
+                        result.push_str("\n\n");
+                    }
+                }
+                Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {}", e))),
             }
         }
         
-        Ok(outputs)
+        Ok(result)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        if self.use_tabs {
+            "tsv"
+        } else {
+            "csv"
+        }
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        if self.use_tabs {
+            "schema.tsv"
+        } else {
+            "schema.csv"
+        }
     }
 }
 
@@ -330,7 +325,7 @@ mod tests {
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Base class
         let mut entity_class = ClassDefinition::default();
@@ -362,38 +357,31 @@ mod tests {
         schema
     }
 
-    #[tokio::test]
-    async fn test_csv_generation() {
+    #[test]
+    fn test_csv_generation() {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate CSV");
+        let result = generator.generate(&schema).expect("should generate CSV");
         
-        // Should generate summary + person.csv (entity is abstract)
-        assert_eq!(result.len(), 2);
-        
-        // Check summary file
-        let summary = result.iter().find(|o| o.filename.contains("summary")).expect("should have summary file");
-        assert!(summary.content.contains("Class"));
-        assert!(summary.content.contains("2")); // 2 classes
-        
-        // Check person file
-        let person = result.iter().find(|o| o.filename == "person.csv").expect("should have person.csv");
-        assert!(person.content.contains("id,name,age"));
-        assert!(person.content.contains("<string>,<string>,<integer>"));
+        // Should contain summary and person class (entity is abstract)
+        assert!(result.contains("Type,Name,Description,Count"));
+        assert!(result.contains("Class,,,Schema classes,2"));
+        assert!(result.contains("=== Person ==="));
+        assert!(result.contains("id,name,age"));
+        assert!(result.contains("<string>,<string>,<integer>"));
     }
 
-    #[tokio::test]
-    async fn test_tsv_generation() {
+    #[test]
+    fn test_tsv_generation() {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate TSV");
+        let result = generator.generate(&schema).expect("should generate TSV");
         
-        let person = result.iter().find(|o| o.filename == "person.tsv").expect("should have person.tsv");
-        assert!(person.content.contains("id\tname\tage"));
+        assert!(result.contains("=== Person ==="));
+        assert!(result.contains("id\tname\tage"));
+        assert!(result.contains("<string>\t<string>\t<integer>"));
     }
 
     #[test]

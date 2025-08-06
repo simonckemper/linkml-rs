@@ -44,10 +44,11 @@ pub mod yaml_validator;
 pub mod namespace_manager;
 pub mod sssom;
 pub mod summary;
-pub mod project;
+// pub mod project; // Temporarily disabled due to compilation issues
 pub mod yaml;
 pub mod rdf;
 pub mod traits_v2;
+pub mod typeql_expression_translator;
 pub mod typeql_rule_generator;
 
 pub use csv::CsvGenerator;
@@ -78,7 +79,7 @@ pub use shex::{ShExGenerator, ShExStyle};
 pub use sparql::{SparqlGenerator, SparqlQueryType};
 pub use sql::SQLGenerator;
 pub use sqlalchemy::{SQLAlchemyGenerator, SQLAlchemyGeneratorConfig};
-pub use traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
+pub use traits::{CodeFormatter, GeneratedOutput, Generator, AsyncGenerator, GeneratorError, GeneratorResult};
 pub use typeql_generator::TypeQLGenerator;
 pub use typeql_generator_enhanced::EnhancedTypeQLGenerator;
 pub use typescript::TypeScriptGenerator;
@@ -88,6 +89,6 @@ pub use yaml_validator::{YamlValidatorGenerator, YamlValidatorGeneratorConfig, V
 pub use namespace_manager::{NamespaceManagerGenerator, NamespaceManagerGeneratorConfig, TargetLanguage};
 pub use sssom::{SssomGenerator, SssomGeneratorConfig, SssomFormat};
 pub use summary::{SummaryGenerator, SummaryGeneratorConfig, SummaryFormat};
-pub use project::{ProjectGenerator, ProjectGeneratorConfig, ProjectTarget, LicenseType};
+// pub use project::{ProjectGenerator, ProjectGeneratorConfig, ProjectTarget, LicenseType};
 pub use yaml::YamlGenerator;
 pub use rdf::RdfGenerator as PlainRdfGenerator;

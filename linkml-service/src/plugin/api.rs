@@ -157,7 +157,7 @@ pub struct ExtensionInput {
     /// Input parameters
     pub params: HashMap<String, serde_json::Value>,
     /// Optional schema context
-    pub schema: Option<Schema>,
+    pub schema: Option<SchemaDefinition>,
     /// Optional data context
     pub data: Option<serde_json::Value>,
 }

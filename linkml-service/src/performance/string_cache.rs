@@ -17,9 +17,11 @@ const MAX_STRING_LENGTH: usize = 10_000;
 /// Errors that can occur during string interning
 #[derive(Debug, Error)]
 pub enum InternError {
+    /// String exceeds maximum allowed size
     #[error("String too large: {0} bytes (max: {MAX_STRING_LENGTH})")]
     StringTooLarge(usize),
     
+    /// Cache has reached maximum capacity
     #[error("Cache full: {0} entries (max: {MAX_CACHE_SIZE})")]
     CacheFull(usize),
 }

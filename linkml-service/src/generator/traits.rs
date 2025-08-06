@@ -1,7 +1,8 @@
 //! Generator trait definitions and core types
 
 use async_trait::async_trait;
-use linkml_core::prelude::*;
+use linkml_core::error::LinkMLError;
+use linkml_core::types::SchemaDefinition;
 use std::collections::HashMap;
 use std::path::Path;
 use thiserror::Error;
@@ -46,6 +47,22 @@ pub enum GeneratorError {
 /// Result type for generator operations
 pub type GeneratorResult<T> = std::result::Result<T, GeneratorError>;
 
+impl From<GeneratorError> for LinkMLError {
+    fn from(err: GeneratorError) -> Self {
+        match err {
+            GeneratorError::SchemaValidation(msg) => LinkMLError::schema_validation(msg),
+            GeneratorError::Io(io_err) => LinkMLError::IoError(io_err),
+            GeneratorError::Template(msg) => LinkMLError::service(format!("Template error: {}", msg)),
+            GeneratorError::UnsupportedFeature(feature) => LinkMLError::not_implemented(feature),
+            GeneratorError::Configuration(msg) => LinkMLError::config(msg),
+            GeneratorError::Generation { context, message } => {
+                LinkMLError::service(format!("Generation error in {}: {}", context, message))
+            }
+            GeneratorError::Plugin(msg) => LinkMLError::service(format!("Plugin error: {}", msg)),
+        }
+    }
+}
+
 /// Generated output from a generator
 #[derive(Debug, Clone)]
 pub struct GeneratedOutput {
@@ -59,9 +76,9 @@ pub struct GeneratedOutput {
     pub metadata: HashMap<String, String>,
 }
 
-/// Generator trait for code generation from LinkML schemas
+/// Async generator trait for code generation from LinkML schemas
 #[async_trait]
-pub trait Generator: Send + Sync {
+pub trait AsyncGenerator: Send + Sync {
     /// Get the name of this generator
     fn name(&self) -> &str;
 
@@ -280,6 +297,51 @@ impl IndentStyle {
             }
             Self::Tabs => "\t",
         }
+    }
+}
+
+/// Generator configuration base type
+#[derive(Debug, Clone, Default)]
+pub struct GeneratorConfig {
+    /// Include documentation in generated code
+    pub include_docs: bool,
+    /// Include examples in generated code  
+    pub include_examples: bool,
+    /// Target language version
+    pub target_version: Option<String>,
+    /// Custom configuration options
+    pub custom: HashMap<String, String>,
+}
+
+/// Simple synchronous generator trait for backward compatibility
+pub trait Generator: Send + Sync {
+    /// Get the name of this generator
+    fn name(&self) -> &str {
+        "Unknown Generator"
+    }
+    
+    /// Get a description of what this generator produces
+    fn description(&self) -> &str {
+        "No description available"
+    }
+    
+    /// Get the file extensions this generator produces
+    fn file_extensions(&self) -> Vec<&str> {
+        vec![self.get_file_extension()]
+    }
+    
+    /// Generate output from a schema
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError>;
+    
+    /// Get the file extension for generated files
+    fn get_file_extension(&self) -> &str;
+    
+    /// Get the default filename for generated files
+    fn get_default_filename(&self) -> &str;
+    
+    /// Validate schema before generation (optional)
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        Ok(())
     }
 }
 

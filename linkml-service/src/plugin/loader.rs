@@ -4,10 +4,11 @@
 //! native libraries, Python modules, JavaScript, and WebAssembly.
 
 use super::*;
-use dlopen::wrapper::{Container, WrapperApi};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::Arc;
 use toml;
+use timeout_core::{TimeoutService, TimeoutContext, OperationComplexity};
 
 /// Plugin loader interface
 pub trait PluginLoader: Send + Sync {
@@ -49,7 +50,10 @@ impl DynamicLoader {
     pub fn load_metadata(&self, path: &Path) -> Result<PluginManifest> {
         let content = fs::read_to_string(path)?;
         let manifest: PluginManifest = toml::from_str(&content)
-            .map_err(|e| LinkMLError::ParseError(format!("Invalid plugin manifest: {}", e)))?;
+            .map_err(|e| LinkMLError::ParseError { 
+                message: format!("Invalid plugin manifest: {}", e),
+                location: Some(path.to_string_lossy().to_string()),
+            })?;
         
         Ok(manifest)
     }
@@ -61,7 +65,7 @@ impl DynamicLoader {
         manifest: &PluginManifest,
     ) -> Result<Box<dyn Plugin>> {
         let base_dir = path.parent()
-            .ok_or_else(|| LinkMLError::InternalError("Invalid plugin path".to_string()))?;
+            .ok_or_else(|| LinkMLError::other("Invalid plugin path"))?;
         
         match &manifest.entry_point {
             EntryPoint::Native { library, symbol } => {
@@ -95,38 +99,19 @@ impl NativeLoader {
         symbol: Option<&str>,
     ) -> Result<Box<dyn Plugin>> {
         let lib_path = base_dir.join(library);
+        let _ = symbol; // Unused but kept for API compatibility
         
-        // Define the plugin API that native libraries must implement
-        #[derive(WrapperApi)]
-        struct PluginApi {
-            create_plugin: fn() -> *mut dyn Plugin,
-            plugin_api_version: fn() -> u32,
-        }
-        
-        // Load the library
-        let container: Container<PluginApi> = unsafe {
-            Container::load(&lib_path)
-                .map_err(|e| LinkMLError::PluginError(format!("Failed to load native plugin: {}", e)))?
-        };
-        
-        // Check API version
-        let api_version = container.plugin_api_version();
-        if api_version != 1 {
-            return Err(LinkMLError::PluginError(
-                format!("Incompatible plugin API version: {} (expected 1)", api_version)
-            ));
-        }
-        
-        // Create plugin instance
-        let plugin_ptr = container.create_plugin();
-        if plugin_ptr.is_null() {
-            return Err(LinkMLError::PluginError("Failed to create plugin instance".to_string()));
-        }
-        
-        // Convert to boxed trait object
-        let plugin = unsafe { Box::from_raw(plugin_ptr as *mut dyn Plugin) };
-        
-        Ok(plugin)
+        // Native plugin loading would require unsafe code, which is forbidden
+        // by RootReal's core principles. Plugins must be compiled into the
+        // application at build time or loaded through safe mechanisms.
+        Err(LinkMLError::ServiceError(
+            format!(
+                "Native plugin loading is not supported due to safety requirements. \
+                 Plugin at '{}' must be compiled into the application at build time \
+                 or implemented using safe plugin mechanisms.",
+                lib_path.display()
+            )
+        ))
     }
 }
 
@@ -138,10 +123,10 @@ impl PythonLoader {
         Self
     }
     
-    async fn load_plugin(&self, module: &str, class: &str) -> Result<Box<dyn Plugin>> {
+    async fn load_plugin(&self, _module: &str, _class: &str) -> Result<Box<dyn Plugin>> {
         // Python integration would require PyO3
         // For now, return an error indicating Python plugins need PyO3 integration
-        Err(LinkMLError::PluginError(
+        Err(LinkMLError::ServiceError(
             "Python plugin support requires PyO3 integration. \
              Please enable the 'python' feature.".to_string()
         ))
@@ -158,12 +143,12 @@ impl JavaScriptLoader {
     
     async fn load_plugin(
         &self,
-        base_dir: &Path,
-        module: &str,
-        export: Option<&str>,
+        _base_dir: &Path,
+        _module: &str,
+        _export: Option<&str>,
     ) -> Result<Box<dyn Plugin>> {
         // JavaScript integration would require a JS runtime like deno_core
-        Err(LinkMLError::PluginError(
+        Err(LinkMLError::ServiceError(
             "JavaScript plugin support requires JS runtime integration. \
              Please enable the 'javascript' feature.".to_string()
         ))
@@ -180,12 +165,12 @@ impl WasmLoader {
     
     async fn load_plugin(
         &self,
-        base_dir: &Path,
-        module: &str,
-        config: Option<&serde_json::Value>,
+        _base_dir: &Path,
+        _module: &str,
+        _config: Option<&serde_json::Value>,
     ) -> Result<Box<dyn Plugin>> {
         // WASM integration would require wasmtime or wasmer
-        Err(LinkMLError::PluginError(
+        Err(LinkMLError::ServiceError(
             "WebAssembly plugin support requires WASM runtime integration. \
              Please enable the 'wasm' feature.".to_string()
         ))
@@ -193,11 +178,46 @@ impl WasmLoader {
 }
 
 /// Plugin sandbox for secure execution
+#[derive(Debug, Clone)]
 pub struct PluginSandbox {
     /// Resource limits
-    limits: ResourceLimits,
+    pub _limits: ResourceLimits,
     /// Allowed capabilities
-    capabilities: Vec<String>,
+    pub _capabilities: Vec<String>,
+}
+
+impl PluginSandbox {
+    /// Create a new plugin sandbox with default limits
+    pub fn new() -> Self {
+        Self {
+            _limits: ResourceLimits::default(),
+            _capabilities: Vec::new(),
+        }
+    }
+    
+    /// Create a sandbox with custom resource limits
+    pub fn with_limits(limits: ResourceLimits) -> Self {
+        Self {
+            _limits: limits,
+            _capabilities: Vec::new(),
+        }
+    }
+    
+    /// Add a capability to the sandbox
+    pub fn add_capability(&mut self, capability: String) {
+        self._capabilities.push(capability);
+    }
+    
+    /// Check if a capability is allowed
+    pub fn has_capability(&self, capability: &str) -> bool {
+        self._capabilities.iter().any(|c| c == capability)
+    }
+}
+
+impl Default for PluginSandbox {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Resource limits for plugins
@@ -244,28 +264,132 @@ impl Default for ResourceLimits {
 }
 
 /// Plugin wrapper that enforces sandboxing
-pub struct SandboxedPlugin {
+pub struct SandboxedPlugin<O: TimeoutService> {
     /// The actual plugin
     plugin: Box<dyn Plugin>,
     /// Sandbox configuration
     sandbox: PluginSandbox,
+    /// Timeout service for managing execution timeouts
+    timeout_service: Arc<O>,
 }
 
-impl SandboxedPlugin {
-    /// Create a new sandboxed plugin
-    pub fn new(plugin: Box<dyn Plugin>, sandbox: PluginSandbox) -> Self {
-        Self { plugin, sandbox }
+impl<O: TimeoutService> SandboxedPlugin<O> {
+    /// Create a new sandboxed plugin with timeout service
+    pub fn new(plugin: Box<dyn Plugin>, sandbox: PluginSandbox, timeout_service: Arc<O>) -> Self {
+        Self { plugin, sandbox, timeout_service }
     }
     
-    /// Execute with resource limits
+    /// Execute with resource limits using the timeout service
+    /// 
+    /// This implementation uses RootReal's timeout service for proper timeout management
+    /// with adaptive algorithms, jitter support, and monitoring integration.
     pub async fn execute_sandboxed<F, R>(&self, f: F) -> Result<R>
     where
-        F: FnOnce(&dyn Plugin) -> R,
+        F: FnOnce(&dyn Plugin) -> Result<R> + Send + 'static,
+        R: Send + 'static,
     {
-        // In a real implementation, this would enforce resource limits
-        // using OS-level mechanisms like cgroups, rlimits, etc.
-        Ok(f(&*self.plugin))
+        use tokio::time::timeout;
+        
+        // Check if operation is allowed based on capabilities
+        if !self.sandbox.has_capability("execute") && !self.sandbox._capabilities.is_empty() {
+            return Err(LinkMLError::other("Plugin does not have execute capability"));
+        }
+        
+        // Create timeout context for the plugin operation
+        let context = TimeoutContext {
+            system_load: None, // Could be populated from monitoring service
+            complexity: Some(OperationComplexity::Variable), // Plugin complexity is variable
+            network_quality: None,
+            metadata: std::collections::HashMap::new(),
+        };
+        
+        // Calculate adaptive timeout using the timeout service
+        let operation_name = format!("plugin_{}", self.plugin.info().name);
+        let timeout_value = self.timeout_service
+            .calculate_timeout(&operation_name, Some(&context))
+            .await
+            .map_err(|e| LinkMLError::other(format!("Failed to calculate timeout: {}", e)))?;
+        
+        // Record the start time for duration tracking
+        let start_time = std::time::Instant::now();
+        
+        // Execute with the calculated timeout
+        let result = timeout(timeout_value.duration, async {
+            f(&*self.plugin)
+        }).await;
+        
+        // Record the actual duration
+        let actual_duration = start_time.elapsed();
+        let success = result.is_ok();
+        
+        // Report the duration back to the timeout service for adaptive learning
+        let _ = self.timeout_service
+            .record_duration(&operation_name, actual_duration, success, Some(&context))
+            .await;
+        
+        match result {
+            Ok(value) => value,
+            Err(_) => {
+                // Log the timeout for analysis
+                let _ = self.timeout_service
+                    .record_duration(
+                        &operation_name,
+                        timeout_value.duration,
+                        false,
+                        Some(&context)
+                    )
+                    .await;
+                    
+                Err(LinkMLError::other(format!(
+                    "Plugin execution timed out after {:?} (algorithm: {:?}, confidence: {:.2})",
+                    timeout_value.duration,
+                    timeout_value.algorithm,
+                    timeout_value.confidence
+                )))
+            }
+        }
     }
+    
+    /// Check if a plugin operation is allowed based on sandbox configuration
+    pub fn is_allowed(&self, operation: PluginOperation) -> bool {
+        match operation {
+            PluginOperation::FileRead(path) => self.check_file_access(&path, false),
+            PluginOperation::FileWrite(path) => self.check_file_access(&path, true),
+            PluginOperation::NetworkAccess(_) => self.sandbox._limits.allow_network,
+            PluginOperation::MemoryAllocation(size) => size <= self.sandbox._limits.max_memory,
+        }
+    }
+    
+    /// Check if file access is allowed
+    fn check_file_access(&self, path: &std::path::Path, write: bool) -> bool {
+        match self.sandbox._limits.fs_access {
+            FsAccessMode::None => false,
+            FsAccessMode::ReadOnly => !write,
+            FsAccessMode::TempOnly => {
+                // Check if path is in temp directory
+                if let Ok(temp_dir) = std::env::temp_dir().canonicalize() {
+                    if let Ok(canonical_path) = path.canonicalize() {
+                        return canonical_path.starts_with(&temp_dir);
+                    }
+                }
+                false
+            }
+            FsAccessMode::Full => true,
+        }
+    }
+}
+
+/// Plugin operations that can be checked against sandbox policies
+#[derive(Debug, Clone)]
+pub enum PluginOperation {
+    /// File read operation
+    FileRead(std::path::PathBuf),
+    /// File write operation
+    FileWrite(std::path::PathBuf),
+    /// Network access operation
+    NetworkAccess(String),
+    /// Memory allocation operation
+    MemoryAllocation(usize),
 }
 
 #[cfg(test)]

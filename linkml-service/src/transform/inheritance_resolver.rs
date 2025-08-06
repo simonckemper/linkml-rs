@@ -4,6 +4,7 @@
 //! in LinkML schemas, including mixin composition and attribute inheritance.
 
 use linkml_core::prelude::*;
+use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use thiserror::Error;
@@ -30,13 +31,15 @@ pub enum InheritanceError {
     /// Conflict in inherited attributes
     #[error("Attribute conflict in inheritance: {attribute} from {sources:?}")]
     AttributeConflict {
+        /// Name of the conflicting attribute
         attribute: String,
+        /// Sources where the attribute is defined
         sources: Vec<String>,
     },
 }
 
 /// Result type for inheritance operations
-pub type InheritanceResult<T> = Result<T, InheritanceError>;
+pub type InheritanceResult<T> = std::result::Result<T, InheritanceError>;
 
 /// Inheritance resolver for LinkML schemas
 pub struct InheritanceResolver {
@@ -44,7 +47,7 @@ pub struct InheritanceResolver {
     resolved_cache: HashMap<String, Arc<ClassDefinition>>,
     
     /// Inheritance depth limit
-    max_depth: usize,
+    _max_depth: usize,
 }
 
 impl InheritanceResolver {
@@ -52,7 +55,7 @@ impl InheritanceResolver {
     pub fn new() -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            max_depth: 100,
+            _max_depth: 100,
         }
     }
     
@@ -60,7 +63,7 @@ impl InheritanceResolver {
     pub fn with_max_depth(max_depth: usize) -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            max_depth,
+            _max_depth: max_depth,
         }
     }
     
@@ -197,9 +200,9 @@ impl InheritanceResolver {
         }
         
         // Merge attributes
-        for attr in &source.attributes {
-            if !target.attributes.contains(attr) {
-                target.attributes.push(attr.clone());
+        for (attr_name, attr_def) in &source.attributes {
+            if !target.attributes.contains_key(attr_name) {
+                target.attributes.insert(attr_name.clone(), attr_def.clone());
             }
         }
         
@@ -226,11 +229,18 @@ impl InheritanceResolver {
     /// Merge annotations
     fn merge_annotations(
         &self,
-        target: &mut HashMap<String, String>,
-        source: &HashMap<String, String>,
+        target: &mut Option<linkml_core::annotations::Annotations>,
+        source: &Option<linkml_core::annotations::Annotations>,
     ) {
-        for (key, value) in source {
-            target.entry(key.clone()).or_insert_with(|| value.clone());
+        if let Some(source_annotations) = source {
+            if target.is_none() {
+                *target = Some(IndexMap::new());
+            }
+            if let Some(target_annotations) = target {
+                for (key, value) in source_annotations {
+                    target_annotations.entry(key.clone()).or_insert_with(|| value.clone());
+                }
+            }
         }
     }
     
@@ -434,34 +444,14 @@ impl InheritanceResolver {
     }
     
     /// Resolve enum inheritance
-    fn resolve_enums(&self, schema: &mut SchemaDefinition) -> InheritanceResult<()> {
-        let enums_to_resolve: Vec<String> = schema.enums.keys().cloned().collect();
-        
-        for enum_name in enums_to_resolve {
-            if let Some(mut enum_def) = schema.enums.get(&enum_name).cloned() {
-                // Resolve enum inheritance
-                if let Some(parent_name) = &enum_def.is_a {
-                    if let Some(parent_enum) = schema.enums.get(parent_name) {
-                        self.merge_enum_attributes(&mut enum_def, parent_enum);
-                    }
-                }
-                
-                // Apply mixins
-                for mixin_name in &enum_def.mixins.clone() {
-                    if let Some(mixin_enum) = schema.enums.get(mixin_name) {
-                        self.merge_enum_attributes(&mut enum_def, mixin_enum);
-                    }
-                }
-                
-                schema.enums.insert(enum_name, enum_def);
-            }
-        }
-        
+    fn resolve_enums(&self, _schema: &mut SchemaDefinition) -> InheritanceResult<()> {
+        // EnumDefinition doesn't support inheritance (no is_a or mixins fields)
+        // So nothing to resolve here
         Ok(())
     }
     
     /// Merge enum attributes
-    fn merge_enum_attributes(
+    fn _merge_enum_attributes(
         &self,
         target: &mut EnumDefinition,
         source: &EnumDefinition,
@@ -469,16 +459,20 @@ impl InheritanceResolver {
         // Merge permissible values
         let mut seen_values = HashSet::new();
         for pv in &target.permissible_values {
-            if let Some(text) = &pv.text {
-                seen_values.insert(text.clone());
-            }
+            let text = match pv {
+                PermissibleValue::Simple(s) => s.clone(),
+                PermissibleValue::Complex { text, .. } => text.clone(),
+            };
+            seen_values.insert(text);
         }
         
         for pv in &source.permissible_values {
-            if let Some(text) = &pv.text {
-                if !seen_values.contains(text) {
-                    target.permissible_values.push(pv.clone());
-                }
+            let text = match pv {
+                PermissibleValue::Simple(s) => s.clone(),
+                PermissibleValue::Complex { text, .. } => text.clone(),
+            };
+            if !seen_values.contains(&text) {
+                target.permissible_values.push(pv.clone());
             }
         }
         

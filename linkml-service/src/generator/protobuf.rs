@@ -9,8 +9,8 @@ use linkml_core::{
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
+use linkml_core::error::LinkMLError;
 
 /// Protocol Buffers generator
 pub struct ProtobufGenerator {
@@ -304,7 +304,6 @@ impl Default for ProtobufGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for ProtobufGenerator {
     fn name(&self) -> &str {
         "protobuf"
@@ -318,11 +317,10 @@ impl Generator for ProtobufGenerator {
         vec![".proto"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let mut output = String::new();
         
         // Generate header
@@ -332,10 +330,7 @@ impl Generator for ProtobufGenerator {
         let mut enum_output = String::new();
         for (name, enum_def) in &schema.enums {
             let enum_code = self.generate_enum(name, enum_def)
-                .map_err(|e| GeneratorError::Generation {
-                    context: format!("enum {}", name),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| LinkMLError::service(format!("Error generating enum {}: {}", name, e)))?;
             writeln!(&mut enum_output, "{}", enum_code).map_err(Self::fmt_error_to_generator_error)?;
         }
         
@@ -347,26 +342,19 @@ impl Generator for ProtobufGenerator {
         // Generate messages
         for (name, class) in &schema.classes {
             let message_code = self.generate_message(name, class, schema)
-                .map_err(|e| GeneratorError::Generation {
-                    context: format!("class {}", name),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| LinkMLError::service(format!("Error generating class {}: {}", name, e)))?;
             writeln!(&mut output, "{}", message_code).map_err(Self::fmt_error_to_generator_error)?;
         }
         
-        // Create generated output
-        let file_name = format!("{}.proto", self.to_snake_case(&schema.name));
-        let mut metadata = HashMap::new();
-        metadata.insert("language".to_string(), "protobuf".to_string());
-        metadata.insert("schema".to_string(), schema.name.clone());
-        
-        let generated = GeneratedOutput {
-            filename: file_name,
-            content: output,
-            metadata,
-        };
-        
-        Ok(vec![generated])
+        Ok(output)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "proto"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -374,10 +362,9 @@ impl Generator for ProtobufGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SlotDefinition;
-    use crate::generator::traits::GeneratorOptions;
     
-    #[tokio::test]
-    async fn test_protobuf_generation() {
+    #[test]
+    fn test_protobuf_generation() {
         let mut schema = SchemaDefinition::new("test_schema");
         schema.id = "https://example.org/test".to_string();
         schema.version = Some("1.0.0".to_string());
@@ -428,24 +415,19 @@ mod tests {
         
         // Generate protobuf
         let generator = ProtobufGenerator::new();
-        let options = GeneratorOptions::default();
-        let results = generator.generate(&schema, &options).await.expect("should generate protobuf");
+        let proto_content = generator.generate(&schema).expect("should generate protobuf");
         
-        assert_eq!(results.len(), 1);
-        let proto = &results[0];
-        
-        assert_eq!(proto.filename, "test_schema.proto");
-        assert!(proto.content.contains("syntax = \"proto3\""));
-        assert!(proto.content.contains("package test_schema"));
-        assert!(proto.content.contains("enum Status"));
-        assert!(proto.content.contains("STATUS_UNSPECIFIED = 0"));
-        assert!(proto.content.contains("PENDING = 1"));
-        assert!(proto.content.contains("APPROVED = 2"));
-        assert!(proto.content.contains("message Person"));
-        assert!(proto.content.contains("string name = 1"));
-        assert!(proto.content.contains("int64 age = 2"));
-        assert!(proto.content.contains("repeated string tags = 3"));
-        assert!(proto.content.contains("Status status = 4"));
+        assert!(proto_content.contains("syntax = \"proto3\""));
+        assert!(proto_content.contains("package test_schema"));
+        assert!(proto_content.contains("enum Status"));
+        assert!(proto_content.contains("STATUS_UNSPECIFIED = 0"));
+        assert!(proto_content.contains("PENDING = 1"));
+        assert!(proto_content.contains("APPROVED = 2"));
+        assert!(proto_content.contains("message Person"));
+        assert!(proto_content.contains("string name = 1"));
+        assert!(proto_content.contains("int64 age = 2"));
+        assert!(proto_content.contains("repeated string tags = 3"));
+        assert!(proto_content.contains("Status status = 4"));
     }
     
     #[test]

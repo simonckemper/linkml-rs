@@ -21,13 +21,13 @@ impl fmt::Display for FunctionError {
 impl std::error::Error for FunctionError {}
 
 impl FunctionError {
-    fn new(message: impl Into<String>) -> Self {
+    pub fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
         }
     }
     
-    fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
+    pub fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
         Self {
             message: format!(
                 "Function '{}' expects {} arguments, got {}",
@@ -36,7 +36,7 @@ impl FunctionError {
         }
     }
     
-    fn invalid_argument(name: &str, message: impl Into<String>) -> Self {
+    pub fn invalid_argument(name: &str, message: impl Into<String>) -> Self {
         Self {
             message: format!("Invalid argument for function '{}': {}", name, message.into()),
         }

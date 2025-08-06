@@ -607,11 +607,11 @@ impl DatabaseDumper {
         } else if self.options.connection_string.starts_with("mysql://") {
             Ok(DatabaseType::MySQL)
         } else if self.options.connection_string.starts_with("sqlite://") {
-            Err(DumperError::UnsupportedFormat(
+            Err(DumperError::Configuration(
                 "SQLite support disabled to resolve dependency conflicts. Use PostgreSQL or MySQL instead.".to_string()
             ))
         } else {
-            Err(DumperError::UnsupportedFormat(
+            Err(DumperError::Configuration(
                 "Unsupported database type in connection string".to_string()
             ))
         }
@@ -733,7 +733,7 @@ impl DatabaseDumper {
         
         // Get class definition
         let class_def = schema.classes.get(class_name)
-            .ok_or_else(|| DumperError::ValidationFailed(
+            .ok_or_else(|| DumperError::SchemaValidation(
                 format!("Class {} not found in schema", class_name)
             ))?;
         

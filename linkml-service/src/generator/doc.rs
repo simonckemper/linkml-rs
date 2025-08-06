@@ -1,10 +1,9 @@
 //! Documentation generation for `LinkML` schemas
 
-use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
+use super::options::IndentStyle;
+use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
-use std::collections::HashMap;
 use std::fmt::Write;
 
 /// Documentation generator for `LinkML` schemas
@@ -320,49 +319,22 @@ impl Generator for DocGenerator {
         vec![".md", ".html", ".rst"]
     }
 
-    async fn generate(
-        &self,
-        schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Validate schema
-        self.validate_schema(schema).await?;
+        self.validate_schema(schema)?;
 
-        let mut outputs = Vec::new();
+        // For now, always generate markdown
+        self.generate_markdown(schema)
+            .map_err(|e| LinkMLError::service(format!("Documentation generation error: {}", e)))
+    }
 
-        // Generate based on format
-        let format = options.get_custom("format").unwrap_or("markdown");
+    fn get_file_extension(&self) -> &str {
+        // For now, always return markdown
+        "md"
+    }
 
-        match format {
-            "markdown" | "md" => {
-                let content = self.generate_markdown(schema)?;
-                let filename = format!(
-                    "{}.md",
-                    if schema.name.is_empty() {
-                        "schema"
-                    } else {
-                        &schema.name
-                    }
-                );
-
-                let mut metadata = HashMap::new();
-                metadata.insert("generator".to_string(), self.name.clone());
-                metadata.insert("format".to_string(), "markdown".to_string());
-
-                outputs.push(GeneratedOutput {
-                    content,
-                    filename,
-                    metadata,
-                });
-            }
-            _ => {
-                return Err(GeneratorError::UnsupportedFeature(format!(
-                    "Unsupported documentation format: {format}"
-                )));
-            }
-        }
-
-        Ok(outputs)
+    fn get_default_filename(&self) -> &str {
+        "schema_documentation"
     }
 }
 
@@ -404,8 +376,8 @@ impl CodeFormatter for DocGenerator {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_doc_generation() {
+    #[test]
+    fn test_doc_generation() {
         let generator = DocGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -420,12 +392,10 @@ mod tests {
 
         schema.classes.insert("Person".to_string(), class);
 
-        let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+        let output = generator.generate(&schema)?;
 
-        assert_eq!(outputs.len(), 1);
-        assert!(outputs[0].content.contains("# test_schema"));
-        assert!(outputs[0].content.contains("### Person"));
-        assert!(outputs[0].content.contains("A person entity"));
+        assert!(output.contains("# test_schema"));
+        assert!(output.contains("### Person"));
+        assert!(output.contains("A person entity"));
     }
 }

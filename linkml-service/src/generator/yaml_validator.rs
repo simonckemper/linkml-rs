@@ -3,11 +3,10 @@
 //! This module generates YAML validation rules and schemas from LinkML schemas,
 //! enabling validation of YAML data against LinkML-defined structures.
 
-use crate::error::LinkMLError;
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::schema::{ClassDefinition, EnumDefinition, Schema, SlotDefinition, TypeDefinition};
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition, PermissibleValue};
 use serde_json::{json, Map, Value};
-use std::collections::{HashMap, HashSet};
 
 /// YAML validator generator configuration
 #[derive(Debug, Clone)]
@@ -29,8 +28,8 @@ pub struct YamlValidatorGeneratorConfig {
 /// Supported validation frameworks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationFramework {
-    /// JSON Schema for YAML validation
-    JsonSchema,
+    /// JSON SchemaDefinition for YAML validation
+    JsonSchemaDefinition,
     /// Cerberus (Python) validation rules
     Cerberus,
     /// Joi (JavaScript) validation schema
@@ -45,7 +44,7 @@ impl Default for YamlValidatorGeneratorConfig {
     fn default() -> Self {
         Self {
             base: GeneratorConfig::default(),
-            framework: ValidationFramework::JsonSchema,
+            framework: ValidationFramework::JsonSchemaDefinition,
             include_docs: true,
             strict_mode: false,
             custom_error_messages: true,
@@ -66,9 +65,9 @@ impl YamlValidatorGenerator {
     }
     
     /// Generate validation schema for the configured framework
-    fn generate_validation(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_validation(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         match self.config.framework {
-            ValidationFramework::JsonSchema => self.generate_json_schema(schema),
+            ValidationFramework::JsonSchemaDefinition => self.generate_json_schema(schema),
             ValidationFramework::Cerberus => self.generate_cerberus(schema),
             ValidationFramework::Joi => self.generate_joi(schema),
             ValidationFramework::Yup => self.generate_yup(schema),
@@ -76,17 +75,17 @@ impl YamlValidatorGenerator {
         }
     }
     
-    /// Generate JSON Schema for YAML validation
-    fn generate_json_schema(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    /// Generate JSON SchemaDefinition for YAML validation
+    fn generate_json_schema(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut json_schema = Map::new();
         
-        // Schema metadata
+        // SchemaDefinition metadata
         json_schema.insert("$schema".to_string(), json!("http://json-schema.org/draft-07/schema#"));
-        if let Some(id) = &schema.id {
-            json_schema.insert("$id".to_string(), json!(id));
+        if !schema.id.is_empty() {
+            json_schema.insert("$id".to_string(), json!(&schema.id));
         }
-        if let Some(name) = &schema.name {
-            json_schema.insert("title".to_string(), json!(name));
+        if !schema.name.is_empty() {
+            json_schema.insert("title".to_string(), json!(&schema.name));
         }
         if let Some(description) = &schema.description {
             json_schema.insert("description".to_string(), json!(description));
@@ -96,22 +95,22 @@ impl YamlValidatorGenerator {
         let mut definitions = Map::new();
         
         // Add type definitions
-        if let Some(types) = &schema.types {
-            for (type_name, type_def) in types {
+        if !schema.types.is_empty() {
+            for (type_name, type_def) in &schema.types {
                 definitions.insert(type_name.clone(), self.type_to_json_schema(type_def)?);
             }
         }
         
         // Add enum definitions
-        if let Some(enums) = &schema.enums {
-            for (enum_name, enum_def) in enums {
+        if !schema.enums.is_empty() {
+            for (enum_name, enum_def) in &schema.enums {
                 definitions.insert(enum_name.clone(), self.enum_to_json_schema(enum_def)?);
             }
         }
         
         // Add class definitions
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 definitions.insert(class_name.clone(), self.class_to_json_schema(class_def, schema)?);
             }
         }
@@ -123,8 +122,8 @@ impl YamlValidatorGenerator {
             json_schema.insert("type".to_string(), json!("object"));
             json_schema.insert("additionalProperties".to_string(), json!(false));
             
-            if let Some(classes) = &schema.classes {
-                let class_refs: Vec<Value> = classes.keys()
+            if !schema.classes.is_empty() {
+                let class_refs: Vec<Value> = schema.classes.keys()
                     .map(|name| json!({ "$ref": format!("#/definitions/{}", name) }))
                     .collect();
                 json_schema.insert("oneOf".to_string(), json!(class_refs));
@@ -132,10 +131,10 @@ impl YamlValidatorGenerator {
         }
         
         serde_json::to_string_pretty(&json_schema)
-            .map_err(|e| LinkMLError::GeneratorError(format!("Failed to serialize JSON Schema: {}", e)))
+            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize JSON SchemaDefinition: {}", e)))
     }
     
-    /// Convert LinkML type to JSON Schema
+    /// Convert LinkML type to JSON SchemaDefinition
     fn type_to_json_schema(&self, type_def: &TypeDefinition) -> Result<Value, LinkMLError> {
         let mut schema = Map::new();
         
@@ -146,34 +145,34 @@ impl YamlValidatorGenerator {
         }
         
         // Base type mapping
-        match type_def.typeof.as_deref() {
+        match type_def.base_type.as_deref() {
             Some("string") => {
                 schema.insert("type".to_string(), json!("string"));
                 if let Some(pattern) = &type_def.pattern {
                     schema.insert("pattern".to_string(), json!(pattern));
                 }
-                if let Some(min_length) = type_def.minimum_value {
+                if let Some(min_length) = &type_def.minimum_value {
                     schema.insert("minLength".to_string(), json!(min_length));
                 }
-                if let Some(max_length) = type_def.maximum_value {
+                if let Some(max_length) = &type_def.maximum_value {
                     schema.insert("maxLength".to_string(), json!(max_length));
                 }
             }
             Some("integer") => {
                 schema.insert("type".to_string(), json!("integer"));
-                if let Some(min) = type_def.minimum_value {
+                if let Some(min) = &type_def.minimum_value {
                     schema.insert("minimum".to_string(), json!(min));
                 }
-                if let Some(max) = type_def.maximum_value {
+                if let Some(max) = &type_def.maximum_value {
                     schema.insert("maximum".to_string(), json!(max));
                 }
             }
             Some("float") | Some("double") => {
                 schema.insert("type".to_string(), json!("number"));
-                if let Some(min) = type_def.minimum_value {
+                if let Some(min) = &type_def.minimum_value {
                     schema.insert("minimum".to_string(), json!(min));
                 }
-                if let Some(max) = type_def.maximum_value {
+                if let Some(max) = &type_def.maximum_value {
                     schema.insert("maximum".to_string(), json!(max));
                 }
             }
@@ -200,7 +199,7 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(schema))
     }
     
-    /// Convert LinkML enum to JSON Schema
+    /// Convert LinkML enum to JSON SchemaDefinition
     fn enum_to_json_schema(&self, enum_def: &EnumDefinition) -> Result<Value, LinkMLError> {
         let mut schema = Map::new();
         
@@ -210,8 +209,13 @@ impl YamlValidatorGenerator {
             }
         }
         
-        if let Some(values) = &enum_def.permissible_values {
-            let enum_values: Vec<String> = values.keys().cloned().collect();
+        if !enum_def.permissible_values.is_empty() {
+            let enum_values: Vec<String> = enum_def.permissible_values.iter()
+                .map(|pv| match pv {
+                    PermissibleValue::Simple(s) => s.clone(),
+                    PermissibleValue::Complex { text, .. } => text.clone(),
+                })
+                .collect();
             schema.insert("enum".to_string(), json!(enum_values));
             
             if self.config.custom_error_messages {
@@ -223,8 +227,8 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(schema))
     }
     
-    /// Convert LinkML class to JSON Schema
-    fn class_to_json_schema(&self, class_def: &ClassDefinition, schema: &Schema) -> Result<Value, LinkMLError> {
+    /// Convert LinkML class to JSON SchemaDefinition
+    fn class_to_json_schema(&self, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         let mut json_schema = Map::new();
         
         json_schema.insert("type".to_string(), json!("object"));
@@ -239,9 +243,9 @@ impl YamlValidatorGenerator {
         let mut required = Vec::new();
         
         // Process slots
-        if let Some(slots) = &class_def.slots {
-            for slot_name in slots {
-                if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
+        if !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
                     properties.insert(slot_name.clone(), self.slot_to_json_schema(slot_def, schema)?);
                     if slot_def.required == Some(true) {
                         required.push(slot_name.clone());
@@ -251,8 +255,8 @@ impl YamlValidatorGenerator {
         }
         
         // Process attributes
-        if let Some(attributes) = &class_def.attributes {
-            for (attr_name, attr_def) in attributes {
+        if !class_def.attributes.is_empty() {
+            for (attr_name, attr_def) in &class_def.attributes {
                 properties.insert(attr_name.clone(), self.slot_to_json_schema(attr_def, schema)?);
                 if attr_def.required == Some(true) {
                     required.push(attr_name.clone());
@@ -273,8 +277,8 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(json_schema))
     }
     
-    /// Convert LinkML slot to JSON Schema
-    fn slot_to_json_schema(&self, slot_def: &SlotDefinition, schema: &Schema) -> Result<Value, LinkMLError> {
+    /// Convert LinkML slot to JSON SchemaDefinition
+    fn slot_to_json_schema(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         let mut json_schema = Map::new();
         
         if let Some(description) = &slot_def.description {
@@ -291,12 +295,13 @@ impl YamlValidatorGenerator {
             let item_schema = self.get_range_schema(slot_def, schema)?;
             array_schema.insert("items".to_string(), item_schema);
             
-            if let Some(min) = slot_def.minimum_cardinality {
-                array_schema.insert("minItems".to_string(), json!(min));
-            }
-            if let Some(max) = slot_def.maximum_cardinality {
-                array_schema.insert("maxItems".to_string(), json!(max));
-            }
+            // TODO: minimum_cardinality and maximum_cardinality not yet implemented
+            // if let Some(min) = slot_def.minimum_cardinality {
+            //     array_schema.insert("minItems".to_string(), json!(min));
+            // }
+            // if let Some(max) = slot_def.maximum_cardinality {
+            //     array_schema.insert("maxItems".to_string(), json!(max));
+            // }
             
             return Ok(Value::Object(array_schema));
         }
@@ -305,28 +310,26 @@ impl YamlValidatorGenerator {
         self.get_range_schema(slot_def, schema)
     }
     
-    /// Get JSON Schema for slot range
-    fn get_range_schema(&self, slot_def: &SlotDefinition, schema: &Schema) -> Result<Value, LinkMLError> {
+    /// Get JSON SchemaDefinition for slot range
+    fn get_range_schema(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         if let Some(range) = &slot_def.range {
             // Check if it's a type
-            if let Some(types) = &schema.types {
-                if types.contains_key(range) {
+            if !schema.types.is_empty() {
+                if schema.types.contains_key(range) {
                     return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
                 }
             }
             
             // Check if it's an enum
-            if let Some(enums) = &schema.enums {
-                if enums.contains_key(range) {
+            if !schema.enums.is_empty() {
+                if schema.enums.contains_key(range) {
                     return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
                 }
             }
             
             // Check if it's a class
-            if let Some(classes) = &schema.classes {
-                if classes.contains_key(range) {
-                    return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
-                }
+            if schema.classes.contains_key(range) {
+                return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
             }
             
             // Built-in types
@@ -346,32 +349,28 @@ impl YamlValidatorGenerator {
     }
     
     /// Generate Cerberus validation rules (Python)
-    fn generate_cerberus(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_cerberus(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = String::new();
         
         output.push_str("# Cerberus validation schema generated from LinkML\n\n");
         output.push_str("from cerberus import Validator\n\n");
         
         // Generate schemas for each class
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 output.push_str(&format!("# Validation schema for {}\n", class_name));
                 output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase()));
                 
                 // Process slots
-                if let Some(slots) = &class_def.slots {
-                    for slot_name in slots {
-                        if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
-                            output.push_str(&self.slot_to_cerberus(slot_name, slot_def, schema)?);
-                        }
+                for slot_name in &class_def.slots {
+                    if let Some(slot_def) = schema.slots.get(slot_name) {
+                        output.push_str(&self.slot_to_cerberus(slot_name, slot_def, schema)?);
                     }
                 }
                 
                 // Process attributes
-                if let Some(attributes) = &class_def.attributes {
-                    for (attr_name, attr_def) in attributes {
-                        output.push_str(&self.slot_to_cerberus(attr_name, attr_def, schema)?);
-                    }
+                for (attr_name, attr_def) in &class_def.attributes {
+                    output.push_str(&self.slot_to_cerberus(attr_name, attr_def, schema)?);
                 }
                 
                 output.push_str("}\n\n");
@@ -380,21 +379,19 @@ impl YamlValidatorGenerator {
         
         // Generate validator functions
         output.push_str("# Validator instances\n");
-        if let Some(classes) = &schema.classes {
-            for class_name in classes.keys() {
-                output.push_str(&format!(
-                    "{}_validator = Validator({}_SCHEMA)\n",
-                    class_name.to_lowercase(),
-                    class_name.to_uppercase()
-                ));
-            }
+        for class_name in schema.classes.keys() {
+            output.push_str(&format!(
+                "{}_validator = Validator({}_SCHEMA)\n",
+                class_name.to_lowercase(),
+                class_name.to_uppercase()
+            ));
         }
         
         Ok(output)
     }
     
     /// Convert slot to Cerberus rule
-    fn slot_to_cerberus(&self, name: &str, slot_def: &SlotDefinition, schema: &Schema) -> Result<String, LinkMLError> {
+    fn slot_to_cerberus(&self, name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut rule = format!("    '{}': {{\n", name);
         
         // Type
@@ -414,10 +411,10 @@ impl YamlValidatorGenerator {
         }
         
         // Min/max values
-        if let Some(min) = slot_def.minimum_value {
+        if let Some(min) = &slot_def.minimum_value {
             rule.push_str(&format!("        'min': {},\n", min));
         }
-        if let Some(max) = slot_def.maximum_value {
+        if let Some(max) = &slot_def.maximum_value {
             rule.push_str(&format!("        'max': {},\n", max));
         }
         
@@ -426,7 +423,7 @@ impl YamlValidatorGenerator {
     }
     
     /// Convert range to Cerberus type
-    fn range_to_cerberus_type(&self, range: &str, _schema: &Schema) -> &'static str {
+    fn range_to_cerberus_type(&self, range: &str, _schema: &SchemaDefinition) -> &'static str {
         match range {
             "string" => "string",
             "integer" | "int" => "integer",
@@ -438,34 +435,30 @@ impl YamlValidatorGenerator {
     }
     
     /// Generate Joi validation schema (JavaScript)
-    fn generate_joi(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_joi(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = String::new();
         
         output.push_str("// Joi validation schema generated from LinkML\n\n");
         output.push_str("const Joi = require('joi');\n\n");
         
         // Generate schemas for each class
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 output.push_str(&format!("// Validation schema for {}\n", class_name));
-                output.push_str(&format!("const {}Schema = Joi.object({{\n", 
+                output.push_str(&format!("const {}SchemaDefinition = Joi.object({{\n", 
                     self.to_camel_case(class_name)));
                 
                 // Process all slots
                 let mut slot_rules = Vec::new();
                 
-                if let Some(slots) = &class_def.slots {
-                    for slot_name in slots {
-                        if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
-                            slot_rules.push(self.slot_to_joi(slot_name, slot_def, schema)?);
-                        }
+                for slot_name in &class_def.slots {
+                    if let Some(slot_def) = schema.slots.get(slot_name) {
+                        slot_rules.push(self.slot_to_joi(slot_name, slot_def, schema)?);
                     }
                 }
                 
-                if let Some(attributes) = &class_def.attributes {
-                    for (attr_name, attr_def) in attributes {
-                        slot_rules.push(self.slot_to_joi(attr_name, attr_def, schema)?);
-                    }
+                for (attr_name, attr_def) in &class_def.attributes {
+                    slot_rules.push(self.slot_to_joi(attr_name, attr_def, schema)?);
                 }
                 
                 output.push_str(&slot_rules.join(",\n"));
@@ -481,19 +474,17 @@ impl YamlValidatorGenerator {
         
         // Export schemas
         output.push_str("module.exports = {\n");
-        if let Some(classes) = &schema.classes {
-            let exports: Vec<String> = classes.keys()
-                .map(|name| format!("  {}Schema", self.to_camel_case(name)))
-                .collect();
-            output.push_str(&exports.join(",\n"));
-        }
+        let exports: Vec<String> = schema.classes.keys()
+            .map(|name| format!("  {}SchemaDefinition", self.to_camel_case(name)))
+            .collect();
+        output.push_str(&exports.join(",\n"));
         output.push_str("\n};\n");
         
         Ok(output)
     }
     
     /// Convert slot to Joi rule
-    fn slot_to_joi(&self, name: &str, slot_def: &SlotDefinition, schema: &Schema) -> Result<String, LinkMLError> {
+    fn slot_to_joi(&self, name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut rule = format!("  {}: ", name);
         
         // Base type
@@ -524,7 +515,7 @@ impl YamlValidatorGenerator {
     }
     
     /// Convert range to Joi type
-    fn range_to_joi_type(&self, range: &str, _schema: &Schema) -> String {
+    fn range_to_joi_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "Joi.string()".to_string(),
             "integer" | "int" => "Joi.number().integer()".to_string(),
@@ -538,34 +529,30 @@ impl YamlValidatorGenerator {
     }
     
     /// Generate Yup validation schema (JavaScript)
-    fn generate_yup(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_yup(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = String::new();
         
         output.push_str("// Yup validation schema generated from LinkML\n\n");
         output.push_str("import * as yup from 'yup';\n\n");
         
         // Generate schemas for each class
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 output.push_str(&format!("// Validation schema for {}\n", class_name));
-                output.push_str(&format!("export const {}Schema = yup.object({{\n", 
+                output.push_str(&format!("export const {}SchemaDefinition = yup.object({{\n", 
                     self.to_camel_case(class_name)));
                 
                 // Process all slots
                 let mut slot_rules = Vec::new();
                 
-                if let Some(slots) = &class_def.slots {
-                    for slot_name in slots {
-                        if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
-                            slot_rules.push(self.slot_to_yup(slot_name, slot_def, schema)?);
-                        }
+                for slot_name in &class_def.slots {
+                    if let Some(slot_def) = schema.slots.get(slot_name) {
+                        slot_rules.push(self.slot_to_yup(slot_name, slot_def, schema)?);
                     }
                 }
                 
-                if let Some(attributes) = &class_def.attributes {
-                    for (attr_name, attr_def) in attributes {
-                        slot_rules.push(self.slot_to_yup(attr_name, attr_def, schema)?);
-                    }
+                for (attr_name, attr_def) in &class_def.attributes {
+                    slot_rules.push(self.slot_to_yup(attr_name, attr_def, schema)?);
                 }
                 
                 output.push_str(&slot_rules.join(",\n"));
@@ -583,7 +570,7 @@ impl YamlValidatorGenerator {
     }
     
     /// Convert slot to Yup rule
-    fn slot_to_yup(&self, name: &str, slot_def: &SlotDefinition, schema: &Schema) -> Result<String, LinkMLError> {
+    fn slot_to_yup(&self, name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut rule = format!("  {}: ", name);
         
         // Base type
@@ -607,7 +594,7 @@ impl YamlValidatorGenerator {
         
         // Custom error message
         if self.config.custom_error_messages {
-            if let Some(description) = &slot_def.description {
+            if let Some(_description) = &slot_def.description {
                 rule.push_str(&format!(".label('{}')", name));
             }
         }
@@ -616,7 +603,7 @@ impl YamlValidatorGenerator {
     }
     
     /// Convert range to Yup type
-    fn range_to_yup_type(&self, range: &str, _schema: &Schema) -> String {
+    fn range_to_yup_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "yup.string()".to_string(),
             "integer" | "int" => "yup.number().integer()".to_string(),
@@ -630,15 +617,15 @@ impl YamlValidatorGenerator {
     }
     
     /// Generate OpenAPI validation specification
-    fn generate_openapi(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_openapi(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut openapi = Map::new();
         
         // OpenAPI metadata
         openapi.insert("openapi".to_string(), json!("3.0.3"));
         
         let mut info = Map::new();
-        if let Some(name) = &schema.name {
-            info.insert("title".to_string(), json!(name));
+        if !schema.name.is_empty() {
+            info.insert("title".to_string(), json!(&schema.name));
         }
         if let Some(description) = &schema.description {
             info.insert("description".to_string(), json!(description));
@@ -651,8 +638,8 @@ impl YamlValidatorGenerator {
         let mut schemas = Map::new();
         
         // Add all classes as schemas
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
                 schemas.insert(class_name.clone(), self.class_to_openapi(class_def, schema)?);
             }
         }
@@ -664,12 +651,12 @@ impl YamlValidatorGenerator {
         openapi.insert("paths".to_string(), json!({}));
         
         serde_json::to_string_pretty(&openapi)
-            .map_err(|e| LinkMLError::GeneratorError(format!("Failed to serialize OpenAPI: {}", e)))
+            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize OpenAPI: {}", e)))
     }
     
     /// Convert class to OpenAPI schema
-    fn class_to_openapi(&self, class_def: &ClassDefinition, schema: &Schema) -> Result<Value, LinkMLError> {
-        // Reuse JSON Schema generation
+    fn class_to_openapi(&self, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
+        // Reuse JSON SchemaDefinition generation
         self.class_to_json_schema(class_def, schema)
     }
     
@@ -696,13 +683,13 @@ impl YamlValidatorGenerator {
 }
 
 impl Generator for YamlValidatorGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         self.generate_validation(schema)
     }
     
     fn get_file_extension(&self) -> &str {
         match self.config.framework {
-            ValidationFramework::JsonSchema => "json",
+            ValidationFramework::JsonSchemaDefinition => "json",
             ValidationFramework::Cerberus => "py",
             ValidationFramework::Joi | ValidationFramework::Yup => "js",
             ValidationFramework::OpenAPI => "yaml",
@@ -711,7 +698,7 @@ impl Generator for YamlValidatorGenerator {
     
     fn get_default_filename(&self) -> &str {
         match self.config.framework {
-            ValidationFramework::JsonSchema => "schema",
+            ValidationFramework::JsonSchemaDefinition => "schema",
             ValidationFramework::Cerberus => "validation",
             ValidationFramework::Joi => "joi_schema",
             ValidationFramework::Yup => "yup_schema",
@@ -723,12 +710,13 @@ impl Generator for YamlValidatorGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::schema::SchemaDefinition;
+    use std::collections::HashMap;
+    use linkml_core::prelude::*;
     
     #[test]
     fn test_yaml_validator_generation() {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = Some("TestSchemaDefinition".to_string());
         
         // Add a simple class
         let mut person_class = ClassDefinition::default();
@@ -746,10 +734,10 @@ mod tests {
             ("Person".to_string(), person_class),
         ]));
         
-        // Test JSON Schema generation
+        // Test JSON SchemaDefinition generation
         let config = YamlValidatorGeneratorConfig::default();
         let generator = YamlValidatorGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).expect("should generate YAML validator");
+        let result = generator.generate(&SchemaDefinition(schema)).expect("should generate YAML validator");
         
         assert!(result.contains("$schema"));
         assert!(result.contains("definitions"));

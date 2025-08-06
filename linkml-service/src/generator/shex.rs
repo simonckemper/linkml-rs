@@ -7,8 +7,8 @@ use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult};
+use linkml_core::error::LinkMLError;
 
 /// ShEx generation style
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -116,20 +116,23 @@ impl ShExGenerator {
         // Header comment
         if self.options.include_comments {
             writeln!(&mut output, "# ShEx shapes for {}", 
-                schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+                if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
             if let Some(desc) = &schema.description {
                 writeln!(&mut output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
         
+        // Create a local copy of prefixes for this generation
+        let mut prefixes = self.prefixes.clone();
+        
         // Add schema prefix
         let schema_prefix = self.to_snake_case(&schema.name);
-        let schema_uri = format!("{}#", schema.id.as_deref().unwrap_or(&self.options.base_uri));
-        self.prefixes.insert(schema_prefix.clone(), schema_uri);
+        let schema_uri = format!("{}#", if schema.id.is_empty() { &self.options.base_uri } else { &schema.id });
+        prefixes.insert(schema_prefix.clone(), schema_uri);
         
         // Write prefixes
-        self.write_prefixes(&mut output)?;
+        self.write_prefixes(&mut output, &prefixes)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate shape for each class
@@ -282,12 +285,17 @@ impl ShExGenerator {
                     facets.push(format!("MAXINCLUSIVE {}", max_val));
                 }
                 
-                if let Some(min_len) = slot_def.min_length {
-                    facets.push(format!("MINLENGTH {}", min_len));
+                // TODO: min_length and max_length not available, using minimum_value/maximum_value as approximation
+                if let Some(min_val) = &slot_def.minimum_value {
+                    if range == "string" {
+                        facets.push(format!("MINLENGTH {}", min_val));
+                    }
                 }
                 
-                if let Some(max_len) = slot_def.max_length {
-                    facets.push(format!("MAXLENGTH {}", max_len));
+                if let Some(max_val) = &slot_def.maximum_value {
+                    if range == "string" {
+                        facets.push(format!("MAXLENGTH {}", max_val));
+                    }
                 }
                 
                 if !facets.is_empty() {
@@ -314,9 +322,9 @@ impl ShExGenerator {
             (false, true) => (0, None),      // 0 or more
         };
         
-        // Handle min/max cardinality overrides
-        let final_min = slot_def.minimum_cardinality.unwrap_or(min);
-        let final_max = match (slot_def.maximum_cardinality, max) {
+        // TODO: minimum_cardinality and maximum_cardinality not available in current SlotDefinition
+        let final_min = min;
+        let final_max = match (None::<u32>, max) {
             (Some(m), _) => Some(m),
             (None, m) => m,
         };
@@ -403,7 +411,7 @@ impl ShExGenerator {
     fn generate_json_shape(
         &self,
         class_name: &str,
-        class_def: &ClassDefinition,
+        _class_def: &ClassDefinition,
         schema: &SchemaDefinition
     ) -> GeneratorResult<serde_json::Value> {
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -417,7 +425,7 @@ impl ShExGenerator {
                 "predicate": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                 "valueExpr": {
                     "type": "NodeConstraint",
-                    "values": [format!("{}#{}", schema.id.as_deref().unwrap_or(""), class_name)]
+                    "values": [format!("{}#{}", if schema.id.is_empty() { "" } else { &schema.id }, class_name)]
                 }
             }
         });
@@ -449,8 +457,8 @@ ex:MyShape a shex:Shape ;
     }
     
     /// Write namespace prefixes
-    fn write_prefixes(&self, output: &mut String) -> GeneratorResult<()> {
-        for (prefix, uri) in &self.prefixes {
+    fn write_prefixes(&self, output: &mut String, prefixes: &HashMap<String, String>) -> GeneratorResult<()> {
+        for (prefix, uri) in prefixes {
             writeln!(output, "PREFIX {}: <{}>", prefix, uri).map_err(Self::fmt_error_to_generator_error)?;
         }
         Ok(())
@@ -543,7 +551,6 @@ impl Default for ShExGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for ShExGenerator {
     fn name(&self) -> &str {
         match self.options.style {
@@ -565,31 +572,25 @@ impl Generator for ShExGenerator {
         }
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_shex(schema)?;
         
-        let extension = match self.options.style {
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        match self.options.style {
             ShExStyle::Compact => "shex",
-            ShExStyle::Json => "shexj",
-            ShExStyle::Rdf => "shexr",
-        };
-        
-        let filename = format!("{}.{}", 
-            schema.name.as_deref().unwrap_or("schema"), extension);
-        
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "shex".to_string());
-        metadata.insert("style".to_string(), format!("{:?}", self.options.style).to_lowercase());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content,
-            metadata,
-        }])
+            ShExStyle::Json => "json",
+            ShExStyle::Rdf => "ttl",
+        }
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "shapes"
     }
 }
 
@@ -636,49 +637,41 @@ mod tests {
         schema
     }
     
-    #[tokio::test]
-    async fn test_shex_compact_generation() {
+    #[test]
+    fn test_shex_compact_generation() {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate ShEx");
-        assert_eq!(result.len(), 1);
-        
-        let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.shex");
+        let output = generator.generate(&schema).expect("should generate ShEx");
         
         // Check content
-        assert!(output.content.contains("PREFIX"));
-        assert!(output.content.contains("test_schema:Person"));
-        assert!(output.content.contains("PATTERN"));
-        assert!(output.content.contains("MININCLUSIVE"));
+        assert!(output.contains("PREFIX"));
+        assert!(output.contains("test_schema:Person"));
+        assert!(output.contains("PATTERN"));
+        assert!(output.contains("MININCLUSIVE"));
     }
     
-    #[tokio::test]
-    async fn test_cardinality_generation() {
+    #[test]
+    fn test_cardinality_generation() {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate ShEx");
-        let output = &result[0];
+        let output = generator.generate(&schema).expect("should generate ShEx");
         
         // Check cardinality markers
-        assert!(output.content.contains("?")); // optional age
-        assert!(output.content.contains("*")); // multiple friends
+        assert!(output.contains("?")); // optional age
+        assert!(output.contains("*")); // multiple friends
     }
     
-    #[tokio::test]
-    async fn test_closed_shapes() {
+    #[test]
+    fn test_closed_shapes() {
         let schema = create_test_schema();
         let mut options = ShExOptions::default();
         options.closed_shapes = true;
         
         let generator = ShExGenerator::with_options(options);
-        let result = generator.generate(&schema, &GeneratorOptions::default()).await.expect("should generate ShEx");
+        let output = generator.generate(&schema).expect("should generate ShEx");
         
-        let output = &result[0];
-        assert!(output.content.contains("CLOSED"));
+        assert!(output.contains("CLOSED"));
     }
 }

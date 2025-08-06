@@ -3,7 +3,7 @@
 //! This module provides tools to check schema quality and compliance.
 
 use linkml_core::prelude::*;
-use linkml_core::error::{Result, LinkMLError};
+use linkml_core::error::Result;
 use std::collections::{HashMap, HashSet};
 use serde::{Serialize, Deserialize};
 use regex::Regex;
@@ -79,7 +79,6 @@ pub trait LintRule: Send + Sync {
 }
 
 /// Options for linting
-#[derive(Debug, Clone)]
 pub struct LintOptions {
     /// Rules to apply
     pub rules: Vec<Box<dyn LintRule>>,
@@ -238,7 +237,9 @@ impl SchemaLinter {
         // Apply fixes for each rule
         for rule in &self.options.rules {
             if let Some(rule_issues) = issues_by_rule.get(rule.name()) {
-                let fixed = rule.fix(schema, rule_issues)?;
+                // Convert &Vec<&LintIssue> to Vec<LintIssue>
+                let issues: Vec<LintIssue> = rule_issues.iter().map(|&issue| issue.clone()).collect();
+                let fixed = rule.fix(schema, &issues)?;
                 total_fixed += fixed;
             }
         }
@@ -308,7 +309,7 @@ impl LintRule for NamingConventionRule {
         issues
     }
     
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
         // Naming changes require manual intervention
         Ok(0)
     }
@@ -341,7 +342,7 @@ impl LintRule for MissingDocumentationRule {
                 severity: self.severity(),
                 message: "Schema has no description".to_string(),
                 element_type: Some("schema".to_string()),
-                element_name: schema.name.clone(),
+                element_name: Some(schema.name.clone()),
                 line: None,
                 column: None,
                 suggestion: Some("Add a description field to the schema".to_string()),
@@ -386,7 +387,7 @@ impl LintRule for MissingDocumentationRule {
         issues
     }
     
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
         // Documentation must be added manually
         Ok(0)
     }
@@ -418,9 +419,7 @@ impl LintRule for UnusedDefinitionsRule {
             used_slots.extend(class.slots.iter().cloned());
             
             // Also check slot_usage
-            if let Some(slot_usage) = &class.slot_usage {
-                used_slots.extend(slot_usage.keys().cloned());
-            }
+            used_slots.extend(class.slot_usage.keys().cloned());
         }
         
         // Find unused slots
@@ -468,18 +467,18 @@ impl LintRule for UnusedDefinitionsRule {
         issues
     }
     
-    fn fix(&self, schema: &mut SchemaDefinition, issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         let mut fixed = 0;
         
         for issue in issues {
             if let Some(element_name) = &issue.element_name {
                 match issue.element_type.as_deref() {
                     Some("slot") => {
-                        schema.slots.remove(element_name);
+                        schema.slots.shift_remove(element_name);
                         fixed += 1;
                     }
                     Some("type") => {
-                        schema.types.remove(element_name);
+                        schema.types.shift_remove(element_name);
                         fixed += 1;
                     }
                     _ => {}
@@ -533,7 +532,7 @@ impl LintRule for SlotConsistencyRule {
         issues
     }
     
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
         // Cannot auto-fix undefined slots
         Ok(0)
     }
@@ -591,7 +590,7 @@ impl LintRule for TypeSafetyRule {
         issues
     }
     
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
         // Cannot auto-fix type issues
         Ok(0)
     }
@@ -618,7 +617,7 @@ impl LintRule for SchemaMetadataRule {
         let mut issues = Vec::new();
         
         // Check for schema name
-        if schema.name.is_none() {
+        if schema.name.is_empty() {
             issues.push(LintIssue {
                 rule: self.name().to_string(),
                 severity: Severity::Error,
@@ -639,7 +638,7 @@ impl LintRule for SchemaMetadataRule {
                 severity: self.severity(),
                 message: "Schema has no version".to_string(),
                 element_type: Some("schema".to_string()),
-                element_name: schema.name.clone(),
+                element_name: Some(schema.name.clone()),
                 line: None,
                 column: None,
                 suggestion: Some("Add a version field (e.g., '1.0.0')".to_string()),
@@ -654,7 +653,7 @@ impl LintRule for SchemaMetadataRule {
                 severity: self.severity(),
                 message: "Schema has no license".to_string(),
                 element_type: Some("schema".to_string()),
-                element_name: schema.name.clone(),
+                element_name: Some(schema.name.clone()),
                 line: None,
                 column: None,
                 suggestion: Some("Add a license field (e.g., 'CC0', 'MIT')".to_string()),
@@ -665,7 +664,7 @@ impl LintRule for SchemaMetadataRule {
         issues
     }
     
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[&LintIssue]) -> Result<usize> {
+    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
         // Metadata must be added manually
         Ok(0)
     }

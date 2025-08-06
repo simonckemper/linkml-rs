@@ -7,8 +7,9 @@ use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
+use super::traits::{AsyncGenerator, Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
 use async_trait::async_trait;
+use linkml_core::error::LinkMLError;
 
 /// yUML diagram type
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -100,7 +101,7 @@ impl YumlGenerator {
         
         // Comment with diagram info
         writeln!(&mut output, "// yUML class diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+            if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "// Paste at: https://yuml.me/diagram/{}/{}/class", 
             self.options.style, self.options.direction).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -219,7 +220,7 @@ impl YumlGenerator {
         let mut output = String::new();
         
         writeln!(&mut output, "// yUML use case diagram for {}", 
-            schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+            if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "// Paste at: https://yuml.me/diagram/{}/{}/usecase", 
             self.options.style, self.options.direction).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -349,7 +350,7 @@ impl Default for YumlGenerator {
 }
 
 #[async_trait]
-impl Generator for YumlGenerator {
+impl AsyncGenerator for YumlGenerator {
     fn name(&self) -> &str {
         match self.options.diagram_type {
             YumlDiagramType::Class => "yuml",
@@ -374,7 +375,7 @@ impl Generator for YumlGenerator {
         let content = self.generate_yuml(schema)?;
         
         let filename = format!("{}.yuml", 
-            schema.name.as_deref().unwrap_or("schema"));
+            if schema.name.is_empty() { "schema" } else { &schema.name });
         
         let mut metadata = HashMap::new();
         metadata.insert("format".to_string(), "yuml".to_string());
@@ -386,6 +387,33 @@ impl Generator for YumlGenerator {
             content,
             metadata,
         }])
+    }
+}
+
+// Implement the synchronous Generator trait for backward compatibility
+impl Generator for YumlGenerator {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        // Use tokio to run the async version
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+        
+        let options = GeneratorOptions::new();
+        let outputs = runtime.block_on(AsyncGenerator::generate(self, schema, &options))
+            .map_err(|e| LinkMLError::service(e.to_string()))?;
+        
+        // Concatenate all outputs into a single string
+        Ok(outputs.into_iter()
+            .map(|output| output.content)
+            .collect::<Vec<_>>()
+            .join("\n"))
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "yuml"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "generated.yuml"
     }
 }
 
@@ -428,7 +456,7 @@ mod tests {
         let generator = YumlGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+        let result = generator.generate(&schema, &options).await.expect("should generate yuml");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -450,7 +478,7 @@ mod tests {
             yuml_options.style = style.to_string();
             
             let generator = YumlGenerator::with_options(yuml_options);
-            let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+            let result = generator.generate(&schema, &options).await.expect("should generate yuml");
             
             let output = &result[0];
             assert!(output.content.contains(&format!("diagram/{}/", style)));

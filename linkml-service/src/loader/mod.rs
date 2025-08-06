@@ -6,6 +6,7 @@
 
 pub mod api;
 pub mod csv;
+#[cfg(feature = "database")]
 pub mod database;
 pub mod dbms_executor;
 pub mod json;
@@ -22,12 +23,13 @@ pub mod yaml_v2;
 pub use api::{ApiLoader, ApiDumper, ApiOptions, AuthConfig, RetryConfig, PaginationConfig, 
               PaginationStyle, EndpointConfig};
 pub use csv::{CsvLoader, CsvDumper, CsvOptions};
+#[cfg(feature = "database")]
 pub use database::{DatabaseLoader, DatabaseDumper, DatabaseOptions, ForeignKeyRelation};
-pub use dbms_executor::{DBMSServiceExecutor, DirectTypeDBExecutor};
+pub use dbms_executor::DBMSServiceExecutor;
 pub use json::{JsonLoader, JsonDumper};
-pub use rdf::{RdfLoader, RdfDumper, RdfOptions};
-pub use traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
-pub use typedb::{TypeDBLoader, TypeDBDumper, TypeDBOptions, SessionType, TransactionType};
+pub use rdf::{RdfLoader, RdfDumper, RdfOptions, RdfSerializationFormat};
+pub use traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
+pub use typedb::{TypeDBLoader, TypeDBDumper, TypeDBOptions};
 pub use typedb_integration::{
     TypeDBIntegrationLoader as TypeDBIntegration, TypeDBIntegrationDumper, TypeDBIntegrationOptions,
     TypeDBQueryExecutor

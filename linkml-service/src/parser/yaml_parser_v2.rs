@@ -45,7 +45,7 @@ impl<F: FileSystemOperations> SchemaParser for YamlParserV2<F> {
         let content = tokio::runtime::Handle::current()
             .block_on(self.fs.read_to_string(path))?;
 
-        self.parse_str(&content).map_err(|e| match e {
+        <Self as SchemaParser>::parse_str(self, &content).map_err(|e| match e {
             LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
                 message: format!("{message} in file {}", path.display()),
                 location,
@@ -82,7 +82,7 @@ impl<F: FileSystemOperations> AsyncSchemaParser for YamlParserV2<F> {
     async fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
         let content = self.fs.read_to_string(path).await?;
         
-        self.parse_str(&content).await.map_err(|e| match e {
+        <Self as AsyncSchemaParser>::parse_str(self, &content).await.map_err(|e| match e {
             LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
                 message: format!("{message} in file {}", path.display()),
                 location,

@@ -4,11 +4,11 @@
 //! concurrently for improved performance.
 
 use super::{Expression, ExpressionEngine, EvaluationError};
-use futures::future::{join_all, try_join_all};
+use futures::future::join_all;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::task::{JoinError, JoinHandle};
+use tokio::task::JoinHandle;
 
 /// Result of parallel expression evaluation
 #[derive(Debug, Clone)]
@@ -167,7 +167,9 @@ impl ParallelEvaluator for ExpressionEngine {
                 failed,
                 total_time_ms: start_time.elapsed().as_millis() as u64,
             }
-        }
+        };
+
+        results
     }
     
     async fn evaluate_ast_parallel(
@@ -241,9 +243,10 @@ impl ParallelEvaluator for ExpressionEngine {
             Ok(ast) => Arc::new(ast),
             Err(e) => {
                 // Return error for all contexts
-                return vec![Err(EvaluationError::ParseError { 
-                    message: e.to_string() 
-                }); contexts.len()];
+                let error = Err(EvaluationError::TypeError { 
+                    message: format!("Parse error: {}", e) 
+                });
+                return (0..contexts.len()).map(|_| error.clone()).collect();
             }
         };
         
@@ -257,24 +260,27 @@ impl ParallelEvaluator for ExpressionEngine {
             
             let task = tokio::spawn(async move {
                 let _permit = semaphore.acquire().await.expect("semaphore should not be closed");
-                (idx, engine.evaluate_ast(&ast, &context))
+                let result = engine.evaluate_ast(&ast, &context)
+                    .map_err(|e| EvaluationError::TypeError { 
+                        message: e.to_string() 
+                    });
+                (idx, result)
             });
             
             tasks.push(task);
         }
         
         // Collect results preserving order
-        let mut results = vec![
-            Err(EvaluationError::InternalError { 
+        let mut results: Vec<Result<Value, EvaluationError>> = (0..tasks.len())
+            .map(|_| Err(EvaluationError::TypeError { 
                 message: "Unprocessed".to_string() 
-            }); 
-            tasks.len()
-        ];
+            }))
+            .collect();
         
-        for task in join_all(tasks).await {
+        for (idx, task) in join_all(tasks).await.into_iter().enumerate() {
             match task {
-                Ok((idx, result)) => results[idx] = result,
-                Err(e) => results[idx] = Err(EvaluationError::InternalError {
+                Ok((task_idx, result)) => results[task_idx] = result,
+                Err(e) => results[idx] = Err(EvaluationError::TypeError {
                     message: format!("Task join error: {}", e),
                 }),
             }
@@ -376,6 +382,9 @@ impl BatchEvaluator {
         reduce_context.insert("values".to_string(), Value::Array(values));
         
         self.engine.evaluate(reduce_expression, &reduce_context)
+            .map_err(|e| EvaluationError::TypeError { 
+                message: e.to_string() 
+            })
     }
 }
 

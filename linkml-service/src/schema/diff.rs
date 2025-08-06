@@ -3,7 +3,7 @@
 //! This module provides tools to compare schemas and identify differences.
 
 use linkml_core::prelude::*;
-use linkml_core::error::{Result, LinkMLError};
+use linkml_core::error::Result;
 use std::collections::{HashMap, HashSet};
 use serde::{Serialize, Deserialize};
 
@@ -352,11 +352,11 @@ impl SchemaDiff {
             changed_attributes: HashMap::new(),
         };
         
-        // Compare base
-        if type1.base != type2.base {
-            diff.changed_attributes.insert("base".to_string(), AttributeChange {
-                old_value: type1.base.as_ref().map(|v| serde_json::Value::String(v.clone())),
-                new_value: type2.base.as_ref().map(|v| serde_json::Value::String(v.clone())),
+        // Compare base_type
+        if type1.base_type != type2.base_type {
+            diff.changed_attributes.insert("base_type".to_string(), AttributeChange {
+                old_value: type1.base_type.as_ref().map(|v| serde_json::Value::String(v.clone())),
+                new_value: type2.base_type.as_ref().map(|v| serde_json::Value::String(v.clone())),
             });
         }
         
@@ -403,8 +403,14 @@ impl SchemaDiff {
             changed_attributes: HashMap::new(),
         };
         
-        let values1: HashSet<_> = enum1.permissible_values.keys().cloned().collect();
-        let values2: HashSet<_> = enum2.permissible_values.keys().cloned().collect();
+        let values1: HashSet<_> = enum1.permissible_values.iter().map(|pv| match pv {
+            linkml_core::types::PermissibleValue::Simple(s) => s.clone(),
+            linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone(),
+        }).collect();
+        let values2: HashSet<_> = enum2.permissible_values.iter().map(|pv| match pv {
+            linkml_core::types::PermissibleValue::Simple(s) => s.clone(),
+            linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone(),
+        }).collect();
         
         // Added values
         for value in values2.difference(&values1) {
@@ -420,7 +426,7 @@ impl SchemaDiff {
     }
     
     /// Detect breaking changes
-    fn detect_breaking_changes(&self, result: &mut DiffResult) {
+    fn detect_breaking_changes(&self, _result: &DiffResult) {
         // Already handled during comparison
         // Additional breaking change detection could go here
     }

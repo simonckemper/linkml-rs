@@ -3,10 +3,16 @@
 //! This generator produces plain RDF/Turtle representation of LinkML schemas,
 //! focusing on the data model rather than OWL ontology features.
 
-use super::traits::{Generator, GeneratorOptions, GeneratorResult, GeneratedOutput};
+use super::traits::Generator;
 use linkml_core::prelude::*;
-use async_trait::async_trait;
 use std::fmt::Write;
+
+/// Helper macro to convert fmt::Error to LinkMLError with newline
+macro_rules! writeln_rdf {
+    ($dst:expr, $($arg:tt)*) => {
+        writeln!($dst, $($arg)*).map_err(|e| LinkMLError::ServiceError(format!("Failed to write RDF: {}", e)))
+    };
+}
 
 /// RDF/Turtle generator for LinkML schemas
 pub struct RdfGenerator {
@@ -57,10 +63,11 @@ impl RdfGenerator {
         let mut output = String::new();
         
         // Determine base URI
+        let default_uri = format!("https://example.org/{}", schema.name);
         let base_uri = self.base_uri.as_ref()
             .map(|s| s.as_str())
             .or_else(|| schema.id.strip_suffix('/').or(Some(&schema.id)))
-            .unwrap_or(&format!("https://example.org/{}", schema.name));
+            .unwrap_or(&default_uri);
 
         // Write prefixes
         self.write_prefixes(&mut output, schema, base_uri)?;
@@ -94,259 +101,280 @@ impl RdfGenerator {
     /// Write prefix declarations
     fn write_prefixes(&self, output: &mut String, schema: &SchemaDefinition, base_uri: &str) -> Result<()> {
         // Standard prefixes
-        writeln!(output, "@prefix : <{}/> .", base_uri)?;
-        writeln!(output, "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .")?;
-        writeln!(output, "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .")?;
-        writeln!(output, "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .")?;
-        writeln!(output, "@prefix dcterms: <http://purl.org/dc/terms/> .")?;
-        writeln!(output, "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .")?;
-        writeln!(output, "@prefix sh: <http://www.w3.org/ns/shacl#> .")?;
+        writeln_rdf!(output, "@prefix : <{}/> .", base_uri)?;
+        writeln_rdf!(output, "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .")?;
+        writeln_rdf!(output, "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .")?;
+        writeln_rdf!(output, "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .")?;
+        writeln_rdf!(output, "@prefix dcterms: <http://purl.org/dc/terms/> .")?;
+        writeln_rdf!(output, "@prefix skos: <http://www.w3.org/2004/02/skos/core#> .")?;
+        writeln_rdf!(output, "@prefix sh: <http://www.w3.org/ns/shacl#> .")?;
         
         if self.include_linkml_props {
-            writeln!(output, "@prefix linkml: <https://w3id.org/linkml/> .")?;
+            writeln_rdf!(output, "@prefix linkml: <https://w3id.org/linkml/> .")?;
         }
         
         // Schema-specific prefixes
         for (prefix, def) in &schema.prefixes {
-            writeln!(output, "@prefix {}: <{}> .", prefix, def.prefix_reference)?;
+            let reference = match def {
+                PrefixDefinition::Simple(url) => url.clone(),
+                PrefixDefinition::Complex { prefix_reference, .. } => {
+                    prefix_reference.as_ref().cloned().unwrap_or_default()
+                }
+            };
+            writeln_rdf!(output, "@prefix {}: <{}> .", prefix, reference)?;
         }
         
-        writeln!(output)?; // Blank line
+        writeln_rdf!(output, "")?; // Blank line
         Ok(())
     }
 
     /// Write schema metadata
     fn write_schema_metadata(&self, output: &mut String, schema: &SchemaDefinition, base_uri: &str) -> Result<()> {
-        writeln!(output, "# Schema: {}", schema.name)?;
-        writeln!(output, "<{}> a linkml:SchemaDefinition ;", base_uri)?;
+        writeln_rdf!(output, "# Schema: {}", schema.name)?;
+        writeln_rdf!(output, "<{}> a linkml:SchemaDefinition ;", base_uri)?;
         
         // Basic metadata
-        writeln!(output, "    rdfs:label \"{}\" ;", schema.name)?;
+        writeln_rdf!(output, "    rdfs:label \"{}\" ;", schema.name)?;
         
         if let Some(title) = &schema.title {
-            writeln!(output, "    dcterms:title \"{}\" ;", escape_literal(title))?;
+            writeln_rdf!(output, "    dcterms:title \"{}\" ;", escape_literal(title))?;
         }
         
         if let Some(description) = &schema.description {
-            writeln!(output, "    dcterms:description \"{}\" ;", escape_literal(description))?;
+            writeln_rdf!(output, "    dcterms:description \"{}\" ;", escape_literal(description))?;
         }
         
         if let Some(version) = &schema.version {
-            writeln!(output, "    dcterms:hasVersion \"{}\" ;", version)?;
+            writeln_rdf!(output, "    dcterms:hasVersion \"{}\" ;", version)?;
         }
         
         if let Some(license) = &schema.license {
-            writeln!(output, "    dcterms:license \"{}\" ;", license)?;
+            writeln_rdf!(output, "    dcterms:license \"{}\" ;", license)?;
         }
         
         if self.include_metadata {
-            if let Some(created_by) = &schema.created_by {
-                writeln!(output, "    dcterms:creator \"{}\" ;", created_by)?;
-            }
+            // TODO: These fields don't exist on SchemaDefinition yet
+            // if let Some(created_by) = &schema.created_by {
+            //     writeln_rdf!(output, "    dcterms:creator \"{}\" ;", created_by)?;
+            // }
             
-            if let Some(created_on) = &schema.created_on {
-                writeln!(output, "    dcterms:created \"{}\" ;", created_on)?;
-            }
+            // if let Some(created_on) = &schema.created_on {
+            //     writeln_rdf!(output, "    dcterms:created \"{}\" ;", created_on)?;
+            // }
             
-            if let Some(modified_by) = &schema.modified_by {
-                writeln!(output, "    dcterms:contributor \"{}\" ;", modified_by)?;
-            }
+            // if let Some(modified_by) = &schema.modified_by {
+            //     writeln_rdf!(output, "    dcterms:contributor \"{}\" ;", modified_by)?;
+            // }
             
-            if let Some(last_updated_on) = &schema.last_updated_on {
-                writeln!(output, "    dcterms:modified \"{}\" ;", last_updated_on)?;
-            }
+            // if let Some(last_updated_on) = &schema.last_updated_on {
+            //     writeln_rdf!(output, "    dcterms:modified \"{}\" ;", last_updated_on)?;
+            // }
         }
         
         // Contributors
         for contributor in &schema.contributors {
-            writeln!(output, "    dcterms:contributor [
+            writeln_rdf!(output, "    dcterms:contributor [
         a dcterms:Agent ;
         rdfs:label \"{}\" ;", contributor.name)?;
             
             if let Some(email) = &contributor.email {
-                writeln!(output, "        dcterms:identifier \"mailto:{}\" ;", email)?;
+                writeln_rdf!(output, "        dcterms:identifier \"mailto:{}\" ;", email)?;
             }
             
-            writeln!(output, "    ] ;")?;
+            writeln_rdf!(output, "    ] ;")?;
         }
         
         // See also links
         for see_also in &schema.see_also {
-            writeln!(output, "    rdfs:seeAlso <{}> ;", see_also)?;
+            writeln_rdf!(output, "    rdfs:seeAlso <{}> ;", see_also)?;
         }
         
         // Close the schema definition
-        writeln!(output, "    .\n")?;
+        writeln_rdf!(output, "    .\n")?;
         
         Ok(())
     }
 
     /// Write a class definition
     fn write_class(&self, output: &mut String, name: &str, class: &ClassDefinition, base_uri: &str) -> Result<()> {
+        let default_uri = format!("{}/{}", base_uri, name);
         let class_uri = class.class_uri.as_deref()
-            .unwrap_or(&format!("{}/{}", base_uri, name));
+            .unwrap_or(&default_uri);
         
-        writeln!(output, "# Class: {}", name)?;
-        writeln!(output, "<{}> a rdfs:Class ;", class_uri)?;
-        writeln!(output, "    rdfs:label \"{}\" ;", name)?;
+        writeln_rdf!(output, "# Class: {}", name)?;
+        writeln_rdf!(output, "<{}> a rdfs:Class ;", class_uri)?;
+        writeln_rdf!(output, "    rdfs:label \"{}\" ;", name)?;
         
         if let Some(description) = &class.description {
-            writeln!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
+            writeln_rdf!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
         }
         
         // Parent class
         if let Some(is_a) = &class.is_a {
             let parent_uri = format!("{}/{}", base_uri, is_a);
-            writeln!(output, "    rdfs:subClassOf <{}> ;", parent_uri)?;
+            writeln_rdf!(output, "    rdfs:subClassOf <{}> ;", parent_uri)?;
         }
         
         // Mixins as additional superclasses
         for mixin in &class.mixins {
             let mixin_uri = format!("{}/{}", base_uri, mixin);
-            writeln!(output, "    rdfs:subClassOf <{}> ;", mixin_uri)?;
+            writeln_rdf!(output, "    rdfs:subClassOf <{}> ;", mixin_uri)?;
         }
         
         // Class properties
         if let Some(abstract_) = class.abstract_ {
             if abstract_ && self.include_linkml_props {
-                writeln!(output, "    linkml:abstract true ;")?;
+                writeln_rdf!(output, "    linkml:abstract true ;")?;
             }
         }
         
         if let Some(mixin) = class.mixin {
             if mixin && self.include_linkml_props {
-                writeln!(output, "    linkml:mixin true ;")?;
+                writeln_rdf!(output, "    linkml:mixin true ;")?;
             }
         }
         
         // Slots as property restrictions
         if self.compact_syntax && !class.slots.is_empty() {
-            writeln!(output, "    sh:property [")?;
+            writeln_rdf!(output, "    sh:property [")?;
             for (i, slot_name) in class.slots.iter().enumerate() {
-                writeln!(output, "        sh:path :{} ;", slot_name)?;
+                writeln_rdf!(output, "        sh:path :{} ;", slot_name)?;
                 if i < class.slots.len() - 1 {
-                    writeln!(output, "    ] , [")?;
+                    writeln_rdf!(output, "    ] , [")?;
                 }
             }
-            writeln!(output, "    ] ;")?;
+            writeln_rdf!(output, "    ] ;")?;
         }
         
-        writeln!(output, "    .\n")?;
+        writeln_rdf!(output, "    .\n")?;
         Ok(())
     }
 
     /// Write a slot definition as an RDF property
     fn write_slot(&self, output: &mut String, name: &str, slot: &SlotDefinition, base_uri: &str) -> Result<()> {
+        let default_uri = format!("{}/{}", base_uri, name);
         let slot_uri = slot.slot_uri.as_deref()
-            .unwrap_or(&format!("{}/{}", base_uri, name));
+            .unwrap_or(&default_uri);
         
-        writeln!(output, "# Property: {}", name)?;
-        writeln!(output, "<{}> a rdf:Property ;", slot_uri)?;
-        writeln!(output, "    rdfs:label \"{}\" ;", name)?;
+        writeln_rdf!(output, "# Property: {}", name)?;
+        writeln_rdf!(output, "<{}> a rdf:Property ;", slot_uri)?;
+        writeln_rdf!(output, "    rdfs:label \"{}\" ;", name)?;
         
         if let Some(description) = &slot.description {
-            writeln!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
+            writeln_rdf!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
         }
         
         // Domain and range
-        if let Some(domain) = &slot.domain {
-            writeln!(output, "    rdfs:domain :{} ;", domain)?;
-        }
+        // TODO: domain field not yet implemented in SlotDefinition
+        // if let Some(domain) = &slot.domain {
+        //     writeln_rdf!(output, "    rdfs:domain :{} ;", domain)?;
+        // }
         
         if let Some(range) = &slot.range {
             let range_uri = map_range_to_xsd(range);
-            writeln!(output, "    rdfs:range {} ;", range_uri)?;
+            writeln_rdf!(output, "    rdfs:range {} ;", range_uri)?;
         }
         
         // Parent slot
         if let Some(is_a) = &slot.is_a {
-            writeln!(output, "    rdfs:subPropertyOf :{} ;", is_a)?;
+            writeln_rdf!(output, "    rdfs:subPropertyOf :{} ;", is_a)?;
         }
         
         // Constraints as SHACL
         if self.compact_syntax {
             if let Some(required) = slot.required {
                 if required {
-                    writeln!(output, "    sh:minCount 1 ;")?;
+                    writeln_rdf!(output, "    sh:minCount 1 ;")?;
                 }
             }
             
             if let Some(multivalued) = slot.multivalued {
                 if !multivalued {
-                    writeln!(output, "    sh:maxCount 1 ;")?;
+                    writeln_rdf!(output, "    sh:maxCount 1 ;")?;
                 }
             }
             
             if let Some(pattern) = &slot.pattern {
-                writeln!(output, "    sh:pattern \"{}\" ;", escape_literal(pattern))?;
+                writeln_rdf!(output, "    sh:pattern \"{}\" ;", escape_literal(pattern))?;
             }
         }
         
-        writeln!(output, "    .\n")?;
+        writeln_rdf!(output, "    .\n")?;
         Ok(())
     }
 
     /// Write a type definition
     fn write_type(&self, output: &mut String, name: &str, type_def: &TypeDefinition, base_uri: &str) -> Result<()> {
+        let default_uri = format!("{}/{}", base_uri, name);
         let type_uri = type_def.uri.as_deref()
-            .unwrap_or(&format!("{}/{}", base_uri, name));
+            .unwrap_or(&default_uri);
         
-        writeln!(output, "# Type: {}", name)?;
-        writeln!(output, "<{}> a rdfs:Datatype ;", type_uri)?;
-        writeln!(output, "    rdfs:label \"{}\" ;", name)?;
+        writeln_rdf!(output, "# Type: {}", name)?;
+        writeln_rdf!(output, "<{}> a rdfs:Datatype ;", type_uri)?;
+        writeln_rdf!(output, "    rdfs:label \"{}\" ;", name)?;
         
         if let Some(description) = &type_def.description {
-            writeln!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
+            writeln_rdf!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
         }
         
-        if let Some(base) = &type_def.base {
-            let base_uri = map_range_to_xsd(base);
-            writeln!(output, "    rdfs:subClassOf {} ;", base_uri)?;
+        if let Some(base_type) = &type_def.base_type {
+            let base_uri = map_range_to_xsd(base_type);
+            writeln_rdf!(output, "    rdfs:subClassOf {} ;", base_uri)?;
         }
         
-        writeln!(output, "    .\n")?;
+        writeln_rdf!(output, "    .\n")?;
         Ok(())
     }
 
     /// Write an enum definition
     fn write_enum(&self, output: &mut String, name: &str, enum_def: &EnumDefinition, base_uri: &str) -> Result<()> {
-        let enum_uri = enum_def.enum_uri.as_deref()
-            .unwrap_or(&format!("{}/{}", base_uri, name));
+        // TODO: enum_uri field not yet implemented in EnumDefinition
+        let enum_uri = format!("{}/{}", base_uri, name);
         
-        writeln!(output, "# Enumeration: {}", name)?;
-        writeln!(output, "<{}> a rdfs:Class ;", enum_uri)?;
-        writeln!(output, "    rdfs:label \"{}\" ;", name)?;
+        writeln_rdf!(output, "# Enumeration: {}", name)?;
+        writeln_rdf!(output, "<{}> a rdfs:Class ;", enum_uri)?;
+        writeln_rdf!(output, "    rdfs:label \"{}\" ;", name)?;
         
         if let Some(description) = &enum_def.description {
-            writeln!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
+            writeln_rdf!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
         }
         
         // Define as enumeration using SHACL
         if self.compact_syntax && !enum_def.permissible_values.is_empty() {
-            writeln!(output, "    sh:in (")?;
-            for (text, _pv) in &enum_def.permissible_values {
-                writeln!(output, "        \"{}\"", escape_literal(text))?;
+            writeln_rdf!(output, "    sh:in (")?;
+            for pv in &enum_def.permissible_values {
+                let text = match pv {
+                    PermissibleValue::Simple(s) => s,
+                    PermissibleValue::Complex { text, .. } => text,
+                };
+                writeln_rdf!(output, "        \"{}\"", escape_literal(text))?;
             }
-            writeln!(output, "    ) ;")?;
+            writeln_rdf!(output, "    ) ;")?;
         }
         
-        writeln!(output, "    .\n")?;
+        writeln_rdf!(output, "    .\n")?;
         
         // Individual permissible values as instances
-        for (text, pv) in &enum_def.permissible_values {
-            writeln!(output, ":{} a <{}> ;", 
+        for pv in &enum_def.permissible_values {
+            let (text, description, meaning) = match pv {
+                PermissibleValue::Simple(s) => (s.as_str(), None, None),
+                PermissibleValue::Complex { text, description, meaning } => {
+                    (text.as_str(), description.as_deref(), meaning.as_deref())
+                }
+            };
+            writeln_rdf!(output, ":{} a <{}> ;", 
                 text.replace(' ', "_"), enum_uri)?;
-            writeln!(output, "    rdfs:label \"{}\" ;", text)?;
+            writeln_rdf!(output, "    rdfs:label \"{}\" ;", text)?;
             
-            if let Some(description) = &pv.description {
-                writeln!(output, "    rdfs:comment \"{}\" ;", escape_literal(description))?;
+            if let Some(desc) = description {
+                writeln_rdf!(output, "    rdfs:comment \"{}\" ;", escape_literal(desc))?;
             }
             
-            if let Some(meaning) = &pv.meaning {
-                writeln!(output, "    skos:exactMatch <{}> ;", meaning)?;
+            if let Some(mean) = meaning {
+                writeln_rdf!(output, "    skos:exactMatch <{}> ;", mean)?;
             }
             
-            writeln!(output, "    .\n")?;
+            writeln_rdf!(output, "    .\n")?;
         }
         
         Ok(())
@@ -379,17 +407,9 @@ fn escape_literal(s: &str) -> String {
      .replace('\t', "\\t")
 }
 
-#[async_trait]
 impl Generator for RdfGenerator {
-    async fn generate(&self, schema: &SchemaDefinition, _options: &GeneratorOptions) -> Result<GeneratorResult> {
-        let rdf_content = self.generate_rdf(schema)?;
-        
-        Ok(GeneratorResult {
-            outputs: vec![GeneratedOutput {
-                filename: format!("{}.ttl", schema.name),
-                content: rdf_content,
-            }],
-        })
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        self.generate_rdf(schema)
     }
 
     fn name(&self) -> &'static str {
@@ -398,5 +418,13 @@ impl Generator for RdfGenerator {
 
     fn description(&self) -> &'static str {
         "Generate RDF/Turtle representation of LinkML schema"
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "ttl"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema.ttl"
     }
 }

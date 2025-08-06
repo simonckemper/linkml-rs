@@ -245,7 +245,10 @@ impl SchemaSet {
     /// Merge all schemas into one
     pub fn merge(self) -> Result<ArcSchema> {
         if self.schemas.is_empty() {
-            return Err(LinkMLError::internal("Cannot merge empty schema set"));
+            return Err(LinkMLError::Other {
+                message: "Cannot merge empty schema set".to_string(),
+                source: None,
+            });
         }
         
         if self.schemas.len() == 1 {

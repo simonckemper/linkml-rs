@@ -8,9 +8,10 @@ use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use linkml_core::prelude::*;
 use linkml_core::error::{Result, LinkMLError};
+use logger_core::{LoggerService, LoggerError};
 
 pub mod discovery;
 pub mod loader;
@@ -18,11 +19,11 @@ pub mod api;
 pub mod registry;
 pub mod compatibility;
 
-pub use discovery::{PluginDiscovery, DiscoveryStrategy};
+pub use discovery::{PluginDiscovery, DiscoveryStrategy, PluginManifest, EntryPoint};
 pub use loader::{PluginLoader, DynamicLoader};
-pub use api::{PluginApi, PluginCapability, PluginMetadata};
+pub use api::{PluginSDK, PluginCapability, PluginMetadata};
 pub use registry::{PluginRegistry, PluginRegistration};
-pub use compatibility::{VersionCompatibility, CompatibilityChecker};
+pub use compatibility::{CompatibilityChecker, CompatibilityRules};
 
 /// Plugin type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -82,7 +83,7 @@ pub struct PluginDependency {
 }
 
 /// Plugin context for execution
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PluginContext {
     /// Plugin configuration
     pub config: HashMap<String, serde_json::Value>,
@@ -139,7 +140,7 @@ pub trait GeneratorPlugin: Plugin {
     /// Generate code from schema
     async fn generate(
         &self,
-        schema: &Schema,
+        schema: &SchemaDefinition,
         format: &str,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<String>;
@@ -154,7 +155,7 @@ pub trait ValidatorPlugin: Plugin {
     /// Validate data against schema
     async fn validate(
         &self,
-        schema: &Schema,
+        schema: &SchemaDefinition,
         data: &serde_json::Value,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<ValidationResult>;
@@ -313,10 +314,10 @@ impl PluginManager {
             match self.load_plugin(&plugin_path).await {
                 Ok(info) => loaded_plugins.push(info),
                 Err(e) => {
-                    self.logger.log_warning(&format!(
+                    self.logger.warn(&format!(
                         "Failed to load plugin from {:?}: {}",
                         plugin_path, e
-                    )).await?;
+                    )).await.map_err(|le| LinkMLError::other(le.to_string()))?;
                 }
             }
         }
@@ -343,12 +344,12 @@ impl PluginManager {
     }
     
     /// Get a plugin by ID
-    pub fn get_plugin(&self, id: &str) -> Option<Arc<dyn Plugin>> {
+    pub fn get_plugin(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get(id)
     }
     
     /// Get all plugins of a specific type
-    pub fn get_plugins_by_type(&self, plugin_type: PluginType) -> Vec<Arc<dyn Plugin>> {
+    pub fn get_plugins_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get_by_type(plugin_type)
     }
     

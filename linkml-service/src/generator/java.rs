@@ -3,12 +3,14 @@
 //! This module generates Java classes from LinkML schemas with full
 //! validation support and builder patterns.
 
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue};
+use linkml_core::{
+    error::LinkMLError,
+    types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue}
+};
 use std::collections::HashMap;
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
 
 /// Java class generator
 pub struct JavaGenerator {
@@ -394,7 +396,6 @@ impl Default for JavaGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for JavaGenerator {
     fn name(&self) -> &str {
         "java"
@@ -408,61 +409,42 @@ impl Generator for JavaGenerator {
         vec![".java"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        let mut outputs = Vec::new();
+    ) -> std::result::Result<String, LinkMLError> {
+        let mut output = String::new();
         
         // Generate header content (package and imports)
         let header = self.generate_header(schema)?;
+        output.push_str(&header);
+        output.push('\n');
         
         // Generate enums
         for (name, enum_def) in &schema.enums {
-            let mut content = header.clone();
             let enum_code = self.generate_enum(name, enum_def)
-                .map_err(|e| GeneratorError::Generation {
-                    context: format!("enum {}", name),
-                    message: e.to_string(),
-                })?;
-            content.push_str(&enum_code);
-            
-            let filename = format!("{}.java", self.to_pascal_case(name));
-            let mut metadata = HashMap::new();
-            metadata.insert("type".to_string(), "enum".to_string());
-            metadata.insert("name".to_string(), name.clone());
-            
-            outputs.push(GeneratedOutput {
-                filename,
-                content,
-                metadata,
-            });
+                .map_err(|e| LinkMLError::service(format!("Failed to generate enum {}: {}", name, e)))?;
+            output.push_str(&enum_code);
+            output.push_str("\n\n");
         }
         
         // Generate classes
         for (name, class_def) in &schema.classes {
-            let mut content = header.clone();
-            let class_code = self.generate_class(name, class_def, schema, options)
-                .map_err(|e| GeneratorError::Generation {
-                    context: format!("class {}", name),
-                    message: e.to_string(),
-                })?;
-            content.push_str(&class_code);
-            
-            let filename = format!("{}.java", self.to_pascal_case(name));
-            let mut metadata = HashMap::new();
-            metadata.insert("type".to_string(), "class".to_string());
-            metadata.insert("name".to_string(), name.clone());
-            
-            outputs.push(GeneratedOutput {
-                filename,
-                content,
-                metadata,
-            });
+            let class_code = self.generate_class(name, class_def, schema, &GeneratorOptions::default())
+                .map_err(|e| LinkMLError::service(format!("Failed to generate class {}: {}", name, e)))?;
+            output.push_str(&class_code);
+            output.push_str("\n\n");
         }
         
-        Ok(outputs)
+        Ok(output)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "java"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 

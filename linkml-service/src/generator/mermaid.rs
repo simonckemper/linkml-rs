@@ -4,12 +4,14 @@
 //! JavaScript-based diagramming tool that uses text definitions to create
 //! diagrams dynamically in the browser.
 
-use linkml_core::prelude::*;
+use linkml_core::{
+    error::LinkMLError,
+    prelude::*,
+};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult};
 
 /// Mermaid diagram type
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -106,7 +108,7 @@ impl MermaidGenerator {
         
         // Header
         writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: {}", if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "erDiagram").map_err(Self::fmt_error_to_generator_error)?;
         
@@ -193,7 +195,7 @@ impl MermaidGenerator {
         
         // Header
         writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "title: {}", schema.name.as_deref().unwrap_or("LinkML Schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "title: {}", if schema.name.is_empty() { "LinkML Schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "---").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "classDiagram").map_err(Self::fmt_error_to_generator_error)?;
         
@@ -360,7 +362,7 @@ impl MermaidGenerator {
         writeln!(&mut output, "flowchart TD").map_err(Self::fmt_error_to_generator_error)?;
         
         // Create a flowchart showing schema structure
-        let schema_name = schema.name.as_deref().unwrap_or("Schema");
+        let schema_name = if schema.name.is_empty() { "Schema" } else { &schema.name };
         writeln!(&mut output, "    {}[{}]", self.sanitize_name(schema_name), schema_name).map_err(Self::fmt_error_to_generator_error)?;
         
         // Group classes by inheritance
@@ -492,7 +494,6 @@ impl Default for MermaidGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for MermaidGenerator {
     fn name(&self) -> &str {
         match self.options.diagram_type {
@@ -516,32 +517,27 @@ impl Generator for MermaidGenerator {
         vec![".mmd", ".mermaid"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_mermaid(schema)?;
-        
-        let filename = format!("{}.mermaid", 
-            schema.name.as_deref().unwrap_or("schema"));
-        
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "mermaid".to_string());
-        metadata.insert("diagram_type".to_string(), format!("{:?}", self.options.diagram_type).to_lowercase());
-        metadata.insert("theme".to_string(), self.options.theme.clone());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content,
-            metadata,
-        }])
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "mmd"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generator::GeneratorOptions;
     
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

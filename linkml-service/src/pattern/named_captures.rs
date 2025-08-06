@@ -19,15 +19,20 @@ pub enum CaptureError {
     /// Type conversion failed
     #[error("Failed to convert capture '{name}' to {target_type}: {error}")]
     ConversionError {
+        /// Name of the capture that failed conversion
         name: String,
+        /// Target type for conversion
         target_type: String,
+        /// Error message from conversion attempt
         error: String,
     },
     
     /// Validation failed
     #[error("Validation failed for capture '{name}': {reason}")]
     ValidationError {
+        /// Name of the capture that failed validation
         name: String,
+        /// Reason for validation failure
         reason: String,
     },
     

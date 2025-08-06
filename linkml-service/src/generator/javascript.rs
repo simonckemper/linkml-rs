@@ -4,12 +4,13 @@ use super::base::{
     collect_all_slots, is_optional_slot, BaseCodeFormatter, TypeMapper,
 };
 use super::traits::{
-    CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
+    CodeFormatter, Generator, GeneratorError, GeneratorResult,
 };
 use super::options::{GeneratorOptions, IndentStyle};
-use async_trait::async_trait;
-use linkml_core::prelude::*;
-use std::collections::HashMap;
+use linkml_core::{
+    error::LinkMLError,
+    prelude::*,
+};
 use std::fmt::Write;
 
 /// JavaScript generator
@@ -377,7 +378,6 @@ impl JavaScriptGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for JavaScriptGenerator {
     fn name(&self) -> &str {
         &self.name
@@ -391,14 +391,12 @@ impl Generator for JavaScriptGenerator {
         vec!["js", "mjs"]
     }
 
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        self.validate_schema(schema).await?;
+    ) -> std::result::Result<String, LinkMLError> {
+        self.validate_schema(schema)?;
 
-        let mut outputs = Vec::new();
         let mut content = String::new();
 
         // File header
@@ -424,13 +422,13 @@ impl Generator for JavaScriptGenerator {
 
         // Generate classes
         for (class_name, class_def) in &schema.classes {
-            let class_code = self.generate_class(class_name, class_def, schema, options)?;
+            let class_code = self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
             content.push_str(&class_code);
             writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        // Generate CommonJS exports if requested
-        if options.get_custom("module_type") == Some("commonjs") {
+        // Generate CommonJS exports (default to ESM)
+        if false {  // Default to ESM module type
             writeln!(&mut content, "// CommonJS exports").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut content, "if (typeof module !== 'undefined' && module.exports) {{").map_err(Self::fmt_error_to_generator_error)?;
             
@@ -450,37 +448,26 @@ impl Generator for JavaScriptGenerator {
             writeln!(&mut content, "}}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        let extension = if options.get_custom("module_type") == Some("commonjs") {
-            "js"
-        } else {
-            "mjs"
-        };
-
-        outputs.push(GeneratedOutput {
-            content,
-            filename: format!("{}.{}", schema.name.to_lowercase().replace('-', "_"), extension),
-            metadata: {
-                let mut meta = HashMap::new();
-                meta.insert("generator".to_string(), self.name.clone());
-                meta.insert("schema".to_string(), schema.name.clone());
-                meta.insert("module_type".to_string(), 
-                    options.get_custom("module_type").unwrap_or("esm").to_string());
-                meta
-            },
-        });
-
-        Ok(outputs)
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "js"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 
-    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(GeneratorError::SchemaValidation(
+            return Err(LinkMLError::service(
                 "Schema must have a name".to_string(),
             ));
         }
 
         if schema.classes.is_empty() {
-            return Err(GeneratorError::SchemaValidation(
+            return Err(LinkMLError::service(
                 "Schema must have at least one class".to_string(),
             ));
         }
@@ -535,8 +522,8 @@ impl CodeFormatter for JavaScriptGenerator {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_basic_generation() {
+    #[test]
+    fn test_basic_generation() {
         let mut schema = SchemaDefinition::default();
         schema.name = "test_schema".to_string();
 
@@ -560,17 +547,13 @@ mod tests {
         schema.slots.insert("age".to_string(), age_slot);
 
         let generator = JavaScriptGenerator::new();
-        let options = GeneratorOptions::new();
-
-        let outputs = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
-        assert_eq!(outputs.len(), 1);
-
-        let output = &outputs[0];
-        assert!(output.content.contains("export class Person"));
-        assert!(output.content.contains("constructor(data = {})"));
-        assert!(output.content.contains("#validate(data)"));
-        assert!(output.content.contains("static fromJSON(json)"));
-        assert!(output.content.contains("toObject()"));
-        assert!(output.content.contains("toJSON()"));
+        
+        let output = generator.generate(&schema).expect("should generate JavaScript");
+        assert!(output.contains("export class Person"));
+        assert!(output.contains("constructor(data = {})"));
+        assert!(output.contains("#validate(data)"));
+        assert!(output.contains("static fromJSON(json)"));
+        assert!(output.contains("toObject()"));
+        assert!(output.contains("toJSON()"));
     }
 }

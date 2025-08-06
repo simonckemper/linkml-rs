@@ -68,7 +68,7 @@ pub struct ElementMetadata {
 }
 
 /// An example of how to use an element
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Example {
     /// The example value
     pub value: String,

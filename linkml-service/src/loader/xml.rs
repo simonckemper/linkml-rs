@@ -2,10 +2,10 @@
 //!
 //! This module provides functionality to load and dump LinkML data in XML format.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
+use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
 use linkml_core::prelude::*;
 use async_trait::async_trait;
-use serde_json::{Value, Map};
+use serde_json::Value;
 
 /// XML loader for LinkML data
 pub struct XmlLoader {
@@ -45,17 +45,55 @@ impl Default for XmlLoader {
 
 #[async_trait]
 impl DataLoader for XmlLoader {
-    async fn load(&mut self, _schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
-        let _content = if let Some(path) = &self.file_path {
-            std::fs::read_to_string(path)
-                .map_err(|e| LoaderError::Io(e))?
-        } else {
-            return Err(LoaderError::Configuration("No input file specified".to_string()));
-        };
+    fn name(&self) -> &str {
+        "xml"
+    }
+    
+    fn description(&self) -> &str {
+        "Load data from XML files"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["xml"]
+    }
+    
+    async fn load_file(
+        &self,
+        path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let _content = std::fs::read_to_string(path)
+            .map_err(|e| LoaderError::Io(e))?;
         
         // TODO: Implement actual XML parsing
         // For now, return a placeholder implementation
-        Err(LoaderError::NotImplemented("XML loading not yet implemented".to_string()))
+        Err(LoaderError::InvalidFormat("XML loading not yet implemented".to_string()))
+    }
+    
+    async fn load_string(
+        &self,
+        _content: &str,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        // TODO: Implement actual XML parsing
+        Err(LoaderError::InvalidFormat("XML loading not yet implemented".to_string()))
+    }
+    
+    async fn load_bytes(
+        &self,
+        data: &[u8],
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let content = String::from_utf8(data.to_vec())
+            .map_err(|e| LoaderError::Parse(e.to_string()))?;
+        self.load_string(&content, schema, options).await
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+        Ok(())
     }
 }
 
@@ -100,7 +138,37 @@ impl Default for XmlDumper {
 
 #[async_trait]
 impl DataDumper for XmlDumper {
-    async fn dump(&mut self, instances: &[DataInstance], _schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    fn name(&self) -> &str {
+        "xml"
+    }
+    
+    fn description(&self) -> &str {
+        "Dump data to XML format"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["xml"]
+    }
+    
+    async fn dump_file(
+        &self,
+        instances: &[DataInstance],
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<()> {
+        let content = self.dump_string(instances, schema, options).await?;
+        std::fs::write(path, content)
+            .map_err(|e| DumperError::Io(e))?;
+        Ok(())
+    }
+    
+    async fn dump_string(
+        &self,
+        instances: &[DataInstance],
+        _schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<String> {
         let mut xml = String::new();
         
         // XML declaration
@@ -115,7 +183,7 @@ impl DataDumper for XmlDumper {
         
         // Convert instances to XML
         for instance in instances {
-            if self.pretty {
+            if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
             xml.push_str(&format!("<{}", instance.class_name));
@@ -135,26 +203,26 @@ impl DataDumper for XmlDumper {
             for (key, value) in &instance.data {
                 match value {
                     Value::String(s) if s.contains('\n') || s.len() >= 50 => {
-                        if self.pretty {
+                        if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
                         xml.push_str(&format!("<{}>{}</{}>\n", key, escape_xml(s), key));
                     }
                     Value::Number(n) => {
-                        if self.pretty {
+                        if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
                         xml.push_str(&format!("<{}>{}</{}>\n", key, n, key));
                     }
                     Value::Bool(b) => {
-                        if self.pretty {
+                        if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
                         xml.push_str(&format!("<{}>{}</{}>\n", key, b, key));
                     }
                     Value::Array(arr) => {
                         for item in arr {
-                            if self.pretty {
+                            if self.pretty || options.pretty_print {
                                 xml.push_str("    ");
                             }
                             xml.push_str(&format!("<{}>{}</{}>\n", key, value_to_xml_string(item), key));
@@ -164,7 +232,7 @@ impl DataDumper for XmlDumper {
                 }
             }
             
-            if self.pretty {
+            if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
             xml.push_str(&format!("</{}>\n", instance.class_name));
@@ -173,7 +241,21 @@ impl DataDumper for XmlDumper {
         // Close root element
         xml.push_str(&format!("</{}>\n", self.root_element));
         
-        Ok(xml.into_bytes())
+        Ok(xml)
+    }
+    
+    async fn dump_bytes(
+        &self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<Vec<u8>> {
+        let result = self.dump_string(instances, schema, options).await?;
+        Ok(result.into_bytes())
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+        Ok(())
     }
 }
 

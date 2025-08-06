@@ -3,7 +3,7 @@
 //! This module provides helper functions that wrap CLI file operations
 //! to use the FileSystemOperations trait instead of direct std::fs access.
 
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::Result;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -61,7 +61,7 @@ impl<F: FileSystemOperations> CLIFileSystemOps<F> {
 /// 
 /// This is a temporary solution for CLI commands that are not yet async.
 /// In a full refactor, all CLI commands should be made async.
-pub fn block_on_with_fs<F, Fut, T>(fs: Arc<F>, future: Fut) -> Result<T>
+pub fn block_on_with_fs<F, Fut, T>(_fs: Arc<F>, future: Fut) -> Result<T>
 where
     F: FileSystemOperations,
     Fut: std::future::Future<Output = Result<T>>,

@@ -73,7 +73,7 @@ pub enum ParseError {
 }
 
 /// Errors that can occur during evaluation
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum EvaluationError {
     /// Variable not found in context
     #[error("Undefined variable '{name}'")]

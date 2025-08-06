@@ -3,12 +3,12 @@
 //! This module provides a proper integration with TypeDB through the DBMS service,
 //! avoiding circular dependencies while maintaining the single source of truth principle.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
+use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
 use linkml_core::prelude::*;
 use async_trait::async_trait;
 use serde_json::{Value, Map};
 use std::collections::HashMap;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info};
 
 /// TypeDB integration options
 #[derive(Debug, Clone)]
@@ -57,13 +57,13 @@ impl Default for TypeDBIntegrationOptions {
 #[async_trait]
 pub trait TypeDBQueryExecutor: Send + Sync {
     /// Execute a TypeQL query and return results as JSON
-    async fn execute_query(&self, query: &str, database: &str) -> Result<String, Box<dyn std::error::Error>>;
+    async fn execute_query(&self, query: &str, database: &str) -> std::result::Result<String, Box<dyn std::error::Error>>;
     
     /// Execute a TypeQL define query (schema modification)
-    async fn execute_define(&self, query: &str, database: &str) -> Result<(), Box<dyn std::error::Error>>;
+    async fn execute_define(&self, query: &str, database: &str) -> std::result::Result<(), Box<dyn std::error::Error>>;
     
     /// Execute a TypeQL insert query
-    async fn execute_insert(&self, query: &str, database: &str) -> Result<(), Box<dyn std::error::Error>>;
+    async fn execute_insert(&self, query: &str, database: &str) -> std::result::Result<(), Box<dyn std::error::Error>>;
 }
 
 /// TypeDB loader using an abstract query executor
@@ -107,7 +107,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Parse type query results
     fn parse_type_results(&self, json_result: &str, root_type: &str) -> LoaderResult<Vec<TypeInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::ParseError(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
         
         let mut types = Vec::new();
         
@@ -153,7 +153,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Parse attribute query results
     fn parse_attribute_results(&self, json_result: &str) -> LoaderResult<Vec<AttributeInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::ParseError(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
         
         let mut attributes = Vec::new();
         
@@ -169,7 +169,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                             
                             attributes.push(AttributeInfo {
                                 name: label.clone(),
-                                value_type,
+                                _value_type: value_type,
                             });
                         }
                     }
@@ -200,7 +200,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Parse role query results
     fn parse_role_results(&self, json_result: &str) -> LoaderResult<Vec<RoleInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::ParseError(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
         
         let mut roles = Vec::new();
         
@@ -210,7 +210,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     if let Some(Value::Object(role)) = obj.get("role") {
                         if let Some(Value::String(label)) = role.get("label") {
                             roles.push(RoleInfo {
-                                name: label.clone(),
+                                _name: label.clone(),
                             });
                         }
                     }
@@ -265,7 +265,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                               type_name: &str, attributes: &[AttributeInfo]) 
         -> LoaderResult<Vec<DataInstance>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::ParseError(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
         
         let mut instances = Vec::new();
         
@@ -293,8 +293,10 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     }
                     
                     instances.push(DataInstance {
-                        class_name: class_name.clone(),
-                        data,
+                        class_name: class_name.to_string(),
+                        data: data.into_iter().collect(),
+                        id: None,
+                        metadata: HashMap::new(),
                     });
                 }
             }
@@ -316,7 +318,33 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
 #[async_trait]
 impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
-    async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
+    fn name(&self) -> &str {
+        "typedb-integration"
+    }
+    
+    fn description(&self) -> &str {
+        "Load data from TypeDB with full integration support"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec![] // TypeDB loader doesn't use file extensions
+    }
+    
+    async fn load_file(
+        &self,
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        Err(LoaderError::InvalidFormat("TypeDB loader does not support file loading".to_string()))
+    }
+    
+    async fn load_string(
+        &self,
+        _content: &str,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
         // Get all types
         let entity_types = self.get_entity_types().await?;
         info!("Found {} entity types", entity_types.len());
@@ -349,7 +377,7 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
             
             debug!("Loading instances of relation type: {}", type_info.name);
             let attributes = self.get_type_attributes(&type_info.name).await?;
-            let roles = self.get_relation_roles(&type_info.name).await?;
+            let _roles = self.get_relation_roles(&type_info.name).await?;
             
             // For now, just load the relation instances without role players
             // Full role player loading would require more complex queries
@@ -359,6 +387,19 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
         }
         
         Ok(all_instances)
+    }
+    
+    async fn load_bytes(
+        &self,
+        _data: &[u8],
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        Err(LoaderError::InvalidFormat("TypeDB loader does not support raw bytes loading".to_string()))
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+        Ok(())
     }
 }
 
@@ -454,7 +495,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .unwrap_or_else(|| to_snake_case(class_name));
         
         let class_def = schema.classes.get(class_name)
-            .ok_or_else(|| DumperError::ValidationFailed(
+            .ok_or_else(|| DumperError::SchemaValidation(
                 format!("Class {} not found in schema", class_name)
             ))?;
         
@@ -576,7 +617,34 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
 #[async_trait]
 impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
-    async fn dump(&mut self, instances: &[DataInstance], schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    fn name(&self) -> &str {
+        "typedb-integration"
+    }
+    
+    fn description(&self) -> &str {
+        "Dump data to TypeDB with full integration support"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec![] // TypeDB dumper doesn't use file extensions
+    }
+    
+    async fn dump_file(
+        &self,
+        _instances: &[DataInstance],
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &DumpOptions,
+    ) -> DumperResult<()> {
+        Err(DumperError::Configuration("TypeDB dumper does not support file dumping".to_string()))
+    }
+    
+    async fn dump_string(
+        &self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+        _options: &DumpOptions,
+    ) -> DumperResult<String> {
         // Group instances by class
         let mut instances_by_class: HashMap<String, Vec<&DataInstance>> = HashMap::new();
         for instance in instances {
@@ -604,7 +672,21 @@ impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
         }
         
         let summary = format!("Successfully dumped {} instances to TypeDB", instances.len());
-        Ok(summary.into_bytes())
+        Ok(summary)
+    }
+    
+    async fn dump_bytes(
+        &self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<Vec<u8>> {
+        let result = self.dump_string(instances, schema, options).await?;
+        Ok(result.into_bytes())
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+        Ok(())
     }
 }
 
@@ -618,12 +700,12 @@ struct TypeInfo {
 #[derive(Debug, Clone)]
 struct AttributeInfo {
     name: String,
-    value_type: String,
+    _value_type: String,
 }
 
 #[derive(Debug, Clone)]
 struct RoleInfo {
-    name: String,
+    _name: String,
 }
 
 // Helper functions
@@ -671,8 +753,8 @@ fn json_value_to_typeql(value: &Value) -> DumperResult<String> {
         Value::String(s) => Ok(format!("\"{}\"", s.replace('\"', "\\\""))),
         Value::Number(n) => Ok(n.to_string()),
         Value::Bool(b) => Ok(b.to_string()),
-        Value::Null => Err(DumperError::ValidationFailed("Cannot insert null values into TypeDB".to_string())),
-        _ => Err(DumperError::ValidationFailed(format!("Unsupported value type: {:?}", value))),
+        Value::Null => Err(DumperError::TypeConversion("Cannot insert null values into TypeDB".to_string())),
+        _ => Err(DumperError::TypeConversion(format!("Unsupported value type: {:?}", value))),
     }
 }
 

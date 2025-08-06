@@ -22,7 +22,7 @@ pub enum DiffError {
 }
 
 /// Result type for diff operations
-pub type DiffResult<T> = Result<T, DiffError>;
+pub type DiffResult<T> = std::result::Result<T, DiffError>;
 
 /// Type of change detected
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,6 +48,16 @@ pub enum ChangeSeverity {
     Minor,
     /// Major breaking change
     Major,
+}
+
+impl std::fmt::Display for ChangeSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ChangeSeverity::Compatible => write!(f, "Compatible"),
+            ChangeSeverity::Minor => write!(f, "Minor"),
+            ChangeSeverity::Major => write!(f, "Major"),
+        }
+    }
 }
 
 /// A single change in the schema
@@ -271,8 +281,8 @@ impl SchemaDiffer {
         let mut max_score = 0.0;
         
         // Compare attributes
-        let old_attrs: HashSet<_> = old_class.attributes.iter().cloned().collect();
-        let new_attrs: HashSet<_> = new_class.attributes.iter().cloned().collect();
+        let old_attrs: HashSet<_> = old_class.attributes.keys().cloned().collect();
+        let new_attrs: HashSet<_> = new_class.attributes.keys().cloned().collect();
         let attr_intersection = old_attrs.intersection(&new_attrs).count() as f64;
         let attr_union = old_attrs.union(&new_attrs).count() as f64;
         
@@ -490,8 +500,8 @@ impl SchemaDiffer {
         }
         
         // Compare attributes
-        let old_attrs: HashSet<_> = old_class.attributes.iter().cloned().collect();
-        let new_attrs: HashSet<_> = new_class.attributes.iter().cloned().collect();
+        let old_attrs: HashSet<_> = old_class.attributes.keys().cloned().collect();
+        let new_attrs: HashSet<_> = new_class.attributes.keys().cloned().collect();
         
         for removed in old_attrs.difference(&new_attrs) {
             let mut path = base_path.clone();
@@ -796,15 +806,19 @@ impl SchemaDiffer {
         let base_path = vec!["enums".to_string(), name.to_string()];
         
         // Compare permissible values
-        let old_values: HashSet<_> = old_enum.permissible_values
+        let old_values: HashSet<String> = old_enum.permissible_values
             .iter()
-            .filter_map(|pv| pv.text.as_ref())
-            .cloned()
+            .map(|pv| match pv {
+                PermissibleValue::Simple(s) => s.clone(),
+                PermissibleValue::Complex { text, .. } => text.clone(),
+            })
             .collect();
-        let new_values: HashSet<_> = new_enum.permissible_values
+        let new_values: HashSet<String> = new_enum.permissible_values
             .iter()
-            .filter_map(|pv| pv.text.as_ref())
-            .cloned()
+            .map(|pv| match pv {
+                PermissibleValue::Simple(s) => s.clone(),
+                PermissibleValue::Complex { text, .. } => text.clone(),
+            })
             .collect();
         
         for removed in old_values.difference(&new_values) {
@@ -950,11 +964,10 @@ mod tests {
         };
         
         // Add a class
-        schema.classes.insert("Person".to_string(), ClassDefinition {
-            name: "Person".to_string(),
-            attributes: vec!["name".to_string(), "age".to_string()],
-            ..Default::default()
-        });
+        let mut person_class = ClassDefinition::default();
+        person_class.name = "Person".to_string();
+        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        schema.classes.insert("Person".to_string(), person_class);
         
         // Add a slot
         schema.slots.insert("name".to_string(), SlotDefinition {
@@ -984,12 +997,11 @@ mod tests {
         let old_schema = create_test_schema("test");
         let mut new_schema = old_schema.clone();
         
-        new_schema.classes.insert("Employee".to_string(), ClassDefinition {
-            name: "Employee".to_string(),
-            is_a: Some("Person".to_string()),
-            attributes: vec!["employee_id".to_string()],
-            ..Default::default()
-        });
+        let mut employee_class = ClassDefinition::default();
+        employee_class.name = "Employee".to_string();
+        employee_class.is_a = Some("Person".to_string());
+        employee_class.slots = vec!["employee_id".to_string()];
+        new_schema.classes.insert("Employee".to_string(), employee_class);
         
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ.diff(&old_schema, &new_schema)

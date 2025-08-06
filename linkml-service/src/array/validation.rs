@@ -3,7 +3,7 @@
 //! This module provides comprehensive validation for array data
 //! including shape, type, uniqueness, and custom constraints.
 
-use super::{ArrayData, ArrayError, ArrayResult, ArraySpec, ArrayDimension};
+use super::{ArrayData, ArrayDimension};
 use linkml_core::types::{SlotDefinition, TypeDefinition};
 use serde_json::Value;
 use std::collections::HashSet;
@@ -115,23 +115,37 @@ impl ArrayValidatorV2 {
             }
             
             // Range validation
-            if let Some(slot) = context.slot.minimum_value.as_ref() {
-                if let Err(e) = Self::validate_minimum(value, slot) {
-                    errors.push(ArrayValidationError {
-                        location: Some(indices.clone()),
-                        message: e,
-                        error_type: ArrayValidationErrorType::RangeError,
-                    });
+            if let Some(min_value) = context.slot.minimum_value.as_ref() {
+                let min_str = match min_value {
+                    Value::String(s) => s.as_str(),
+                    Value::Number(n) => &n.to_string(),
+                    _ => "",
+                };
+                if !min_str.is_empty() {
+                    if let Err(e) = Self::validate_minimum(value, min_str) {
+                        errors.push(ArrayValidationError {
+                            location: Some(indices.clone()),
+                            message: e,
+                            error_type: ArrayValidationErrorType::RangeError,
+                        });
+                    }
                 }
             }
             
-            if let Some(slot) = context.slot.maximum_value.as_ref() {
-                if let Err(e) = Self::validate_maximum(value, slot) {
-                    errors.push(ArrayValidationError {
-                        location: Some(indices.clone()),
-                        message: e,
-                        error_type: ArrayValidationErrorType::RangeError,
-                    });
+            if let Some(max_value) = context.slot.maximum_value.as_ref() {
+                let max_str = match max_value {
+                    Value::String(s) => s.as_str(),
+                    Value::Number(n) => &n.to_string(),
+                    _ => "",
+                };
+                if !max_str.is_empty() {
+                    if let Err(e) = Self::validate_maximum(value, max_str) {
+                        errors.push(ArrayValidationError {
+                            location: Some(indices.clone()),
+                            message: e,
+                            error_type: ArrayValidationErrorType::RangeError,
+                        });
+                    }
                 }
             }
             
@@ -210,8 +224,8 @@ impl ArrayValidatorV2 {
             _ => {
                 // Check custom types
                 if let Some(type_def) = type_defs.get(expected_type) {
-                    if let Some(base) = &type_def.base {
-                        return Self::validate_element_type(value, base, type_defs);
+                    if let Some(base_type) = &type_def.base_type {
+                        return Self::validate_element_type(value, base_type, type_defs);
                     }
                 }
                 true // Unknown types pass by default

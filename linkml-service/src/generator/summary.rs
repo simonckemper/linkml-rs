@@ -3,10 +3,11 @@
 //! This module generates summary statistics and reports from LinkML schemas,
 //! providing insights into schema structure, complexity, and usage patterns.
 
-use crate::error::LinkMLError;
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::schema::{ClassDefinition, Schema, SlotDefinition, TypeDefinition, EnumDefinition};
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition, TypeDefinition, EnumDefinition};
 use std::collections::{HashMap, HashSet};
+use indexmap::IndexMap;
 
 /// Summary generator configuration
 #[derive(Debug, Clone)]
@@ -116,7 +117,7 @@ impl SummaryGenerator {
     }
     
     /// Generate summary from schema
-    fn generate_summary(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_summary(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let stats = self.calculate_statistics(schema)?;
         
         match self.config.format {
@@ -128,35 +129,27 @@ impl SummaryGenerator {
     }
     
     /// Calculate schema statistics
-    fn calculate_statistics(&self, schema: &Schema) -> Result<SchemaStats, LinkMLError> {
+    fn calculate_statistics(&self, schema: &SchemaDefinition) -> Result<SchemaStats, LinkMLError> {
         let mut stats = SchemaStats::default();
         
         // Basic counts
-        stats.class_count = schema.classes.as_ref().map(|c| c.len()).unwrap_or(0);
-        stats.slot_count = schema.slots.as_ref().map(|s| s.len()).unwrap_or(0);
-        stats.type_count = schema.types.as_ref().map(|t| t.len()).unwrap_or(0);
-        stats.enum_count = schema.enums.as_ref().map(|e| e.len()).unwrap_or(0);
-        stats.subset_count = schema.subsets.as_ref().map(|s| s.len()).unwrap_or(0);
-        
+        stats.class_count = schema.classes.len();
+        stats.slot_count = schema.slots.len();
+        stats.type_count = schema.types.len();
+        stats.enum_count = schema.enums.len();
+        stats.subset_count = schema.subsets.len();
+
         // Analyze classes
-        if let Some(classes) = &schema.classes {
-            self.analyze_classes(classes, &mut stats);
-        }
-        
+        self.analyze_classes(&schema.classes, &mut stats);
+
         // Analyze slots
-        if let Some(slots) = &schema.slots {
-            self.analyze_slots(slots, &mut stats);
-        }
+        self.analyze_slots(&schema.slots, &mut stats);
         
         // Analyze types
-        if let Some(types) = &schema.types {
-            self.analyze_types(types, &mut stats);
-        }
-        
+        self.analyze_types(&schema.types, &mut stats);
+
         // Analyze enums
-        if let Some(enums) = &schema.enums {
-            self.analyze_enums(enums, &mut stats);
-        }
+        self.analyze_enums(&schema.enums, &mut stats);
         
         // Calculate derived metrics
         self.calculate_derived_metrics(&mut stats, schema);
@@ -170,8 +163,8 @@ impl SummaryGenerator {
     }
     
     /// Analyze classes
-    fn analyze_classes(&self, classes: &HashMap<String, ClassDefinition>, stats: &mut SchemaStats) {
-        for (name, class_def) in classes {
+    fn analyze_classes(&self, classes: &IndexMap<String, ClassDefinition>, stats: &mut SchemaStats) {
+        for (_name, class_def) in classes {
             if class_def.abstract_.unwrap_or(false) {
                 stats.abstract_class_count += 1;
             }
@@ -180,11 +173,11 @@ impl SummaryGenerator {
                 stats.mixin_class_count += 1;
             }
             
-            if class_def.slots.is_some() || class_def.slot_usage.is_some() {
+            if !class_def.slots.is_empty() || !class_def.slot_usage.is_empty() {
                 stats.classes_with_slots += 1;
             }
             
-            if class_def.attributes.is_some() {
+            if !class_def.attributes.is_empty() {
                 stats.classes_with_attributes += 1;
             }
             
@@ -193,10 +186,8 @@ impl SummaryGenerator {
             }
             
             // Count slot usage
-            if let Some(slots) = &class_def.slots {
-                for slot in slots {
-                    *stats.slot_usage_count.entry(slot.clone()).or_insert(0) += 1;
-                }
+            for slot in &class_def.slots {
+                *stats.slot_usage_count.entry(slot.clone()).or_insert(0) += 1;
             }
             
             // Count inheritance relationships
@@ -204,15 +195,12 @@ impl SummaryGenerator {
                 stats.inheritance_relationships += 1;
             }
             
-            if let Some(mixins) = &class_def.mixins {
-                stats.mixin_relationships += mixins.len();
-            }
+            stats.mixin_relationships += class_def.mixins.len();
         }
         
         // Calculate average slots per class
         let total_slots: usize = classes.values()
-            .filter_map(|c| c.slots.as_ref())
-            .map(|s| s.len())
+            .map(|c| c.slots.len())
             .sum();
         
         if stats.class_count > 0 {
@@ -221,7 +209,7 @@ impl SummaryGenerator {
     }
     
     /// Analyze slots
-    fn analyze_slots(&self, slots: &HashMap<String, SlotDefinition>, stats: &mut SchemaStats) {
+    fn analyze_slots(&self, slots: &IndexMap<String, SlotDefinition>, stats: &mut SchemaStats) {
         for (_, slot_def) in slots {
             if slot_def.required.unwrap_or(false) {
                 stats.required_slot_count += 1;
@@ -240,9 +228,7 @@ impl SummaryGenerator {
             }
             
             if slot_def.minimum_value.is_some() || 
-               slot_def.maximum_value.is_some() ||
-               slot_def.minimum_cardinality.is_some() ||
-               slot_def.maximum_cardinality.is_some() {
+               slot_def.maximum_value.is_some() {
                 stats.slots_with_constraints += 1;
             }
             
@@ -253,9 +239,9 @@ impl SummaryGenerator {
     }
     
     /// Analyze types
-    fn analyze_types(&self, types: &HashMap<String, TypeDefinition>, stats: &mut SchemaStats) {
+    fn analyze_types(&self, types: &IndexMap<String, TypeDefinition>, stats: &mut SchemaStats) {
         for (_, type_def) in types {
-            if type_def.typeof.is_none() {
+            if type_def.base_type.is_none() {
                 stats.custom_type_count += 1;
             }
             
@@ -274,11 +260,9 @@ impl SummaryGenerator {
     }
     
     /// Analyze enums
-    fn analyze_enums(&self, enums: &HashMap<String, EnumDefinition>, stats: &mut SchemaStats) {
+    fn analyze_enums(&self, enums: &IndexMap<String, EnumDefinition>, stats: &mut SchemaStats) {
         for (_, enum_def) in enums {
-            if let Some(values) = &enum_def.permissible_values {
-                stats.total_permissible_values += values.len();
-            }
+            stats.total_permissible_values += enum_def.permissible_values.len();
             
             if enum_def.description.is_some() {
                 stats.documented_enums += 1;
@@ -291,7 +275,7 @@ impl SummaryGenerator {
     }
     
     /// Calculate derived metrics
-    fn calculate_derived_metrics(&self, stats: &mut SchemaStats, schema: &Schema) {
+    fn calculate_derived_metrics(&self, stats: &mut SchemaStats, schema: &SchemaDefinition) {
         // Calculate documentation coverage
         let total_elements = stats.class_count + stats.slot_count + stats.type_count + stats.enum_count;
         let documented_elements = stats.documented_classes + stats.documented_slots + 
@@ -302,13 +286,11 @@ impl SummaryGenerator {
         }
         
         // Calculate max inheritance depth
-        if let Some(classes) = &schema.classes {
-            stats.max_inheritance_depth = self.calculate_max_inheritance_depth(classes);
-        }
+        stats.max_inheritance_depth = self.calculate_max_inheritance_depth(&schema.classes);
     }
     
     /// Calculate maximum inheritance depth
-    fn calculate_max_inheritance_depth(&self, classes: &HashMap<String, ClassDefinition>) -> usize {
+    fn calculate_max_inheritance_depth(&self, classes: &IndexMap<String, ClassDefinition>) -> usize {
         let mut max_depth = 0;
         let mut visited = HashSet::new();
         
@@ -324,7 +306,7 @@ impl SummaryGenerator {
     fn calculate_inheritance_depth(
         &self,
         class_name: &str,
-        classes: &HashMap<String, ClassDefinition>,
+        classes: &IndexMap<String, ClassDefinition>,
         visited: &mut HashSet<String>,
     ) -> usize {
         if visited.contains(class_name) {
@@ -343,7 +325,7 @@ impl SummaryGenerator {
     }
     
     /// Calculate complexity metrics
-    fn calculate_complexity_metrics(&self, stats: &mut SchemaStats, schema: &Schema) {
+    fn calculate_complexity_metrics(&self, stats: &mut SchemaStats, schema: &SchemaDefinition) {
         // Schema complexity score (simple heuristic)
         stats.schema_complexity_score = 
             (stats.class_count as f64 * 1.0) +
@@ -360,12 +342,8 @@ impl SummaryGenerator {
         
         // Coupling score (based on cross-references)
         let mut references = 0;
-        if let Some(classes) = &schema.classes {
-            for class_def in classes.values() {
-                if let Some(slots) = &class_def.slots {
-                    references += slots.len();
-                }
-            }
+        for class_def in schema.classes.values() {
+            references += class_def.slots.len();
         }
         
         if stats.class_count > 0 {
@@ -386,15 +364,15 @@ impl SummaryGenerator {
     }
     
     /// Generate TSV format
-    fn generate_tsv(&self, stats: &SchemaStats, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_tsv(&self, stats: &SchemaStats, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = String::new();
         
         // Header
         output.push_str("Metric\tValue\n");
         
         // Basic information
-        if let Some(name) = &schema.name {
-            output.push_str(&format!("Schema Name\t{}\n", name));
+        if !schema.name.is_empty() {
+            output.push_str(&format!("Schema Name\t{}\n", schema.name));
         }
         if let Some(version) = &schema.version {
             output.push_str(&format!("Schema Version\t{}\n", version));
@@ -449,14 +427,14 @@ impl SummaryGenerator {
     }
     
     /// Generate Markdown format
-    fn generate_markdown(&self, stats: &SchemaStats, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_markdown(&self, stats: &SchemaStats, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = String::new();
         
         // Title
         output.push_str("# LinkML Schema Summary Report\n\n");
         
-        if let Some(name) = &schema.name {
-            output.push_str(&format!("## Schema: {}\n\n", name));
+        if !schema.name.is_empty() {
+            output.push_str(&format!("## Schema: {}\n\n", schema.name));
         }
         
         if let Some(description) = &schema.description {
@@ -526,15 +504,15 @@ impl SummaryGenerator {
     }
     
     /// Generate JSON format
-    fn generate_json(&self, stats: &SchemaStats, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_json(&self, stats: &SchemaStats, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         use serde_json::{json, Map, Value};
         
         let mut root = Map::new();
         
         // Schema information
         let mut schema_info = Map::new();
-        if let Some(name) = &schema.name {
-            schema_info.insert("name".to_string(), json!(name));
+        if !schema.name.is_empty() {
+            schema_info.insert("name".to_string(), json!(&schema.name));
         }
         if let Some(version) = &schema.version {
             schema_info.insert("version".to_string(), json!(version));
@@ -597,11 +575,11 @@ impl SummaryGenerator {
         }
         
         serde_json::to_string_pretty(&root)
-            .map_err(|e| LinkMLError::GeneratorError(format!("Failed to serialize summary JSON: {}", e)))
+            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize summary JSON: {}", e)))
     }
     
     /// Generate HTML format
-    fn generate_html(&self, stats: &SchemaStats, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_html(&self, stats: &SchemaStats, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut html = String::new();
         
         html.push_str("<!DOCTYPE html>\n");
@@ -624,8 +602,8 @@ impl SummaryGenerator {
         
         html.push_str("    <h1>LinkML Schema Summary Report</h1>\n");
         
-        if let Some(name) = &schema.name {
-            html.push_str(&format!("    <h2>Schema: {}</h2>\n", name));
+        if !schema.name.is_empty() {
+            html.push_str(&format!("    <h2>Schema: {}</h2>\n", schema.name));
         }
         
         if let Some(description) = &schema.description {
@@ -666,7 +644,7 @@ impl SummaryGenerator {
 }
 
 impl Generator for SummaryGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         self.generate_summary(schema)
     }
     
@@ -687,28 +665,28 @@ impl Generator for SummaryGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::schema::SchemaDefinition;
+    use linkml_core::types::SchemaDefinition;
     
     #[test]
     fn test_summary_generation() {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         schema.description = Some("A test schema".to_string());
         
         // Add some classes
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
         person_class.abstract_ = Some(false);
-        person_class.slots = Some(vec!["name".to_string(), "age".to_string()]);
+        person_class.slots = vec!["name".to_string(), "age".to_string()];
         
         let mut abstract_class = ClassDefinition::default();
         abstract_class.abstract_ = Some(true);
         abstract_class.description = Some("An abstract class".to_string());
         
-        schema.classes = Some(HashMap::from([
-            ("Person".to_string(), person_class),
-            ("NamedThing".to_string(), abstract_class),
-        ]));
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
+        classes.insert("NamedThing".to_string(), abstract_class);
+        schema.classes = classes;
         
         // Add some slots
         let mut name_slot = SlotDefinition::default();
@@ -718,15 +696,15 @@ mod tests {
         let mut age_slot = SlotDefinition::default();
         age_slot.range = Some("integer".to_string());
         
-        schema.slots = Some(HashMap::from([
-            ("name".to_string(), name_slot),
-            ("age".to_string(), age_slot),
-        ]));
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+        schema.slots = slots;
         
         // Test TSV generation
         let config = SummaryGeneratorConfig::default();
         let generator = SummaryGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).expect("should generate summary");
+        let result = generator.generate(&schema).expect("should generate summary");
         
         assert!(result.contains("Total Classes\t2"));
         assert!(result.contains("Total Slots\t2"));

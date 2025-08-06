@@ -91,7 +91,7 @@ impl SchemaMerge {
     /// Merge multiple schemas
     pub fn merge(&self, schemas: &[SchemaDefinition]) -> Result<SchemaDefinition> {
         if schemas.is_empty() {
-            return Err(LinkMLError::Configuration("No schemas to merge".to_string()));
+            return Err(LinkMLError::config("No schemas to merge"));
         }
         
         if schemas.len() == 1 {
@@ -114,7 +114,7 @@ impl SchemaMerge {
         
         // Handle conflicts
         if !conflicts.is_empty() && matches!(self.options.conflict_resolution, ConflictResolution::Error) {
-            return Err(LinkMLError::Validation(format!("{} conflicts found during merge", conflicts.len())));
+            return Err(LinkMLError::schema_validation(format!("{} conflicts found during merge", conflicts.len())));
         }
         
         Ok(merged)
@@ -131,11 +131,8 @@ impl SchemaMerge {
             
             // Merge prefixes
             for schema in schemas {
-                if let Some(prefixes) = &schema.prefixes {
-                    let merged_prefixes = merged.prefixes.get_or_insert_with(HashMap::new);
-                    for (prefix, uri) in prefixes {
-                        merged_prefixes.insert(prefix.clone(), uri.clone());
-                    }
+                for (prefix, prefix_def) in &schema.prefixes {
+                    merged.prefixes.insert(prefix.clone(), prefix_def.clone());
                 }
             }
             
@@ -211,13 +208,28 @@ impl SchemaMerge {
         }
         
         // Merge enums
-        for (i, schema) in schemas.iter().enumerate() {
+        for (_i, schema) in schemas.iter().enumerate() {
             for (name, enum_def) in &schema.enums {
                 if let Some(existing) = merged.enums.get(name) {
                     // Conflict detected - merge enum values
                     let mut merged_enum = existing.clone();
-                    for (value_name, value_def) in &enum_def.permissible_values {
-                        merged_enum.permissible_values.insert(value_name.clone(), value_def.clone());
+                    // Add permissible values that don't already exist
+                    for pv in &enum_def.permissible_values {
+                        let pv_text = match pv {
+                            linkml_core::types::PermissibleValue::Simple(s) => s,
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
+                        };
+                        
+                        let already_exists = merged_enum.permissible_values.iter().any(|existing_pv| {
+                            match existing_pv {
+                                linkml_core::types::PermissibleValue::Simple(s) => s == pv_text,
+                                linkml_core::types::PermissibleValue::Complex { text, .. } => text == pv_text,
+                            }
+                        });
+                        
+                        if !already_exists {
+                            merged_enum.permissible_values.push(pv.clone());
+                        }
                     }
                     merged.enums.insert(name.clone(), merged_enum);
                 } else {
@@ -381,7 +393,7 @@ impl SchemaMerge {
     ) -> Result<ClassDefinition> {
         match self.options.conflict_resolution {
             ConflictResolution::Error => {
-                Err(LinkMLError::Validation("Class conflict".to_string()))
+                Err(LinkMLError::schema_validation("Class conflict".to_string()))
             }
             ConflictResolution::First => {
                 Ok(existing.clone())
@@ -410,7 +422,7 @@ impl SchemaMerge {
     ) -> Result<SlotDefinition> {
         match self.options.conflict_resolution {
             ConflictResolution::Error => {
-                Err(LinkMLError::Validation("Slot conflict".to_string()))
+                Err(LinkMLError::schema_validation("Slot conflict".to_string()))
             }
             ConflictResolution::First => {
                 Ok(existing.clone())
@@ -439,7 +451,7 @@ impl SchemaMerge {
     ) -> Result<TypeDefinition> {
         match self.options.conflict_resolution {
             ConflictResolution::Error => {
-                Err(LinkMLError::Validation("Type conflict".to_string()))
+                Err(LinkMLError::schema_validation("Type conflict".to_string()))
             }
             ConflictResolution::First => {
                 Ok(existing.clone())

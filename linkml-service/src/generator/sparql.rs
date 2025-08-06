@@ -7,8 +7,8 @@ use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult};
+use linkml_core::error::LinkMLError;
 
 /// SPARQL query type to generate
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -125,7 +125,7 @@ impl SparqlGenerator {
     
     /// Generate SELECT queries for each class
     fn generate_select_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL SELECT queries for {}", schema.name.as_deref().unwrap_or("schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "# SPARQL SELECT queries for {}", if schema.name.is_empty() { "schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         for (class_name, class_def) in &schema.classes {
@@ -181,7 +181,7 @@ impl SparqlGenerator {
     
     /// Generate CONSTRUCT queries
     fn generate_construct_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL CONSTRUCT queries for {}", schema.name.as_deref().unwrap_or("schema")).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "# SPARQL CONSTRUCT queries for {}", if schema.name.is_empty() { "schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         
         for (class_name, class_def) in &schema.classes {
@@ -448,8 +448,8 @@ impl SparqlGenerator {
     }
     
     /// Add schema-specific prefix
-    fn add_schema_prefix(&self, prefix: &str, schema: &SchemaDefinition) {
-        let uri = format!("{}#", schema.id.as_deref().unwrap_or(&self.options.base_uri));
+    fn add_schema_prefix(&self, _prefix: &str, schema: &SchemaDefinition) {
+        let _uri = format!("{}#", if schema.id.is_empty() { &self.options.base_uri } else { &schema.id });
         // Note: In real implementation, would need mutable access to prefixes
     }
     
@@ -568,7 +568,6 @@ impl Default for SparqlGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for SparqlGenerator {
     fn name(&self) -> &str {
         "sparql"
@@ -582,25 +581,21 @@ impl Generator for SparqlGenerator {
         vec![".sparql", ".rq"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_sparql(schema)?;
         
-        let filename = format!("{}.sparql", 
-            schema.name.as_deref().unwrap_or("schema"));
-        
-        let mut metadata = HashMap::new();
-        metadata.insert("format".to_string(), "sparql".to_string());
-        metadata.insert("query_type".to_string(), format!("{:?}", self.options.query_type).to_lowercase());
-        
-        Ok(vec![GeneratedOutput {
-            filename,
-            content,
-            metadata,
-        }])
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "sparql"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "queries"
     }
 }
 

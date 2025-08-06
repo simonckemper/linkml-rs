@@ -4,6 +4,47 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Represents an expression in the LinkML expression language
+/// Binary operators
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BinaryOp {
+    /// Addition operator (+)
+    Add,
+    /// Subtraction operator (-)
+    Subtract,
+    /// Multiplication operator (*)
+    Multiply,
+    /// Division operator (/)
+    Divide,
+    /// Modulo operator (%)
+    Modulo,
+    /// Equality operator (==)
+    Equal,
+    /// Inequality operator (!=)
+    NotEqual,
+    /// Less than operator (<)
+    Less,
+    /// Greater than operator (>)
+    Greater,
+    /// Less than or equal operator (<=)
+    LessOrEqual,
+    /// Greater than or equal operator (>=)
+    GreaterOrEqual,
+    /// Logical AND operator (&&)
+    And,
+    /// Logical OR operator (||)
+    Or,
+}
+
+/// Unary operators
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum UnaryOp {
+    /// Negation operator (-)
+    Negate,
+    /// Logical NOT operator (!)
+    Not,
+}
+
+/// Represents an expression in the LinkML expression language
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     /// Null literal

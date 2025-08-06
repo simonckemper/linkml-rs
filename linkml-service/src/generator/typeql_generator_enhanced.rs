@@ -8,11 +8,12 @@
 //! - TypeDB 3.0 feature support
 
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorResult, GeneratorError};
+use super::traits::{AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorResult, GeneratorError};
 use super::typeql_constraints::TypeQLConstraintTranslator;
 use super::typeql_relation_analyzer::RelationAnalyzer;
 use super::typeql_role_inheritance::RoleInheritanceResolver;
 use async_trait::async_trait;
+use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::sync::RwLock;
@@ -52,7 +53,7 @@ pub struct EnhancedTypeQLGenerator {
     /// Role inheritance resolver
     role_inheritance_resolver: RwLock<RoleInheritanceResolver>,
     /// Identifier mapping table for bidirectional lookups
-    identifier_map: HashMap<String, String>,
+    _identifier_map: HashMap<String, String>,
 }
 
 /// Analyzes schema structure for optimal TypeQL generation
@@ -63,6 +64,7 @@ struct SchemaAnalyzer {
 
 /// Type of TypeQL schema element
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 enum TypeQLType {
     Entity,
     Relation,
@@ -72,6 +74,7 @@ enum TypeQLType {
 
 /// Relation role information
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct RelationRole {
     name: String,
     players: Vec<String>,
@@ -94,7 +97,7 @@ impl EnhancedTypeQLGenerator {
             constraint_translator: RwLock::new(TypeQLConstraintTranslator::new()),
             relation_analyzer: RwLock::new(RelationAnalyzer::new()),
             role_inheritance_resolver: RwLock::new(RoleInheritanceResolver::new()),
-            identifier_map: HashMap::new(),
+            _identifier_map: HashMap::new(),
         }
     }
 
@@ -878,7 +881,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Collect relation roles
-    fn collect_relation_roles(
+    fn _collect_relation_roles(
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
@@ -967,7 +970,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Escape regex pattern for TypeQL
-    fn escape_regex(&self, pattern: &str) -> String {
+    fn _escape_regex(&self, pattern: &str) -> String {
         // TypeQL uses Java regex syntax, escape accordingly
         pattern
             .replace('\\', "\\\\")
@@ -1141,7 +1144,7 @@ impl SchemaAnalyzer {
 
 
 #[async_trait]
-impl Generator for EnhancedTypeQLGenerator {
+impl AsyncGenerator for EnhancedTypeQLGenerator {
     fn name(&self) -> &str {
         &self.name
     }
@@ -1160,7 +1163,7 @@ impl Generator for EnhancedTypeQLGenerator {
         options: &GeneratorOptions,
     ) -> GeneratorResult<Vec<GeneratedOutput>> {
         // Validate schema
-        self.validate_schema(schema).await?;
+        AsyncGenerator::validate_schema(self, schema).await?;
         
         // Analyze schema structure
         self.analyze_schema(schema)?;
@@ -1200,6 +1203,33 @@ impl Generator for EnhancedTypeQLGenerator {
         }
         
         Ok(outputs)
+    }
+}
+
+// Implement the synchronous Generator trait for backward compatibility
+impl Generator for EnhancedTypeQLGenerator {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        // Use tokio to run the async version
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+        
+        let options = GeneratorOptions::new();
+        let outputs = runtime.block_on(AsyncGenerator::generate(self, schema, &options))
+            .map_err(|e| LinkMLError::service(e.to_string()))?;
+        
+        // Concatenate all outputs into a single string
+        Ok(outputs.into_iter()
+            .map(|output| output.content)
+            .collect::<Vec<_>>()
+            .join("\n"))
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "txt"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "generated.txt"
     }
 }
 

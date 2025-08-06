@@ -37,10 +37,14 @@ pub enum LoaderError {
     /// Configuration error
     #[error("Configuration error: {0}")]
     Configuration(String),
+    
+    /// Generic error
+    #[error("Error: {0}")]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 /// Result type for loader operations
-pub type LoaderResult<T> = Result<T, LoaderError>;
+pub type LoaderResult<T> = std::result::Result<T, LoaderError>;
 
 /// Error type for data dumping operations
 #[derive(Debug, Error)]
@@ -64,13 +68,17 @@ pub enum DumperError {
     /// Configuration error
     #[error("Configuration error: {0}")]
     Configuration(String),
+    
+    /// Generic error
+    #[error("Error: {0}")]
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 /// Result type for dumper operations
-pub type DumperResult<T> = Result<T, DumperError>;
+pub type DumperResult<T> = std::result::Result<T, DumperError>;
 
 /// Represents a loaded data instance
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DataInstance {
     /// The class this instance belongs to
     pub class_name: String,

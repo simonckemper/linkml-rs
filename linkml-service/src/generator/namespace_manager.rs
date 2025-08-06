@@ -3,10 +3,9 @@
 //! This module generates namespace management utilities from LinkML schemas,
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
-use crate::error::LinkMLError;
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::schema::{Schema, Prefix};
-use std::collections::{HashMap, HashSet};
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{SchemaDefinition as Schema, PrefixDefinition as Prefix};
 
 /// Namespace manager generator configuration
 #[derive(Debug, Clone)]
@@ -64,6 +63,16 @@ impl NamespaceManagerGenerator {
         Self { config }
     }
     
+    /// Get prefix reference from PrefixDefinition
+    fn get_prefix_reference(prefix_def: &Prefix) -> &str {
+        match prefix_def {
+            Prefix::Simple(url) => url,
+            Prefix::Complex { prefix_reference, .. } => {
+                prefix_reference.as_deref().unwrap_or("")
+            }
+        }
+    }
+    
     /// Generate namespace manager for the configured language
     fn generate_manager(&self, schema: &Schema) -> Result<String, LinkMLError> {
         match self.config.target_language {
@@ -104,11 +113,11 @@ impl NamespaceManagerGenerator {
         
         // Initialize prefix mappings
         output.push_str("        self._prefixes: Dict[str, str] = {\n");
-        if let Some(prefixes) = &schema.prefixes {
-            for (prefix, expansion) in prefixes {
+        if !schema.prefixes.is_empty() {
+            for (prefix, expansion) in &schema.prefixes {
                 output.push_str(&format!(
                     "            '{}': '{}',\n",
-                    prefix, expansion.prefix_reference
+                    prefix, Self::get_prefix_reference(expansion)
                 ));
             }
         }
@@ -378,11 +387,11 @@ impl NamespaceManagerGenerator {
         output.push_str("    this._prefixes = new Map([\n");
         
         // Add schema prefixes
-        if let Some(prefixes) = &schema.prefixes {
-            for (prefix, expansion) in prefixes {
+        if !schema.prefixes.is_empty() {
+            for (prefix, expansion) in &schema.prefixes {
                 output.push_str(&format!(
                     "      ['{}', '{}'],\n",
-                    prefix, expansion.prefix_reference
+                    prefix, Self::get_prefix_reference(expansion)
                 ));
             }
         }
@@ -554,13 +563,11 @@ impl NamespaceManagerGenerator {
         output.push_str("        let mut prefixes = HashMap::new();\n");
         
         // Add schema prefixes
-        if let Some(schema_prefixes) = &schema.prefixes {
-            for (prefix, expansion) in schema_prefixes {
-                output.push_str(&format!(
-                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());\n",
-                    prefix, expansion.prefix_reference
-                ));
-            }
+        for (prefix, expansion) in &schema.prefixes {
+            output.push_str(&format!(
+                "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());\n",
+                prefix, Self::get_prefix_reference(expansion)
+            ));
         }
         
         // Add common prefixes
@@ -739,13 +746,11 @@ impl NamespaceManagerGenerator {
         output.push_str(&format!("    public {}() {{\n", self.config.class_name));
         
         // Add schema prefixes
-        if let Some(schema_prefixes) = &schema.prefixes {
-            for (prefix, expansion) in schema_prefixes {
-                output.push_str(&format!(
-                    "        prefixes.put(\"{}\", \"{}\");\n",
-                    prefix, expansion.prefix_reference
-                ));
-            }
+        for (prefix, expansion) in &schema.prefixes {
+            output.push_str(&format!(
+                "        prefixes.put(\"{}\", \"{}\");\n",
+                prefix, Self::get_prefix_reference(expansion)
+            ));
         }
         
         // Add common prefixes
@@ -871,13 +876,13 @@ impl NamespaceManagerGenerator {
         output.push_str("\t}\n\n");
         
         // Add schema prefixes
-        if let Some(schema_prefixes) = &schema.prefixes {
-            for (prefix, expansion) in schema_prefixes {
-                output.push_str(&format!(
-                    "\tm.prefixes[\"{}\"] = \"{}\"\n",
-                    prefix, expansion.prefix_reference
-                ));
-            }
+        for (prefix, expansion) in &schema.prefixes {
+            output.push_str(&format!(
+                "\tm.prefixes[\"{}\"] = \"{}\"\n",
+                prefix, Self::get_prefix_reference(expansion)
+            ));
+        }
+        if !schema.prefixes.is_empty() {
             output.push_str("\n");
         }
         
@@ -996,7 +1001,7 @@ impl Generator for NamespaceManagerGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::schema::SchemaDefinition;
+    use linkml_core::types::SchemaDefinition;
     
     #[test]
     fn test_namespace_manager_generation() {
@@ -1004,21 +1009,23 @@ mod tests {
         schema.name = Some("TestSchema".to_string());
         
         // Add prefixes
-        let mut prefixes = HashMap::new();
+        use indexmap::IndexMap;
+        use linkml_core::prelude::PrefixDefinition;
+        let mut prefixes = IndexMap::new();
         prefixes.insert(
             "ex".to_string(),
-            Prefix {
+            PrefixDefinition::Complex {
                 prefix_prefix: "ex".to_string(),
-                prefix_reference: "https://example.com/".to_string(),
+                prefix_reference: Some("https://example.com/".to_string()),
             },
         );
-        schema.prefixes = Some(prefixes);
+        schema.prefixes = prefixes;
         schema.default_prefix = Some("ex".to_string());
         
         // Test Python generation
         let config = NamespaceManagerGeneratorConfig::default();
         let generator = NamespaceManagerGenerator::new(config);
-        let result = generator.generate(&Schema(schema)).expect("should generate namespace manager");
+        let result = generator.generate(&schema).expect("should generate namespace manager");
         
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));

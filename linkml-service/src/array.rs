@@ -6,9 +6,7 @@
 pub mod operations;
 pub mod validation;
 
-use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use thiserror::Error;
 
 /// Error type for array operations
@@ -21,7 +19,9 @@ pub enum ArrayError {
     /// Shape mismatch
     #[error("Shape mismatch: expected {expected:?}, got {actual:?}")]
     ShapeMismatch {
+        /// Expected shape
         expected: Vec<usize>,
+        /// Actual shape
         actual: Vec<usize>,
     },
     
@@ -32,14 +32,18 @@ pub enum ArrayError {
     /// Type mismatch
     #[error("Type mismatch: expected {expected}, got {actual}")]
     TypeMismatch {
+        /// Expected type
         expected: String,
+        /// Actual type
         actual: String,
     },
     
     /// Index out of bounds
     #[error("Index out of bounds: {index} >= {size}")]
     IndexOutOfBounds {
+        /// Index that was accessed
         index: usize,
+        /// Size of the dimension
         size: usize,
     },
     
@@ -49,7 +53,7 @@ pub enum ArrayError {
 }
 
 /// Result type for array operations
-pub type ArrayResult<T> = Result<T, ArrayError>;
+pub type ArrayResult<T> = std::result::Result<T, ArrayError>;
 
 /// Array dimension specification
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -286,7 +290,7 @@ impl ArraySpec {
         }
         
         // Validate indices
-        for (i, (&idx, &dim_size)) in indices.iter().zip(shape.iter()).enumerate() {
+        for (_i, (&idx, &dim_size)) in indices.iter().zip(shape.iter()).enumerate() {
             if idx >= dim_size {
                 return Err(ArrayError::IndexOutOfBounds {
                     index: idx,
@@ -301,15 +305,15 @@ impl ArraySpec {
             // Row-major
             let mut stride = 1;
             for i in (0..shape.len()).rev() {
-                flat_index += indices[i] * stride;
-                stride *= shape[i];
+                flat_index += indices.get(i).copied().unwrap_or(0) * stride;
+                stride *= shape.get(i).copied().unwrap_or(1);
             }
         } else {
             // Column-major
             let mut stride = 1;
             for i in 0..shape.len() {
-                flat_index += indices[i] * stride;
-                stride *= shape[i];
+                flat_index += indices.get(i).copied().unwrap_or(0) * stride;
+                stride *= shape.get(i).copied().unwrap_or(1);
             }
         }
         
@@ -358,12 +362,22 @@ impl ArrayData {
     /// Get element at indices
     pub fn get(&self, indices: &[usize]) -> ArrayResult<&serde_json::Value> {
         let flat_index = self.spec.indices_to_flat(indices, &self.shape)?;
-        Ok(&self.data[flat_index])
+        self.data.get(flat_index)
+            .ok_or_else(|| ArrayError::IndexOutOfBounds {
+                index: flat_index,
+                size: self.data.len(),
+            })
     }
     
     /// Set element at indices
     pub fn set(&mut self, indices: &[usize], value: serde_json::Value) -> ArrayResult<()> {
         let flat_index = self.spec.indices_to_flat(indices, &self.shape)?;
+        if flat_index >= self.data.len() {
+            return Err(ArrayError::IndexOutOfBounds {
+                index: flat_index,
+                size: self.data.len(),
+            });
+        }
         self.data[flat_index] = value;
         Ok(())
     }
@@ -376,10 +390,15 @@ impl ArrayData {
             ));
         }
         
-        if index >= self.shape[dimension] {
+        let dim_size = self.shape.get(dimension).copied()
+            .ok_or_else(|| ArrayError::InvalidDimension(
+                format!("Dimension {} out of range", dimension)
+            ))?;
+        
+        if index >= dim_size {
             return Err(ArrayError::IndexOutOfBounds {
                 index,
-                size: self.shape[dimension],
+                size: dim_size,
             });
         }
         
@@ -500,7 +519,7 @@ impl ArrayValidator {
     }
     
     /// Validate a single element
-    fn validate_element(value: &serde_json::Value, expected_type: &str, index: usize) -> ArrayResult<()> {
+    fn validate_element(value: &serde_json::Value, expected_type: &str, _index: usize) -> ArrayResult<()> {
         let actual_type = match value {
             serde_json::Value::Null => "null",
             serde_json::Value::Bool(_) => "boolean",

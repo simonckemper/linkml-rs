@@ -1,8 +1,7 @@
 //! JSON Schema generation for `LinkML` schemas
 
-use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
-use async_trait::async_trait;
+use super::options::IndentStyle;
+use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::prelude::*;
 use serde_json::{Value as JsonValue, json};
 use std::collections::HashMap;
@@ -266,7 +265,6 @@ impl Default for JsonSchemaGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for JsonSchemaGenerator {
     fn name(&self) -> &str {
         &self.name
@@ -280,13 +278,12 @@ impl Generator for JsonSchemaGenerator {
         vec![".json", ".schema.json"]
     }
 
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    ) -> std::result::Result<String, LinkMLError> {
         // Validate schema
-        self.validate_schema(schema).await?;
+        self.validate_schema(schema)?;
 
         let mut definitions = HashMap::new();
 
@@ -338,34 +335,18 @@ impl Generator for JsonSchemaGenerator {
         }
 
         // Format output
-        let content = if options.get_custom("pretty_print") == Some("true") {
-            serde_json::to_string_pretty(&json_schema)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        } else {
-            serde_json::to_string(&json_schema)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        };
+        let content = serde_json::to_string_pretty(&json_schema)
+            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
 
-        // Create output
-        let filename = format!(
-            "{}.schema.json",
-            if schema.name.is_empty() {
-                "schema"
-            } else {
-                &schema.name
-            }
-        );
-
-        let mut metadata = HashMap::new();
-        metadata.insert("generator".to_string(), self.name.clone());
-        metadata.insert("schema_name".to_string(), schema.name.clone());
-        metadata.insert("json_schema_version".to_string(), "draft-07".to_string());
-
-        Ok(vec![GeneratedOutput {
-            content,
-            filename,
-            metadata,
-        }])
+        Ok(content)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "json"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -401,6 +382,7 @@ impl CodeFormatter for JsonSchemaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::generator::GeneratorOptions;
 
     #[tokio::test]
     async fn test_json_schema_generation() {

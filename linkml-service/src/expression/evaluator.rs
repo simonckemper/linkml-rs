@@ -520,9 +520,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 let result = left_num + right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -549,9 +549,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 let result = left_num - right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -573,9 +573,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 let result = left_num * right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -597,12 +597,12 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let divisor = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
                 let dividend = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let result = dividend / divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -624,12 +624,12 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let divisor = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
                 let dividend = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let result = dividend % divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -650,7 +650,7 @@ impl<'a> EvalContext<'a> {
         match val {
             Value::Number(n) => {
                 let num = n.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Operand is not a valid number".to_string() })?;
                 let result = -num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result)
@@ -685,9 +685,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 Ok(Value::Bool(left_num < right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l < r)),
@@ -706,9 +706,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 Ok(Value::Bool(left_num > right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l > r)),
@@ -727,9 +727,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 Ok(Value::Bool(left_num <= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l <= r)),
@@ -748,9 +748,9 @@ impl<'a> EvalContext<'a> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Left operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Left operand is not a valid number".to_string() })?;
                 let right_num = r.as_f64()
-                    .ok_or_else(|| EvaluationError::TypeError("Right operand is not a valid number".to_string()))?;
+                    .ok_or_else(|| EvaluationError::TypeError { message: "Right operand is not a valid number".to_string() })?;
                 Ok(Value::Bool(left_num >= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l >= r)),

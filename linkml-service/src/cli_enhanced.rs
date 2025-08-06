@@ -10,23 +10,23 @@ use linkml_core::prelude::*;
 use linkml_core::error::{Result, LinkMLError};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
-use std::io::Write;
-use tracing::{info, debug, warn, error};
+use tracing::warn;
 
-use crate::generator::{GeneratorRegistry, GeneratorOptions, generator_factory};
+use crate::generator::{GeneratorRegistry, GeneratorOptions};
 use crate::loader::{
     DataLoader, DataDumper, CsvLoader, CsvDumper, CsvOptions,
-    RdfLoader, RdfDumper, RdfOptions, RdfFormat,
-    DatabaseLoader, DatabaseDumper, DatabaseOptions,
+    RdfLoader, RdfDumper, RdfOptions, RdfSerializationFormat,
     ApiLoader, ApiDumper, ApiOptions,
-    TypeDBLoader, TypeDBIntegration, TypeDBOptions,
-    JsonLoader, JsonDumper, YamlLoader, YamlDumper, XmlLoader, XmlDumper
+    JsonLoader, JsonDumper, YamlLoader, YamlDumper, XmlLoader, XmlDumper,
+    traits::{LoadOptions, DumpOptions}
 };
-use crate::validator::ValidatorBuilder;
+#[cfg(feature = "database")]
+use crate::loader::{DatabaseLoader, DatabaseDumper, DatabaseOptions};
+use crate::validator::ValidationEngine;
 use crate::schema::{
-    diff::{SchemaDiff, DiffOptions, DiffResult},
-    merge::{SchemaMerge, MergeOptions, MergeResult},
-    lint::{SchemaLinter, LintOptions, LintResult, LintRule}
+    diff::{SchemaDiff, DiffOptions},
+    merge::{SchemaMerge, MergeOptions},
+    lint::{SchemaLinter, LintOptions, LintResult}
 };
 
 /// LinkML command-line interface
@@ -155,7 +155,7 @@ pub enum LinkMLCommand {
     /// Merge multiple schemas
     Merge {
         /// Schema files to merge
-        #[arg(required = true, min_values = 2)]
+        #[arg(required = true, num_args = 2..)]
         schemas: Vec<PathBuf>,
         
         /// Output file path
@@ -544,7 +544,7 @@ impl LinkMLApp {
         schema_path: &Path,
         data_paths: &[PathBuf],
         class_name: Option<&str>,
-        strict: bool,
+        _strict: bool,
         max_errors: usize,
         show_stats: bool,
         parallel: bool,
@@ -554,12 +554,10 @@ impl LinkMLApp {
         
         // Load schema
         let schema = self.load_schema_file(schema_path).await?;
-        println!("✓ Schema loaded: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("✓ Schema loaded: {}", schema.name);
         
         // Create validator
-        let validator = ValidatorBuilder::new()
-            .with_strict_mode(strict)
-            .build()?;
+        let mut validator = ValidationEngine::new(&schema)?;
         
         let mut total_valid = 0;
         let mut total_invalid = 0;
@@ -573,32 +571,38 @@ impl LinkMLApp {
             let target_class = class_name.unwrap_or("Root");
             
             let report = if parallel {
-                validator.validate_parallel(&data, &schema, target_class).await?
+                // For parallel validation, convert single data to collection
+                let collection = if data.is_array() {
+                    data.as_array().unwrap().clone()
+                } else {
+                    vec![data.clone()]
+                };
+                validator.validate_collection_parallel(&collection, target_class, None).await?
             } else {
-                validator.validate(&data, &schema, target_class).await?
+                validator.validate_as_class(&data, target_class, None).await?
             };
             
             if report.valid {
                 println!("  {} PASSED", "✓".green());
                 total_valid += 1;
             } else {
-                println!("  {} FAILED ({} errors)", "✗".red(), report.errors.len());
+                println!("  {} FAILED ({} errors)", "✗".red(), report.issues.len());
                 total_invalid += 1;
-                all_errors.extend(report.errors.clone());
+                all_errors.extend(report.issues.clone());
             }
             
             // Show errors for this file
             if !report.valid && max_errors > 0 {
-                for (i, error) in report.errors.iter().take(max_errors).enumerate() {
+                for (i, error) in report.issues.iter().take(max_errors).enumerate() {
                     println!("    {}. {}: {}", 
                         i + 1,
-                        error.path.as_deref().unwrap_or(""),
+                        error.path.clone(),
                         error.message
                     );
                 }
                 
-                if report.errors.len() > max_errors {
-                    println!("    ... and {} more errors", report.errors.len() - max_errors);
+                if report.issues.len() > max_errors {
+                    println!("    ... and {} more errors", report.issues.len() - max_errors);
                 }
             }
         }
@@ -613,10 +617,10 @@ impl LinkMLApp {
             println!("\n{}", "Statistics:".bold());
             println!("  Total errors: {}", all_errors.len());
             
-            // Group errors by type
+            // Group errors by validator
             let mut error_types: HashMap<String, usize> = HashMap::new();
             for error in &all_errors {
-                *error_types.entry(error.error_type.clone().unwrap_or_else(|| "unknown".to_string())).or_insert(0) += 1;
+                *error_types.entry(error.validator.clone()).or_insert(0) += 1;
             }
             
             println!("  Error types:");
@@ -648,28 +652,28 @@ impl LinkMLApp {
         
         // Load schema
         let schema = self.load_schema_file(schema_path).await?;
-        println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema: {}", schema.name);
         println!("Generator: {}", generator_name);
         
         // Parse options
         let mut gen_options = GeneratorOptions::default();
         for opt in options {
             if let Some((key, value)) = opt.split_once('=') {
-                gen_options.set(key, value);
+                gen_options = gen_options.set_custom(key, value);
             }
         }
         
         if let Some(template_path) = template_dir {
-            gen_options.set("template_dir", template_path.to_str().unwrap_or(""));
+            gen_options = gen_options.set_custom("template_dir", template_path.to_str().unwrap_or(""));
         }
         
         if include_imports {
-            gen_options.set("include_imports", "true");
+            let _ = gen_options.set_custom("include_imports", "true");
         }
         
         // Get generator
-        let generator = self.generator_registry.get(generator_name)
-            .ok_or_else(|| LinkMLError::Generator(format!("Unknown generator: {}", generator_name)))?;
+        let generator = self.generator_registry.get(generator_name).await
+            .ok_or_else(|| LinkMLError::other(format!("Unknown generator: {}", generator_name)))?;
         
         // Generate code
         println!("Generating...");
@@ -680,7 +684,7 @@ impl LinkMLApp {
         pb.set_message("Processing schema...");
         pb.enable_steady_tick(std::time::Duration::from_millis(100));
         
-        let result = generator.generate(&schema, &gen_options)?;
+        let result = generator.generate(&schema)?;
         
         pb.finish_with_message("✓ Generation complete");
         
@@ -726,7 +730,7 @@ impl LinkMLApp {
         if validate {
             println!("Validating schema...");
             // Basic schema validation
-            if schema.name.is_none() {
+            if schema.name.is_empty() {
                 warn!("Schema has no name");
             }
             println!("✓ Schema is valid");
@@ -842,8 +846,8 @@ impl LinkMLApp {
         let schema1 = self.load_schema_file(schema1_path).await?;
         let schema2 = self.load_schema_file(schema2_path).await?;
         
-        println!("Schema 1: {}", schema1.name.as_deref().unwrap_or("unnamed"));
-        println!("Schema 2: {}", schema2.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema 1: {}", schema1.name);
+        println!("Schema 2: {}", schema2.name);
         
         // Create diff options
         let diff_options = DiffOptions {
@@ -914,7 +918,7 @@ impl LinkMLApp {
         
         // Load schema
         let mut schema = self.load_schema_file(schema_path).await?;
-        println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema: {}", schema.name);
         
         // Create lint options
         let mut lint_options = LintOptions::default();
@@ -1011,7 +1015,14 @@ impl LinkMLApp {
         
         // Load schema
         let schema = self.load_schema_file(schema_path).await?;
-        println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema: {}", schema.name);
+        
+        // Validate TLS configuration
+        if cert.is_some() != key.is_some() {
+            return Err(linkml_core::error::LinkMLError::service(
+                "Both cert and key must be provided for TLS"
+            ));
+        }
         
         // Server configuration
         println!("\nServer configuration:");
@@ -1019,6 +1030,10 @@ impl LinkMLApp {
         println!("  CORS: {}", if cors { "enabled" } else { "disabled" });
         println!("  Auth: {:?}", auth.unwrap_or(AuthType::None));
         println!("  TLS: {}", if cert.is_some() { "enabled" } else { "disabled" });
+        if let (Some(cert_path), Some(key_path)) = (cert, key) {
+            println!("    Certificate: {}", cert_path.display());
+            println!("    Key: {}", key_path.display());
+        }
         println!("  API docs: {}", docs_path);
         
         // TODO: Implement actual server using a web framework
@@ -1048,7 +1063,7 @@ impl LinkMLApp {
         
         // Load schema
         let schema = self.load_schema_file(schema_path).await?;
-        println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema: {}", schema.name);
         println!("Loading from: {} ({:?})", input.display(), format);
         
         // Parse options
@@ -1064,80 +1079,95 @@ impl LinkMLApp {
             LoadFormat::Csv => {
                 let mut csv_options = CsvOptions::default();
                 if let Some(delimiter) = load_options.get("delimiter") {
-                    csv_options.delimiter = delimiter.chars().next().unwrap_or(',');
+                    csv_options.delimiter = delimiter.chars().next().unwrap_or(',') as u8;
                 }
                 if let Some(has_header) = load_options.get("header") {
-                    csv_options.has_header = has_header == "true";
+                    csv_options.has_headers = has_header == "true";
                 }
                 
-                let mut loader = CsvLoader::new(csv_options);
-                loader.load(&schema).await?
+                let loader = CsvLoader::with_options(csv_options);
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::Json => {
-                let mut loader = JsonLoader::new();
-                loader.load(&schema).await?
+                let loader = JsonLoader::new();
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::Yaml => {
-                let mut loader = YamlLoader::new();
-                loader.load(&schema).await?
+                let loader = YamlLoader::new();
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::Xml => {
-                let mut loader = XmlLoader::new();
-                loader.load(&schema).await?
+                let loader = XmlLoader::new();
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::Rdf => {
                 let mut rdf_options = RdfOptions::default();
                 if let Some(format_str) = load_options.get("format") {
                     rdf_options.format = match format_str.as_str() {
-                        "turtle" => RdfFormat::Turtle,
-                        "ntriples" => RdfFormat::NTriples,
-                        "rdfxml" => RdfFormat::RdfXml,
-                        "nquads" => RdfFormat::NQuads,
-                        "trig" => RdfFormat::TriG,
-                        _ => RdfFormat::Turtle,
+                        "turtle" => RdfSerializationFormat::Turtle,
+                        "ntriples" => RdfSerializationFormat::NTriples,
+                        "rdfxml" => RdfSerializationFormat::RdfXml,
+                        "nquads" => RdfSerializationFormat::NQuads,
+                        "trig" => RdfSerializationFormat::TriG,
+                        _ => RdfSerializationFormat::Turtle,
                     };
                 }
                 
-                let mut loader = RdfLoader::new(rdf_options);
-                loader.load(&schema).await?
+                let loader = RdfLoader::with_options(rdf_options);
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::Database => {
-                let mut db_options = DatabaseOptions::default();
-                db_options.connection_string = load_options.get("connection")
-                    .ok_or_else(|| LinkMLError::Configuration("Database connection string required".to_string()))?
-                    .clone();
-                
-                let mut loader = DatabaseLoader::new(db_options);
-                loader.load(&schema).await?
+                #[cfg(feature = "database")]
+                {
+                    let mut db_options = DatabaseOptions::default();
+                    db_options.connection_string = load_options.get("connection")
+                        .ok_or_else(|| LinkMLError::config("Database connection string required".to_string()))?
+                        .clone();
+                    
+                    let loader = DatabaseLoader::new(db_options);
+                    let load_opts = LoadOptions::default();
+                    loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
+                }
+                #[cfg(not(feature = "database"))]
+                {
+                    return Err(LinkMLError::config("Database support not compiled in".to_string()));
+                }
             }
             
             LoadFormat::Api => {
                 let mut api_options = ApiOptions::default();
                 api_options.base_url = load_options.get("url")
-                    .ok_or_else(|| LinkMLError::Configuration("API URL required".to_string()))?
+                    .ok_or_else(|| LinkMLError::config("API URL required".to_string()))?
                     .clone();
                 
-                let mut loader = ApiLoader::new(api_options);
-                loader.load(&schema).await?
+                let loader = ApiLoader::new(api_options);
+                let load_opts = LoadOptions::default();
+                loader.load_file(input, &schema, &load_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?
             }
             
             LoadFormat::TypeDb => {
-                let mut typedb_options = TypeDBOptions::default();
-                typedb_options.server_url = load_options.get("server")
-                    .unwrap_or(&crate::config::get_config().typedb.server_address)
-                    .clone();
-                typedb_options.database = load_options.get("database")
-                    .ok_or_else(|| LinkMLError::Configuration("TypeDB database name required".to_string()))?
-                    .clone();
-                
-                let integration = TypeDBIntegration::new(typedb_options);
-                let mut loader = TypeDBLoader::new(integration);
-                loader.load(&schema).await?
+                return Err(LinkMLError::config(
+                    "TypeDB loading is not supported in the CLI. \n\
+                     TypeDB operations require the DBMS service which is not available in standalone CLI mode. \n\
+                     Please use the LinkML service API with proper service dependencies instead.".to_string()
+                ));
             }
         };
         
@@ -1146,7 +1176,7 @@ impl LinkMLApp {
         // Validate if requested
         if validate {
             println!("\nValidating loaded data...");
-            let validator = ValidatorBuilder::new().build()?;
+            let validator = ValidationEngine::new(&schema)?;
             let mut valid_count = 0;
             let mut invalid_count = 0;
             
@@ -1154,7 +1184,7 @@ impl LinkMLApp {
                 let data = serde_json::to_value(&instance.data)?;
                 let target_class = class_name.unwrap_or(&instance.class_name);
                 
-                let report = validator.validate(&data, &schema, target_class).await?;
+                let report = validator.validate_as_class(&data, target_class, None).await?;
                 if report.valid {
                     valid_count += 1;
                 } else {
@@ -1189,7 +1219,7 @@ impl LinkMLApp {
         
         // Load schema
         let schema = self.load_schema_file(schema_path).await?;
-        println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+        println!("Schema: {}", schema.name);
         
         // Load instances
         let input_content = std::fs::read_to_string(input)?;
@@ -1210,91 +1240,101 @@ impl LinkMLApp {
             DumpFormat::Csv => {
                 let mut csv_options = CsvOptions::default();
                 if let Some(delimiter) = dump_options.get("delimiter") {
-                    csv_options.delimiter = delimiter.chars().next().unwrap_or(',');
+                    csv_options.delimiter = delimiter.chars().next().unwrap_or(',') as u8;
                 }
                 
-                let mut dumper = CsvDumper::new(csv_options);
-                let result = dumper.dump(&instances, &schema).await?;
-                std::fs::write(output, result)?;
+                let dumper = CsvDumper::with_options(csv_options);
+                let dump_opts = DumpOptions::default();
+                dumper.dump_file(&instances, output, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
             }
             
             DumpFormat::Json => {
-                let mut dumper = JsonDumper::new(pretty);
-                let result = dumper.dump(&instances, &schema).await?;
-                std::fs::write(output, result)?;
+                let dumper = JsonDumper::new(pretty);
+                let dump_opts = DumpOptions::default();
+                dumper.dump_file(&instances, output, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
             }
             
             DumpFormat::Yaml => {
-                let mut dumper = YamlDumper::new();
-                let result = dumper.dump(&instances, &schema).await?;
-                std::fs::write(output, result)?;
+                let dumper = YamlDumper::new();
+                let dump_opts = DumpOptions::default();
+                dumper.dump_file(&instances, output, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
             }
             
             DumpFormat::Xml => {
-                let mut dumper = XmlDumper::new(pretty);
-                let result = dumper.dump(&instances, &schema).await?;
-                std::fs::write(output, result)?;
+                let dumper = XmlDumper::new(pretty);
+                let dump_opts = DumpOptions::default();
+                dumper.dump_file(&instances, output, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
             }
             
             DumpFormat::Rdf => {
                 let mut rdf_options = RdfOptions::default();
                 if let Some(format_str) = dump_options.get("format") {
                     rdf_options.format = match format_str.as_str() {
-                        "turtle" => RdfFormat::Turtle,
-                        "ntriples" => RdfFormat::NTriples,
-                        "rdfxml" => RdfFormat::RdfXml,
-                        "nquads" => RdfFormat::NQuads,
-                        "trig" => RdfFormat::TriG,
-                        _ => RdfFormat::Turtle,
+                        "turtle" => RdfSerializationFormat::Turtle,
+                        "ntriples" => RdfSerializationFormat::NTriples,
+                        "rdfxml" => RdfSerializationFormat::RdfXml,
+                        "nquads" => RdfSerializationFormat::NQuads,
+                        "trig" => RdfSerializationFormat::TriG,
+                        _ => RdfSerializationFormat::Turtle,
                     };
                 }
                 
-                let mut dumper = RdfDumper::new(rdf_options);
-                let result = dumper.dump(&instances, &schema).await?;
-                std::fs::write(output, result)?;
+                let dumper = RdfDumper::with_options(rdf_options);
+                let dump_opts = DumpOptions::default();
+                dumper.dump_file(&instances, output, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
             }
             
             DumpFormat::Database => {
-                let mut db_options = DatabaseOptions::default();
-                db_options.connection_string = dump_options.get("connection")
-                    .ok_or_else(|| LinkMLError::Configuration("Database connection string required".to_string()))?
-                    .clone();
-                db_options.create_if_not_exists = dump_options.get("create_tables")
-                    .map(|v| v == "true")
-                    .unwrap_or(false);
-                
-                let mut dumper = DatabaseDumper::new(db_options);
-                dumper.dump(&instances, &schema).await?;
-                println!("✓ Data dumped to database");
-                return Ok(());
+                #[cfg(feature = "database")]
+                {
+                    let mut db_options = DatabaseOptions::default();
+                    db_options.connection_string = dump_options.get("connection")
+                        .ok_or_else(|| LinkMLError::config("Database connection string required".to_string()))?
+                        .clone();
+                    db_options.create_if_not_exists = dump_options.get("create_tables")
+                        .map(|v| v == "true")
+                        .unwrap_or(false);
+                    
+                    let dumper = DatabaseDumper::new(db_options);
+                    let dump_opts = DumpOptions::default();
+                    // Database dumper doesn't use files, use dump_string
+                    let _ = dumper.dump_string(&instances, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
+                    println!("✓ Data dumped to database");
+                    return Ok(());
+                }
+                #[cfg(not(feature = "database"))]
+                {
+                    return Err(LinkMLError::config("Database support not compiled in".to_string()));
+                }
             }
             
             DumpFormat::Api => {
                 let mut api_options = ApiOptions::default();
                 api_options.base_url = dump_options.get("url")
-                    .ok_or_else(|| LinkMLError::Configuration("API URL required".to_string()))?
+                    .ok_or_else(|| LinkMLError::config("API URL required".to_string()))?
                     .clone();
                 
-                let mut dumper = ApiDumper::new(api_options);
-                dumper.dump(&instances, &schema).await?;
+                let dumper = ApiDumper::new(api_options);
+                let dump_opts = DumpOptions::default();
+                // API dumper doesn't use files, use dump_string
+                let _ = dumper.dump_string(&instances, &schema, &dump_opts).await
+                    .map_err(|e| LinkMLError::other(e.to_string()))?;
                 println!("✓ Data dumped to API");
                 return Ok(());
             }
             
             DumpFormat::TypeDb => {
-                let mut typedb_options = TypeDBOptions::default();
-                typedb_options.server_url = dump_options.get("server")
-                    .unwrap_or(&crate::config::get_config().typedb.server_address)
-                    .clone();
-                typedb_options.database = dump_options.get("database")
-                    .ok_or_else(|| LinkMLError::Configuration("TypeDB database name required".to_string()))?
-                    .clone();
-                
-                let integration = TypeDBIntegration::new(typedb_options);
-                let mut dumper = TypeDBDumper::new(integration);
-                dumper.dump(&instances, &schema).await?;
-                println!("✓ Data dumped to TypeDB");
-                return Ok(());
+                return Err(LinkMLError::config(
+                    "TypeDB dumping is not supported in the CLI. \n\
+                     TypeDB operations require the DBMS service which is not available in standalone CLI mode. \n\
+                     Please use the LinkML service API with proper service dependencies instead.".to_string()
+                ));
             }
         }
         
@@ -1314,6 +1354,10 @@ impl LinkMLApp {
         println!("{}", "========================".blue());
         println!("Type 'help' for commands, 'quit' to exit\n");
         
+        if highlight {
+            println!("{}", "Syntax highlighting: enabled".green());
+        }
+        
         // Load initial schema if provided
         let mut current_schema = if let Some(schema_path) = initial_schema {
             println!("Loading initial schema: {}", schema_path.display());
@@ -1323,7 +1367,8 @@ impl LinkMLApp {
         };
         
         // Setup readline
-        let mut rl = rustyline::Editor::<()>::new()?;
+        let mut rl = rustyline::Editor::<(), rustyline::history::DefaultHistory>::new()
+            .map_err(|e| LinkMLError::other(e.to_string()))?;
         
         // Load history
         if let Some(history_path) = history_file {
@@ -1349,7 +1394,7 @@ impl LinkMLApp {
             
             match rl.readline(&prompt) {
                 Ok(line) => {
-                    rl.add_history_entry(line.as_str());
+                    let _ = rl.add_history_entry(line.as_str());
                     
                     if line.trim() == "quit" || line.trim() == "exit" {
                         break;
@@ -1506,7 +1551,7 @@ impl LinkMLApp {
                 } else {
                     match self.load_schema_file(Path::new(parts[1])).await {
                         Ok(schema) => {
-                            println!("✓ Loaded schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+                            println!("✓ Loaded schema: {}", schema.name);
                             *current_schema = Some(schema);
                         }
                         Err(e) => println!("Failed to load schema: {}", e),
@@ -1516,7 +1561,7 @@ impl LinkMLApp {
             
             "show" => {
                 if let Some(schema) = current_schema {
-                    println!("Schema: {}", schema.name.as_deref().unwrap_or("unnamed"));
+                    println!("Schema: {}", schema.name);
                     if let Some(version) = &schema.version {
                         println!("Version: {}", version);
                     }

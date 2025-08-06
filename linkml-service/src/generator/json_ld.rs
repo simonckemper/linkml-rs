@@ -3,12 +3,13 @@
 //! This module generates JSON-LD (JSON for Linked Data) contexts and schemas from LinkML schemas.
 //! JSON-LD is a W3C standard for representing linked data in JSON format.
 
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue};
-use std::collections::HashMap;
+use linkml_core::{
+    error::LinkMLError,
+    types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, PermissibleValue}
+};
 use serde_json::{json, Value as JsonValue};
 
-use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult, GeneratedOutput};
-use async_trait::async_trait;
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
 
 /// JSON-LD generator for linked data contexts
 pub struct JsonLdGenerator {}
@@ -86,7 +87,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate frame for a class
-    fn generate_frame(&self, class_name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn _generate_frame(&self, class_name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut frame = serde_json::Map::new();
         
         // Add type
@@ -94,7 +95,7 @@ impl JsonLdGenerator {
         frame.insert("@type".to_string(), json!(format!("{}:{}", schema_prefix, self.to_pascal_case(class_name))));
         
         // Collect all slots (including inherited)
-        let all_slots = self.collect_all_slots(class, schema);
+        let all_slots = self._collect_all_slots(class, schema);
         
         // Add slot defaults/examples
         for slot_name in &all_slots {
@@ -118,7 +119,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate JSON-LD schema document
-    fn generate_schema_document(&self, schema: &SchemaDefinition) -> JsonValue {
+    fn _generate_schema_document(&self, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         
         // Add context
@@ -145,19 +146,19 @@ impl JsonLdGenerator {
         
         // Add classes
         for (class_name, class) in &schema.classes {
-            let class_doc = self.generate_class_document(class_name, class, schema);
+            let class_doc = self._generate_class_document(class_name, class, schema);
             graph.push(class_doc);
         }
         
         // Add properties
         for (slot_name, slot) in &schema.slots {
-            let property_doc = self.generate_property_document(slot_name, slot, schema);
+            let property_doc = self._generate_property_document(slot_name, slot, schema);
             graph.push(property_doc);
         }
         
         // Add enums
         for (enum_name, enum_def) in &schema.enums {
-            let enum_doc = self.generate_enum_document(enum_name, enum_def, schema);
+            let enum_doc = self._generate_enum_document(enum_name, enum_def, schema);
             graph.push(enum_doc);
         }
         
@@ -167,7 +168,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate class document
-    fn generate_class_document(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn _generate_class_document(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -203,7 +204,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate property document
-    fn generate_property_document(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn _generate_property_document(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -229,7 +230,7 @@ impl JsonLdGenerator {
         
         // Range
         if let Some(range) = &slot.range {
-            if let Some(xsd_type) = self.get_xsd_datatype(range) {
+            if let Some(xsd_type) = self._get_xsd_datatype(range) {
                 doc.insert("rdfs:range".to_string(), json!(xsd_type));
             } else if schema.classes.contains_key(range) {
                 doc.insert("rdfs:range".to_string(), json!(format!("{}:{}", schema_prefix, self.to_pascal_case(range))));
@@ -242,7 +243,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate enum document
-    fn generate_enum_document(&self, name: &str, enum_def: &EnumDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn _generate_enum_document(&self, name: &str, enum_def: &EnumDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -275,7 +276,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate example instance
-    fn generate_example_instance(&self, class_name: &str, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
+    fn _generate_example_instance(&self, class_name: &str, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
         let class = schema.classes.get(class_name)
             .ok_or_else(|| GeneratorError::Generation {
                 context: "example".to_string(),
@@ -295,14 +296,14 @@ impl JsonLdGenerator {
         instance.insert("@id".to_string(), json!(format!("{}#example-{}", schema.id, self.to_snake_case(class_name))));
         
         // Collect all slots
-        let all_slots = self.collect_all_slots(class, schema);
+        let all_slots = self._collect_all_slots(class, schema);
         
         // Add example values for required slots
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.required == Some(true) {
                     let property_id = self.to_snake_case(slot_name);
-                    let example_value = self.get_example_value(slot, schema)?;
+                    let example_value = self._get_example_value(slot, schema)?;
                     instance.insert(property_id, example_value);
                 }
             }
@@ -312,7 +313,7 @@ impl JsonLdGenerator {
     }
     
     /// Get example value for a slot
-    fn get_example_value(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
+    fn _get_example_value(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
         if let Some(range) = &slot.range {
             match range.as_str() {
                 "string" | "str" => Ok(json!("example string")),
@@ -352,13 +353,13 @@ impl JsonLdGenerator {
     }
     
     /// Collect all slots including inherited ones
-    fn collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn _collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
         let mut all_slots = Vec::new();
         
         // First, get slots from parent if any
         if let Some(parent_name) = &class.is_a {
             if let Some(parent_class) = schema.classes.get(parent_name) {
-                all_slots.extend(self.collect_all_slots(parent_class, schema));
+                all_slots.extend(self._collect_all_slots(parent_class, schema));
             }
         }
         
@@ -396,7 +397,7 @@ impl JsonLdGenerator {
     }
     
     /// Get XSD datatype
-    fn get_xsd_datatype(&self, range: &str) -> Option<String> {
+    fn _get_xsd_datatype(&self, range: &str) -> Option<String> {
         match range {
             "string" | "str" => Some("xsd:string".to_string()),
             "integer" | "int" => Some("xsd:integer".to_string()),
@@ -447,7 +448,6 @@ impl Default for JsonLdGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for JsonLdGenerator {
     fn name(&self) -> &str {
         "json-ld"
@@ -461,112 +461,56 @@ impl Generator for JsonLdGenerator {
         vec![".jsonld", ".context.jsonld"]
     }
     
-    async fn generate(
+    fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
-        let mut outputs = Vec::new();
+    ) -> std::result::Result<String, LinkMLError> {
+        // Generate complete JSON-LD document with context
+        let mut doc = serde_json::Map::new();
         
-        // Generate context file
+        // Add context
         let context = self.generate_context(schema);
-        let context_content = if options.get_custom("pretty_print") == Some("true") {
-            serde_json::to_string_pretty(&context)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        } else {
-            serde_json::to_string(&context)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        };
+        doc.insert("@context".to_string(), context);
         
-        let context_filename = format!("{}.context.jsonld", self.to_snake_case(&schema.name));
-        let mut context_metadata = HashMap::new();
-        context_metadata.insert("type".to_string(), "context".to_string());
-        context_metadata.insert("schema".to_string(), schema.name.clone());
+        // Add schema metadata
+        doc.insert("@id".to_string(), serde_json::Value::String(
+            format!("https://example.org/schemas/{}", schema.name)
+        ));
+        doc.insert("@type".to_string(), serde_json::Value::String("linkml:Schema".to_string()));
         
-        outputs.push(GeneratedOutput {
-            filename: context_filename,
-            content: context_content,
-            metadata: context_metadata,
-        });
-        
-        // Generate schema document
-        let schema_doc = self.generate_schema_document(schema);
-        let schema_content = if options.get_custom("pretty_print") == Some("true") {
-            serde_json::to_string_pretty(&schema_doc)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        } else {
-            serde_json::to_string(&schema_doc)
-                .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-        };
-        
-        let schema_filename = format!("{}.schema.jsonld", self.to_snake_case(&schema.name));
-        let mut schema_metadata = HashMap::new();
-        schema_metadata.insert("type".to_string(), "schema".to_string());
-        schema_metadata.insert("schema".to_string(), schema.name.clone());
-        
-        outputs.push(GeneratedOutput {
-            filename: schema_filename,
-            content: schema_content,
-            metadata: schema_metadata,
-        });
-        
-        // Generate frames for each class
-        for (class_name, class) in &schema.classes {
-            let frame = self.generate_frame(class_name, class, schema);
-            let frame_content = if options.get_custom("pretty_print") == Some("true") {
-                serde_json::to_string_pretty(&frame)
-                    .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-            } else {
-                serde_json::to_string(&frame)
-                    .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-            };
-            
-            let frame_filename = format!("{}.{}.frame.jsonld", 
-                self.to_snake_case(&schema.name), 
-                self.to_snake_case(class_name)
-            );
-            
-            let mut frame_metadata = HashMap::new();
-            frame_metadata.insert("type".to_string(), "frame".to_string());
-            frame_metadata.insert("class".to_string(), class_name.clone());
-            
-            outputs.push(GeneratedOutput {
-                filename: frame_filename,
-                content: frame_content,
-                metadata: frame_metadata,
-            });
+        if let Some(desc) = &schema.description {
+            doc.insert("description".to_string(), serde_json::Value::String(desc.clone()));
         }
         
-        // Generate example instances
-        if options.get_custom("generate_examples") == Some("true") {
-            for (class_name, _) in &schema.classes {
-                if let Ok(example) = self.generate_example_instance(class_name, schema) {
-                    let example_content = if options.get_custom("pretty_print") == Some("true") {
-                        serde_json::to_string_pretty(&example)
-                            .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-                    } else {
-                        serde_json::to_string(&example)
-                            .map_err(|e| GeneratorError::Template(format!("JSON formatting error: {e}")))?
-                    };
+        // Add classes
+        if !schema.classes.is_empty() {
+            let classes_array: Vec<serde_json::Value> = schema.classes.iter()
+                .map(|(name, class_def)| {
+                    let mut class_obj = serde_json::Map::new();
+                    class_obj.insert("@id".to_string(), serde_json::Value::String(name.clone()));
+                    class_obj.insert("@type".to_string(), serde_json::Value::String("linkml:ClassDefinition".to_string()));
                     
-                    let example_filename = format!("{}.{}.example.jsonld", 
-                        self.to_snake_case(&schema.name), 
-                        self.to_snake_case(class_name)
-                    );
+                    if let Some(desc) = &class_def.description {
+                        class_obj.insert("description".to_string(), serde_json::Value::String(desc.clone()));
+                    }
                     
-                    let mut example_metadata = HashMap::new();
-                    example_metadata.insert("type".to_string(), "example".to_string());
-                    example_metadata.insert("class".to_string(), class_name.clone());
-                    
-                    outputs.push(GeneratedOutput {
-                        filename: example_filename,
-                        content: example_content,
-                        metadata: example_metadata,
-                    });
-                }
-            }
+                    serde_json::Value::Object(class_obj)
+                })
+                .collect();
+            doc.insert("classes".to_string(), serde_json::Value::Array(classes_array));
         }
         
-        Ok(outputs)
+        let result = serde_json::to_string_pretty(&doc)
+            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
+        
+        Ok(result)
+    }
+    
+    fn get_file_extension(&self) -> &str {
+        "jsonld"
+    }
+    
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }

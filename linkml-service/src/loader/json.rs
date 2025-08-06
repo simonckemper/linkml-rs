@@ -2,10 +2,11 @@
 //!
 //! This module provides functionality to load and dump LinkML data in JSON format.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
+use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
 use linkml_core::prelude::*;
 use async_trait::async_trait;
 use serde_json::{Value, Map};
+use std::collections::HashMap;
 
 /// JSON loader for LinkML data
 pub struct JsonLoader {
@@ -36,15 +37,36 @@ impl Default for JsonLoader {
 
 #[async_trait]
 impl DataLoader for JsonLoader {
-    async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
-        let content = if let Some(path) = &self.file_path {
-            std::fs::read_to_string(path)
-                .map_err(|e| LoaderError::Io(e))?
-        } else {
-            return Err(LoaderError::Configuration("No input file specified".to_string()));
-        };
-        
-        let json: Value = serde_json::from_str(&content)
+    fn name(&self) -> &str {
+        "json"
+    }
+    
+    fn description(&self) -> &str {
+        "Load data from JSON files"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["json", "jsonld"]
+    }
+    
+    async fn load_file(
+        &self,
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| LoaderError::Io(e))?;
+        self.load_string(&content, schema, _options).await
+    }
+    
+    async fn load_string(
+        &self,
+        content: &str,
+        schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let json: Value = serde_json::from_str(content)
             .map_err(|e| LoaderError::Parse(e.to_string()))?;
         
         let instances = match json {
@@ -72,6 +94,21 @@ impl DataLoader for JsonLoader {
         
         Ok(instances)
     }
+    
+    async fn load_bytes(
+        &self,
+        data: &[u8],
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let content = String::from_utf8(data.to_vec())
+            .map_err(|e| LoaderError::Parse(e.to_string()))?;
+        self.load_string(&content, schema, options).await
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+        Ok(())
+    }
 }
 
 impl JsonLoader {
@@ -87,7 +124,9 @@ impl JsonLoader {
         
         Ok(DataInstance {
             class_name,
-            data: obj,
+            data: obj.into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
         })
     }
     
@@ -109,7 +148,7 @@ impl JsonLoader {
             }
         }
         
-        best_match.ok_or_else(|| LoaderError::ValidationFailed(
+        best_match.ok_or_else(|| LoaderError::SchemaValidation(
             "Could not infer class from object structure".to_string()
         ))
     }
@@ -136,22 +175,70 @@ impl Default for JsonDumper {
 
 #[async_trait]
 impl DataDumper for JsonDumper {
-    async fn dump(&mut self, instances: &[DataInstance], _schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    fn name(&self) -> &str {
+        "json"
+    }
+    
+    fn description(&self) -> &str {
+        "Dump data to JSON format"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["json", "jsonld"]
+    }
+    
+    async fn dump_file(
+        &self,
+        instances: &[DataInstance],
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<()> {
+        let content = self.dump_string(instances, schema, options).await?;
+        std::fs::write(path, content)
+            .map_err(|e| DumperError::Io(e))?;
+        Ok(())
+    }
+    
+    async fn dump_string(
+        &self,
+        instances: &[DataInstance],
+        _schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<String> {
         let json_instances: Vec<Value> = instances.iter()
             .map(|instance| {
-                let mut obj = instance.data.clone();
+                let mut obj = Map::new();
+                // Convert HashMap to Map
+                for (k, v) in &instance.data {
+                    obj.insert(k.clone(), v.clone());
+                }
                 obj.insert("@type".to_string(), Value::String(instance.class_name.clone()));
                 Value::Object(obj)
             })
             .collect();
         
-        let json_str = if self.pretty {
+        let json_str = if options.pretty_print || self.pretty {
             serde_json::to_string_pretty(&json_instances)
         } else {
             serde_json::to_string(&json_instances)
         }.map_err(|e| DumperError::Serialization(e.to_string()))?;
         
-        Ok(json_str.into_bytes())
+        Ok(json_str)
+    }
+    
+    async fn dump_bytes(
+        &self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<Vec<u8>> {
+        let result = self.dump_string(instances, schema, options).await?;
+        Ok(result.into_bytes())
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+        Ok(())
     }
 }
 
@@ -188,14 +275,26 @@ mod tests {
     
     #[tokio::test]
     async fn test_json_dumper() {
+        let mut alice_data = HashMap::new();
+        alice_data.insert("name".to_string(), Value::String("Alice".to_string()));
+        alice_data.insert("age".to_string(), Value::Number(serde_json::Number::from(25)));
+        
+        let mut bob_data = HashMap::new();
+        bob_data.insert("name".to_string(), Value::String("Bob".to_string()));
+        bob_data.insert("age".to_string(), Value::Number(serde_json::Number::from(30)));
+        
         let instances = vec![
             DataInstance {
                 class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{"name": "Alice", "age": 25}"#).expect("should parse valid JSON"),
+                data: alice_data,
+                id: None,
+                metadata: HashMap::new(),
             },
             DataInstance {
                 class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{"name": "Bob", "age": 30}"#).expect("should parse valid JSON"),
+                data: bob_data,
+                id: None,
+                metadata: HashMap::new(),
             },
         ];
         

@@ -2,9 +2,9 @@
 //!
 //! This generator creates Go structs, interfaces, and validation code from LinkML schemas.
 
-use super::traits::{Generator, GeneratorOptions, GeneratorResult, GeneratedOutput, GeneratorError};
+use super::traits::{Generator, GeneratorError};
+use crate::generator::GeneratorResult;
 use linkml_core::prelude::*;
-use async_trait::async_trait;
 use convert_case::{Case, Casing};
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write;
@@ -206,7 +206,7 @@ impl GoGenerator {
         let mut output = String::new();
         
         if !self.generate_interfaces {
-            return output;
+            return Ok(output);
         }
         
         // Find abstract classes to turn into interfaces
@@ -359,7 +359,7 @@ impl GoGenerator {
         class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition
-    ) {
+    ) -> GeneratorResult<()> {
         writeln!(output, "// Validate checks if the {} is valid", struct_name).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "func (s *{}) Validate() error {{", struct_name).map_err(Self::fmt_error_to_generator_error)?;
         
@@ -409,7 +409,7 @@ impl GoGenerator {
             }
             
             // Enum validation
-            if let Some(enum_name) = self.get_enum_type(&slot_def, schema) {
+            if let Some(_enum_name) = self.get_enum_type(&slot_def, schema) {
                 writeln!(output, "\tif err := s.{}.Validate(); err != nil {{", field_name).map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t\treturn fmt.Errorf(\"{} validation failed: %w\", err)", slot_name).map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -443,6 +443,7 @@ impl GoGenerator {
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
+        Ok(())
     }
 
     /// Convert to Go type name (PascalCase)
@@ -509,7 +510,7 @@ impl GoGenerator {
 
     /// Collect all slots for a class including inherited
     fn collect_class_slots(&self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition
     ) -> Vec<(String, SlotDefinition)> {
@@ -559,7 +560,6 @@ impl Default for GoGenerator {
     }
 }
 
-#[async_trait]
 impl Generator for GoGenerator {
     fn name(&self) -> &str {
         "golang"
@@ -569,30 +569,33 @@ impl Generator for GoGenerator {
         "Generate Go code from LinkML schemas"
     }
 
-    fn file_extensions(&self) -> Vec<&str> {
-        vec![".go"]
-    }
 
-    async fn generate(
-        &self,
-        schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-    ) -> GeneratorResult<Vec<GeneratedOutput>> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let mut content = String::new();
         
         // Generate sections
-        content.push_str(&self.generate_header(schema)?);
-        content.push_str(&self.generate_imports(schema)?);
-        content.push_str(&self.generate_types(schema)?);
-        content.push_str(&self.generate_enums(schema)?);
-        content.push_str(&self.generate_interfaces(schema)?);
-        content.push_str(&self.generate_structs(schema)?);
+        content.push_str(&self.generate_header(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
+        content.push_str(&self.generate_imports(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
+        content.push_str(&self.generate_types(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
+        content.push_str(&self.generate_enums(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
+        content.push_str(&self.generate_interfaces(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
+        content.push_str(&self.generate_structs(schema)
+            .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?);
         
-        Ok(vec![GeneratedOutput {
-            filename: format!("{}.go", if schema.name.is_empty() { "schema" } else { &schema.name }),
-            content,
-            metadata: std::collections::HashMap::new(),
-        }])
+        Ok(content)
+    }
+
+    fn get_file_extension(&self) -> &str {
+        "go"
+    }
+
+    fn get_default_filename(&self) -> &str {
+        "schema"
     }
 }
 
@@ -624,35 +627,45 @@ mod tests {
         
         // Add an enum
         let mut status_enum = EnumDefinition::default();
-        let mut active_pv = PermissibleValue::default();
-        active_pv.description = Some("Active status".to_string());
-        status_enum.permissible_values.insert("ACTIVE".to_string(), active_pv);
-        status_enum.permissible_values.insert("INACTIVE".to_string(), PermissibleValue::default());
+        status_enum.description = Some("Status values".to_string());
+        status_enum.permissible_values = vec![
+            linkml_core::types::PermissibleValue::Complex {
+                text: "ACTIVE".to_string(),
+                description: Some("Active status".to_string()),
+                meaning: None,
+                deprecated: None,
+                todos: vec![],
+                notes: vec![],
+                comments: vec![],
+                examples: vec![],
+                see_also: vec![],
+                deprecated_element_has_exact_replacement: None,
+                deprecated_element_has_possible_replacement: None,
+                extensions: Default::default(),
+                annotations: Default::default(),
+            },
+            linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
+        ];
         schema.enums.insert("Status".to_string(), status_enum);
         
         schema
     }
 
-    #[tokio::test]
-    async fn test_go_generation() {
+    #[test]
+    fn test_go_generation() {
         let schema = create_test_schema();
         let generator = GoGenerator::new();
-        let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate Go code");
-        assert_eq!(result.len(), 1);
-        
-        let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.go");
+        let content = generator.generate(&schema).expect("should generate Go code");
         
         // Check content
-        assert!(output.content.contains("package linkml"));
-        assert!(output.content.contains("type Person struct"));
-        assert!(output.content.contains("Name string"));
-        assert!(output.content.contains("Age int64"));
-        assert!(output.content.contains("type Status string"));
-        assert!(output.content.contains("StatusACTIVE Status = \"ACTIVE\""));
-        assert!(output.content.contains("func (s *Person) Validate() error"));
+        assert!(content.contains("package linkml"));
+        assert!(content.contains("type Person struct"));
+        assert!(content.contains("Name string"));
+        assert!(content.contains("Age int64"));
+        assert!(content.contains("type Status string"));
+        assert!(content.contains("StatusACTIVE Status = \"ACTIVE\""));
+        assert!(content.contains("func (s *Person) Validate() error"));
     }
 
     #[test]

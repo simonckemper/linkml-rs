@@ -2,11 +2,12 @@
 //!
 //! This module provides functionality to load and dump LinkML data in YAML format.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
+use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
 use linkml_core::prelude::*;
 use async_trait::async_trait;
 use serde_json::{Value, Map};
 use serde_yaml;
+use std::collections::HashMap;
 
 /// YAML loader for LinkML data
 pub struct YamlLoader {
@@ -37,15 +38,37 @@ impl Default for YamlLoader {
 
 #[async_trait]
 impl DataLoader for YamlLoader {
-    async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
-        let content = if let Some(path) = &self.file_path {
-            std::fs::read_to_string(path)
-                .map_err(|e| LoaderError::Io(e))?
-        } else {
-            return Err(LoaderError::Configuration("No input file specified".to_string()));
-        };
+    fn name(&self) -> &str {
+        "yaml"
+    }
+    
+    fn description(&self) -> &str {
+        "Load data from YAML files"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["yaml", "yml"]
+    }
+    
+    async fn load_file(
+        &self,
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| LoaderError::Io(e))?;
+        self.load_string(&content, schema, _options).await
+    }
+    
+    async fn load_string(
+        &self,
+        content: &str,
+        schema: &SchemaDefinition,
+        _options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
         
-        let yaml_value: serde_yaml::Value = serde_yaml::from_str(&content)
+        let yaml_value: serde_yaml::Value = serde_yaml::from_str(content)
             .map_err(|e| LoaderError::Parse(e.to_string()))?;
         
         // Convert YAML to JSON for easier processing
@@ -79,6 +102,21 @@ impl DataLoader for YamlLoader {
         
         Ok(instances)
     }
+    
+    async fn load_bytes(
+        &self,
+        data: &[u8],
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
+    ) -> LoaderResult<Vec<DataInstance>> {
+        let content = String::from_utf8(data.to_vec())
+            .map_err(|e| LoaderError::Parse(e.to_string()))?;
+        self.load_string(&content, schema, options).await
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+        Ok(())
+    }
 }
 
 impl YamlLoader {
@@ -96,7 +134,9 @@ impl YamlLoader {
         
         Ok(DataInstance {
             class_name,
-            data: obj,
+            data: obj.into_iter().collect(),
+            id: None,
+            metadata: HashMap::new(),
         })
     }
     
@@ -118,7 +158,7 @@ impl YamlLoader {
             }
         }
         
-        best_match.ok_or_else(|| LoaderError::ValidationFailed(
+        best_match.ok_or_else(|| LoaderError::SchemaValidation(
             "Could not infer class from object structure".to_string()
         ))
     }
@@ -153,7 +193,37 @@ impl Default for YamlDumper {
 
 #[async_trait]
 impl DataDumper for YamlDumper {
-    async fn dump(&mut self, instances: &[DataInstance], _schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    fn name(&self) -> &str {
+        "yaml"
+    }
+    
+    fn description(&self) -> &str {
+        "Dump data to YAML format"
+    }
+    
+    fn supported_extensions(&self) -> Vec<&str> {
+        vec!["yaml", "yml"]
+    }
+    
+    async fn dump_file(
+        &self,
+        instances: &[DataInstance],
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<()> {
+        let content = self.dump_string(instances, schema, options).await?;
+        std::fs::write(path, content)
+            .map_err(|e| DumperError::Io(e))?;
+        Ok(())
+    }
+    
+    async fn dump_string(
+        &self,
+        instances: &[DataInstance],
+        _schema: &SchemaDefinition,
+        _options: &DumpOptions,
+    ) -> DumperResult<String> {
         let yaml_instances: Vec<serde_yaml::Value> = instances.iter()
             .map(|instance| {
                 let mut obj = instance.data.clone();
@@ -162,7 +232,8 @@ impl DataDumper for YamlDumper {
                 }
                 
                 // Convert to YAML value
-                let json_str = serde_json::to_string(&Value::Object(obj))
+                let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
+                let json_str = serde_json::to_string(&json_obj)
                     .expect("valid JSON object should serialize");
                 serde_yaml::from_str(&json_str)
                     .expect("valid JSON should parse as YAML")
@@ -175,7 +246,21 @@ impl DataDumper for YamlDumper {
             serde_yaml::to_string(&yaml_instances)
         }.map_err(|e| DumperError::Serialization(e.to_string()))?;
         
-        Ok(yaml_str.into_bytes())
+        Ok(yaml_str)
+    }
+    
+    async fn dump_bytes(
+        &self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
+    ) -> DumperResult<Vec<u8>> {
+        let result = self.dump_string(instances, schema, options).await?;
+        Ok(result.into_bytes())
+    }
+    
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+        Ok(())
     }
 }
 

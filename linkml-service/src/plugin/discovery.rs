@@ -73,9 +73,10 @@ impl PluginDiscovery {
         let mut plugins = Vec::new();
         
         if !path.is_dir() {
-            return Err(LinkMLError::ValidationError(
+            return Err(LinkMLError::IoError(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
                 format!("Path is not a directory: {:?}", path)
-            ));
+            )));
         }
         
         for entry in fs::read_dir(path)? {
@@ -99,7 +100,10 @@ impl PluginDiscovery {
             .into_iter()
             .filter_entry(|e| !self.should_exclude(e.path()))
         {
-            let entry = entry?;
+            let entry = entry.map_err(|e| LinkMLError::IoError(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to read directory entry: {}", e)
+            )))?;
             let path = entry.path();
             
             if path.is_file() && self.is_plugin_manifest(path) {
@@ -118,8 +122,14 @@ impl PluginDiscovery {
             let full_pattern = base_path.join(pattern);
             let pattern_str = full_pattern.to_string_lossy();
             
-            for entry in glob(&pattern_str)? {
-                let path = entry?;
+            for entry in glob(&pattern_str).map_err(|e| LinkMLError::IoError(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("Invalid glob pattern: {}", e)
+            )))? {
+                let path = entry.map_err(|e| LinkMLError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Failed to read glob entry: {}", e)
+                )))?;
                 if path.is_file() {
                     plugins.push(path);
                 }
@@ -300,10 +310,10 @@ mod tests {
     #[test]
     fn test_plugin_discovery_shallow() -> Result<()> {
         let temp_dir = TempDir::new()
-            .map_err(|e| LinkMLError::IOError(e.to_string()))?;
+            .map_err(|e| LinkMLError::IoError(e))?;
         let plugin_file = temp_dir.path().join("plugin.toml");
         fs::write(&plugin_file, "# Plugin manifest")
-            .map_err(|e| LinkMLError::IOError(e.to_string()))?;
+            .map_err(|e| LinkMLError::IoError(e))?;
         
         let discovery = PluginDiscovery::new();
         let plugins = discovery.discover(temp_dir.path(), DiscoveryStrategy::Shallow)?;

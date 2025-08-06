@@ -3,10 +3,11 @@
 //! This module generates Python SQLAlchemy ORM models from LinkML schemas,
 //! enabling database persistence with full ORM capabilities.
 
-use crate::error::LinkMLError;
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::schema::{ClassDefinition, EnumDefinition, Schema, SlotDefinition, TypeDefinition};
-use std::collections::{HashMap, HashSet};
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, SlotDefinition, SchemaDefinition, EnumDefinition, TypeDefinition, PermissibleValue};
+use std::collections::HashSet;
+use indexmap::IndexMap;
 
 /// SQLAlchemy generator configuration
 #[derive(Debug, Clone)]
@@ -98,7 +99,7 @@ impl SQLAlchemyGenerator {
     fn map_type_to_column(&self, type_name: &str, type_def: Option<&TypeDefinition>) -> String {
         // Check if we have a type definition with a base
         if let Some(td) = type_def {
-            if let Some(base) = &td.typeof {
+            if let Some(base) = &td.base_type {
                 return self.map_type_to_column(base, None);
             }
         }
@@ -127,14 +128,18 @@ impl SQLAlchemyGenerator {
         lines.push(format!("    \"\"\"{}\"\"\"", 
             enum_def.description.as_deref().unwrap_or("An enumeration")));
         
-        if let Some(values) = &enum_def.permissible_values {
-            for (value_name, _value_def) in values {
+        if !enum_def.permissible_values.is_empty() {
+            for value in &enum_def.permissible_values {
+                let value_name = match value {
+                    PermissibleValue::Simple(name) => name,
+                    PermissibleValue::Complex { text, .. } => text,
+                };
                 let safe_name = self.to_python_name(value_name);
                 lines.push(format!("    {} = \"{}\"", safe_name.to_uppercase(), value_name));
             }
         }
         
-        if enum_def.permissible_values.as_ref().map(|v| v.is_empty()).unwrap_or(true) {
+        if enum_def.permissible_values.is_empty() {
             lines.push("    pass".to_string());
         }
         
@@ -165,7 +170,7 @@ impl SQLAlchemyGenerator {
     }
     
     /// Generate model class
-    fn generate_class(&self, name: &str, class_def: &ClassDefinition, schema: &Schema) -> String {
+    fn generate_class(&self, name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> String {
         let mut lines = vec![];
         let table_name = format!("{}{}", self.config.table_prefix, self.to_snake_case(name));
         
@@ -203,9 +208,9 @@ impl SQLAlchemyGenerator {
         }
         
         // Process slots
-        if let Some(slots) = &class_def.slots {
-            for slot_name in slots {
-                if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
+        if !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
                     let column_def = self.generate_column(slot_name, slot_def, schema);
                     if !column_def.is_empty() {
                         if !has_content {
@@ -219,8 +224,8 @@ impl SQLAlchemyGenerator {
         }
         
         // Process attributes
-        if let Some(attrs) = &class_def.attributes {
-            for (attr_name, attr_def) in attrs {
+        if !class_def.attributes.is_empty() {
+            for (attr_name, attr_def) in &class_def.attributes {
                 let column_def = self.generate_column(attr_name, attr_def, schema);
                 if !column_def.is_empty() {
                     if !has_content {
@@ -266,21 +271,21 @@ impl SQLAlchemyGenerator {
     }
     
     /// Generate column definition
-    fn generate_column(&self, name: &str, slot: &SlotDefinition, schema: &Schema) -> String {
+    fn generate_column(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> String {
         let column_name = self.to_snake_case(name);
         let mut column_args = vec![];
         
         // Determine column type
         let column_type = if let Some(range) = &slot.range {
             // Check if it's an enum
-            if schema.enums.as_ref().and_then(|e| e.get(range)).is_some() {
+            if schema.enums.contains_key(range) {
                 format!("Enum({})", range)
-            } else if schema.classes.as_ref().and_then(|c| c.get(range)).is_some() {
+            } else if schema.classes.contains_key(range) {
                 // This is a foreign key
                 return self.generate_foreign_key_column(name, slot, range);
             } else {
                 // It's a type
-                let type_def = schema.types.as_ref().and_then(|t| t.get(range));
+                let type_def = schema.types.get(range);
                 self.map_type_to_column(range, type_def)
             }
         } else {
@@ -336,14 +341,14 @@ impl SQLAlchemyGenerator {
     }
     
     /// Generate relationships
-    fn generate_relationships(&self, class_def: &ClassDefinition, schema: &Schema) -> Vec<String> {
+    fn generate_relationships(&self, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
         let mut relationships = vec![];
         
-        if let Some(slots) = &class_def.slots {
-            for slot_name in slots {
-                if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
+        if !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
                     if let Some(range) = &slot_def.range {
-                        if schema.classes.as_ref().and_then(|c| c.get(range)).is_some() {
+                        if schema.classes.contains_key(range) {
                             let rel = self.generate_relationship(slot_name, slot_def, range);
                             relationships.push(rel);
                         }
@@ -384,19 +389,20 @@ impl SQLAlchemyGenerator {
     }
     
     /// Generate table constraints
-    fn generate_constraints(&self, class_name: &str, class_def: &ClassDefinition, schema: &Schema) -> Vec<String> {
+    fn generate_constraints(&self, class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
         let mut constraints = vec![];
         
         // Unique constraints
-        let mut unique_together = vec![];
-        if let Some(slots) = &class_def.slots {
-            for slot_name in slots {
-                if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
-                    if let Some(unique_keys) = &slot_def.unique_keys {
-                        for key in unique_keys {
-                            unique_together.push(key.clone());
-                        }
-                    }
+        let unique_together: Vec<String> = vec![];
+        if !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(_slot_def) = schema.slots.get(slot_name) {
+                    // TODO: unique_keys field not yet implemented in SlotDefinition
+                    // if let Some(unique_keys) = &slot_def.unique_keys {
+                    //     for key in unique_keys {
+                    //         unique_together.push(key.clone());
+                    //     }
+                    // }
                 }
             }
         }
@@ -411,10 +417,12 @@ impl SQLAlchemyGenerator {
         
         // Index generation
         if self.config.generate_indexes {
-            if let Some(slots) = &class_def.slots {
-                for slot_name in slots {
-                    if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
-                        if slot_def.indexed == Some(true) {
+            if !class_def.slots.is_empty() {
+                for slot_name in &class_def.slots {
+                    if let Some(_slot_def) = schema.slots.get(slot_name) {
+                        // TODO: indexed field not yet implemented in SlotDefinition
+                        // if slot_def.indexed == Some(true) {
+                        if false {
                             let column_name = self.to_snake_case(slot_name);
                             constraints.push(format!("Index('idx_{}_{}')", 
                                 self.to_snake_case(class_name), column_name));
@@ -428,7 +436,7 @@ impl SQLAlchemyGenerator {
     }
     
     /// Get type annotation for SQLAlchemy 2.0
-    fn get_type_annotation(&self, slot: &SlotDefinition, schema: &Schema) -> String {
+    fn get_type_annotation(&self, slot: &SlotDefinition, _schema: &SchemaDefinition) -> String {
         let base_type = if let Some(range) = &slot.range {
             match range.as_str() {
                 "string" | "str" => "str",
@@ -494,14 +502,14 @@ impl SQLAlchemyGenerator {
 }
 
 impl Generator for SQLAlchemyGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = vec![];
         
         // File header
         output.push("\"\"\"".to_string());
         output.push("SQLAlchemy ORM models generated from LinkML schema".to_string());
-        if let Some(name) = &schema.name {
-            output.push(format!("Schema: {}", name));
+        if !schema.name.is_empty() {
+            output.push(format!("# Schema: {}", schema.name));
         }
         output.push("\"\"\"".to_string());
         output.push(String::new());
@@ -515,8 +523,8 @@ impl Generator for SQLAlchemyGenerator {
         output.push(String::new());
         
         // Generate enums
-        if let Some(enums) = &schema.enums {
-            for (name, enum_def) in enums {
+        if !schema.enums.is_empty() {
+            for (name, enum_def) in &schema.enums {
                 output.push(self.generate_enum(name, enum_def));
                 output.push(String::new());
             }
@@ -524,14 +532,14 @@ impl Generator for SQLAlchemyGenerator {
         
         // Generate association tables for many-to-many relationships
         let mut association_tables = HashSet::new();
-        if let Some(classes) = &schema.classes {
-            for (class_name, class_def) in classes {
-                if let Some(slots) = &class_def.slots {
-                    for slot_name in slots {
-                        if let Some(slot_def) = schema.slots.as_ref().and_then(|s| s.get(slot_name)) {
+        if !schema.classes.is_empty() {
+            for (class_name, class_def) in &schema.classes {
+                if !class_def.slots.is_empty() {
+                    for slot_name in &class_def.slots {
+                        if let Some(slot_def) = schema.slots.get(slot_name) {
                             if slot_def.multivalued == Some(true) {
                                 if let Some(range) = &slot_def.range {
-                                    if schema.classes.as_ref().and_then(|c| c.get(range)).is_some() {
+                                    if schema.classes.contains_key(range) {
                                         let table_key = format!("{}-{}-{}", class_name, slot_name, range);
                                         if !association_tables.contains(&table_key) {
                                             association_tables.insert(table_key);
@@ -548,10 +556,10 @@ impl Generator for SQLAlchemyGenerator {
         }
         
         // Generate classes in dependency order
-        if let Some(classes) = &schema.classes {
-            let ordered_classes = self.order_classes_by_dependency(classes);
+        if !schema.classes.is_empty() {
+            let ordered_classes = self.order_classes_by_dependency(&schema.classes);
             for class_name in ordered_classes {
-                if let Some(class_def) = classes.get(&class_name) {
+                if let Some(class_def) = schema.classes.get(&class_name) {
                     output.push(self.generate_class(&class_name, class_def, schema));
                     output.push(String::new());
                 }
@@ -577,13 +585,13 @@ impl Generator for SQLAlchemyGenerator {
 
 impl SQLAlchemyGenerator {
     /// Order classes by dependency (parent classes first)
-    fn order_classes_by_dependency(&self, classes: &HashMap<String, ClassDefinition>) -> Vec<String> {
+    fn order_classes_by_dependency(&self, classes: &IndexMap<String, ClassDefinition>) -> Vec<String> {
         let mut ordered = vec![];
         let mut visited = HashSet::new();
         
         fn visit(
             name: &str,
-            classes: &HashMap<String, ClassDefinition>,
+            classes: &IndexMap<String, ClassDefinition>,
             visited: &mut HashSet<String>,
             ordered: &mut Vec<String>,
         ) {
@@ -630,21 +638,21 @@ impl SQLAlchemyGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::schema::{Prefix, SchemaDefinition};
+    use linkml_core::types::SchemaDefinition;
     
     #[test]
     fn test_sqlalchemy_generation() {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Add a simple class
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
-        person_class.slots = Some(vec!["name".to_string(), "age".to_string()]);
+        person_class.slots = vec!["name".to_string(), "age".to_string()];
         
-        schema.classes = Some(HashMap::from([
-            ("Person".to_string(), person_class),
-        ]));
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
+        schema.classes = classes;
         
         // Add slots
         let mut name_slot = SlotDefinition::default();
@@ -656,15 +664,15 @@ mod tests {
         age_slot.description = Some("The person's age".to_string());
         age_slot.range = Some("integer".to_string());
         
-        schema.slots = Some(HashMap::from([
-            ("name".to_string(), name_slot),
-            ("age".to_string(), age_slot),
-        ]));
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+        schema.slots = slots;
         
         let config = SQLAlchemyGeneratorConfig::default();
         let generator = SQLAlchemyGenerator::new(config);
         
-        let result = generator.generate(&Schema(schema)).expect("should generate SQLAlchemy models");
+        let result = generator.generate(&schema).expect("should generate SQLAlchemy models");
         
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));

@@ -11,17 +11,41 @@ use thiserror::Error;
 /// Errors related to resource limits
 #[derive(Debug, Error)]
 pub enum ResourceError {
+    /// Validation timeout exceeded
     #[error("Validation timeout exceeded: {elapsed:.2}s (max: {max:.2}s)")]
-    Timeout { elapsed: f64, max: f64 },
+    Timeout { 
+        /// Elapsed time in seconds
+        elapsed: f64, 
+        /// Maximum allowed time in seconds
+        max: f64 
+    },
     
+    /// Memory limit exceeded
     #[error("Memory limit exceeded: {used} bytes (max: {max} bytes)")]
-    MemoryExceeded { used: usize, max: usize },
+    MemoryExceeded { 
+        /// Memory used in bytes
+        used: usize, 
+        /// Maximum allowed memory in bytes
+        max: usize 
+    },
     
+    /// Too many parallel operations
     #[error("Too many parallel operations: {current} (max: {max})")]
-    TooManyParallelOps { current: usize, max: usize },
+    TooManyParallelOps { 
+        /// Current number of operations
+        current: usize, 
+        /// Maximum allowed operations
+        max: usize 
+    },
     
+    /// Cache memory exceeded
     #[error("Cache memory exceeded: {used} bytes (max: {max} bytes)")]
-    CacheMemoryExceeded { used: usize, max: usize },
+    CacheMemoryExceeded { 
+        /// Cache memory used in bytes
+        used: usize, 
+        /// Maximum allowed cache memory in bytes
+        max: usize 
+    },
 }
 
 /// Resource limits configuration

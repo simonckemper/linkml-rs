@@ -5,9 +5,8 @@
 
 use super::ast::Expression;
 use super::compiler::CompiledExpression;
-use super::error::ExpressionError;
 use lru::LruCache;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::num::NonZeroUsize;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -260,8 +259,8 @@ impl GlobalExpressionCache {
         let hot_stats = self.hot_cache.stats();
         
         GlobalCacheStats {
-            parse_cache: parse_stats,
-            hot_cache: hot_stats,
+            parse_cache: parse_stats.clone(),
+            hot_cache: hot_stats.clone(),
             total_hits: parse_stats.hits + hot_stats.hits,
             total_misses: parse_stats.misses,
             hot_hit_rate: self.hot_cache.hit_rate(),

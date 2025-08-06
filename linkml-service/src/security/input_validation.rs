@@ -39,32 +39,71 @@ pub mod limits {
 /// Validation errors
 #[derive(Debug, Error)]
 pub enum ValidationError {
+    /// String exceeds maximum allowed size
     #[error("String too large: {size} bytes (max: {max})")]
-    StringTooLarge { size: usize, max: usize },
+    StringTooLarge { 
+        /// Actual size in bytes
+        size: usize, 
+        /// Maximum allowed size
+        max: usize 
+    },
     
+    /// Identifier exceeds maximum allowed length
     #[error("Identifier too long: {size} characters (max: {max})")]
-    IdentifierTooLong { size: usize, max: usize },
+    IdentifierTooLong { 
+        /// Actual size in characters
+        size: usize, 
+        /// Maximum allowed size
+        max: usize 
+    },
     
+    /// Expression nesting depth exceeds limit
     #[error("Expression too deep: {depth} levels (max: {max})")]
-    ExpressionTooDeep { depth: usize, max: usize },
+    ExpressionTooDeep { 
+        /// Actual depth
+        depth: usize, 
+        /// Maximum allowed depth
+        max: usize 
+    },
     
+    /// Too many constraints in validation
     #[error("Too many constraints: {count} (max: {max})")]
-    TooManyConstraints { count: usize, max: usize },
+    TooManyConstraints { 
+        /// Actual count
+        count: usize, 
+        /// Maximum allowed count
+        max: usize 
+    },
     
+    /// Too many function arguments
     #[error("Too many function arguments: {count} (max: {max})")]
-    TooManyFunctionArgs { count: usize, max: usize },
+    TooManyFunctionArgs { 
+        /// Actual count
+        count: usize, 
+        /// Maximum allowed count
+        max: usize 
+    },
     
+    /// Invalid UTF-8 in string
     #[error("Invalid UTF-8 in string")]
     InvalidUtf8,
     
+    /// String contains control characters
     #[error("String contains control characters")]
     ControlCharacters,
     
+    /// String contains null bytes
     #[error("String contains null bytes")]
     NullBytes,
     
+    /// JSON payload too large
     #[error("JSON payload too large: {size} bytes (max: {max})")]
-    JsonTooLarge { size: usize, max: usize },
+    JsonTooLarge { 
+        /// Actual size in bytes
+        size: usize, 
+        /// Maximum allowed size
+        max: usize 
+    },
 }
 
 /// Validate a general string input

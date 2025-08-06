@@ -3,8 +3,8 @@
 //! This module provides JIT compilation capabilities for LinkML expressions,
 //! converting AST nodes into optimized bytecode for faster evaluation.
 
-use super::ast::{Expression, BinaryOp, UnaryOp};
-use super::error::ExpressionError;
+use super::ast::Expression;
+use super::error::{ExpressionError, ParseError};
 use super::functions::FunctionRegistry;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -24,35 +24,58 @@ pub enum Instruction {
     /// Duplicate top of stack
     Dup,
     /// Binary operations
+    /// Addition operation
     Add,
+    /// Subtraction operation
     Subtract,
+    /// Multiplication operation
     Multiply,
+    /// Division operation
     Divide,
+    /// Modulo operation
     Modulo,
+    /// Power/exponentiation operation
     Power,
+    /// Equality comparison
     Equal,
+    /// Inequality comparison
     NotEqual,
+    /// Less than comparison
     Less,
+    /// Less than or equal comparison
     LessEqual,
+    /// Greater than comparison
     Greater,
+    /// Greater than or equal comparison
     GreaterEqual,
+    /// Logical AND operation
     And,
+    /// Logical OR operation
     Or,
     /// Unary operations
+    /// Logical NOT operation
     Not,
+    /// Numeric negation operation
     Negate,
     /// Control flow
+    /// Unconditional jump to instruction at index
     Jump(usize),
+    /// Jump to instruction if top of stack is false
     JumpIfFalse(usize),
+    /// Jump to instruction if top of stack is true
     JumpIfTrue(usize),
     /// Function call with argument count
     Call(String, usize),
     /// Return from function
     Return,
     /// Array/object operations
+    /// Create array from N stack elements
     MakeArray(usize),
+    /// Create object from N key-value pairs on stack
     MakeObject(usize),
+    /// Index into array or object
     Index,
+    /// Get field from object by name
     GetField(String),
 }
 
@@ -138,8 +161,17 @@ impl Compiler {
     /// Compile a single expression
     fn compile_expr(&self, expr: &Expression, ctx: &mut CompilationContext) -> Result<(), ExpressionError> {
         match expr {
-            Expression::Literal(val) => {
-                ctx.emit(Instruction::Const(val.clone()));
+            Expression::Null => {
+                ctx.emit(Instruction::Const(Value::Null));
+            }
+            Expression::Boolean(b) => {
+                ctx.emit(Instruction::Const(Value::from(*b)));
+            }
+            Expression::Number(n) => {
+                ctx.emit(Instruction::Const(Value::from(*n)));
+            }
+            Expression::String(s) => {
+                ctx.emit(Instruction::Const(Value::from(s.clone())));
             }
             
             Expression::Variable(name) => {
@@ -147,58 +179,105 @@ impl Compiler {
                 ctx.emit(Instruction::Load(name.clone()));
             }
             
-            Expression::Binary { op, left, right } => {
-                // Compile operands
+            // Binary operations
+            Expression::Add(left, right) => {
                 self.compile_expr(left, ctx)?;
                 self.compile_expr(right, ctx)?;
-                
-                // Emit operation
-                match op {
-                    BinaryOp::Add => ctx.emit(Instruction::Add),
-                    BinaryOp::Subtract => ctx.emit(Instruction::Subtract),
-                    BinaryOp::Multiply => ctx.emit(Instruction::Multiply),
-                    BinaryOp::Divide => ctx.emit(Instruction::Divide),
-                    BinaryOp::Modulo => ctx.emit(Instruction::Modulo),
-                    BinaryOp::Power => ctx.emit(Instruction::Power),
-                    BinaryOp::Equal => ctx.emit(Instruction::Equal),
-                    BinaryOp::NotEqual => ctx.emit(Instruction::NotEqual),
-                    BinaryOp::Less => ctx.emit(Instruction::Less),
-                    BinaryOp::LessEqual => ctx.emit(Instruction::LessEqual),
-                    BinaryOp::Greater => ctx.emit(Instruction::Greater),
-                    BinaryOp::GreaterEqual => ctx.emit(Instruction::GreaterEqual),
-                    BinaryOp::And => {
-                        // Short-circuit AND
-                        if self.optimization_level > 1 {
-                            let jump_idx = ctx.emit_placeholder();
-                            ctx.emit(Instruction::Dup);
-                            ctx.patch_jump(jump_idx, Instruction::JumpIfFalse(ctx.instructions.len() + 1));
-                            ctx.emit(Instruction::Pop);
-                            self.compile_expr(right, ctx)?;
-                            return Ok(());
-                        }
-                        ctx.emit(Instruction::And)
-                    }
-                    BinaryOp::Or => {
-                        // Short-circuit OR
-                        if self.optimization_level > 1 {
-                            let jump_idx = ctx.emit_placeholder();
-                            ctx.emit(Instruction::Dup);
-                            ctx.patch_jump(jump_idx, Instruction::JumpIfTrue(ctx.instructions.len() + 1));
-                            ctx.emit(Instruction::Pop);
-                            self.compile_expr(right, ctx)?;
-                            return Ok(());
-                        }
-                        ctx.emit(Instruction::Or)
-                    }
+                ctx.emit(Instruction::Add);
+            }
+            Expression::Subtract(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Subtract);
+            }
+            Expression::Multiply(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Multiply);
+            }
+            Expression::Divide(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Divide);
+            }
+            Expression::Modulo(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Modulo);
+            }
+            
+            // Comparison operations
+            Expression::Equal(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Equal);
+            }
+            Expression::NotEqual(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::NotEqual);
+            }
+            Expression::Less(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Less);
+            }
+            Expression::Greater(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::Greater);
+            }
+            Expression::LessOrEqual(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::LessEqual);
+            }
+            Expression::GreaterOrEqual(left, right) => {
+                self.compile_expr(left, ctx)?;
+                self.compile_expr(right, ctx)?;
+                ctx.emit(Instruction::GreaterEqual);
+            }
+            
+            // Logical operations
+            Expression::And(left, right) => {
+                if self.optimization_level > 1 {
+                    // Short-circuit AND
+                    self.compile_expr(left, ctx)?;
+                    let jump_idx = ctx.emit_placeholder();
+                    ctx.emit(Instruction::Dup);
+                    ctx.patch_jump(jump_idx, Instruction::JumpIfFalse(ctx.instructions.len() + 2));
+                    ctx.emit(Instruction::Pop);
+                    self.compile_expr(right, ctx)?;
+                } else {
+                    self.compile_expr(left, ctx)?;
+                    self.compile_expr(right, ctx)?;
+                    ctx.emit(Instruction::And);
+                }
+            }
+            Expression::Or(left, right) => {
+                if self.optimization_level > 1 {
+                    // Short-circuit OR
+                    self.compile_expr(left, ctx)?;
+                    let jump_idx = ctx.emit_placeholder();
+                    ctx.emit(Instruction::Dup);
+                    ctx.patch_jump(jump_idx, Instruction::JumpIfTrue(ctx.instructions.len() + 2));
+                    ctx.emit(Instruction::Pop);
+                    self.compile_expr(right, ctx)?;
+                } else {
+                    self.compile_expr(left, ctx)?;
+                    self.compile_expr(right, ctx)?;
+                    ctx.emit(Instruction::Or);
                 }
             }
             
-            Expression::Unary { op, operand } => {
+            // Unary operations
+            Expression::Negate(operand) => {
                 self.compile_expr(operand, ctx)?;
-                match op {
-                    UnaryOp::Not => ctx.emit(Instruction::Not),
-                    UnaryOp::Negate => ctx.emit(Instruction::Negate),
-                }
+                ctx.emit(Instruction::Negate);
+            }
+            Expression::Not(operand) => {
+                self.compile_expr(operand, ctx)?;
+                ctx.emit(Instruction::Not);
             }
             
             Expression::Conditional { condition, then_expr, else_expr } => {
@@ -223,7 +302,10 @@ impl Compiler {
             Expression::FunctionCall { name, args } => {
                 // Validate function exists
                 if !self.function_registry.has_function(name) {
-                    return Err(ExpressionError::Parse(format!("Unknown function: {}", name)));
+                    return Err(ExpressionError::Parse(ParseError::UnknownFunction { 
+                        name: name.clone(), 
+                        position: 0 
+                    }));
                 }
                 
                 ctx.called_functions.insert(name.clone());
@@ -235,34 +317,6 @@ impl Compiler {
                 
                 // Emit call
                 ctx.emit(Instruction::Call(name.clone(), args.len()));
-            }
-            
-            Expression::Array(elements) => {
-                // Compile elements
-                for elem in elements {
-                    self.compile_expr(elem, ctx)?;
-                }
-                ctx.emit(Instruction::MakeArray(elements.len()));
-            }
-            
-            Expression::Object(fields) => {
-                // Compile field values
-                for (key, value) in fields {
-                    ctx.emit(Instruction::Const(Value::String(key.clone())));
-                    self.compile_expr(value, ctx)?;
-                }
-                ctx.emit(Instruction::MakeObject(fields.len()));
-            }
-            
-            Expression::Index { object, index } => {
-                self.compile_expr(object, ctx)?;
-                self.compile_expr(index, ctx)?;
-                ctx.emit(Instruction::Index);
-            }
-            
-            Expression::FieldAccess { object, field } => {
-                self.compile_expr(object, ctx)?;
-                ctx.emit(Instruction::GetField(field.clone()));
             }
         }
         
@@ -457,7 +511,7 @@ impl Compiler {
     }
     
     /// Combine multiple instructions into more efficient forms
-    fn combine_instructions(&self, ctx: &mut CompilationContext) {
+    fn combine_instructions(&self, _ctx: &mut CompilationContext) {
         // This is a placeholder for more advanced optimizations
         // such as combining multiple field accesses or array operations
     }
@@ -481,7 +535,7 @@ impl Compiler {
     /// Calculate compilation metadata
     fn calculate_metadata(&self, ctx: &CompilationContext) -> CompilationMetadata {
         let mut max_stack = 0;
-        let mut current_stack = 0;
+        let mut current_stack: usize = 0;
         let mut is_pure = true;
         let mut complexity = 0;
         
@@ -492,26 +546,26 @@ impl Compiler {
                     current_stack += 1;
                 }
                 Instruction::Store(_) | Instruction::Pop => {
-                    current_stack = current_stack.saturating_sub(1);
+                    current_stack = current_stack.saturating_sub(1usize);
                 }
                 Instruction::Add | Instruction::Subtract | Instruction::Multiply | Instruction::Divide |
                 Instruction::Modulo | Instruction::Power | Instruction::Equal | Instruction::NotEqual |
                 Instruction::Less | Instruction::LessEqual | Instruction::Greater | Instruction::GreaterEqual |
                 Instruction::And | Instruction::Or | Instruction::Index => {
-                    current_stack = current_stack.saturating_sub(1);
+                    current_stack = current_stack.saturating_sub(1usize);
                 }
                 Instruction::Not | Instruction::Negate | Instruction::GetField(_) => {
                     // Stack neutral
                 }
                 Instruction::Call(_, args) => {
-                    current_stack = current_stack.saturating_sub(*args).saturating_add(1);
+                    current_stack = current_stack.saturating_sub(*args).saturating_add(1usize);
                     is_pure = false; // Conservative: assume functions have side effects
                 }
                 Instruction::MakeArray(n) => {
-                    current_stack = current_stack.saturating_sub(*n).saturating_add(1);
+                    current_stack = current_stack.saturating_sub(*n).saturating_add(1usize);
                 }
                 Instruction::MakeObject(n) => {
-                    current_stack = current_stack.saturating_sub(n * 2).saturating_add(1);
+                    current_stack = current_stack.saturating_sub(n * 2).saturating_add(1usize);
                 }
                 _ => {}
             }

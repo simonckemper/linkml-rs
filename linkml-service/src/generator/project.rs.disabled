@@ -1508,45 +1508,45 @@ fn main() -> Result<(), Box<dyn Error>> {
     
     fn get_installation_instructions(&self) -> &str {
         match self.config.target {
-            ProjectTarget::Python => "```bash\npip install poetry\npoetry install\n```",
-            ProjectTarget::TypeScript => "```bash\nnpm install\n```",
-            ProjectTarget::Rust => "```bash\ncargo build\n```",
-            ProjectTarget::Java => "```bash\nmvn install\n```",
-            ProjectTarget::Go => "```bash\ngo mod download\n```",
-            ProjectTarget::MultiLanguage => "```bash\nmake build\n```",
+            ProjectTarget::Python => "pip install poetry\\npoetry install",
+            ProjectTarget::TypeScript => "npm install",
+            ProjectTarget::Rust => "cargo build",
+            ProjectTarget::Java => "mvn install",
+            ProjectTarget::Go => "go mod download",
+            ProjectTarget::MultiLanguage => "make build",
         }
     }
     
     fn get_prerequisites(&self) -> &str {
         match self.config.target {
-            ProjectTarget::Python => "- Python 3.8 or higher\n- Poetry package manager",
-            ProjectTarget::TypeScript => "- Node.js 16 or higher\n- npm or yarn",
-            ProjectTarget::Rust => "- Rust 1.70 or higher\n- Cargo",
-            ProjectTarget::Java => "- Java 11 or higher\n- Maven 3.6 or higher",
+            ProjectTarget::Python => "- Python 3.8 or higher\\n- Poetry package manager",
+            ProjectTarget::TypeScript => "- Node.js 16 or higher\\n- npm or yarn",
+            ProjectTarget::Rust => "- Rust 1.70 or higher\\n- Cargo",
+            ProjectTarget::Java => "- Java 11 or higher\\n- Maven 3.6 or higher",
             ProjectTarget::Go => "- Go 1.19 or higher",
-            ProjectTarget::MultiLanguage => "- Make\n- Python 3.8+\n- Node.js 16+\n- Rust 1.70+\n- Java 11+\n- Go 1.19+",
+            ProjectTarget::MultiLanguage => "- Make\\n- Python 3.8+\\n- Node.js 16+\\n- Rust 1.70+\\n- Java 11+\\n- Go 1.19+",
         }
     }
     
     fn get_install_command(&self) -> &str {
         match self.config.target {
-            ProjectTarget::Python => "```bash\n   poetry install\n   ```",
-            ProjectTarget::TypeScript => "```bash\n   npm install\n   ```",
-            ProjectTarget::Rust => "```bash\n   cargo build\n   ```",
-            ProjectTarget::Java => "```bash\n   mvn install\n   ```",
-            ProjectTarget::Go => "```bash\n   go mod download\n   ```",
-            ProjectTarget::MultiLanguage => "```bash\n   make build\n   ```",
+            ProjectTarget::Python => "poetry install",
+            ProjectTarget::TypeScript => "npm install",
+            ProjectTarget::Rust => "cargo build",
+            ProjectTarget::Java => "mvn install",
+            ProjectTarget::Go => "go mod download",
+            ProjectTarget::MultiLanguage => "make build",
         }
     }
     
     fn get_test_command(&self) -> &str {
         match self.config.target {
-            ProjectTarget::Python => "```bash\n   poetry run pytest\n   ```",
-            ProjectTarget::TypeScript => "```bash\n   npm test\n   ```",
-            ProjectTarget::Rust => "```bash\n   cargo test\n   ```",
-            ProjectTarget::Java => "```bash\n   mvn test\n   ```",
-            ProjectTarget::Go => "```bash\n   go test ./...\n   ```",
-            ProjectTarget::MultiLanguage => "```bash\n   make test\n   ```",
+            ProjectTarget::Python => "poetry run pytest",
+            ProjectTarget::TypeScript => "npm test",
+            ProjectTarget::Rust => "cargo test",
+            ProjectTarget::Java => "mvn test",
+            ProjectTarget::Go => "go test ./...",
+            ProjectTarget::MultiLanguage => "make test",
         }
     }
     

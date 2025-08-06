@@ -4,7 +4,8 @@
 //! and other dependencies.
 
 use super::*;
-use semver::{Version, VersionReq, Comparator, Op};
+use semver::{Op, Version, VersionReq};
+use crate::plugin::api::PLUGIN_API_VERSION;
 
 /// Version compatibility checker
 pub struct CompatibilityChecker {
@@ -75,10 +76,11 @@ impl CompatibilityChecker {
         }
         
         // Check API version
-        if let Some(metadata) = &manifest.plugin.capabilities.iter()
+        if let Some(_metadata) = &manifest.plugin.capabilities.iter()
             .find_map(|_| None::<&PluginMetadata>)
         {
-            self.check_api_version(metadata.api_version)?;
+            // API version check would happen here if metadata existed
+            // self.check_api_version(metadata.api_version)?;
         }
         
         Ok(())
@@ -98,7 +100,7 @@ impl CompatibilityChecker {
         
         // Check if plugin requires newer version
         if !self.rules.allow_newer && self.requires_newer_version(requirement) {
-            return Err(LinkMLError::PluginError(format!(
+            return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but current version is {}",
                 requirement, self.linkml_version
             )));
@@ -106,13 +108,13 @@ impl CompatibilityChecker {
         
         // In strict mode, require exact major version match
         if self.rules.strict_mode && !self.same_major_version(requirement) {
-            return Err(LinkMLError::PluginError(format!(
+            return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but strict mode requires major version {}",
                 requirement, self.linkml_version.major
             )));
         }
         
-        Err(LinkMLError::PluginError(format!(
+        Err(LinkMLError::ServiceError(format!(
             "Plugin LinkML version requirement {} is not compatible with {}",
             requirement, self.linkml_version
         )))
@@ -136,7 +138,7 @@ impl CompatibilityChecker {
     fn validate_dependency(&self, dependency: &PluginDependency) -> Result<()> {
         // Check for invalid version requirements
         if dependency.version.to_string().is_empty() {
-            return Err(LinkMLError::PluginError(format!(
+            return Err(LinkMLError::ServiceError(format!(
                 "Invalid version requirement for dependency '{}'",
                 dependency.id
             )));
@@ -145,7 +147,7 @@ impl CompatibilityChecker {
         // Validate version requirement can be parsed
         // (already validated by serde, but double-check)
         let _ = VersionReq::parse(&dependency.version.to_string())
-            .map_err(|e| LinkMLError::PluginError(format!(
+            .map_err(|e| LinkMLError::ServiceError(format!(
                 "Invalid version requirement for dependency '{}': {}",
                 dependency.id, e
             )))?;
@@ -154,9 +156,9 @@ impl CompatibilityChecker {
     }
     
     /// Check API version compatibility
-    fn check_api_version(&self, api_version: u32) -> Result<()> {
+    fn _check_api_version(&self, api_version: u32) -> Result<()> {
         if api_version != PLUGIN_API_VERSION {
-            return Err(LinkMLError::PluginError(format!(
+            return Err(LinkMLError::ServiceError(format!(
                 "Plugin API version {} is not compatible with current API version {}",
                 api_version, PLUGIN_API_VERSION
             )));

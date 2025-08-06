@@ -3,7 +3,7 @@
 //! This module provides date/time functions for working with temporal data.
 
 use super::functions::{BuiltinFunction, FunctionError};
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Utc};
 use serde_json::Value;
 
 /// now() - Get current timestamp

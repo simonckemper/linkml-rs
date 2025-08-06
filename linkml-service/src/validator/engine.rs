@@ -285,7 +285,7 @@ impl ValidationEngine {
                 let cache_key =
                     ValidatorCacheKey::new(&self.schema, class_name, &compilation_options);
                 cache.get(&cache_key).await.ok_or_else(|| {
-                    ValidationError::Internal("Failed to retrieve cached validator".to_string())
+                    LinkMLError::service("Failed to retrieve cached validator")
                 })?
             };
 
@@ -325,9 +325,7 @@ impl ValidationEngine {
             Some(obj) => obj,
             None => {
                 // This should not happen as we already checked is_object()
-                return Err(ValidationError::Internal(
-                    "Unexpected non-object after is_object check".to_string()
-                ));
+                return Err(LinkMLError::service("Unexpected non-object after is_object check"));
             }
         };
         
@@ -556,7 +554,7 @@ impl ValidationEngine {
             
             // Validate the instance
             let class_def = self.schema.classes.get(class_name)
-                .ok_or_else(|| ValidationError::ClassNotFound(class_name.to_string()))?;
+                .ok_or_else(|| LinkMLError::schema_validation(format!("Class not found: {}", class_name)))?;
             self.validate_class_instance(
                 instance,
                 class_name,
