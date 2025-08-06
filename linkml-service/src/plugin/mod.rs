@@ -20,7 +20,7 @@ pub mod registry;
 pub mod compatibility;
 
 pub use discovery::{PluginDiscovery, DiscoveryStrategy, PluginManifest, EntryPoint};
-pub use loader::{PluginLoader, DynamicLoader};
+pub use loader::{PluginLoader, DynamicLoader, PluginSandbox, ResourceLimits, FsAccessMode};
 pub use api::{PluginSDK, PluginCapability, PluginMetadata};
 pub use registry::{PluginRegistry, PluginRegistration};
 pub use compatibility::{CompatibilityChecker, CompatibilityRules};
