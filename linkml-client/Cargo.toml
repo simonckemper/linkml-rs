@@ -2,7 +2,7 @@
 name = "linkml-client"
 version = "0.1.0"
 edition = "2024"
-authors = ["Simon C. Kemper <simon.kemper@kempertech.com>"]
+authors = ["Simon C. Kemper <textpast@textpast.com>"]
 license = "CC-BY-NC-4.0"
 description = "Client library for LinkML service"
 repository = "https://github.com/simonckemper/rootreal"

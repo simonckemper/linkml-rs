@@ -266,4 +266,4 @@ This project is licensed under the Creative Commons Attribution-NonCommercial 4.
 
 - **Issues**: [GitHub Issues](https://github.com/simonckemper/linkml-rs/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/simonckemper/linkml-rs/discussions)
-- **Email**: simon.kemper@kempertech.com
+- **Email**: textpast@textpast.com
