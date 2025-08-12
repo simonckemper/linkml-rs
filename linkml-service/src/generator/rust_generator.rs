@@ -353,14 +353,12 @@ impl RustGenerator {
                 let field_name = self.convert_field_name(slot_name);
 
                 // Required field validation
-                if slot.required.unwrap_or(false) {
-                    if slot.range.as_deref() == Some("string") {
-                        writeln!(output, "{}// Required field: {}", indent.to_string(2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "{}if self.{}.is_empty() {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "{}errors.push(ValidationError::RequiredField {{ field: \"{}\" }});", 
-                            indent.to_string(3), slot_name).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
-                    }
+                if slot.required.unwrap_or(false) && slot.range.as_deref() == Some("string") {
+                    writeln!(output, "{}// Required field: {}", indent.to_string(2), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "{}if self.{}.is_empty() {{", indent.to_string(2), field_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "{}errors.push(ValidationError::RequiredField {{ field: \"{}\" }});", 
+                        indent.to_string(3), slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "{}}}", indent.to_string(2)).map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Pattern validation
@@ -733,7 +731,7 @@ impl AsyncGenerator for RustGenerator {
         
         // Check if we need chrono imports
         let needs_chrono = schema.slots.values().any(|slot| {
-            matches!(slot.range.as_deref(), Some("date") | Some("datetime") | Some("time"))
+            matches!(slot.range.as_deref(), Some("date" | "datetime" | "time"))
         });
         
         if needs_chrono {

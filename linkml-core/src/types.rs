@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-/// Schema definition - the root of a LinkML schema
+/// Schema definition - the root of a `LinkML` schema
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct SchemaDefinition {
     /// Unique identifier for the schema
@@ -163,7 +163,7 @@ pub struct ClassDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<Rule>,
     
-    /// Conditional requirements (if_required/then_required)
+    /// Conditional requirements (`if_required/then_required`)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub if_required: Option<IndexMap<String, ConditionalRequirement>>,
     
@@ -255,7 +255,7 @@ pub struct SlotDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub aliases: Vec<String>,
     
-    /// Is inherited (is_a)
+    /// Is inherited (`is_a`)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_a: Option<String>,
     
@@ -279,19 +279,19 @@ pub struct SlotDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inlined_as_list: Option<bool>,
     
-    /// any_of constraint - at least one must be satisfied
+    /// `any_of` constraint - at least one must be satisfied
     #[serde(skip_serializing_if = "Option::is_none")]
     pub any_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// all_of constraint - all must be satisfied
+    /// `all_of` constraint - all must be satisfied
     #[serde(skip_serializing_if = "Option::is_none")]
     pub all_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// exactly_one_of constraint - exactly one must be satisfied
+    /// `exactly_one_of` constraint - exactly one must be satisfied
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exactly_one_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// none_of constraint - none can be satisfied
+    /// `none_of` constraint - none can be satisfied
     #[serde(skip_serializing_if = "Option::is_none")]
     pub none_of: Option<Vec<AnonymousSlotExpression>>,
     
@@ -303,7 +303,7 @@ pub struct SlotDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rules: Option<Vec<String>>,
     
-    /// List of allowed string values (equals_string_in constraint)
+    /// List of allowed string values (`equals_string_in` constraint)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub equals_string_in: Option<Vec<String>>,
     
@@ -348,7 +348,7 @@ pub struct SlotDefinition {
 /// Structured pattern for advanced pattern matching
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct StructuredPattern {
-    /// The pattern syntax (e.g., "regular_expression", "glob")
+    /// The pattern syntax (e.g., "`regular_expression`", "glob")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub syntax: Option<String>,
     
@@ -606,19 +606,19 @@ pub struct AnonymousSlotExpression {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub inlined_as_list: Option<bool>,
     
-    /// Nested any_of constraints
+    /// Nested `any_of` constraints
     #[serde(skip_serializing_if = "Option::is_none")]
     pub any_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// Nested all_of constraints
+    /// Nested `all_of` constraints
     #[serde(skip_serializing_if = "Option::is_none")]
     pub all_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// Nested exactly_one_of constraints
+    /// Nested `exactly_one_of` constraints
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exactly_one_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// Nested none_of constraints
+    /// Nested `none_of` constraints
     #[serde(skip_serializing_if = "Option::is_none")]
     pub none_of: Option<Vec<AnonymousSlotExpression>>,
 }
@@ -706,19 +706,19 @@ pub struct SlotCondition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum_value: Option<Value>,
     
-    /// any_of constraint
+    /// `any_of` constraint
     #[serde(skip_serializing_if = "Option::is_none")]
     pub any_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// all_of constraint
+    /// `all_of` constraint
     #[serde(skip_serializing_if = "Option::is_none")]
     pub all_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// exactly_one_of constraint
+    /// `exactly_one_of` constraint
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exactly_one_of: Option<Vec<AnonymousSlotExpression>>,
     
-    /// none_of constraint
+    /// `none_of` constraint
     #[serde(skip_serializing_if = "Option::is_none")]
     pub none_of: Option<Vec<AnonymousSlotExpression>>,
 }
@@ -776,7 +776,7 @@ impl SchemaDefinition {
     pub fn new(name: impl Into<String>) -> Self {
         let name = name.into();
         Self {
-            id: format!("https://example.org/{}", name),
+            id: format!("https://example.org/{name}"),
             name,
             ..Default::default()
         }

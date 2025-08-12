@@ -440,7 +440,7 @@ impl ShExGenerator {
     /// Generate ShExR (RDF format)
     fn generate_shexr(&self, _schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified RDF representation in Turtle
-        let output = r#"@prefix shex: <http://www.w3.org/ns/shex#> .
+        let output = r"@prefix shex: <http://www.w3.org/ns/shex#> .
 @prefix ex: <http://example.org/> .
 
 # ShExR format would represent shapes as RDF triples
@@ -452,7 +452,7 @@ ex:MyShape a shex:Shape ;
         shex:predicate rdf:type ;
         shex:valueExpr [ a shex:NodeConstraint ]
     ] .
-"#;
+";
         Ok(output.to_string())
     }
     

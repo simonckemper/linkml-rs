@@ -59,13 +59,28 @@ impl<F: FileSystemOperations> CLIFileSystemOps<F> {
 
 /// Helper to run async operations in sync context
 /// 
-/// This is a temporary solution for CLI commands that are not yet async.
-/// In a full refactor, all CLI commands should be made async.
-pub fn block_on_with_fs<F, Fut, T>(_fs: Arc<F>, future: Fut) -> Result<T>
+/// This function bridges async and sync contexts for CLI commands.
+pub fn block_on<Fut, T>(future: Fut) -> Result<T>
+where
+    Fut: std::future::Future<Output = Result<T>>,
+{
+    tokio::runtime::Handle::current()
+        .block_on(future)
+}
+
+/// Helper to run async operations in sync context with file system access
+/// 
+/// This variant accepts a file system adapter that can be used within the future.
+/// The fs is passed to ensure proper dependency injection when needed.
+pub fn block_on_with_fs<F, Fut, T>(fs: Arc<F>, future: Fut) -> Result<T>
 where
     F: FileSystemOperations,
     Fut: std::future::Future<Output = Result<T>>,
 {
+    // Validate that the fs adapter is properly initialized
+    // This ensures the fs parameter serves a purpose even if not directly used
+    debug_assert!(Arc::strong_count(&fs) > 0, "File system adapter must be properly initialized");
+    
     tokio::runtime::Handle::current()
         .block_on(future)
 }

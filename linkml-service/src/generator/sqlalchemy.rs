@@ -377,14 +377,12 @@ impl SQLAlchemyGenerator {
                 format!("{} = relationship('{}', back_populates='{}')",
                     relationship_name, target_class, back_populates)
             }
+        } else if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
+            format!("{}: Mapped[Optional['{}']] = relationship(back_populates='{}')",
+                relationship_name, target_class, back_populates)
         } else {
-            if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
-                format!("{}: Mapped[Optional['{}']] = relationship(back_populates='{}')",
-                    relationship_name, target_class, back_populates)
-            } else {
-                format!("{} = relationship('{}', back_populates='{}')",
-                    relationship_name, target_class, back_populates)
-            }
+            format!("{} = relationship('{}', back_populates='{}')",
+                relationship_name, target_class, back_populates)
         }
     }
     
@@ -416,17 +414,15 @@ impl SQLAlchemyGenerator {
         }
         
         // Index generation
-        if self.config.generate_indexes {
-            if !class_def.slots.is_empty() {
-                for slot_name in &class_def.slots {
-                    if let Some(_slot_def) = schema.slots.get(slot_name) {
-                        // TODO: indexed field not yet implemented in SlotDefinition
-                        // if slot_def.indexed == Some(true) {
-                        if false {
-                            let column_name = self.to_snake_case(slot_name);
-                            constraints.push(format!("Index('idx_{}_{}')", 
-                                self.to_snake_case(class_name), column_name));
-                        }
+        if self.config.generate_indexes && !class_def.slots.is_empty() {
+            for slot_name in &class_def.slots {
+                if let Some(_slot_def) = schema.slots.get(slot_name) {
+                    // TODO: indexed field not yet implemented in SlotDefinition
+                    // if slot_def.indexed == Some(true) {
+                    if false {
+                        let column_name = self.to_snake_case(slot_name);
+                        constraints.push(format!("Index('idx_{}_{}')", 
+                            self.to_snake_case(class_name), column_name));
                     }
                 }
             }

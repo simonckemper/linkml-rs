@@ -770,7 +770,6 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Helper methods...
-    
     /// Build inheritance chain for a class
     fn build_inheritance_chain(
         &self,

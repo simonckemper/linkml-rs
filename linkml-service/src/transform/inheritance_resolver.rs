@@ -47,7 +47,7 @@ pub struct InheritanceResolver {
     resolved_cache: HashMap<String, Arc<ClassDefinition>>,
     
     /// Inheritance depth limit
-    _max_depth: usize,
+    max_depth: usize,
 }
 
 impl InheritanceResolver {
@@ -55,7 +55,7 @@ impl InheritanceResolver {
     pub fn new() -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            _max_depth: 100,
+            max_depth: 100,
         }
     }
     
@@ -63,7 +63,7 @@ impl InheritanceResolver {
     pub fn with_max_depth(max_depth: usize) -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            _max_depth: max_depth,
+            max_depth,
         }
     }
     
@@ -142,6 +142,13 @@ impl InheritanceResolver {
             ));
         }
         
+        // Check depth limit
+        if visited.len() > self.max_depth {
+            return Err(InheritanceError::InvalidInheritance(
+                format!("Maximum inheritance depth {} exceeded", self.max_depth)
+            ));
+        }
+        
         let parent = schema.classes.get(parent_name)
             .ok_or_else(|| InheritanceError::ParentNotFound(parent_name.to_string()))?;
         
@@ -165,6 +172,13 @@ impl InheritanceResolver {
         if !visited.insert(format!("mixin:{}", mixin_name)) {
             return Err(InheritanceError::CircularInheritance(
                 format!("Circular mixin reference involving {}", mixin_name)
+            ));
+        }
+        
+        // Check depth limit for mixins
+        if visited.len() > self.max_depth {
+            return Err(InheritanceError::InvalidInheritance(
+                format!("Maximum mixin depth {} exceeded", self.max_depth)
             ));
         }
         
@@ -282,6 +296,13 @@ impl InheritanceResolver {
                 .join(" -> ");
             return Err(InheritanceError::CircularInheritance(
                 format!("{} -> {}", cycle, class_name)
+            ));
+        }
+        
+        // Check depth limit
+        if path.len() >= self.max_depth {
+            return Err(InheritanceError::InvalidInheritance(
+                format!("Maximum inheritance depth {} exceeded at class {}", self.max_depth, class_name)
             ));
         }
         

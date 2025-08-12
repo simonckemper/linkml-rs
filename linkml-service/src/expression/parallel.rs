@@ -49,28 +49,28 @@ impl Default for ParallelOptions {
 /// Extension trait for parallel evaluation
 pub trait ParallelEvaluator {
     /// Evaluate multiple expressions in parallel
-    async fn evaluate_parallel(
+    fn evaluate_parallel(
         &self,
         expressions: HashMap<String, String>,
         context: &HashMap<String, Value>,
         options: ParallelOptions,
-    ) -> ParallelResult;
+    ) -> impl std::future::Future<Output = ParallelResult> + Send;
     
     /// Evaluate multiple pre-parsed expressions in parallel
-    async fn evaluate_ast_parallel(
+    fn evaluate_ast_parallel(
         &self,
         expressions: HashMap<String, Expression>,
         context: &HashMap<String, Value>,
         options: ParallelOptions,
-    ) -> ParallelResult;
+    ) -> impl std::future::Future<Output = ParallelResult> + Send;
     
     /// Evaluate the same expression with multiple different contexts
-    async fn evaluate_with_contexts(
+    fn evaluate_with_contexts(
         &self,
         expression: &str,
         contexts: Vec<HashMap<String, Value>>,
         options: ParallelOptions,
-    ) -> Vec<Result<Value, EvaluationError>>;
+    ) -> impl std::future::Future<Output = Vec<Result<Value, EvaluationError>>> + Send;
 }
 
 impl ParallelEvaluator for ExpressionEngine {

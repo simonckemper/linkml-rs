@@ -25,13 +25,15 @@ pub trait PluginLoader: Send + Sync {
 
 /// Dynamic plugin loader supporting multiple plugin types
 pub struct DynamicLoader {
-    /// Native library loader
+    /// Built-in plugin registry
+    builtin_registry: super::BuiltinPluginRegistry,
+    /// Native library loader (disabled for safety)
     native_loader: NativeLoader,
-    /// Python plugin loader
+    /// Python plugin loader (requires feature flag)
     python_loader: PythonLoader,
-    /// JavaScript plugin loader
+    /// JavaScript plugin loader (requires feature flag)
     js_loader: JavaScriptLoader,
-    /// WebAssembly plugin loader
+    /// WebAssembly plugin loader (requires feature flag)
     wasm_loader: WasmLoader,
 }
 
@@ -39,11 +41,22 @@ impl DynamicLoader {
     /// Create a new dynamic loader
     pub fn new() -> Self {
         Self {
+            builtin_registry: super::BuiltinPluginRegistry::new(),
             native_loader: NativeLoader::new(),
             python_loader: PythonLoader::new(),
             js_loader: JavaScriptLoader::new(),
             wasm_loader: WasmLoader::new(),
         }
+    }
+    
+    /// Get a built-in plugin by name
+    pub fn get_builtin_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
+        self.builtin_registry.get_plugin(name)
+    }
+    
+    /// List all available built-in plugins
+    pub fn list_builtin_plugins(&self) -> Vec<String> {
+        self.builtin_registry.list_plugins()
     }
     
     /// Load plugin metadata from a manifest file
@@ -181,36 +194,36 @@ impl WasmLoader {
 #[derive(Debug, Clone)]
 pub struct PluginSandbox {
     /// Resource limits
-    pub _limits: ResourceLimits,
+    pub limits: ResourceLimits,
     /// Allowed capabilities
-    pub _capabilities: Vec<String>,
+    pub capabilities: Vec<String>,
 }
 
 impl PluginSandbox {
     /// Create a new plugin sandbox with default limits
     pub fn new() -> Self {
         Self {
-            _limits: ResourceLimits::default(),
-            _capabilities: Vec::new(),
+            limits: ResourceLimits::default(),
+            capabilities: Vec::new(),
         }
     }
     
     /// Create a sandbox with custom resource limits
     pub fn with_limits(limits: ResourceLimits) -> Self {
         Self {
-            _limits: limits,
-            _capabilities: Vec::new(),
+            limits,
+            capabilities: Vec::new(),
         }
     }
     
     /// Add a capability to the sandbox
     pub fn add_capability(&mut self, capability: String) {
-        self._capabilities.push(capability);
+        self.capabilities.push(capability);
     }
     
     /// Check if a capability is allowed
     pub fn has_capability(&self, capability: &str) -> bool {
-        self._capabilities.iter().any(|c| c == capability)
+        self.capabilities.iter().any(|c| c == capability)
     }
 }
 
@@ -291,7 +304,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
         use tokio::time::timeout;
         
         // Check if operation is allowed based on capabilities
-        if !self.sandbox.has_capability("execute") && !self.sandbox._capabilities.is_empty() {
+        if !self.sandbox.has_capability("execute") && !self.sandbox.capabilities.is_empty() {
             return Err(LinkMLError::other("Plugin does not have execute capability"));
         }
         
@@ -355,14 +368,14 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
         match operation {
             PluginOperation::FileRead(path) => self.check_file_access(&path, false),
             PluginOperation::FileWrite(path) => self.check_file_access(&path, true),
-            PluginOperation::NetworkAccess(_) => self.sandbox._limits.allow_network,
-            PluginOperation::MemoryAllocation(size) => size <= self.sandbox._limits.max_memory,
+            PluginOperation::NetworkAccess(_) => self.sandbox.limits.allow_network,
+            PluginOperation::MemoryAllocation(size) => size <= self.sandbox.limits.max_memory,
         }
     }
     
     /// Check if file access is allowed
     fn check_file_access(&self, path: &std::path::Path, write: bool) -> bool {
-        match self.sandbox._limits.fs_access {
+        match self.sandbox.limits.fs_access {
             FsAccessMode::None => false,
             FsAccessMode::ReadOnly => !write,
             FsAccessMode::TempOnly => {

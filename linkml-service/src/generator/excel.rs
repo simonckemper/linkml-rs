@@ -85,7 +85,7 @@ impl ExcelGenerator {
             .set_border(FormatBorder::Thin);
             
         let required_format = Format::new()
-            .set_background_color(Color::RGB(0xFFEBCD))
+            .set_background_color(Color::RGB(0x00FF_EBCD))
             .set_border(FormatBorder::Thin);
             
         let optional_format = Format::new()
@@ -524,7 +524,7 @@ impl ExcelGenerator {
                         })?;
                     
                     // Apply to entire column (starting from row 3)
-                    worksheet.add_data_validation(start_row, col, 1048575, col, &data_validation)
+                    worksheet.add_data_validation(start_row, col, 1_048_575, col, &data_validation)
                         .map_err(|e| GeneratorError::Generation {
                             context: "data_validation".to_string(),
                             message: e.to_string(),
@@ -575,13 +575,13 @@ impl ExcelGenerator {
                             })?;
                     }
                     
-                    worksheet.add_data_validation(start_row, col, 1048575, col, &validation)
+                    worksheet.add_data_validation(start_row, col, 1_048_575, col, &validation)
                         .map_err(|e| GeneratorError::Generation {
                             context: "data_validation".to_string(),
                             message: e.to_string(),
                         })?;
                 }
-                Some("float") | Some("double") | Some("decimal") => {
+                Some("float" | "double" | "decimal") => {
                     let mut validation = DataValidation::new();
                     
                     if let (Some(min), Some(max)) = (&slot_def.minimum_value, &slot_def.maximum_value) {
@@ -602,7 +602,7 @@ impl ExcelGenerator {
                             message: e.to_string(),
                         })?;
                     
-                    worksheet.add_data_validation(start_row, col, 1048575, col, &validation)
+                    worksheet.add_data_validation(start_row, col, 1_048_575, col, &validation)
                         .map_err(|e| GeneratorError::Generation {
                             context: "data_validation".to_string(),
                             message: e.to_string(),
@@ -623,7 +623,7 @@ impl ExcelGenerator {
                             message: e.to_string(),
                         })?;
                     
-                    worksheet.add_data_validation(start_row, col, 1048575, col, &validation)
+                    worksheet.add_data_validation(start_row, col, 1_048_575, col, &validation)
                         .map_err(|e| GeneratorError::Generation {
                             context: "data_validation".to_string(),
                             message: e.to_string(),

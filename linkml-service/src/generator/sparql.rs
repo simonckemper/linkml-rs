@@ -516,7 +516,7 @@ impl SparqlGenerator {
         match range.as_deref() {
             Some("string") => "\"example string\"",
             Some("integer") => "42",
-            Some("float") | Some("double") => "3.14",
+            Some("float" | "double") => "3.14",
             Some("boolean") => "true",
             Some("date") => "\"2024-01-01\"^^xsd:date",
             Some("datetime") => "\"2024-01-01T00:00:00Z\"^^xsd:dateTime",

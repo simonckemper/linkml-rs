@@ -7,10 +7,10 @@ use configuration_core::{Validate, ConfigurationError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Main LinkML service configuration
-#[derive(Debug, Clone, Deserialize, Serialize)]
+/// Main `LinkML` service configuration
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct LinkMLServiceConfig {
-    /// TypeDB configuration
+    /// `TypeDB` configuration
     pub typedb: TypeDBConfig,
     
     /// Parser configuration
@@ -32,10 +32,10 @@ pub struct LinkMLServiceConfig {
     pub security_limits: SecurityLimitsConfig,
 }
 
-/// TypeDB specific configuration
+/// `TypeDB` specific configuration
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TypeDBConfig {
-    /// TypeDB server address (e.g., "localhost:1729")
+    /// `TypeDB` server address (e.g., "localhost:1729")
     pub server_address: String,
     
     /// Default database name
@@ -382,20 +382,6 @@ impl Validate for LinkMLServiceConfig {
     }
 }
 
-impl Default for LinkMLServiceConfig {
-    fn default() -> Self {
-        Self {
-            typedb: TypeDBConfig::default(),
-            parser: ParserConfig::default(),
-            validator: ValidatorConfig::default(),
-            generator: GeneratorConfig::default(),
-            cache: CacheConfig::default(),
-            performance: PerformanceConfig::default(),
-            security_limits: SecurityLimitsConfig::default(),
-        }
-    }
-}
-
 impl Default for TypeDBConfig {
     fn default() -> Self {
         Self {
@@ -506,8 +492,8 @@ impl Default for PerformanceConfig {
 impl Default for StringCacheConfig {
     fn default() -> Self {
         Self {
-            max_entries: 100000,
-            max_string_length: 10000,
+            max_entries: 100_000,
+            max_string_length: 10_000,
         }
     }
 }
@@ -528,7 +514,7 @@ impl Default for CacheTtlLevelsConfig {
             l2_seconds: 3600,   // 1 hour
             l3_seconds: 86400,  // 24 hours
             min_ttl_seconds: 60,       // 1 minute
-            max_ttl_seconds: 604800,   // 7 days
+            max_ttl_seconds: 604_800,   // 7 days
         }
     }
 }
@@ -536,16 +522,16 @@ impl Default for CacheTtlLevelsConfig {
 impl Default for SecurityLimitsConfig {
     fn default() -> Self {
         Self {
-            max_string_length: 1000000, // 1MB
+            max_string_length: 1_000_000, // 1MB
             max_expression_depth: 100,
             max_constraint_count: 1000,
-            max_cache_entries: 10000,
+            max_cache_entries: 10_000,
             max_function_args: 20,
             max_identifier_length: 256,
-            max_json_size_bytes: 10000000, // 10MB
+            max_json_size_bytes: 10_000_000, // 10MB
             max_slots_per_class: 1000,
-            max_classes_per_schema: 10000,
-            max_validation_time_ms: 30000, // 30 seconds
+            max_classes_per_schema: 10_000,
+            max_validation_time_ms: 30_000, // 30 seconds
             max_memory_usage_bytes: 1_000_000_000, // 1GB
             max_parallel_validators: 100,
             max_cache_memory_bytes: 100_000_000, // 100MB
@@ -558,6 +544,7 @@ impl Default for SecurityLimitsConfig {
 /// Environment-specific configuration presets
 impl LinkMLServiceConfig {
     /// Development environment configuration
+    #[must_use]
     pub fn development() -> Self {
         let mut config = Self::default();
         config.typedb.server_address = String::from("localhost:1729");
@@ -569,6 +556,7 @@ impl LinkMLServiceConfig {
     }
     
     /// Testing environment configuration
+    #[must_use]
     pub fn testing() -> Self {
         let mut config = Self::default();
         config.typedb.server_address = String::from("localhost:1730");
@@ -580,6 +568,7 @@ impl LinkMLServiceConfig {
     }
     
     /// Production environment configuration
+    #[must_use]
     pub fn production() -> Self {
         let mut config = Self::default();
         config.typedb.pool_size = 50;

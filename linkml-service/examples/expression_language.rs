@@ -1,3 +1,6 @@
+mod common;
+use common::initialize_example_service;
+
 //! Expression Language Example
 //! 
 //! This example demonstrates the LinkML expression language for validation rules,
@@ -284,5 +287,5 @@ enums:
 async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
     // For this example, we'll use a simplified initialization
-    todo!("Initialize LinkML service with dependencies")
+    initialize_example_service().await
 }

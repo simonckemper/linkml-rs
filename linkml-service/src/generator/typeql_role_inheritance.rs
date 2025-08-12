@@ -176,11 +176,10 @@ impl RoleInheritanceResolver {
 
         // Check for naming patterns (e.g., "participant" -> "student")
         for (parent_role, parent_type) in parent_roles {
-            if child_role.contains(parent_role) || 
-               self.is_semantic_specialization(child_role, parent_role) {
-                if self.is_subtype_of(child_type, parent_type, schema) {
-                    return Some((parent_role.clone(), parent_type.clone()));
-                }
+            if (child_role.contains(parent_role) || 
+               self.is_semantic_specialization(child_role, parent_role)) && 
+               self.is_subtype_of(child_type, parent_type, schema) {
+                return Some((parent_role.clone(), parent_type.clone()));
             }
         }
 

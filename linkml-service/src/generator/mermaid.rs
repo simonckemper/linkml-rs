@@ -429,11 +429,11 @@ impl MermaidGenerator {
     /// Get Mermaid data type for ER diagrams
     fn get_mermaid_type(&self, range: &Option<String>) -> &'static str {
         match range.as_deref() {
-            Some("string") | Some("str") => "string",
-            Some("integer") | Some("int") => "int",
-            Some("float") | Some("double") | Some("decimal") => "float",
-            Some("boolean") | Some("bool") => "bool",
-            Some("date") | Some("datetime") | Some("time") => "date",
+            Some("string" | "str") => "string",
+            Some("integer" | "int") => "int",
+            Some("float" | "double" | "decimal") => "float",
+            Some("boolean" | "bool") => "bool",
+            Some("date" | "datetime" | "time") => "date",
             _ => "string",
         }
     }

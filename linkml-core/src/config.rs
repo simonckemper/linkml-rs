@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Duration;
 
-/// Main configuration for LinkML services
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Main configuration for `LinkML` services
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LinkMLConfig {
     /// Schema loading configuration
@@ -22,18 +22,6 @@ pub struct LinkMLConfig {
     
     /// Integration configuration
     pub integration: IntegrationConfig,
-}
-
-impl Default for LinkMLConfig {
-    fn default() -> Self {
-        Self {
-            schema: SchemaConfig::default(),
-            validation: ValidationConfig::default(),
-            performance: PerformanceConfig::default(),
-            generation: GenerationConfig::default(),
-            integration: IntegrationConfig::default(),
-        }
-    }
 }
 
 /// Schema loading configuration
@@ -157,7 +145,7 @@ pub struct GenerationConfig {
     /// Output directory for generated code
     pub output_dir: PathBuf,
     
-    /// Enable TypeQL generation
+    /// Enable `TypeQL` generation
     pub enable_typeql: bool,
     
     /// Enable Rust generation
@@ -200,10 +188,10 @@ pub struct IntegrationConfig {
     /// Iceberg service endpoint
     pub iceberg_endpoint: Option<String>,
     
-    /// Enable TypeDB integration
+    /// Enable `TypeDB` integration
     pub enable_typedb: bool,
     
-    /// TypeDB connection string
+    /// `TypeDB` connection string
     pub typedb_connection: Option<String>,
     
     /// Enable monitoring

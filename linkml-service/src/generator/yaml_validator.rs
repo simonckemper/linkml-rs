@@ -167,7 +167,7 @@ impl YamlValidatorGenerator {
                     schema.insert("maximum".to_string(), json!(max));
                 }
             }
-            Some("float") | Some("double") => {
+            Some("float" | "double") => {
                 schema.insert("type".to_string(), json!("number"));
                 if let Some(min) = &type_def.minimum_value {
                     schema.insert("minimum".to_string(), json!(min));
@@ -314,17 +314,13 @@ impl YamlValidatorGenerator {
     fn get_range_schema(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         if let Some(range) = &slot_def.range {
             // Check if it's a type
-            if !schema.types.is_empty() {
-                if schema.types.contains_key(range) {
-                    return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
-                }
+            if !schema.types.is_empty() && schema.types.contains_key(range) {
+                return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
             }
             
             // Check if it's an enum
-            if !schema.enums.is_empty() {
-                if schema.enums.contains_key(range) {
-                    return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
-                }
+            if !schema.enums.is_empty() && schema.enums.contains_key(range) {
+                return Ok(json!({ "$ref": format!("#/definitions/{}", range) }));
             }
             
             // Check if it's a class

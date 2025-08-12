@@ -204,7 +204,7 @@ impl RuleMatcher {
             
             match result {
                 Value::Bool(false) => return Ok(false),
-                Value::Bool(true) => continue,
+                Value::Bool(true) => {},
                 _ => {
                     return Err(LinkMLError::data_validation(
                         "Rule expression must evaluate to boolean"

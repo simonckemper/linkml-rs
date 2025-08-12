@@ -56,14 +56,19 @@ impl Default for CacheWarmingConfig {
 
 impl CacheWarmingConfig {
     /// Create cache warming config from LinkML service configuration
-    pub fn from_service_config(_config: &linkml_core::configuration_v2::CacheConfig) -> Self {
+    pub fn from_service_config(config: &linkml_core::configuration_v2::CacheConfig) -> Self {
+        // Derive settings from available cache config fields
+        let max_entries = config.max_entries;
+        let ttl_seconds = config.ttl_seconds;
+        let enable_compression = config.enable_compression;
+        
         Self {
-            auto_warm: true,  // Default to enabled
-            batch_size: 50,
+            auto_warm: max_entries > 100,  // Enable if cache is large enough
+            batch_size: (max_entries / 20).max(10).min(100) as usize,  // 5% of max entries
             max_concurrent: 4,
-            warming_interval: Duration::from_secs(3600),  // Default to 1 hour
+            warming_interval: Duration::from_secs(ttl_seconds),  // Use TTL as warming interval
             priority_threshold: 0.5,
-            predictive_warming: true,
+            predictive_warming: !enable_compression,  // Predictive warming if not compressing
             history_size: 1000,
         }
     }
@@ -88,7 +93,7 @@ struct WarmingEntry {
     /// Priority score (higher is better)
     priority: f64,
     /// Estimated compilation time
-    _estimated_time: Duration,
+    estimated_time: Duration,
 }
 
 impl PartialEq for WarmingEntry {
@@ -196,7 +201,7 @@ impl WarmingStrategy for FrequencyBasedStrategy {
 /// Predictive warming strategy using access patterns
 pub struct PredictiveStrategy {
     /// Pattern detection window
-    _pattern_window: Duration,
+    pattern_window: Duration,
     /// Prediction lookahead
     lookahead: Duration,
 }
@@ -206,23 +211,26 @@ impl PredictiveStrategy {
     #[must_use]
     pub fn new(pattern_window: Duration, lookahead: Duration) -> Self {
         Self {
-            _pattern_window: pattern_window,
+            pattern_window,
             lookahead,
         }
     }
 
     /// Detect access patterns
     fn detect_patterns(&self, history: &[AccessEntry]) -> Vec<(ValidatorCacheKey, Duration)> {
-        let _ = self;
         let mut patterns = Vec::new();
         let key_accesses: DashMap<ValidatorCacheKey, SmallVec<[Instant; 16]>> = DashMap::new();
+        let now = Instant::now();
+        let window_start = now.checked_sub(self.pattern_window).unwrap_or(now);
 
-        // Group accesses by key
+        // Group accesses by key within the pattern window
         for entry in history {
-            key_accesses
-                .entry(entry.key.clone())
-                .or_default()
-                .push(entry.timestamp);
+            if entry.timestamp >= window_start {
+                key_accesses
+                    .entry(entry.key.clone())
+                    .or_default()
+                    .push(entry.timestamp);
+            }
         }
 
         // Analyze patterns for each key
@@ -418,10 +426,12 @@ impl CacheWarmer {
                 let priority = strategy.calculate_priority(&key, &history);
 
                 if priority >= config.priority_threshold {
+                    // Estimate time based on priority (higher priority = likely more complex)
+                    let estimated_time = Duration::from_millis((50.0 * (1.0 + priority)) as u64);
                     all_candidates.push(WarmingEntry {
                         key,
                         priority,
-                        _estimated_time: Duration::from_millis(50), // TODO: Estimate based on schema
+                        estimated_time,
                     });
                 }
             }
@@ -489,8 +499,15 @@ impl CacheWarmer {
 
         for _ in 0..config.batch_size {
             if let Some(entry) = queue.pop() {
-                // Skip if already warming
+                // Skip if already warming or if estimated time is too long
                 if self.warming_in_progress.contains_key(&entry.key) {
+                    continue;
+                }
+                
+                // Skip entries that would take too long
+                if entry.estimated_time > Duration::from_secs(1) {
+                    tracing::debug!("Skipping cache warming for {} due to long estimated time: {:?}", 
+                                   entry.key.class_name, entry.estimated_time);
                     continue;
                 }
 
@@ -608,7 +625,7 @@ mod tests {
                 options_hash: "opts".to_string(),
             },
             priority: 0.8,
-            _estimated_time: Duration::from_millis(50),
+            estimated_time: Duration::from_millis(50),
         };
 
         let entry2 = WarmingEntry {
@@ -619,7 +636,7 @@ mod tests {
                 options_hash: "opts".to_string(),
             },
             priority: 0.9,
-            _estimated_time: Duration::from_millis(50),
+            estimated_time: Duration::from_millis(50),
         };
 
         assert!(entry2 > entry1);

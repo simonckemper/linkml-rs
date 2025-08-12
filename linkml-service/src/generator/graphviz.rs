@@ -226,10 +226,8 @@ impl GraphvizGenerator {
             GraphvizStyle::Simple => {
                 write!(output, "    {} [label=\"{}\"]", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
-                if self.options.use_colors {
-                    if class_def.abstract_.unwrap_or(false) {
-                        write!(output, " [style=\"dashed\"]").map_err(Self::fmt_error_to_generator_error)?;
-                    }
+                if self.options.use_colors && class_def.abstract_.unwrap_or(false) {
+                    write!(output, " [style=\"dashed\"]").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
@@ -286,10 +284,8 @@ impl GraphvizGenerator {
                 // EntityRelationship and Hierarchical styles
                 write!(output, "    {} [label=\"{}\"", node_id, name).map_err(Self::fmt_error_to_generator_error)?;
                 
-                if self.options.use_colors {
-                    if class_def.abstract_.unwrap_or(false) {
-                        write!(output, ", style=\"dashed,filled\", fillcolor=lightgray").map_err(Self::fmt_error_to_generator_error)?;
-                    }
+                if self.options.use_colors && class_def.abstract_.unwrap_or(false) {
+                    write!(output, ", style=\"dashed,filled\", fillcolor=lightgray").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 
                 writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;

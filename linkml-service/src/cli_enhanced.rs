@@ -1406,7 +1406,6 @@ impl LinkMLApp {
                 }
                 Err(rustyline::error::ReadlineError::Interrupted) => {
                     println!("^C");
-                    continue;
                 }
                 Err(rustyline::error::ReadlineError::Eof) => {
                     println!("^D");

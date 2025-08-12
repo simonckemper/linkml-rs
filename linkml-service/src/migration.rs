@@ -320,7 +320,8 @@ where
 {
     config: Arc<RwLock<MigrationConfig>>,
     versions: Arc<RwLock<Vec<SchemaVersion>>>,
-    _service: Arc<S>,
+    #[allow(dead_code)]
+    service: Arc<S>,  // Reserved for future async validation
 }
 
 impl<S> MigrationEngine<S>
@@ -328,11 +329,11 @@ where
     S: linkml_core::traits::LinkMLService,
 {
     /// Create new migration engine
-    pub fn new(config: MigrationConfig, _service: Arc<S>) -> Self {
+    pub fn new(config: MigrationConfig, service: Arc<S>) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
             versions: Arc::new(RwLock::new(Vec::new())),
-            _service,
+            service,
         }
     }
 

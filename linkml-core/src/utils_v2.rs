@@ -205,9 +205,8 @@ pub fn get_slot_definition<'a>(
         // Check if we have a base definition to merge with
         if let Some(base) = schema.slots.get(slot_name) {
             return Ok(merge_slot_definitions_cow(base, usage));
-        } else {
-            return Ok(Cow::Borrowed(usage));
         }
+        return Ok(Cow::Borrowed(usage));
     }
     
     // Check attributes

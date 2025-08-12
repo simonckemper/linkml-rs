@@ -165,10 +165,8 @@ impl PlantUmlGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         
         // Use package if enabled
-        if self.options.use_packages {
-            if !schema.name.is_empty() {
-                writeln!(&mut output, "package {} {{", schema.name).map_err(Self::fmt_error_to_generator_error)?;
-            }
+        if self.options.use_packages && !schema.name.is_empty() {
+            writeln!(&mut output, "package {} {{", schema.name).map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Generate classes
@@ -687,7 +685,7 @@ impl PlantUmlGenerator {
         match range.as_deref() {
             Some("string") => "\"Example\"",
             Some("integer") => "42",
-            Some("float") | Some("double") => "3.14",
+            Some("float" | "double") => "3.14",
             Some("boolean") => "true",
             Some("date") => "2024-01-01",
             _ => "value",

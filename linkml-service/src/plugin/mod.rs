@@ -18,12 +18,14 @@ pub mod loader;
 pub mod api;
 pub mod registry;
 pub mod compatibility;
+pub mod builtin_plugins;
 
 pub use discovery::{PluginDiscovery, DiscoveryStrategy, PluginManifest, EntryPoint};
 pub use loader::{PluginLoader, DynamicLoader, PluginSandbox, ResourceLimits, FsAccessMode};
 pub use api::{PluginSDK, PluginCapability, PluginMetadata};
 pub use registry::{PluginRegistry, PluginRegistration};
 pub use compatibility::{CompatibilityChecker, CompatibilityRules};
+pub use builtin_plugins::BuiltinPluginRegistry;
 
 /// Plugin type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

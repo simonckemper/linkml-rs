@@ -1,3 +1,6 @@
+mod common;
+use common::initialize_example_service;
+
 //! Code Generation Showcase
 //! 
 //! This example demonstrates all the code generation capabilities of LinkML:
@@ -288,5 +291,5 @@ fn truncate(s: &str, max_len: usize) -> String {
 
 async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
-    todo!("Initialize LinkML service with dependencies")
+    initialize_example_service().await
 }

@@ -7,6 +7,10 @@
 //! implementations from their respective crates. This module provides minimal
 //! implementations suitable for running examples in isolation.
 
+pub mod service_init;
+
+pub use service_init::initialize_example_service;
+
 use linkml_service::LinkMLServiceImpl;
 use linkml_core::error::Result;
 use std::sync::Arc;

@@ -1,3 +1,6 @@
+mod common;
+use common::initialize_example_service;
+
 //! Validation Patterns Example
 //! 
 //! This example demonstrates various validation patterns including:
@@ -346,5 +349,5 @@ enums:
 
 async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
-    todo!("Initialize LinkML service with dependencies")
+    initialize_example_service().await
 }

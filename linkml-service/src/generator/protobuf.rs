@@ -94,7 +94,7 @@ impl ProtobufGenerator {
     fn needs_timestamp_import(&self, schema: &SchemaDefinition) -> bool {
         // Check if any slot uses datetime type
         schema.slots.values().any(|slot| {
-            matches!(slot.range.as_deref(), Some("datetime") | Some("timestamp"))
+            matches!(slot.range.as_deref(), Some("datetime" | "timestamp"))
         })
     }
     

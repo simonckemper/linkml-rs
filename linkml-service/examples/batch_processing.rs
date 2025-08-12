@@ -15,6 +15,9 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use indicatif::{ProgressBar, ProgressStyle};
 
+mod common;
+use common::initialize_example_service;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Batch Processing Example");
@@ -103,7 +106,7 @@ enums:
     // Parse schema
     let parser = YamlParser::new();
     let schema = parser.parse_str(schema_yaml)?;
-    let service = Arc::new(create_example_linkml_service().await?);
+    let service = initialize_example_service().await;
 
     // Example 1: Simple batch validation
     println!("Example 1: Simple Batch Validation");
@@ -299,7 +302,5 @@ fn generate_customer_batch(count: usize) -> Vec<serde_json::Value> {
         .collect()
 }
 
-async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
-    // In a real application, this would initialize with all dependencies
-    todo!("Initialize LinkML service with dependencies")
-}
+// Service initialization is now handled by the common module
+// which provides proper mock implementations for examples

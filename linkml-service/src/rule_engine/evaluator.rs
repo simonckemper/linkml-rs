@@ -235,7 +235,7 @@ impl RuleEvaluator {
                             .with_context("expression_index", (i + 1).into())
                     );
                 }
-                Ok(Value::Bool(true)) => continue,
+                Ok(Value::Bool(true)) => {},
                 Ok(_) => {
                     issues.push(
                         ValidationIssue::error(

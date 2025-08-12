@@ -93,7 +93,7 @@ impl GoGenerator {
         
         // Check if we need time package
         for slot in schema.slots.values() {
-            if matches!(slot.range.as_deref(), Some("date") | Some("datetime")) {
+            if matches!(slot.range.as_deref(), Some("date" | "datetime")) {
                 imports.insert("time");
                 break;
             }

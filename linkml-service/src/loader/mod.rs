@@ -17,6 +17,7 @@ pub mod traits_v2;
 pub mod typedb;
 pub mod typedb_integration;
 pub mod xml;
+pub mod xml_impl;
 pub mod yaml;
 pub mod yaml_v2;
 

@@ -23,7 +23,7 @@ use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
 use timestamp_core::TimestampService;
 
-/// Create LinkML service with Configuration Service integration
+/// Create `LinkML` service with Configuration Service integration
 ///
 /// This is the primary factory function that should be used in production.
 /// It loads configuration from the Configuration Service and validates it
@@ -77,7 +77,7 @@ where
     ).await
 }
 
-/// Create LinkML service with custom configuration
+/// Create `LinkML` service with custom configuration
 ///
 /// This factory function accepts a pre-loaded configuration, useful for
 /// testing or when configuration needs to be customized before service creation.
@@ -130,7 +130,7 @@ where
     Ok(Arc::new(service))
 }
 
-/// Create LinkML service from configuration source
+/// Create `LinkML` service from configuration source
 ///
 /// This factory function loads configuration from a specific source
 /// (e.g., a specific configuration file) through the Configuration Service.

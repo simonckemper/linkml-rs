@@ -7,10 +7,10 @@ use configuration_core::{Validate, ConfigurationError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Main LinkML service configuration
-#[derive(Debug, Clone, Deserialize, Serialize)]
+/// Main `LinkML` service configuration
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct LinkMLServiceConfig {
-    /// TypeDB configuration
+    /// `TypeDB` configuration
     pub typedb: TypeDBConfig,
     
     /// Parser configuration
@@ -29,10 +29,10 @@ pub struct LinkMLServiceConfig {
     pub performance: PerformanceConfig,
 }
 
-/// TypeDB specific configuration
+/// `TypeDB` specific configuration
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TypeDBConfig {
-    /// TypeDB server address (e.g., "localhost:1729")
+    /// `TypeDB` server address (e.g., "localhost:1729")
     pub server_address: String,
     
     /// Default database name
@@ -234,19 +234,6 @@ impl Validate for LinkMLServiceConfig {
     }
 }
 
-impl Default for LinkMLServiceConfig {
-    fn default() -> Self {
-        Self {
-            typedb: TypeDBConfig::default(),
-            parser: ParserConfig::default(),
-            validator: ValidatorConfig::default(),
-            generator: GeneratorConfig::default(),
-            cache: CacheConfig::default(),
-            performance: PerformanceConfig::default(),
-        }
-    }
-}
-
 impl Default for TypeDBConfig {
     fn default() -> Self {
         Self {
@@ -329,6 +316,7 @@ impl Default for PerformanceConfig {
 /// Environment-specific configuration presets
 impl LinkMLServiceConfig {
     /// Development environment configuration
+    #[must_use]
     pub fn development() -> Self {
         let mut config = Self::default();
         config.typedb.server_address = String::from("localhost:1729");
@@ -339,6 +327,7 @@ impl LinkMLServiceConfig {
     }
     
     /// Testing environment configuration
+    #[must_use]
     pub fn testing() -> Self {
         let mut config = Self::default();
         config.typedb.server_address = String::from("localhost:1730");
@@ -349,6 +338,7 @@ impl LinkMLServiceConfig {
     }
     
     /// Production environment configuration
+    #[must_use]
     pub fn production() -> Self {
         let mut config = Self::default();
         config.typedb.pool_size = 50;

@@ -102,7 +102,7 @@ pub enum DocFormat {
     Markdown,
     /// HTML format
     Html,
-    /// ReStructuredText format
+    /// `ReStructuredText` format
     Rst,
 }
 

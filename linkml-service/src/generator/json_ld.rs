@@ -12,33 +12,44 @@ use serde_json::{json, Value as JsonValue};
 use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions};
 
 /// JSON-LD generator for linked data contexts
-pub struct JsonLdGenerator {}
+pub struct JsonLdGenerator {
+    options: GeneratorOptions,
+}
 
 impl JsonLdGenerator {
     /// Create a new JSON-LD generator
     #[must_use]
     pub fn new() -> Self {
-        Self {}
+        Self {
+            options: GeneratorOptions::default(),
+        }
     }
     
     /// Create with custom options
     #[must_use]
-    pub fn with_options(_options: GeneratorOptions) -> Self {
-        Self {}
+    pub fn with_options(options: GeneratorOptions) -> Self {
+        Self { options }
     }
     
     /// Generate JSON-LD context
     fn generate_context(&self, schema: &SchemaDefinition) -> JsonValue {
         let mut context = serde_json::Map::new();
         
-        // Standard prefixes
-        context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
-        context.insert("xsd".to_string(), json!("http://www.w3.org/2001/XMLSchema#"));
-        context.insert("rdf".to_string(), json!("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
-        context.insert("rdfs".to_string(), json!("http://www.w3.org/2000/01/rdf-schema#"));
-        context.insert("owl".to_string(), json!("http://www.w3.org/2002/07/owl#"));
-        context.insert("skos".to_string(), json!("http://www.w3.org/2004/02/skos/core#"));
-        context.insert("dcterms".to_string(), json!("http://purl.org/dc/terms/"));
+        // Standard prefixes (skip if format is compact)
+        let use_compact = self.options.custom.get("compact").map_or(false, |v| v == "true");
+        
+        if !use_compact {
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
+            context.insert("xsd".to_string(), json!("http://www.w3.org/2001/XMLSchema#"));
+            context.insert("rdf".to_string(), json!("http://www.w3.org/1999/02/22-rdf-syntax-ns#"));
+            context.insert("rdfs".to_string(), json!("http://www.w3.org/2000/01/rdf-schema#"));
+            context.insert("owl".to_string(), json!("http://www.w3.org/2002/07/owl#"));
+            context.insert("skos".to_string(), json!("http://www.w3.org/2004/02/skos/core#"));
+            context.insert("dcterms".to_string(), json!("http://purl.org/dc/terms/"));
+        } else {
+            // Compact output - only required prefixes
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
+        }
         
         // Add schema name as prefix
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -52,6 +63,12 @@ impl JsonLdGenerator {
         
         // Add properties (slots)
         for (slot_name, slot) in &schema.slots {
+            // Skip internal slots if configured to exclude them
+            let exclude_internal = self.options.custom.get("exclude_internal").map_or(false, |v| v == "true");
+            if exclude_internal && slot_name.starts_with('_') {
+                continue;
+            }
+            
             let mut slot_def = serde_json::Map::new();
             
             let property_id = self.to_snake_case(slot_name);
@@ -87,7 +104,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate frame for a class
-    fn _generate_frame(&self, class_name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn generate_frame(&self, class_name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut frame = serde_json::Map::new();
         
         // Add type
@@ -95,7 +112,7 @@ impl JsonLdGenerator {
         frame.insert("@type".to_string(), json!(format!("{}:{}", schema_prefix, self.to_pascal_case(class_name))));
         
         // Collect all slots (including inherited)
-        let all_slots = self._collect_all_slots(class, schema);
+        let all_slots = self.collect_all_slots(class, schema);
         
         // Add slot defaults/examples
         for slot_name in &all_slots {
@@ -119,7 +136,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate JSON-LD schema document
-    fn _generate_schema_document(&self, schema: &SchemaDefinition) -> JsonValue {
+    fn generate_schema_document(&self, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         
         // Add context
@@ -146,19 +163,19 @@ impl JsonLdGenerator {
         
         // Add classes
         for (class_name, class) in &schema.classes {
-            let class_doc = self._generate_class_document(class_name, class, schema);
+            let class_doc = self.generate_class_document(class_name, class, schema);
             graph.push(class_doc);
         }
         
         // Add properties
         for (slot_name, slot) in &schema.slots {
-            let property_doc = self._generate_property_document(slot_name, slot, schema);
+            let property_doc = self.generate_property_document(slot_name, slot, schema);
             graph.push(property_doc);
         }
         
         // Add enums
         for (enum_name, enum_def) in &schema.enums {
-            let enum_doc = self._generate_enum_document(enum_name, enum_def, schema);
+            let enum_doc = self.generate_enum_document(enum_name, enum_def, schema);
             graph.push(enum_doc);
         }
         
@@ -168,7 +185,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate class document
-    fn _generate_class_document(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn generate_class_document(&self, name: &str, class: &ClassDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -204,7 +221,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate property document
-    fn _generate_property_document(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn generate_property_document(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -230,7 +247,7 @@ impl JsonLdGenerator {
         
         // Range
         if let Some(range) = &slot.range {
-            if let Some(xsd_type) = self._get_xsd_datatype(range) {
+            if let Some(xsd_type) = self.get_xsd_datatype(range) {
                 doc.insert("rdfs:range".to_string(), json!(xsd_type));
             } else if schema.classes.contains_key(range) {
                 doc.insert("rdfs:range".to_string(), json!(format!("{}:{}", schema_prefix, self.to_pascal_case(range))));
@@ -243,7 +260,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate enum document
-    fn _generate_enum_document(&self, name: &str, enum_def: &EnumDefinition, schema: &SchemaDefinition) -> JsonValue {
+    fn generate_enum_document(&self, name: &str, enum_def: &EnumDefinition, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
         
@@ -276,7 +293,7 @@ impl JsonLdGenerator {
     }
     
     /// Generate example instance
-    fn _generate_example_instance(&self, class_name: &str, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
+    pub fn generate_example_instance(&self, class_name: &str, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
         let class = schema.classes.get(class_name)
             .ok_or_else(|| GeneratorError::Generation {
                 context: "example".to_string(),
@@ -296,14 +313,14 @@ impl JsonLdGenerator {
         instance.insert("@id".to_string(), json!(format!("{}#example-{}", schema.id, self.to_snake_case(class_name))));
         
         // Collect all slots
-        let all_slots = self._collect_all_slots(class, schema);
+        let all_slots = self.collect_all_slots(class, schema);
         
         // Add example values for required slots
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.required == Some(true) {
                     let property_id = self.to_snake_case(slot_name);
-                    let example_value = self._get_example_value(slot, schema)?;
+                    let example_value = self.get_example_value(slot, schema)?;
                     instance.insert(property_id, example_value);
                 }
             }
@@ -313,7 +330,7 @@ impl JsonLdGenerator {
     }
     
     /// Get example value for a slot
-    fn _get_example_value(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
+    fn get_example_value(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<JsonValue> {
         if let Some(range) = &slot.range {
             match range.as_str() {
                 "string" | "str" => Ok(json!("example string")),
@@ -353,13 +370,13 @@ impl JsonLdGenerator {
     }
     
     /// Collect all slots including inherited ones
-    fn _collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
         let mut all_slots = Vec::new();
         
         // First, get slots from parent if any
         if let Some(parent_name) = &class.is_a {
             if let Some(parent_class) = schema.classes.get(parent_name) {
-                all_slots.extend(self._collect_all_slots(parent_class, schema));
+                all_slots.extend(self.collect_all_slots(parent_class, schema));
             }
         }
         
@@ -397,7 +414,7 @@ impl JsonLdGenerator {
     }
     
     /// Get XSD datatype
-    fn _get_xsd_datatype(&self, range: &str) -> Option<String> {
+    fn get_xsd_datatype(&self, range: &str) -> Option<String> {
         match range {
             "string" | "str" => Some("xsd:string".to_string()),
             "integer" | "int" => Some("xsd:integer".to_string()),
@@ -465,43 +482,107 @@ impl Generator for JsonLdGenerator {
         &self,
         schema: &SchemaDefinition,
     ) -> std::result::Result<String, LinkMLError> {
-        // Generate complete JSON-LD document with context
-        let mut doc = serde_json::Map::new();
+        // Choose generation mode based on options
+        let generate_full = self.options.custom.get("full_schema").map_or(false, |v| v == "true");
         
-        // Add context
-        let context = self.generate_context(schema);
-        doc.insert("@context".to_string(), context);
+        let mut doc = if generate_full {
+            // Use the comprehensive schema document generator
+            match self.generate_schema_document(schema) {
+                serde_json::Value::Object(obj) => obj,
+                _ => serde_json::Map::new(),
+            }
+        } else {
+            // Generate simple context document
+            serde_json::Map::new()
+        };
         
-        // Add schema metadata
-        doc.insert("@id".to_string(), serde_json::Value::String(
-            format!("https://example.org/schemas/{}", schema.name)
-        ));
-        doc.insert("@type".to_string(), serde_json::Value::String("linkml:Schema".to_string()));
+        // If not using full schema, generate basic structure
+        if !generate_full {
         
-        if let Some(desc) = &schema.description {
-            doc.insert("description".to_string(), serde_json::Value::String(desc.clone()));
+            // Add context
+            let context = self.generate_context(schema);
+            doc.insert("@context".to_string(), context);
+        
+            // Add schema metadata
+            doc.insert("@id".to_string(), serde_json::Value::String(
+                format!("https://example.org/schemas/{}", schema.name)
+            ));
+            doc.insert("@type".to_string(), serde_json::Value::String("linkml:Schema".to_string()));
+        
+            // Include documentation if enabled in options
+            if self.options.include_docs {
+                if let Some(desc) = &schema.description {
+                    doc.insert("description".to_string(), serde_json::Value::String(desc.clone()));
+                }
+            }
+        
+            // Add classes
+            if !schema.classes.is_empty() {
+                let classes_array: Vec<serde_json::Value> = schema.classes.iter()
+                    .map(|(name, class_def)| {
+                        // Use the class document generator for rich output
+                        self.generate_class_document(name, class_def, schema)
+                    })
+                    .collect();
+                doc.insert("classes".to_string(), serde_json::Value::Array(classes_array));
+            }
+            
+            // Add properties
+            if !schema.slots.is_empty() {
+                let properties_array: Vec<serde_json::Value> = schema.slots.iter()
+                    .map(|(name, slot_def)| {
+                        self.generate_property_document(name, slot_def, schema)
+                    })
+                    .collect();
+                doc.insert("properties".to_string(), serde_json::Value::Array(properties_array));
+            }
+            
+            // Add enums
+            if !schema.enums.is_empty() {
+                let enums_array: Vec<serde_json::Value> = schema.enums.iter()
+                    .map(|(name, enum_def)| {
+                        self.generate_enum_document(name, enum_def, schema)
+                    })
+                    .collect();
+                doc.insert("enums".to_string(), serde_json::Value::Array(enums_array));
+            }
         }
         
-        // Add classes
-        if !schema.classes.is_empty() {
-            let classes_array: Vec<serde_json::Value> = schema.classes.iter()
-                .map(|(name, class_def)| {
-                    let mut class_obj = serde_json::Map::new();
-                    class_obj.insert("@id".to_string(), serde_json::Value::String(name.clone()));
-                    class_obj.insert("@type".to_string(), serde_json::Value::String("linkml:ClassDefinition".to_string()));
-                    
-                    if let Some(desc) = &class_def.description {
-                        class_obj.insert("description".to_string(), serde_json::Value::String(desc.clone()));
-                    }
-                    
-                    serde_json::Value::Object(class_obj)
-                })
-                .collect();
-            doc.insert("classes".to_string(), serde_json::Value::Array(classes_array));
+        // Generate example instances if requested
+        if self.options.include_examples {
+            // Generate frame documents for each class
+            let mut frames_map = serde_json::Map::new();
+            for (class_name, class_def) in &schema.classes {
+                let frame = self.generate_frame(class_name, class_def, schema);
+                frames_map.insert(class_name.clone(), frame);
+            }
+            
+            // Add frames to document
+            if !frames_map.is_empty() {
+                doc.insert("frames".to_string(), json!(frames_map));
+            }
+            
+            // Also generate example instances
+            let mut examples = Vec::new();
+            for class_name in schema.classes.keys() {
+                if let Ok(example) = self.generate_example_instance(class_name, schema) {
+                    examples.push(example);
+                }
+            }
+            if !examples.is_empty() {
+                doc.insert("examples".to_string(), json!(examples));
+            }
         }
         
-        let result = serde_json::to_string_pretty(&doc)
-            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
+        // Format based on options
+        let use_compact = self.options.custom.get("compact").map_or(false, |v| v == "true");
+        let result = if use_compact {
+            serde_json::to_string(&doc)
+                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?
+        } else {
+            serde_json::to_string_pretty(&doc)
+                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?
+        };
         
         Ok(result)
     }

@@ -12,9 +12,8 @@ pub fn is_valid_identifier(s: &str) -> bool {
     }
     
     // Must start with letter or underscore
-    let first = match s.chars().next() {
-        Some(c) => c,
-        None => return false,  // Empty string case already handled above
+    let Some(first) = s.chars().next() else {
+        return false;  // Empty string case already handled above
     };
     if !first.is_alphabetic() && first != '_' {
         return false;
@@ -25,6 +24,7 @@ pub fn is_valid_identifier(s: &str) -> bool {
 }
 
 /// Normalize a URI by removing trailing slashes and fragments
+#[must_use]
 pub fn normalize_uri(uri: &str) -> String {
     let mut normalized = uri.trim().to_string();
     
@@ -42,6 +42,7 @@ pub fn normalize_uri(uri: &str) -> String {
 }
 
 /// Extract prefix from a CURIE (Compact URI)
+#[must_use]
 pub fn extract_prefix(curie: &str) -> Option<(&str, &str)> {
     curie.split_once(':')
 }
@@ -50,9 +51,9 @@ pub fn extract_prefix(curie: &str) -> Option<(&str, &str)> {
 pub fn expand_curie(curie: &str, prefixes: &IndexMap<String, String>) -> Result<String> {
     if let Some((prefix, local)) = extract_prefix(curie) {
         if let Some(expansion) = prefixes.get(prefix) {
-            Ok(format!("{}{}", expansion, local))
+            Ok(format!("{expansion}{local}"))
         } else {
-            Err(LinkMLError::other(format!("Unknown prefix: {}", prefix)))
+            Err(LinkMLError::other(format!("Unknown prefix: {prefix}")))
         }
     } else {
         // Not a CURIE, return as-is
@@ -72,7 +73,7 @@ pub fn get_class_slots(
     visited.insert(class_name.to_string());
     
     let class = schema.classes.get(class_name)
-        .ok_or_else(|| LinkMLError::other(format!("Class not found: {}", class_name)))?;
+        .ok_or_else(|| LinkMLError::other(format!("Class not found: {class_name}")))?;
     
     let mut slots = Vec::new();
     
@@ -149,6 +150,7 @@ pub fn is_subclass_of(
 }
 
 /// Merge slot definitions, with override taking precedence
+#[must_use]
 pub fn merge_slot_definitions(
     base: &SlotDefinition,
     override_def: &SlotDefinition,
@@ -216,15 +218,14 @@ pub fn get_effective_slot(
     slot_name: &str,
 ) -> Result<SlotDefinition> {
     let class = schema.classes.get(class_name)
-        .ok_or_else(|| LinkMLError::other(format!("Class not found: {}", class_name)))?;
+        .ok_or_else(|| LinkMLError::other(format!("Class not found: {class_name}")))?;
     
     // Check slot usage first
     if let Some(usage) = class.slot_usage.get(slot_name) {
         if let Some(base) = schema.slots.get(slot_name) {
             return Ok(merge_slot_definitions(base, usage));
-        } else {
-            return Ok(usage.clone());
         }
+        return Ok(usage.clone());
     }
     
     // Check attributes
