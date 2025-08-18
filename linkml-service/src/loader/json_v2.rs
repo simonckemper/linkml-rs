@@ -260,19 +260,21 @@ mod tests {
         
         let instances = vec![
             DataInstance {
-                data: serde_json::json!({
-                    "name": "Alice",
-                    "age": 30
-                }),
-                class_name: None,
+                class_name: "Person".to_string(),
+                data: HashMap::from([
+                    ("name".to_string(), serde_json::json!("Alice")),
+                    ("age".to_string(), serde_json::json!(30))
+                ]),
+                id: Some("person1".to_string()),
                 metadata: HashMap::new(),
             },
             DataInstance {
-                data: serde_json::json!({
-                    "name": "Bob",
-                    "age": 25
-                }),
-                class_name: None,
+                class_name: "Person".to_string(),
+                data: HashMap::from([
+                    ("name".to_string(), serde_json::json!("Bob")),
+                    ("age".to_string(), serde_json::json!(25))
+                ]),
+                id: Some("person2".to_string()),
                 metadata: HashMap::new(),
             },
         ];

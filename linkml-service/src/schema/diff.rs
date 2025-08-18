@@ -655,7 +655,7 @@ mod tests {
     #[test]
     fn test_schema_diff_basic() {
         let mut schema1 = SchemaDefinition::default();
-        schema1.name = Some("TestSchema".to_string());
+        schema1.name = "TestSchema".to_string();
         
         let mut class1 = ClassDefinition::default();
         class1.slots = vec!["name".to_string(), "age".to_string()];

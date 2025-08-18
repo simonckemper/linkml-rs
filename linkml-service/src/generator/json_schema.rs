@@ -419,7 +419,7 @@ mod tests {
 
         let options = GeneratorOptions::new().set_custom("pretty_print", "true");
 
-        let outputs = generator.generate(&schema, &options).await.expect("should generate JSON schema");
+        let outputs = generator.generate(&schema).expect("should generate JSON schema");
 
         assert_eq!(outputs.len(), 1);
         let json_content = &outputs[0].content;

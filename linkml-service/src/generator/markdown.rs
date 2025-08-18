@@ -458,7 +458,7 @@ mod tests {
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         schema.title = Some("Test Schema".to_string());
         schema.description = Some("A test schema for documentation".to_string());
         schema.version = Some("1.0.0".to_string());
@@ -489,34 +489,12 @@ mod tests {
             text: "ACTIVE".to_string(),
             description: Some("Currently employed".to_string()),
             meaning: None,
-            deprecated: None,
-            aliases: vec![],
-            structured_aliases: vec![],
-            mappings: vec![],
-            exact_mappings: vec![],
-            close_mappings: vec![],
-            related_mappings: vec![],
-            narrow_mappings: vec![],
-            broad_mappings: vec![],
-            extensions: vec![],
-            annotations: vec![],
         });
         
         status_enum.permissible_values.push(PermissibleValue::Complex {
             text: "INACTIVE".to_string(),
             description: Some("Not currently employed".to_string()),
             meaning: None,
-            deprecated: None,
-            aliases: vec![],
-            structured_aliases: vec![],
-            mappings: vec![],
-            exact_mappings: vec![],
-            close_mappings: vec![],
-            related_mappings: vec![],
-            narrow_mappings: vec![],
-            broad_mappings: vec![],
-            extensions: vec![],
-            annotations: vec![],
         });
         
         schema.enums.insert("EmploymentStatus".to_string(), status_enum);

@@ -377,7 +377,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_doc_generation() {
+    fn test_doc_generation() -> Result<(), Box<dyn std::error::Error>> {
         let generator = DocGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -397,5 +397,7 @@ mod tests {
         assert!(output.contains("# test_schema"));
         assert!(output.contains("### Person"));
         assert!(output.contains("A person entity"));
+        
+        Ok(())
     }
 }

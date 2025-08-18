@@ -605,7 +605,7 @@ mod tests {
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Add a class
         let mut person_class = ClassDefinition::default();
@@ -633,16 +633,6 @@ mod tests {
                 text: "ACTIVE".to_string(),
                 description: Some("Active status".to_string()),
                 meaning: None,
-                deprecated: None,
-                todos: vec![],
-                notes: vec![],
-                comments: vec![],
-                examples: vec![],
-                see_also: vec![],
-                deprecated_element_has_exact_replacement: None,
-                deprecated_element_has_possible_replacement: None,
-                extensions: Default::default(),
-                annotations: Default::default(),
             },
             linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
         ];

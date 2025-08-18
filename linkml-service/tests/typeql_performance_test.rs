@@ -2,12 +2,11 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{
-    Generator, GeneratorOptions,
+    Generator,
     typeql_generator_enhanced::EnhancedTypeQLGenerator,
 };
 use std::time::Instant;
 use tokio;
-use serde_json::Value;
 
 /// Create a schema with the specified number of classes
 fn create_test_schema(num_classes: usize) -> SchemaDefinition {
@@ -62,10 +61,9 @@ fn create_test_schema(num_classes: usize) -> SchemaDefinition {
 async fn test_small_schema_performance() {
     let schema = create_test_schema(10);
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
@@ -77,10 +75,9 @@ async fn test_small_schema_performance() {
 async fn test_medium_schema_performance() {
     let schema = create_test_schema(100);
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
@@ -98,10 +95,9 @@ async fn test_medium_schema_performance() {
 async fn test_large_schema_performance() {
     let schema = create_test_schema(1000);
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
@@ -145,10 +141,9 @@ async fn test_rule_generation_performance() {
     schema.slots.insert("value".to_string(), value_slot);
     
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
@@ -182,10 +177,9 @@ async fn test_complex_inheritance_performance() {
     schema.slots.insert("id".to_string(), id_slot);
     
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
@@ -203,10 +197,9 @@ async fn test_memory_efficiency() {
     // Generate a very large schema and ensure memory usage is reasonable
     let schema = create_test_schema(5000);
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());

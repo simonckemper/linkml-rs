@@ -840,7 +840,7 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.expect("should generate HTML output");
+        let outputs = generator.generate(&schema).expect("should generate HTML output");
 
         assert_eq!(outputs.len(), 1);
         let html = &outputs[0].content;

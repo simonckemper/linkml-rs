@@ -316,17 +316,17 @@ fn _show_production_pattern() {
 // At application startup (e.g., in main.rs):
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {{
-    // 1. Initialize concrete service implementations
-    let logger = Arc::new(StandardLoggerService::new()?);
-    let timestamp = Arc::new(StandardTimestampService::new()?);
-    let task_manager = Arc::new(StandardTaskManagementService::new()?);
-    let error_handler = Arc::new(StandardErrorHandlingService::new(
+    // 1. Initialize concrete service implementations using factory functions
+    let logger = logger_service::factory::create_standard_logger().await?;
+    let timestamp = timestamp_service::factory::create_chrono_timestamp_service();
+    let task_manager = task_management_service::factory::create_standard_task_management_service().await?;
+    let error_handler = error_handling_service::factory::create_standard_error_handling_service(
         logger.clone(),
         timestamp.clone(),
-    )?);
-    let config_service = Arc::new(StandardConfigurationService::new()?);
-    let cache = Arc::new(ValkeyCache::new(...).await?);
-    let monitor = Arc::new(StandardMonitoringService::new(...)?);
+    ).await?;
+    let config_service = configuration_service::factory::create_standard_configuration_service().await?;
+    let cache = cache_service::factory::create_valkey_cache_service().await?;
+    let monitor = monitoring_service::factory::create_standard_monitoring_service().await?;
     
     // 2. Create LinkML service with all dependencies
     let linkml = create_linkml_service_with_config(

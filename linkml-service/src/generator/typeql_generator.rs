@@ -578,3 +578,15 @@ mod tests {
         assert_eq!(generator.convert_identifier("PERSON_NAME"), "person-name");
     }
 }
+
+/// Create a new TypeQL generator using the factory pattern
+///
+/// This is the preferred way to create a TypeQL generator, ensuring proper
+/// initialization and following RootReal's factory pattern standards.
+///
+/// # Returns
+///
+/// Returns a configured TypeQL generator instance
+pub fn create_typeql_generator() -> TypeQLGenerator {
+    TypeQLGenerator::new()
+}

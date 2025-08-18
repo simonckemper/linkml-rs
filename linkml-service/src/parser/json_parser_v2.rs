@@ -112,8 +112,8 @@ mod tests {
         let schema_path = temp_dir.path().join("test_schema.json");
         fs.write(&schema_path, schema_content).await.unwrap();
         
-        // Parse using async trait
-        let schema = parser.parse_file(&schema_path).await.unwrap();
+        // Parse using async trait - explicitly use AsyncSchemaParser trait
+        let schema = <JsonParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(&parser, &schema_path).await.unwrap();
         assert_eq!(schema.name, "TestSchema");
         assert!(schema.classes.contains_key("Person"));
     }

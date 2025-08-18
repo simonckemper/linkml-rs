@@ -11,7 +11,7 @@ use linkml_service::{
     parser::yaml_parser::YamlParser,
     validator::{Validator, ValidatorBuilder},
     generator::{
-        RustGenerator, TypeQLGenerator, PythonDataclassGenerator,
+        RustGenerator, TypeQLGenerator, typeql_generator::create_typeql_generator, PythonDataclassGenerator,
         TypeScriptGenerator, JavaGenerator, ProtobufGenerator,
     },
     expression::{Evaluator, parse_expression},
@@ -412,7 +412,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Generate TypeQL
     let typeql = profiler.time("generate_typeql", || {
-        TypeQLGenerator::new().generate(&schema)
+        create_typeql_generator().generate(&schema)
     })?;
     println!("✓ TypeQL generated ({} lines)", typeql.lines().count());
     

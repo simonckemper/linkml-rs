@@ -478,14 +478,14 @@ mod tests {
     #[test]
     fn test_merge_union() {
         let mut schema1 = SchemaDefinition::default();
-        schema1.name = Some("Schema1".to_string());
+        schema1.name = "Schema1".to_string();
         
         let mut class1 = ClassDefinition::default();
         class1.slots = vec!["name".to_string()];
         schema1.classes.insert("Person".to_string(), class1);
         
         let mut schema2 = SchemaDefinition::default();
-        schema2.name = Some("Schema2".to_string());
+        schema2.name = "Schema2".to_string();
         
         let mut class2 = ClassDefinition::default();
         class2.slots = vec!["brand".to_string()];

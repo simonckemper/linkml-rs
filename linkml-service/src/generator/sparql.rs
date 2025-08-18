@@ -637,9 +637,9 @@ mod tests {
     async fn test_select_query_generation() {
         let schema = create_test_schema();
         let generator = SparqlGenerator::new();
-        let options = GeneratorOptions::default();
+        // GeneratorOptions not needed for new generate signature
         
-        let result = generator.generate(&schema, &options).await.expect("should generate queries");
+        let result = generator.generate(&schema).expect("should generate queries");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
@@ -657,9 +657,9 @@ mod tests {
         let schema = create_test_schema();
         let generator = SparqlGenerator::new()
             .with_query_type(SparqlQueryType::Construct);
-        let options = GeneratorOptions::default();
+        // GeneratorOptions not needed for new generate signature
         
-        let result = generator.generate(&schema, &options).await.expect("should generate queries");
+        let result = generator.generate(&schema).expect("should generate queries");
         let output = &result[0];
         
         assert!(output.content.contains("CONSTRUCT"));
@@ -669,9 +669,9 @@ mod tests {
     async fn test_filter_generation() {
         let schema = create_test_schema();
         let generator = SparqlGenerator::new();
-        let options = GeneratorOptions::default();
+        // GeneratorOptions not needed for new generate signature
         
-        let result = generator.generate(&schema, &options).await.expect("should generate queries");
+        let result = generator.generate(&schema).expect("should generate queries");
         let output = &result[0];
         
         // Should contain filters for constraints

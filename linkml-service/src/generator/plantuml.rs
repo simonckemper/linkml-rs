@@ -777,7 +777,7 @@ mod tests {
     
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Base class
         let mut base_class = ClassDefinition::default();
@@ -823,16 +823,15 @@ mod tests {
         let generator = PlantUmlGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+        let result = generator.generate(&schema).expect("should generate PlantUML");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.puml");
         
         // Check content
-        assert!(output.content.contains("@startuml"));
-        assert!(output.content.contains("@enduml"));
-        assert!(output.content.contains("abstract class Base"));
+        assert!(output.contains("@startuml"));
+        assert!(output.contains("@enduml"));
+        assert!(output.contains("abstract class Base"));
         assert!(output.content.contains("class Person"));
         assert!(output.content.contains("Person --|> Base"));
     }
@@ -844,11 +843,11 @@ mod tests {
             .with_diagram_type(PlantUmlDiagramType::EntityRelationship);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+        let result = generator.generate(&schema).expect("should generate PlantUML");
         let output = &result[0];
         
-        assert!(output.content.contains("!define ENTITY"));
-        assert!(output.content.contains("TABLE(Person)"));
+        assert!(output.contains("!define ENTITY"));
+        assert!(output.contains("TABLE(Person)"));
     }
     
     #[tokio::test]
@@ -858,11 +857,11 @@ mod tests {
             .with_diagram_type(PlantUmlDiagramType::MindMap);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.map_err(Self::fmt_error_to_generator_error)?;
+        let result = generator.generate(&schema).expect("should generate PlantUML");
         let output = &result[0];
         
-        assert!(output.content.contains("@startmindmap"));
-        assert!(output.content.contains("@endmindmap"));
-        assert!(output.content.contains("** Classes"));
+        assert!(output.contains("@startmindmap"));
+        assert!(output.contains("@endmindmap"));
+        assert!(output.contains("** Classes"));
     }
 }

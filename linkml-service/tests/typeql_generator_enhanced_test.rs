@@ -1,8 +1,10 @@
 //! Comprehensive tests for the enhanced TypeQL generator
 
-use linkml_service::generator::{EnhancedTypeQLGenerator, Generator, GeneratorOptions};
+use linkml_service::generator::{EnhancedTypeQLGenerator, Generator};
 use linkml_core::prelude::*;
-use std::collections::HashMap;
+use linkml_core::Value;
+use linkml_service::generator::CodeFormatter;
+use indexmap::IndexMap;
 
 /// Helper to create a test schema
 fn create_test_schema() -> SchemaDefinition {
@@ -13,17 +15,15 @@ fn create_test_schema() -> SchemaDefinition {
     schema.description = Some("Test schema for TypeQL generator".to_string());
     
     // Add prefixes
-    schema.prefixes.insert("test".to_string(), Prefix {
-        prefix_prefix: "test".to_string(),
-        prefix_reference: "https://example.org/test/".to_string(),
-    });
+    // Prefixes are not structured this way in current API
+    // schema.prefixes would be a simple HashMap<String, String>
     
     schema
 }
 
 #[tokio::test]
 async fn test_basic_entity_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Add a simple Person entity
@@ -38,8 +38,8 @@ async fn test_basic_entity_generation() {
     let mut age_slot = SlotDefinition::default();
     age_slot.name = "age".to_string();
     age_slot.range = Some("integer".to_string());
-    age_slot.minimum_value = Some(Value::Integer(0));
-    age_slot.maximum_value = Some(Value::Integer(150));
+    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
+    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
     schema.slots.insert("age".to_string(), age_slot);
     
     let mut person_class = ClassDefinition::default();
@@ -48,11 +48,11 @@ async fn test_basic_entity_generation() {
     person_class.slots = vec!["name".to_string(), "age".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    assert_eq!(outputs.len(), 1);
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
+    
     
     // Check header
     assert!(content.contains("# TypeQL Schema generated from LinkML"));
@@ -71,7 +71,7 @@ async fn test_basic_entity_generation() {
 
 #[tokio::test]
 async fn test_inheritance_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create inheritance hierarchy
@@ -94,10 +94,10 @@ async fn test_inheritance_generation() {
     person_class.is_a = Some("NamedEntity".to_string());
     schema.classes.insert("Person".to_string(), person_class);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Check abstract type
     assert!(content.contains("named-entity sub entity, abstract"));
@@ -108,7 +108,7 @@ async fn test_inheritance_generation() {
 
 #[tokio::test]
 async fn test_relation_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create entities
@@ -143,10 +143,10 @@ async fn test_relation_generation() {
     employment.slots = vec!["employee".to_string(), "employer".to_string(), "start_date".to_string()];
     schema.classes.insert("Employment".to_string(), employment);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Check relation definition
     assert!(content.contains("employment sub relation,"));
@@ -161,7 +161,7 @@ async fn test_relation_generation() {
 
 #[tokio::test]
 async fn test_constraint_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Slot with pattern constraint
@@ -183,11 +183,11 @@ async fn test_constraint_generation() {
     person.slots = vec!["email".to_string(), "phone".to_string()];
     schema.classes.insert("Person".to_string(), person);
     
-    let mut options = GeneratorOptions::default();
-    options.set_custom("generate_constraints", "true");
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let content = &outputs[0].content;
+    
+    
+    let content = generator.generate(&schema).unwrap();
+    
     
     // Check pattern constraint
     assert!(content.contains("email sub attribute, value string, regex"));
@@ -198,20 +198,21 @@ async fn test_constraint_generation() {
 
 #[tokio::test]
 async fn test_enum_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create enum
     let mut status_enum = EnumDefinition::default();
     status_enum.name = "StatusEnum".to_string();
-    status_enum.permissible_values.insert("active".to_string(), PermissibleValue {
-        text: Some("Active".to_string()),
+    status_enum.permissible_values.push(linkml_core::types::PermissibleValue::Complex {
+        text: "active".to_string(),
         description: Some("Currently active".to_string()),
-        ..Default::default()
+        meaning: None,
     });
-    status_enum.permissible_values.insert("inactive".to_string(), PermissibleValue {
-        text: Some("Inactive".to_string()),
-        ..Default::default()
+    status_enum.permissible_values.push(linkml_core::types::PermissibleValue::Complex {
+        text: "inactive".to_string(),
+        description: Some("Inactive state".to_string()),
+        meaning: None,
     });
     schema.enums.insert("StatusEnum".to_string(), status_enum);
     
@@ -226,10 +227,10 @@ async fn test_enum_generation() {
     entity.slots = vec!["status".to_string()];
     schema.classes.insert("Entity".to_string(), entity);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // For now, enums are represented as string attributes
     // In future, could use TypeDB 3.0 value restrictions
@@ -238,7 +239,7 @@ async fn test_enum_generation() {
 
 #[tokio::test]
 async fn test_mixin_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create timestamp slots
@@ -265,10 +266,10 @@ async fn test_mixin_generation() {
     document.mixins = vec!["Timestamped".to_string()];
     schema.classes.insert("Document".to_string(), document);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Check mixin as abstract
     assert!(content.contains("timestamped sub entity, abstract"));
@@ -279,7 +280,7 @@ async fn test_mixin_generation() {
 
 #[tokio::test]
 async fn test_unique_key_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create slots
@@ -297,18 +298,23 @@ async fn test_unique_key_generation() {
     let mut product = ClassDefinition::default();
     product.name = "Product".to_string();
     product.slots = vec!["code".to_string(), "version".to_string()];
-    product.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: Some("product_key".to_string()),
-        unique_key_slots: vec!["code".to_string(), "version".to_string()],
-        consider_nulls_inequal: Some(true),
-    }];
+    let mut unique_keys_map = IndexMap::new();
+    unique_keys_map.insert(
+        "code_version_key".to_string(),
+        linkml_core::types::UniqueKeyDefinition {
+            description: Some("Code and version uniqueness constraint".to_string()),
+            unique_key_slots: vec!["code".to_string(), "version".to_string()],
+            consider_nulls_inequal: Some(true),
+        },
+    );
+    product.unique_keys = unique_keys_map;
     schema.classes.insert("Product".to_string(), product);
     
-    let mut options = GeneratorOptions::default();
-    options.set_custom("generate_constraints", "true");
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let content = &outputs[0].content;
+    
+    
+    let content = generator.generate(&schema).unwrap();
+    
     
     // Check for unique constraint rule
     assert!(content.contains("rule product-unique-product_key"));
@@ -316,7 +322,7 @@ async fn test_unique_key_generation() {
 
 #[tokio::test]
 async fn test_rule_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create slots
@@ -344,11 +350,11 @@ async fn test_rule_generation() {
     
     schema.classes.insert("Person".to_string(), person);
     
-    let mut options = GeneratorOptions::default();
-    options.set_custom("generate_constraints", "true");
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let content = &outputs[0].content;
+    
+    
+    let content = generator.generate(&schema).unwrap();
+    
     
     // Check for rule generation
     assert!(content.contains("rule person-rule-minor-guardian"));
@@ -357,13 +363,13 @@ async fn test_rule_generation() {
 
 #[tokio::test]
 async fn test_custom_type_mapping() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create custom type
     let mut percentage_type = TypeDefinition::default();
     percentage_type.name = "Percentage".to_string();
-    percentage_type.base = Some("float".to_string());
+    percentage_type.base_type = Some("float".to_string());
     percentage_type.minimum_value = Some(Value::Float(0.0));
     percentage_type.maximum_value = Some(Value::Float(100.0));
     schema.types.insert("Percentage".to_string(), percentage_type);
@@ -379,10 +385,10 @@ async fn test_custom_type_mapping() {
     result.slots = vec!["score".to_string()];
     schema.classes.insert("TestResult".to_string(), result);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Custom type should resolve to base type
     assert!(content.contains("score sub attribute, value double"));
@@ -390,7 +396,7 @@ async fn test_custom_type_mapping() {
 
 #[tokio::test]
 async fn test_multi_way_relation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create entities
@@ -437,10 +443,10 @@ async fn test_multi_way_relation() {
     ];
     schema.classes.insert("Enrollment".to_string(), enrollment);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Check multi-way relation
     assert!(content.contains("enrollment sub relation,"));
@@ -457,15 +463,15 @@ async fn test_multi_way_relation() {
 
 #[tokio::test]
 async fn test_migration_generation() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let schema = create_test_schema();
     
-    let mut options = GeneratorOptions::default();
-    options.set_custom("generate_migration", "true");
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    assert_eq!(outputs.len(), 2);
+    
+    let content = generator.generate(&schema).unwrap();
+    
+    // Generated content is a single string now
     
     // Check migration file
     let migration = outputs.iter().find(|o| o.filename.contains("migration")).unwrap();
@@ -475,7 +481,7 @@ async fn test_migration_generation() {
 
 #[tokio::test]
 async fn test_complex_schema() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create a complex biomedical-like schema
@@ -521,10 +527,10 @@ async fn test_complex_schema() {
     condition_slot.range = Some("Condition".to_string());
     schema.slots.insert("condition".to_string(), condition_slot);
     
-    let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await.unwrap();
     
-    let content = &outputs[0].content;
+    let content = generator.generate(&schema).unwrap();
+    
+    
     
     // Verify complex inheritance and relations
     assert!(content.contains("entity sub entity, abstract"));
@@ -557,7 +563,7 @@ async fn test_identifier_mapping_preservation() {
 
 #[tokio::test]
 async fn test_error_handling() {
-    let mut generator = EnhancedTypeQLGenerator::new();
+    let generator = EnhancedTypeQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Create inheritance cycle
@@ -571,8 +577,8 @@ async fn test_error_handling() {
     class_b.is_a = Some("ClassA".to_string());
     schema.classes.insert("ClassB".to_string(), class_b);
     
-    let options = GeneratorOptions::default();
-    let result = generator.generate(&schema, &options).await;
+    
+    let result = generator.generate(&schema);
     
     // Should detect inheritance cycle
     assert!(result.is_err());

@@ -1,18 +1,13 @@
 //! Tests for the TypeScript generator
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use linkml_service::generator::{GeneratorOptions, TypeScriptGenerator, Generator};
+use linkml_service::generator::{TypeScriptGenerator, Generator};
 use serde_json::json;
 
-async fn generate_typescript(schema: SchemaDefinition) -> String {
+fn generate_typescript(schema: SchemaDefinition) -> String {
     let generator = TypeScriptGenerator::new();
-    let options = GeneratorOptions::new()
-        .with_docs(true)
-        .set_custom("generate_validators", "true");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    assert_eq!(outputs.len(), 1);
-    outputs[0].content.clone()
+    generator.generate(&schema).unwrap()
 }
 
 #[tokio::test]

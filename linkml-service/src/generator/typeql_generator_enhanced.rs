@@ -1429,3 +1429,15 @@ mod tests {
         );
     }
 }
+
+/// Create an enhanced TypeQL generator using the factory pattern
+///
+/// This is the preferred way to create an EnhancedTypeQLGenerator, ensuring
+/// proper initialization and following RootReal's factory pattern standards.
+///
+/// # Returns
+///
+/// Returns a configured enhanced TypeQL generator instance
+pub fn create_enhanced_typeql_generator() -> EnhancedTypeQLGenerator {
+    EnhancedTypeQLGenerator::new()
+}

@@ -6,7 +6,7 @@
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
-use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, Quad, Subject, Term};
+use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term};
 use oxigraph::store::Store;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -168,7 +168,7 @@ impl RdfLoader {
             .map_err(|e| LoaderError::Configuration(format!("Invalid type predicate: {}", e)))?;
         
         // Get all typed subjects
-        let typed_subjects: Vec<Subject> = store
+        let typed_subjects: Vec<NamedOrBlankNode> = store
             .quads_for_pattern(None, Some((&type_predicate).into()), None, None)
             .filter_map(|quad| quad.ok())
             .map(|quad| quad.subject.clone())
@@ -296,29 +296,31 @@ impl RdfLoader {
     }
     
     /// Convert subject to string
-    fn subject_to_string(&self, subject: &Subject) -> String {
+    fn subject_to_string(&self, subject: &NamedOrBlankNode) -> String {
         match subject {
-            Subject::NamedNode(n) => n.as_str().to_string(),
-            Subject::BlankNode(b) => format!("_:{}", b.as_str()),
-            Subject::Triple(t) => format!("<<{} {} {}>>", 
-                self.subject_to_string(&t.subject),
-                t.predicate.as_str(),
-                self.term_to_string(&t.object)
-            ),
+            NamedOrBlankNode::NamedNode(n) => n.as_str().to_string(),
+            NamedOrBlankNode::BlankNode(b) => format!("_:{}", b.as_str()),
+            // Subject::Triple(t) => format!("<<{} {} {}>>", 
+            //     self.subject_to_string(&t.subject),
+            //     t.predicate.as_str(),
+            //     self._term_to_string(&t.object)
+            // ),
         }
     }
 
-    /// Convert term to string
-    fn term_to_string(&self, term: &Term) -> String {
+    /// Convert term to string (reserved for future RDF-star support)
+    #[allow(dead_code)]
+    fn _term_to_string(&self, term: &Term) -> String {
         match term {
             Term::NamedNode(n) => n.as_str().to_string(),
             Term::BlankNode(b) => format!("_:{}", b.as_str()),
             Term::Literal(l) => l.value().to_string(),
-            Term::Triple(t) => format!("<<{} {} {}>>", 
-                self.subject_to_string(&t.subject),
-                t.predicate.as_str(),
-                self.term_to_string(&t.object)
-            ),
+            // TODO: Add Triple support when oxigraph adds RDF-star support
+            // Term::Triple(t) => format!("<<{} {} {}>>", 
+            //     self.subject_to_string(&t.subject),
+            //     t.predicate.as_str(),
+            //     self._term_to_string(&t.object)
+            // ),
         }
     }
     
@@ -382,11 +384,12 @@ impl RdfLoader {
                     _ => Ok(JsonValue::String(value.to_string())),
                 }
             }
-            Term::Triple(t) => Ok(JsonValue::String(format!("<<{} {} {}>>", 
-                self.subject_to_string(&t.subject),
-                t.predicate.as_str(),
-                self.term_to_string(&t.object)
-            ))),
+            // TODO: Add Triple support when oxigraph adds RDF-star support
+            // Term::Triple(t) => Ok(JsonValue::String(format!("<<{} {} {}>>", 
+            //     self.subject_to_string(&t.subject),
+            //     t.predicate.as_str(),
+            //     self._term_to_string(&t.object)
+            // ))),
         }
     }
     
@@ -415,7 +418,7 @@ impl RdfLoader {
     /// Infer class from properties
     fn infer_class_from_properties(
         &self,
-        subject: &Subject,
+        subject: &NamedOrBlankNode,
         store: &Store,
         schema: &SchemaDefinition,
     ) -> Option<String> {
@@ -592,23 +595,23 @@ impl RdfDumper {
             let subject = if let Some(id) = &instance.id {
                 if id.starts_with("_:") {
                     // Blank node
-                    Subject::BlankNode(BlankNode::new(&id[2..]).map_err(|e| 
+                    NamedOrBlankNode::BlankNode(BlankNode::new(&id[2..]).map_err(|e| 
                         DumperError::Serialization(format!("Invalid blank node ID: {}", e))
                     )?)
                 } else if id.starts_with("http://") || id.starts_with("https://") {
                     // Already a full URI
-                    Subject::NamedNode(NamedNode::new(id).map_err(|e| 
+                    NamedOrBlankNode::NamedNode(NamedNode::new(id).map_err(|e| 
                         DumperError::Serialization(format!("Invalid URI: {}", e))
                     )?)
                 } else {
                     // Create URI with default namespace
                     let uri = format!("{}{}", self.options.default_namespace, id);
-                    Subject::NamedNode(NamedNode::new(&uri).map_err(|e| 
+                    NamedOrBlankNode::NamedNode(NamedNode::new(&uri).map_err(|e| 
                         DumperError::Serialization(format!("Invalid URI: {}", e))
                     )?)
                 }
             } else if self.options.generate_blank_nodes {
-                Subject::BlankNode(BlankNode::default())
+                NamedOrBlankNode::BlankNode(BlankNode::default())
             } else {
                 return Err(DumperError::Serialization(
                     "Instance has no ID and blank node generation is disabled".to_string()

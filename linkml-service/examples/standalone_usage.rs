@@ -7,7 +7,7 @@ use linkml_core::*;
 use linkml_service::{
     parser::YamlParser,
     validator::{Validator, ValidationReport},
-    generator::{TypeQLGenerator, RustGenerator, GeneratorOptions},
+    generator::{TypeQLGenerator, typeql_generator::create_typeql_generator, RustGenerator, GeneratorOptions},
 };
 use serde_json::json;
 use std::error::Error;
@@ -141,7 +141,7 @@ classes:
     
     // Generate TypeQL
     println!("\n3. Generating TypeQL for TypeDB...");
-    let typeql_gen = TypeQLGenerator::new();
+    let typeql_gen = create_typeql_generator();
     let typeql = typeql_gen.generate(&schema, &GeneratorOptions::default())?;
     println!("   Generated TypeQL schema ({} lines)", typeql.lines().count());
     println!("\n--- TypeQL Preview ---");

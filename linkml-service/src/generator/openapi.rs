@@ -739,7 +739,7 @@ mod tests {
         let content = generator.generate(&schema).expect("should generate OpenAPI");
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(content).expect("should parse as valid JSON");
+        let parsed: JsonValue = serde_json::from_str(&content).expect("should parse as valid JSON");
 
         // Check basic structure
         assert_eq!(parsed["openapi"], "3.0.3");

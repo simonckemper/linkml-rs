@@ -96,11 +96,10 @@ fn create_test_schema() -> SchemaDefinition {
 #[tokio::test]
 async fn test_rule_generation() {
     let schema = create_test_schema();
-    let mut generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
+    let generator = EnhancedTypeQLGenerator::new();
     
-    let result = generator.generate(&schema, &options).await.unwrap();
-    let typeql = result.primary_output.content;
+    let result = generator.generate(&schema).unwrap();
+    let typeql = result;
     
     println!("Generated TypeQL:\n{}", typeql);
     
@@ -152,8 +151,8 @@ async fn test_multiple_classes_with_rules() {
     
     // Add salary range constraint
     let mut salary_slot = SlotDefinition::default();
-    salary_slot.minimum_value = Some(Value::Float(0.0));
-    salary_slot.maximum_value = Some(Value::Float(1000000.0));
+    salary_slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).unwrap()));
+    salary_slot.maximum_value = Some(Value::Number(serde_json::Number::from_f64(1000000.0).unwrap()));
     employee.slot_usage.insert("salary".to_string(), salary_slot);
     
     schema.classes.insert("Employee".to_string(), employee);
@@ -164,10 +163,17 @@ async fn test_multiple_classes_with_rules() {
     department.slots.push("name".to_string());
     
     // Add unique key
-    let mut unique_key = UniqueKeyDefinition::default();
-    unique_key.unique_key_name = Some("dept_key".to_string());
-    unique_key.unique_key_slots = vec!["dept_code".to_string()];
-    department.unique_keys.push(unique_key);
+    use indexmap::IndexMap;
+    let mut unique_keys_map: IndexMap<String, linkml_core::types::UniqueKeyDefinition> = IndexMap::new();
+    unique_keys_map.insert(
+        "dept_key".to_string(),
+        linkml_core::types::UniqueKeyDefinition {
+            description: Some("Department code uniqueness".to_string()),
+            unique_key_slots: vec!["dept_code".to_string()],
+            consider_nulls_inequal: Some(true),
+        },
+    );
+    department.unique_keys = unique_keys_map;
     
     schema.classes.insert("Department".to_string(), department);
     
@@ -192,11 +198,10 @@ async fn test_multiple_classes_with_rules() {
     name_def.range = Some("string".to_string());
     schema.slots.insert("name".to_string(), name_def);
     
-    let mut generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
+    let generator = EnhancedTypeQLGenerator::new();
     
-    let result = generator.generate(&schema, &options).await.unwrap();
-    let typeql = result.primary_output.content;
+    let result = generator.generate(&schema).unwrap();
+    let typeql = result;
     
     // Check Employee rules
     assert!(typeql.contains("## Validation Rules for Employee"));
@@ -250,11 +255,10 @@ async fn test_expression_based_rules() {
     is_luxury_def.range = Some("boolean".to_string());
     schema.slots.insert("is_luxury".to_string(), is_luxury_def);
     
-    let mut generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
+    let generator = EnhancedTypeQLGenerator::new();
     
-    let result = generator.generate(&schema, &options).await.unwrap();
-    let typeql = result.primary_output.content;
+    let result = generator.generate(&schema).unwrap();
+    let typeql = result;
     
     // Check simple expression rule
     assert!(typeql.contains("rule product-compute-is-luxury:"));

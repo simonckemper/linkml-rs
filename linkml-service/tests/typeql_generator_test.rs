@@ -70,13 +70,10 @@ async fn test_typeql_generation_with_complex_schema() {
     
     // Generate TypeQL
     let generator = TypeQLGenerator::new();
-    let options = GeneratorOptions::new()
-        .set_custom("generate_rules", "true");
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
+    let output = generator.generate(&schema).unwrap();
     
-    assert_eq!(outputs.len(), 1);
-    let typeql = &outputs[0].content;
+    let typeql = &output;
     
     // Verify the generated TypeQL contains expected elements
     assert!(typeql.contains("define"));
@@ -158,9 +155,7 @@ async fn test_typeql_generation_with_relations() {
     
     // Generate TypeQL
     let generator = TypeQLGenerator::new();
-    let outputs = generator.generate(&schema, &GeneratorOptions::new()).await.unwrap();
-    
-    let typeql = &outputs[0].content;
+    let typeql = generator.generate(&schema).unwrap();
     
     // Verify relation generation
     assert!(typeql.contains("employment sub relation"));

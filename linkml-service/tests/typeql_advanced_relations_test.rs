@@ -84,9 +84,8 @@ fn create_advanced_schema() -> SchemaDefinition {
 async fn test_multiway_relation_generation() {
     let generator = EnhancedTypeQLGenerator::new();
     let schema = create_advanced_schema();
-    let options = GeneratorOptions::default();
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
+    let outputs = generator.generate(&schema).unwrap();
     let content = &outputs[0].content;
     
     // Check multi-way relation is generated
@@ -132,9 +131,8 @@ async fn test_nested_relation_detection() {
     schema.slots.insert("terms".to_string(), terms_slot);
     
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
+    let outputs = generator.generate(&schema).unwrap();
     let content = &outputs[0].content;
     
     // Check that enrollment can play a role
@@ -195,9 +193,8 @@ async fn test_role_inheritance() {
     schema.slots.insert("course".to_string(), course_slot);
     
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
-    let outputs = generator.generate(&schema, &options).await.unwrap();
+    let outputs = generator.generate(&schema).unwrap();
     let content = &outputs[0].content;
     
     // Check abstract relation
@@ -216,7 +213,7 @@ async fn test_role_inheritance() {
 
 #[test]
 fn test_relation_analyzer_directly() {
-    let analyzer = RelationAnalyzer::new();
+    let mut analyzer = RelationAnalyzer::new();
     let schema = create_advanced_schema();
     
     // Test enrollment detection
@@ -275,7 +272,7 @@ fn test_polymorphic_role_detection() {
     attendee_slot.multivalued = Some(true);
     schema.slots.insert("attendee".to_string(), attendee_slot);
     
-    let analyzer = RelationAnalyzer::new();
+    let mut analyzer = RelationAnalyzer::new();
     let meeting_class = schema.classes.get("Meeting").unwrap();
     analyzer.analyze_relation("Meeting", meeting_class, &schema);
     
@@ -321,7 +318,7 @@ fn test_role_cardinality() {
     book_slot.required = Some(true);
     schema.slots.insert("book".to_string(), book_slot);
     
-    let analyzer = RelationAnalyzer::new();
+    let mut analyzer = RelationAnalyzer::new();
     let authorship_class = schema.classes.get("Authorship").unwrap();
     let relation_info = analyzer.analyze_relation("Authorship", authorship_class, &schema);
     

@@ -70,10 +70,10 @@ Some RootReal services (like TaskManagementService) are not dyn-compatible due t
 ### Service Initialization Pattern
 
 ```rust
-// Production pattern (simplified)
-let logger = Arc::new(StandardLoggerService::new()?);
-let task_manager = Arc::new(StandardTaskManagementService::new()?);
-// ... initialize other services ...
+// Production pattern (simplified) - use factory functions
+let logger = logger_service::factory::create_standard_logger().await?;
+let task_manager = task_management_service::factory::create_standard_task_management_service().await?;
+// ... initialize other services using factory functions ...
 
 let linkml = create_linkml_service(
     logger,      // dyn-compatible - passed as trait object

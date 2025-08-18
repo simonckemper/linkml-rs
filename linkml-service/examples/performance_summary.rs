@@ -6,7 +6,7 @@
 use linkml_service::{
     parser::yaml_parser::YamlParser,
     validator::{Validator, ValidatorBuilder},
-    generator::{RustGenerator, TypeQLGenerator, PythonDataclassGenerator},
+    generator::{RustGenerator, TypeQLGenerator, typeql_generator::create_typeql_generator, PythonDataclassGenerator},
     expression::{Evaluator, parse_expression},
     performance::global_profiler,
 };
@@ -158,7 +158,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let generators = vec![
         ("Rust", Box::new(RustGenerator::new()) as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>),
-        ("TypeQL", Box::new(TypeQLGenerator::new()) as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>),
+        ("TypeQL", Box::new(create_typeql_generator()) as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>),
         ("Python", Box::new(PythonDataclassGenerator::new()) as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>),
     ];
     

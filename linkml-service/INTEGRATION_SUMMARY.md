@@ -111,10 +111,10 @@ The LinkML service has been successfully integrated with the RootReal service ec
 
 ### Service Initialization
 ```rust
-// Standard initialization with RootReal services
-let logger = LoggerService::new();
-let config = ConfigurationService::new();
-let cache = CacheService::new();
+// Standard initialization with RootReal services using factory functions
+let logger = logger_service::factory::create_standard_logger().await?;
+let config = configuration_service::factory::create_standard_configuration_service().await?;
+let cache = cache_service::factory::create_valkey_cache_service().await?;
 
 let linkml_config = LinkMLServiceConfig {
     enable_caching: config.get("linkml.cache_enabled")? == "true",

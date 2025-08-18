@@ -447,8 +447,8 @@ mod tests {
         SlotDefinition {
             name: "test_array".to_string(),
             range: Some("float".to_string()),
-            minimum_value: Some("0".to_string()),
-            maximum_value: Some("100".to_string()),
+            minimum_value: Some(linkml_core::Value::Number(serde_json::Number::from(0))),
+            maximum_value: Some(linkml_core::Value::Number(serde_json::Number::from(100))),
             ..Default::default()
         }
     }
@@ -457,7 +457,7 @@ mod tests {
         let mut types = std::collections::HashMap::new();
         types.insert("float".to_string(), TypeDefinition {
             name: "float".to_string(),
-            base: Some("float".to_string()),
+            base_type: Some("float".to_string()),
             ..Default::default()
         });
         types

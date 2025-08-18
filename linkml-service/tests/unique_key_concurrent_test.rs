@@ -3,6 +3,7 @@
 use linkml_core::types::{
     ClassDefinition, SchemaDefinition, SlotDefinition, UniqueKeyDefinition
 };
+use indexmap::IndexMap;
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
@@ -16,13 +17,16 @@ async fn test_concurrent_unique_validation() {
     user_class.slots = vec!["id".to_string(), "email".to_string()];
     
     // Add unique key for email
-    user_class.unique_keys = vec![
+    let mut unique_keys = IndexMap::new();
+    unique_keys.insert(
+        "email_key".to_string(),
         UniqueKeyDefinition {
-            unique_key_name: "email_key".to_string(),
+            description: Some("Email uniqueness".to_string()),
             unique_key_slots: vec!["email".to_string()],
             consider_nulls_inequal: Some(false),
         }
-    ];
+    );
+    user_class.unique_keys = unique_keys;
     
     schema.classes.insert("User".to_string(), user_class);
     

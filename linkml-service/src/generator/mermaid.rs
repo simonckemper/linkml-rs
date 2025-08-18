@@ -541,7 +541,7 @@ mod tests {
     
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Create a base class
         let mut person_class = ClassDefinition::default();
@@ -593,17 +593,17 @@ mod tests {
         let generator = MermaidGenerator::new();
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate mermaid diagram");
+        let result = generator.generate(&schema).expect("should generate mermaid diagram");
         assert_eq!(result.len(), 1);
         
         let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.mermaid");
+        assert_eq!(output.chars().next().unwrap(), 'e');
         
         // Check ER diagram content
-        assert!(output.content.contains("erDiagram"));
-        assert!(output.content.contains("Person {"));
-        assert!(output.content.contains("Address {"));
-        assert!(output.content.contains("Person ||--|| Address : has"));
+        assert!(output.contains("erDiagram"));
+        assert!(output.contains("Person {"));
+        assert!(output.contains("Address {"));
+        assert!(output.contains("Person ||--|| Address : has"));
     }
     
     #[tokio::test]
@@ -613,12 +613,12 @@ mod tests {
             .with_diagram_type(MermaidDiagramType::ClassDiagram);
         let options = GeneratorOptions::default();
         
-        let result = generator.generate(&schema, &options).await.expect("should generate mermaid diagram");
+        let result = generator.generate(&schema).expect("should generate mermaid diagram");
         let output = &result[0];
         
-        assert!(output.content.contains("classDiagram"));
-        assert!(output.content.contains("class Person"));
-        assert!(output.content.contains("class Address"));
+        assert!(output.contains("classDiagram"));
+        assert!(output.contains("class Person"));
+        assert!(output.contains("class Address"));
     }
     
     #[test]

@@ -7,7 +7,7 @@ use linkml_core::prelude::*;
 use linkml_service::prelude::*;
 use linkml_service::generator::{
     Generator, GeneratorOptions,
-    typeql_generator_enhanced::EnhancedTypeQLGenerator,
+    typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
 };
 
 #[tokio::main]
@@ -58,8 +58,8 @@ slots:
     let parser = YamlParser::new();
     let schema = parser.parse_str(simple_schema)?;
     
-    // Generate TypeQL
-    let generator = EnhancedTypeQLGenerator::new();
+    // Generate TypeQL using the factory function
+    let generator = create_enhanced_typeql_generator();
     let options = GeneratorOptions::default();
     
     println!("Generating TypeQL for simple schema...");

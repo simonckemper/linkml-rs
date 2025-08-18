@@ -46,7 +46,7 @@ impl GeneratorRegistry {
             MarkdownGenerator, MermaidGenerator, MermaidDiagramType, OpenApiGenerator, PlantUmlGenerator, 
             PrefixMapGenerator, PrefixMapGeneratorConfig, PrefixMapFormat, RdfGenerator, ProtobufGenerator, 
             PydanticGenerator, PythonDataclassGenerator, RustGenerator, ShaclGenerator, ShExGenerator, 
-            SparqlGenerator, SQLAlchemyGenerator, SQLGenerator, TypeQLGenerator, TypeScriptGenerator, 
+            SparqlGenerator, SQLAlchemyGenerator, SQLGenerator, typeql_generator::create_typeql_generator, TypeScriptGenerator, 
             YumlGenerator, YamlValidatorGenerator, YamlValidatorGeneratorConfig, ValidationFramework,
             NamespaceManagerGenerator, NamespaceManagerGeneratorConfig, TargetLanguage as NsTargetLanguage,
             SssomGenerator, SssomGeneratorConfig, SssomFormat, SummaryGenerator, SummaryGeneratorConfig,
@@ -67,7 +67,7 @@ impl GeneratorRegistry {
             Arc::new(GraphQLGenerator::new()),
             Arc::new(GraphvizGenerator::new()),
             Arc::new(RustGenerator::new()),
-            Arc::new(TypeQLGenerator::new()),
+            Arc::new(create_typeql_generator()),
             Arc::new(HtmlGenerator::new()),
             Arc::new(JsonSchemaGenerator::new()),
             Arc::new(JsonLdGenerator::new()),
@@ -306,15 +306,15 @@ pub struct GeneratorInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generator::traits::{GeneratedOutput, GeneratorOptions};
+    use crate::generator::traits::GeneratedOutput;
     use async_trait::async_trait;
     use linkml_core::prelude::SchemaDefinition;
+    use linkml_core::LinkMLError;
 
     struct TestGenerator {
         name: String,
     }
 
-    #[async_trait]
     impl Generator for TestGenerator {
         fn name(&self) -> &str {
             &self.name
@@ -328,12 +328,19 @@ mod tests {
             vec![".test"]
         }
 
-        async fn generate(
+        fn generate(
             &self,
             _schema: &SchemaDefinition,
-            _options: &GeneratorOptions,
-        ) -> GeneratorResult<Vec<GeneratedOutput>> {
-            Ok(vec![])
+        ) -> std::result::Result<String, LinkMLError> {
+            Ok(String::new())
+        }
+        
+        fn get_file_extension(&self) -> &str {
+            ".test"
+        }
+        
+        fn get_default_filename(&self) -> &str {
+            "output.test"
         }
     }
 

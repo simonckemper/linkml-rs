@@ -3,7 +3,7 @@
 use linkml_core::prelude::*;
 use linkml_service::generator::{
     Generator, GeneratorOptions,
-    typeql_generator_enhanced::EnhancedTypeQLGenerator,
+    typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
 };
 use std::time::Instant;
 
@@ -54,7 +54,7 @@ async fn main() {
         schema.slots.insert("name".to_string(), name_slot);
         
         // Generate TypeQL
-        let generator = EnhancedTypeQLGenerator::new();
+        let generator = create_enhanced_typeql_generator();
         let options = GeneratorOptions::default();
         
         let start = Instant::now();

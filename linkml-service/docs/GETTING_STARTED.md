@@ -285,10 +285,10 @@ impl SchemaRegistry {
 use rootreal_services::prelude::*;
 
 async fn setup_linkml_with_rootreal() -> Result<Arc<dyn LinkMLService>, Box<dyn std::error::Error>> {
-    // Get RootReal services
-    let logger = LoggerService::new();
-    let config = ConfigurationService::new();
-    let cache = CacheService::new();
+    // Get RootReal services using factory functions
+    let logger = logger_service::factory::create_standard_logger().await?;
+    let config = configuration_service::factory::create_standard_configuration_service().await?;
+    let cache = cache_service::factory::create_valkey_cache_service().await?;
     
     // Configure LinkML
     let mut linkml_config = LinkMLServiceConfig::default();

@@ -411,7 +411,7 @@ mod tests {
     #[test]
     fn test_prefix_map_generation() {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
+        schema.name = "TestSchema".to_string();
         
         // Add prefixes
         use indexmap::IndexMap;

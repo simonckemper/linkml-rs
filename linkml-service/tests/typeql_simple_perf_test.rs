@@ -2,7 +2,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{
-    Generator, GeneratorOptions,
+    Generator,
     typeql_generator_enhanced::EnhancedTypeQLGenerator,
 };
 use std::time::Instant;
@@ -39,10 +39,9 @@ async fn test_typeql_performance() {
     
     // Generate TypeQL
     let generator = EnhancedTypeQLGenerator::new();
-    let options = GeneratorOptions::default();
     
     let start = Instant::now();
-    let result = generator.generate(&schema, &options).await;
+    let result = generator.generate(&schema);
     let duration = start.elapsed();
     
     // Verify success

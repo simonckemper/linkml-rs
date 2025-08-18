@@ -228,10 +228,10 @@ fn _production_test_pattern() {
     println!(r#"
 #[tokio::test]
 async fn test_real_integration() {{
-    // 1. Initialize all services
-    let logger = Arc::new(StandardLoggerService::new().unwrap());
+    // 1. Initialize all services using proper test patterns
+    let logger = Arc::new(MockLoggerService::new());
     let linkml = create_linkml_service(...).await.unwrap();
-    let typedb = Arc::new(TypeDBService::new(...).await.unwrap());
+    let typedb = Arc::new(MockTypeDBService::new());
     
     // 2. Load schema
     let _schema = linkml.load_schema_str(SCHEMA, SchemaFormat::Yaml).await.unwrap();

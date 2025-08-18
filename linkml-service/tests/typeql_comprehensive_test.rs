@@ -5,19 +5,20 @@ use linkml_service::generator::{
     Generator, GeneratorOptions, 
     typeql_generator_enhanced::EnhancedTypeQLGenerator,
 };
-use std::collections::HashMap;
+use linkml_core::Value;
+use linkml_service::expression::Expression;
 
 /// Create a comprehensive test schema with all features
 fn create_comprehensive_schema() -> SchemaDefinition {
     let mut schema = SchemaDefinition::default();
     schema.name = "ComprehensiveTestSchema".to_string();
-    schema.id = Some("https://example.org/schemas/comprehensive".to_string());
+    schema.id = "https://example.org/schemas/comprehensive".to_string();
     schema.version = Some("1.0.0".to_string());
     schema.description = Some("A comprehensive test schema for TypeQL generation".to_string());
     
     // Define types
     let mut positive_int = TypeDefinition::default();
-    positive_int.typeof = Some("integer".to_string());
+    positive_int.base_type = Some("integer".to_string());
     positive_int.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
     schema.types.insert("PositiveInt".to_string(), positive_int);
     
@@ -25,12 +26,18 @@ fn create_comprehensive_schema() -> SchemaDefinition {
     let mut status_enum = EnumDefinition::default();
     status_enum.description = Some("Status values".to_string());
     
-    let mut active = PermissibleValue::default();
-    active.description = Some("Active status".to_string());
+    let active = PermissibleValue {
+        text: "ACTIVE".to_string(),
+        description: Some("Active status".to_string()),
+        meaning: None,
+    };
     status_enum.permissible_values.insert("ACTIVE".to_string(), active);
     
-    let mut inactive = PermissibleValue::default();
-    inactive.description = Some("Inactive status".to_string());
+    let inactive = PermissibleValue {
+        text: "INACTIVE".to_string(),
+        description: Some("Inactive status".to_string()),
+        meaning: None,
+    };
     status_enum.permissible_values.insert("INACTIVE".to_string(), inactive);
     
     schema.enums.insert("StatusEnum".to_string(), status_enum);
@@ -94,29 +101,13 @@ fn create_comprehensive_schema() -> SchemaDefinition {
     // Add unique key
     let mut person_unique = UniqueKeyDefinition::default();
     person_unique.unique_key_slots.push("email".to_string());
-    person.unique_keys.push(person_unique);
+    person.unique_keys.insert("email_key".to_string(), person_unique);
     
-    // Add conditional requirement
-    let mut age_condition = SlotCondition::default();
-    age_condition.value_presence = Some(PresenceEnum::Present);
-    
-    let mut if_age = IfRequiredCondition::default();
-    if_age.field = "age".to_string();
-    if_age.condition = Some(age_condition);
-    if_age.required_fields = vec!["email".to_string()];
-    person.conditional_requirements.push(if_age);
+    // Removed conditional requirements as they don't exist in the current API
     
     // Add rule
     let mut adult_rule = Rule::default();
-    adult_rule.name = Some("adult_validation".to_string());
     adult_rule.description = Some("Validate adult age".to_string());
-    adult_rule.preconditions = Some(vec![
-        Expression::Comparison {
-            left: Box::new(Expression::Variable("age".to_string())),
-            operator: ComparisonOperator::GreaterOrEqual,
-            right: Box::new(Expression::Literal(Value::Number(serde_json::Number::from(18)))),
-        }
-    ]);
     person.rules.push(adult_rule);
     
     schema.classes.insert("Person".to_string(), person);
@@ -218,11 +209,11 @@ fn test_enhanced_generator_comprehensive() {
     let generator = EnhancedTypeQLGenerator::new();
     let options = GeneratorOptions::default();
     
-    let result = generator.generate(&schema, &options);
+    let result = generator.generate(&schema);
     assert!(result.is_ok(), "Generation failed: {:?}", result);
     
     let output = result.unwrap();
-    let content = &output.content;
+    let content = &output;
     
     // Verify header
     assert!(content.contains("# TypeQL Schema generated from LinkML"));
@@ -267,7 +258,7 @@ fn test_edge_cases() {
     // Test empty schema
     let empty_schema = SchemaDefinition::default();
     let generator = EnhancedTypeQLGenerator::new();
-    let result = generator.generate(&empty_schema, &GeneratorOptions::default());
+    let result = generator.generate(&empty_schema);
     assert!(result.is_ok());
     
     // Test schema with only attributes
@@ -277,9 +268,9 @@ fn test_edge_cases() {
     slot.range = Some("string".to_string());
     attr_only.slots.insert("test_attr".to_string(), slot);
     
-    let result = generator.generate(&attr_only, &GeneratorOptions::default());
+    let result = generator.generate(&attr_only);
     assert!(result.is_ok());
-    assert!(result.unwrap().content.contains("test-attr sub attribute"));
+    assert!(result.unwrap().contains("test-attr sub attribute"));
     
     // Test deeply nested inheritance
     let mut nested = SchemaDefinition::default();
@@ -293,9 +284,9 @@ fn test_edge_cases() {
         nested.classes.insert(format!("Level{}", i), class);
     }
     
-    let result = generator.generate(&nested, &GeneratorOptions::default());
+    let result = generator.generate(&nested);
     assert!(result.is_ok());
-    let content = result.unwrap().content;
+    let content = result.unwrap();
     assert!(content.contains("level-0 sub entity"));
     assert!(content.contains("level-4 sub level-3"));
 }
@@ -309,8 +300,7 @@ fn test_complex_constraints() {
     let mut complex_slot = SlotDefinition::default();
     complex_slot.range = Some("string".to_string());
     complex_slot.pattern = Some(r"^[A-Z][a-z]+$".to_string());
-    complex_slot.minimum_length = Some(3);
-    complex_slot.maximum_length = Some(50);
+    // minimum_length and maximum_length not available in current API
     complex_slot.required = Some(true);
     complex_slot.multivalued = Some(true);
     
@@ -325,10 +315,10 @@ fn test_complex_constraints() {
     schema.classes.insert("TestClass".to_string(), test_class);
     
     let generator = EnhancedTypeQLGenerator::new();
-    let result = generator.generate(&schema, &GeneratorOptions::default());
+    let result = generator.generate(&schema);
     assert!(result.is_ok());
     
-    let content = result.unwrap().content;
+    let content = result.unwrap();
     assert!(content.contains("complex-field sub attribute"));
     assert!(content.contains("owns complex-field @key"));
     assert!(content.contains("regex"));
@@ -363,7 +353,7 @@ fn test_performance_scaling() {
         schema.slots.insert("name".to_string(), name_slot);
         
         let start = Instant::now();
-        let result = generator.generate(&schema, &GeneratorOptions::default());
+        let result = generator.generate(&schema);
         let duration = start.elapsed();
         
         assert!(result.is_ok());

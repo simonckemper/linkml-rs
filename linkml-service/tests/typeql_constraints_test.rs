@@ -2,7 +2,7 @@
 
 use linkml_service::generator::typeql_constraints::TypeQLConstraintTranslator;
 use linkml_core::prelude::*;
-use serde_json::Value;
+use linkml_core::Value;
 
 #[test]
 fn test_key_constraint_generation() {
@@ -108,7 +108,7 @@ fn test_range_constraints() {
     
     // Test range with only maximum
     let mut slot = SlotDefinition::default();
-    slot.maximum_value = Some(Value::Integer(999));
+    slot.maximum_value = Some(Value::Number(serde_json::Number::from(999)));
     
     let constraints = translator.translate_range_constraints(&slot);
     assert!(constraints.contains(&"range (..999]".to_string()));
@@ -119,7 +119,7 @@ fn test_composite_unique_rule_generation() {
     let translator = TypeQLConstraintTranslator::new();
     
     let mut unique_key = UniqueKeyDefinition::default();
-    unique_key.unique_key_name = Some("product_key".to_string());
+    // unique_key_name field doesn't exist in current API
     unique_key.unique_key_slots = vec!["code".to_string(), "version".to_string()];
     
     let converter = |s: &str| s.to_lowercase().replace('_', "-");
@@ -207,7 +207,9 @@ fn test_common_identifier_patterns() {
         let mut slot = SlotDefinition::default();
         slot.name = name.to_string();
         
-        let is_unique = translator.is_unique_constraint(&slot);
+        // is_unique_constraint is a private method, test the actual constraints instead
+        let constraints = translator.translate_slot_constraints(&slot);
+        let is_unique = constraints.contains(&"@unique".to_string());
         assert_eq!(
             is_unique, should_be_unique,
             "Failed for {}: expected {}, got {}",

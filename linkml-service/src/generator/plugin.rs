@@ -258,12 +258,19 @@ mod tests {
             vec![".test"]
         }
 
-        async fn generate(
+        fn generate(
             &self,
             _schema: &SchemaDefinition,
-            _options: &GeneratorOptions,
-        ) -> GeneratorResult<Vec<GeneratedOutput>> {
-            Ok(vec![])
+        ) -> std::result::Result<String, LinkMLError> {
+            Ok(String::new())
+        }
+        
+        fn get_file_extension(&self) -> &str {
+            "test"
+        }
+        
+        fn get_default_filename(&self) -> &str {
+            "test.test"
         }
     }
 

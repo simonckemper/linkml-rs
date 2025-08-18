@@ -288,13 +288,15 @@ mod tests {
         let instances = vec![
             DataInstance {
                 class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{
-                    "id": "person1",
-                    "name": "Alice Smith",
-                    "age": 25,
-                    "active": true,
-                    "description": "A person named Alice.\nShe is 25 years old."
-                }"#).expect("should parse JSON"),
+                data: std::collections::HashMap::from([
+                    ("id".to_string(), serde_json::json!("person1")),
+                    ("name".to_string(), serde_json::json!("Alice Smith")),
+                    ("age".to_string(), serde_json::json!(25)),
+                    ("active".to_string(), serde_json::json!(true)),
+                    ("description".to_string(), serde_json::json!("A person named Alice.\nShe is 25 years old.")),
+                ]),
+                id: Some("person1".to_string()),
+                metadata: std::collections::HashMap::new(),
             },
         ];
         
