@@ -206,8 +206,10 @@ mod tests {
         
         assert!(Arc::ptr_eq(&s1, &s2));
         
-        // Common strings should already be interned
+        // Common strings should be interned and point to same memory
         let string_type = intern("string");
+        let string_type2 = intern("string");
+        assert!(Arc::ptr_eq(&string_type, &string_type2));
         assert!(!global_interner().is_empty());
     }
 }

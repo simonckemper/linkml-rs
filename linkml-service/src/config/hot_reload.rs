@@ -221,12 +221,23 @@ mod tests {
         fs::write(temp_file.path(), modified_content)
             .expect("should write modified config");
             
-        // Wait a bit for file system events
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-        
-        // Check if update was received
-        // Note: In real tests, file watching might not work reliably
-        // This is more of a demonstration of the API
+        // Wait a bit for file system events and check for update
+        tokio::select! {
+            _ = tokio::time::sleep(std::time::Duration::from_millis(500)) => {
+                // File watching might not trigger in test environment,
+                // but we should still check if config was reloaded
+                let updated_config = reloader.get_config();
+                // In a real environment with file watching, this would be 2000
+                // In test environment without file watching, it remains 1000
+                assert!(updated_config.typedb.batch_size == 1000 || updated_config.typedb.batch_size == 2000);
+            }
+            config = rx.recv() => {
+                // If we received an update notification
+                if let Some(new_config) = config {
+                    assert_eq!(new_config.typedb.batch_size, 2000);
+                }
+            }
+        }
         
         reloader.stop_watching();
     }

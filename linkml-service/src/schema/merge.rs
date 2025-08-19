@@ -508,7 +508,7 @@ mod tests {
     #[test]
     fn test_merge_intersection() {
         let mut schema1 = SchemaDefinition::default();
-        let mut class1 = ClassDefinition::default();
+        let class1 = ClassDefinition::default();
         schema1.classes.insert("Person".to_string(), class1.clone());
         schema1.classes.insert("Car".to_string(), class1.clone());
         

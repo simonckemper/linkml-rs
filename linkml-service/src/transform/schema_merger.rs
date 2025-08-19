@@ -758,7 +758,7 @@ mod tests {
     
     #[test]
     fn test_merge_imports() {
-        let mut schema1 = SchemaDefinition {
+        let schema1 = SchemaDefinition {
             id: "schema1".to_string(),
             name: "schema1".to_string(),
             imports: vec!["import1".to_string(), "import2".to_string()],
