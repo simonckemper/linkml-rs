@@ -170,6 +170,10 @@ impl Validator for EnhancedPatternValidator {
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
+        
+        // Debug: Log the slot pattern
+        eprintln!("DEBUG EnhancedPatternValidator: Validating slot '{}' with pattern: {:?}", 
+                 slot.name, slot.pattern);
 
         // Only validate if there's a pattern
         if let Some(pattern) = &slot.pattern {

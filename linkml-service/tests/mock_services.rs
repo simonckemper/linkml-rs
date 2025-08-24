@@ -28,8 +28,9 @@ use timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
 use dbms_core::{
-    config::DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus, 
-    HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation, SchemaVersion},
+    DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus, 
+    HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation, SchemaVersion,
+    DatabaseConfig as TypesConfig},
     ConnectionPool, DatabaseConnection, DBMSError, DBMSService, DBMSResult,
 };
 use timeout_core::{
@@ -122,7 +123,7 @@ impl TimestampService for MockTimestampService {
         use chrono::DateTime;
         Ok(DateTime::parse_from_rfc3339(timestamp)
             .map_err(|e| TimestampError::ParseError {
-                message: e.to_string(),
+                message: e.to_string().into(),
             })?
             .with_timezone(&chrono::Utc))
     }
@@ -237,6 +238,34 @@ impl ErrorHandlingService for MockErrorHandlerService {
             estimated_recovery_time_ms: 1000,
             retry_safe: true,
         })
+    }
+
+    async fn get_error_statistics(&self) -> Result<error_handling_core::traits::error_handling::ErrorStatistics, Self::Error> {
+        Ok(error_handling_core::traits::error_handling::ErrorStatistics {
+            total_count: 0,
+            is_empty: true,
+            capacity: Some(1000),
+            is_sharded: false,
+            recent_hour_count: 0,
+            recent_day_count: 0,
+        })
+    }
+
+    async fn get_recent_errors(&self, _limit: u32) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
+        Ok(Vec::new())
+    }
+
+    async fn get_service_errors(&self, _service_name: &str) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
+        Ok(Vec::new())
+    }
+
+    async fn clear_all_errors(&self) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    #[cfg(debug_assertions)]
+    async fn get_raw_reports(&self) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
+        Ok(Vec::new())
     }
 
     async fn determine_recovery_strategy(
@@ -707,14 +736,39 @@ impl DBMSService for MockDBMSService {
     type Error = DBMSError;
 
     // Database Lifecycle Management
-    async fn create_database(&self, name: &str, _config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
+    async fn create_database(&self, name: &str, config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
+        use uuid::Uuid;
+        // Convert config::DatabaseConfig to types::DatabaseConfig
+        let types_config = TypesConfig {
+            max_connections: config.connection_limits.max_connections,
+            connection_timeout_secs: config.connection_limits.connection_timeout_secs,
+            query_timeout_secs: config.query_limits.max_execution_time_secs,
+            transaction_timeout_secs: 600, // Default transaction timeout
+            enable_query_logging: config.security_settings.enable_audit_logging,
+            enable_monitoring: true, // Default to enabled
+            enable_schema_validation: true, // Default to enabled
+            enable_auto_backup: false, // Default to disabled
+            backup_interval_hours: 24, // Default backup interval
+            max_backup_files: 7, // Default backup file retention
+            database_settings: config.custom_settings,
+        };
+        
         Ok(DatabaseInfo {
+            id: Uuid::new_v4(),
             name: name.to_string(),
-            status: DatabaseStatus::Running,
-            creation_time: chrono::Utc::now(),
-            last_modified: chrono::Utc::now(),
-            size_bytes: 0,
             description: Some("Mock database".to_string()),
+            created_at: chrono::Utc::now(),
+            modified_at: chrono::Utc::now(),
+            owner: "mock-owner".to_string(),
+            config: types_config,
+            status: DatabaseStatus::Active,
+            size_bytes: 0,
+            entity_count: 0,
+            relation_count: 0,
+            attribute_count: 0,
+            schema_version: None,
+            tags: Vec::new(),
+            metadata: std::collections::HashMap::new(),
         })
     }
 
@@ -728,7 +782,7 @@ impl DBMSService for MockDBMSService {
 
     async fn get_database_status(&self, name: &str) -> DBMSResult<DatabaseStatus> {
         let _ = name;
-        Ok(DatabaseStatus::Running)
+        Ok(DatabaseStatus::Active)
     }
 
     // Connection Management
@@ -756,10 +810,12 @@ impl DBMSService for MockDBMSService {
 
     async fn health_check(&self, _database: &str) -> DBMSResult<DBHealthStatus> {
         Ok(DBHealthStatus {
-            state: dbms_core::types::HealthState::Healthy,
+            status: dbms_core::types::HealthState::Healthy,
             timestamp: chrono::Utc::now(),
-            details: HashMap::new(),
-            metrics: Vec::new(),
+            database: "mock-db".to_string(),
+            components: HashMap::new(),
+            details: Some("Mock health check successful".to_string()),
+            check_duration_ms: 10,
         })
     }
 
@@ -771,18 +827,26 @@ impl DBMSService for MockDBMSService {
     async fn validate_schema(&self, _schema: &str) -> DBMSResult<SchemaValidation> {
         Ok(SchemaValidation {
             is_valid: true,
+            schema_version: "1.0.0".to_string(),
+            validated_at: chrono::Utc::now(),
             errors: Vec::new(),
             warnings: Vec::new(),
-            complexity_score: 1.0,
+            validation_duration_ms: 50,
+            elements_validated: 10,
         })
     }
 
     async fn get_schema_version(&self, _database: &str) -> DBMSResult<SchemaVersion> {
         Ok(SchemaVersion {
             version: "1.0.0".to_string(),
-            timestamp: chrono::Utc::now(),
-            description: "Mock schema version".to_string(),
-            hash: "mock-hash".to_string(),
+            description: Some("Mock schema version".to_string()),
+            deployed_at: chrono::Utc::now(),
+            deployed_by: "mock-user".to_string(),
+            content_hash: "mock-hash".to_string(),
+            migrations: Vec::new(),
+            status: dbms_core::types::SchemaVersionStatus::Active,
+            previous_version: None,
+            tags: Vec::new(),
         })
     }
 
@@ -794,45 +858,129 @@ impl DBMSService for MockDBMSService {
     // Performance Monitoring
     async fn get_database_metrics(&self, _database: &str) -> DBMSResult<DatabaseMetrics> {
         Ok(DatabaseMetrics {
+            timestamp: chrono::Utc::now(),
+            database: "mock-db".to_string(),
             connection_pool: dbms_core::types::ConnectionPoolMetrics {
+                total_connections: 5,
                 active_connections: 1,
                 idle_connections: 4,
-                max_connections: 5,
-                connection_acquisition_time_ms: 1.0,
-                connection_utilization_percent: 20.0,
+                waiting_connections: 0,
+                avg_acquisition_time_ms: 1.0,
+                max_acquisition_time_ms: 5.0,
+                utilization_percent: 20.0,
+                connection_timeouts: 0,
+                connection_errors: 0,
             },
             query_performance: dbms_core::types::QueryPerformanceMetrics {
-                average_latency_ms: 10.0,
-                queries_per_second: 100.0,
-                slow_query_count: 0,
-                failed_query_count: 0,
-                query_cache_hit_ratio: 0.8,
+                total_queries: 100,
+                avg_query_time_ms: 10.0,
+                max_query_time_ms: 50.0,
+                p95_query_time_ms: 25.0,
+                slow_queries: 0,
+                query_timeouts: 0,
+                cache_hit_rate: 0.8,
             },
-            memory_usage: dbms_core::types::MemoryUsageMetrics {
-                used_memory_mb: 100.0,
-                available_memory_mb: 900.0,
-                memory_utilization_percent: 10.0,
-                gc_collection_count: 5,
-                gc_collection_time_ms: 50.0,
+            resource_usage: dbms_core::types::ResourceUsageMetrics {
+                disk_usage_bytes: 1024 * 1024,
+                memory_usage_bytes: 100 * 1024 * 1024,
+                cpu_usage_percent: 10.0,
+                open_file_descriptors: 50,
+                network_bytes_sent: 1024,
+                network_bytes_received: 2048,
             },
-            storage: dbms_core::types::StorageMetrics {
-                database_size_bytes: 1024 * 1024,
-                available_space_bytes: 1024 * 1024 * 1024,
-                storage_utilization_percent: 0.1,
-                io_operations_per_second: 500.0,
-                average_io_latency_ms: 1.0,
+            transaction_metrics: dbms_core::types::TransactionMetrics {
+                total_transactions: 50,
+                committed_transactions: 48,
+                rolled_back_transactions: 2,
+                avg_transaction_duration_ms: 15.0,
+                max_transaction_duration_ms: 100.0,
+                deadlocks_detected: 0,
+            },
+            schema_metrics: dbms_core::types::SchemaMetrics {
+                entity_types: 10,
+                relation_types: 5,
+                attribute_types: 20,
+                roles: 15,
+                rules: 3,
+                complexity_score: 25.0,
+            },
+            error_metrics: dbms_core::types::ErrorMetrics {
+                total_errors: 2,
+                connection_errors: 1,
+                query_errors: 1,
+                transaction_errors: 0,
+                auth_errors: 0,
+                error_rate_per_minute: 0.1,
             },
         })
     }
 
-    async fn optimize_database(&self, _database: &str) -> DBMSResult<OptimizationReport> {
-        Ok(OptimizationReport {
-            optimization_type: dbms_core::types::OptimizationType::IndexOptimization,
+    async fn optimize_database(&self, database: &str) -> DBMSResult<OptimizationReport> {
+        let mock_metrics = DatabaseMetrics {
             timestamp: chrono::Utc::now(),
-            duration_ms: 100,
-            performance_improvement_percent: 5.0,
+            database: database.to_string(),
+            connection_pool: dbms_core::types::ConnectionPoolMetrics {
+                total_connections: 5,
+                active_connections: 1,
+                idle_connections: 4,
+                waiting_connections: 0,
+                avg_acquisition_time_ms: 1.0,
+                max_acquisition_time_ms: 5.0,
+                utilization_percent: 20.0,
+                connection_timeouts: 0,
+                connection_errors: 0,
+            },
+            query_performance: dbms_core::types::QueryPerformanceMetrics {
+                total_queries: 100,
+                avg_query_time_ms: 10.0,
+                max_query_time_ms: 50.0,
+                p95_query_time_ms: 25.0,
+                slow_queries: 0,
+                query_timeouts: 0,
+                cache_hit_rate: 0.8,
+            },
+            resource_usage: dbms_core::types::ResourceUsageMetrics {
+                disk_usage_bytes: 1024 * 1024,
+                memory_usage_bytes: 100 * 1024 * 1024,
+                cpu_usage_percent: 10.0,
+                open_file_descriptors: 50,
+                network_bytes_sent: 1024,
+                network_bytes_received: 2048,
+            },
+            transaction_metrics: dbms_core::types::TransactionMetrics {
+                total_transactions: 50,
+                committed_transactions: 48,
+                rolled_back_transactions: 2,
+                avg_transaction_duration_ms: 15.0,
+                max_transaction_duration_ms: 100.0,
+                deadlocks_detected: 0,
+            },
+            schema_metrics: dbms_core::types::SchemaMetrics {
+                entity_types: 10,
+                relation_types: 5,
+                attribute_types: 20,
+                roles: 15,
+                rules: 3,
+                complexity_score: 25.0,
+            },
+            error_metrics: dbms_core::types::ErrorMetrics {
+                total_errors: 2,
+                connection_errors: 1,
+                query_errors: 1,
+                transaction_errors: 0,
+                auth_errors: 0,
+                error_rate_per_minute: 0.1,
+            },
+        };
+
+        Ok(OptimizationReport {
+            generated_at: chrono::Utc::now(),
+            database: database.to_string(),
+            optimization_score: 85.0,
             recommendations: Vec::new(),
-            applied_optimizations: Vec::new(),
+            before_metrics: mock_metrics.clone(),
+            projected_metrics: Some(mock_metrics),
+            estimated_improvement: 5.0,
         })
     }
 
@@ -863,7 +1011,6 @@ impl DBMSService for MockDBMSService {
 
 // Mock Timeout Service
 use std::time::Duration;
-use std::pin::Pin;
 
 pub struct MockTimeoutService;
 
@@ -878,8 +1025,10 @@ impl TimeoutService for MockTimeoutService {
     ) -> Result<TimeoutValue, Self::Error> {
         Ok(TimeoutValue {
             duration: Duration::from_secs(30),
+            algorithm: timeout_core::TimeoutAlgorithm::Static,
             confidence: 0.8,
-            source: timeout_core::TimeoutSource::Default,
+            jitter: None,
+            calculated_at: chrono::Utc::now(),
         })
     }
 
@@ -900,21 +1049,29 @@ impl TimeoutService for MockTimeoutService {
     ) -> Result<TimeoutHistory, Self::Error> {
         Ok(TimeoutHistory {
             operation: "test".to_string(),
-            entries: Vec::new(),
+            records: Vec::new(),
+            current_timeout: None,
+            statistics: None,
         })
     }
 
     async fn get_statistics(&self, _operation: &str) -> Result<TimeoutStatistics, Self::Error> {
         Ok(TimeoutStatistics {
-            operation: "test".to_string(),
             count: 0,
+            mean: Duration::from_secs(1),
+            median: Duration::from_secs(1),
+            std_dev: Duration::from_millis(100),
+            min: Duration::from_secs(1),
+            max: Duration::from_secs(1),
+            percentiles: timeout_core::PercentileData {
+                p50: Duration::from_secs(1),
+                p75: Duration::from_secs(1),
+                p90: Duration::from_secs(1),
+                p95: Duration::from_secs(1),
+                p99: Duration::from_secs(1),
+            },
             success_rate: 1.0,
-            average_duration: Duration::from_secs(1),
-            min_duration: Duration::from_secs(1),
-            max_duration: Duration::from_secs(1),
-            p50_duration: Duration::from_secs(1),
-            p95_duration: Duration::from_secs(1),
-            p99_duration: Duration::from_secs(1),
+            timeout_violation_rate: 0.0,
         })
     }
 

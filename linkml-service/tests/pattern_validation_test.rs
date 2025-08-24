@@ -43,6 +43,12 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    
+    // Debug: Check patterns in parsed schema
+    eprintln!("DEBUG: Checking parsed schema slots:");
+    for (slot_name, slot_def) in &schema.slots {
+        eprintln!("  Slot '{}': pattern = {:?}", slot_name, slot_def.pattern);
+    }
 
     // Valid data with different date formats
     let valid_data = json!({
