@@ -123,33 +123,37 @@ impl Compiler {
             optimization_level: 2,
         }
     }
-    
+
     /// Set optimization level (0=none, 3=maximum)
     pub fn with_optimization_level(mut self, level: u8) -> Self {
         self.optimization_level = level.min(3);
         self
     }
-    
+
     /// Compile an expression AST into bytecode
-    pub fn compile(&self, expr: &Expression, source: &str) -> Result<CompiledExpression, ExpressionError> {
+    pub fn compile(
+        &self,
+        expr: &Expression,
+        source: &str,
+    ) -> Result<CompiledExpression, ExpressionError> {
         let mut ctx = CompilationContext::new();
-        
+
         // Generate bytecode
         self.compile_expr(expr, &mut ctx)?;
-        
+
         // Add implicit return if needed
         if !matches!(ctx.instructions.last(), Some(Instruction::Return)) {
             ctx.instructions.push(Instruction::Return);
         }
-        
+
         // Apply optimizations
         if self.optimization_level > 0 {
             self.optimize(&mut ctx);
         }
-        
+
         // Calculate metadata
         let metadata = self.calculate_metadata(&ctx);
-        
+
         Ok(CompiledExpression {
             instructions: ctx.instructions,
             constants: ctx.constants,
@@ -157,9 +161,13 @@ impl Compiler {
             metadata,
         })
     }
-    
+
     /// Compile a single expression
-    fn compile_expr(&self, expr: &Expression, ctx: &mut CompilationContext) -> Result<(), ExpressionError> {
+    fn compile_expr(
+        &self,
+        expr: &Expression,
+        ctx: &mut CompilationContext,
+    ) -> Result<(), ExpressionError> {
         match expr {
             Expression::Null => {
                 ctx.emit(Instruction::Const(Value::Null));
@@ -173,12 +181,12 @@ impl Compiler {
             Expression::String(s) => {
                 ctx.emit(Instruction::Const(Value::from(s.clone())));
             }
-            
+
             Expression::Variable(name) => {
                 ctx.accessed_variables.insert(name.clone());
                 ctx.emit(Instruction::Load(name.clone()));
             }
-            
+
             // Binary operations
             Expression::Add(left, right) => {
                 self.compile_expr(left, ctx)?;
@@ -205,7 +213,7 @@ impl Compiler {
                 self.compile_expr(right, ctx)?;
                 ctx.emit(Instruction::Modulo);
             }
-            
+
             // Comparison operations
             Expression::Equal(left, right) => {
                 self.compile_expr(left, ctx)?;
@@ -237,7 +245,7 @@ impl Compiler {
                 self.compile_expr(right, ctx)?;
                 ctx.emit(Instruction::GreaterEqual);
             }
-            
+
             // Logical operations
             Expression::And(left, right) => {
                 if self.optimization_level > 1 {
@@ -245,7 +253,10 @@ impl Compiler {
                     self.compile_expr(left, ctx)?;
                     let jump_idx = ctx.emit_placeholder();
                     ctx.emit(Instruction::Dup);
-                    ctx.patch_jump(jump_idx, Instruction::JumpIfFalse(ctx.instructions.len() + 2));
+                    ctx.patch_jump(
+                        jump_idx,
+                        Instruction::JumpIfFalse(ctx.instructions.len() + 2),
+                    );
                     ctx.emit(Instruction::Pop);
                     self.compile_expr(right, ctx)?;
                 } else {
@@ -260,7 +271,10 @@ impl Compiler {
                     self.compile_expr(left, ctx)?;
                     let jump_idx = ctx.emit_placeholder();
                     ctx.emit(Instruction::Dup);
-                    ctx.patch_jump(jump_idx, Instruction::JumpIfTrue(ctx.instructions.len() + 2));
+                    ctx.patch_jump(
+                        jump_idx,
+                        Instruction::JumpIfTrue(ctx.instructions.len() + 2),
+                    );
                     ctx.emit(Instruction::Pop);
                     self.compile_expr(right, ctx)?;
                 } else {
@@ -269,7 +283,7 @@ impl Compiler {
                     ctx.emit(Instruction::Or);
                 }
             }
-            
+
             // Unary operations
             Expression::Negate(operand) => {
                 self.compile_expr(operand, ctx)?;
@@ -279,82 +293,86 @@ impl Compiler {
                 self.compile_expr(operand, ctx)?;
                 ctx.emit(Instruction::Not);
             }
-            
-            Expression::Conditional { condition, then_expr, else_expr } => {
+
+            Expression::Conditional {
+                condition,
+                then_expr,
+                else_expr,
+            } => {
                 // Compile condition
                 self.compile_expr(condition, ctx)?;
-                
+
                 // Jump if false
                 let else_jump = ctx.emit_placeholder();
-                
+
                 // Compile then branch
                 self.compile_expr(then_expr, ctx)?;
                 let end_jump = ctx.emit_placeholder();
-                
+
                 // Compile else branch
                 ctx.patch_jump(else_jump, Instruction::JumpIfFalse(ctx.instructions.len()));
                 self.compile_expr(else_expr, ctx)?;
-                
+
                 // Patch end jump
                 ctx.patch_jump(end_jump, Instruction::Jump(ctx.instructions.len()));
             }
-            
+
             Expression::FunctionCall { name, args } => {
                 // Validate function exists
                 if !self.function_registry.has_function(name) {
-                    return Err(ExpressionError::Parse(ParseError::UnknownFunction { 
-                        name: name.clone(), 
-                        position: 0 
+                    return Err(ExpressionError::Parse(ParseError::UnknownFunction {
+                        name: name.clone(),
+                        position: 0,
                     }));
                 }
-                
+
                 ctx.called_functions.insert(name.clone());
-                
+
                 // Compile arguments
                 for arg in args {
                     self.compile_expr(arg, ctx)?;
                 }
-                
+
                 // Emit call
                 ctx.emit(Instruction::Call(name.clone(), args.len()));
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Apply bytecode optimizations
     fn optimize(&self, ctx: &mut CompilationContext) {
         if self.optimization_level >= 1 {
             // Constant folding
             self.fold_constants(ctx);
         }
-        
+
         if self.optimization_level >= 2 {
             // Dead code elimination
             self.eliminate_dead_code(ctx);
-            
+
             // Peephole optimizations
             self.peephole_optimize(ctx);
         }
-        
+
         if self.optimization_level >= 3 {
             // Instruction combining
             self.combine_instructions(ctx);
         }
     }
-    
+
     /// Fold constant expressions at compile time
     fn fold_constants(&self, ctx: &mut CompilationContext) {
         let mut i = 0;
         while i < ctx.instructions.len() {
             // Look for patterns like: Const, Const, BinaryOp
             if i + 2 < ctx.instructions.len() {
-                if let (
-                    Instruction::Const(a),
-                    Instruction::Const(b),
-                    op
-                ) = (&ctx.instructions[i], &ctx.instructions[i + 1], &ctx.instructions[i + 2]) {
+                if let (Instruction::Const(a), Instruction::Const(b), op) = (
+                    &ctx.instructions[i],
+                    &ctx.instructions[i + 1],
+                    &ctx.instructions[i + 2],
+                ) {
                     if let Some(result) = self.evaluate_constant_binary_op(a, b, op) {
                         // Replace with single constant
                         ctx.instructions[i] = Instruction::Const(result);
@@ -364,10 +382,12 @@ impl Compiler {
                     }
                 }
             }
-            
+
             // Look for patterns like: Const, UnaryOp
             if i + 1 < ctx.instructions.len() {
-                if let (Instruction::Const(val), op) = (&ctx.instructions[i], &ctx.instructions[i + 1]) {
+                if let (Instruction::Const(val), op) =
+                    (&ctx.instructions[i], &ctx.instructions[i + 1])
+                {
                     if let Some(result) = self.evaluate_constant_unary_op(val, op) {
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.remove(i + 1);
@@ -375,11 +395,11 @@ impl Compiler {
                     }
                 }
             }
-            
+
             i += 1;
         }
     }
-    
+
     /// Evaluate constant binary operations
     fn evaluate_constant_binary_op(&self, a: &Value, b: &Value, op: &Instruction) -> Option<Value> {
         match (a, b, op) {
@@ -401,16 +421,12 @@ impl Compiler {
             (Value::String(s1), Value::String(s2), Instruction::Add) => {
                 Some(Value::String(format!("{}{}", s1, s2)))
             }
-            (Value::Bool(b1), Value::Bool(b2), Instruction::And) => {
-                Some(Value::Bool(*b1 && *b2))
-            }
-            (Value::Bool(b1), Value::Bool(b2), Instruction::Or) => {
-                Some(Value::Bool(*b1 || *b2))
-            }
+            (Value::Bool(b1), Value::Bool(b2), Instruction::And) => Some(Value::Bool(*b1 && *b2)),
+            (Value::Bool(b1), Value::Bool(b2), Instruction::Or) => Some(Value::Bool(*b1 || *b2)),
             _ => None,
         }
     }
-    
+
     /// Evaluate constant unary operations
     fn evaluate_constant_unary_op(&self, val: &Value, op: &Instruction) -> Option<Value> {
         match (val, op) {
@@ -422,20 +438,20 @@ impl Compiler {
             _ => None,
         }
     }
-    
+
     /// Remove unreachable code
     fn eliminate_dead_code(&self, ctx: &mut CompilationContext) {
         // Mark reachable instructions
         let mut reachable = vec![false; ctx.instructions.len()];
         let mut work_list = vec![0];
-        
+
         while let Some(pc) = work_list.pop() {
             if pc >= ctx.instructions.len() || reachable[pc] {
                 continue;
             }
-            
+
             reachable[pc] = true;
-            
+
             match &ctx.instructions[pc] {
                 Instruction::Jump(target) => {
                     work_list.push(*target);
@@ -452,18 +468,18 @@ impl Compiler {
                 }
             }
         }
-        
+
         // Remove unreachable instructions and update jumps
         let mut new_instructions = Vec::new();
         let mut old_to_new: HashMap<usize, usize> = HashMap::new();
-        
+
         for (old_pc, inst) in ctx.instructions.iter().enumerate() {
             if reachable[old_pc] {
                 old_to_new.insert(old_pc, new_instructions.len());
                 new_instructions.push(inst.clone());
             }
         }
-        
+
         // Update jump targets
         for inst in &mut new_instructions {
             match inst {
@@ -476,10 +492,10 @@ impl Compiler {
                 _ => {}
             }
         }
-        
+
         ctx.instructions = new_instructions;
     }
-    
+
     /// Apply peephole optimizations
     fn peephole_optimize(&self, ctx: &mut CompilationContext) {
         let mut i = 0;
@@ -496,34 +512,42 @@ impl Compiler {
                     _ => {}
                 }
             }
-            
+
             // Remove double negation
             if i + 1 < ctx.instructions.len() {
-                if let (Instruction::Not, Instruction::Not) = (&ctx.instructions[i], &ctx.instructions[i + 1]) {
+                if let (Instruction::Not, Instruction::Not) =
+                    (&ctx.instructions[i], &ctx.instructions[i + 1])
+                {
                     ctx.instructions.remove(i);
                     ctx.instructions.remove(i);
                     continue;
                 }
             }
-            
+
             i += 1;
         }
     }
-    
+
     /// Combine multiple instructions into more efficient forms
     fn combine_instructions(&self, _ctx: &mut CompilationContext) {
         // This is a placeholder for more advanced optimizations
         // such as combining multiple field accesses or array operations
     }
-    
+
     /// Check if an instruction produces a value
     fn produces_value(&self, inst: &Instruction) -> bool {
         match inst {
             Instruction::Const(_) | Instruction::Load(_) | Instruction::Dup => true,
-            Instruction::Add | Instruction::Subtract | Instruction::Multiply | Instruction::Divide => true,
+            Instruction::Add
+            | Instruction::Subtract
+            | Instruction::Multiply
+            | Instruction::Divide => true,
             Instruction::Modulo | Instruction::Power => true,
             Instruction::Equal | Instruction::NotEqual => true,
-            Instruction::Less | Instruction::LessEqual | Instruction::Greater | Instruction::GreaterEqual => true,
+            Instruction::Less
+            | Instruction::LessEqual
+            | Instruction::Greater
+            | Instruction::GreaterEqual => true,
             Instruction::And | Instruction::Or | Instruction::Not | Instruction::Negate => true,
             Instruction::Call(_, _) => true,
             Instruction::MakeArray(_) | Instruction::MakeObject(_) => true,
@@ -531,14 +555,14 @@ impl Compiler {
             _ => false,
         }
     }
-    
+
     /// Calculate compilation metadata
     fn calculate_metadata(&self, ctx: &CompilationContext) -> CompilationMetadata {
         let mut max_stack = 0;
         let mut current_stack: usize = 0;
         let mut is_pure = true;
         let mut complexity = 0;
-        
+
         for inst in &ctx.instructions {
             // Update stack depth
             match inst {
@@ -548,10 +572,21 @@ impl Compiler {
                 Instruction::Store(_) | Instruction::Pop => {
                     current_stack = current_stack.saturating_sub(1usize);
                 }
-                Instruction::Add | Instruction::Subtract | Instruction::Multiply | Instruction::Divide |
-                Instruction::Modulo | Instruction::Power | Instruction::Equal | Instruction::NotEqual |
-                Instruction::Less | Instruction::LessEqual | Instruction::Greater | Instruction::GreaterEqual |
-                Instruction::And | Instruction::Or | Instruction::Index => {
+                Instruction::Add
+                | Instruction::Subtract
+                | Instruction::Multiply
+                | Instruction::Divide
+                | Instruction::Modulo
+                | Instruction::Power
+                | Instruction::Equal
+                | Instruction::NotEqual
+                | Instruction::Less
+                | Instruction::LessEqual
+                | Instruction::Greater
+                | Instruction::GreaterEqual
+                | Instruction::And
+                | Instruction::Or
+                | Instruction::Index => {
                     current_stack = current_stack.saturating_sub(1usize);
                 }
                 Instruction::Not | Instruction::Negate | Instruction::GetField(_) => {
@@ -569,17 +604,19 @@ impl Compiler {
                 }
                 _ => {}
             }
-            
+
             max_stack = max_stack.max(current_stack);
-            
+
             // Calculate complexity
             match inst {
                 Instruction::Call(_, _) => complexity += 10,
-                Instruction::Jump(_) | Instruction::JumpIfTrue(_) | Instruction::JumpIfFalse(_) => complexity += 2,
+                Instruction::Jump(_) | Instruction::JumpIfTrue(_) | Instruction::JumpIfFalse(_) => {
+                    complexity += 2
+                }
                 _ => complexity += 1,
             }
         }
-        
+
         CompilationMetadata {
             max_stack_size: max_stack,
             accessed_variables: ctx.accessed_variables.iter().cloned().collect(),
@@ -607,17 +644,17 @@ impl CompilationContext {
             called_functions: std::collections::HashSet::new(),
         }
     }
-    
+
     fn emit(&mut self, inst: Instruction) {
         self.instructions.push(inst);
     }
-    
+
     fn emit_placeholder(&mut self) -> usize {
         let idx = self.instructions.len();
         self.instructions.push(Instruction::Return); // Placeholder
         idx
     }
-    
+
     fn patch_jump(&mut self, idx: usize, inst: Instruction) {
         self.instructions[idx] = inst;
     }
@@ -626,49 +663,73 @@ impl CompilationContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::{Parser, FunctionRegistry};
-    
+    use crate::expression::{FunctionRegistry, Parser};
+
     #[test]
     fn test_simple_compilation() {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(registry);
         let parser = Parser::new();
-        
+
         // Test arithmetic
         let expr = parser.parse("1 + 2 * 3").expect("should parse expression");
-        let compiled = compiler.compile(&expr, "1 + 2 * 3").expect("should compile expression");
-        
-        assert!(compiled.instructions.contains(&Instruction::Const(Value::Number(serde_json::Number::from(1)))));
+        let compiled = compiler
+            .compile(&expr, "1 + 2 * 3")
+            .expect("should compile expression");
+
+        assert!(
+            compiled
+                .instructions
+                .contains(&Instruction::Const(Value::Number(
+                    serde_json::Number::from(1)
+                )))
+        );
         assert!(compiled.instructions.contains(&Instruction::Add));
         assert!(compiled.instructions.contains(&Instruction::Multiply));
     }
-    
+
     #[test]
     fn test_constant_folding() {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(registry).with_optimization_level(1);
         let parser = Parser::new();
-        
+
         // Constants should be folded
-        let expr = parser.parse("2 + 3").expect("should parse constant expression");
-        let compiled = compiler.compile(&expr, "2 + 3").expect("should compile constant expression");
-        
+        let expr = parser
+            .parse("2 + 3")
+            .expect("should parse constant expression");
+        let compiled = compiler
+            .compile(&expr, "2 + 3")
+            .expect("should compile constant expression");
+
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
-        assert_eq!(compiled.instructions[0], Instruction::Const(Value::Number(serde_json::Number::from(5))));
+        assert_eq!(
+            compiled.instructions[0],
+            Instruction::Const(Value::Number(serde_json::Number::from(5)))
+        );
     }
-    
+
     #[test]
     fn test_short_circuit() {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(registry).with_optimization_level(2);
         let parser = Parser::new();
-        
+
         // Test short-circuit AND
-        let expr = parser.parse("false && expensive_func()").expect("should parse short-circuit expression");
-        let compiled = compiler.compile(&expr, "false && expensive_func()").expect("should compile short-circuit expression");
-        
+        let expr = parser
+            .parse("false && expensive_func()")
+            .expect("should parse short-circuit expression");
+        let compiled = compiler
+            .compile(&expr, "false && expensive_func()")
+            .expect("should compile short-circuit expression");
+
         // Should have jump instruction for short-circuit
-        assert!(compiled.instructions.iter().any(|inst| matches!(inst, Instruction::JumpIfFalse(_))));
+        assert!(
+            compiled
+                .instructions
+                .iter()
+                .any(|inst| matches!(inst, Instruction::JumpIfFalse(_)))
+        );
     }
 }

@@ -52,7 +52,8 @@ mod tests {
         }"#;
 
         let parser = JsonParser::new();
-        let schema = parser.parse_str(json)
+        let schema = parser
+            .parse_str(json)
             .expect("Failed to parse minimal JSON schema");
 
         assert_eq!(schema.id, "https://example.org/test");

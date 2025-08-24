@@ -5,8 +5,8 @@
 
 use crate::generator::traits::{Generator, GeneratorConfig};
 use linkml_core::error::LinkMLError;
-use linkml_core::types::{SchemaDefinition as Schema, PrefixDefinition};
-use serde_json::{json, Map, Value};
+use linkml_core::types::{PrefixDefinition, SchemaDefinition as Schema};
+use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 
 /// Prefix map generator configuration
@@ -61,17 +61,17 @@ impl PrefixMapGenerator {
     pub fn new(config: PrefixMapGeneratorConfig) -> Self {
         Self { config }
     }
-    
+
     /// Get prefix reference from PrefixDefinition
     fn get_prefix_reference(prefix_def: &PrefixDefinition) -> String {
         match prefix_def {
             PrefixDefinition::Simple(url) => url.clone(),
-            PrefixDefinition::Complex { prefix_reference, .. } => {
-                prefix_reference.as_ref().cloned().unwrap_or_default()
-            }
+            PrefixDefinition::Complex {
+                prefix_reference, ..
+            } => prefix_reference.as_ref().cloned().unwrap_or_default(),
         }
     }
-    
+
     /// Generate prefix map in the configured format
     fn generate_prefix_map(&self, schema: &Schema) -> Result<String, LinkMLError> {
         match self.config.format {
@@ -82,11 +82,11 @@ impl PrefixMapGenerator {
             PrefixMapFormat::Csv => self.generate_csv(schema),
         }
     }
-    
+
     /// Generate simple JSON format
     fn generate_simple_json(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut map = Map::new();
-        
+
         // Add schema prefixes
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
@@ -97,7 +97,7 @@ impl PrefixMapGenerator {
                 map.insert(prefix.clone(), json!(reference));
             }
         }
-        
+
         // Add additional prefixes
         for (prefix, uri) in &self.config.additional_prefixes {
             if self.config.validate_prefixes {
@@ -105,18 +105,19 @@ impl PrefixMapGenerator {
             }
             map.insert(prefix.clone(), json!(uri));
         }
-        
+
         // Add common prefixes if not already present
         self.add_common_prefixes(&mut map);
-        
-        serde_json::to_string_pretty(&map)
-            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize prefix map: {}", e)))
+
+        serde_json::to_string_pretty(&map).map_err(|e| {
+            LinkMLError::ServiceError(format!("Failed to serialize prefix map: {}", e))
+        })
     }
-    
+
     /// Generate extended JSON format with metadata
     fn generate_extended_json(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut output = Map::new();
-        
+
         // Add metadata if requested
         if self.config.include_metadata {
             let mut metadata = Map::new();
@@ -126,78 +127,89 @@ impl PrefixMapGenerator {
             if !schema.id.is_empty() {
                 metadata.insert("schema_id".to_string(), json!(&schema.id));
             }
-            metadata.insert("generated_by".to_string(), json!("LinkML Prefix Map Generator"));
+            metadata.insert(
+                "generated_by".to_string(),
+                json!("LinkML Prefix Map Generator"),
+            );
             metadata.insert("format_version".to_string(), json!("1.0"));
-            
+
             output.insert("@metadata".to_string(), Value::Object(metadata));
         }
-        
+
         // Add prefixes
         let mut prefixes = Map::new();
-        
+
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
                 let mut prefix_info = Map::new();
-                prefix_info.insert("uri".to_string(), json!(Self::get_prefix_reference(expansion)));
-                
+                prefix_info.insert(
+                    "uri".to_string(),
+                    json!(Self::get_prefix_reference(expansion)),
+                );
+
                 // Add prefix metadata
                 if prefix == schema.default_prefix.as_ref().unwrap_or(&String::new()) {
                     prefix_info.insert("default".to_string(), json!(true));
                 }
-                
+
                 // Check if it's a standard prefix
                 if self.is_standard_prefix(prefix) {
                     prefix_info.insert("standard".to_string(), json!(true));
                 }
-                
+
                 prefixes.insert(prefix.clone(), Value::Object(prefix_info));
             }
         }
-        
+
         // Add additional prefixes
         for (prefix, uri) in &self.config.additional_prefixes {
             let mut prefix_info = Map::new();
             prefix_info.insert("uri".to_string(), json!(uri));
             prefix_info.insert("custom".to_string(), json!(true));
-            
+
             prefixes.insert(prefix.clone(), Value::Object(prefix_info));
         }
-        
+
         output.insert("prefixes".to_string(), Value::Object(prefixes));
-        
+
         // Add usage statistics
         if self.config.include_metadata {
             let stats = self.calculate_usage_stats(schema);
             output.insert("usage_stats".to_string(), stats);
         }
-        
-        serde_json::to_string_pretty(&output)
-            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize extended prefix map: {}", e)))
+
+        serde_json::to_string_pretty(&output).map_err(|e| {
+            LinkMLError::ServiceError(format!("Failed to serialize extended prefix map: {}", e))
+        })
     }
-    
+
     /// Generate Turtle/SPARQL prefix format
     fn generate_turtle(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut lines = vec![];
-        
+
         // Add header comment
         lines.push("# Prefix declarations for LinkML schema".to_string());
         if !schema.name.is_empty() {
             lines.push(format!("# Schema: {}", &schema.name));
         }
         lines.push(String::new());
-        
+
         // Add prefixes
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
-                lines.push(format!("@prefix {}: <{}> .", prefix, Self::get_prefix_reference(expansion)));
+                lines.push(format!(
+                    "@prefix {}: <{}> .",
+                    prefix,
+                    Self::get_prefix_reference(expansion)
+                ));
             }
         }
-        
+
         // Add additional prefixes
         for (prefix, uri) in &self.config.additional_prefixes {
             lines.push(format!("@prefix {}: <{}> .", prefix, uri));
         }
-        
+
         // Add common prefixes
         lines.push(String::new());
         lines.push("# Common prefixes".to_string());
@@ -206,21 +218,21 @@ impl PrefixMapGenerator {
                 lines.push(format!("@prefix {}: <{}> .", prefix, uri));
             }
         }
-        
+
         Ok(lines.join("\n"))
     }
-    
+
     /// Generate YAML format
     fn generate_yaml(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut lines = vec![];
-        
+
         // Add header
         lines.push("# Prefix map for LinkML schema".to_string());
         if !schema.name.is_empty() {
             lines.push(format!("# Schema: {}", &schema.name));
         }
         lines.push(String::new());
-        
+
         if self.config.include_metadata {
             lines.push("metadata:".to_string());
             if !schema.name.is_empty() {
@@ -231,16 +243,20 @@ impl PrefixMapGenerator {
             }
             lines.push(String::new());
         }
-        
+
         lines.push("prefixes:".to_string());
-        
+
         // Add schema prefixes
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
-                lines.push(format!("  {}: {}", prefix, Self::get_prefix_reference(expansion)));
+                lines.push(format!(
+                    "  {}: {}",
+                    prefix,
+                    Self::get_prefix_reference(expansion)
+                ));
             }
         }
-        
+
         // Add additional prefixes
         if !self.config.additional_prefixes.is_empty() {
             lines.push(String::new());
@@ -249,17 +265,17 @@ impl PrefixMapGenerator {
                 lines.push(format!("  {}: {}", prefix, uri));
             }
         }
-        
+
         Ok(lines.join("\n"))
     }
-    
+
     /// Generate CSV format
     fn generate_csv(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut lines = vec![];
-        
+
         // Header
         lines.push("prefix,uri,type,is_default".to_string());
-        
+
         // Schema prefixes
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
@@ -272,26 +288,26 @@ impl PrefixMapGenerator {
                 ));
             }
         }
-        
+
         // Additional prefixes
         for (prefix, uri) in &self.config.additional_prefixes {
             lines.push(format!("{},{},custom,false", prefix, uri));
         }
-        
+
         Ok(lines.join("\n"))
     }
-    
+
     /// Add common semantic web prefixes
     fn add_common_prefixes(&self, map: &mut Map<String, Value>) {
         let common = self.get_common_prefixes();
-        
+
         for (prefix, uri) in common {
             if !map.contains_key(prefix) {
                 map.insert(prefix.to_string(), json!(uri));
             }
         }
     }
-    
+
     /// Get common semantic web prefixes
     fn get_common_prefixes(&self) -> Vec<(&'static str, &'static str)> {
         vec![
@@ -307,47 +323,52 @@ impl PrefixMapGenerator {
             ("linkml", "https://w3id.org/linkml/"),
         ]
     }
-    
+
     /// Check if a prefix is a standard one
     fn is_standard_prefix(&self, prefix: &str) -> bool {
-        self.get_common_prefixes()
-            .iter()
-            .any(|(p, _)| p == &prefix)
+        self.get_common_prefixes().iter().any(|(p, _)| p == &prefix)
     }
-    
+
     /// Validate a prefix
     fn validate_prefix(&self, prefix: &str, uri: &str) -> Result<(), LinkMLError> {
         // Check prefix format
         if prefix.is_empty() {
-            return Err(LinkMLError::ServiceError("Empty prefix not allowed".to_string()));
-        }
-        
-        if !prefix.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
             return Err(LinkMLError::ServiceError(
-                format!("Invalid prefix '{}': must contain only alphanumeric characters, underscores, or hyphens", prefix)
+                "Empty prefix not allowed".to_string(),
             ));
         }
-        
+
+        if !prefix
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
+            return Err(LinkMLError::ServiceError(format!(
+                "Invalid prefix '{}': must contain only alphanumeric characters, underscores, or hyphens",
+                prefix
+            )));
+        }
+
         // Check URI format
         if !uri.ends_with('/') && !uri.ends_with('#') {
-            return Err(LinkMLError::ServiceError(
-                format!("Invalid URI '{}': should end with '/' or '#'", uri)
-            ));
+            return Err(LinkMLError::ServiceError(format!(
+                "Invalid URI '{}': should end with '/' or '#'",
+                uri
+            )));
         }
-        
+
         Ok(())
     }
-    
+
     /// Calculate usage statistics
     fn calculate_usage_stats(&self, schema: &Schema) -> Value {
         let mut stats = Map::new();
-        
+
         if !schema.prefixes.is_empty() {
             stats.insert("total_prefixes".to_string(), json!(schema.prefixes.len()));
-            
+
             // Count usage in classes and slots
             let usage_count: HashMap<String, usize> = HashMap::new();
-            
+
             // Check classes
             if !schema.classes.is_empty() {
                 for (_, _class_def) in &schema.classes {
@@ -359,7 +380,7 @@ impl PrefixMapGenerator {
                     // }
                 }
             }
-            
+
             // Check slots
             if !schema.slots.is_empty() {
                 for (_, _slot_def) in &schema.slots {
@@ -371,15 +392,15 @@ impl PrefixMapGenerator {
                     // }
                 }
             }
-            
+
             let usage_map: Map<String, Value> = usage_count
                 .into_iter()
                 .map(|(k, v)| (k, json!(v)))
                 .collect();
-            
+
             stats.insert("usage_by_prefix".to_string(), Value::Object(usage_map));
         }
-        
+
         Value::Object(stats)
     }
 }
@@ -388,7 +409,7 @@ impl Generator for PrefixMapGenerator {
     fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
         self.generate_prefix_map(schema)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         match self.config.format {
             PrefixMapFormat::Simple | PrefixMapFormat::Extended => "json",
@@ -397,7 +418,7 @@ impl Generator for PrefixMapGenerator {
             PrefixMapFormat::Csv => "csv",
         }
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "prefix_map"
     }
@@ -407,12 +428,12 @@ impl Generator for PrefixMapGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::{PrefixDefinition, SchemaDefinition};
-    
+
     #[test]
     fn test_prefix_map_generation() {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
-        
+
         // Add prefixes
         use indexmap::IndexMap;
         let mut prefixes = IndexMap::new();
@@ -426,23 +447,27 @@ mod tests {
         );
         schema.prefixes = prefixes;
         schema.default_prefix = Some("ex".to_string());
-        
+
         // Test simple JSON format
         let config = PrefixMapGeneratorConfig::default();
         let generator = PrefixMapGenerator::new(config);
-        let result = generator.generate(&schema).expect("should generate prefix map");
-        
+        let result = generator
+            .generate(&schema)
+            .expect("should generate prefix map");
+
         assert!(result.contains("\"ex\": \"https://example.com/\""));
         assert!(result.contains("\"test\": \"https://test.org/vocab#\""));
-        
+
         // Test Turtle format
         let config_ttl = PrefixMapGeneratorConfig {
             format: PrefixMapFormat::Turtle,
             ..Default::default()
         };
         let generator_ttl = PrefixMapGenerator::new(config_ttl);
-        let result_ttl = generator_ttl.generate(&schema).expect("should generate turtle prefix map");
-        
+        let result_ttl = generator_ttl
+            .generate(&schema)
+            .expect("should generate turtle prefix map");
+
         assert!(result_ttl.contains("@prefix ex: <https://example.com/> ."));
         assert!(result_ttl.contains("@prefix test: <https://test.org/vocab#> ."));
     }

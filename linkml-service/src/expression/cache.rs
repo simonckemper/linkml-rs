@@ -65,7 +65,8 @@ pub struct ExpressionCache {
 impl ExpressionCache {
     /// Create a new expression cache with given capacity
     pub fn new(capacity: usize) -> Self {
-        let capacity = NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always non-zero");
+        let capacity =
+            NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -73,10 +74,13 @@ impl ExpressionCache {
             cache_compiled: true,
         }
     }
-    
+
     /// Create expression cache from LinkML service configuration
-    pub fn from_service_config(config: &linkml_core::configuration_v2::ExpressionCacheConfig) -> Self {
-        let capacity = NonZeroUsize::new(config.max_entries.max(1)).expect("max_entries.max(1) is always non-zero");
+    pub fn from_service_config(
+        config: &linkml_core::configuration_v2::ExpressionCacheConfig,
+    ) -> Self {
+        let capacity = NonZeroUsize::new(config.max_entries.max(1))
+            .expect("max_entries.max(1) is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -84,24 +88,24 @@ impl ExpressionCache {
             cache_compiled: true,
         }
     }
-    
+
     /// Set maximum age for cache entries
     pub fn with_max_age(mut self, max_age: Duration) -> Self {
         self.max_age = max_age;
         self
     }
-    
+
     /// Set whether to cache compiled bytecode
     pub fn with_compiled_caching(mut self, enabled: bool) -> Self {
         self.cache_compiled = enabled;
         self
     }
-    
+
     /// Get an expression from the cache
     pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
         let mut cache = self.cache.write().expect("cache lock poisoned");
         let mut stats = self.stats.write().expect("stats lock poisoned");
-        
+
         if let Some(entry) = cache.get_mut(key) {
             // Check if entry is too old
             if entry.last_accessed.elapsed() > self.max_age {
@@ -110,58 +114,63 @@ impl ExpressionCache {
                 stats.misses += 1;
                 return None;
             }
-            
+
             // Update access time and hit count
             entry.last_accessed = Instant::now();
             entry.hit_count += 1;
-            
+
             stats.hits += 1;
             // Estimate 10ms saved per cache hit (parsing + compilation)
             stats.time_saved_ms += 10;
-            
+
             Some(entry.clone())
         } else {
             stats.misses += 1;
             None
         }
     }
-    
+
     /// Insert an expression into the cache
-    pub fn insert(&self, key: ExpressionKey, ast: Expression, compiled: Option<Arc<CompiledExpression>>) {
+    pub fn insert(
+        &self,
+        key: ExpressionKey,
+        ast: Expression,
+        compiled: Option<Arc<CompiledExpression>>,
+    ) {
         let mut cache = self.cache.write().expect("cache lock poisoned");
         let mut stats = self.stats.write().expect("stats lock poisoned");
-        
+
         let entry = CachedExpression {
             ast,
             compiled: if self.cache_compiled { compiled } else { None },
             last_accessed: Instant::now(),
             hit_count: 0,
         };
-        
+
         if cache.put(key, entry).is_some() {
             stats.evictions += 1;
         }
-        
+
         stats.entries = cache.len();
         // Estimate cache size (very rough)
         stats.size_bytes = stats.entries * 1024; // Assume ~1KB per entry
     }
-    
+
     /// Clear the cache
     pub fn clear(&self) {
         let mut cache = self.cache.write().expect("cache lock poisoned");
         let mut stats = self.stats.write().expect("stats lock poisoned");
-        
+
         cache.clear();
         stats.entries = 0;
         stats.size_bytes = 0;
     }
-    
+
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
         self.stats.read().expect("stats lock poisoned").clone()
     }
-    
+
     /// Get cache hit rate (0.0 to 1.0)
     pub fn hit_rate(&self) -> f64 {
         let stats = self.stats.read().expect("stats lock poisoned");
@@ -172,28 +181,28 @@ impl ExpressionCache {
             stats.hits as f64 / total as f64
         }
     }
-    
+
     /// Prune old entries from the cache
     pub fn prune_old_entries(&self) {
         let mut cache = self.cache.write().expect("cache lock poisoned");
         let mut stats = self.stats.write().expect("stats lock poisoned");
-        
+
         let now = Instant::now();
         let mut to_remove = Vec::new();
-        
+
         // Collect keys to remove (can't modify while iterating)
         for (key, entry) in cache.iter() {
             if now.duration_since(entry.last_accessed) > self.max_age {
                 to_remove.push(key.clone());
             }
         }
-        
+
         // Remove old entries
         for key in to_remove {
             cache.pop(&key);
             stats.evictions += 1;
         }
-        
+
         stats.entries = cache.len();
         stats.size_bytes = stats.entries * 1024;
     }
@@ -218,46 +227,48 @@ impl GlobalExpressionCache {
             hot_threshold: 10,
         }
     }
-    
+
     /// Set the threshold for promoting expressions to hot cache
     pub fn with_hot_threshold(mut self, threshold: u64) -> Self {
         self.hot_threshold = threshold;
         self
     }
-    
+
     /// Get an expression, checking hot cache first
     pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
         // Check hot cache first
         if let Some(entry) = self.hot_cache.get(key) {
             return Some(entry);
         }
-        
+
         // Check regular cache
         if let Some(entry) = self.parse_cache.get(key) {
             // Promote to hot cache if accessed frequently
             if entry.hit_count >= self.hot_threshold {
-                self.hot_cache.insert(
-                    key.clone(),
-                    entry.ast.clone(),
-                    entry.compiled.clone(),
-                );
+                self.hot_cache
+                    .insert(key.clone(), entry.ast.clone(), entry.compiled.clone());
             }
             return Some(entry);
         }
-        
+
         None
     }
-    
+
     /// Insert an expression into the appropriate cache
-    pub fn insert(&self, key: ExpressionKey, ast: Expression, compiled: Option<Arc<CompiledExpression>>) {
+    pub fn insert(
+        &self,
+        key: ExpressionKey,
+        ast: Expression,
+        compiled: Option<Arc<CompiledExpression>>,
+    ) {
         self.parse_cache.insert(key, ast, compiled);
     }
-    
+
     /// Get combined statistics from both caches
     pub fn stats(&self) -> GlobalCacheStats {
         let parse_stats = self.parse_cache.stats();
         let hot_stats = self.hot_cache.stats();
-        
+
         GlobalCacheStats {
             parse_cache: parse_stats.clone(),
             hot_cache: hot_stats.clone(),
@@ -267,28 +278,28 @@ impl GlobalExpressionCache {
             overall_hit_rate: self.overall_hit_rate(),
         }
     }
-    
+
     /// Get overall hit rate
     pub fn overall_hit_rate(&self) -> f64 {
         let parse_stats = self.parse_cache.stats();
         let hot_stats = self.hot_cache.stats();
-        
+
         let total_hits = parse_stats.hits + hot_stats.hits;
         let total_requests = total_hits + parse_stats.misses;
-        
+
         if total_requests == 0 {
             0.0
         } else {
             total_hits as f64 / total_requests as f64
         }
     }
-    
+
     /// Clear all caches
     pub fn clear(&self) {
         self.parse_cache.clear();
         self.hot_cache.clear();
     }
-    
+
     /// Prune old entries from all caches
     pub fn prune_old_entries(&self) {
         self.parse_cache.prune_old_entries();
@@ -316,8 +327,8 @@ pub struct GlobalCacheStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::ast::{Expression, BinaryOp};
-    
+    use crate::expression::ast::{BinaryOp, Expression};
+
     #[test]
     fn test_basic_caching() {
         let cache = ExpressionCache::new(10);
@@ -325,46 +336,45 @@ mod tests {
             source: "1 + 2".to_string(),
             schema_id: None,
         };
-        
+
         // Cache miss
         assert!(cache.get(&key).is_none());
         assert_eq!(cache.stats().misses, 1);
-        
+
         // Insert
-        let ast = Expression::Binary {
-            op: BinaryOp::Add,
-            left: Box::new(Expression::Literal(serde_json::json!(1))),
-            right: Box::new(Expression::Literal(serde_json::json!(2))),
-        };
+        let ast = Expression::Add(
+            Box::new(Expression::Number(1.0)),
+            Box::new(Expression::Number(2.0)),
+        );
         cache.insert(key.clone(), ast.clone(), None);
-        
+
         // Cache hit
         let cached = cache.get(&key).expect("cached entry should exist");
         assert_eq!(cache.stats().hits, 1);
         assert_eq!(cached.hit_count, 1);
     }
-    
+
     #[test]
     fn test_lru_eviction() {
         let cache = ExpressionCache::new(2);
-        
+
         // Fill cache
         for i in 0..3 {
             let key = ExpressionKey {
                 source: format!("expr{}", i),
                 schema_id: None,
             };
-            let ast = Expression::Literal(serde_json::json!(i));
+            let ast = Expression::Number(i as f64);
             cache.insert(key, ast, None);
         }
-        
+
         // First expression should be evicted
         let key0 = ExpressionKey {
             source: "expr0".to_string(),
             schema_id: None,
         };
         assert!(cache.get(&key0).is_none());
-        
+
         // Later expressions should still be there
         let key2 = ExpressionKey {
             source: "expr2".to_string(),
@@ -372,25 +382,25 @@ mod tests {
         };
         assert!(cache.get(&key2).is_some());
     }
-    
+
     #[test]
     fn test_global_cache_promotion() {
         let global = GlobalExpressionCache::new(10, 5).with_hot_threshold(3);
-        
+
         let key = ExpressionKey {
             source: "hot_expr".to_string(),
             schema_id: None,
         };
-        let ast = Expression::Literal(serde_json::json!(42));
-        
+        let ast = Expression::Number(42.0);
+
         // Insert into regular cache
         global.insert(key.clone(), ast, None);
-        
+
         // Access multiple times to trigger promotion
         for _ in 0..4 {
             global.get(&key);
         }
-        
+
         // Should now be in hot cache
         let stats = global.stats();
         assert!(stats.hot_cache.entries > 0);

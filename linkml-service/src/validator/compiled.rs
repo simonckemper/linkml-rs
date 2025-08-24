@@ -255,30 +255,30 @@ impl CompiledValidator {
             ValidationInstruction::ValidatePattern { path, pattern_id } => {
                 if let Some(field_value) = self.extract_value_at_path(value, path) {
                     if let Some(s) = field_value.as_str() {
-                    if let Some(pattern) = self.compiled_patterns.get(*pattern_id) {
-                        if !pattern.is_match(s) {
-                            let mut context = HashMap::new();
-                            context.insert(
-                                "value".to_string(),
-                                serde_json::Value::String(s.to_string()),
-                            );
-                            context.insert(
-                                "pattern".to_string(),
-                                serde_json::Value::String(pattern.as_str().to_string()),
-                            );
-                            issues.push(ValidationIssue {
-                                severity: Severity::Error,
-                                path: path.clone(),
-                                message: format!(
-                                    "Value does not match pattern: {}",
-                                    pattern.as_str()
-                                ),
-                                validator: self.name.clone(),
-                                code: Some("pattern_mismatch".to_string()),
-                                context,
-                            });
+                        if let Some(pattern) = self.compiled_patterns.get(*pattern_id) {
+                            if !pattern.is_match(s) {
+                                let mut context = HashMap::new();
+                                context.insert(
+                                    "value".to_string(),
+                                    serde_json::Value::String(s.to_string()),
+                                );
+                                context.insert(
+                                    "pattern".to_string(),
+                                    serde_json::Value::String(pattern.as_str().to_string()),
+                                );
+                                issues.push(ValidationIssue {
+                                    severity: Severity::Error,
+                                    path: path.clone(),
+                                    message: format!(
+                                        "Value does not match pattern: {}",
+                                        pattern.as_str()
+                                    ),
+                                    validator: self.name.clone(),
+                                    code: Some("pattern_mismatch".to_string()),
+                                    context,
+                                });
+                            }
                         }
-                    }
                     }
                 }
             }
@@ -388,9 +388,9 @@ impl CompiledValidator {
                         CompiledType::Date | CompiledType::DateTime => {
                             actual_type != CompiledType::String
                         }
-                        _ => actual_type != *expected_type && *expected_type != CompiledType::Any
+                        _ => actual_type != *expected_type && *expected_type != CompiledType::Any,
                     };
-                    
+
                     if type_mismatch {
                         let mut context = HashMap::new();
                         context.insert(
@@ -404,7 +404,9 @@ impl CompiledValidator {
                         issues.push(ValidationIssue {
                             severity: Severity::Error,
                             path: path.clone(),
-                            message: format!("Expected type {expected_type:?}, got {actual_type:?}"),
+                            message: format!(
+                                "Expected type {expected_type:?}, got {actual_type:?}"
+                            ),
                             validator: self.name.clone(),
                             code: Some("type_mismatch".to_string()),
                             context,
@@ -485,8 +487,10 @@ impl CompiledValidator {
 
                         if !valid {
                             let mut context_map = HashMap::new();
-                            context_map
-                                .insert("length".to_string(), serde_json::Value::Number(len.into()));
+                            context_map.insert(
+                                "length".to_string(),
+                                serde_json::Value::Number(len.into()),
+                            );
                             if let Some(min_len) = min {
                                 context_map.insert(
                                     "min".to_string(),
@@ -523,10 +527,10 @@ impl CompiledValidator {
         if path == "$" {
             return Some(root);
         }
-        
+
         let mut current = root;
         let parts: Vec<&str> = path.trim_start_matches("$.").split('.').collect();
-        
+
         for part in parts {
             match current {
                 JsonValue::Object(obj) => {
@@ -543,7 +547,7 @@ impl CompiledValidator {
                 _ => return None,
             }
         }
-        
+
         Some(current)
     }
 

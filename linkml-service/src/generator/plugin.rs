@@ -258,17 +258,14 @@ mod tests {
             vec![".test"]
         }
 
-        fn generate(
-            &self,
-            _schema: &SchemaDefinition,
-        ) -> std::result::Result<String, LinkMLError> {
+        fn generate(&self, _schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
             Ok(String::new())
         }
-        
+
         fn get_file_extension(&self) -> &str {
             "test"
         }
-        
+
         fn get_default_filename(&self) -> &str {
             "test.test"
         }
@@ -293,7 +290,10 @@ mod tests {
         ));
 
         // Register the plugin
-        manager.register_plugin(plugin).await.expect("should register plugin");
+        manager
+            .register_plugin(plugin)
+            .await
+            .expect("should register plugin");
 
         // Verify plugin is loaded
         assert_eq!(manager.list_plugins().len(), 1);

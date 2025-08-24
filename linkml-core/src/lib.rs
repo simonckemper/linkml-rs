@@ -1,12 +1,12 @@
 //! # `LinkML` Core
 //!
 //! Core types and traits for `LinkML` schema validation in Rust.
-//! 
+//!
 //! This crate provides the fundamental building blocks for working with `LinkML` schemas,
 //! including type definitions, validation traits, and error handling.
 //!
 //! ## Design Principles
-//! 
+//!
 //! - **100% Feature Parity**: Full compatibility with Python `LinkML`
 //! - **Native Performance**: Leveraging Rust's zero-cost abstractions
 //! - **Type Safety**: Compile-time guarantees where possible
@@ -63,19 +63,19 @@ pub mod hashmap_utils;
 pub mod schema_arc;
 
 // Re-export commonly used types
-pub use error::{LinkMLError, Result};
-pub use traits::{LinkMLService, SchemaOperations, ValidationOperations};
-pub use types::{SchemaDefinition, ClassDefinition, SlotDefinition, StructuredPattern};
-pub use serde_json::Value;
 pub use config::LinkMLConfig;
 pub use configuration_v2::LinkMLServiceConfig;
+pub use error::{LinkMLError, Result};
+pub use serde_json::Value;
 pub use settings::SchemaSettings;
+pub use traits::{LinkMLService, SchemaOperations, ValidationOperations};
+pub use types::{ClassDefinition, SchemaDefinition, SlotDefinition, StructuredPattern};
 
 /// Prelude module for convenient imports
 pub mod prelude {
+    pub use crate::config::LinkMLConfig;
     pub use crate::error::{LinkMLError, Result};
+    pub use crate::settings::*;
     pub use crate::traits::*;
     pub use crate::types::*;
-    pub use crate::config::LinkMLConfig;
-    pub use crate::settings::*;
 }

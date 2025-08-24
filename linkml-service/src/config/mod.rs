@@ -3,24 +3,23 @@
 //! This module provides configuration loading from YAML files with
 //! environment variable substitution support.
 
-pub mod validation;
 pub mod hot_reload;
+pub mod validation;
 
+use linkml_core::error::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
-use linkml_core::error::{LinkMLError, Result};
 
 /// Load configuration from YAML file with environment variable substitution
 pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
     // Read the file
-    let contents = std::fs::read_to_string(path)
-        .map_err(|e| LinkMLError::IoError(e))?;
-    
+    let contents = std::fs::read_to_string(path).map_err(|e| LinkMLError::IoError(e))?;
+
     // Substitute environment variables
     let substituted = substitute_env_vars(&contents);
-    
+
     // Parse YAML
     serde_yaml::from_str(&substituted)
         .map_err(|e| LinkMLError::ConfigError(format!("Failed to parse YAML config: {}", e)))
@@ -28,15 +27,15 @@ pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
 
 /// Substitute environment variables in the format ${VAR:-default}
 fn substitute_env_vars(content: &str) -> String {
-    let re = regex::Regex::new(r"\$\{([^}:]+)(?::(-)?([^}]*))?\}")
-        .expect("regex should be valid");
-    
+    let re = regex::Regex::new(r"\$\{([^}:]+)(?::(-)?([^}]*))?\}").expect("regex should be valid");
+
     re.replace_all(content, |caps: &regex::Captures| {
         let var_name = &caps[1];
         let default_value = caps.get(3).map(|m| m.as_str()).unwrap_or("");
-        
+
         env::var(var_name).unwrap_or_else(|_| default_value.to_string())
-    }).to_string()
+    })
+    .to_string()
 }
 
 /// Complete LinkML service configuration
@@ -357,7 +356,7 @@ pub fn load_production_config() -> Result<LinkMLConfig> {
 /// Load configuration based on environment
 pub fn load_environment_config() -> Result<LinkMLConfig> {
     let env = env::var("LINKML_ENV").unwrap_or_else(|_| "default".to_string());
-    
+
     match env.as_str() {
         "production" | "prod" => load_production_config(),
         _ => load_default_config(),
@@ -369,23 +368,20 @@ static INSTANCE: std::sync::OnceLock<LinkMLConfig> = std::sync::OnceLock::new();
 
 /// Get the global configuration instance
 pub fn get_config() -> &'static LinkMLConfig {
-    INSTANCE.get_or_init(|| {
-        load_environment_config()
-            .expect("Failed to load LinkML configuration")
-    })
+    INSTANCE.get_or_init(|| load_environment_config().expect("Failed to load LinkML configuration"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_env_var_substitution() {
         // Test with default values only since we can't set env vars without unsafe
         let content = "server: ${NONEXISTENT:-default_value}";
         let result = substitute_env_vars(content);
         assert_eq!(result, "server: default_value");
-        
+
         // Test multiple substitutions
         let content = "${VAR1:-val1} and ${VAR2:-val2}";
         let result = substitute_env_vars(content);

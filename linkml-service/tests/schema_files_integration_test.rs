@@ -3,12 +3,14 @@
 //! This test suite uses actual LinkML schema files to test
 //! file-based workflows and import resolution.
 
-use linkml_service::{LinkMLService, create_linkml_service, SchemaView, GeneratorConfig, GeneratorType};
 use linkml_core::prelude::*;
-use std::sync::Arc;
+use linkml_service::{
+    GeneratorConfig, GeneratorType, LinkMLService, SchemaView, create_linkml_service,
+};
 use serde_json::json;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tempfile::TempDir;
 
 // Import mock services
@@ -29,7 +31,7 @@ async fn create_test_service() -> Arc<dyn LinkMLService> {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     create_linkml_service(
         logger,
         timestamp,
@@ -38,25 +40,27 @@ async fn create_test_service() -> Arc<dyn LinkMLService> {
         config_service,
         cache,
         monitor,
-    ).await.unwrap()
+    )
+    .await
+    .unwrap()
 }
 
 #[tokio::test]
 async fn test_biolink_schema_from_file() {
     println!("=== Testing Biolink Schema from File ===");
-    
+
     let service = create_test_service().await;
     let schema_path = test_data_dir().join("biolink_minimal.yaml");
-    
+
     // Load schema from file
     let schema = service.load_schema(&schema_path).await.unwrap();
-    
+
     // Verify schema structure
     assert_eq!(schema.name, "biolink_minimal");
     assert!(schema.classes.contains_key("Gene"));
     assert!(schema.classes.contains_key("Disease"));
     assert!(schema.classes.contains_key("GeneDiseaseAssociation"));
-    
+
     // Test with biomedical data
     let gene = json!({
         "id": "HGNC:1234",
@@ -70,10 +74,10 @@ async fn test_biolink_schema_from_file() {
             "common_name": "human"
         }
     });
-    
+
     let report = service.validate(&gene, &schema, "Gene").await.unwrap();
     assert!(report.valid, "Gene validation failed: {:?}", report.errors);
-    
+
     // Test gene-disease association with rule validation
     let association = json!({
         "id": "association_001",
@@ -99,10 +103,17 @@ async fn test_biolink_schema_from_file() {
         "evidence": ["experimental", "curated"],
         "publications": ["PMID:12345678", "PMID:87654321"]
     });
-    
-    let assoc_report = service.validate(&association, &schema, "GeneDiseaseAssociation").await.unwrap();
-    assert!(assoc_report.valid, "Association validation failed: {:?}", assoc_report.errors);
-    
+
+    let assoc_report = service
+        .validate(&association, &schema, "GeneDiseaseAssociation")
+        .await
+        .unwrap();
+    assert!(
+        assoc_report.valid,
+        "Association validation failed: {:?}",
+        assoc_report.errors
+    );
+
     // Test rule violation - experimental evidence without publications
     let invalid_association = json!({
         "id": "association_002",
@@ -116,23 +127,29 @@ async fn test_biolink_schema_from_file() {
         "evidence": ["experimental"],
         "publications": []  // Should fail - experimental needs publications
     });
-    
-    let invalid_report = service.validate(&invalid_association, &schema, "GeneDiseaseAssociation").await.unwrap();
-    assert!(!invalid_report.valid, "Should fail validation - experimental evidence needs publications");
-    
+
+    let invalid_report = service
+        .validate(&invalid_association, &schema, "GeneDiseaseAssociation")
+        .await
+        .unwrap();
+    assert!(
+        !invalid_report.valid,
+        "Should fail validation - experimental evidence needs publications"
+    );
+
     println!("✓ Biolink schema file loading and validation complete");
 }
 
 #[tokio::test]
 async fn test_fhir_schema_integration() {
     println!("=== Testing FHIR Schema Integration ===");
-    
+
     let service = create_test_service().await;
     let schema_path = test_data_dir().join("fhir_subset.yaml");
-    
+
     // Load FHIR schema
     let schema = service.load_schema(&schema_path).await.unwrap();
-    
+
     // Create patient data
     let patient = json!({
         "id": "patient-123",
@@ -161,10 +178,17 @@ async fn test_fhir_schema_integration() {
             "country": "US"
         }]
     });
-    
-    let patient_report = service.validate(&patient, &schema, "Patient").await.unwrap();
-    assert!(patient_report.valid, "Patient validation failed: {:?}", patient_report.errors);
-    
+
+    let patient_report = service
+        .validate(&patient, &schema, "Patient")
+        .await
+        .unwrap();
+    assert!(
+        patient_report.valid,
+        "Patient validation failed: {:?}",
+        patient_report.errors
+    );
+
     // Create observation
     let observation = json!({
         "id": "obs-456",
@@ -206,10 +230,17 @@ async fn test_fhir_schema_integration() {
             }
         }]
     });
-    
-    let obs_report = service.validate(&observation, &schema, "Observation").await.unwrap();
-    assert!(obs_report.valid, "Observation validation failed: {:?}", obs_report.errors);
-    
+
+    let obs_report = service
+        .validate(&observation, &schema, "Observation")
+        .await
+        .unwrap();
+    assert!(
+        obs_report.valid,
+        "Observation validation failed: {:?}",
+        obs_report.errors
+    );
+
     // Test rule - final observations must have values
     let incomplete_obs = json!({
         "id": "obs-789",
@@ -226,24 +257,30 @@ async fn test_fhir_schema_integration() {
         "subject": {"id": "patient-123"}
         // Missing valueQuantity - should fail for final status
     });
-    
-    let incomplete_report = service.validate(&incomplete_obs, &schema, "Observation").await.unwrap();
-    assert!(!incomplete_report.valid, "Should fail - final observations need values");
-    
+
+    let incomplete_report = service
+        .validate(&incomplete_obs, &schema, "Observation")
+        .await
+        .unwrap();
+    assert!(
+        !incomplete_report.valid,
+        "Should fail - final observations need values"
+    );
+
     println!("✓ FHIR schema integration complete");
 }
 
 #[tokio::test]
 async fn test_api_models_code_generation() {
     println!("=== Testing API Models Code Generation ===");
-    
+
     let service = create_test_service().await;
     let schema_path = test_data_dir().join("api_models.yaml");
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Load API models schema
     let schema = service.load_schema(&schema_path).await.unwrap();
-    
+
     // Generate code for different targets
     let generators = vec![
         ("TypeScript", GeneratorType::TypeScript, "models.ts"),
@@ -251,7 +288,7 @@ async fn test_api_models_code_generation() {
         ("OpenAPI", GeneratorType::OpenAPI, "openapi.yaml"),
         ("JSON Schema", GeneratorType::JsonSchema, "schema.json"),
     ];
-    
+
     for (name, gen_type, filename) in &generators {
         let config = GeneratorConfig {
             generator_type: *gen_type,
@@ -261,24 +298,30 @@ async fn test_api_models_code_generation() {
             include_subsets: true,
             ..Default::default()
         };
-        
+
         service.generate_code(&schema, config).await.unwrap();
-        
+
         let generated_path = temp_dir.path().join(filename);
         assert!(generated_path.exists(), "{} should be generated", filename);
-        
+
         let content = fs::read_to_string(&generated_path).unwrap();
         assert!(content.len() > 100, "{} should have content", filename);
-        
+
         // Verify subset annotations are included
-        if matches!(gen_type, GeneratorType::TypeScript | GeneratorType::PythonDataclass) {
-            assert!(content.contains("public") || content.contains("required"), 
-                   "{} should include subset information", name);
+        if matches!(
+            gen_type,
+            GeneratorType::TypeScript | GeneratorType::PythonDataclass
+        ) {
+            assert!(
+                content.contains("public") || content.contains("required"),
+                "{} should include subset information",
+                name
+            );
         }
-        
+
         println!("✓ Generated {} code", name);
     }
-    
+
     // Test data validation with API models
     let user = json!({
         "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -303,10 +346,14 @@ async fn test_api_models_code_generation() {
             }
         }
     });
-    
+
     let user_report = service.validate(&user, &schema, "User").await.unwrap();
-    assert!(user_report.valid, "User validation failed: {:?}", user_report.errors);
-    
+    assert!(
+        user_report.valid,
+        "User validation failed: {:?}",
+        user_report.errors
+    );
+
     // Test organization with members
     let org = json!({
         "id": "660e8400-e29b-41d4-a716-446655440001",
@@ -327,20 +374,27 @@ async fn test_api_models_code_generation() {
             "features": ["advanced_analytics", "api_access", "unlimited_projects"]
         }
     });
-    
-    let org_report = service.validate(&org, &schema, "Organization").await.unwrap();
-    assert!(org_report.valid, "Organization validation failed: {:?}", org_report.errors);
-    
+
+    let org_report = service
+        .validate(&org, &schema, "Organization")
+        .await
+        .unwrap();
+    assert!(
+        org_report.valid,
+        "Organization validation failed: {:?}",
+        org_report.errors
+    );
+
     println!("✓ API models code generation and validation complete");
 }
 
 #[tokio::test]
 async fn test_schema_import_resolution() {
     println!("=== Testing Schema Import Resolution ===");
-    
+
     let service = create_test_service().await;
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create base schema file
     let base_schema = r#"
 id: https://example.org/base
@@ -361,10 +415,10 @@ types:
     base: str
     pattern: "^[\\w.%+-]+@[\\w.-]+\\.[A-Z]{2,}$"
 "#;
-    
+
     let base_path = temp_dir.path().join("base.yaml");
     fs::write(&base_path, base_schema).unwrap();
-    
+
     // Create importing schema
     let main_schema = r#"
 id: https://example.org/main
@@ -384,147 +438,183 @@ classes:
         range: email
         required: true
 "#;
-    
+
     let main_path = temp_dir.path().join("main.yaml");
     fs::write(&main_path, main_schema).unwrap();
-    
+
     // Load schema with imports
     let schema = service.load_schema(&main_path).await.unwrap();
-    
+
     // Verify import was resolved
     assert!(schema.classes.contains_key("Identifiable"));
     assert!(schema.classes.contains_key("Person"));
     assert!(schema.types.contains_key("email"));
-    
+
     // Validate data using imported definitions
     let person = json!({
         "id": "person-001",
         "name": "Alice Smith",
         "email": "alice@example.com"
     });
-    
+
     let report = service.validate(&person, &schema, "Person").await.unwrap();
-    assert!(report.valid, "Person validation failed: {:?}", report.errors);
-    
+    assert!(
+        report.valid,
+        "Person validation failed: {:?}",
+        report.errors
+    );
+
     // Test email pattern from imported type
     let invalid_person = json!({
         "id": "person-002",
         "name": "Bob Jones",
         "email": "not-an-email"  // Should fail pattern
     });
-    
-    let invalid_report = service.validate(&invalid_person, &schema, "Person").await.unwrap();
+
+    let invalid_report = service
+        .validate(&invalid_person, &schema, "Person")
+        .await
+        .unwrap();
     assert!(!invalid_report.valid, "Should fail email validation");
-    
+
     println!("✓ Schema import resolution working correctly");
 }
 
 #[tokio::test]
 async fn test_schema_view_with_file_schemas() {
     println!("=== Testing SchemaView with File-based Schemas ===");
-    
+
     let service = create_test_service().await;
-    
+
     // Load all test schemas
-    let biolink = service.load_schema(&test_data_dir().join("biolink_minimal.yaml")).await.unwrap();
-    let fhir = service.load_schema(&test_data_dir().join("fhir_subset.yaml")).await.unwrap();
-    let api = service.load_schema(&test_data_dir().join("api_models.yaml")).await.unwrap();
-    
+    let biolink = service
+        .load_schema(&test_data_dir().join("biolink_minimal.yaml"))
+        .await
+        .unwrap();
+    let fhir = service
+        .load_schema(&test_data_dir().join("fhir_subset.yaml"))
+        .await
+        .unwrap();
+    let api = service
+        .load_schema(&test_data_dir().join("api_models.yaml"))
+        .await
+        .unwrap();
+
     // Create SchemaViews
     let biolink_view = SchemaView::new(biolink);
     let fhir_view = SchemaView::new(fhir);
     let api_view = SchemaView::new(api);
-    
+
     // Compare schema statistics
     println!("\nSchema Statistics:");
-    
+
     let biolink_stats = biolink_view.get_statistics();
     println!("Biolink Model:");
     println!("  - Classes: {}", biolink_stats.num_classes);
     println!("  - Enums: {}", biolink_stats.num_enums);
     println!("  - Rules: {}", biolink_stats.num_rules);
-    
+
     let fhir_stats = fhir_view.get_statistics();
     println!("FHIR Subset:");
     println!("  - Classes: {}", fhir_stats.num_classes);
     println!("  - Enums: {}", fhir_stats.num_enums);
     println!("  - Mixins: {}", fhir_stats.num_mixins);
-    
+
     let api_stats = api_view.get_statistics();
     println!("API Models:");
     println!("  - Classes: {}", api_stats.num_classes);
     println!("  - Subsets: {}", api_stats.num_subsets);
     println!("  - Unique slots: {}", api_stats.num_unique_keys);
-    
+
     // Test inheritance in API models
     let user_slots = api_view.class_slots("User", true).unwrap();
     let slot_names: Vec<_> = user_slots.iter().map(|s| &s.name).collect();
-    assert!(slot_names.contains(&&"id".to_string()), "Should inherit id from Identifiable");
-    assert!(slot_names.contains(&&"created_at".to_string()), "Should inherit created_at from Timestamped");
-    assert!(slot_names.contains(&&"username".to_string()), "Should have direct username slot");
-    
+    assert!(
+        slot_names.contains(&&"id".to_string()),
+        "Should inherit id from Identifiable"
+    );
+    assert!(
+        slot_names.contains(&&"created_at".to_string()),
+        "Should inherit created_at from Timestamped"
+    );
+    assert!(
+        slot_names.contains(&&"username".to_string()),
+        "Should have direct username slot"
+    );
+
     println!("✓ SchemaView analysis of file schemas complete");
 }
 
 #[tokio::test]
 async fn test_multi_file_workflow() {
     println!("=== Testing Multi-File Workflow ===");
-    
+
     let service = create_test_service().await;
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Load multiple schemas
     let schemas = vec![
         ("biolink", test_data_dir().join("biolink_minimal.yaml")),
         ("fhir", test_data_dir().join("fhir_subset.yaml")),
         ("api", test_data_dir().join("api_models.yaml")),
     ];
-    
+
     // Generate code for each schema
     for (name, schema_path) in schemas {
         println!("\nProcessing {} schema...", name);
-        
+
         let schema = service.load_schema(&schema_path).await.unwrap();
-        
+
         // Generate multiple output formats
         let outputs = vec![
             (format!("{}.ts", name), GeneratorType::TypeScript),
             (format!("{}.py", name), GeneratorType::PythonDataclass),
             (format!("{}-schema.json", name), GeneratorType::JsonSchema),
         ];
-        
+
         for (filename, gen_type) in outputs {
             let config = GeneratorConfig {
                 generator_type: gen_type,
                 output_path: Some(temp_dir.path().join(&filename)),
                 ..Default::default()
             };
-            
+
             service.generate_code(&schema, config).await.unwrap();
-            assert!(temp_dir.path().join(&filename).exists(), "{} should exist", filename);
+            assert!(
+                temp_dir.path().join(&filename).exists(),
+                "{} should exist",
+                filename
+            );
         }
-        
+
         println!("✓ Generated code for {} schema", name);
     }
-    
+
     // Verify all files were created
     let entries: Vec<_> = fs::read_dir(temp_dir.path())
         .unwrap()
         .filter_map(Result::ok)
         .collect();
-    
-    assert_eq!(entries.len(), 9, "Should have 9 generated files (3 schemas × 3 formats)");
-    
-    println!("\n✓ Multi-file workflow complete with {} files generated", entries.len());
+
+    assert_eq!(
+        entries.len(),
+        9,
+        "Should have 9 generated files (3 schemas × 3 formats)"
+    );
+
+    println!(
+        "\n✓ Multi-file workflow complete with {} files generated",
+        entries.len()
+    );
 }
 
 #[tokio::test]
 async fn test_error_reporting_with_file_context() {
     println!("=== Testing Error Reporting with File Context ===");
-    
+
     let service = create_test_service().await;
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create schema with intentional issues
     let problematic_schema = r#"
 id: https://example.org/problematic
@@ -542,26 +632,33 @@ classes:
         minimum_value: 100
         maximum_value: 50  # min > max
 "#;
-    
+
     let schema_path = temp_dir.path().join("problematic.yaml");
     fs::write(&schema_path, problematic_schema).unwrap();
-    
+
     // Try to load schema - should succeed but validation might catch issues
     let schema = service.load_schema(&schema_path).await.unwrap();
-    
+
     // Create test data that should trigger various errors
     let test_data = json!({
         "conflicting_field": null,  // Required but null
         "pattern_field": "test",
         "range_conflict": 75
     });
-    
-    let report = service.validate(&test_data, &schema, "TestClass").await.unwrap();
-    
+
+    let report = service
+        .validate(&test_data, &schema, "TestClass")
+        .await
+        .unwrap();
+
     if !report.valid {
         println!("\nValidation errors detected:");
         for error in &report.errors {
-            println!("  - {}: {}", error.field.as_deref().unwrap_or("unknown"), error.message);
+            println!(
+                "  - {}: {}",
+                error.field.as_deref().unwrap_or("unknown"),
+                error.message
+            );
             if let Some(details) = &error.details {
                 for (key, value) in details {
                     println!("    {}: {:?}", key, value);
@@ -569,6 +666,6 @@ classes:
             }
         }
     }
-    
+
     println!("✓ Error reporting with file context working");
 }

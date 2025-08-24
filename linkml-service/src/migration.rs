@@ -321,7 +321,7 @@ where
     config: Arc<RwLock<MigrationConfig>>,
     versions: Arc<RwLock<Vec<SchemaVersion>>>,
     #[allow(dead_code)]
-    service: Arc<S>,  // Reserved for future async validation
+    service: Arc<S>, // Reserved for future async validation
 }
 
 impl<S> MigrationEngine<S>

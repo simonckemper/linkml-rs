@@ -2,14 +2,14 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
     settings::ImportSettings,
+    types::SchemaDefinition,
 };
-use std::path::{Path, PathBuf};
 use reqwest;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 
-use super::{Parser, ImportResolverV2};
+use super::{ImportResolverV2, Parser};
 
 /// Loader for LinkML schemas from various sources
 pub struct SchemaLoader {
@@ -25,40 +25,44 @@ impl SchemaLoader {
             http_client: reqwest::Client::new(),
         }
     }
-    
+
     /// Load a schema from a file path
     pub async fn load_file(&self, path: impl AsRef<Path>) -> Result<SchemaDefinition> {
         let path = path.as_ref();
-        
+
         // Read file content
         let content = fs::read_to_string(path)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to read file: {}", e)))?;
-        
+
         // Determine format from extension
         let extension = path
             .extension()
             .and_then(|s| s.to_str())
             .ok_or_else(|| LinkMLError::parse("No file extension found"))?;
-        
+
         // Parse the schema
         let schema = self.parser.parse_str(&content, extension)?;
-        
+
         // Set up import settings with the file's parent directory as search path
         let mut settings = ImportSettings::default();
         if let Some(parent) = path.parent() {
-            settings.search_paths.push(parent.to_string_lossy().to_string());
+            settings
+                .search_paths
+                .push(parent.to_string_lossy().to_string());
         }
-        
+
         // Use schema settings if available
         if let Some(schema_settings) = &schema.settings {
             if let Some(import_settings) = &schema_settings.imports {
                 settings = import_settings.clone();
-                
+
                 // Resolve relative search paths from schema settings
                 if let Some(parent) = path.parent() {
                     // Make relative paths absolute based on schema location
-                    settings.search_paths = settings.search_paths.iter()
+                    settings.search_paths = settings
+                        .search_paths
+                        .iter()
                         .map(|p| {
                             let path_buf = PathBuf::from(p);
                             if path_buf.is_relative() {
@@ -68,7 +72,7 @@ impl SchemaLoader {
                             }
                         })
                         .collect();
-                    
+
                     // Also add the parent directory if not already present
                     let parent_str = parent.to_string_lossy().to_string();
                     if !settings.search_paths.contains(&parent_str) {
@@ -77,21 +81,22 @@ impl SchemaLoader {
                 }
             }
         }
-        
+
         // Resolve imports using enhanced resolver
         let import_resolver = ImportResolverV2::with_settings(settings);
         import_resolver.resolve_imports(&schema).await
     }
-    
+
     /// Load a schema from a URL
     pub async fn load_url(&self, url: &str) -> Result<SchemaDefinition> {
         // Fetch content from URL
-        let response = self.http_client
+        let response = self
+            .http_client
             .get(url)
             .send()
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to fetch URL: {}", e)))?;
-        
+
         if !response.status().is_success() {
             return Err(LinkMLError::service(format!(
                 "HTTP error {}: {}",
@@ -99,12 +104,12 @@ impl SchemaLoader {
                 response.status().canonical_reason().unwrap_or("Unknown")
             )));
         }
-        
+
         let content = response
             .text()
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to read response: {}", e)))?;
-        
+
         // Determine format from URL extension or content type
         let format = if url.ends_with(".json") {
             "json"
@@ -114,20 +119,20 @@ impl SchemaLoader {
             // Default to YAML as it's more common for LinkML
             "yaml"
         };
-        
+
         // Parse the schema
         let schema = self.parser.parse_str(&content, format)?;
-        
+
         // Set up import settings with URL base
         let mut settings = ImportSettings::default();
-        
+
         // Add base URL path for relative URL imports
         if let Ok(parsed_url) = url::Url::parse(url) {
             if let Some(base) = parsed_url.join("./").ok() {
                 settings.base_url = Some(base.to_string());
             }
         }
-        
+
         // Use schema settings if available
         if let Some(schema_settings) = &schema.settings {
             if let Some(import_settings) = &schema_settings.imports {
@@ -142,23 +147,23 @@ impl SchemaLoader {
                 }
             }
         }
-        
+
         // Resolve imports using enhanced resolver
         let import_resolver = ImportResolverV2::with_settings(settings);
         import_resolver.resolve_imports(&schema).await
     }
-    
+
     /// Load a schema from a string with specified format
     pub async fn load_string(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
         let schema = self.parser.parse_str(content, format)?;
-        
+
         // Use schema settings if available, otherwise defaults
         let settings = if let Some(schema_settings) = &schema.settings {
             schema_settings.imports.clone().unwrap_or_default()
         } else {
             ImportSettings::default()
         };
-        
+
         // Resolve imports using enhanced resolver
         let import_resolver = ImportResolverV2::with_settings(settings);
         import_resolver.resolve_imports(&schema).await

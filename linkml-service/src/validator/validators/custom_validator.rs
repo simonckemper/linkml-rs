@@ -4,24 +4,19 @@
 //! that can be registered with the validation engine.
 
 use linkml_core::{
+    Value,
     error::{LinkMLError, Result},
     types::SlotDefinition,
-    Value,
 };
 use std::sync::Arc;
 
-use crate::validator::{
-    context::ValidationContext,
-    report::ValidationIssue,
-};
+use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 use super::Validator;
 
 /// Function signature for custom validation logic
 pub type ValidationFunction = Arc<
-    dyn Fn(&Value, &SlotDefinition, &mut ValidationContext) -> Vec<ValidationIssue>
-        + Send
-        + Sync,
+    dyn Fn(&Value, &SlotDefinition, &mut ValidationContext) -> Vec<ValidationIssue> + Send + Sync,
 >;
 
 /// A custom validator that wraps user-provided validation logic
@@ -62,10 +57,7 @@ impl std::fmt::Debug for AppliesTo {
 
 impl CustomValidator {
     /// Create a new custom validator
-    pub fn new(
-        name: impl Into<String>,
-        validation_fn: ValidationFunction,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, validation_fn: ValidationFunction) -> Self {
         Self {
             name: name.into(),
             description: None,
@@ -186,7 +178,8 @@ impl CustomValidatorBuilder {
     ///
     /// Returns an error if the validation function is not set
     pub fn build(self) -> Result<CustomValidator> {
-        let validation_fn = self.validation_fn
+        let validation_fn = self
+            .validation_fn
             .ok_or_else(|| LinkMLError::other("Validation function not set"))?;
 
         Ok(CustomValidator {
@@ -213,12 +206,12 @@ pub mod helpers {
         let format_upper = format.to_uppercase();
         let format_clone = format.clone();
         let name_clone = name_str.clone();
-        
+
         CustomValidatorBuilder::new(name_str)
             .description(format!("Validates {} format", format))
             .validate_with(move |value, _slot, context| {
                 let mut issues = Vec::new();
-                
+
                 match value {
                     Value::String(s) => {
                         if !check_fn(s) {
@@ -244,7 +237,7 @@ pub mod helpers {
                         issues.push(issue);
                     }
                 }
-                
+
                 issues
             })
             .build()
@@ -257,12 +250,12 @@ pub mod helpers {
     ) -> Result<CustomValidator> {
         let name_str = name.into();
         let name_clone = name_str.clone();
-        
+
         CustomValidatorBuilder::new(name_str)
             .description("Validates against a custom set of allowed values")
             .validate_with(move |value, _slot, context| {
                 let mut issues = Vec::new();
-                
+
                 match value {
                     Value::String(s) => {
                         if !allowed_values.contains(s) {
@@ -283,7 +276,7 @@ pub mod helpers {
                         // Only validate strings
                     }
                 }
-                
+
                 issues
             })
             .build()
@@ -292,29 +285,25 @@ pub mod helpers {
     /// Create a cross-field validator
     pub fn cross_field_validator(
         name: impl Into<String>,
-        check_fn: impl Fn(&Value, &SlotDefinition, &ValidationContext) -> Option<String> 
-            + Send 
-            + Sync 
-            + 'static,
+        check_fn: impl Fn(&Value, &SlotDefinition, &ValidationContext) -> Option<String>
+        + Send
+        + Sync
+        + 'static,
     ) -> Result<CustomValidator> {
         let name_str = name.into();
         let name_clone = name_str.clone();
-        
+
         CustomValidatorBuilder::new(name_str)
             .description("Validates relationships between fields")
             .validate_with(move |value, slot, context| {
                 let mut issues = Vec::new();
-                
+
                 if let Some(error_msg) = check_fn(value, slot, context) {
-                    let mut issue = ValidationIssue::error(
-                        error_msg,
-                        context.path(),
-                        &name_clone,
-                    );
+                    let mut issue = ValidationIssue::error(error_msg, context.path(), &name_clone);
                     issue.code = Some("CROSS_FIELD_VIOLATION".to_string());
                     issues.push(issue);
                 }
-                
+
                 issues
             })
             .build()
@@ -332,7 +321,7 @@ mod tests {
             .description("Ensures strings are uppercase")
             .validate_with(|value, _slot, context| {
                 let mut issues = Vec::new();
-                
+
                 if let Value::String(s) = value {
                     if s != &s.to_uppercase() {
                         issues.push(ValidationIssue::error(
@@ -342,7 +331,7 @@ mod tests {
                         ));
                     }
                 }
-                
+
                 issues
             })
             .build()
@@ -369,7 +358,7 @@ mod tests {
             .for_slots(vec!["email".to_string(), "contact_email".to_string()])
             .validate_with(|value, _slot, context| {
                 let mut issues = Vec::new();
-                
+
                 if let Value::String(s) = value {
                     if !s.contains('@') {
                         issues.push(ValidationIssue::error(
@@ -379,7 +368,7 @@ mod tests {
                         ));
                     }
                 }
-                
+
                 issues
             })
             .build()
@@ -402,14 +391,10 @@ mod tests {
 
     #[test]
     fn test_format_validator_helper() {
-        let validator = helpers::format_validator(
-            "phone_validator",
-            "phone number",
-            |s| {
-                // Simple phone validation
-                s.chars().filter(|c| c.is_numeric()).count() >= 10
-            },
-        )
+        let validator = helpers::format_validator("phone_validator", "phone number", |s| {
+            // Simple phone validation
+            s.chars().filter(|c| c.is_numeric()).count() >= 10
+        })
         .expect("should build format validator");
 
         let schema = Arc::new(SchemaDefinition::default());
@@ -456,7 +441,7 @@ mod tests {
             .when(|slot| slot.range.as_deref() == Some("integer"))
             .validate_with(|value, _slot, context| {
                 let mut issues = Vec::new();
-                
+
                 if let Value::Number(n) = value {
                     if n.as_i64().is_none() {
                         issues.push(ValidationIssue::error(
@@ -466,7 +451,7 @@ mod tests {
                         ));
                     }
                 }
-                
+
                 issues
             })
             .build()
@@ -478,8 +463,10 @@ mod tests {
         // Should validate integer slots
         let mut int_slot = SlotDefinition::new("count");
         int_slot.range = Some("integer".to_string());
-        
-        let value = Value::Number(serde_json::Number::from_f64(3.14).expect("should create number from f64"));
+
+        let value = Value::Number(
+            serde_json::Number::from_f64(3.14).expect("should create number from f64"),
+        );
         let issues = validator.validate(&value, &int_slot, &mut context);
         assert_eq!(issues.len(), 1);
 

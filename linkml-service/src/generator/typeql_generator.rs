@@ -1,7 +1,9 @@
 //! `TypeQL` generation implementation for `TypeDB` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorResult, GeneratorError};
+use super::traits::{
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
+};
 use async_trait::async_trait;
 use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
@@ -43,8 +45,7 @@ impl TypeQLGenerator {
 
         // Add documentation if requested
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "# {desc}")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine if this is an entity or relation
@@ -71,40 +72,33 @@ impl TypeQLGenerator {
         let type_name = self.convert_identifier(name);
 
         // Entity definition
-        write!(output, "{type_name} sub entity")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "{type_name} sub entity").map_err(Self::fmt_error_to_generator_error)?;
 
         // Add parent if specified
         if let Some(parent) = &class.is_a {
             let parent_name = self.convert_identifier(parent);
-            write!(output, " sub {parent_name}")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            write!(output, " sub {parent_name}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Add attributes
         let attributes = self.collect_class_attributes(class, schema);
         if attributes.is_empty() {
-            writeln!(output, ";")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, ",")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
 
             for (i, attr) in attributes.iter().enumerate() {
                 write!(output, "{}owns {}", indent.single(), attr)
                     .map_err(Self::fmt_error_to_generator_error)?;
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",")
-                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";")
-                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
 
-        writeln!(output)
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -120,18 +114,15 @@ impl TypeQLGenerator {
         let type_name = self.convert_identifier(name);
 
         // Relation definition
-        write!(output, "{type_name} sub relation")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "{type_name} sub relation").map_err(Self::fmt_error_to_generator_error)?;
 
         // Add parent if specified
         if let Some(parent) = &class.is_a {
             let parent_name = self.convert_identifier(parent);
-            write!(output, " sub {parent_name}")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            write!(output, " sub {parent_name}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, ",")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
 
         // Add roles based on slots
         let roles = self.collect_relation_roles(class, schema)?;
@@ -139,35 +130,29 @@ impl TypeQLGenerator {
             write!(output, "{}relates {}", indent.single(), role)
                 .map_err(Self::fmt_error_to_generator_error)?;
             if i < roles.len() - 1 {
-                writeln!(output, ",")
-                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         // Add attributes
         let attributes = self.collect_class_attributes(class, schema);
         if attributes.is_empty() {
-            writeln!(output, ";")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(output, ",")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             for (i, attr) in attributes.iter().enumerate() {
                 write!(output, "{}owns {}", indent.single(), attr)
                     .map_err(Self::fmt_error_to_generator_error)?;
                 if i < attributes.len() - 1 {
-                    writeln!(output, ",")
-                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(output, ";")
-                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
 
         // Add role players
-        writeln!(output)
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         for (role, types) in roles {
             for player_type in types {
                 writeln!(output, "{player_type} plays {type_name}:{role};")
@@ -175,8 +160,7 @@ impl TypeQLGenerator {
             }
         }
 
-        writeln!(output)
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
 
@@ -220,14 +204,12 @@ impl TypeQLGenerator {
 
         // Add documentation if present
         if let Some(desc) = &slot.description {
-            writeln!(output, "# {desc}")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(output, "{attr_name} sub attribute, value {value_type};")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output)
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -271,10 +253,8 @@ impl TypeQLGenerator {
             self.convert_identifier(slot_name)
         );
 
-        writeln!(output, "rule {rule_name}:")
-            .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "when {{")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "rule {rule_name}:").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x isa {};",
@@ -282,8 +262,7 @@ impl TypeQLGenerator {
             self.convert_identifier(class_name)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "}} then {{")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}} then {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
             "{}$x has {};",
@@ -291,10 +270,8 @@ impl TypeQLGenerator {
             self.convert_identifier(slot_name)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "}};")
-            .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output)
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "}};").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
     }
@@ -423,8 +400,7 @@ impl AsyncGenerator for TypeQLGenerator {
             writeln!(&mut output, "# Description: {desc}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
-        writeln!(&mut output, "\ndefine\n")
-            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "\ndefine\n").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate attributes first
         self.generate_attributes(&mut output, schema, indent)?;
@@ -439,8 +415,7 @@ impl AsyncGenerator for TypeQLGenerator {
 
         // Generate rules if requested
         if options.get_custom("generate_rules") == Some("true") {
-            writeln!(&mut output, "# Rules")
-                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "# Rules").map_err(Self::fmt_error_to_generator_error)?;
             self.generate_rules(&mut output, schema, indent)?;
         }
 
@@ -472,22 +447,24 @@ impl Generator for TypeQLGenerator {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
-        
+
         let options = GeneratorOptions::new();
-        let outputs = runtime.block_on(AsyncGenerator::generate(self, schema, &options))
+        let outputs = runtime
+            .block_on(AsyncGenerator::generate(self, schema, &options))
             .map_err(|e| LinkMLError::service(e.to_string()))?;
-        
+
         // Concatenate all outputs into a single string
-        Ok(outputs.into_iter()
+        Ok(outputs
+            .into_iter()
             .map(|output| output.content)
             .collect::<Vec<_>>()
             .join("\n"))
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "tql"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "generated.tql"
     }
@@ -556,7 +533,8 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await
+        let outputs = AsyncGenerator::generate(&generator, &schema, &options)
+            .await
             .expect("Failed to generate TypeQL");
 
         assert_eq!(outputs.len(), 1);

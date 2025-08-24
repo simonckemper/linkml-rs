@@ -12,7 +12,7 @@ use serde_json::json;
 #[test]
 fn test_typedb_integration_pattern() {
     println!("TypeDB Integration Pattern:");
-    
+
     // Example schema for TypeDB
     let _schema = r#"
 classes:
@@ -45,19 +45,19 @@ slots:
     range: Person
     multivalued: true
 "#;
-    
+
     println!("1. Load LinkML schema");
     println!("2. Generate TypeQL using LinkML service");
     println!("3. Define in TypeDB");
     println!("4. Validate data before insertion");
-    
+
     // Example data to validate
     let _person = json!({
         "person_id": "P001",
         "name": "Alice",
         "friends": [{"person_id": "P002"}]
     });
-    
+
     println!("\nValidation pattern:");
     println!("- Validate against LinkML schema");
     println!("- If valid, insert into TypeDB");
@@ -67,7 +67,7 @@ slots:
 #[test]
 fn test_graphql_integration_pattern() {
     println!("\nGraphQL Integration Pattern:");
-    
+
     // Example schema
     let _schema = r#"
 classes:
@@ -86,18 +86,18 @@ classes:
       - content
       - author
 "#;
-    
+
     println!("1. Load LinkML schema");
     println!("2. Generate GraphQL schema");
     println!("3. Register with GraphQL service");
     println!("4. Validate mutations before execution");
-    
+
     // Example mutation data
     let _new_user = json!({
         "username": "alice123",
         "email": "alice@example.com"
     });
-    
+
     println!("\nValidation flow:");
     println!("- Receive GraphQL mutation");
     println!("- Validate input against LinkML schema");
@@ -105,10 +105,10 @@ classes:
     println!("- Return errors if invalid");
 }
 
-#[test] 
+#[test]
 fn test_parse_service_integration_pattern() {
     println!("\nParse Service Integration Pattern:");
-    
+
     // Schema for parsing
     let _schema = r#"
 classes:
@@ -131,17 +131,17 @@ slots:
     unit:
       symbol: "°C"
 "#;
-    
+
     // CSV data to parse
     let _csv_data = r#"device_id,timestamp,temperature,humidity
 SENSOR-0001,2024-01-20T10:00:00Z,22.5,65.3
 SENSOR-0002,2024-01-20T10:00:00Z,23.1,62.8"#;
-    
+
     println!("1. Define LinkML schema with constraints");
     println!("2. Parse CSV data");
     println!("3. Validate each row against schema");
     println!("4. Handle validation errors");
-    
+
     println!("\nBenefits:");
     println!("- Ensure data quality at ingestion");
     println!("- Catch errors early");
@@ -151,7 +151,7 @@ SENSOR-0002,2024-01-20T10:00:00Z,23.1,62.8"#;
 #[test]
 fn test_lakehouse_integration_pattern() {
     println!("\nLakehouse Integration Pattern:");
-    
+
     // Schema for data lake
     let _schema = r#"
 classes:
@@ -182,12 +182,12 @@ enums:
       - completed
       - failed
 "#;
-    
+
     println!("1. Define LinkML schema for data model");
     println!("2. Create lakehouse tables from schema");
     println!("3. Validate data before insertion");
     println!("4. Maintain data quality in lake");
-    
+
     // Example transaction
     let _transaction = json!({
         "transaction_id": "TXN-1234567890",
@@ -196,7 +196,7 @@ enums:
         "timestamp": "2024-01-20T10:30:00Z",
         "status": "completed"
     });
-    
+
     println!("\nData flow:");
     println!("- Receive transaction data");
     println!("- Validate against LinkML schema");
@@ -207,13 +207,13 @@ enums:
 #[test]
 fn test_multi_service_workflow() {
     println!("\nMulti-Service Workflow Pattern:");
-    
+
     println!("1. Parse Service reads CSV data");
     println!("2. LinkML validates each record");
     println!("3. Valid records sent to Lakehouse");
     println!("4. TypeDB updated with relationships");
     println!("5. GraphQL API exposes validated data");
-    
+
     println!("\nCentral role of LinkML:");
     println!("- Single source of truth for data models");
     println!("- Consistent validation across services");
@@ -224,8 +224,9 @@ fn test_multi_service_workflow() {
 /// Demonstrates the production test pattern
 fn _production_test_pattern() {
     println!("\nProduction Test Pattern:");
-    
-    println!(r#"
+
+    println!(
+        r#"
 #[tokio::test]
 async fn test_real_integration() {{
     // 1. Initialize all services using proper test patterns
@@ -252,5 +253,6 @@ async fn test_real_integration() {{
         typedb.insert(data).await.unwrap();
     }}
 }}
-"#);
+"#
+    );
 }

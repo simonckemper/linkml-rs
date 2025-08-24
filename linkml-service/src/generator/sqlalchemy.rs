@@ -4,10 +4,13 @@
 //! enabling database persistence with full ORM capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::error::LinkMLError;
-use linkml_core::types::{ClassDefinition, SlotDefinition, SchemaDefinition, EnumDefinition, TypeDefinition, PermissibleValue};
-use std::collections::HashSet;
 use indexmap::IndexMap;
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{
+    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    TypeDefinition,
+};
+use std::collections::HashSet;
 
 /// SQLAlchemy generator configuration
 #[derive(Debug, Clone)]
@@ -61,7 +64,7 @@ impl SQLAlchemyGenerator {
     pub fn new(config: SQLAlchemyGeneratorConfig) -> Self {
         Self { config }
     }
-    
+
     /// Generate imports section
     fn generate_imports(&self) -> String {
         let mut imports = vec![
@@ -70,31 +73,34 @@ impl SQLAlchemyGenerator {
             "from typing import Optional, List, Dict, Any, Union".to_string(),
             "from enum import Enum".to_string(),
         ];
-        
+
         // SQLAlchemy imports based on version
         if self.config.sqlalchemy_version.starts_with("2.") {
             imports.push("from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Date, Text, JSON, ForeignKey, Table, UniqueConstraint, Index, CheckConstraint".to_string());
-            imports.push("from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped".to_string());
+            imports.push(
+                "from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped"
+                    .to_string(),
+            );
             imports.push("from sqlalchemy.ext.hybrid import hybrid_property".to_string());
         } else {
             imports.push("from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Date, Text, JSON, ForeignKey, Table".to_string());
             imports.push("from sqlalchemy.ext.declarative import declarative_base".to_string());
             imports.push("from sqlalchemy.orm import relationship".to_string());
         }
-        
+
         if self.config.alembic_support {
             imports.push("from alembic import op".to_string());
             imports.push("import sqlalchemy as sa".to_string());
         }
-        
+
         imports.join("\n")
     }
-    
+
     /// Generate base class declaration
     fn generate_base(&self) -> String {
         format!("{} = declarative_base()", self.config.base_class)
     }
-    
+
     /// Map LinkML type to SQLAlchemy column type
     fn map_type_to_column(&self, type_name: &str, type_def: Option<&TypeDefinition>) -> String {
         // Check if we have a type definition with a base
@@ -103,7 +109,7 @@ impl SQLAlchemyGenerator {
                 return self.map_type_to_column(base, None);
             }
         }
-        
+
         // Map based on type name
         match type_name {
             "string" | "str" => "String",
@@ -116,18 +122,21 @@ impl SQLAlchemyGenerator {
             "uri" | "uriorcurie" | "curie" => "String(512)",
             "ncname" => "String(255)",
             _ => "String",
-        }.to_string()
+        }
+        .to_string()
     }
-    
+
     /// Generate enum class
     fn generate_enum(&self, name: &str, enum_def: &EnumDefinition) -> String {
         let mut lines = vec![];
-        
+
         // Generate Python enum
         lines.push(format!("class {}(str, Enum):", name));
-        lines.push(format!("    \"\"\"{}\"\"\"", 
-            enum_def.description.as_deref().unwrap_or("An enumeration")));
-        
+        lines.push(format!(
+            "    \"\"\"{}\"\"\"",
+            enum_def.description.as_deref().unwrap_or("An enumeration")
+        ));
+
         if !enum_def.permissible_values.is_empty() {
             for value in &enum_def.permissible_values {
                 let value_name = match value {
@@ -135,26 +144,36 @@ impl SQLAlchemyGenerator {
                     PermissibleValue::Complex { text, .. } => text,
                 };
                 let safe_name = self.to_python_name(value_name);
-                lines.push(format!("    {} = \"{}\"", safe_name.to_uppercase(), value_name));
+                lines.push(format!(
+                    "    {} = \"{}\"",
+                    safe_name.to_uppercase(),
+                    value_name
+                ));
             }
         }
-        
+
         if enum_def.permissible_values.is_empty() {
             lines.push("    pass".to_string());
         }
-        
+
         lines.join("\n")
     }
-    
+
     /// Generate association table for many-to-many relationships
-    fn generate_association_table(&self, class_name: &str, slot_name: &str, target_class: &str) -> String {
-        let table_name = format!("{}{}_{}_{}", 
+    fn generate_association_table(
+        &self,
+        class_name: &str,
+        slot_name: &str,
+        target_class: &str,
+    ) -> String {
+        let table_name = format!(
+            "{}{}_{}_{}",
             self.config.table_prefix,
             self.to_snake_case(class_name),
             self.to_snake_case(slot_name),
             self.to_snake_case(target_class)
         );
-        
+
         format!(
             "{}_association = Table(\n    '{}',\n    {}.metadata,\n    Column('{}_id', Integer, ForeignKey('{}{}.id'), primary_key=True),\n    Column('{}_id', Integer, ForeignKey('{}{}.id'), primary_key=True)\n)",
             self.to_snake_case(slot_name),
@@ -168,34 +187,39 @@ impl SQLAlchemyGenerator {
             self.to_snake_case(target_class)
         )
     }
-    
+
     /// Generate model class
-    fn generate_class(&self, name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> String {
+    fn generate_class(
+        &self,
+        name: &str,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> String {
         let mut lines = vec![];
         let table_name = format!("{}{}", self.config.table_prefix, self.to_snake_case(name));
-        
+
         // Class declaration
         let parent = if let Some(is_a) = &class_def.is_a {
             self.to_class_name(is_a)
         } else {
             self.config.base_class.clone()
         };
-        
+
         lines.push(format!("class {}({}):", name, parent));
-        
+
         // Docstring
         if let Some(desc) = &class_def.description {
             lines.push(format!("    \"\"\"{}\"\"\"", desc));
         }
-        
+
         // Table name
         if class_def.is_a.is_none() {
             lines.push(format!("    __tablename__ = '{}'", table_name));
         }
-        
+
         // Generate columns for slots
         let mut has_content = false;
-        
+
         // Add primary key if this is a root class
         if class_def.is_a.is_none() {
             lines.push("    ".to_string());
@@ -206,7 +230,7 @@ impl SQLAlchemyGenerator {
             }
             has_content = true;
         }
-        
+
         // Process slots
         if !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
@@ -222,7 +246,7 @@ impl SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         // Process attributes
         if !class_def.attributes.is_empty() {
             for (attr_name, attr_def) in &class_def.attributes {
@@ -236,7 +260,7 @@ impl SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         // Generate relationships
         if self.config.generate_relationships {
             let relationships = self.generate_relationships(class_def, schema);
@@ -248,7 +272,7 @@ impl SQLAlchemyGenerator {
                 has_content = true;
             }
         }
-        
+
         // Generate constraints
         if self.config.generate_constraints {
             let constraints = self.generate_constraints(name, class_def, schema);
@@ -262,19 +286,24 @@ impl SQLAlchemyGenerator {
                 has_content = true;
             }
         }
-        
+
         if !has_content {
             lines.push("    pass".to_string());
         }
-        
+
         lines.join("\n")
     }
-    
+
     /// Generate column definition
-    fn generate_column(&self, name: &str, slot: &SlotDefinition, schema: &SchemaDefinition) -> String {
+    fn generate_column(
+        &self,
+        name: &str,
+        slot: &SlotDefinition,
+        schema: &SchemaDefinition,
+    ) -> String {
         let column_name = self.to_snake_case(name);
         let mut column_args = vec![];
-        
+
         // Determine column type
         let column_type = if let Some(range) = &slot.range {
             // Check if it's an enum
@@ -291,20 +320,20 @@ impl SQLAlchemyGenerator {
         } else {
             "String".to_string()
         };
-        
+
         // Add column arguments
         if let Some(desc) = &slot.description {
             column_args.push(format!("comment='{}'", desc.replace("'", "\\'")));
         }
-        
+
         if slot.required == Some(true) {
             column_args.push("nullable=False".to_string());
         }
-        
+
         if slot.identifier == Some(true) {
             column_args.push("unique=True".to_string());
         }
-        
+
         // Generate column definition
         if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
             let type_annotation = self.get_type_annotation(slot, schema);
@@ -313,7 +342,10 @@ impl SQLAlchemyGenerator {
             } else {
                 format!(", {}", column_args.join(", "))
             };
-            format!("{}: Mapped[{}] = mapped_column({}{})", column_name, type_annotation, column_type, args)
+            format!(
+                "{}: Mapped[{}] = mapped_column({}{})",
+                column_name, type_annotation, column_type, args
+            )
         } else {
             let args = if column_args.is_empty() {
                 String::new()
@@ -323,27 +355,48 @@ impl SQLAlchemyGenerator {
             format!("{} = Column({}{})", column_name, column_type, args)
         }
     }
-    
+
     /// Generate foreign key column
-    fn generate_foreign_key_column(&self, name: &str, slot: &SlotDefinition, target_class: &str) -> String {
+    fn generate_foreign_key_column(
+        &self,
+        name: &str,
+        slot: &SlotDefinition,
+        target_class: &str,
+    ) -> String {
         let column_name = format!("{}_id", self.to_snake_case(name));
-        let target_table = format!("{}{}", self.config.table_prefix, self.to_snake_case(target_class));
-        
-        let nullable = if slot.required == Some(true) { "False" } else { "True" };
-        
-        if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
-            format!("{}: Mapped[Optional[int]] = mapped_column(ForeignKey('{}.id'), nullable={})",
-                column_name, target_table, nullable)
+        let target_table = format!(
+            "{}{}",
+            self.config.table_prefix,
+            self.to_snake_case(target_class)
+        );
+
+        let nullable = if slot.required == Some(true) {
+            "False"
         } else {
-            format!("{} = Column(Integer, ForeignKey('{}.id'), nullable={})",
-                column_name, target_table, nullable)
+            "True"
+        };
+
+        if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
+            format!(
+                "{}: Mapped[Optional[int]] = mapped_column(ForeignKey('{}.id'), nullable={})",
+                column_name, target_table, nullable
+            )
+        } else {
+            format!(
+                "{} = Column(Integer, ForeignKey('{}.id'), nullable={})",
+                column_name, target_table, nullable
+            )
         }
     }
-    
+
     /// Generate relationships
-    fn generate_relationships(&self, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn generate_relationships(
+        &self,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> Vec<String> {
         let mut relationships = vec![];
-        
+
         if !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
@@ -356,40 +409,62 @@ impl SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         relationships
     }
-    
+
     /// Generate a single relationship
-    fn generate_relationship(&self, name: &str, slot: &SlotDefinition, target_class: &str) -> String {
+    fn generate_relationship(
+        &self,
+        name: &str,
+        slot: &SlotDefinition,
+        target_class: &str,
+    ) -> String {
         let relationship_name = self.to_snake_case(name);
-        
-        let back_populates = format!("{}_{}_inverse", 
+
+        let back_populates = format!(
+            "{}_{}_inverse",
             self.to_snake_case(&self.config.base_class),
             self.to_snake_case(name)
         );
-        
+
         if slot.multivalued == Some(true) {
-            if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
-                format!("{}: Mapped[List['{}']] = relationship(back_populates='{}')",
-                    relationship_name, target_class, back_populates)
+            if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations
+            {
+                format!(
+                    "{}: Mapped[List['{}']] = relationship(back_populates='{}')",
+                    relationship_name, target_class, back_populates
+                )
             } else {
-                format!("{} = relationship('{}', back_populates='{}')",
-                    relationship_name, target_class, back_populates)
+                format!(
+                    "{} = relationship('{}', back_populates='{}')",
+                    relationship_name, target_class, back_populates
+                )
             }
-        } else if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
-            format!("{}: Mapped[Optional['{}']] = relationship(back_populates='{}')",
-                relationship_name, target_class, back_populates)
+        } else if self.config.sqlalchemy_version.starts_with("2.")
+            && self.config.use_type_annotations
+        {
+            format!(
+                "{}: Mapped[Optional['{}']] = relationship(back_populates='{}')",
+                relationship_name, target_class, back_populates
+            )
         } else {
-            format!("{} = relationship('{}', back_populates='{}')",
-                relationship_name, target_class, back_populates)
+            format!(
+                "{} = relationship('{}', back_populates='{}')",
+                relationship_name, target_class, back_populates
+            )
         }
     }
-    
+
     /// Generate table constraints
-    fn generate_constraints(&self, class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn generate_constraints(
+        &self,
+        class_name: &str,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> Vec<String> {
         let mut constraints = vec![];
-        
+
         // Unique constraints
         let unique_together: Vec<String> = vec![];
         if !class_def.slots.is_empty() {
@@ -404,15 +479,16 @@ impl SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         if !unique_together.is_empty() {
-            let columns = unique_together.iter()
+            let columns = unique_together
+                .iter()
                 .map(|k| format!("'{}'", self.to_snake_case(k)))
                 .collect::<Vec<_>>()
                 .join(", ");
             constraints.push(format!("UniqueConstraint({})", columns));
         }
-        
+
         // Index generation
         if self.config.generate_indexes && !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
@@ -421,16 +497,19 @@ impl SQLAlchemyGenerator {
                     // if slot_def.indexed == Some(true) {
                     if false {
                         let column_name = self.to_snake_case(slot_name);
-                        constraints.push(format!("Index('idx_{}_{}')", 
-                            self.to_snake_case(class_name), column_name));
+                        constraints.push(format!(
+                            "Index('idx_{}_{}')",
+                            self.to_snake_case(class_name),
+                            column_name
+                        ));
                     }
                 }
             }
         }
-        
+
         constraints
     }
-    
+
     /// Get type annotation for SQLAlchemy 2.0
     fn get_type_annotation(&self, slot: &SlotDefinition, _schema: &SchemaDefinition) -> String {
         let base_type = if let Some(range) = &slot.range {
@@ -446,14 +525,14 @@ impl SQLAlchemyGenerator {
         } else {
             "str"
         };
-        
+
         if slot.required == Some(true) {
             base_type.to_string()
         } else {
             format!("Optional[{}]", base_type)
         }
     }
-    
+
     /// Convert to Python class name
     fn to_class_name(&self, name: &str) -> String {
         name.split('_')
@@ -466,7 +545,7 @@ impl SQLAlchemyGenerator {
             })
             .collect()
     }
-    
+
     /// Convert to Python variable name
     fn to_python_name(&self, name: &str) -> String {
         // Handle reserved words
@@ -477,22 +556,27 @@ impl SQLAlchemyGenerator {
             "from" => "from_",
             "return" => "return_",
             _ => name,
-        }.to_string()
+        }
+        .to_string()
     }
-    
+
     /// Convert to snake_case
     fn to_snake_case(&self, name: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
-        
+
         for (i, ch) in name.chars().enumerate() {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().expect("lowercase char should exist"));
+            result.push(
+                ch.to_lowercase()
+                    .next()
+                    .expect("lowercase char should exist"),
+            );
             prev_upper = ch.is_uppercase();
         }
-        
+
         result
     }
 }
@@ -500,7 +584,7 @@ impl SQLAlchemyGenerator {
 impl Generator for SQLAlchemyGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = vec![];
-        
+
         // File header
         output.push("\"\"\"".to_string());
         output.push("SQLAlchemy ORM models generated from LinkML schema".to_string());
@@ -509,15 +593,15 @@ impl Generator for SQLAlchemyGenerator {
         }
         output.push("\"\"\"".to_string());
         output.push(String::new());
-        
+
         // Imports
         output.push(self.generate_imports());
         output.push(String::new());
-        
+
         // Base declaration
         output.push(self.generate_base());
         output.push(String::new());
-        
+
         // Generate enums
         if !schema.enums.is_empty() {
             for (name, enum_def) in &schema.enums {
@@ -525,7 +609,7 @@ impl Generator for SQLAlchemyGenerator {
                 output.push(String::new());
             }
         }
-        
+
         // Generate association tables for many-to-many relationships
         let mut association_tables = HashSet::new();
         if !schema.classes.is_empty() {
@@ -536,10 +620,13 @@ impl Generator for SQLAlchemyGenerator {
                             if slot_def.multivalued == Some(true) {
                                 if let Some(range) = &slot_def.range {
                                     if schema.classes.contains_key(range) {
-                                        let table_key = format!("{}-{}-{}", class_name, slot_name, range);
+                                        let table_key =
+                                            format!("{}-{}-{}", class_name, slot_name, range);
                                         if !association_tables.contains(&table_key) {
                                             association_tables.insert(table_key);
-                                            output.push(self.generate_association_table(class_name, slot_name, range));
+                                            output.push(self.generate_association_table(
+                                                class_name, slot_name, range,
+                                            ));
                                             output.push(String::new());
                                         }
                                     }
@@ -550,7 +637,7 @@ impl Generator for SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         // Generate classes in dependency order
         if !schema.classes.is_empty() {
             let ordered_classes = self.order_classes_by_dependency(&schema.classes);
@@ -561,19 +648,19 @@ impl Generator for SQLAlchemyGenerator {
                 }
             }
         }
-        
+
         // Generate Alembic migration support if requested
         if self.config.alembic_support {
             output.push(self.generate_alembic_support());
         }
-        
+
         Ok(output.join("\n"))
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "py"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "models"
     }
@@ -581,10 +668,13 @@ impl Generator for SQLAlchemyGenerator {
 
 impl SQLAlchemyGenerator {
     /// Order classes by dependency (parent classes first)
-    fn order_classes_by_dependency(&self, classes: &IndexMap<String, ClassDefinition>) -> Vec<String> {
+    fn order_classes_by_dependency(
+        &self,
+        classes: &IndexMap<String, ClassDefinition>,
+    ) -> Vec<String> {
         let mut ordered = vec![];
         let mut visited = HashSet::new();
-        
+
         fn visit(
             name: &str,
             classes: &IndexMap<String, ClassDefinition>,
@@ -594,39 +684,45 @@ impl SQLAlchemyGenerator {
             if visited.contains(name) {
                 return;
             }
-            
+
             visited.insert(name.to_string());
-            
+
             if let Some(class_def) = classes.get(name) {
                 // Visit parent first
                 if let Some(parent) = &class_def.is_a {
                     visit(parent, classes, visited, ordered);
                 }
             }
-            
+
             ordered.push(name.to_string());
         }
-        
+
         for name in classes.keys() {
             visit(name, classes, &mut visited, &mut ordered);
         }
-        
+
         ordered
     }
-    
+
     /// Generate Alembic migration support
     fn generate_alembic_support(&self) -> String {
         let mut lines = vec![];
-        
+
         lines.push("# Alembic migration support".to_string());
         lines.push("def upgrade():".to_string());
         lines.push("    \"\"\"Create all tables\"\"\"".to_string());
-        lines.push(format!("    {}.metadata.create_all()", self.config.base_class));
+        lines.push(format!(
+            "    {}.metadata.create_all()",
+            self.config.base_class
+        ));
         lines.push(String::new());
         lines.push("def downgrade():".to_string());
         lines.push("    \"\"\"Drop all tables\"\"\"".to_string());
-        lines.push(format!("    {}.metadata.drop_all()", self.config.base_class));
-        
+        lines.push(format!(
+            "    {}.metadata.drop_all()",
+            self.config.base_class
+        ));
+
         lines.join("\n")
     }
 }
@@ -635,41 +731,43 @@ impl SQLAlchemyGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SchemaDefinition;
-    
+
     #[test]
     fn test_sqlalchemy_generation() {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
-        
+
         // Add a simple class
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
         person_class.slots = vec!["name".to_string(), "age".to_string()];
-        
+
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
         schema.classes = classes;
-        
+
         // Add slots
         let mut name_slot = SlotDefinition::default();
         name_slot.description = Some("The person's name".to_string());
         name_slot.range = Some("string".to_string());
         name_slot.required = Some(true);
-        
+
         let mut age_slot = SlotDefinition::default();
         age_slot.description = Some("The person's age".to_string());
         age_slot.range = Some("integer".to_string());
-        
+
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);
         slots.insert("age".to_string(), age_slot);
         schema.slots = slots;
-        
+
         let config = SQLAlchemyGeneratorConfig::default();
         let generator = SQLAlchemyGenerator::new(config);
-        
-        let result = generator.generate(&schema).expect("should generate SQLAlchemy models");
-        
+
+        let result = generator
+            .generate(&schema)
+            .expect("should generate SQLAlchemy models");
+
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));
         assert!(result.contains("Base = declarative_base()"));

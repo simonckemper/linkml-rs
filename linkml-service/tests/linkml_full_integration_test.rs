@@ -4,26 +4,28 @@
 //! in real-world scenarios, including complex schemas, validation, code generation,
 //! expression language, rules engine, and performance characteristics.
 
+use linkml_core::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_service::{
     SchemaView,
+    expression::{EvaluationContext, Evaluator, Parser as ExpressionParser},
     generator::{
-        PythonDataclassGenerator, PydanticGenerator, TypeScriptGenerator, 
-        JavaScriptGenerator, RustGenerator, JavaGenerator, ProtobufGenerator,
-        JsonSchemaGenerator, ShaclGenerator, OwlRdfGenerator, JsonLdGenerator,
-        Generator, GeneratorOptions, IndentStyle, LineEnding
+        Generator, GeneratorOptions, IndentStyle, JavaGenerator, JavaScriptGenerator,
+        JsonLdGenerator, JsonSchemaGenerator, LineEnding, OwlRdfGenerator, ProtobufGenerator,
+        PydanticGenerator, PythonDataclassGenerator, RustGenerator, ShaclGenerator,
+        TypeScriptGenerator,
+    },
+    parser::YamlParser,
+    rule_engine::{ExecutionStrategy, RuleEngine},
+    transform::{
+        ConflictResolution, InheritanceResolver, MergeOptions, MergeStrategy, SchemaMerger,
     },
     validator::{ValidationEngine, ValidationOptions, ValidationReport},
-    parser::YamlParser,
-    expression::{Parser as ExpressionParser, Evaluator, EvaluationContext},
-    rule_engine::{RuleEngine, ExecutionStrategy},
-    transform::{InheritanceResolver, SchemaMerger, MergeOptions, MergeStrategy, ConflictResolution},
 };
-use linkml_core::{SchemaDefinition, ClassDefinition, SlotDefinition};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
+use std::collections::HashMap;
+use std::fs;
 use std::time::Instant;
 use tempfile::TempDir;
-use std::fs;
-use std::collections::HashMap;
 
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -372,14 +374,14 @@ classes:
 #[tokio::test]
 async fn test_biomedical_research_workflow() {
     println!("=== Testing Biomedical Research Workflow ===");
-    
+
     let start = Instant::now();
-    
+
     // Load the complex biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse(BIOMEDICAL_SCHEMA).unwrap();
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
     println!("Schema loaded in {:?}", start.elapsed());
-    
+
     // Create test data representing a research study
     let study_data = json!({
         "id": "STU000001",
@@ -446,7 +448,7 @@ async fn test_biomedical_research_workflow() {
             }
         ]
     });
-    
+
     // Add more participants to meet minimum requirement
     let mut participants = study_data["participants"].as_array().unwrap().clone();
     for i in 3..=10 {
@@ -459,33 +461,37 @@ async fn test_biomedical_research_workflow() {
             "medical_history": []
         }));
     }
-    
+
     let mut complete_study = study_data.as_object().unwrap().clone();
     complete_study["participants"] = json!(participants);
-    
+
     // Validate the complete research study
     println!("\nValidating research study data...");
     let validation_start = Instant::now();
     let engine = ValidationEngine::new(schema.clone());
     let options = ValidationOptions::default();
-    let report = engine.validate(&json!(complete_study), "ResearchStudy", &options).unwrap();
+    let report = engine
+        .validate(&json!(complete_study), "ResearchStudy", &options)
+        .unwrap();
     println!("Validation completed in {:?}", validation_start.elapsed());
-    
+
     assert!(report.valid, "Study validation failed: {:?}", report.errors);
     println!("✓ Research study validation passed");
-    
+
     // Test expression evaluation for lab results
     println!("\nEvaluating expressions for lab results...");
     let lab_result = &complete_study["lab_results"][0];
     let expr_parser = ExpressionParser::new();
-    let expr_ast = expr_parser.parse("value < 50 ? \"Low\" : value > 100 ? \"High\" : \"Normal\"").unwrap();
+    let expr_ast = expr_parser
+        .parse_str("value < 50 ? \"Low\" : value > 100 ? \"High\" : \"Normal\"")
+        .unwrap();
     let evaluator = Evaluator::new();
     let mut context = EvaluationContext::new();
     context.set_variable("value", lab_result["value"].clone());
     let expr_result = evaluator.evaluate(&expr_ast, &context).unwrap();
     println!("Lab result category: {}", expr_result);
     assert_eq!(expr_result.as_str().unwrap(), "High");
-    
+
     // Test rule validation for minors requiring medical history
     println!("\nTesting rule validation for minors...");
     let minor_without_history = json!({
@@ -496,15 +502,20 @@ async fn test_biomedical_research_workflow() {
         "gender": "male",
         "medical_history": []  // Should fail - minors need medical history
     });
-    
-    let minor_report = engine.validate(&minor_without_history, "Patient", &options).unwrap();
-    assert!(!minor_report.valid, "Minor without medical history should fail validation");
+
+    let minor_report = engine
+        .validate(&minor_without_history, "Patient", &options)
+        .unwrap();
+    assert!(
+        !minor_report.valid,
+        "Minor without medical history should fail validation"
+    );
     println!("✓ Rule validation correctly enforced");
-    
+
     // Generate code for multiple languages
     println!("\nGenerating code for biomedical schema...");
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Python dataclass generation
     let py_generator = PythonDataclassGenerator::new();
     let py_options = GeneratorOptions::default();
@@ -515,28 +526,31 @@ async fn test_biomedical_research_workflow() {
         assert!(path.exists());
     }
     println!("✓ Python dataclass generated");
-    
+
     // TypeScript generation
     let ts_generator = TypeScriptGenerator::new();
-    let ts_outputs = ts_generator.generate(&schema, &GeneratorOptions::default()).await.unwrap();
+    let ts_outputs = ts_generator
+        .generate(&schema, &GeneratorOptions::default())
+        .await
+        .unwrap();
     for output in ts_outputs {
         let path = temp_dir.path().join(&output.filename);
         fs::write(&path, &output.content).unwrap();
         assert!(path.exists());
     }
     println!("✓ TypeScript interfaces generated");
-    
+
     println!("\nBiomedical workflow completed in {:?}", start.elapsed());
 }
 
 #[tokio::test]
 async fn test_multi_tenant_config_validation() {
     println!("=== Testing Multi-Tenant Configuration Workflow ===");
-    
+
     // Load configuration schema
     let parser = YamlParser::new();
-    let schema = parser.parse(CONFIG_SCHEMA).unwrap();
-    
+    let schema = parser.parse_str(CONFIG_SCHEMA).unwrap();
+
     // Test valid tenant configuration
     let valid_tenant = json!({
         "tenant_id": "acme-corp",
@@ -569,13 +583,19 @@ async fn test_multi_tenant_config_validation() {
             "burst_size": 100
         }
     });
-    
+
     let engine = ValidationEngine::new(schema.clone());
     let options = ValidationOptions::default();
-    let report = engine.validate(&valid_tenant, "TenantConfig", &options).unwrap();
-    assert!(report.valid, "Valid tenant config failed: {:?}", report.errors);
+    let report = engine
+        .validate(&valid_tenant, "TenantConfig", &options)
+        .unwrap();
+    assert!(
+        report.valid,
+        "Valid tenant config failed: {:?}",
+        report.errors
+    );
     println!("✓ Valid tenant configuration passed");
-    
+
     // Test rule violation - advanced analytics without sufficient rate limits
     let invalid_tenant = json!({
         "tenant_id": "small-startup",
@@ -590,36 +610,47 @@ async fn test_multi_tenant_config_validation() {
             "burst_size": 20
         }
     });
-    
-    let invalid_report = engine.validate(&invalid_tenant, "TenantConfig", &options).unwrap();
-    assert!(!invalid_report.valid, "Should fail - advanced analytics needs higher rate limits");
+
+    let invalid_report = engine
+        .validate(&invalid_tenant, "TenantConfig", &options)
+        .unwrap();
+    assert!(
+        !invalid_report.valid,
+        "Should fail - advanced analytics needs higher rate limits"
+    );
     println!("✓ Rule validation correctly enforced rate limits");
 }
 
 #[tokio::test]
 async fn test_schema_view_introspection() {
     println!("=== Testing SchemaView Introspection ===");
-    
+
     // Load biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse(BIOMEDICAL_SCHEMA).unwrap();
-    
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
+
     // Create SchemaView for introspection
     let view = SchemaView::new(schema.clone());
-    
+
     // Test class hierarchy
     let patient_ancestors = view.class_ancestors("Patient");
     assert!(patient_ancestors.contains(&"NamedEntity".to_string()));
-    println!("✓ Class hierarchy: Patient inherits from {:?}", patient_ancestors);
-    
+    println!(
+        "✓ Class hierarchy: Patient inherits from {:?}",
+        patient_ancestors
+    );
+
     // Test slot inheritance
     let patient_slots = view.induced_slots("Patient");
     assert!(patient_slots.is_some());
     let slots = patient_slots.unwrap();
     assert!(slots.iter().any(|s| s.name == "id")); // Inherited from NamedEntity
     assert!(slots.iter().any(|s| s.name == "age")); // Direct slot
-    println!("✓ Slot inheritance: Patient has {} total slots", slots.len());
-    
+    println!(
+        "✓ Slot inheritance: Patient has {} total slots",
+        slots.len()
+    );
+
     // Test schema statistics
     let stats = view.schema_statistics();
     println!("\nSchema statistics:");
@@ -634,7 +665,7 @@ async fn test_schema_view_introspection() {
 #[tokio::test]
 async fn test_multi_schema_merge_validation() {
     println!("=== Testing Multi-Schema Merge and Validation ===");
-    
+
     // Create a base schema
     let base_schema_str = r#"
 id: https://example.org/base
@@ -652,7 +683,7 @@ classes:
         range: datetime
         required: true
 "#;
-    
+
     // Create an extension schema
     let extension_schema_str = r#"
 id: https://example.org/extension
@@ -671,11 +702,11 @@ classes:
         range: string
         required: true
 "#;
-    
+
     let parser = YamlParser::new();
-    let base_schema = parser.parse(base_schema_str).unwrap();
-    let ext_schema = parser.parse(extension_schema_str).unwrap();
-    
+    let base_schema = parser.parse_str(base_schema_str).unwrap();
+    let ext_schema = parser.parse_str(extension_schema_str).unwrap();
+
     // Merge schemas
     let merger = SchemaMerger::new();
     let merge_options = MergeOptions {
@@ -683,26 +714,32 @@ classes:
         conflict_resolution: ConflictResolution::UseOverlay,
         merge_imports: true,
     };
-    let merged = merger.merge_with_options(base_schema, ext_schema, &merge_options).unwrap();
-    
+    let merged = merger
+        .merge_with_options(base_schema, ext_schema, &merge_options)
+        .unwrap();
+
     // Validate data against merged schema
     let data = json!({
         "id": "ext_001",
         "created": "2025-01-16T10:00:00Z",
         "extra_field": "Extended data"
     });
-    
+
     let engine = ValidationEngine::new(merged);
     let options = ValidationOptions::default();
     let report = engine.validate(&data, "ExtendedEntity", &options).unwrap();
-    assert!(report.valid, "Merged schema validation failed: {:?}", report.errors);
+    assert!(
+        report.valid,
+        "Merged schema validation failed: {:?}",
+        report.errors
+    );
     println!("✓ Multi-schema merge and validation successful");
 }
 
 #[tokio::test]
 async fn test_performance_large_dataset() {
     println!("=== Testing Performance with Large Dataset ===");
-    
+
     // Create simple schema for performance testing
     let schema_str = r#"
 id: https://example.org/perf
@@ -725,16 +762,16 @@ classes:
         minimum_value: 0
         maximum_value: 150
 "#;
-    
+
     let parser = YamlParser::new();
-    let schema = parser.parse(schema_str).unwrap();
+    let schema = parser.parse_str(schema_str).unwrap();
     let engine = ValidationEngine::new(schema);
     let options = ValidationOptions::default();
-    
+
     // Generate large dataset
     let num_records = 1000;
     let mut users = Vec::new();
-    
+
     for i in 0..num_records {
         users.push(json!({
             "id": format!("usr_{:05}", i),
@@ -743,43 +780,52 @@ classes:
             "age": 25 + (i % 50)
         }));
     }
-    
+
     // Measure validation performance
     let start = Instant::now();
     let mut valid_count = 0;
-    
+
     for user in &users {
         let report = engine.validate(user, "User", &options).unwrap();
         if report.valid {
             valid_count += 1;
         }
     }
-    
+
     let elapsed = start.elapsed();
     let per_record = elapsed / num_records as u32;
-    
+
     println!("Performance results:");
     println!("  - Total records: {}", num_records);
     println!("  - Valid records: {}", valid_count);
     println!("  - Total time: {:?}", elapsed);
     println!("  - Per record: {:?}", per_record);
-    println!("  - Records/second: {:.0}", num_records as f64 / elapsed.as_secs_f64());
-    
+    println!(
+        "  - Records/second: {:.0}",
+        num_records as f64 / elapsed.as_secs_f64()
+    );
+
     assert_eq!(valid_count, num_records);
-    assert!(per_record < std::time::Duration::from_millis(10), "Validation should be fast");
+    assert!(
+        per_record < std::time::Duration::from_millis(10),
+        "Validation should be fast"
+    );
 }
 
 #[tokio::test]
 async fn test_code_generation_all_targets() {
     println!("=== Testing Code Generation for All Targets ===");
-    
+
     let parser = YamlParser::new();
-    let schema = parser.parse(CONFIG_SCHEMA).unwrap();
+    let schema = parser.parse_str(CONFIG_SCHEMA).unwrap();
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Test all generators
     let generators: Vec<(Box<dyn Generator>, &str)> = vec![
-        (Box::new(PythonDataclassGenerator::new()), "python_dataclass"),
+        (
+            Box::new(PythonDataclassGenerator::new()),
+            "python_dataclass",
+        ),
         (Box::new(PydanticGenerator::new()), "pydantic"),
         (Box::new(TypeScriptGenerator::new()), "typescript"),
         (Box::new(JavaScriptGenerator::new()), "javascript"),
@@ -791,20 +837,20 @@ async fn test_code_generation_all_targets() {
         (Box::new(OwlRdfGenerator::new()), "owl_rdf"),
         (Box::new(JsonLdGenerator::new()), "json_ld"),
     ];
-    
+
     let options = GeneratorOptions::default();
-    
+
     for (generator, name) in generators {
         let start = Instant::now();
         let outputs = generator.generate(&schema, &options).await.unwrap();
-        
+
         for output in outputs {
             let path = temp_dir.path().join(&output.filename);
             fs::write(&path, &output.content).unwrap();
             assert!(path.exists());
             assert!(!output.content.is_empty());
         }
-        
+
         println!("✓ {} generator completed in {:?}", name, start.elapsed());
     }
 }
@@ -812,7 +858,7 @@ async fn test_code_generation_all_targets() {
 #[tokio::test]
 async fn test_complex_inheritance_resolution() {
     println!("=== Testing Complex Inheritance Resolution ===");
-    
+
     // Schema with diamond inheritance pattern
     let schema_str = r#"
 id: https://example.org/inheritance
@@ -879,28 +925,37 @@ enums:
       confidential:
       secret:
 "#;
-    
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(schema_str).unwrap();
-    
+    let mut schema = parser.parse_str(schema_str).unwrap();
+
     // Resolve inheritance
     let resolver = InheritanceResolver::new();
     resolver.resolve(&mut schema).unwrap();
-    
+
     let view = SchemaView::new(schema.clone());
-    
+
     // Test inheritance chain
     let doc_slots = view.induced_slots("Document").unwrap();
     let slot_names: Vec<_> = doc_slots.iter().map(|s| s.name.as_str()).collect();
-    
+
     assert!(slot_names.contains(&"id"), "Should inherit id from Entity");
-    assert!(slot_names.contains(&"created"), "Should inherit created from Entity");
-    assert!(slot_names.contains(&"last_modified"), "Should inherit from Trackable mixin");
-    assert!(slot_names.contains(&"version"), "Should inherit from Versioned mixin");
+    assert!(
+        slot_names.contains(&"created"),
+        "Should inherit created from Entity"
+    );
+    assert!(
+        slot_names.contains(&"last_modified"),
+        "Should inherit from Trackable mixin"
+    );
+    assert!(
+        slot_names.contains(&"version"),
+        "Should inherit from Versioned mixin"
+    );
     assert!(slot_names.contains(&"title"), "Should have direct slot");
-    
+
     println!("✓ Document class has all inherited slots: {:?}", slot_names);
-    
+
     // Validate instance with all inherited fields
     let secure_doc = json!({
         "id": "doc-001",
@@ -915,24 +970,30 @@ enums:
         "access_level": "confidential",
         "encryption_key_id": "key-1234567890abcdef1234567890abcdef"
     });
-    
+
     let engine = ValidationEngine::new(schema);
     let options = ValidationOptions::default();
-    let report = engine.validate(&secure_doc, "SecureDocument", &options).unwrap();
-    assert!(report.valid, "SecureDocument validation failed: {:?}", report.errors);
+    let report = engine
+        .validate(&secure_doc, "SecureDocument", &options)
+        .unwrap();
+    assert!(
+        report.valid,
+        "SecureDocument validation failed: {:?}",
+        report.errors
+    );
     println!("✓ Complex inheritance validation successful");
 }
 
 #[tokio::test]
 async fn test_rule_engine_with_expressions() {
     println!("=== Testing Rule Engine with Complex Expressions ===");
-    
+
     let parser = YamlParser::new();
-    let schema = parser.parse(BIOMEDICAL_SCHEMA).unwrap();
-    
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
+
     // Create rule engine
     let rule_engine = RuleEngine::new(schema.clone());
-    
+
     // Test data that should trigger rules
     let lab_result_high = json!({
         "id": "LAB999999",
@@ -945,26 +1006,27 @@ async fn test_rule_engine_with_expressions() {
         "reference_range": "10.0-100.0",
         "abnormal_flag": false  // Should be true according to rule
     });
-    
+
     // Execute rules
     let mut context = HashMap::new();
     context.insert("data".to_string(), lab_result_high.clone());
-    
-    let result = rule_engine.execute_class_rules(
-        "LabResult",
-        &context,
-        &ExecutionStrategy::Sequential
-    ).unwrap();
-    
+
+    let result = rule_engine
+        .execute_class_rules("LabResult", &context, &ExecutionStrategy::Sequential)
+        .unwrap();
+
     // The rule should have detected the violation
-    assert!(!result.all_passed, "Rule should have failed for high value without abnormal flag");
+    assert!(
+        !result.all_passed,
+        "Rule should have failed for high value without abnormal flag"
+    );
     println!("✓ Rule engine correctly detected violation");
 }
 
 #[tokio::test]
 async fn test_end_to_end_api_modeling() {
     println!("=== Testing End-to-End API Modeling ===");
-    
+
     // API schema with RESTful resource modeling
     let api_schema_str = r#"
 id: https://example.org/api
@@ -1032,27 +1094,27 @@ enums:
       active:
       archived:
 "#;
-    
+
     let parser = YamlParser::new();
-    let schema = parser.parse(api_schema_str).unwrap();
+    let schema = parser.parse_str(api_schema_str).unwrap();
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Generate OpenAPI spec
     let openapi_gen = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
     let outputs = openapi_gen.generate(&schema, &options).await.unwrap();
-    
+
     for output in outputs {
         let path = temp_dir.path().join(&output.filename);
         fs::write(&path, &output.content).unwrap();
-        
+
         // Verify JSON Schema is valid JSON
         let parsed: Value = serde_json::from_str(&output.content).unwrap();
         assert!(parsed.is_object());
     }
-    
+
     println!("✓ API modeling and generation complete");
-    
+
     // Test validation of API data
     let user_data = json!({
         "id": "usr_123",
@@ -1062,10 +1124,12 @@ enums:
         "email": "john@example.com",
         "roles": ["user", "admin"]
     });
-    
+
     let engine = ValidationEngine::new(schema);
     let validation_options = ValidationOptions::default();
-    let report = engine.validate(&user_data, "User", &validation_options).unwrap();
+    let report = engine
+        .validate(&user_data, "User", &validation_options)
+        .unwrap();
     assert!(report.valid);
     println!("✓ API data validation passed");
 }

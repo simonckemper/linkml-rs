@@ -35,7 +35,7 @@ pub use instance_validator::InstanceValidator;
 pub use pattern_validator::PatternValidator;
 pub use pattern_validator_enhanced::{EnhancedPatternValidator, PatternMatchResult};
 pub use range_validator::RangeValidator;
-pub use rule_validator::{RuleValidator, RuleValidation};
+pub use rule_validator::{RuleValidation, RuleValidator};
 pub use string_constraints::{EqualsStringInValidator, StructuredPatternValidator};
 pub use type_validators::*;
 pub use unique_key_validator::{UniqueKeyValidator, UniqueValueTracker};
@@ -97,7 +97,7 @@ impl ValidatorRegistry {
         } else {
             None
         };
-        
+
         // Create conditional requirement validator if schema has classes with if_required
         let has_conditional_requirements = schema.classes.values().any(|c| c.if_required.is_some());
         let conditional_requirement_validator = if has_conditional_requirements {
@@ -105,17 +105,22 @@ impl ValidatorRegistry {
         } else {
             None
         };
-        
+
         // Create unique key validator if schema has classes with unique keys or identifier slots
-        let has_unique_constraints = schema.classes.values().any(|c| !c.unique_keys.is_empty()) ||
-            schema.slots.values().any(|s| s.identifier.unwrap_or(false));
+        let has_unique_constraints = schema.classes.values().any(|c| !c.unique_keys.is_empty())
+            || schema.slots.values().any(|s| s.identifier.unwrap_or(false));
         let unique_key_validator = if has_unique_constraints {
             Some(UniqueKeyValidator::new())
         } else {
             None
         };
 
-        Ok(Self { validators, rule_validator, conditional_requirement_validator, unique_key_validator })
+        Ok(Self {
+            validators,
+            rule_validator,
+            conditional_requirement_validator,
+            unique_key_validator,
+        })
     }
 
     /// Get all validators that apply to a slot
@@ -132,22 +137,22 @@ impl ValidatorRegistry {
     pub fn add_validator(&mut self, validator: Box<dyn Validator>) {
         self.validators.push(validator);
     }
-    
+
     /// Get the rule validator if available
     pub fn rule_validator(&self) -> Option<&RuleValidator> {
         self.rule_validator.as_ref()
     }
-    
+
     /// Get the conditional requirement validator if available
     pub fn conditional_requirement_validator(&self) -> Option<&ConditionalRequirementValidator> {
         self.conditional_requirement_validator.as_ref()
     }
-    
+
     /// Get the unique key validator if available
     pub fn unique_key_validator(&self) -> Option<&UniqueKeyValidator> {
         self.unique_key_validator.as_ref()
     }
-    
+
     /// Get a mutable reference to the unique key validator if available
     pub fn unique_key_validator_mut(&mut self) -> Option<&mut UniqueKeyValidator> {
         self.unique_key_validator.as_mut()

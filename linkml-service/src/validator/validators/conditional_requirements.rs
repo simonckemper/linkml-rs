@@ -5,10 +5,7 @@
 use linkml_core::types::{ClassDefinition, ConditionalRequirement, SlotDefinition};
 use serde_json::Value;
 
-use crate::validator::{
-    context::ValidationContext,
-    report::ValidationIssue,
-};
+use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 use super::Validator;
 
@@ -20,7 +17,7 @@ impl ConditionalRequirementValidator {
     pub fn new() -> Self {
         Self
     }
-    
+
     /// Check if a condition is satisfied
     fn check_condition(
         &self,
@@ -34,12 +31,12 @@ impl ConditionalRequirementValidator {
             Value::Object(map) => map.get(slot_name),
             _ => None,
         };
-        
+
         // If there's no condition specified, it's always satisfied
         let Some(slot_condition) = &condition.condition else {
             return Ok(true);
         };
-        
+
         // Check various condition types
         if let Some(required) = slot_condition.required {
             let is_present = slot_value.is_some() && !matches!(slot_value, Some(Value::Null));
@@ -47,7 +44,7 @@ impl ConditionalRequirementValidator {
                 return Ok(false);
             }
         }
-        
+
         if let Some(ref equals_string) = slot_condition.equals_string {
             match slot_value {
                 Some(Value::String(s)) => {
@@ -58,7 +55,7 @@ impl ConditionalRequirementValidator {
                 _ => return Ok(false),
             }
         }
-        
+
         if let Some(equals_number) = slot_condition.equals_number {
             match slot_value {
                 Some(Value::Number(n)) => {
@@ -73,7 +70,7 @@ impl ConditionalRequirementValidator {
                 _ => return Ok(false),
             }
         }
-        
+
         if let Some(ref pattern) = slot_condition.pattern {
             if let Some(Value::String(s)) = slot_value {
                 match regex::Regex::new(pattern) {
@@ -95,7 +92,7 @@ impl ConditionalRequirementValidator {
                 return Ok(false);
             }
         }
-        
+
         // Check range constraints
         if slot_condition.minimum_value.is_some() || slot_condition.maximum_value.is_some() {
             match slot_value {
@@ -120,11 +117,11 @@ impl ConditionalRequirementValidator {
                 _ => return Ok(false),
             }
         }
-        
+
         // All conditions passed
         Ok(true)
     }
-    
+
     /// Validate conditional requirements for a class instance
     pub fn validate_class(
         &self,
@@ -133,16 +130,16 @@ impl ConditionalRequirementValidator {
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
-        
+
         // Check if there are any conditional requirements
         let Some(if_required) = &class_def.if_required else {
             return issues;
         };
-        
+
         // For each conditional requirement
         for (condition_slot, requirement) in if_required {
             context.push_path(&format!("if_required[{}]", condition_slot));
-            
+
             match self.check_condition(instance, condition_slot, requirement, context) {
                 Ok(condition_met) => {
                     if condition_met {
@@ -150,13 +147,13 @@ impl ConditionalRequirementValidator {
                         if let Some(then_slots) = &requirement.then_required {
                             for required_slot in then_slots {
                                 context.push_path(&format!("then_required[{}]", required_slot));
-                                
+
                                 // Get the value of the required slot
                                 let slot_value = match instance {
                                     Value::Object(map) => map.get(required_slot),
                                     _ => None,
                                 };
-                                
+
                                 // Check if the required slot is missing or null
                                 if slot_value.is_none() || matches!(slot_value, Some(Value::Null)) {
                                     let mut issue = ValidationIssue::error(
@@ -167,7 +164,8 @@ impl ConditionalRequirementValidator {
                                         context.path(),
                                         "ConditionalRequirementValidator",
                                     );
-                                    issue.code = Some("CONDITIONAL_REQUIREMENT_NOT_MET".to_string());
+                                    issue.code =
+                                        Some("CONDITIONAL_REQUIREMENT_NOT_MET".to_string());
                                     issue.context.insert(
                                         "condition_slot".to_string(),
                                         serde_json::json!(condition_slot),
@@ -177,8 +175,8 @@ impl ConditionalRequirementValidator {
                                         serde_json::json!(required_slot),
                                     );
                                     issues.push(issue);
-}
-                                
+                                }
+
                                 context.pop_path();
                             }
                         }
@@ -188,10 +186,10 @@ impl ConditionalRequirementValidator {
                     issues.push(error);
                 }
             }
-            
+
             context.pop_path();
         }
-        
+
         issues
     }
 }
@@ -211,7 +209,7 @@ impl Validator for ConditionalRequirementValidator {
             self.name(),
         )]
     }
-    
+
     fn name(&self) -> &str {
         "ConditionalRequirementValidator"
     }
@@ -223,13 +221,13 @@ mod tests {
     use indexmap::IndexMap;
     use linkml_core::types::{SchemaDefinition, SlotCondition};
     use std::sync::Arc;
-    
+
     #[test]
     fn test_conditional_requirement_string_equals() {
         let validator = ConditionalRequirementValidator::new();
         let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Create a class with conditional requirement
         let mut if_required = IndexMap::new();
         if_required.insert(
@@ -242,24 +240,24 @@ mod tests {
                 then_required: Some(vec!["email".to_string(), "phone".to_string()]),
             },
         );
-        
+
         let class_def = ClassDefinition {
             name: "Person".to_string(),
             if_required: Some(if_required),
             ..Default::default()
         };
-        
+
         // Test case 1: Status is "active" but email and phone are missing
         let instance1 = serde_json::json!({
             "name": "John Doe",
             "status": "active"
         });
-        
+
         let issues = validator.validate_class(&instance1, &class_def, &mut context);
         assert_eq!(issues.len(), 2);
         assert!(issues[0].message.contains("email"));
         assert!(issues[1].message.contains("phone"));
-        
+
         // Test case 2: Status is "active" and required fields are present
         let instance2 = serde_json::json!({
             "name": "John Doe",
@@ -267,26 +265,26 @@ mod tests {
             "email": "john@example.com",
             "phone": "555-1234"
         });
-        
+
         let issues = validator.validate_class(&instance2, &class_def, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test case 3: Status is "inactive", conditional fields not required
         let instance3 = serde_json::json!({
             "name": "Jane Doe",
             "status": "inactive"
         });
-        
+
         let issues = validator.validate_class(&instance3, &class_def, &mut context);
         assert!(issues.is_empty());
     }
-    
+
     #[test]
     fn test_conditional_requirement_number_range() {
         let validator = ConditionalRequirementValidator::new();
         let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Create a class with conditional requirement based on age range
         let mut if_required = IndexMap::new();
         if_required.insert(
@@ -300,49 +298,49 @@ mod tests {
                 then_required: Some(vec!["employment_status".to_string()]),
             },
         );
-        
+
         let class_def = ClassDefinition {
             name: "Person".to_string(),
             if_required: Some(if_required),
             ..Default::default()
         };
-        
+
         // Test case 1: Age is 30 (in range), employment_status required
         let instance1 = serde_json::json!({
             "name": "Working Adult",
             "age": 30
         });
-        
+
         let issues = validator.validate_class(&instance1, &class_def, &mut context);
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("employment_status"));
-        
+
         // Test case 2: Age is 30 with employment_status
         let instance2 = serde_json::json!({
             "name": "Working Adult",
             "age": 30,
             "employment_status": "employed"
         });
-        
+
         let issues = validator.validate_class(&instance2, &class_def, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test case 3: Age is 70 (out of range), no requirement
         let instance3 = serde_json::json!({
             "name": "Retired Person",
             "age": 70
         });
-        
+
         let issues = validator.validate_class(&instance3, &class_def, &mut context);
         assert!(issues.is_empty());
     }
-    
+
     #[test]
     fn test_conditional_requirement_pattern() {
         let validator = ConditionalRequirementValidator::new();
         let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Create a class with conditional requirement based on pattern
         let mut if_required = IndexMap::new();
         if_required.insert(
@@ -355,39 +353,39 @@ mod tests {
                 then_required: Some(vec!["employee_id".to_string()]),
             },
         );
-        
+
         let class_def = ClassDefinition {
             name: "Person".to_string(),
             if_required: Some(if_required),
             ..Default::default()
         };
-        
+
         // Test case 1: Company email requires employee_id
         let instance1 = serde_json::json!({
             "name": "Employee",
             "email": "john@company.com"
         });
-        
+
         let issues = validator.validate_class(&instance1, &class_def, &mut context);
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("employee_id"));
-        
+
         // Test case 2: Non-company email doesn't require employee_id
         let instance2 = serde_json::json!({
             "name": "External User",
             "email": "john@gmail.com"
         });
-        
+
         let issues = validator.validate_class(&instance2, &class_def, &mut context);
         assert!(issues.is_empty());
     }
-    
+
     #[test]
     fn test_conditional_requirement_required_field() {
         let validator = ConditionalRequirementValidator::new();
         let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Create a class where if phone is provided, then phone_type is required
         let mut if_required = IndexMap::new();
         if_required.insert(
@@ -400,51 +398,51 @@ mod tests {
                 then_required: Some(vec!["phone_type".to_string()]),
             },
         );
-        
+
         let class_def = ClassDefinition {
             name: "Contact".to_string(),
             if_required: Some(if_required),
             ..Default::default()
         };
-        
+
         // Test case 1: Phone is provided but phone_type is missing
         let instance1 = serde_json::json!({
             "name": "Contact Info",
             "phone": "555-1234"
         });
-        
+
         let issues = validator.validate_class(&instance1, &class_def, &mut context);
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("phone_type"));
-        
+
         // Test case 2: No phone provided, no phone_type required
         let instance2 = serde_json::json!({
             "name": "Contact Info"
         });
-        
+
         let issues = validator.validate_class(&instance2, &class_def, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test case 3: Phone and phone_type both provided
         let instance3 = serde_json::json!({
             "name": "Contact Info",
             "phone": "555-1234",
             "phone_type": "mobile"
         });
-        
+
         let issues = validator.validate_class(&instance3, &class_def, &mut context);
         assert!(issues.is_empty());
     }
-    
+
     #[test]
     fn test_multiple_conditional_requirements() {
         let validator = ConditionalRequirementValidator::new();
         let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Create a class with multiple conditional requirements
         let mut if_required = IndexMap::new();
-        
+
         // If country is "US", then state is required
         if_required.insert(
             "country".to_string(),
@@ -456,7 +454,7 @@ mod tests {
                 then_required: Some(vec!["state".to_string()]),
             },
         );
-        
+
         // If is_student is true, then student_id is required
         if_required.insert(
             "is_student".to_string(),
@@ -468,33 +466,35 @@ mod tests {
                 then_required: Some(vec!["student_id".to_string()]),
             },
         );
-        
+
         let class_def = ClassDefinition {
             name: "Person".to_string(),
             if_required: Some(if_required),
             ..Default::default()
         };
-        
+
         // Test case: Both conditions are met, both requirements violated
         let instance = serde_json::json!({
             "name": "US Student",
             "country": "US",
             "is_student": true
         });
-        
+
         let issues = validator.validate_class(&instance, &class_def, &mut context);
         assert_eq!(issues.len(), 2);
-        
+
         // Check that we have one error for each missing field
         let error_fields: Vec<String> = issues
             .iter()
             .filter_map(|issue| {
-                issue.context.get("required_slot")
+                issue
+                    .context
+                    .get("required_slot")
                     .and_then(|v| v.as_str())
                     .map(String::from)
             })
             .collect();
-        
+
         assert!(error_fields.contains(&"state".to_string()));
         assert!(error_fields.contains(&"student_id".to_string()));
     }

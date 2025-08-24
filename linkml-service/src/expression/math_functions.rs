@@ -7,11 +7,12 @@ use serde_json::Value;
 
 /// Convert f64 to serde_json::Number, returning error for non-finite values
 fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
-    serde_json::Number::from_f64(val)
-        .ok_or_else(|| FunctionError::invalid_result(
+    serde_json::Number::from_f64(val).ok_or_else(|| {
+        FunctionError::invalid_result(
             function_name,
-            "result is not a finite number (NaN or infinity)"
-        ))
+            "result is not a finite number (NaN or infinity)",
+        )
+    })
 }
 
 /// abs() - Absolute value
@@ -21,14 +22,14 @@ impl BuiltinFunction for AbsFunction {
     fn name(&self) -> &str {
         "abs"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -50,14 +51,14 @@ impl BuiltinFunction for SqrtFunction {
     fn name(&self) -> &str {
         "sqrt"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -85,32 +86,39 @@ impl BuiltinFunction for PowFunction {
     fn name(&self) -> &str {
         "pow"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let base = match &args[0] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a number",
+                ));
+            }
         };
-        
+
         let exponent = match &args[1] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a number",
+                ));
+            }
         };
-        
-        Ok(Value::Number(f64_to_number(base.powf(exponent), self.name())?))
+
+        Ok(Value::Number(f64_to_number(
+            base.powf(exponent),
+            self.name(),
+        )?))
     }
 }
 
@@ -121,14 +129,14 @@ impl BuiltinFunction for SinFunction {
     fn name(&self) -> &str {
         "sin"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -150,14 +158,14 @@ impl BuiltinFunction for CosFunction {
     fn name(&self) -> &str {
         "cos"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -179,14 +187,14 @@ impl BuiltinFunction for TanFunction {
     fn name(&self) -> &str {
         "tan"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -208,53 +216,61 @@ impl BuiltinFunction for LogFunction {
     fn name(&self) -> &str {
         "log"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 && args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "1 or 2", args.len()));
+            return Err(FunctionError::wrong_arity(
+                self.name(),
+                "1 or 2",
+                args.len(),
+            ));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let val = match &args[0] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a number",
+                ));
+            }
         };
-        
+
         if val <= 0.0 {
             return Err(FunctionError::invalid_argument(
                 self.name(),
                 "logarithm of non-positive number is undefined",
             ));
         }
-        
+
         let result = if args.len() == 2 {
             // log with custom base
             let base = match &args[1] {
                 Value::Number(n) => n.as_f64().unwrap_or(0.0),
-                _ => return Err(FunctionError::invalid_argument(
-                    self.name(),
-                    "second argument must be a number",
-                )),
+                _ => {
+                    return Err(FunctionError::invalid_argument(
+                        self.name(),
+                        "second argument must be a number",
+                    ));
+                }
             };
-            
+
             if base <= 0.0 || base == 1.0 {
                 return Err(FunctionError::invalid_argument(
                     self.name(),
                     "base must be positive and not equal to 1",
                 ));
             }
-            
+
             val.log(base)
         } else {
             // natural logarithm
             val.ln()
         };
-        
+
         Ok(Value::Number(f64_to_number(result, self.name())?))
     }
 }
@@ -266,14 +282,14 @@ impl BuiltinFunction for ExpFunction {
     fn name(&self) -> &str {
         "exp"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -295,14 +311,14 @@ impl BuiltinFunction for FloorFunction {
     fn name(&self) -> &str {
         "floor"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -324,14 +340,14 @@ impl BuiltinFunction for CeilFunction {
     fn name(&self) -> &str {
         "ceil"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::Number(n) => {
@@ -353,40 +369,48 @@ impl BuiltinFunction for RoundFunction {
     fn name(&self) -> &str {
         "round"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.is_empty() || args.len() > 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "1 or 2", args.len()));
+            return Err(FunctionError::wrong_arity(
+                self.name(),
+                "1 or 2",
+                args.len(),
+            ));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let val = match &args[0] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a number",
+                ));
+            }
         };
-        
+
         let result = if args.len() == 2 {
             // Round to specific decimal places
             let places = match &args[1] {
                 Value::Number(n) => n.as_i64().unwrap_or(0),
-                _ => return Err(FunctionError::invalid_argument(
-                    self.name(),
-                    "second argument must be an integer",
-                )),
+                _ => {
+                    return Err(FunctionError::invalid_argument(
+                        self.name(),
+                        "second argument must be an integer",
+                    ));
+                }
             };
-            
+
             let factor = 10_f64.powi(places as i32);
             (val * factor).round() / factor
         } else {
             // Round to nearest integer
             val.round()
         };
-        
+
         Ok(Value::Number(f64_to_number(result, self.name())?))
     }
 }
@@ -398,39 +422,46 @@ impl BuiltinFunction for ModFunction {
     fn name(&self) -> &str {
         "mod"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let dividend = match &args[0] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a number",
+                ));
+            }
         };
-        
+
         let divisor = match &args[1] {
             Value::Number(n) => n.as_f64().unwrap_or(0.0),
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a number",
+                ));
+            }
         };
-        
+
         if divisor == 0.0 {
             return Err(FunctionError::invalid_argument(
                 self.name(),
                 "division by zero",
             ));
         }
-        
-        Ok(Value::Number(f64_to_number(dividend % divisor, self.name())?))
+
+        Ok(Value::Number(f64_to_number(
+            dividend % divisor,
+            self.name(),
+        )?))
     }
 }
 
@@ -438,7 +469,7 @@ impl BuiltinFunction for ModFunction {
 mod tests {
     use super::*;
     use serde_json::json;
-    
+
     #[test]
     fn test_abs_function() {
         let abs_fn = AbsFunction;
@@ -446,18 +477,21 @@ mod tests {
         assert_eq!(abs_fn.call(vec![json!(5)]).unwrap(), json!(5.0));
         assert_eq!(abs_fn.call(vec![json!(-3.14)]).unwrap(), json!(3.14));
     }
-    
+
     #[test]
     fn test_sqrt_function() {
         let sqrt_fn = SqrtFunction;
         assert_eq!(sqrt_fn.call(vec![json!(4)]).unwrap(), json!(2.0));
         assert_eq!(sqrt_fn.call(vec![json!(9)]).unwrap(), json!(3.0));
-        assert_eq!(sqrt_fn.call(vec![json!(2)]).unwrap(), json!(1.4142135623730951));
-        
+        assert_eq!(
+            sqrt_fn.call(vec![json!(2)]).unwrap(),
+            json!(1.4142135623730951)
+        );
+
         // Negative number should error
         assert!(sqrt_fn.call(vec![json!(-1)]).is_err());
     }
-    
+
     #[test]
     fn test_pow_function() {
         let pow_fn = PowFunction;
@@ -465,22 +499,22 @@ mod tests {
         assert_eq!(pow_fn.call(vec![json!(5), json!(2)]).unwrap(), json!(25.0));
         assert_eq!(pow_fn.call(vec![json!(10), json!(0)]).unwrap(), json!(1.0));
     }
-    
+
     #[test]
     fn test_trig_functions() {
         let sin_fn = SinFunction;
         let cos_fn = CosFunction;
         let tan_fn = TanFunction;
-        
+
         // sin(0) = 0
         assert_eq!(sin_fn.call(vec![json!(0)]).unwrap(), json!(0.0));
-        
+
         // cos(0) = 1
         assert_eq!(cos_fn.call(vec![json!(0)]).unwrap(), json!(1.0));
-        
+
         // tan(0) = 0
         assert_eq!(tan_fn.call(vec![json!(0)]).unwrap(), json!(0.0));
-        
+
         // sin(π/2) ≈ 1
         let pi_2 = std::f64::consts::PI / 2.0;
         let sin_result = sin_fn.call(vec![json!(pi_2)]).unwrap();
@@ -488,56 +522,65 @@ mod tests {
             assert!((n.as_f64().unwrap() - 1.0).abs() < 1e-10);
         }
     }
-    
+
     #[test]
     fn test_log_function() {
         let log_fn = LogFunction;
-        
+
         // Natural log
         let e = std::f64::consts::E;
         assert_eq!(log_fn.call(vec![json!(e)]).unwrap(), json!(1.0));
-        
+
         // Log base 10
-        assert_eq!(log_fn.call(vec![json!(100), json!(10)]).unwrap(), json!(2.0));
-        
+        assert_eq!(
+            log_fn.call(vec![json!(100), json!(10)]).unwrap(),
+            json!(2.0)
+        );
+
         // Log of non-positive should error
         assert!(log_fn.call(vec![json!(0)]).is_err());
         assert!(log_fn.call(vec![json!(-1)]).is_err());
     }
-    
+
     #[test]
     fn test_exp_function() {
         let exp_fn = ExpFunction;
         assert_eq!(exp_fn.call(vec![json!(0)]).unwrap(), json!(1.0));
-        assert_eq!(exp_fn.call(vec![json!(1)]).unwrap(), json!(std::f64::consts::E));
+        assert_eq!(
+            exp_fn.call(vec![json!(1)]).unwrap(),
+            json!(std::f64::consts::E)
+        );
     }
-    
+
     #[test]
     fn test_rounding_functions() {
         let floor_fn = FloorFunction;
         let ceil_fn = CeilFunction;
         let round_fn = RoundFunction;
-        
+
         // Floor
         assert_eq!(floor_fn.call(vec![json!(3.7)]).unwrap(), json!(3));
         assert_eq!(floor_fn.call(vec![json!(-3.7)]).unwrap(), json!(-4));
-        
+
         // Ceil
         assert_eq!(ceil_fn.call(vec![json!(3.2)]).unwrap(), json!(4));
         assert_eq!(ceil_fn.call(vec![json!(-3.2)]).unwrap(), json!(-3));
-        
+
         // Round
         assert_eq!(round_fn.call(vec![json!(3.5)]).unwrap(), json!(4.0));
         assert_eq!(round_fn.call(vec![json!(3.2)]).unwrap(), json!(3.0));
-        assert_eq!(round_fn.call(vec![json!(3.14159), json!(2)]).unwrap(), json!(3.14));
+        assert_eq!(
+            round_fn.call(vec![json!(3.14159), json!(2)]).unwrap(),
+            json!(3.14)
+        );
     }
-    
+
     #[test]
     fn test_mod_function() {
         let mod_fn = ModFunction;
         assert_eq!(mod_fn.call(vec![json!(10), json!(3)]).unwrap(), json!(1.0));
         assert_eq!(mod_fn.call(vec![json!(7), json!(4)]).unwrap(), json!(3.0));
-        
+
         // Division by zero should error
         assert!(mod_fn.call(vec![json!(10), json!(0)]).is_err());
     }

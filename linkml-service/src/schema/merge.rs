@@ -2,26 +2,26 @@
 //!
 //! This module provides tools to merge multiple schemas into one.
 
+use crate::cli_enhanced::{ConflictResolution, MergeStrategy};
+use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
-use linkml_core::error::{Result, LinkMLError};
 use std::collections::{HashMap, HashSet};
-use crate::cli_enhanced::{MergeStrategy, ConflictResolution};
 
 /// Options for schema merging
 #[derive(Debug, Clone)]
 pub struct MergeOptions {
     /// Merge strategy to use
     pub strategy: MergeStrategy,
-    
+
     /// How to resolve conflicts
     pub conflict_resolution: ConflictResolution,
-    
+
     /// Base schema for three-way merge
     pub base_schema: Option<SchemaDefinition>,
-    
+
     /// Preserve annotations during merge
     pub preserve_annotations: bool,
-    
+
     /// Merge imports
     pub merge_imports: bool,
 }
@@ -43,10 +43,10 @@ impl Default for MergeOptions {
 pub struct MergeResult {
     /// Merged schema
     pub schema: SchemaDefinition,
-    
+
     /// Conflicts encountered
     pub conflicts: Vec<MergeConflict>,
-    
+
     /// Elements merged from each schema
     pub merge_sources: HashMap<String, Vec<String>>,
 }
@@ -56,13 +56,13 @@ pub struct MergeResult {
 pub struct MergeConflict {
     /// Type of element (class, slot, type, enum)
     pub element_type: String,
-    
+
     /// Element name
     pub element_name: String,
-    
+
     /// Conflicting values from different schemas
     pub conflicting_values: Vec<ConflictValue>,
-    
+
     /// Resolution applied
     pub resolution: String,
 }
@@ -72,7 +72,7 @@ pub struct MergeConflict {
 pub struct ConflictValue {
     /// Source schema index
     pub schema_index: usize,
-    
+
     /// Value
     pub value: serde_json::Value,
 }
@@ -87,55 +87,66 @@ impl SchemaMerge {
     pub fn new(options: MergeOptions) -> Self {
         Self { options }
     }
-    
+
     /// Merge multiple schemas
     pub fn merge(&self, schemas: &[SchemaDefinition]) -> Result<SchemaDefinition> {
         if schemas.is_empty() {
             return Err(LinkMLError::config("No schemas to merge"));
         }
-        
+
         if schemas.len() == 1 {
             return Ok(schemas[0].clone());
         }
-        
+
         let mut merged = SchemaDefinition::default();
         let mut conflicts = Vec::new();
-        
+
         // Merge metadata
         self.merge_metadata(schemas, &mut merged)?;
-        
+
         // Merge based on strategy
         match self.options.strategy {
             MergeStrategy::Union => self.merge_union(schemas, &mut merged, &mut conflicts)?,
-            MergeStrategy::Intersection => self.merge_intersection(schemas, &mut merged, &mut conflicts)?,
+            MergeStrategy::Intersection => {
+                self.merge_intersection(schemas, &mut merged, &mut conflicts)?
+            }
             MergeStrategy::Override => self.merge_override(schemas, &mut merged, &mut conflicts)?,
             MergeStrategy::Custom => self.merge_custom(schemas, &mut merged, &mut conflicts)?,
         }
-        
+
         // Handle conflicts
-        if !conflicts.is_empty() && matches!(self.options.conflict_resolution, ConflictResolution::Error) {
-            return Err(LinkMLError::schema_validation(format!("{} conflicts found during merge", conflicts.len())));
+        if !conflicts.is_empty()
+            && matches!(self.options.conflict_resolution, ConflictResolution::Error)
+        {
+            return Err(LinkMLError::schema_validation(format!(
+                "{} conflicts found during merge",
+                conflicts.len()
+            )));
         }
-        
+
         Ok(merged)
     }
-    
+
     /// Merge schema metadata
-    fn merge_metadata(&self, schemas: &[SchemaDefinition], merged: &mut SchemaDefinition) -> Result<()> {
+    fn merge_metadata(
+        &self,
+        schemas: &[SchemaDefinition],
+        merged: &mut SchemaDefinition,
+    ) -> Result<()> {
         // Use first schema's metadata as base
         if let Some(first) = schemas.first() {
             merged.name = first.name.clone();
             merged.version = first.version.clone();
             merged.description = first.description.clone();
             merged.license = first.license.clone();
-            
+
             // Merge prefixes
             for schema in schemas {
                 for (prefix, prefix_def) in &schema.prefixes {
                     merged.prefixes.insert(prefix.clone(), prefix_def.clone());
                 }
             }
-            
+
             // Merge imports if enabled
             if self.options.merge_imports {
                 let mut all_imports = HashSet::new();
@@ -145,10 +156,10 @@ impl SchemaMerge {
                 merged.imports = all_imports.into_iter().collect();
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Union merge - include all elements from all schemas
     fn merge_union(
         &self,
@@ -163,16 +174,17 @@ impl SchemaMerge {
                     // Conflict detected
                     let conflict = self.create_conflict("class", name, i, existing, class);
                     conflicts.push(conflict);
-                    
+
                     // Resolve conflict
-                    let resolved = self.resolve_class_conflict(existing, class, i, schemas.len())?;
+                    let resolved =
+                        self.resolve_class_conflict(existing, class, i, schemas.len())?;
                     merged.classes.insert(name.clone(), resolved);
                 } else {
                     merged.classes.insert(name.clone(), class.clone());
                 }
             }
         }
-        
+
         // Merge slots
         for (i, schema) in schemas.iter().enumerate() {
             for (name, slot) in &schema.slots {
@@ -180,7 +192,7 @@ impl SchemaMerge {
                     // Conflict detected
                     let conflict = self.create_conflict("slot", name, i, existing, slot);
                     conflicts.push(conflict);
-                    
+
                     // Resolve conflict
                     let resolved = self.resolve_slot_conflict(existing, slot, i, schemas.len())?;
                     merged.slots.insert(name.clone(), resolved);
@@ -189,7 +201,7 @@ impl SchemaMerge {
                 }
             }
         }
-        
+
         // Merge types
         for (i, schema) in schemas.iter().enumerate() {
             for (name, type_def) in &schema.types {
@@ -197,16 +209,17 @@ impl SchemaMerge {
                     // Conflict detected
                     let conflict = self.create_conflict("type", name, i, existing, type_def);
                     conflicts.push(conflict);
-                    
+
                     // Resolve conflict
-                    let resolved = self.resolve_type_conflict(existing, type_def, i, schemas.len())?;
+                    let resolved =
+                        self.resolve_type_conflict(existing, type_def, i, schemas.len())?;
                     merged.types.insert(name.clone(), resolved);
                 } else {
                     merged.types.insert(name.clone(), type_def.clone());
                 }
             }
         }
-        
+
         // Merge enums
         for (_i, schema) in schemas.iter().enumerate() {
             for (name, enum_def) in &schema.enums {
@@ -219,14 +232,17 @@ impl SchemaMerge {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
                             linkml_core::types::PermissibleValue::Complex { text, .. } => text,
                         };
-                        
-                        let already_exists = merged_enum.permissible_values.iter().any(|existing_pv| {
-                            match existing_pv {
-                                linkml_core::types::PermissibleValue::Simple(s) => s == pv_text,
-                                linkml_core::types::PermissibleValue::Complex { text, .. } => text == pv_text,
-                            }
-                        });
-                        
+
+                        let already_exists =
+                            merged_enum.permissible_values.iter().any(|existing_pv| {
+                                match existing_pv {
+                                    linkml_core::types::PermissibleValue::Simple(s) => s == pv_text,
+                                    linkml_core::types::PermissibleValue::Complex {
+                                        text, ..
+                                    } => text == pv_text,
+                                }
+                            });
+
                         if !already_exists {
                             merged_enum.permissible_values.push(pv.clone());
                         }
@@ -237,10 +253,10 @@ impl SchemaMerge {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Intersection merge - include only elements present in all schemas
     fn merge_intersection(
         &self,
@@ -251,14 +267,17 @@ impl SchemaMerge {
         if schemas.is_empty() {
             return Ok(());
         }
-        
+
         // Find common classes
         let mut common_classes: HashSet<String> = schemas[0].classes.keys().cloned().collect();
         for schema in &schemas[1..] {
             let schema_classes: HashSet<String> = schema.classes.keys().cloned().collect();
-            common_classes = common_classes.intersection(&schema_classes).cloned().collect();
+            common_classes = common_classes
+                .intersection(&schema_classes)
+                .cloned()
+                .collect();
         }
-        
+
         // Add common classes
         for class_name in common_classes {
             // Use the definition from the first schema
@@ -266,52 +285,52 @@ impl SchemaMerge {
                 merged.classes.insert(class_name, class_def.clone());
             }
         }
-        
+
         // Find common slots
         let mut common_slots: HashSet<String> = schemas[0].slots.keys().cloned().collect();
         for schema in &schemas[1..] {
             let schema_slots: HashSet<String> = schema.slots.keys().cloned().collect();
             common_slots = common_slots.intersection(&schema_slots).cloned().collect();
         }
-        
+
         // Add common slots
         for slot_name in common_slots {
             if let Some(slot_def) = schemas[0].slots.get(&slot_name) {
                 merged.slots.insert(slot_name, slot_def.clone());
             }
         }
-        
+
         // Find common types
         let mut common_types: HashSet<String> = schemas[0].types.keys().cloned().collect();
         for schema in &schemas[1..] {
             let schema_types: HashSet<String> = schema.types.keys().cloned().collect();
             common_types = common_types.intersection(&schema_types).cloned().collect();
         }
-        
+
         // Add common types
         for type_name in common_types {
             if let Some(type_def) = schemas[0].types.get(&type_name) {
                 merged.types.insert(type_name, type_def.clone());
             }
         }
-        
+
         // Find common enums
         let mut common_enums: HashSet<String> = schemas[0].enums.keys().cloned().collect();
         for schema in &schemas[1..] {
             let schema_enums: HashSet<String> = schema.enums.keys().cloned().collect();
             common_enums = common_enums.intersection(&schema_enums).cloned().collect();
         }
-        
+
         // Add common enums
         for enum_name in common_enums {
             if let Some(enum_def) = schemas[0].enums.get(&enum_name) {
                 merged.enums.insert(enum_name, enum_def.clone());
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Override merge - later schemas override earlier ones
     fn merge_override(
         &self,
@@ -325,26 +344,26 @@ impl SchemaMerge {
             for (name, class) in &schema.classes {
                 merged.classes.insert(name.clone(), class.clone());
             }
-            
+
             // Override slots
             for (name, slot) in &schema.slots {
                 merged.slots.insert(name.clone(), slot.clone());
             }
-            
+
             // Override types
             for (name, type_def) in &schema.types {
                 merged.types.insert(name.clone(), type_def.clone());
             }
-            
+
             // Override enums
             for (name, enum_def) in &schema.enums {
                 merged.enums.insert(name.clone(), enum_def.clone());
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Custom merge - use custom rules
     fn merge_custom(
         &self,
@@ -356,7 +375,7 @@ impl SchemaMerge {
         // In a real implementation, this would read custom merge rules
         self.merge_union(schemas, merged, conflicts)
     }
-    
+
     /// Create a merge conflict
     fn create_conflict<T: serde::Serialize>(
         &self,
@@ -372,7 +391,8 @@ impl SchemaMerge {
             conflicting_values: vec![
                 ConflictValue {
                     schema_index: 0,
-                    value: serde_json::to_value(existing).expect("should serialize existing element"),
+                    value: serde_json::to_value(existing)
+                        .expect("should serialize existing element"),
                 },
                 ConflictValue {
                     schema_index,
@@ -382,7 +402,7 @@ impl SchemaMerge {
             resolution: format!("{:?}", self.options.conflict_resolution),
         }
     }
-    
+
     /// Resolve class conflict
     fn resolve_class_conflict(
         &self,
@@ -395,9 +415,7 @@ impl SchemaMerge {
             ConflictResolution::Error => {
                 Err(LinkMLError::schema_validation("Class conflict".to_string()))
             }
-            ConflictResolution::First => {
-                Ok(existing.clone())
-            }
+            ConflictResolution::First => Ok(existing.clone()),
             ConflictResolution::Last => {
                 if schema_index == total_schemas - 1 {
                     Ok(new.clone())
@@ -411,7 +429,7 @@ impl SchemaMerge {
             }
         }
     }
-    
+
     /// Resolve slot conflict
     fn resolve_slot_conflict(
         &self,
@@ -424,9 +442,7 @@ impl SchemaMerge {
             ConflictResolution::Error => {
                 Err(LinkMLError::schema_validation("Slot conflict".to_string()))
             }
-            ConflictResolution::First => {
-                Ok(existing.clone())
-            }
+            ConflictResolution::First => Ok(existing.clone()),
             ConflictResolution::Last => {
                 if schema_index == total_schemas - 1 {
                     Ok(new.clone())
@@ -440,7 +456,7 @@ impl SchemaMerge {
             }
         }
     }
-    
+
     /// Resolve type conflict
     fn resolve_type_conflict(
         &self,
@@ -453,9 +469,7 @@ impl SchemaMerge {
             ConflictResolution::Error => {
                 Err(LinkMLError::schema_validation("Type conflict".to_string()))
             }
-            ConflictResolution::First => {
-                Ok(existing.clone())
-            }
+            ConflictResolution::First => Ok(existing.clone()),
             ConflictResolution::Last => {
                 if schema_index == total_schemas - 1 {
                     Ok(new.clone())
@@ -474,56 +488,60 @@ impl SchemaMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_merge_union() {
         let mut schema1 = SchemaDefinition::default();
         schema1.name = "Schema1".to_string();
-        
+
         let mut class1 = ClassDefinition::default();
         class1.slots = vec!["name".to_string()];
         schema1.classes.insert("Person".to_string(), class1);
-        
+
         let mut schema2 = SchemaDefinition::default();
         schema2.name = "Schema2".to_string();
-        
+
         let mut class2 = ClassDefinition::default();
         class2.slots = vec!["brand".to_string()];
         schema2.classes.insert("Car".to_string(), class2);
-        
+
         let options = MergeOptions {
             strategy: MergeStrategy::Union,
             conflict_resolution: ConflictResolution::First,
             ..Default::default()
         };
-        
+
         let merger = SchemaMerge::new(options);
-        let merged = merger.merge(&[schema1, schema2]).expect("should merge schemas");
-        
+        let merged = merger
+            .merge(&[schema1, schema2])
+            .expect("should merge schemas");
+
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
         assert!(merged.classes.contains_key("Car"));
     }
-    
+
     #[test]
     fn test_merge_intersection() {
         let mut schema1 = SchemaDefinition::default();
         let class1 = ClassDefinition::default();
         schema1.classes.insert("Person".to_string(), class1.clone());
         schema1.classes.insert("Car".to_string(), class1.clone());
-        
+
         let mut schema2 = SchemaDefinition::default();
         schema2.classes.insert("Person".to_string(), class1.clone());
         schema2.classes.insert("Bike".to_string(), class1);
-        
+
         let options = MergeOptions {
             strategy: MergeStrategy::Intersection,
             ..Default::default()
         };
-        
+
         let merger = SchemaMerge::new(options);
-        let merged = merger.merge(&[schema1, schema2]).expect("should merge schemas");
-        
+        let merged = merger
+            .merge(&[schema1, schema2])
+            .expect("should merge schemas");
+
         assert_eq!(merged.classes.len(), 1);
         assert!(merged.classes.contains_key("Person"));
         assert!(!merged.classes.contains_key("Car"));

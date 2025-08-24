@@ -7,5 +7,5 @@
 pub mod input_validation;
 pub mod resource_limits;
 
-pub use input_validation::{validate_string_input, ValidationError};
+pub use input_validation::{ValidationError, validate_string_input};
 pub use resource_limits::{ResourceLimits, ResourceMonitor};

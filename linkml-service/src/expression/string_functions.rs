@@ -12,14 +12,14 @@ impl BuiltinFunction for UpperFunction {
     fn name(&self) -> &str {
         "upper"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::String(s) => Ok(Value::String(s.to_uppercase())),
@@ -38,14 +38,14 @@ impl BuiltinFunction for LowerFunction {
     fn name(&self) -> &str {
         "lower"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::String(s) => Ok(Value::String(s.to_lowercase())),
@@ -64,14 +64,14 @@ impl BuiltinFunction for TrimFunction {
     fn name(&self) -> &str {
         "trim"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
             return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match &args[0] {
             Value::String(s) => Ok(Value::String(s.trim().to_string())),
@@ -90,31 +90,35 @@ impl BuiltinFunction for StartsWithFunction {
     fn name(&self) -> &str {
         "starts_with"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let string = match &args[0] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
         };
-        
+
         let prefix = match &args[1] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string",
+                ));
+            }
         };
-        
+
         Ok(Value::Bool(string.starts_with(prefix)))
     }
 }
@@ -126,31 +130,35 @@ impl BuiltinFunction for EndsWithFunction {
     fn name(&self) -> &str {
         "ends_with"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let string = match &args[0] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
         };
-        
+
         let suffix = match &args[1] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string",
+                ));
+            }
         };
-        
+
         Ok(Value::Bool(string.ends_with(suffix)))
     }
 }
@@ -162,39 +170,45 @@ impl BuiltinFunction for ReplaceFunction {
     fn name(&self) -> &str {
         "replace"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
             return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let string = match &args[0] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
         };
-        
+
         let from = match &args[1] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string",
+                ));
+            }
         };
-        
+
         let to = match &args[2] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "third argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "third argument must be a string",
+                ));
+            }
         };
-        
+
         Ok(Value::String(string.replace(from, to)))
     }
 }
@@ -206,36 +220,40 @@ impl BuiltinFunction for SplitFunction {
     fn name(&self) -> &str {
         "split"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let string = match &args[0] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
         };
-        
+
         let delimiter = match &args[1] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string",
+                ));
+            }
         };
-        
+
         let parts: Vec<Value> = string
             .split(delimiter)
             .map(|s| Value::String(s.to_string()))
             .collect();
-        
+
         Ok(Value::Array(parts))
     }
 }
@@ -247,31 +265,35 @@ impl BuiltinFunction for JoinFunction {
     fn name(&self) -> &str {
         "join"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
             return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let array = match &args[0] {
             Value::Array(arr) => arr,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be an array",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be an array",
+                ));
+            }
         };
-        
+
         let delimiter = match &args[1] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a string",
+                ));
+            }
         };
-        
+
         let strings: Result<Vec<String>, _> = array
             .iter()
             .map(|v| match v {
@@ -282,7 +304,7 @@ impl BuiltinFunction for JoinFunction {
                 )),
             })
             .collect();
-        
+
         match strings {
             Ok(strs) => Ok(Value::String(strs.join(delimiter))),
             Err(e) => Err(e),
@@ -297,52 +319,55 @@ impl BuiltinFunction for SubstringFunction {
     fn name(&self) -> &str {
         "substring"
     }
-    
+
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() < 2 || args.len() > 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "2 or 3", args.len()));
+            return Err(FunctionError::wrong_arity(
+                self.name(),
+                "2 or 3",
+                args.len(),
+            ));
         }
         Ok(())
     }
-    
+
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         let string = match &args[0] {
             Value::String(s) => s,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "first argument must be a string",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "first argument must be a string",
+                ));
+            }
         };
-        
+
         let start = match &args[1] {
             Value::Number(n) => n.as_u64().unwrap_or(0) as usize,
-            _ => return Err(FunctionError::invalid_argument(
-                self.name(),
-                "second argument must be a number",
-            )),
+            _ => {
+                return Err(FunctionError::invalid_argument(
+                    self.name(),
+                    "second argument must be a number",
+                ));
+            }
         };
-        
+
         let result = if args.len() == 3 {
             let length = match &args[2] {
                 Value::Number(n) => n.as_u64().unwrap_or(0) as usize,
-                _ => return Err(FunctionError::invalid_argument(
-                    self.name(),
-                    "third argument must be a number",
-                )),
+                _ => {
+                    return Err(FunctionError::invalid_argument(
+                        self.name(),
+                        "third argument must be a number",
+                    ));
+                }
             };
-            
-            string
-                .chars()
-                .skip(start)
-                .take(length)
-                .collect()
+
+            string.chars().skip(start).take(length).collect()
         } else {
-            string
-                .chars()
-                .skip(start)
-                .collect()
+            string.chars().skip(start).collect()
         };
-        
+
         Ok(Value::String(result))
     }
 }
@@ -351,88 +376,110 @@ impl BuiltinFunction for SubstringFunction {
 mod tests {
     use super::*;
     use serde_json::json;
-    
+
     #[test]
     fn test_upper_lower_trim() {
         let upper = UpperFunction;
         assert_eq!(
-            upper.call(vec![json!("hello")]).expect("should convert to uppercase"),
+            upper
+                .call(vec![json!("hello")])
+                .expect("should convert to uppercase"),
             json!("HELLO")
         );
-        
+
         let lower = LowerFunction;
         assert_eq!(
-            lower.call(vec![json!("HELLO")]).expect("should convert to lowercase"),
+            lower
+                .call(vec![json!("HELLO")])
+                .expect("should convert to lowercase"),
             json!("hello")
         );
-        
+
         let trim = TrimFunction;
         assert_eq!(
-            trim.call(vec![json!("  hello  ")]).expect("should trim whitespace"),
+            trim.call(vec![json!("  hello  ")])
+                .expect("should trim whitespace"),
             json!("hello")
         );
     }
-    
+
     #[test]
     fn test_starts_ends_with() {
         let starts_with = StartsWithFunction;
         assert_eq!(
-            starts_with.call(vec![json!("hello world"), json!("hello")]).expect("should check starts_with"),
+            starts_with
+                .call(vec![json!("hello world"), json!("hello")])
+                .expect("should check starts_with"),
             json!(true)
         );
         assert_eq!(
-            starts_with.call(vec![json!("hello world"), json!("world")]).expect("should check starts_with"),
+            starts_with
+                .call(vec![json!("hello world"), json!("world")])
+                .expect("should check starts_with"),
             json!(false)
         );
-        
+
         let ends_with = EndsWithFunction;
         assert_eq!(
-            ends_with.call(vec![json!("hello world"), json!("world")]).expect("should check ends_with"),
+            ends_with
+                .call(vec![json!("hello world"), json!("world")])
+                .expect("should check ends_with"),
             json!(true)
         );
         assert_eq!(
-            ends_with.call(vec![json!("hello world"), json!("hello")]).expect("should check ends_with"),
+            ends_with
+                .call(vec![json!("hello world"), json!("hello")])
+                .expect("should check ends_with"),
             json!(false)
         );
     }
-    
+
     #[test]
     fn test_replace() {
         let replace = ReplaceFunction;
         assert_eq!(
-            replace.call(vec![json!("hello world"), json!("world"), json!("rust")]).expect("should replace substring"),
+            replace
+                .call(vec![json!("hello world"), json!("world"), json!("rust")])
+                .expect("should replace substring"),
             json!("hello rust")
         );
     }
-    
+
     #[test]
     fn test_split_join() {
         let split = SplitFunction;
         assert_eq!(
-            split.call(vec![json!("a,b,c"), json!(",")]).expect("should split string"),
+            split
+                .call(vec![json!("a,b,c"), json!(",")])
+                .expect("should split string"),
             json!(["a", "b", "c"])
         );
-        
+
         let join = JoinFunction;
         assert_eq!(
-            join.call(vec![json!(["a", "b", "c"]), json!("-")]).expect("should join array"),
+            join.call(vec![json!(["a", "b", "c"]), json!("-")])
+                .expect("should join array"),
             json!("a-b-c")
         );
     }
-    
+
     #[test]
     fn test_substring() {
         let substring = SubstringFunction;
-        
+
         // With length
         assert_eq!(
-            substring.call(vec![json!("hello world"), json!(6), json!(5)]).expect("should extract substring"),
+            substring
+                .call(vec![json!("hello world"), json!(6), json!(5)])
+                .expect("should extract substring"),
             json!("world")
         );
-        
+
         // Without length
         assert_eq!(
-            substring.call(vec![json!("hello world"), json!(6)]).expect("should extract substring to end"),
+            substring
+                .call(vec![json!("hello world"), json!(6)])
+                .expect("should extract substring to end"),
             json!("world")
         );
     }

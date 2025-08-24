@@ -26,23 +26,35 @@ where
     S: dbms_core::DBMSService + Send + Sync + 'static,
     S::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    async fn execute_query(&self, query: &str, database: &str) -> Result<String, Box<dyn std::error::Error>> {
+    async fn execute_query(
+        &self,
+        query: &str,
+        database: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         // Use the DBMS service's execute_string_query method
         self.service
             .execute_string_query(database, query)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
-    
-    async fn execute_define(&self, query: &str, database: &str) -> Result<(), Box<dyn std::error::Error>> {
+
+    async fn execute_define(
+        &self,
+        query: &str,
+        database: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // Schema modifications go through the deploy_schema method
         self.service
             .deploy_schema(database, query)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
-    
-    async fn execute_insert(&self, query: &str, database: &str) -> Result<(), Box<dyn std::error::Error>> {
+
+    async fn execute_insert(
+        &self,
+        query: &str,
+        database: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // Data insertions also use execute_string_query
         self.service
             .execute_string_query(database, query)
@@ -51,4 +63,3 @@ where
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 }
-

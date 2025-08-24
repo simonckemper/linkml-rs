@@ -39,14 +39,14 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(yaml_content).unwrap();
-    
+
     // Check basic metadata
     assert_eq!(schema.title, Some("Test Schema".to_string()));
     assert_eq!(schema.status, Some("release".to_string()));
     assert_eq!(schema.keywords.len(), 2);
     assert_eq!(schema.categories.len(), 1);
     assert_eq!(schema.see_also.len(), 1);
-    
+
     // Check contributors
     assert_eq!(schema.contributors.len(), 2);
     let jane = &schema.contributors[0];
@@ -88,21 +88,27 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(yaml_content).unwrap();
-    
+
     let dataset_class = schema.classes.get("Dataset").unwrap();
-    
+
     // Check metadata
     assert_eq!(dataset_class.aliases.len(), 2);
     assert_eq!(dataset_class.see_also.len(), 2);
-    assert_eq!(dataset_class.deprecated, Some("Use DataPackage instead".to_string()));
+    assert_eq!(
+        dataset_class.deprecated,
+        Some("Use DataPackage instead".to_string())
+    );
     assert_eq!(dataset_class.todos.len(), 2);
     assert_eq!(dataset_class.notes.len(), 1);
     assert_eq!(dataset_class.comments.len(), 1);
-    
+
     // Check examples
     assert_eq!(dataset_class.examples.len(), 2);
     assert_eq!(dataset_class.examples[0].value, "genomic_dataset_001");
-    assert_eq!(dataset_class.examples[0].description, Some("A genomic dataset identifier".to_string()));
+    assert_eq!(
+        dataset_class.examples[0].description,
+        Some("A genomic dataset identifier".to_string())
+    );
     assert_eq!(dataset_class.examples[1].value, "survey_responses_2023");
     assert!(dataset_class.examples[1].description.is_none());
 }
@@ -144,14 +150,17 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(yaml_content).unwrap();
-    
+
     let email_slot = schema.slots.get("email").unwrap();
-    
+
     // Check all metadata fields
     assert_eq!(email_slot.aliases.len(), 2);
     assert_eq!(email_slot.see_also.len(), 1);
     assert_eq!(email_slot.examples.len(), 2);
-    assert_eq!(email_slot.deprecated, Some("Use contact_info instead".to_string()));
+    assert_eq!(
+        email_slot.deprecated,
+        Some("Use contact_info instead".to_string())
+    );
     assert_eq!(email_slot.todos.len(), 1);
     assert_eq!(email_slot.notes.len(), 1);
     assert_eq!(email_slot.comments.len(), 1);
@@ -162,25 +171,29 @@ slots:
 fn test_metadata_inheritance() {
     // Test that metadata is properly merged during slot inheritance
     let _schema = SchemaDefinition::new("test_schema");
-    
+
     // Base slot with some metadata
     let mut base_slot = SlotDefinition::new("base");
     base_slot.aliases.push("original_name".to_string());
-    base_slot.see_also.push("https://example.org/base".to_string());
+    base_slot
+        .see_also
+        .push("https://example.org/base".to_string());
     base_slot.notes.push("Base note".to_string());
     base_slot.rank = Some(1);
-    
+
     // Override slot with additional metadata
     let mut override_slot = SlotDefinition::new("base");
     override_slot.aliases.push("new_name".to_string());
-    override_slot.see_also.push("https://example.org/override".to_string());
+    override_slot
+        .see_also
+        .push("https://example.org/override".to_string());
     override_slot.notes.push("Override note".to_string());
     override_slot.deprecated = Some("Use new_slot instead".to_string());
     override_slot.rank = Some(2);
-    
+
     // Merge the slots
     let merged = linkml_core::utils::merge_slot_definitions(&base_slot, &override_slot);
-    
+
     // Check merged metadata
     assert_eq!(merged.aliases.len(), 2); // Both aliases preserved
     assert_eq!(merged.see_also.len(), 2); // Both references preserved
@@ -200,11 +213,11 @@ fn test_example_serialization() {
         value: "example2".to_string(),
         description: None,
     });
-    
+
     let json = serde_json::to_string_pretty(&slot).unwrap();
     assert!(json.contains(r#""value": "example1""#));
     assert!(json.contains(r#""description": "First example""#));
-    
+
     // Deserialize back
     let parsed: SlotDefinition = serde_json::from_str(&json).unwrap();
     assert_eq!(parsed.examples.len(), 2);
@@ -221,11 +234,11 @@ fn test_contributor_serialization() {
         orcid: None,
         role: Some("maintainer".to_string()),
     });
-    
+
     let yaml = serde_yaml::to_string(&schema).unwrap();
     assert!(yaml.contains("Alice Johnson"));
     assert!(yaml.contains("maintainer"));
-    
+
     // Parse back
     let parsed: SchemaDefinition = serde_yaml::from_str(&yaml).unwrap();
     assert_eq!(parsed.contributors.len(), 1);

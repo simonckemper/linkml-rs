@@ -3,16 +3,18 @@
 //! This module tests the boolean constraint validators with randomly generated data
 //! to ensure they handle edge cases correctly and maintain their invariants.
 
-use linkml_core::types::{AnonymousSlotExpression, SlotDefinition, SchemaDefinition};
+use linkml_core::types::{AnonymousSlotExpression, SchemaDefinition, SlotDefinition};
 use linkml_service::validator::{
-    validators::{
-        boolean_constraints::{AllOfValidator, AnyOfValidator, ExactlyOneOfValidator, NoneOfValidator},
-        Validator,
-    },
     context::ValidationContext,
+    validators::{
+        Validator,
+        boolean_constraints::{
+            AllOfValidator, AnyOfValidator, ExactlyOneOfValidator, NoneOfValidator,
+        },
+    },
 };
 use proptest::prelude::*;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 /// Generate a random JSON value
@@ -24,7 +26,7 @@ fn arb_json_value() -> impl Strategy<Value = Value> {
         any::<f64>().prop_map(|f| json!(f)),
         ".*".prop_map(Value::String),
     ];
-    
+
     leaf.boxed()
 }
 
@@ -60,16 +62,16 @@ fn arb_anonymous_slot_expression() -> impl Strategy<Value = AnonymousSlotExpress
         prop::option::of(any::<i64>().prop_map(|n| json!(n))),
         prop::option::of(any::<bool>()),
     )
-        .prop_map(|(range, pattern, min, max, required)| {
-            AnonymousSlotExpression {
+        .prop_map(
+            |(range, pattern, min, max, required)| AnonymousSlotExpression {
                 range,
                 pattern,
                 minimum_value: min,
                 maximum_value: max,
                 required,
                 ..Default::default()
-            }
-        })
+            },
+        )
 }
 
 proptest! {
@@ -81,25 +83,25 @@ proptest! {
     ) {
         let validator = AnyOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             any_of: Some(vec![expr]),
             ..Default::default()
         };
-        
+
         // Should not panic
         let _issues = validator.validate(&value, &slot, &mut context);
     }
-    
+
     /// Test that all_of with contradictory constraints always fails
     #[test]
     fn test_all_of_contradictory_constraints(value in arb_json_value()) {
         let validator = AllOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         // Create contradictory constraints
         let slot = SlotDefinition {
             name: "test".to_string(),
@@ -115,12 +117,12 @@ proptest! {
             ]),
             ..Default::default()
         };
-        
+
         let issues = validator.validate(&value, &slot, &mut context);
         // Should always have issues (no value can be both string and integer)
         assert!(!issues.is_empty());
     }
-    
+
     /// Test that exactly_one_of maintains mutual exclusion
     #[test]
     fn test_exactly_one_of_mutual_exclusion(
@@ -129,29 +131,29 @@ proptest! {
     ) {
         let validator = ExactlyOneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             exactly_one_of: Some(constraints),
             ..Default::default()
         };
-        
+
         let issues = validator.validate(&value, &slot, &mut context);
-        
+
         // If there are no issues, exactly one constraint was satisfied
         // If there are issues, either none or multiple were satisfied
         // This is the invariant we're testing - no panic should occur
         let _ = issues;
     }
-    
+
     /// Test that none_of with all type constraints rejects all basic types
     #[test]
     fn test_none_of_all_types_rejection() {
         let validator = NoneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         let all_types = vec!["string", "integer", "float", "boolean", "null"];
         let constraints: Vec<_> = all_types.iter()
             .map(|t| AnonymousSlotExpression {
@@ -159,13 +161,13 @@ proptest! {
                 ..Default::default()
             })
             .collect();
-        
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             none_of: Some(constraints),
             ..Default::default()
         };
-        
+
         // Test basic values - all should fail
         for value in &[
             json!("string"),
@@ -177,15 +179,15 @@ proptest! {
             let issues = validator.validate(value, &slot, &mut context);
             assert!(!issues.is_empty(), "Value {:?} should have been rejected", value);
         }
-        
+
         // Arrays and objects should pass
         let issues = validator.validate(&json!([1, 2, 3]), &slot, &mut context);
         assert!(issues.is_empty());
-        
+
         let issues = validator.validate(&json!({"key": "value"}), &slot, &mut context);
         assert!(issues.is_empty());
     }
-    
+
     /// Test range boundary conditions
     #[test]
     fn test_range_boundaries_in_boolean_constraints(
@@ -195,11 +197,11 @@ proptest! {
     ) {
         let validator = AllOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         // Ensure min <= max
         let (min, max) = if min <= max { (min, max) } else { (max, min) };
-        
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             all_of: Some(vec![
@@ -212,14 +214,14 @@ proptest! {
             ]),
             ..Default::default()
         };
-        
+
         let issues = validator.validate(&json!(value), &slot, &mut context);
-        
+
         // Check the invariant: issues should be empty iff min <= value <= max
         let in_range = min <= value && value <= max;
         assert_eq!(issues.is_empty(), in_range);
     }
-    
+
     /// Test pattern matching edge cases
     #[test]
     fn test_pattern_edge_cases_in_any_of(
@@ -228,8 +230,8 @@ proptest! {
     ) {
         let validator = AnyOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         let constraints = if use_pattern {
             vec![
                 AnonymousSlotExpression {
@@ -249,18 +251,18 @@ proptest! {
                 },
             ]
         };
-        
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             any_of: Some(constraints),
             ..Default::default()
         };
-        
+
         let issues = validator.validate(&json!(s), &slot, &mut context);
         // String values should pass either way
         assert!(issues.is_empty());
     }
-    
+
     /// Test that parallel evaluation in all_of produces same results as sequential
     #[test]
     fn test_all_of_parallel_consistency(
@@ -270,26 +272,26 @@ proptest! {
         // Test with sequential evaluation (high threshold)
         let sequential_validator = AllOfValidator::with_parallel_threshold(100);
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context1 = ValidationContext::new(schema.clone());
-        
+        let mut context1 = // ValidationContext removed(schema.clone());
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             all_of: Some(constraints),
             ..Default::default()
         };
-        
+
         let sequential_issues = sequential_validator.validate(&value, &slot, &mut context1);
-        
+
         // Test with parallel evaluation (low threshold)
         let parallel_validator = AllOfValidator::with_parallel_threshold(1);
-        let mut context2 = ValidationContext::new(schema);
-        
+        let mut context2 = // ValidationContext removed(schema);
+
         let parallel_issues = parallel_validator.validate(&value, &slot, &mut context2);
-        
+
         // Both should produce the same validity result
         assert_eq!(sequential_issues.is_empty(), parallel_issues.is_empty());
     }
-    
+
     /// Test none_of early exit optimization correctness
     #[test]
     fn test_none_of_early_exit_correctness(
@@ -299,12 +301,12 @@ proptest! {
     ) {
         let validator = NoneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = ValidationContext::new(schema);
-        
+        let mut context = // ValidationContext removed(schema);
+
         // Create constraints where one will be satisfied
         let satisfied_idx = satisfied_index % num_constraints;
         let mut constraints = Vec::new();
-        
+
         for i in 0..num_constraints {
             if i == satisfied_idx {
                 // This constraint will be satisfied
@@ -320,13 +322,13 @@ proptest! {
                 });
             }
         }
-        
+
         let slot = SlotDefinition {
             name: "test".to_string(),
             none_of: Some(constraints),
             ..Default::default()
         };
-        
+
         // Create a value of the matching type
         let value = match value_type.as_str() {
             "string" => json!("test"),
@@ -336,9 +338,9 @@ proptest! {
             "null" => json!(null),
             _ => json!("default"),
         };
-        
+
         let issues = validator.validate(&value, &slot, &mut context);
-        
+
         // Should always have issues (constraint is satisfied)
         assert!(!issues.is_empty());
         // Should detect the satisfied constraint

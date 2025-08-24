@@ -3,13 +3,15 @@
 //! This module provides functionality to load data from SQL databases
 //! and dump LinkML instances back to databases.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance};
-use linkml_core::prelude::*;
+use super::traits::{
+    DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
+};
 use async_trait::async_trait;
-use serde_json::{Value, Map};
-use sqlx::{Database, Pool, Row, Column, TypeInfo, Executor, query::Query};
-use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
+use linkml_core::prelude::*;
+use serde_json::{Map, Value};
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions, MySqlRow};
+use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
+use sqlx::{Column, Database, Executor, Pool, Row, TypeInfo, query::Query};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
@@ -26,40 +28,40 @@ enum DatabasePool {
 pub struct DatabaseOptions {
     /// Database connection string
     pub connection_string: String,
-    
+
     /// Schema name to use (if applicable)
     pub schema_name: Option<String>,
-    
+
     /// Table name to class name mapping
     pub table_mapping: HashMap<String, String>,
-    
+
     /// Column name to slot name mapping (per table)
     pub column_mapping: HashMap<String, HashMap<String, String>>,
-    
+
     /// Tables to exclude from loading
     pub exclude_tables: HashSet<String>,
-    
+
     /// Include only these tables
     pub include_tables: Option<HashSet<String>>,
-    
+
     /// Primary key column names (if not standard)
     pub primary_key_columns: HashMap<String, String>,
-    
+
     /// Foreign key relationships
     pub foreign_keys: HashMap<String, Vec<ForeignKeyRelation>>,
-    
+
     /// Batch size for loading/dumping
     pub batch_size: usize,
-    
+
     /// Whether to infer types from database schema
     pub infer_types: bool,
-    
+
     /// Whether to create tables if they don't exist
     pub create_if_not_exists: bool,
-    
+
     /// Whether to use transactions
     pub use_transactions: bool,
-    
+
     /// Maximum number of connections in the pool
     pub max_connections: u32,
 }
@@ -69,13 +71,13 @@ pub struct DatabaseOptions {
 pub struct ForeignKeyRelation {
     /// Column in the source table
     pub column: String,
-    
+
     /// Referenced table
     pub referenced_table: String,
-    
+
     /// Referenced column
     pub referenced_column: String,
-    
+
     /// Slot name in LinkML schema
     pub slot_name: String,
 }
@@ -114,7 +116,7 @@ impl DatabaseLoader {
             pool: None,
         }
     }
-    
+
     /// Connect to the database
     async fn connect(&mut self) -> LoaderResult<()> {
         if self.pool.is_none() {
@@ -122,30 +124,32 @@ impl DatabaseLoader {
                 .max_connections(self.options.max_connections)
                 .connect(&self.options.connection_string)
                 .await
-                .map_err(|e| LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::ConnectionRefused,
-                    format!("Failed to connect to database: {}", e)
-                )))?;
-            
+                .map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::ConnectionRefused,
+                        format!("Failed to connect to database: {}", e),
+                    ))
+                })?;
+
             self.pool = Some(pool);
         }
         Ok(())
     }
-    
+
     /// Get the connection pool
     fn get_pool(&self) -> LoaderResult<&AnyPool> {
         self.pool.as_ref().ok_or_else(|| {
             LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::NotConnected,
-                "Database not connected"
+                "Database not connected",
             ))
         })
     }
-    
+
     /// Get table names from the database
     async fn get_table_names(&self) -> LoaderResult<Vec<String>> {
         let pool = self.get_pool()?;
-        
+
         // This query works for PostgreSQL, MySQL, and SQLite
         let query = match self.get_database_type()? {
             DatabaseType::PostgreSQL => {
@@ -157,7 +161,8 @@ impl DatabaseLoader {
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables 
-                     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'".to_string()
+                     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+                        .to_string()
                 }
             }
             DatabaseType::MySQL => {
@@ -169,26 +174,27 @@ impl DatabaseLoader {
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables 
-                     WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'".to_string()
+                     WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
+                        .to_string()
                 }
             }
-            DatabaseType::SQLite => {
-                "SELECT name FROM sqlite_master WHERE type='table' 
-                 AND name NOT LIKE 'sqlite_%'".to_string()
+            DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table' 
+                 AND name NOT LIKE 'sqlite_%'"
+                .to_string(),
+            _ => {
+                return Err(LoaderError::UnsupportedFormat(
+                    "Unsupported database type".to_string(),
+                ));
             }
-            _ => return Err(LoaderError::UnsupportedFormat(
-                "Unsupported database type".to_string()
-            )),
         };
-        
-        let rows = sqlx::query(&query)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| LoaderError::Io(std::io::Error::new(
+
+        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
+            LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to query tables: {}", e)
-            )))?;
-        
+                format!("Failed to query tables: {}", e),
+            ))
+        })?;
+
         let mut tables = Vec::new();
         for row in rows {
             if let Ok(table_name) = row.try_get::<String, _>(0) {
@@ -196,24 +202,25 @@ impl DatabaseLoader {
                 if self.options.exclude_tables.contains(&table_name) {
                     continue;
                 }
-                
+
                 if let Some(include) = &self.options.include_tables {
                     if !include.contains(&table_name) {
                         continue;
                     }
                 }
-                
+
                 tables.push(table_name);
             }
         }
-        
+
         Ok(tables)
     }
-    
+
     /// Get database type from connection string
     fn get_database_type(&self) -> LoaderResult<DatabaseType> {
-        if self.options.connection_string.starts_with("postgresql://") ||
-           self.options.connection_string.starts_with("postgres://") {
+        if self.options.connection_string.starts_with("postgresql://")
+            || self.options.connection_string.starts_with("postgres://")
+        {
             Ok(DatabaseType::PostgreSQL)
         } else if self.options.connection_string.starts_with("mysql://") {
             Ok(DatabaseType::MySQL)
@@ -223,15 +230,15 @@ impl DatabaseLoader {
             ))
         } else {
             Err(LoaderError::UnsupportedFormat(
-                "Unsupported database type in connection string".to_string()
+                "Unsupported database type in connection string".to_string(),
             ))
         }
     }
-    
+
     /// Get column information for a table
     async fn get_columns(&self, table_name: &str) -> LoaderResult<Vec<ColumnInfo>> {
         let pool = self.get_pool()?;
-        
+
         let query = match self.get_database_type()? {
             DatabaseType::PostgreSQL => {
                 format!(
@@ -264,21 +271,22 @@ impl DatabaseLoader {
             DatabaseType::SQLite => {
                 format!("PRAGMA table_info({})", table_name)
             }
-            _ => return Err(LoaderError::UnsupportedFormat(
-                "Unsupported database type".to_string()
-            )),
+            _ => {
+                return Err(LoaderError::UnsupportedFormat(
+                    "Unsupported database type".to_string(),
+                ));
+            }
         };
-        
-        let rows = sqlx::query(&query)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| LoaderError::Io(std::io::Error::new(
+
+        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
+            LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to query columns: {}", e)
-            )))?;
-        
+                format!("Failed to query columns: {}", e),
+            ))
+        })?;
+
         let mut columns = Vec::new();
-        
+
         match self.get_database_type()? {
             DatabaseType::SQLite => {
                 for row in rows {
@@ -299,19 +307,23 @@ impl DatabaseLoader {
                         is_primary_key: false, // Will be determined separately
                     });
                 }
-                
+
                 // Get primary key information
                 self.update_primary_keys(&mut columns, table_name).await?;
             }
         }
-        
+
         Ok(columns)
     }
-    
+
     /// Update primary key information for columns
-    async fn update_primary_keys(&self, columns: &mut [ColumnInfo], table_name: &str) -> LoaderResult<()> {
+    async fn update_primary_keys(
+        &self,
+        columns: &mut [ColumnInfo],
+        table_name: &str,
+    ) -> LoaderResult<()> {
         let pool = self.get_pool()?;
-        
+
         let query = match self.get_database_type()? {
             DatabaseType::PostgreSQL => {
                 format!(
@@ -345,31 +357,30 @@ impl DatabaseLoader {
             }
             _ => return Ok(()), // SQLite handled differently
         };
-        
-        let rows = sqlx::query(&query)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| LoaderError::Io(std::io::Error::new(
+
+        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
+            LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to query primary keys: {}", e)
-            )))?;
-        
+                format!("Failed to query primary keys: {}", e),
+            ))
+        })?;
+
         let mut pk_columns = HashSet::new();
         for row in rows {
             if let Ok(col_name) = row.try_get::<String, _>(0) {
                 pk_columns.insert(col_name);
             }
         }
-        
+
         for column in columns {
             if pk_columns.contains(&column.name) {
                 column.is_primary_key = true;
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Convert database type to LinkML range
     fn db_type_to_linkml_range(&self, db_type: &str) -> String {
         match db_type.to_lowercase().as_str() {
@@ -378,45 +389,55 @@ impl DatabaseLoader {
             "boolean" | "bool" => "boolean",
             "text" | "varchar" | "char" | "character varying" => "string",
             "date" => "date",
-            "timestamp" | "datetime" | "timestamp with time zone" | "timestamp without time zone" => "datetime",
+            "timestamp"
+            | "datetime"
+            | "timestamp with time zone"
+            | "timestamp without time zone" => "datetime",
             "time" | "time with time zone" | "time without time zone" => "time",
             _ => "string", // Default to string for unknown types
         }
     }
-    
+
     /// Load data from a table
-    async fn load_table_data(&self, table_name: &str, columns: &[ColumnInfo], schema: &SchemaDefinition) 
-        -> LoaderResult<Vec<DataInstance>> {
+    async fn load_table_data(
+        &self,
+        table_name: &str,
+        columns: &[ColumnInfo],
+        schema: &SchemaDefinition,
+    ) -> LoaderResult<Vec<DataInstance>> {
         let pool = self.get_pool()?;
         let mut instances = Vec::new();
-        
+
         // Get the class name for this table
-        let class_name = self.options.table_mapping.get(table_name)
+        let class_name = self
+            .options
+            .table_mapping
+            .get(table_name)
             .cloned()
             .unwrap_or_else(|| to_pascal_case(table_name));
-        
+
         // Build query
         let query = format!("SELECT * FROM {}", table_name);
         let mut rows = sqlx::query(&query).fetch(pool);
-        
+
         let mut batch = Vec::new();
-        
+
         while let Some(row) = rows.try_next().await.map_err(|e| {
             LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to fetch row: {}", e)
+                format!("Failed to fetch row: {}", e),
             ))
         })? {
             let instance = self.row_to_instance(&row, table_name, columns)?;
             batch.push(instance);
-            
+
             if batch.len() >= self.options.batch_size {
                 instances.extend(batch.drain(..));
             }
         }
-        
+
         instances.extend(batch);
-        
+
         // Apply foreign key relationships
         if let Some(fk_relations) = self.options.foreign_keys.get(table_name) {
             for instance in &mut instances {
@@ -429,51 +450,56 @@ impl DatabaseLoader {
                                 .unwrap_or_else(|| to_pascal_case(&fk.referenced_table)),
                             "id": ref_id
                         });
-                        
+
                         instance.data.insert(fk.slot_name.clone(), ref_instance);
                     }
                 }
             }
         }
-        
+
         Ok(instances)
     }
-    
+
     /// Convert a database row to a DataInstance
-    fn row_to_instance(&self, row: &AnyRow, table_name: &str, columns: &[ColumnInfo]) 
-        -> LoaderResult<DataInstance> {
+    fn row_to_instance(
+        &self,
+        row: &AnyRow,
+        table_name: &str,
+        columns: &[ColumnInfo],
+    ) -> LoaderResult<DataInstance> {
         let mut data = Map::new();
-        
+
         // Get column mapping for this table
         let column_mapping = self.options.column_mapping.get(table_name);
-        
+
         for (idx, column) in columns.iter().enumerate() {
             let slot_name = if let Some(mapping) = column_mapping {
-                mapping.get(&column.name)
+                mapping
+                    .get(&column.name)
                     .cloned()
                     .unwrap_or_else(|| to_snake_case(&column.name))
             } else {
                 to_snake_case(&column.name)
             };
-            
+
             // Get value based on type
             let value = self.get_column_value(row, idx, &column.data_type)?;
-            
+
             if !value.is_null() {
                 data.insert(slot_name, value);
             }
         }
-        
-        let class_name = self.options.table_mapping.get(table_name)
+
+        let class_name = self
+            .options
+            .table_mapping
+            .get(table_name)
             .cloned()
             .unwrap_or_else(|| to_pascal_case(table_name));
-        
-        Ok(DataInstance {
-            class_name,
-            data,
-        })
+
+        Ok(DataInstance { class_name, data })
     }
-    
+
     /// Get column value with proper type conversion
     fn get_column_value(&self, row: &AnyRow, idx: usize, db_type: &str) -> LoaderResult<Value> {
         // Try to decode based on the database type
@@ -532,27 +558,31 @@ impl DataLoader for DatabaseLoader {
     async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
         // Connect to database
         self.connect().await?;
-        
+
         // Get all tables
         let tables = self.get_table_names().await?;
         info!("Found {} tables to load", tables.len());
-        
+
         let mut all_instances = Vec::new();
-        
+
         // Load data from each table
         for table_name in tables {
             debug!("Loading data from table: {}", table_name);
-            
+
             // Get column information
             let columns = self.get_columns(&table_name).await?;
-            
+
             // Load table data
             let instances = self.load_table_data(&table_name, &columns, schema).await?;
-            info!("Loaded {} instances from table {}", instances.len(), table_name);
-            
+            info!(
+                "Loaded {} instances from table {}",
+                instances.len(),
+                table_name
+            );
+
             all_instances.extend(instances);
         }
-        
+
         Ok(all_instances)
     }
 }
@@ -571,7 +601,7 @@ impl DatabaseDumper {
             pool: None,
         }
     }
-    
+
     /// Connect to the database
     async fn connect(&mut self) -> DumperResult<()> {
         if self.pool.is_none() {
@@ -579,30 +609,33 @@ impl DatabaseDumper {
                 .max_connections(self.options.max_connections)
                 .connect(&self.options.connection_string)
                 .await
-                .map_err(|e| DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::ConnectionRefused,
-                    format!("Failed to connect to database: {}", e)
-                )))?;
-            
+                .map_err(|e| {
+                    DumperError::Io(std::io::Error::new(
+                        std::io::ErrorKind::ConnectionRefused,
+                        format!("Failed to connect to database: {}", e),
+                    ))
+                })?;
+
             self.pool = Some(pool);
         }
         Ok(())
     }
-    
+
     /// Get the connection pool
     fn get_pool(&self) -> DumperResult<&AnyPool> {
         self.pool.as_ref().ok_or_else(|| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::NotConnected,
-                "Database not connected"
+                "Database not connected",
             ))
         })
     }
-    
+
     /// Get database type
     fn get_database_type(&self) -> DumperResult<DatabaseType> {
-        if self.options.connection_string.starts_with("postgresql://") ||
-           self.options.connection_string.starts_with("postgres://") {
+        if self.options.connection_string.starts_with("postgresql://")
+            || self.options.connection_string.starts_with("postgres://")
+        {
             Ok(DatabaseType::PostgreSQL)
         } else if self.options.connection_string.starts_with("mysql://") {
             Ok(DatabaseType::MySQL)
@@ -612,170 +645,182 @@ impl DatabaseDumper {
             ))
         } else {
             Err(DumperError::Configuration(
-                "Unsupported database type in connection string".to_string()
+                "Unsupported database type in connection string".to_string(),
             ))
         }
     }
-    
+
     /// Create table if it doesn't exist
-    async fn create_table_if_needed(&self, class_name: &str, class_def: &ClassDefinition, 
-                                    schema: &SchemaDefinition) -> DumperResult<()> {
+    async fn create_table_if_needed(
+        &self,
+        class_name: &str,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> DumperResult<()> {
         if !self.options.create_if_not_exists {
             return Ok(());
         }
-        
+
         let pool = self.get_pool()?;
-        
+
         // Get table name
-        let table_name = self.options.table_mapping.iter()
+        let table_name = self
+            .options
+            .table_mapping
+            .iter()
             .find(|(_, cn)| cn == &class_name)
             .map(|(tn, _)| tn.clone())
             .unwrap_or_else(|| to_snake_case(class_name));
-        
+
         // Build CREATE TABLE statement
         let mut columns = Vec::new();
-        
+
         // Add ID column (assuming all classes have an identifier)
         columns.push("id VARCHAR(255) PRIMARY KEY".to_string());
-        
+
         // Add columns for each slot
         for slot_name in &class_def.slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 let column_name = to_snake_case(slot_name);
-                let column_type = self.linkml_range_to_db_type(
-                    slot_def.range.as_deref().unwrap_or("string")
-                )?;
-                
+                let column_type =
+                    self.linkml_range_to_db_type(slot_def.range.as_deref().unwrap_or("string"))?;
+
                 let nullable = if slot_def.required == Some(true) {
                     "NOT NULL"
                 } else {
                     ""
                 };
-                
-                columns.push(format!("{} {} {}", column_name, column_type, nullable).trim().to_string());
+
+                columns.push(
+                    format!("{} {} {}", column_name, column_type, nullable)
+                        .trim()
+                        .to_string(),
+                );
             }
         }
-        
+
         let create_sql = format!(
             "CREATE TABLE IF NOT EXISTS {} ({})",
             table_name,
             columns.join(", ")
         );
-        
-        sqlx::query(&create_sql)
-            .execute(pool)
-            .await
-            .map_err(|e| DumperError::Io(std::io::Error::new(
+
+        sqlx::query(&create_sql).execute(pool).await.map_err(|e| {
+            DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to create table: {}", e)
-            )))?;
-        
+                format!("Failed to create table: {}", e),
+            ))
+        })?;
+
         Ok(())
     }
-    
+
     /// Convert LinkML range to database type
     fn linkml_range_to_db_type(&self, range: &str) -> DumperResult<String> {
         let db_type = match self.get_database_type()? {
-            DatabaseType::PostgreSQL => {
-                match range {
-                    "string" => "TEXT",
-                    "integer" => "INTEGER",
-                    "float" => "DOUBLE PRECISION",
-                    "boolean" => "BOOLEAN",
-                    "date" => "DATE",
-                    "datetime" => "TIMESTAMP",
-                    "time" => "TIME",
-                    _ => "TEXT",
-                }
+            DatabaseType::PostgreSQL => match range {
+                "string" => "TEXT",
+                "integer" => "INTEGER",
+                "float" => "DOUBLE PRECISION",
+                "boolean" => "BOOLEAN",
+                "date" => "DATE",
+                "datetime" => "TIMESTAMP",
+                "time" => "TIME",
+                _ => "TEXT",
+            },
+            DatabaseType::MySQL => match range {
+                "string" => "TEXT",
+                "integer" => "INT",
+                "float" => "DOUBLE",
+                "boolean" => "BOOLEAN",
+                "date" => "DATE",
+                "datetime" => "DATETIME",
+                "time" => "TIME",
+                _ => "TEXT",
+            },
+            DatabaseType::SQLite => match range {
+                "string" => "TEXT",
+                "integer" => "INTEGER",
+                "float" => "REAL",
+                "boolean" => "INTEGER",
+                "date" => "TEXT",
+                "datetime" => "TEXT",
+                "time" => "TEXT",
+                _ => "TEXT",
+            },
+            _ => {
+                return Err(DumperError::UnsupportedFormat(
+                    "Unsupported database type".to_string(),
+                ));
             }
-            DatabaseType::MySQL => {
-                match range {
-                    "string" => "TEXT",
-                    "integer" => "INT",
-                    "float" => "DOUBLE",
-                    "boolean" => "BOOLEAN",
-                    "date" => "DATE",
-                    "datetime" => "DATETIME",
-                    "time" => "TIME",
-                    _ => "TEXT",
-                }
-            }
-            DatabaseType::SQLite => {
-                match range {
-                    "string" => "TEXT",
-                    "integer" => "INTEGER",
-                    "float" => "REAL",
-                    "boolean" => "INTEGER",
-                    "date" => "TEXT",
-                    "datetime" => "TEXT",
-                    "time" => "TEXT",
-                    _ => "TEXT",
-                }
-            }
-            _ => return Err(DumperError::UnsupportedFormat(
-                "Unsupported database type".to_string()
-            )),
         };
-        
+
         Ok(db_type.to_string())
     }
-    
+
     /// Insert instances for a class
-    async fn insert_instances(&self, class_name: &str, instances: &[DataInstance], 
-                             schema: &SchemaDefinition) -> DumperResult<()> {
+    async fn insert_instances(
+        &self,
+        class_name: &str,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+    ) -> DumperResult<()> {
         let pool = self.get_pool()?;
-        
+
         // Get table name
-        let table_name = self.options.table_mapping.iter()
+        let table_name = self
+            .options
+            .table_mapping
+            .iter()
             .find(|(_, cn)| cn == &class_name)
             .map(|(tn, _)| tn.clone())
             .unwrap_or_else(|| to_snake_case(class_name));
-        
+
         // Get class definition
-        let class_def = schema.classes.get(class_name)
-            .ok_or_else(|| DumperError::SchemaValidation(
-                format!("Class {} not found in schema", class_name)
-            ))?;
-        
+        let class_def = schema.classes.get(class_name).ok_or_else(|| {
+            DumperError::SchemaValidation(format!("Class {} not found in schema", class_name))
+        })?;
+
         // Get column mapping
         let column_mapping = self.options.column_mapping.get(&table_name);
-        
+
         // Process in batches
         for batch in instances.chunks(self.options.batch_size) {
             let mut tx = pool.begin().await.map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to begin transaction: {}", e)
+                    format!("Failed to begin transaction: {}", e),
                 ))
             })?;
-            
+
             for instance in batch {
                 // Build INSERT statement
                 let mut columns = Vec::new();
                 let mut values = Vec::new();
                 let mut placeholders = Vec::new();
-                
+
                 for (slot_name, value) in &instance.data {
                     let column_name = if let Some(mapping) = column_mapping {
-                        mapping.get(slot_name)
+                        mapping
+                            .get(slot_name)
                             .cloned()
                             .unwrap_or_else(|| to_snake_case(slot_name))
                     } else {
                         to_snake_case(slot_name)
                     };
-                    
+
                     columns.push(column_name);
                     values.push(value.clone());
                     placeholders.push(format!("${}", placeholders.len() + 1));
                 }
-                
+
                 let insert_sql = format!(
                     "INSERT INTO {} ({}) VALUES ({})",
                     table_name,
                     columns.join(", "),
                     placeholders.join(", ")
                 );
-                
+
                 // Build query with values
                 let mut query = sqlx::query(&insert_sql);
                 for value in values {
@@ -795,61 +840,74 @@ impl DatabaseDumper {
                         _ => query.bind(value.to_string()),
                     };
                 }
-                
+
                 query.execute(&mut *tx).await.map_err(|e| {
                     DumperError::Io(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        format!("Failed to insert row: {}", e)
+                        format!("Failed to insert row: {}", e),
                     ))
                 })?;
             }
-            
+
             tx.commit().await.map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to commit transaction: {}", e)
+                    format!("Failed to commit transaction: {}", e),
                 ))
             })?;
         }
-        
+
         Ok(())
     }
 }
 
 #[async_trait]
 impl DataDumper for DatabaseDumper {
-    async fn dump(&mut self, instances: &[DataInstance], schema: &SchemaDefinition) -> DumperResult<Vec<u8>> {
+    async fn dump(
+        &mut self,
+        instances: &[DataInstance],
+        schema: &SchemaDefinition,
+    ) -> DumperResult<Vec<u8>> {
         // Connect to database
         self.connect().await?;
-        
+
         // Group instances by class
         let mut instances_by_class: HashMap<String, Vec<&DataInstance>> = HashMap::new();
         for instance in instances {
-            instances_by_class.entry(instance.class_name.clone())
+            instances_by_class
+                .entry(instance.class_name.clone())
                 .or_default()
                 .push(instance);
         }
-        
+
         // Create tables if needed and insert data
         for (class_name, class_instances) in instances_by_class {
             if let Some(class_def) = schema.classes.get(&class_name) {
                 // Create table if needed
-                self.create_table_if_needed(&class_name, class_def, schema).await?;
-                
+                self.create_table_if_needed(&class_name, class_def, schema)
+                    .await?;
+
                 // Convert references to owned instances
-                let owned_instances: Vec<DataInstance> = class_instances.into_iter()
-                    .cloned()
-                    .collect();
-                
+                let owned_instances: Vec<DataInstance> =
+                    class_instances.into_iter().cloned().collect();
+
                 // Insert instances
-                self.insert_instances(&class_name, &owned_instances, schema).await?;
-                
-                info!("Dumped {} instances of class {}", owned_instances.len(), class_name);
+                self.insert_instances(&class_name, &owned_instances, schema)
+                    .await?;
+
+                info!(
+                    "Dumped {} instances of class {}",
+                    owned_instances.len(),
+                    class_name
+                );
             }
         }
-        
+
         // Return summary as bytes
-        let summary = format!("Successfully dumped {} instances to database", instances.len());
+        let summary = format!(
+            "Successfully dumped {} instances to database",
+            instances.len()
+        );
         Ok(summary.into_bytes())
     }
 }
@@ -888,16 +946,20 @@ fn to_pascal_case(s: &str) -> String {
 fn to_snake_case(s: &str) -> String {
     let mut result = String::new();
     let mut prev_upper = false;
-    
+
     for (i, ch) in s.chars().enumerate() {
         if ch.is_uppercase() && i > 0 && !prev_upper {
             result.push('_');
         }
         // to_lowercase() for ASCII characters always produces at least one char
-        result.push(ch.to_lowercase().next().expect("to_lowercase() should produce at least one char"));
+        result.push(
+            ch.to_lowercase()
+                .next()
+                .expect("to_lowercase() should produce at least one char"),
+        );
         prev_upper = ch.is_uppercase();
     }
-    
+
     result
 }
 
@@ -907,14 +969,14 @@ use futures::TryStreamExt;
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_pascal_case_conversion() {
         assert_eq!(to_pascal_case("user_account"), "UserAccount");
         assert_eq!(to_pascal_case("order_items"), "OrderItems");
         assert_eq!(to_pascal_case("product"), "Product");
     }
-    
+
     #[test]
     fn test_snake_case_conversion() {
         assert_eq!(to_snake_case("UserAccount"), "user_account");

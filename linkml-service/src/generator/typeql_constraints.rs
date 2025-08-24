@@ -56,16 +56,17 @@ impl TypeQLConstraintTranslator {
         // Check if slot name or description indicates uniqueness
         if let Some(desc) = &slot.description {
             let desc_lower = desc.to_lowercase();
-            if desc_lower.contains("unique") 
+            if desc_lower.contains("unique")
                 || desc_lower.contains("identifier")
-                || desc_lower.contains("primary key") {
+                || desc_lower.contains("primary key")
+            {
                 return true;
             }
         }
 
         // Check for certain patterns that suggest uniqueness
         let name_lower = slot.name.to_lowercase();
-        name_lower.ends_with("_id") 
+        name_lower.ends_with("_id")
             || name_lower.ends_with("_code")
             || name_lower.ends_with("_uuid")
             || name_lower == "urn"
@@ -91,11 +92,7 @@ impl TypeQLConstraintTranslator {
 
     /// Get minimum cardinality for a slot
     fn get_min_cardinality(&self, slot: &SlotDefinition) -> usize {
-        if slot.required == Some(true) {
-            1
-        } else {
-            0
-        }
+        if slot.required == Some(true) { 1 } else { 0 }
     }
 
     /// Get maximum cardinality for a slot
@@ -122,11 +119,12 @@ impl TypeQLConstraintTranslator {
         // TypeQL uses Java regex syntax, which is mostly compatible with LinkML patterns
         // But we need to escape certain characters
         let typeql_pattern = self.escape_regex_for_typeql(pattern);
-        
+
         // Validate the pattern
         if self.is_valid_regex(&typeql_pattern) {
             let constraint = format!("regex \"{}\"", typeql_pattern);
-            self.regex_cache.insert(pattern.to_string(), constraint.clone());
+            self.regex_cache
+                .insert(pattern.to_string(), constraint.clone());
             Some(constraint)
         } else {
             None
@@ -211,10 +209,7 @@ impl TypeQLConstraintTranslator {
 
         // Check for conditional requirements
         if slot.rules.is_some() {
-            rule_parts.push(format!(
-                "# Conditional validation for {}",
-                slot_name
-            ));
+            rule_parts.push(format!("# Conditional validation for {}", slot_name));
         }
 
         if rule_parts.is_empty() {
@@ -232,11 +227,7 @@ impl TypeQLConstraintTranslator {
         type_name_converter: &dyn Fn(&str) -> String,
     ) -> String {
         let class_typeql = type_name_converter(class_name);
-        let rule_name = format!(
-            "{}-unique-{}",
-            class_typeql,
-            "key"
-        );
+        let rule_name = format!("{}-unique-{}", class_typeql, "key");
 
         let mut rule = String::new();
         rule.push_str(&format!("rule {}:\n", rule_name));
@@ -270,7 +261,7 @@ mod tests {
     #[test]
     fn test_cardinality_translation() {
         let translator = TypeQLConstraintTranslator::new();
-        
+
         // Test required single-valued (default)
         let mut slot = SlotDefinition::default();
         slot.required = Some(true);
@@ -281,20 +272,26 @@ mod tests {
         let mut slot = SlotDefinition::default();
         slot.required = Some(false);
         slot.multivalued = Some(true);
-        assert_eq!(translator.translate_cardinality(&slot), Some("@card(0..)".to_string()));
+        assert_eq!(
+            translator.translate_cardinality(&slot),
+            Some("@card(0..)".to_string())
+        );
 
         // Test required multi-valued with max
         let mut slot = SlotDefinition::default();
         slot.required = Some(true);
         slot.multivalued = Some(true);
         slot.maximum_value = Some(serde_json::json!(5));
-        assert_eq!(translator.translate_cardinality(&slot), Some("@card(1..5)".to_string()));
+        assert_eq!(
+            translator.translate_cardinality(&slot),
+            Some("@card(1..5)".to_string())
+        );
     }
 
     #[test]
     fn test_unique_detection() {
         let translator = TypeQLConstraintTranslator::new();
-        
+
         // Test ID-like names
         let mut slot = SlotDefinition::default();
         slot.name = "user_id".to_string();
@@ -315,17 +312,25 @@ mod tests {
     #[test]
     fn test_regex_translation() {
         let mut translator = TypeQLConstraintTranslator::new();
-        
+
         // Test simple pattern
         let pattern = r"^\d{3}-\d{2}-\d{4}$";
         let result = translator.translate_regex(pattern);
         assert!(result.is_some());
-        assert!(result.expect("should have regex constraint").contains("regex"));
+        assert!(
+            result
+                .expect("should have regex constraint")
+                .contains("regex")
+        );
 
         // Test pattern with quotes
         let pattern = r#"^"[A-Z]+"$"#;
         let result = translator.translate_regex(pattern);
         assert!(result.is_some());
-        assert!(result.expect("should have regex constraint with quotes").contains(r#"\""#));
+        assert!(
+            result
+                .expect("should have regex constraint with quotes")
+                .contains(r#"\""#)
+        );
     }
 }

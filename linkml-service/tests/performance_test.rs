@@ -3,12 +3,12 @@
 //! This test suite verifies that the service meets performance
 //! requirements and memory usage constraints.
 
-use linkml_service::{create_linkml_service, LinkMLService};
 use linkml_core::prelude::*;
-use std::sync::Arc;
+use linkml_service::{LinkMLService, create_linkml_service};
 use serde_json::json;
-use std::time::{Duration, Instant};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
 use tokio::time::timeout;
 
 // Import mock services
@@ -34,7 +34,7 @@ async fn test_schema_compilation_performance() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -44,8 +44,10 @@ async fn test_schema_compilation_performance() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test schemas of varying complexity
     let simple_schema = r#"
 id: https://example.org/simple
@@ -67,7 +69,7 @@ slots:
     name: name
     range: string
 "#;
-    
+
     let medium_schema = r#"
 id: https://example.org/medium
 name: MediumSchema
@@ -127,7 +129,7 @@ slots:
     range: Person
     multivalued: true
 "#;
-    
+
     let complex_schema = r#"
 id: https://example.org/complex
 name: ComplexSchema
@@ -293,31 +295,49 @@ enums:
     name: Status
     permissible_values: [planned, active, completed, cancelled]
 "#;
-    
+
     // Test simple schema compilation
     let start = Instant::now();
-    let _simple = service.load_schema_str(simple_schema, SchemaFormat::Yaml).await.unwrap();
+    let _simple = service
+        .load_schema_str(simple_schema, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let simple_time = start.elapsed();
-    
+
     // Test medium schema compilation
     let start = Instant::now();
-    let _medium = service.load_schema_str(medium_schema, SchemaFormat::Yaml).await.unwrap();
+    let _medium = service
+        .load_schema_str(medium_schema, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let medium_time = start.elapsed();
-    
+
     // Test complex schema compilation
     let start = Instant::now();
-    let _complex = service.load_schema_str(complex_schema, SchemaFormat::Yaml).await.unwrap();
+    let _complex = service
+        .load_schema_str(complex_schema, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let complex_time = start.elapsed();
-    
+
     // Performance requirements: <100ms for schema compilation
     println!("Schema compilation times:");
     println!("  Simple: {:?}", simple_time);
     println!("  Medium: {:?}", medium_time);
     println!("  Complex: {:?}", complex_time);
-    
-    assert!(simple_time < Duration::from_millis(100), "Simple schema compilation too slow");
-    assert!(medium_time < Duration::from_millis(100), "Medium schema compilation too slow");
-    assert!(complex_time < Duration::from_millis(100), "Complex schema compilation too slow");
+
+    assert!(
+        simple_time < Duration::from_millis(100),
+        "Simple schema compilation too slow"
+    );
+    assert!(
+        medium_time < Duration::from_millis(100),
+        "Medium schema compilation too slow"
+    );
+    assert!(
+        complex_time < Duration::from_millis(100),
+        "Complex schema compilation too slow"
+    );
 }
 
 #[tokio::test]
@@ -330,7 +350,7 @@ async fn test_validation_throughput() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -340,8 +360,10 @@ async fn test_validation_throughput() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     let schema_yaml = r#"
 id: https://example.org/throughput-test
 name: ThroughputTest
@@ -372,9 +394,14 @@ slots:
     range: string
     pattern: "^(active|inactive|pending)$"
 "#;
-    
-    let schema = Arc::new(service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap());
-    
+
+    let schema = Arc::new(
+        service
+            .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+            .await
+            .unwrap(),
+    );
+
     // Generate test data
     let mut test_data = Vec::new();
     for i in 0..10000 {
@@ -385,29 +412,33 @@ slots:
             "status": if i % 3 == 0 { "active" } else if i % 3 == 1 { "inactive" } else { "pending" }
         }));
     }
-    
+
     // Measure throughput
     let start = Instant::now();
     let mut valid_count = 0;
-    
+
     for data in &test_data {
         let report = service.validate(data, &schema, "Record").await.unwrap();
         if report.valid {
             valid_count += 1;
         }
     }
-    
+
     let duration = start.elapsed();
     let throughput = test_data.len() as f64 / duration.as_secs_f64();
-    
+
     println!("Validation throughput:");
     println!("  Total records: {}", test_data.len());
     println!("  Valid records: {}", valid_count);
     println!("  Total time: {:?}", duration);
     println!("  Throughput: {:.0} validations/second", throughput);
-    
+
     // Performance requirement: >10,000 validations/second
-    assert!(throughput > 10000.0, "Validation throughput too low: {:.0}/s", throughput);
+    assert!(
+        throughput > 10000.0,
+        "Validation throughput too low: {:.0}/s",
+        throughput
+    );
 }
 
 #[tokio::test]
@@ -420,18 +451,22 @@ async fn test_parallel_validation_scaling() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
-    let service = Arc::new(create_linkml_service(
-        logger,
-        timestamp,
-        task_manager,
-        error_handler,
-        config_service,
-        cache,
-        monitor,
-    ).await.unwrap());
-    
+    let service = Arc::new(
+        create_linkml_service(
+            logger,
+            timestamp,
+            task_manager,
+            error_handler,
+            config_service,
+            cache,
+            monitor,
+        )
+        .await
+        .unwrap(),
+    );
+
     let schema_yaml = r#"
 id: https://example.org/parallel-test
 name: ParallelTest
@@ -452,51 +487,59 @@ slots:
     name: value
     range: integer
 "#;
-    
-    let schema = Arc::new(service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap());
-    
+
+    let schema = Arc::new(
+        service
+            .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+            .await
+            .unwrap(),
+    );
+
     // Test scaling from 1 to 8 cores
     for num_threads in [1, 2, 4, 8] {
         let test_size = 10000;
         let counter = Arc::new(AtomicUsize::new(0));
-        
+
         let start = Instant::now();
         let mut handles = Vec::new();
-        
+
         for thread_id in 0..num_threads {
             let service_clone = service.clone();
             let schema_clone = schema.clone();
             let counter_clone = counter.clone();
-            
+
             handles.push(tokio::spawn(async move {
                 let chunk_size = test_size / num_threads;
                 let start_idx = thread_id * chunk_size;
-                
+
                 for i in start_idx..(start_idx + chunk_size) {
                     let data = json!({
                         "id": format!("ID-{}", i),
                         "value": i as i32
                     });
-                    
-                    let report = service_clone.validate(&data, &schema_clone, "Data").await.unwrap();
+
+                    let report = service_clone
+                        .validate(&data, &schema_clone, "Data")
+                        .await
+                        .unwrap();
                     if report.valid {
                         counter_clone.fetch_add(1, Ordering::Relaxed);
                     }
                 }
             }));
         }
-        
+
         for handle in handles {
             handle.await.unwrap();
         }
-        
+
         let duration = start.elapsed();
         let throughput = test_size as f64 / duration.as_secs_f64();
-        
+
         println!("Parallel validation with {} threads:", num_threads);
         println!("  Throughput: {:.0} validations/second", throughput);
         println!("  Time: {:?}", duration);
-        
+
         // Should see near-linear scaling up to available cores
         if num_threads > 1 {
             assert!(throughput > 10000.0, "Parallel throughput too low");
@@ -514,7 +557,7 @@ async fn test_memory_efficiency() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -524,17 +567,22 @@ async fn test_memory_efficiency() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Large schema with many classes and slots
     let mut schema_classes = String::new();
     let mut schema_slots = String::new();
-    
+
     for i in 0..100 {
-        schema_classes.push_str(&format!("  Class{}:\n    name: Class{}\n    slots: [slot{}_1, slot{}_2]\n", i, i, i, i));
+        schema_classes.push_str(&format!(
+            "  Class{}:\n    name: Class{}\n    slots: [slot{}_1, slot{}_2]\n",
+            i, i, i, i
+        ));
         schema_slots.push_str(&format!("  slot{}_1:\n    name: slot{}_1\n    range: string\n  slot{}_2:\n    name: slot{}_2\n    range: integer\n", i, i, i, i));
     }
-    
+
     let large_schema = format!(
         r#"id: https://example.org/memory-test
 name: MemoryTest
@@ -548,13 +596,16 @@ slots:
 {}"#,
         schema_classes, schema_slots
     );
-    
+
     // Baseline memory (approximate)
     let baseline_memory = get_memory_usage();
-    
+
     // Load large schema
-    let schema = service.load_schema_str(&large_schema, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(&large_schema, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Perform many validations
     let validation_count = 10000;
     for i in 0..validation_count {
@@ -562,19 +613,22 @@ slots:
             format!("slot{}_1", i % 100): "test",
             format!("slot{}_2", i % 100): i
         });
-        
-        let _ = service.validate(&data, &schema, &format!("Class{}", i % 100)).await.unwrap();
+
+        let _ = service
+            .validate(&data, &schema, &format!("Class{}", i % 100))
+            .await
+            .unwrap();
     }
-    
+
     // Check memory usage
     let final_memory = get_memory_usage();
     let memory_overhead = final_memory.saturating_sub(baseline_memory);
-    
+
     println!("Memory usage:");
     println!("  Baseline: {} MB", baseline_memory / 1024 / 1024);
     println!("  Final: {} MB", final_memory / 1024 / 1024);
     println!("  Overhead: {} MB", memory_overhead / 1024 / 1024);
-    
+
     // Performance requirement: <50MB memory overhead
     assert!(
         memory_overhead < 50 * 1024 * 1024,
@@ -593,7 +647,7 @@ async fn test_cache_effectiveness() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -603,8 +657,10 @@ async fn test_cache_effectiveness() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     let schema_yaml = r#"
 id: https://example.org/cache-test
 name: CacheTest
@@ -630,15 +686,18 @@ slots:
     range: string
     multivalued: true
 "#;
-    
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Create repeating validation data
     let unique_items = 100;
     let total_validations = 10000;
-    
+
     let mut validation_times = Vec::new();
-    
+
     for i in 0..total_validations {
         let item_id = i % unique_items; // Repeat items to test cache
         let data = json!({
@@ -646,25 +705,32 @@ slots:
             "category": "ABC",
             "tags": ["tag1", "tag2"]
         });
-        
+
         let start = Instant::now();
         let _ = service.validate(&data, &schema, "Item").await.unwrap();
         validation_times.push(start.elapsed());
     }
-    
+
     // Calculate cache hit rate (later validations should be faster)
     let first_100_avg: Duration = validation_times[..100].iter().sum::<Duration>() / 100;
-    let last_100_avg: Duration = validation_times[validation_times.len()-100..].iter().sum::<Duration>() / 100;
-    
+    let last_100_avg: Duration = validation_times[validation_times.len() - 100..]
+        .iter()
+        .sum::<Duration>()
+        / 100;
+
     let speedup = first_100_avg.as_nanos() as f64 / last_100_avg.as_nanos() as f64;
-    
+
     println!("Cache effectiveness:");
     println!("  First 100 avg: {:?}", first_100_avg);
     println!("  Last 100 avg: {:?}", last_100_avg);
     println!("  Speedup: {:.2}x", speedup);
-    
+
     // Performance requirement: >1.3x speedup from cache (mock cache may not be as effective as real cache)
-    assert!(speedup > 1.3, "Cache not effective enough: {:.2}x speedup", speedup);
+    assert!(
+        speedup > 1.3,
+        "Cache not effective enough: {:.2}x speedup",
+        speedup
+    );
 }
 
 #[tokio::test]
@@ -677,7 +743,7 @@ async fn test_timeout_handling() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -687,8 +753,10 @@ async fn test_timeout_handling() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Schema with complex regex that could be slow
     let schema_yaml = r#"
 id: https://example.org/timeout-test
@@ -711,28 +779,32 @@ slots:
     range: string
     pattern: "^(a+)+$"  # Potential for catastrophic backtracking
 "#;
-    
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Test with potentially problematic input
     let data = json!({
         "id": "test1",
         "pattern_field": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"  // Will cause backtracking
     });
-    
+
     // Validation should timeout rather than hang
     let start = Instant::now();
     let result = timeout(
         Duration::from_secs(1),
-        service.validate(&data, &schema, "Complex")
-    ).await;
-    
+        service.validate(&data, &schema, "Complex"),
+    )
+    .await;
+
     let elapsed = start.elapsed();
-    
+
     println!("Timeout test:");
     println!("  Elapsed time: {:?}", elapsed);
     println!("  Result: {:?}", result.is_ok());
-    
+
     // Should complete within timeout
     assert!(elapsed < Duration::from_secs(1), "Validation took too long");
 }
@@ -747,18 +819,22 @@ async fn test_concurrent_schema_loading() {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
-    let service = Arc::new(create_linkml_service(
-        logger,
-        timestamp,
-        task_manager,
-        error_handler,
-        config_service,
-        cache,
-        monitor,
-    ).await.unwrap());
-    
+    let service = Arc::new(
+        create_linkml_service(
+            logger,
+            timestamp,
+            task_manager,
+            error_handler,
+            config_service,
+            cache,
+            monitor,
+        )
+        .await
+        .unwrap(),
+    );
+
     // Test concurrent loading of different schemas
     let schemas = vec![
         (
@@ -778,7 +854,7 @@ slots:
   id:
     name: id
     range: string
-"#
+"#,
         ),
         (
             "schema2",
@@ -797,7 +873,7 @@ slots:
   id:
     name: id
     range: integer
-"#
+"#,
         ),
         (
             "schema3",
@@ -816,35 +892,41 @@ slots:
   id:
     name: id
     range: boolean
-"#
+"#,
         ),
     ];
-    
+
     let mut handles = Vec::new();
     let start = Instant::now();
-    
+
     for (name, content) in schemas {
         let service_clone = service.clone();
         let content = content.to_string();
-        
+
         handles.push(tokio::spawn(async move {
-            let schema = service_clone.load_schema_str(&content, SchemaFormat::Yaml).await.unwrap();
+            let schema = service_clone
+                .load_schema_str(&content, SchemaFormat::Yaml)
+                .await
+                .unwrap();
             (name, schema)
         }));
     }
-    
+
     let mut loaded_schemas = Vec::new();
     for handle in handles {
         let (name, schema) = handle.await.unwrap();
         loaded_schemas.push((name, schema));
     }
-    
+
     let duration = start.elapsed();
-    
+
     println!("Concurrent schema loading:");
     println!("  Schemas loaded: {}", loaded_schemas.len());
     println!("  Total time: {:?}", duration);
-    
+
     assert_eq!(loaded_schemas.len(), 3);
-    assert!(duration < Duration::from_millis(200), "Concurrent loading too slow");
+    assert!(
+        duration < Duration::from_millis(200),
+        "Concurrent loading too slow"
+    );
 }

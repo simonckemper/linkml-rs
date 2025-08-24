@@ -3,18 +3,18 @@
 //! This test suite focuses on performance characteristics and scalability
 //! of the LinkML service when used in production scenarios.
 
-use linkml_service::{
-    LinkMLService, create_linkml_service, LinkMLServiceConfig,
-    SchemaView, GeneratorConfig, GeneratorType
-};
-use linkml_core::prelude::*;
-use std::sync::Arc;
-use serde_json::json;
-use std::time::{Instant, Duration};
-use tempfile::TempDir;
-use std::fs;
 use futures::future::join_all;
+use linkml_core::prelude::*;
+use linkml_service::{
+    GeneratorConfig, GeneratorType, LinkMLService, LinkMLServiceConfig, SchemaView,
+    create_linkml_service,
+};
+use serde_json::json;
+use std::fs;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
+use tempfile::TempDir;
 
 // Import mock services
 mod mock_services;
@@ -332,7 +332,7 @@ fn generate_large_customer(id: u32) -> serde_json::Value {
             "validated": i % 2 == 0
         }));
     }
-    
+
     let mut contacts = Vec::new();
     for i in 1..=3 {
         contacts.push(json!({
@@ -345,7 +345,7 @@ fn generate_large_customer(id: u32) -> serde_json::Value {
             "active": true
         }));
     }
-    
+
     json!({
         "id": format!("CUS-{:010}", id),
         "created_timestamp": "2025-01-01T00:00:00Z",
@@ -372,7 +372,7 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
         expression_timeout_ms: 1000,
         ..Default::default()
     };
-    
+
     let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
@@ -380,7 +380,7 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
     let config_service = Arc::new(MockConfigurationService::new());
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     linkml_service::create_linkml_service_with_config(
         logger,
         timestamp,
@@ -390,78 +390,98 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
         cache,
         monitor,
         config,
-    ).await.unwrap()
+    )
+    .await
+    .unwrap()
 }
 
 #[tokio::test]
 async fn test_large_schema_loading_performance() {
     println!("=== Testing Large Schema Loading Performance ===");
-    
+
     let service = create_performance_service().await;
-    
+
     // Measure schema loading time
     let start = Instant::now();
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let load_time = start.elapsed();
-    
+
     println!("Schema loading time: {:?}", load_time);
-    assert!(load_time < Duration::from_millis(500), "Schema loading should be fast");
-    
+    assert!(
+        load_time < Duration::from_millis(500),
+        "Schema loading should be fast"
+    );
+
     // Create SchemaView and measure introspection
     let view_start = Instant::now();
     let view = SchemaView::new(schema.clone());
     let stats = view.get_statistics();
     let view_time = view_start.elapsed();
-    
+
     println!("SchemaView creation time: {:?}", view_time);
     println!("Schema statistics:");
     println!("  - Classes: {}", stats.num_classes);
     println!("  - Attributes: {}", stats.num_slots);
     println!("  - Enums: {}", stats.num_enums);
     println!("  - Rules: {}", stats.num_rules);
-    
-    assert!(view_time < Duration::from_millis(100), "SchemaView creation should be fast");
+
+    assert!(
+        view_time < Duration::from_millis(100),
+        "SchemaView creation should be fast"
+    );
 }
 
 #[tokio::test]
 async fn test_bulk_validation_performance() {
     println!("=== Testing Bulk Validation Performance ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Generate test data
     let num_customers = 1000;
     let mut customers = Vec::new();
     for i in 0..num_customers {
         customers.push(generate_large_customer(i));
     }
-    
+
     // Warm up cache
     println!("Warming up cache...");
     for i in 0..10 {
-        let _ = service.validate(&customers[i], &schema, "Customer").await.unwrap();
+        let _ = service
+            .validate(&customers[i], &schema, "Customer")
+            .await
+            .unwrap();
     }
-    
+
     // Measure bulk validation
     println!("Starting bulk validation of {} customers...", num_customers);
     let start = Instant::now();
     let mut valid_count = 0;
     let mut total_errors = 0;
-    
+
     for customer in &customers {
-        let report = service.validate(customer, &schema, "Customer").await.unwrap();
+        let report = service
+            .validate(customer, &schema, "Customer")
+            .await
+            .unwrap();
         if report.valid {
             valid_count += 1;
         } else {
             total_errors += report.errors.len();
         }
     }
-    
+
     let elapsed = start.elapsed();
     let per_record = elapsed.as_micros() as f64 / num_customers as f64;
     let throughput = num_customers as f64 / elapsed.as_secs_f64();
-    
+
     println!("\nBulk validation results:");
     println!("  - Total records: {}", num_customers);
     println!("  - Valid records: {}", valid_count);
@@ -469,7 +489,7 @@ async fn test_bulk_validation_performance() {
     println!("  - Total time: {:?}", elapsed);
     println!("  - Per record: {:.2} μs", per_record);
     println!("  - Throughput: {:.0} records/second", throughput);
-    
+
     assert_eq!(valid_count, num_customers, "All customers should be valid");
     assert!(throughput > 100.0, "Should validate >100 records/second");
 }
@@ -477,30 +497,38 @@ async fn test_bulk_validation_performance() {
 #[tokio::test]
 async fn test_concurrent_schema_operations() {
     println!("=== Testing Concurrent Schema Operations ===");
-    
+
     let service = create_performance_service().await;
-    let schema = Arc::new(service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap());
-    
+    let schema = Arc::new(
+        service
+            .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+            .await
+            .unwrap(),
+    );
+
     let num_concurrent_tasks = 100;
     let operations_per_task = 50;
-    
+
     let total_operations = Arc::new(AtomicU64::new(0));
     let start = Instant::now();
-    
+
     let mut handles = Vec::new();
-    
+
     for task_id in 0..num_concurrent_tasks {
         let service_clone = service.clone();
         let schema_clone = schema.clone();
         let counter = total_operations.clone();
-        
+
         let handle = tokio::spawn(async move {
             for op in 0..operations_per_task {
                 match task_id % 4 {
                     0 => {
                         // Validation
                         let customer = generate_large_customer(task_id * 100 + op);
-                        let _ = service_clone.validate(&customer, &schema_clone, "Customer").await.unwrap();
+                        let _ = service_clone
+                            .validate(&customer, &schema_clone, "Customer")
+                            .await
+                            .unwrap();
                     }
                     1 => {
                         // SchemaView operations
@@ -515,12 +543,15 @@ async fn test_concurrent_schema_operations() {
                             "quantity_reserved": 20,
                             "reorder_point": 30
                         });
-                        let _ = service_clone.evaluate_expression(
-                            "quantity_on_hand - quantity_reserved",
-                            &inventory,
-                            &schema_clone,
-                            Some("InventoryItem")
-                        ).await.unwrap();
+                        let _ = service_clone
+                            .evaluate_expression(
+                                "quantity_on_hand - quantity_reserved",
+                                &inventory,
+                                &schema_clone,
+                                Some("InventoryItem"),
+                            )
+                            .await
+                            .unwrap();
                     }
                     3 => {
                         // Rule checking
@@ -533,39 +564,45 @@ async fn test_concurrent_schema_operations() {
                         });
                         let _ = service_clone.validate(&order, &schema_clone, "Order").await;
                     }
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 }
                 counter.fetch_add(1, Ordering::Relaxed);
             }
         });
         handles.push(handle);
     }
-    
+
     // Wait for all tasks
     for handle in handles {
         handle.await.unwrap();
     }
-    
+
     let elapsed = start.elapsed();
     let total_ops = total_operations.load(Ordering::Relaxed);
     let ops_per_second = total_ops as f64 / elapsed.as_secs_f64();
-    
+
     println!("\nConcurrent operations results:");
     println!("  - Total operations: {}", total_ops);
     println!("  - Time elapsed: {:?}", elapsed);
     println!("  - Operations/second: {:.0}", ops_per_second);
-    
-    assert_eq!(total_ops, (num_concurrent_tasks * operations_per_task) as u64);
+
+    assert_eq!(
+        total_ops,
+        (num_concurrent_tasks * operations_per_task) as u64
+    );
     assert!(ops_per_second > 1000.0, "Should handle >1000 ops/second");
 }
 
 #[tokio::test]
 async fn test_memory_efficiency() {
     println!("=== Testing Memory Efficiency ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Create a large order with many line items
     let mut line_items = Vec::new();
     for i in 1..=100 {
@@ -597,7 +634,7 @@ async fn test_memory_efficiency() {
             "line_total": 449.95
         }));
     }
-    
+
     let large_order = json!({
         "id": "ORD-0000000001",
         "created_timestamp": "2025-01-16T10:00:00Z",
@@ -631,20 +668,23 @@ async fn test_memory_efficiency() {
         "shipping": 50.00,
         "total": 48644.60
     });
-    
+
     // Validate multiple times to test memory usage
     println!("Validating large order 100 times...");
     let start = Instant::now();
-    
+
     for i in 0..100 {
-        let report = service.validate(&large_order, &schema, "Order").await.unwrap();
+        let report = service
+            .validate(&large_order, &schema, "Order")
+            .await
+            .unwrap();
         assert!(report.valid, "Large order should be valid");
-        
+
         if i % 20 == 0 {
             println!("  Completed {} validations", i);
         }
     }
-    
+
     let elapsed = start.elapsed();
     println!("Completed 100 large order validations in {:?}", elapsed);
     println!("Average time per validation: {:?}", elapsed / 100);
@@ -653,12 +693,15 @@ async fn test_memory_efficiency() {
 #[tokio::test]
 async fn test_code_generation_performance() {
     println!("=== Testing Code Generation Performance ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Test different generators
     let generators = vec![
         ("TypeScript", GeneratorType::TypeScript, "enterprise.ts"),
@@ -667,7 +710,7 @@ async fn test_code_generation_performance() {
         ("JSON Schema", GeneratorType::JsonSchema, "enterprise.json"),
         ("OpenAPI", GeneratorType::OpenAPI, "enterprise-api.yaml"),
     ];
-    
+
     println!("\nCode generation performance:");
     for (name, gen_type, filename) in generators {
         let config = GeneratorConfig {
@@ -677,144 +720,192 @@ async fn test_code_generation_performance() {
             include_validation: true,
             ..Default::default()
         };
-        
+
         let start = Instant::now();
         service.generate_code(&schema, config).await.unwrap();
         let elapsed = start.elapsed();
-        
+
         let file_size = fs::metadata(temp_dir.path().join(filename)).unwrap().len();
-        
-        println!("  - {}: {:?} ({:.1} KB)", name, elapsed, file_size as f64 / 1024.0);
-        assert!(elapsed < Duration::from_secs(2), "{} generation should complete quickly", name);
+
+        println!(
+            "  - {}: {:?} ({:.1} KB)",
+            name,
+            elapsed,
+            file_size as f64 / 1024.0
+        );
+        assert!(
+            elapsed < Duration::from_secs(2),
+            "{} generation should complete quickly",
+            name
+        );
     }
 }
 
 #[tokio::test]
 async fn test_expression_evaluation_performance() {
     println!("=== Testing Expression Evaluation Performance ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Complex expressions to evaluate
     let expressions = vec![
         ("Simple arithmetic", "quantity_on_hand - quantity_reserved"),
         ("Comparison", "quantity_on_hand > reorder_point"),
-        ("Complex condition", "(quantity_on_hand - quantity_reserved) <= reorder_point && reorder_point > 0"),
+        (
+            "Complex condition",
+            "(quantity_on_hand - quantity_reserved) <= reorder_point && reorder_point > 0",
+        ),
         ("String operation", "warehouse_locations.join(\", \")"),
         ("Array operation", "warehouse_locations.length > 0"),
     ];
-    
+
     let inventory_data = json!({
         "quantity_on_hand": 500,
         "quantity_reserved": 150,
         "reorder_point": 100,
         "warehouse_locations": ["W1-A-1", "W1-A-2", "W2-B-1", "W2-B-2", "W3-C-1"]
     });
-    
+
     println!("\nExpression evaluation performance:");
-    
+
     for (name, expr) in expressions {
         let iterations = 10000;
         let start = Instant::now();
-        
+
         for _ in 0..iterations {
-            let _ = service.evaluate_expression(
-                expr,
-                &inventory_data,
-                &schema,
-                Some("InventoryItem")
-            ).await.unwrap();
+            let _ = service
+                .evaluate_expression(expr, &inventory_data, &schema, Some("InventoryItem"))
+                .await
+                .unwrap();
         }
-        
+
         let elapsed = start.elapsed();
         let per_eval = elapsed / iterations;
         let evals_per_sec = iterations as f64 / elapsed.as_secs_f64();
-        
-        println!("  - {}: {:?} per eval, {:.0} evals/sec", name, per_eval, evals_per_sec);
-        assert!(per_eval < Duration::from_micros(100), "Expression evaluation should be fast");
+
+        println!(
+            "  - {}: {:?} per eval, {:.0} evals/sec",
+            name, per_eval, evals_per_sec
+        );
+        assert!(
+            per_eval < Duration::from_micros(100),
+            "Expression evaluation should be fast"
+        );
     }
 }
 
 #[tokio::test]
 async fn test_cache_effectiveness() {
     println!("=== Testing Cache Effectiveness ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Create test data
     let customer = generate_large_customer(1);
-    
+
     // Cold cache validation
     let cold_start = Instant::now();
-    let cold_report = service.validate(&customer, &schema, "Customer").await.unwrap();
+    let cold_report = service
+        .validate(&customer, &schema, "Customer")
+        .await
+        .unwrap();
     let cold_time = cold_start.elapsed();
     assert!(cold_report.valid);
-    
+
     // Warm cache validation (same data)
     let warm_start = Instant::now();
-    let warm_report = service.validate(&customer, &schema, "Customer").await.unwrap();
+    let warm_report = service
+        .validate(&customer, &schema, "Customer")
+        .await
+        .unwrap();
     let warm_time = warm_start.elapsed();
     assert!(warm_report.valid);
-    
+
     // Multiple warm cache hits
     let multi_start = Instant::now();
     for _ in 0..100 {
-        let _ = service.validate(&customer, &schema, "Customer").await.unwrap();
+        let _ = service
+            .validate(&customer, &schema, "Customer")
+            .await
+            .unwrap();
     }
     let multi_time = multi_start.elapsed();
     let avg_cached = multi_time / 100;
-    
+
     println!("\nCache effectiveness:");
     println!("  - Cold cache: {:?}", cold_time);
     println!("  - Warm cache: {:?}", warm_time);
     println!("  - Average cached: {:?}", avg_cached);
-    println!("  - Cache speedup: {:.2}x", cold_time.as_nanos() as f64 / warm_time.as_nanos() as f64);
-    
-    assert!(warm_time < cold_time / 2, "Cache should provide significant speedup");
-    assert!(avg_cached < cold_time / 5, "Repeated cache hits should be very fast");
+    println!(
+        "  - Cache speedup: {:.2}x",
+        cold_time.as_nanos() as f64 / warm_time.as_nanos() as f64
+    );
+
+    assert!(
+        warm_time < cold_time / 2,
+        "Cache should provide significant speedup"
+    );
+    assert!(
+        avg_cached < cold_time / 5,
+        "Repeated cache hits should be very fast"
+    );
 }
 
 #[tokio::test]
 async fn test_parallel_validation_scaling() {
     println!("=== Testing Parallel Validation Scaling ===");
-    
+
     let service = create_performance_service().await;
-    let schema = Arc::new(service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap());
-    
+    let schema = Arc::new(
+        service
+            .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+            .await
+            .unwrap(),
+    );
+
     // Test with different parallelism levels
     let test_sizes = vec![1, 2, 4, 8, 16];
     let records_per_thread = 100;
-    
+
     println!("\nParallel validation scaling:");
     let mut previous_time = Duration::from_secs(0);
-    
+
     for num_threads in test_sizes {
         let start = Instant::now();
         let mut handles = Vec::new();
-        
+
         for thread_id in 0..num_threads {
             let service_clone = service.clone();
             let schema_clone = schema.clone();
-            
+
             let handle = tokio::spawn(async move {
                 for i in 0..records_per_thread {
                     let customer = generate_large_customer((thread_id * 1000 + i) as u32);
-                    let _ = service_clone.validate(&customer, &schema_clone, "Customer").await.unwrap();
+                    let _ = service_clone
+                        .validate(&customer, &schema_clone, "Customer")
+                        .await
+                        .unwrap();
                 }
             });
             handles.push(handle);
         }
-        
+
         for handle in handles {
             handle.await.unwrap();
         }
-        
+
         let elapsed = start.elapsed();
         let total_records = num_threads * records_per_thread;
         let throughput = total_records as f64 / elapsed.as_secs_f64();
-        
+
         let scaling_efficiency = if num_threads > 1 && previous_time > Duration::from_secs(0) {
             let expected_time = previous_time / (num_threads / (num_threads / 2)) as u32;
             let efficiency = expected_time.as_secs_f64() / elapsed.as_secs_f64() * 100.0;
@@ -822,10 +913,12 @@ async fn test_parallel_validation_scaling() {
         } else {
             "N/A".to_string()
         };
-        
-        println!("  - {} threads: {:?}, {:.0} records/sec, efficiency: {}", 
-                 num_threads, elapsed, throughput, scaling_efficiency);
-        
+
+        println!(
+            "  - {} threads: {:?}, {:.0} records/sec, efficiency: {}",
+            num_threads, elapsed, throughput, scaling_efficiency
+        );
+
         if num_threads > 1 {
             previous_time = elapsed;
         }
@@ -835,22 +928,25 @@ async fn test_parallel_validation_scaling() {
 #[tokio::test]
 async fn test_stress_test_with_errors() {
     println!("=== Testing Stress Test with Validation Errors ===");
-    
+
     let service = create_performance_service().await;
-    let schema = service.load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Create mix of valid and invalid data
     let mut test_data = Vec::new();
-    
+
     // Valid customers
     for i in 0..500 {
         test_data.push((generate_large_customer(i), true));
     }
-    
+
     // Invalid customers (various error types)
     for i in 500..1000 {
         let mut customer = generate_large_customer(i);
-        
+
         match i % 5 {
             0 => {
                 // Missing required field
@@ -872,39 +968,39 @@ async fn test_stress_test_with_errors() {
                 // Cardinality violation
                 customer["addresses"] = json!([]);
             }
-            _ => unreachable!()
+            _ => unreachable!(),
         }
-        
+
         test_data.push((customer, false));
     }
-    
+
     // Shuffle to mix valid and invalid
     use rand::seq::SliceRandom;
     use rand::thread_rng;
     test_data.shuffle(&mut thread_rng());
-    
+
     // Run stress test
     let start = Instant::now();
     let mut valid_count = 0;
     let mut error_count = 0;
     let mut total_validation_errors = 0;
-    
+
     for (data, expected_valid) in &test_data {
         let report = service.validate(data, &schema, "Customer").await.unwrap();
-        
+
         if report.valid {
             valid_count += 1;
         } else {
             error_count += 1;
             total_validation_errors += report.errors.len();
         }
-        
+
         assert_eq!(report.valid, *expected_valid, "Validation result mismatch");
     }
-    
+
     let elapsed = start.elapsed();
     let throughput = test_data.len() as f64 / elapsed.as_secs_f64();
-    
+
     println!("\nStress test results:");
     println!("  - Total records: {}", test_data.len());
     println!("  - Valid records: {}", valid_count);
@@ -912,10 +1008,15 @@ async fn test_stress_test_with_errors() {
     println!("  - Total validation errors: {}", total_validation_errors);
     println!("  - Time elapsed: {:?}", elapsed);
     println!("  - Throughput: {:.0} records/second", throughput);
-    println!("  - Average errors per invalid record: {:.1}", 
-             total_validation_errors as f64 / error_count as f64);
-    
+    println!(
+        "  - Average errors per invalid record: {:.1}",
+        total_validation_errors as f64 / error_count as f64
+    );
+
     assert_eq!(valid_count, 500);
     assert_eq!(error_count, 500);
-    assert!(throughput > 100.0, "Should maintain performance even with errors");
+    assert!(
+        throughput > 100.0,
+        "Should maintain performance even with errors"
+    );
 }

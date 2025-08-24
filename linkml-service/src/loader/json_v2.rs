@@ -10,9 +10,9 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+use super::traits::{DataInstance, DumperError, LoaderError};
+use super::traits_v2::{DataDumperV2, DataLoaderV2, DumperResult, LoaderResult};
 use crate::file_system_adapter::FileSystemOperations;
-use super::traits::{DataInstance, LoaderError, DumperError};
-use super::traits_v2::{DataLoaderV2, DataDumperV2, LoaderResult, DumperResult};
 
 /// JSON loader v2 with file system adapter support
 #[derive(Default)]
@@ -30,13 +30,13 @@ impl JsonLoaderV2 {
             strict: false,
         }
     }
-    
+
     /// Set validation enabled
     pub fn with_validation(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
     }
-    
+
     /// Set strict mode
     pub fn with_strict(mut self, strict: bool) -> Self {
         self.strict = strict;
@@ -52,27 +52,29 @@ impl DataLoaderV2 for JsonLoaderV2 {
         schema: &SchemaDefinition,
         fs: Arc<F>,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = fs.read_to_string(path).await
-            .map_err(|e| LoaderError::Io(std::io::Error::new(
+        let content = fs.read_to_string(path).await.map_err(|e| {
+            LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                e.to_string()
-            )))?;
-        
+                e.to_string(),
+            ))
+        })?;
+
         self.load_str(&content, schema).await
     }
-    
+
     async fn load_str(
         &mut self,
         content: &str,
         _schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let json_value: Value = serde_json::from_str(content)
-            .map_err(|e| LoaderError::Parse(e.to_string()))?;
-        
+        let json_value: Value =
+            serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
+
         // Handle both single objects and arrays
         let instances = match json_value {
             Value::Array(items) => {
-                items.into_iter()
+                items
+                    .into_iter()
                     .filter_map(|item| {
                         if let Value::Object(obj) = item {
                             Some(DataInstance {
@@ -97,18 +99,18 @@ impl DataLoaderV2 for JsonLoaderV2 {
             }
             _ => {
                 return Err(LoaderError::Parse(
-                    "Expected object or array at root".to_string()
+                    "Expected object or array at root".to_string(),
                 ));
             }
         };
-        
+
         Ok(instances)
     }
-    
+
     fn name(&self) -> &'static str {
         "JSONLoaderV2"
     }
-    
+
     fn supported_extensions(&self) -> Vec<&'static str> {
         vec!["json", "jsonl"]
     }
@@ -131,13 +133,13 @@ impl JsonDumperV2 {
             jsonl: false,
         }
     }
-    
+
     /// Set pretty printing
     pub fn with_pretty(mut self, pretty: bool) -> Self {
         self.pretty = pretty;
         self
     }
-    
+
     /// Set JSON Lines format
     pub fn with_jsonl(mut self, jsonl: bool) -> Self {
         self.jsonl = jsonl;
@@ -155,16 +157,17 @@ impl DataDumperV2 for JsonDumperV2 {
         fs: Arc<F>,
     ) -> DumperResult<()> {
         let content = self.dump_str(instances, schema).await?;
-        
-        fs.write(path, &content).await
-            .map_err(|e| DumperError::Io(std::io::Error::new(
+
+        fs.write(path, &content).await.map_err(|e| {
+            DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                e.to_string()
-            )))?;
-        
+                e.to_string(),
+            ))
+        })?;
+
         Ok(())
     }
-    
+
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
@@ -176,32 +179,47 @@ impl DataDumperV2 for JsonDumperV2 {
                 .into_iter()
                 .map(|instance| {
                     let mut obj = instance.data;
-                    obj.insert("@type".to_string(), serde_json::Value::String(instance.class_name));
+                    obj.insert(
+                        "@type".to_string(),
+                        serde_json::Value::String(instance.class_name),
+                    );
                     let json_obj = serde_json::Value::Object(serde_json::Map::from_iter(obj));
                     serde_json::to_string(&json_obj)
                 })
                 .collect::<std::result::Result<Vec<_>, _>>()
                 .map_err(|e| DumperError::Serialization(e.to_string()))?;
-            
+
             Ok(lines.join("\n"))
         } else {
             // Regular JSON format
             let json_output = if instances.len() == 1 {
                 // Single instance - output as object
-                let instance = instances.into_iter().next().expect("should have at least one instance after length check");
+                let instance = instances
+                    .into_iter()
+                    .next()
+                    .expect("should have at least one instance after length check");
                 let mut obj = instance.data;
-                obj.insert("@type".to_string(), serde_json::Value::String(instance.class_name));
+                obj.insert(
+                    "@type".to_string(),
+                    serde_json::Value::String(instance.class_name),
+                );
                 serde_json::Value::Object(serde_json::Map::from_iter(obj))
             } else {
                 // Multiple instances - output as array
-                let json_instances: Vec<serde_json::Value> = instances.into_iter().map(|instance| {
-                    let mut obj = instance.data;
-                    obj.insert("@type".to_string(), serde_json::Value::String(instance.class_name));
-                    serde_json::Value::Object(serde_json::Map::from_iter(obj))
-                }).collect();
+                let json_instances: Vec<serde_json::Value> = instances
+                    .into_iter()
+                    .map(|instance| {
+                        let mut obj = instance.data;
+                        obj.insert(
+                            "@type".to_string(),
+                            serde_json::Value::String(instance.class_name),
+                        );
+                        serde_json::Value::Object(serde_json::Map::from_iter(obj))
+                    })
+                    .collect();
                 serde_json::Value::Array(json_instances)
             };
-            
+
             if self.pretty {
                 serde_json::to_string_pretty(&json_output)
                     .map_err(|e| DumperError::Serialization(e.to_string()))
@@ -211,11 +229,11 @@ impl DataDumperV2 for JsonDumperV2 {
             }
         }
     }
-    
+
     fn name(&self) -> &'static str {
         "JSONDumperV2"
     }
-    
+
     fn supported_extensions(&self) -> Vec<&'static str> {
         if self.jsonl {
             vec!["jsonl", "ndjson"]
@@ -230,40 +248,49 @@ mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
     use tempfile::TempDir;
-    
+
     #[tokio::test]
     async fn test_json_loader_v2() {
         let temp_dir = TempDir::new().expect("should create temporary directory");
-        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
-        
+        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
+            temp_dir.path().to_path_buf(),
+        ));
+
         let json_content = r#"[
   {"name": "Alice", "age": 30},
   {"name": "Bob", "age": 25}
 ]"#;
-        
+
         let file_path = temp_dir.path().join("data.json");
-        fs.write(&file_path, json_content).await.expect("should write JSON file");
-        
+        fs.write(&file_path, json_content)
+            .await
+            .expect("should write JSON file");
+
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
-        let instances = loader.load_file(&file_path, &schema, fs).await.expect("should load JSON file");
-        
+        let instances = loader
+            .load_file(&file_path, &schema, fs)
+            .await
+            .expect("should load JSON file");
+
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
         assert_eq!(instances[1].data["name"], "Bob");
     }
-    
+
     #[tokio::test]
     async fn test_json_dumper_v2() {
         let temp_dir = TempDir::new().expect("should create temporary directory");
-        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
-        
+        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
+            temp_dir.path().to_path_buf(),
+        ));
+
         let instances = vec![
             DataInstance {
                 class_name: "Person".to_string(),
                 data: HashMap::from([
                     ("name".to_string(), serde_json::json!("Alice")),
-                    ("age".to_string(), serde_json::json!(30))
+                    ("age".to_string(), serde_json::json!(30)),
                 ]),
                 id: Some("person1".to_string()),
                 metadata: HashMap::new(),
@@ -272,31 +299,43 @@ mod tests {
                 class_name: "Person".to_string(),
                 data: HashMap::from([
                     ("name".to_string(), serde_json::json!("Bob")),
-                    ("age".to_string(), serde_json::json!(25))
+                    ("age".to_string(), serde_json::json!(25)),
                 ]),
                 id: Some("person2".to_string()),
                 metadata: HashMap::new(),
             },
         ];
-        
+
         // Test regular JSON
         let file_path = temp_dir.path().join("output.json");
         let mut dumper = JsonDumperV2::new();
         let schema = SchemaDefinition::default();
-        
-        dumper.dump_file(instances.clone(), &file_path, &schema, fs.clone()).await.expect("should dump instances to JSON");
-        
-        let content = fs.read_to_string(&file_path).await.expect("should read JSON file");
+
+        dumper
+            .dump_file(instances.clone(), &file_path, &schema, fs.clone())
+            .await
+            .expect("should dump instances to JSON");
+
+        let content = fs
+            .read_to_string(&file_path)
+            .await
+            .expect("should read JSON file");
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
-        
+
         // Test JSON Lines
         let jsonl_path = temp_dir.path().join("output.jsonl");
         let mut jsonl_dumper = JsonDumperV2::new().with_jsonl(true);
-        
-        jsonl_dumper.dump_file(instances, &jsonl_path, &schema, fs.clone()).await.expect("should dump instances to JSONL");
-        
-        let jsonl_content = fs.read_to_string(&jsonl_path).await.expect("should read JSONL file");
+
+        jsonl_dumper
+            .dump_file(instances, &jsonl_path, &schema, fs.clone())
+            .await
+            .expect("should dump instances to JSONL");
+
+        let jsonl_content = fs
+            .read_to_string(&jsonl_path)
+            .await
+            .expect("should read JSONL file");
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
         assert_eq!(lines.len(), 2);
     }

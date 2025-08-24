@@ -1,6 +1,6 @@
 //! Example of generating prefix maps from LinkML schemas
 
-use linkml_service::generator::{PrefixMapGenerator, PrefixMapGeneratorConfig, PrefixMapFormat};
+use linkml_service::generator::{PrefixMapFormat, PrefixMapGenerator, PrefixMapGeneratorConfig};
 use linkml_service::parser::SchemaParser;
 
 #[tokio::main]
@@ -119,17 +119,17 @@ classes:
     // Parse the schema
     let mut parser = SchemaParser::new();
     let schema = parser.parse(schema_yaml)?;
-    
+
     println!("Generating prefix maps in various formats...\n");
-    
+
     // Generate simple JSON format
     let config_simple = PrefixMapGeneratorConfig::default();
     let generator_simple = PrefixMapGenerator::new(config_simple);
     let output_simple = generator_simple.generate(&schema)?;
-    
+
     println!("=== Simple JSON Format ===");
     println!("{}\n", output_simple);
-    
+
     // Generate extended JSON format with metadata
     let config_extended = PrefixMapGeneratorConfig {
         format: PrefixMapFormat::Extended,
@@ -139,10 +139,10 @@ classes:
     };
     let generator_extended = PrefixMapGenerator::new(config_extended);
     let output_extended = generator_extended.generate(&schema)?;
-    
+
     println!("=== Extended JSON Format with Metadata ===");
     println!("{}\n", output_extended);
-    
+
     // Generate Turtle format for SPARQL
     let config_turtle = PrefixMapGeneratorConfig {
         format: PrefixMapFormat::Turtle,
@@ -150,10 +150,10 @@ classes:
     };
     let generator_turtle = PrefixMapGenerator::new(config_turtle);
     let output_turtle = generator_turtle.generate(&schema)?;
-    
+
     println!("=== Turtle/SPARQL Format ===");
     println!("{}\n", output_turtle);
-    
+
     // Generate YAML format
     let config_yaml = PrefixMapGeneratorConfig {
         format: PrefixMapFormat::Yaml,
@@ -162,10 +162,10 @@ classes:
     };
     let generator_yaml = PrefixMapGenerator::new(config_yaml);
     let output_yaml = generator_yaml.generate(&schema)?;
-    
+
     println!("=== YAML Format ===");
     println!("{}\n", output_yaml);
-    
+
     // Generate CSV format
     let config_csv = PrefixMapGeneratorConfig {
         format: PrefixMapFormat::Csv,
@@ -173,15 +173,21 @@ classes:
     };
     let generator_csv = PrefixMapGenerator::new(config_csv);
     let output_csv = generator_csv.generate(&schema)?;
-    
+
     println!("=== CSV Format ===");
     println!("{}\n", output_csv);
-    
+
     // Generate with additional custom prefixes
     let mut additional_prefixes = std::collections::HashMap::new();
-    additional_prefixes.insert("custom".to_string(), "https://custom.example.com/".to_string());
-    additional_prefixes.insert("local".to_string(), "http://localhost:8080/vocab#".to_string());
-    
+    additional_prefixes.insert(
+        "custom".to_string(),
+        "https://custom.example.com/".to_string(),
+    );
+    additional_prefixes.insert(
+        "local".to_string(),
+        "http://localhost:8080/vocab#".to_string(),
+    );
+
     let config_custom = PrefixMapGeneratorConfig {
         format: PrefixMapFormat::Extended,
         include_metadata: true,
@@ -190,21 +196,21 @@ classes:
     };
     let generator_custom = PrefixMapGenerator::new(config_custom);
     let output_custom = generator_custom.generate(&schema)?;
-    
+
     println!("=== Extended Format with Custom Prefixes ===");
     println!("{}\n", output_custom);
-    
+
     // Save different formats to files
     std::fs::write("prefix_map.json", &output_simple)?;
     std::fs::write("prefix_map.ttl", &output_turtle)?;
     std::fs::write("prefix_map.yaml", &output_yaml)?;
     std::fs::write("prefix_map.csv", &output_csv)?;
-    
+
     println!("Prefix maps saved to:");
     println!("  - prefix_map.json");
     println!("  - prefix_map.ttl");
     println!("  - prefix_map.yaml");
     println!("  - prefix_map.csv");
-    
+
     Ok(())
 }

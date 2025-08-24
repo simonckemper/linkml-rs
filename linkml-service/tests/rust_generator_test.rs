@@ -1,17 +1,14 @@
 //! Comprehensive tests for the Rust code generator
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use linkml_service::generator::{GeneratorOptions, RustGenerator, Generator};
+use linkml_service::generator::{Generator, GeneratorOptions, RustGenerator};
 use serde_json::json;
 
 async fn generate_rust(schema: SchemaDefinition) -> String {
     let generator = RustGenerator::new();
-    let options = GeneratorOptions::new()
-        .with_docs(true);
+    let options = GeneratorOptions::new().with_docs(true);
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    assert_eq!(outputs.len(), 1);
-    outputs[0].content.clone()
+    generator.generate(&schema).unwrap()
 }
 
 #[tokio::test]
@@ -34,30 +31,39 @@ async fn test_simple_struct_generation() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        description: Some("Unique identifier".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            description: Some("Unique identifier".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        description: Some("Person's full name".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            description: Some("Person's full name".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        description: Some("Age in years".to_string()),
-        range: Some("integer".to_string()),
-        minimum_value: Some(json!(0)),
-        maximum_value: Some(json!(150)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            description: Some("Age in years".to_string()),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            maximum_value: Some(json!(150)),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -103,27 +109,33 @@ async fn test_enum_generation() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("status".to_string(), SlotDefinition {
-        name: "status".to_string(),
-        description: Some("Current status".to_string()),
-        permissible_values: vec![
-            PermissibleValue::Simple("active".to_string()),
-            PermissibleValue::Simple("inactive".to_string()),
-            PermissibleValue::Complex {
-                text: "pending-review".to_string(),
-                description: Some("Awaiting review".to_string()),
-                meaning: None,
-            },
-        ],
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "status".to_string(),
+        SlotDefinition {
+            name: "status".to_string(),
+            description: Some("Current status".to_string()),
+            permissible_values: vec![
+                PermissibleValue::Simple("active".to_string()),
+                PermissibleValue::Simple("inactive".to_string()),
+                PermissibleValue::Complex {
+                    text: "pending-review".to_string(),
+                    description: Some("Awaiting review".to_string()),
+                    meaning: None,
+                },
+            ],
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -165,21 +177,27 @@ async fn test_pattern_validation() {
 
     schema.classes.insert("Contact".to_string(), contact);
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        description: Some("Email address".to_string()),
-        range: Some("string".to_string()),
-        pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            description: Some("Email address".to_string()),
+            range: Some("string".to_string()),
+            pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("phone".to_string(), SlotDefinition {
-        name: "phone".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "phone".to_string(),
+        SlotDefinition {
+            name: "phone".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -208,34 +226,47 @@ async fn test_multivalued_fields() {
 
     let group = ClassDefinition {
         name: "Group".to_string(),
-        slots: vec!["name".to_string(), "members".to_string(), "tags".to_string()],
+        slots: vec![
+            "name".to_string(),
+            "members".to_string(),
+            "tags".to_string(),
+        ],
         ..Default::default()
     };
 
     schema.classes.insert("Group".to_string(), group);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("members".to_string(), SlotDefinition {
-        name: "members".to_string(),
-        description: Some("Group members".to_string()),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "members".to_string(),
+        SlotDefinition {
+            name: "members".to_string(),
+            description: Some("Group members".to_string()),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("tags".to_string(), SlotDefinition {
-        name: "tags".to_string(),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "tags".to_string(),
+        SlotDefinition {
+            name: "tags".to_string(),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -245,7 +276,11 @@ async fn test_multivalued_fields() {
     assert!(output.contains("pub tags: Vec<String>,"));
 
     // Check constructor - required multivalued field should be a parameter
-    assert!(output.contains("pub fn new(name: impl Into<String>, members: impl Into<Vec<String>>) -> Self"));
+    assert!(
+        output.contains(
+            "pub fn new(name: impl Into<String>, members: impl Into<Vec<String>>) -> Self"
+        )
+    );
     // Optional multivalued fields are initialized as empty
     assert!(output.contains("tags: Vec::new(),"));
 }
@@ -279,31 +314,43 @@ async fn test_inheritance() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        range: Some("integer".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -328,32 +375,45 @@ async fn test_datetime_fields() {
 
     let event = ClassDefinition {
         name: "Event".to_string(),
-        slots: vec!["name".to_string(), "date".to_string(), "timestamp".to_string()],
+        slots: vec![
+            "name".to_string(),
+            "date".to_string(),
+            "timestamp".to_string(),
+        ],
         ..Default::default()
     };
 
     schema.classes.insert("Event".to_string(), event);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("date".to_string(), SlotDefinition {
-        name: "date".to_string(),
-        description: Some("Event date".to_string()),
-        range: Some("date".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "date".to_string(),
+        SlotDefinition {
+            name: "date".to_string(),
+            description: Some("Event date".to_string()),
+            range: Some("date".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("timestamp".to_string(), SlotDefinition {
-        name: "timestamp".to_string(),
-        description: Some("Event timestamp".to_string()),
-        range: Some("datetime".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "timestamp".to_string(),
+        SlotDefinition {
+            name: "timestamp".to_string(),
+            description: Some("Event timestamp".to_string()),
+            range: Some("datetime".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
@@ -381,32 +441,39 @@ async fn test_builder_pattern() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        range: Some("integer".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+    );
 
     let generator = RustGenerator::new();
-    let options = GeneratorOptions::new()
-        .set_custom("generate_builder", "true");
+    let options = GeneratorOptions::new().set_custom("generate_builder", "true");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let output = &outputs[0].content;
+    let output = generator.generate(&schema).unwrap();
 
     // Check builder struct
     assert!(output.contains("pub struct PersonBuilder"));
@@ -442,42 +509,54 @@ async fn test_field_name_edge_cases() {
     schema.classes.insert("Data".to_string(), data);
 
     // Define slots with problematic names
-    schema.slots.insert("type".to_string(), SlotDefinition {
-        name: "type".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "type".to_string(),
+        SlotDefinition {
+            name: "type".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("firstName".to_string(), SlotDefinition {
-        name: "firstName".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "firstName".to_string(),
+        SlotDefinition {
+            name: "firstName".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("XMLData".to_string(), SlotDefinition {
-        name: "XMLData".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "XMLData".to_string(),
+        SlotDefinition {
+            name: "XMLData".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("self".to_string(), SlotDefinition {
-        name: "self".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "self".to_string(),
+        SlotDefinition {
+            name: "self".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
     // Check field name conversions
     assert!(output.contains("pub type_: Option<String>,"));
     assert!(output.contains(r#"#[serde(rename = "type")]"#));
-    
+
     assert!(output.contains("pub first_name: Option<String>,"));
     assert!(output.contains(r#"#[serde(rename = "firstName")]"#));
-    
+
     assert!(output.contains("pub xmldata: Option<String>,"));
     assert!(output.contains(r#"#[serde(rename = "XMLData")]"#));
-    
+
     assert!(output.contains("pub self_: Option<String>,"));
     assert!(output.contains(r#"#[serde(rename = "self")]"#));
 }
@@ -492,47 +571,62 @@ async fn test_range_validation_comprehensive() {
 
     let measurement = ClassDefinition {
         name: "Measurement".to_string(),
-        slots: vec!["temperature".to_string(), "percentage".to_string(), "count".to_string()],
+        slots: vec![
+            "temperature".to_string(),
+            "percentage".to_string(),
+            "count".to_string(),
+        ],
         ..Default::default()
     };
 
-    schema.classes.insert("Measurement".to_string(), measurement);
+    schema
+        .classes
+        .insert("Measurement".to_string(), measurement);
 
-    schema.slots.insert("temperature".to_string(), SlotDefinition {
-        name: "temperature".to_string(),
-        description: Some("Temperature in Celsius".to_string()),
-        range: Some("float".to_string()),
-        minimum_value: Some(json!(-273.15)),
-        maximum_value: Some(json!(1000.0)),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "temperature".to_string(),
+        SlotDefinition {
+            name: "temperature".to_string(),
+            description: Some("Temperature in Celsius".to_string()),
+            range: Some("float".to_string()),
+            minimum_value: Some(json!(-273.15)),
+            maximum_value: Some(json!(1000.0)),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("percentage".to_string(), SlotDefinition {
-        name: "percentage".to_string(),
-        range: Some("float".to_string()),
-        minimum_value: Some(json!(0.0)),
-        maximum_value: Some(json!(100.0)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "percentage".to_string(),
+        SlotDefinition {
+            name: "percentage".to_string(),
+            range: Some("float".to_string()),
+            minimum_value: Some(json!(0.0)),
+            maximum_value: Some(json!(100.0)),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("count".to_string(), SlotDefinition {
-        name: "count".to_string(),
-        range: Some("integer".to_string()),
-        minimum_value: Some(json!(0)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "count".to_string(),
+        SlotDefinition {
+            name: "count".to_string(),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            ..Default::default()
+        },
+    );
 
     let output = generate_rust(schema).await;
 
     // Check validation generates range checks
     assert!(output.contains("if temperature < -273.15"));
     assert!(output.contains("if temperature > 1000"));
-    
+
     assert!(output.contains("if let Some(value) = self.percentage"));
     assert!(output.contains("if value < 0"));
     assert!(output.contains("if value > 100"));
-    
+
     assert!(output.contains("if let Some(value) = self.count"));
     assert!(output.contains("if value < 0"));
 }

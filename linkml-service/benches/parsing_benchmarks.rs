@@ -1,9 +1,9 @@
 //! Performance benchmarks for LinkML parsing and schema operations
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use linkml_service::parser::{YamlParser, JsonParser};
-use linkml_service::transform::{InheritanceResolver, SchemaMerger};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use linkml_service::SchemaView;
+use linkml_service::parser::{JsonParser, YamlParser};
+use linkml_service::transform::{InheritanceResolver, SchemaMerger};
 
 const SMALL_YAML_SCHEMA: &str = r#"
 id: https://example.org/small
@@ -101,14 +101,18 @@ slots:
 "#;
 
 fn generate_large_yaml_schema() -> String {
-    let mut schema = String::from("id: https://example.org/large\nname: large_schema\nversion: 1.0.0\n\n");
-    
+    let mut schema =
+        String::from("id: https://example.org/large\nname: large_schema\nversion: 1.0.0\n\n");
+
     // Add types
     schema.push_str("types:\n");
     for i in 0..20 {
-        schema.push_str(&format!("  Type{}:\n    base: string\n    pattern: \"^type{}.*$\"\n", i, i));
+        schema.push_str(&format!(
+            "  Type{}:\n    base: string\n    pattern: \"^type{}.*$\"\n",
+            i, i
+        ));
     }
-    
+
     // Add enums
     schema.push_str("\nenums:\n");
     for i in 0..10 {
@@ -117,7 +121,7 @@ fn generate_large_yaml_schema() -> String {
             schema.push_str(&format!("      - value_{}_{}\n", i, j));
         }
     }
-    
+
     // Add classes
     schema.push_str("\nclasses:\n");
     for i in 0..50 {
@@ -130,12 +134,15 @@ fn generate_large_yaml_schema() -> String {
             schema.push_str(&format!("      - slot_{}_{}\n", i, j));
         }
     }
-    
+
     // Add slots
     schema.push_str("\nslots:\n");
     for i in 0..50 {
         for j in 0..10 {
-            schema.push_str(&format!("  slot_{}_{}:\n    range: {}\n", i, j, 
+            schema.push_str(&format!(
+                "  slot_{}_{}:\n    range: {}\n",
+                i,
+                j,
                 match j % 4 {
                     0 => "string",
                     1 => "integer",
@@ -151,90 +158,90 @@ fn generate_large_yaml_schema() -> String {
             }
         }
     }
-    
+
     schema
 }
 
 fn bench_yaml_parsing(c: &mut Criterion) {
     let parser = YamlParser::new();
     let large_schema = generate_large_yaml_schema();
-    
+
     let mut group = c.benchmark_group("yaml_parsing");
-    
+
     group.bench_function("small", |b| {
         b.iter(|| {
             let result = parser.parse(black_box(SMALL_YAML_SCHEMA));
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("medium", |b| {
         b.iter(|| {
             let result = parser.parse(black_box(MEDIUM_YAML_SCHEMA));
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("large", |b| {
         b.iter(|| {
             let result = parser.parse(black_box(&large_schema));
             assert!(result.is_ok());
         })
     });
-    
+
     group.finish();
 }
 
 fn bench_json_parsing(c: &mut Criterion) {
     let yaml_parser = YamlParser::new();
     let json_parser = JsonParser::new();
-    
+
     // Convert YAML schemas to JSON
     let small_schema = yaml_parser.parse(SMALL_YAML_SCHEMA).unwrap();
     let small_json = serde_json::to_string(&small_schema).unwrap();
-    
+
     let medium_schema = yaml_parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
     let medium_json = serde_json::to_string(&medium_schema).unwrap();
-    
+
     let large_yaml = generate_large_yaml_schema();
     let large_schema = yaml_parser.parse(&large_yaml).unwrap();
     let large_json = serde_json::to_string(&large_schema).unwrap();
-    
+
     let mut group = c.benchmark_group("json_parsing");
-    
+
     group.bench_function("small", |b| {
         b.iter(|| {
             let result = json_parser.parse(black_box(&small_json));
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("medium", |b| {
         b.iter(|| {
             let result = json_parser.parse(black_box(&medium_json));
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("large", |b| {
         b.iter(|| {
             let result = json_parser.parse(black_box(&large_json));
             assert!(result.is_ok());
         })
     });
-    
+
     group.finish();
 }
 
 fn bench_inheritance_resolution(c: &mut Criterion) {
     let parser = YamlParser::new();
-    
+
     let small_schema = parser.parse(SMALL_YAML_SCHEMA).unwrap();
     let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
     let large_schema = parser.parse(&generate_large_yaml_schema()).unwrap();
-    
+
     let mut group = c.benchmark_group("inheritance_resolution");
-    
+
     group.bench_function("small", |b| {
         b.iter(|| {
             let mut schema = black_box(small_schema.clone());
@@ -243,7 +250,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("medium", |b| {
         b.iter(|| {
             let mut schema = black_box(medium_schema.clone());
@@ -252,7 +259,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("large", |b| {
         b.iter(|| {
             let mut schema = black_box(large_schema.clone());
@@ -261,7 +268,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
             assert!(result.is_ok());
         })
     });
-    
+
     group.finish();
 }
 
@@ -269,12 +276,12 @@ fn bench_schema_view_operations(c: &mut Criterion) {
     let parser = YamlParser::new();
     let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
     let large_schema = parser.parse(&generate_large_yaml_schema()).unwrap();
-    
+
     let medium_view = SchemaView::new(medium_schema.clone());
     let large_view = SchemaView::new(large_schema.clone());
-    
+
     let mut group = c.benchmark_group("schema_view");
-    
+
     // Induced slots (includes inheritance resolution)
     group.bench_function("induced_slots_medium", |b| {
         b.iter(|| {
@@ -283,7 +290,7 @@ fn bench_schema_view_operations(c: &mut Criterion) {
             assert!(!slots.unwrap().is_empty());
         })
     });
-    
+
     group.bench_function("induced_slots_large", |b| {
         b.iter(|| {
             let slots = large_view.induced_slots(black_box("Class49"));
@@ -291,7 +298,7 @@ fn bench_schema_view_operations(c: &mut Criterion) {
             assert!(!slots.unwrap().is_empty());
         })
     });
-    
+
     // Class ancestors
     group.bench_function("ancestors_medium", |b| {
         b.iter(|| {
@@ -299,14 +306,14 @@ fn bench_schema_view_operations(c: &mut Criterion) {
             assert!(!ancestors.is_empty());
         })
     });
-    
+
     group.bench_function("ancestors_large", |b| {
         b.iter(|| {
             let ancestors = large_view.class_ancestors(black_box("Class49"));
             assert!(!ancestors.is_empty());
         })
     });
-    
+
     // Class descendants
     group.bench_function("descendants_medium", |b| {
         b.iter(|| {
@@ -314,14 +321,14 @@ fn bench_schema_view_operations(c: &mut Criterion) {
             assert!(!descendants.is_empty());
         })
     });
-    
+
     group.bench_function("descendants_large", |b| {
         b.iter(|| {
             let descendants = large_view.class_descendants(black_box("Class0"));
             assert!(!descendants.is_empty());
         })
     });
-    
+
     // Schema statistics
     group.bench_function("statistics_medium", |b| {
         b.iter(|| {
@@ -329,30 +336,27 @@ fn bench_schema_view_operations(c: &mut Criterion) {
             assert!(stats.total_elements > 0);
         })
     });
-    
+
     group.bench_function("statistics_large", |b| {
         b.iter(|| {
             let stats = large_view.schema_statistics();
             assert!(stats.total_elements > 0);
         })
     });
-    
+
     group.finish();
 }
 
 fn bench_schema_merging(c: &mut Criterion) {
     let parser = YamlParser::new();
     let merger = SchemaMerger::new();
-    
+
     let schema1 = parser.parse(SMALL_YAML_SCHEMA).unwrap();
     let schema2 = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
-    
+
     c.bench_function("schema_merge", |b| {
         b.iter(|| {
-            let result = merger.merge(
-                black_box(schema1.clone()),
-                black_box(schema2.clone())
-            );
+            let result = merger.merge(black_box(schema1.clone()), black_box(schema2.clone()));
             assert!(result.is_ok());
         })
     });
@@ -361,27 +365,27 @@ fn bench_schema_merging(c: &mut Criterion) {
 fn bench_parsing_comparison(c: &mut Criterion) {
     let yaml_parser = YamlParser::new();
     let json_parser = JsonParser::new();
-    
+
     let yaml_content = MEDIUM_YAML_SCHEMA;
     let schema = yaml_parser.parse(yaml_content).unwrap();
     let json_content = serde_json::to_string(&schema).unwrap();
-    
+
     let mut group = c.benchmark_group("parsing_comparison");
-    
+
     group.bench_function("yaml", |b| {
         b.iter(|| {
             let result = yaml_parser.parse(black_box(yaml_content));
             assert!(result.is_ok());
         })
     });
-    
+
     group.bench_function("json", |b| {
         b.iter(|| {
             let result = json_parser.parse(black_box(&json_content));
             assert!(result.is_ok());
         })
     });
-    
+
     group.finish();
 }
 

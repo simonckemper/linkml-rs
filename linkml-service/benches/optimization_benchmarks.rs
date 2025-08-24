@@ -1,12 +1,12 @@
 //! Benchmarks demonstrating performance optimizations
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use linkml_service::performance::{global_profiler, intern, str_eq_fast};
 use std::sync::Arc;
 
 fn bench_string_interning(c: &mut Criterion) {
     let mut group = c.benchmark_group("string_interning");
-    
+
     // Create test strings
     let strings: Vec<String> = (0..1000)
         .map(|i| match i % 10 {
@@ -22,7 +22,7 @@ fn bench_string_interning(c: &mut Criterion) {
             _ => "range".to_string(),
         })
         .collect();
-    
+
     // Benchmark regular string comparison
     group.bench_function("regular_comparison", |b| {
         b.iter(|| {
@@ -35,11 +35,11 @@ fn bench_string_interning(c: &mut Criterion) {
             matches
         })
     });
-    
+
     // Pre-intern strings
     let interned: Vec<Arc<str>> = strings.iter().map(|s| intern(s)).collect();
     let target = intern("string");
-    
+
     // Benchmark interned string comparison
     group.bench_function("interned_comparison", |b| {
         b.iter(|| {
@@ -52,15 +52,15 @@ fn bench_string_interning(c: &mut Criterion) {
             matches
         })
     });
-    
+
     group.finish();
 }
 
 fn bench_small_vec_optimization(c: &mut Criterion) {
     use linkml_service::performance::{IssueVec, issue_vec};
-    
+
     let mut group = c.benchmark_group("small_vec");
-    
+
     // Benchmark regular Vec
     group.bench_function("regular_vec_small", |b| {
         b.iter(|| {
@@ -70,7 +70,7 @@ fn bench_small_vec_optimization(c: &mut Criterion) {
             black_box(v)
         })
     });
-    
+
     // Benchmark SmallVec
     group.bench_function("small_vec_small", |b| {
         b.iter(|| {
@@ -80,7 +80,7 @@ fn bench_small_vec_optimization(c: &mut Criterion) {
             black_box(v)
         })
     });
-    
+
     // Benchmark with more elements (causes spill)
     group.bench_function("regular_vec_large", |b| {
         b.iter(|| {
@@ -91,7 +91,7 @@ fn bench_small_vec_optimization(c: &mut Criterion) {
             black_box(v)
         })
     });
-    
+
     group.bench_function("small_vec_large", |b| {
         b.iter(|| {
             let mut v: IssueVec<i32> = issue_vec();
@@ -101,28 +101,26 @@ fn bench_small_vec_optimization(c: &mut Criterion) {
             black_box(v)
         })
     });
-    
+
     group.finish();
 }
 
 fn bench_memory_estimation(c: &mut Criterion) {
     use linkml_service::performance::MemorySize;
     use serde_json::json;
-    
+
     let mut group = c.benchmark_group("memory_size");
-    
+
     // Small JSON
     let small_json = json!({
         "name": "test",
         "age": 30
     });
-    
+
     group.bench_function("small_json", |b| {
-        b.iter(|| {
-            black_box(small_json.heap_size())
-        })
+        b.iter(|| black_box(small_json.heap_size()))
     });
-    
+
     // Medium JSON
     let medium_json = json!({
         "id": "12345",
@@ -135,13 +133,11 @@ fn bench_memory_estimation(c: &mut Criterion) {
             "version": 1
         }
     });
-    
+
     group.bench_function("medium_json", |b| {
-        b.iter(|| {
-            black_box(medium_json.heap_size())
-        })
+        b.iter(|| black_box(medium_json.heap_size()))
     });
-    
+
     // Large JSON (nested structure)
     let large_json = json!({
         "schema": {
@@ -167,44 +163,36 @@ fn bench_memory_estimation(c: &mut Criterion) {
             }
         }
     });
-    
+
     group.bench_function("large_json", |b| {
-        b.iter(|| {
-            black_box(large_json.heap_size())
-        })
+        b.iter(|| black_box(large_json.heap_size()))
     });
-    
+
     group.finish();
 }
 
 fn bench_profiling_overhead(c: &mut Criterion) {
     let profiler = global_profiler();
-    
+
     let mut group = c.benchmark_group("profiling_overhead");
-    
+
     // Function to profile
     fn compute_sum(n: usize) -> usize {
         (0..n).sum()
     }
-    
+
     // Benchmark without profiling
     group.bench_function("no_profiling", |b| {
         profiler.set_enabled(false);
-        b.iter(|| {
-            black_box(compute_sum(1000))
-        })
+        b.iter(|| black_box(compute_sum(1000)))
     });
-    
+
     // Benchmark with profiling
     group.bench_function("with_profiling", |b| {
         profiler.set_enabled(true);
-        b.iter(|| {
-            profiler.time("compute_sum", || {
-                black_box(compute_sum(1000))
-            })
-        })
+        b.iter(|| profiler.time("compute_sum", || black_box(compute_sum(1000))))
     });
-    
+
     profiler.set_enabled(false);
     group.finish();
 }

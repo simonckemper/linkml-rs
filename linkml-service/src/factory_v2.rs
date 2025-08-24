@@ -51,17 +51,18 @@ where
         .load_configuration()
         .await
         .map_err(|e| LinkMLError::service(format!("Failed to load configuration: {e}")))?;
-    
+
     // Validate configuration
     use configuration_core::Validate;
-    config.validate()
+    config
+        .validate()
         .map_err(|e| LinkMLError::service(format!("Configuration validation failed: {e}")))?;
-    
+
     logger
         .info("LinkML configuration loaded and validated successfully")
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-    
+
     // Create service with validated configuration
     create_linkml_service_with_custom_config(
         config,
@@ -74,7 +75,8 @@ where
         error_handler,
         dbms_service,
         timeout_service,
-    ).await
+    )
+    .await
 }
 
 /// Create `LinkML` service with custom configuration
@@ -102,12 +104,13 @@ where
 {
     // Validate custom configuration
     use configuration_core::Validate;
-    config.validate()
+    config
+        .validate()
         .map_err(|e| LinkMLError::service(format!("Configuration validation failed: {e}")))?;
-    
+
     // Import the correct dependencies struct from factory module
     use crate::factory::LinkMLServiceDependencies as FactoryDeps;
-    
+
     // Create service dependencies
     let dependencies = FactoryDeps {
         logger,
@@ -120,13 +123,13 @@ where
         cache,
         monitor: monitoring,
     };
-    
+
     // Create and initialize the service with default LinkMLConfig
     // Note: LinkMLServiceConfig from Configuration Service is stored separately
     let linkml_config = linkml_core::config::LinkMLConfig::default();
     let service = LinkMLServiceImpl::with_config(linkml_config, dependencies)?;
     service.initialize().await?;
-    
+
     Ok(Arc::new(service))
 }
 
@@ -157,15 +160,21 @@ where
     let config: LinkMLServiceConfig = configuration_service
         .load_configuration_from_source(config_source)
         .await
-        .map_err(|e| LinkMLError::service(
-            format!("Failed to load configuration from source '{}': {}", config_source, e)
-        ))?;
-    
+        .map_err(|e| {
+            LinkMLError::service(format!(
+                "Failed to load configuration from source '{}': {}",
+                config_source, e
+            ))
+        })?;
+
     logger
-        .info(&format!("LinkML configuration loaded from source: {}", config_source))
+        .info(&format!(
+            "LinkML configuration loaded from source: {}",
+            config_source
+        ))
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-    
+
     // Create service with loaded configuration
     create_linkml_service_with_custom_config(
         config,
@@ -178,7 +187,8 @@ where
         error_handler,
         dbms_service,
         timeout_service,
-    ).await
+    )
+    .await
 }
 
 /// Create LinkML service for specific environment
@@ -220,15 +230,19 @@ where
                 error_handler,
                 dbms_service,
                 timeout_service,
-            ).await;
+            )
+            .await;
         }
     };
-    
+
     logger
-        .info(&format!("Creating LinkML service for {} environment", environment))
+        .info(&format!(
+            "Creating LinkML service for {} environment",
+            environment
+        ))
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-    
+
     // Create service with environment-specific configuration
     create_linkml_service_with_custom_config(
         config,
@@ -241,7 +255,8 @@ where
         error_handler,
         dbms_service,
         timeout_service,
-    ).await
+    )
+    .await
 }
 
 /// Environment enumeration
@@ -299,7 +314,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     // Tests would go here following RootReal testing patterns
     // Using mock services only in tests (never in production code)
 }

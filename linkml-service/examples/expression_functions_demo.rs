@@ -9,21 +9,21 @@ use std::collections::HashMap;
 fn main() {
     println!("LinkML Expression Functions Demo");
     println!("================================\n");
-    
+
     let engine = ExpressionEngine::new();
-    
+
     // String functions demo
     demo_string_functions(&engine);
-    
+
     // Date functions demo
     demo_date_functions(&engine);
-    
+
     // Math functions demo
     demo_math_functions(&engine);
-    
+
     // Aggregation functions demo
     demo_aggregation_functions(&engine);
-    
+
     // Show all available functions
     list_all_functions();
 }
@@ -31,24 +31,33 @@ fn main() {
 fn demo_string_functions(engine: &ExpressionEngine) {
     println!("String Functions");
     println!("----------------");
-    
+
     let mut context = HashMap::new();
     context.insert("name".to_string(), json!("hello world"));
     context.insert("email".to_string(), json!("user@example.com"));
-    
+
     let examples = vec![
         ("upper(name)", "Convert to uppercase"),
         ("lower(name)", "Convert to lowercase"),
         ("trim(\"  spaced  \")", "Remove leading/trailing whitespace"),
-        ("starts_with(email, \"user\")", "Check if string starts with prefix"),
-        ("ends_with(email, \".com\")", "Check if string ends with suffix"),
+        (
+            "starts_with(email, \"user\")",
+            "Check if string starts with prefix",
+        ),
+        (
+            "ends_with(email, \".com\")",
+            "Check if string ends with suffix",
+        ),
         ("replace(name, \"world\", \"rust\")", "Replace substring"),
         ("split(email, \"@\")", "Split string into array"),
-        ("join(split(email, \"@\"), \" at \")", "Join array into string"),
+        (
+            "join(split(email, \"@\"), \" at \")",
+            "Join array into string",
+        ),
         ("substring(name, 6)", "Extract substring from position"),
         ("substring(name, 0, 5)", "Extract substring with length"),
     ];
-    
+
     for (expr, desc) in examples {
         match engine.evaluate(expr, &context) {
             Ok(result) => println!("  {}: {} = {:?}", desc, expr, result),
@@ -61,24 +70,30 @@ fn demo_string_functions(engine: &ExpressionEngine) {
 fn demo_date_functions(engine: &ExpressionEngine) {
     println!("Date Functions");
     println!("--------------");
-    
+
     let mut context = HashMap::new();
     context.insert("date".to_string(), json!("2024-01-15"));
     context.insert("date2".to_string(), json!("2024-03-15"));
-    
+
     let examples = vec![
         ("now()", "Current timestamp"),
         ("today()", "Today's date"),
-        ("date_parse(\"15/01/2024\", \"%d/%m/%Y\")", "Parse date with format"),
+        (
+            "date_parse(\"15/01/2024\", \"%d/%m/%Y\")",
+            "Parse date with format",
+        ),
         ("date_format(date, \"%B %d, %Y\")", "Format date"),
         ("date_add(date, 10, \"days\")", "Add days to date"),
         ("date_add(date, 2, \"months\")", "Add months to date"),
-        ("date_diff(date, date2, \"days\")", "Difference between dates"),
+        (
+            "date_diff(date, date2, \"days\")",
+            "Difference between dates",
+        ),
         ("year(date)", "Extract year"),
         ("month(date)", "Extract month"),
         ("day(date)", "Extract day"),
     ];
-    
+
     for (expr, desc) in examples {
         match engine.evaluate(expr, &context) {
             Ok(result) => println!("  {}: {} = {:?}", desc, expr, result),
@@ -91,9 +106,9 @@ fn demo_date_functions(engine: &ExpressionEngine) {
 fn demo_math_functions(engine: &ExpressionEngine) {
     println!("Math Functions");
     println!("--------------");
-    
+
     let context = HashMap::new();
-    
+
     let examples = vec![
         ("abs(-42)", "Absolute value"),
         ("sqrt(16)", "Square root"),
@@ -110,7 +125,7 @@ fn demo_math_functions(engine: &ExpressionEngine) {
         ("round(3.14159, 2)", "Round to 2 decimal places"),
         ("mod(17, 5)", "Modulo operation"),
     ];
-    
+
     for (expr, desc) in examples {
         match engine.evaluate(expr, &context) {
             Ok(result) => println!("  {}: {} = {:?}", desc, expr, result),
@@ -123,19 +138,22 @@ fn demo_math_functions(engine: &ExpressionEngine) {
 fn demo_aggregation_functions(engine: &ExpressionEngine) {
     println!("Aggregation Functions");
     println!("--------------------");
-    
+
     let mut context = HashMap::new();
     context.insert("numbers".to_string(), json!([10, 20, 30, 40, 50]));
     context.insert("grades".to_string(), json!([85, 90, 78, 92, 88, 90, 85]));
     context.insert("mixed".to_string(), json!([1, null, 3, "", 5]));
-    context.insert("products".to_string(), json!([
-        {"type": "electronics", "price": 299},
-        {"type": "clothing", "price": 49},
-        {"type": "electronics", "price": 599},
-        {"type": "clothing", "price": 79},
-        {"type": "books", "price": 19}
-    ]));
-    
+    context.insert(
+        "products".to_string(),
+        json!([
+            {"type": "electronics", "price": 299},
+            {"type": "clothing", "price": 49},
+            {"type": "electronics", "price": 599},
+            {"type": "clothing", "price": 79},
+            {"type": "books", "price": 19}
+        ]),
+    );
+
     let examples = vec![
         ("sum(numbers)", "Sum of values"),
         ("avg(numbers)", "Average of values"),
@@ -149,7 +167,7 @@ fn demo_aggregation_functions(engine: &ExpressionEngine) {
         ("unique(grades)", "Unique values"),
         ("group_by(products, \"type\")", "Group by field"),
     ];
-    
+
     for (expr, desc) in examples {
         match engine.evaluate(expr, &context) {
             Ok(result) => {
@@ -169,35 +187,77 @@ fn demo_aggregation_functions(engine: &ExpressionEngine) {
 fn list_all_functions() {
     println!("All Available Functions");
     println!("----------------------");
-    
+
     let registry = FunctionRegistry::new();
     let mut functions = registry.function_names();
     functions.sort();
-    
+
     println!("Total functions: {}", functions.len());
     println!();
-    
+
     // Group by category
-    let string_fns: Vec<_> = functions.iter()
-        .filter(|f| ["upper", "lower", "trim", "starts_with", "ends_with", "replace", "split", "join", "substring"].contains(f))
+    let string_fns: Vec<_> = functions
+        .iter()
+        .filter(|f| {
+            [
+                "upper",
+                "lower",
+                "trim",
+                "starts_with",
+                "ends_with",
+                "replace",
+                "split",
+                "join",
+                "substring",
+            ]
+            .contains(f)
+        })
         .collect();
-    
-    let date_fns: Vec<_> = functions.iter()
-        .filter(|f| ["now", "today", "date_parse", "date_format", "date_add", "date_diff", "year", "month", "day"].contains(f))
+
+    let date_fns: Vec<_> = functions
+        .iter()
+        .filter(|f| {
+            [
+                "now",
+                "today",
+                "date_parse",
+                "date_format",
+                "date_add",
+                "date_diff",
+                "year",
+                "month",
+                "day",
+            ]
+            .contains(f)
+        })
         .collect();
-    
-    let math_fns: Vec<_> = functions.iter()
-        .filter(|f| ["abs", "sqrt", "pow", "sin", "cos", "tan", "log", "exp", "floor", "ceil", "round", "mod"].contains(f))
+
+    let math_fns: Vec<_> = functions
+        .iter()
+        .filter(|f| {
+            [
+                "abs", "sqrt", "pow", "sin", "cos", "tan", "log", "exp", "floor", "ceil", "round",
+                "mod",
+            ]
+            .contains(f)
+        })
         .collect();
-    
-    let agg_fns: Vec<_> = functions.iter()
-        .filter(|f| ["sum", "avg", "count", "median", "mode", "stddev", "variance", "unique", "group_by"].contains(f))
+
+    let agg_fns: Vec<_> = functions
+        .iter()
+        .filter(|f| {
+            [
+                "sum", "avg", "count", "median", "mode", "stddev", "variance", "unique", "group_by",
+            ]
+            .contains(f)
+        })
         .collect();
-    
-    let core_fns: Vec<_> = functions.iter()
+
+    let core_fns: Vec<_> = functions
+        .iter()
         .filter(|f| ["len", "max", "min", "case", "matches", "contains"].contains(f))
         .collect();
-    
+
     println!("Core functions: {:?}", core_fns);
     println!("String functions: {:?}", string_fns);
     println!("Date functions: {:?}", date_fns);

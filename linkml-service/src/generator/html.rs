@@ -16,7 +16,7 @@ impl HtmlGenerator {
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
         super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
-    
+
     /// Create a new HTML generator
     #[must_use]
     pub fn new() -> Self {
@@ -32,7 +32,8 @@ impl HtmlGenerator {
         writeln!(&mut output, "<!DOCTYPE html>").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "<html lang=\"en\">").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "<head>").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "    <meta charset=\"UTF-8\">").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    <meta charset=\"UTF-8\">")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             &mut output,
             "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
@@ -54,8 +55,10 @@ impl HtmlGenerator {
         writeln!(&mut output, "<body>").map_err(Self::fmt_error_to_generator_error)?;
 
         // Navigation
-        writeln!(&mut output, "    <nav class=\"sidebar\">").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "        <h2>Contents</h2>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    <nav class=\"sidebar\">")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        <h2>Contents</h2>")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "        <ul>").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             &mut output,
@@ -64,13 +67,15 @@ impl HtmlGenerator {
         .map_err(Self::fmt_error_to_generator_error)?;
 
         if !schema.classes.is_empty() {
-            writeln!(&mut output, "            <li>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            <li>")
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
                 &mut output,
                 "                <a href=\"#classes\">Classes</a>"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "                <ul>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                <ul>")
+                .map_err(Self::fmt_error_to_generator_error)?;
             for class_name in schema.classes.keys() {
                 writeln!(
                     &mut output,
@@ -80,8 +85,10 @@ impl HtmlGenerator {
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
-            writeln!(&mut output, "                </ul>").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "            </li>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                </ul>")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            </li>")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if !schema.slots.is_empty() {
@@ -111,7 +118,8 @@ impl HtmlGenerator {
         writeln!(&mut output, "        </ul>").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "    </nav>").map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(&mut output, "    <main class=\"content\">").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    <main class=\"content\">")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(output)
     }
@@ -161,9 +169,12 @@ impl HtmlGenerator {
         }
 
         // Schema metadata
-        writeln!(&mut output, "            <div class=\"metadata\">").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "                <h3>Schema Information</h3>").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "                <table>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "            <div class=\"metadata\">")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "                <h3>Schema Information</h3>")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "                <table>")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         if !schema.id.is_empty() {
             writeln!(
@@ -197,7 +208,8 @@ impl HtmlGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(&mut output, "                </table>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "                </table>")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "            </div>").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "        </section>").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -217,7 +229,8 @@ impl HtmlGenerator {
             "        <section id=\"classes\" class=\"section\">"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "            <h2>Classes</h2>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "            <h2>Classes</h2>")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         for (class_name, class) in &schema.classes {
             writeln!(
@@ -243,7 +256,8 @@ impl HtmlGenerator {
             }
 
             // Class properties
-            writeln!(&mut output, "                <div class=\"properties\">").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                <div class=\"properties\">")
+                .map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(parent) = &class.is_a {
                 writeln!(&mut output, "                    <p><strong>Inherits from:</strong> <a href=\"#class-{}\">{}</a></p>", 
@@ -280,11 +294,16 @@ impl HtmlGenerator {
 
             // Class slots
             if !class.slots.is_empty() {
-                writeln!(&mut output, "                    <h4>Slots</h4>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                    <table class=\"slots\">").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                        <thead>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                            <tr>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                                <th>Name</th>").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                    <h4>Slots</h4>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                    <table class=\"slots\">")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                        <thead>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                            <tr>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                                <th>Name</th>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     &mut output,
                     "                                <th>Range</th>"
@@ -300,13 +319,17 @@ impl HtmlGenerator {
                     "                                <th>Description</th>"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                            </tr>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                        </thead>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                        <tbody>").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                            </tr>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                        </thead>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                        <tbody>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
 
                 for slot_name in &class.slots {
                     if let Some(slot) = schema.slots.get(slot_name) {
-                        writeln!(&mut output, "                            <tr>").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "                            <tr>")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             &mut output,
                             "                                <td><a href=\"#slot-{}\">{}</a></td>",
@@ -336,16 +359,21 @@ impl HtmlGenerator {
                             self.escape_html(slot.description.as_deref().unwrap_or(""))
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(&mut output, "                            </tr>").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "                            </tr>")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
-                writeln!(&mut output, "                        </tbody>").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "                    </table>").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                        </tbody>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "                    </table>")
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
 
-            writeln!(&mut output, "                </div>").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "            </div>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                </div>")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            </div>")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output, "        </section>").map_err(Self::fmt_error_to_generator_error)?;
@@ -366,7 +394,8 @@ impl HtmlGenerator {
             "        <section id=\"slots\" class=\"section\">"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "            <h2>Slots</h2>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "            <h2>Slots</h2>")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         for (slot_name, slot) in &schema.slots {
             writeln!(
@@ -392,7 +421,8 @@ impl HtmlGenerator {
             }
 
             // Slot properties table
-            writeln!(&mut output, "                <table class=\"properties\">").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                <table class=\"properties\">")
+                .map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(range) = &slot.range {
                 writeln!(
@@ -446,8 +476,10 @@ impl HtmlGenerator {
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
 
-            writeln!(&mut output, "                </table>").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "            </div>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                </table>")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            </div>")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output, "        </section>").map_err(Self::fmt_error_to_generator_error)?;
@@ -468,7 +500,8 @@ impl HtmlGenerator {
             "        <section id=\"enums\" class=\"section\">"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "            <h2>Enumerations</h2>").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "            <h2>Enumerations</h2>")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         for (enum_name, enum_def) in &schema.enums {
             writeln!(
@@ -494,8 +527,10 @@ impl HtmlGenerator {
             }
 
             // Permissible values
-            writeln!(&mut output, "                <h4>Values</h4>").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "                <ul class=\"enum-values\">").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                <h4>Values</h4>")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                <ul class=\"enum-values\">")
+                .map_err(Self::fmt_error_to_generator_error)?;
 
             for value in &enum_def.permissible_values {
                 match value {
@@ -510,7 +545,8 @@ impl HtmlGenerator {
                     PermissibleValue::Complex {
                         text, description, ..
                     } => {
-                        writeln!(&mut output, "                    <li>").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "                    <li>")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             &mut output,
                             "                        <code>{}</code>",
@@ -525,13 +561,16 @@ impl HtmlGenerator {
                             )
                             .map_err(Self::fmt_error_to_generator_error)?;
                         }
-                        writeln!(&mut output, "                    </li>").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "                    </li>")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
 
-            writeln!(&mut output, "                </ul>").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "            </div>").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                </ul>")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            </div>")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output, "        </section>").map_err(Self::fmt_error_to_generator_error)?;
@@ -745,10 +784,7 @@ impl Generator for HtmlGenerator {
         vec![".html", ".htm"]
     }
 
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Validate schema
         self.validate_schema(schema)?;
 
@@ -760,31 +796,25 @@ impl Generator for HtmlGenerator {
         };
 
         // Generate HTML document
-        output.push_str(&self.generate_header(title, schema)
-?);
-        output.push_str(&self.generate_overview(schema)
-?);
-        output.push_str(&self.generate_classes(schema)
-?);
-        output.push_str(&self.generate_slots(schema)
-?);
-        output.push_str(&self.generate_enums(schema)
-?);
+        output.push_str(&self.generate_header(title, schema)?);
+        output.push_str(&self.generate_overview(schema)?);
+        output.push_str(&self.generate_classes(schema)?);
+        output.push_str(&self.generate_slots(schema)?);
+        output.push_str(&self.generate_enums(schema)?);
 
         // Add types section if implemented
         // output.push_str(&self.generate_types(schema)?);
 
-        output.push_str(&self.generate_footer()
-?);
+        output.push_str(&self.generate_footer()?);
 
         // Return the generated HTML content
         Ok(output)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "html"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "schema"
     }
@@ -839,11 +869,9 @@ mod tests {
 
         schema.classes.insert("Person".to_string(), class);
 
-        let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema).expect("should generate HTML output");
-
-        assert_eq!(outputs.len(), 1);
-        let html = &outputs[0].content;
+        let html = generator
+            .generate(&schema)
+            .expect("should generate HTML output");
 
         // Check basic structure
         assert!(html.contains("<!DOCTYPE html>"));

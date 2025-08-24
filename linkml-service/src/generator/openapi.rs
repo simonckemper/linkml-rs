@@ -2,10 +2,7 @@
 
 use super::options::IndentStyle;
 use super::traits::{CodeFormatter, Generator, GeneratorResult};
-use linkml_core::{
-    error::LinkMLError,
-    prelude::*,
-};
+use linkml_core::{error::LinkMLError, prelude::*};
 use serde_json::{Value as JsonValue, json};
 
 /// `OpenAPI` schema generator for `LinkML` schemas
@@ -583,10 +580,7 @@ impl Generator for OpenApiGenerator {
         vec![".openapi.json", ".openapi.yaml"]
     }
 
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Validate schema
         self.validate_schema(schema)?;
 
@@ -677,11 +671,11 @@ impl Generator for OpenApiGenerator {
 
         Ok(content)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "json"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "openapi"
     }
@@ -735,8 +729,9 @@ mod tests {
 
         schema.classes.insert("User".to_string(), class);
 
-
-        let content = generator.generate(&schema).expect("should generate OpenAPI");
+        let content = generator
+            .generate(&schema)
+            .expect("should generate OpenAPI");
 
         // Parse to verify it's valid JSON
         let parsed: JsonValue = serde_json::from_str(&content).expect("should parse as valid JSON");

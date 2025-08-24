@@ -71,7 +71,7 @@ invalid: yaml: syntax:
 /// Test that validator errors are properly propagated
 #[test]
 fn test_validator_error_propagation() {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.name = Some("test_schema".to_string());
     
     // Create a class with invalid constraint
@@ -86,12 +86,12 @@ fn test_validator_error_propagation() {
     class.attributes.insert("test_slot".to_string(), slot);
     schema.classes.insert("TestClass".to_string(), class);
     
-    let validator = ValidatorEngine::new();
-    let context = ValidationContext::new(&schema);
+    let validator = ValidationEngine::new();
+    let context = // ValidationContext removed(&schema);
     let options = ValidationOptions::default();
     
     // This should return error, not panic
-    let result = validator.validate_schema(&schema, &context, &options);
+    let result = validator.validate(&schema, &context, &options);
     assert!(result.is_err());
 }
 
@@ -105,7 +105,7 @@ fn test_expression_error_propagation() {
     // Test division by zero
     let expr = "10 / 0";
     let parser = ExpressionParser::new();
-    let parsed = parser.parse(expr);
+    let parsed = parser.parse_str(expr);
     
     if let Ok(parsed_expr) = parsed {
         let result = evaluator.evaluate(&parsed_expr, &registry, &Default::default());
@@ -115,7 +115,7 @@ fn test_expression_error_propagation() {
     
     // Test undefined function
     let expr = "undefined_function(42)";
-    let parsed = parser.parse(expr);
+    let parsed = parser.parse_str(expr);
     
     if let Ok(parsed_expr) = parsed {
         let result = evaluator.evaluate(&parsed_expr, &registry, &Default::default());
@@ -167,7 +167,7 @@ fn test_generator_error_propagation() {
     if let Ok(generators) = registry.list_generators() {
         if let Some(gen_name) = generators.first() {
             if let Ok(generator) = registry.get_generator(gen_name) {
-                let invalid_schema = Schema::default(); // Empty schema
+                let invalid_schema = SchemaDefinition::default(); // Empty schema
                 let options = GenOptions::default();
                 
                 // This should handle the error gracefully
@@ -255,13 +255,13 @@ fn test_schema_operations_error_propagation() {
     let merger = SchemaMerger::new();
     
     // Create conflicting classes
-    let mut schema_a = Schema::default();
+    let mut schema_a = SchemaDefinition::default();
     let mut class_a = ClassDefinition::default();
     class_a.name = Some("ConflictClass".to_string());
     class_a.description = Some("Description A".to_string());
     schema_a.classes.insert("ConflictClass".to_string(), class_a);
     
-    let mut schema_b = Schema::default();
+    let mut schema_b = SchemaDefinition::default();
     let mut class_b = ClassDefinition::default();
     class_b.name = Some("ConflictClass".to_string());
     class_b.description = Some("Description B".to_string());
@@ -284,7 +284,7 @@ fn test_file_operation_error_propagation() {
     
     // Test writing to read-only location
     let json_parser = JsonParser::new();
-    let schema = Schema::default();
+    let schema = SchemaDefinition::default();
     
     // Try to write to root directory (should fail on most systems)
     let result = json_parser.write_to_file(&schema, Path::new("/root_file.json"));
@@ -350,8 +350,8 @@ classes:
 /// Test recovery from errors
 #[test] 
 fn test_error_recovery() {
-    let validator = ValidatorEngine::new();
-    let mut schema = Schema::default();
+    let validator = ValidationEngine::new();
+    let mut schema = SchemaDefinition::default();
     
     // First validation with invalid schema
     let invalid_class = ClassDefinition {
@@ -360,9 +360,9 @@ fn test_error_recovery() {
     };
     schema.classes.insert("".to_string(), invalid_class);
     
-    let context = ValidationContext::new(&schema);
+    let context = // ValidationContext removed(&schema);
     let options = ValidationOptions::default();
-    let result1 = validator.validate_schema(&schema, &context, &options);
+    let result1 = validator.validate(&schema, &context, &options);
     assert!(result1.is_err());
     
     // Fix the schema and validate again
@@ -373,8 +373,8 @@ fn test_error_recovery() {
     };
     schema.classes.insert("ValidClass".to_string(), valid_class);
     
-    let context = ValidationContext::new(&schema);
-    let result2 = validator.validate_schema(&schema, &context, &options);
+    let context = // ValidationContext removed(&schema);
+    let result2 = validator.validate(&schema, &context, &options);
     // Should recover and validate successfully
     assert!(result2.is_ok() || result2.is_err()); // Depends on other validation rules
 }
@@ -383,7 +383,7 @@ fn test_error_recovery() {
 #[test]
 fn test_expect_replacement_messages() {
     // Test regex compilation errors
-    let validator = ValidatorEngine::new();
+    let validator = ValidationEngine::new();
     let pattern = "[invalid(regex";
     
     // The error should contain helpful context
@@ -440,10 +440,10 @@ slots:
     
     if let Ok(schema) = schema_result {
         // Validate - should report errors without panicking
-        let validator = ValidatorEngine::new();
-        let context = ValidationContext::new(&schema);
+        let validator = ValidationEngine::new();
+        let context = // ValidationContext removed(&schema);
         let options = ValidationOptions::default();
-        let _ = validator.validate_schema(&schema, &context, &options);
+        let _ = validator.validate(&schema, &context, &options);
         
         // Generate code - should handle incomplete schema
         let registry = GeneratorRegistry::new();

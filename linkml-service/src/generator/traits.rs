@@ -52,7 +52,9 @@ impl From<GeneratorError> for LinkMLError {
         match err {
             GeneratorError::SchemaValidation(msg) => LinkMLError::schema_validation(msg),
             GeneratorError::Io(io_err) => LinkMLError::IoError(io_err),
-            GeneratorError::Template(msg) => LinkMLError::service(format!("Template error: {}", msg)),
+            GeneratorError::Template(msg) => {
+                LinkMLError::service(format!("Template error: {}", msg))
+            }
             GeneratorError::UnsupportedFeature(feature) => LinkMLError::not_implemented(feature),
             GeneratorError::Configuration(msg) => LinkMLError::config(msg),
             GeneratorError::Generation { context, message } => {
@@ -319,26 +321,26 @@ pub trait Generator: Send + Sync {
     fn name(&self) -> &str {
         "Unknown Generator"
     }
-    
+
     /// Get a description of what this generator produces
     fn description(&self) -> &str {
         "No description available"
     }
-    
+
     /// Get the file extensions this generator produces
     fn file_extensions(&self) -> Vec<&str> {
         vec![self.get_file_extension()]
     }
-    
+
     /// Generate output from a schema
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError>;
-    
+
     /// Get the file extension for generated files
     fn get_file_extension(&self) -> &str;
-    
+
     /// Get the default filename for generated files
     fn get_default_filename(&self) -> &str;
-    
+
     /// Validate schema before generation (optional)
     fn validate_schema(&self, _schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         Ok(())

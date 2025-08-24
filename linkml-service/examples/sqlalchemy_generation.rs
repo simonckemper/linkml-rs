@@ -154,17 +154,17 @@ enums:
     // Parse the schema
     let mut parser = SchemaParser::new();
     let schema = parser.parse(schema_yaml)?;
-    
+
     println!("Generating SQLAlchemy ORM models for blog schema...\n");
-    
+
     // Generate with default configuration (SQLAlchemy 2.0)
     let config = SQLAlchemyGeneratorConfig::default();
     let generator = SQLAlchemyGenerator::new(config);
     let output = generator.generate(&schema)?;
-    
+
     println!("=== SQLAlchemy 2.0 Models (Default) ===\n");
     println!("{}", output);
-    
+
     // Generate with SQLAlchemy 1.4 configuration
     let config_v14 = SQLAlchemyGeneratorConfig {
         sqlalchemy_version: "1.4".to_string(),
@@ -173,13 +173,13 @@ enums:
         table_prefix: "blog_".to_string(),
         ..Default::default()
     };
-    
+
     let generator_v14 = SQLAlchemyGenerator::new(config_v14);
     let output_v14 = generator_v14.generate(&schema)?;
-    
+
     println!("\n\n=== SQLAlchemy 1.4 Models with Alembic Support ===\n");
     println!("{}", output_v14);
-    
+
     // Generate minimal configuration without relationships
     let config_minimal = SQLAlchemyGeneratorConfig {
         generate_relationships: false,
@@ -187,16 +187,16 @@ enums:
         generate_constraints: false,
         ..Default::default()
     };
-    
+
     let generator_minimal = SQLAlchemyGenerator::new(config_minimal);
     let output_minimal = generator_minimal.generate(&schema)?;
-    
+
     println!("\n\n=== Minimal SQLAlchemy Models ===\n");
     println!("{}", output_minimal);
-    
+
     // Save to file
     std::fs::write("blog_models.py", &output)?;
     println!("\n\nSQLAlchemy models saved to blog_models.py");
-    
+
     Ok(())
 }

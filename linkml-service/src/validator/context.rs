@@ -144,6 +144,11 @@ impl ValidationContext {
         self.class_stack.pop();
     }
 
+    /// Get the current recursion depth
+    pub fn current_depth(&self) -> usize {
+        self.class_stack.len()
+    }
+
     /// Get the current class being validated
     #[must_use]
     pub fn current_class(&self) -> Option<&str> {
@@ -235,23 +240,23 @@ impl ValidationContext {
     pub fn get_data(&self, key: &str) -> Option<&serde_json::Value> {
         self.data.get(key)
     }
-    
+
     /// Set the parent value for expression evaluation
     pub fn set_parent(&mut self, value: serde_json::Value) {
         self.parent_value = Some(value);
     }
-    
+
     /// Get the parent value
     #[must_use]
     pub fn parent(&self) -> Option<&serde_json::Value> {
         self.parent_value.as_ref()
     }
-    
+
     /// Set the root value for expression evaluation
     pub fn set_root(&mut self, value: serde_json::Value) {
         self.root_value = Some(value);
     }
-    
+
     /// Get the root value
     #[must_use]
     pub fn root(&self) -> Option<&serde_json::Value> {

@@ -10,8 +10,8 @@ use linkml_core::{
 use std::path::Path;
 use std::sync::Arc;
 
+use super::{AsyncSchemaParser, SchemaParser};
 use crate::file_system_adapter::FileSystemOperations;
-use super::{SchemaParser, AsyncSchemaParser};
 
 /// JSON parser implementation with file system adapter
 pub struct JsonParserV2<F: FileSystemOperations> {
@@ -38,8 +38,7 @@ impl<F: FileSystemOperations> SchemaParser for JsonParserV2<F> {
     fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
         // Note: This is a sync trait method, but we need to use async fs operations
         // In a real implementation, we'd need to refactor the trait to be async
-        let content = tokio::runtime::Handle::current()
-            .block_on(self.fs.read_to_string(path))?;
+        let content = tokio::runtime::Handle::current().block_on(self.fs.read_to_string(path))?;
 
         <Self as SchemaParser>::parse_str(self, &content).map_err(|e| match e {
             LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
@@ -61,17 +60,19 @@ impl<F: FileSystemOperations> AsyncSchemaParser for JsonParserV2<F> {
             )
         })
     }
-    
+
     async fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
         let content = self.fs.read_to_string(path).await?;
-        
-        <Self as AsyncSchemaParser>::parse_str(self, &content).await.map_err(|e| match e {
-            LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
-                message: format!("{message} in file {}", path.display()),
-                location,
-            },
-            other => other,
-        })
+
+        <Self as AsyncSchemaParser>::parse_str(self, &content)
+            .await
+            .map_err(|e| match e {
+                LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
+                    message: format!("{message} in file {}", path.display()),
+                    location,
+                },
+                other => other,
+            })
     }
 }
 
@@ -80,13 +81,15 @@ mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
     use tempfile::TempDir;
-    
+
     #[tokio::test]
     async fn test_json_parser_v2() {
         let temp_dir = TempDir::new().unwrap();
-        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
+        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
+            temp_dir.path().to_path_buf(),
+        ));
         let parser = JsonParserV2::new(fs.clone());
-        
+
         // Create a test schema
         let schema_content = r#"{
   "id": "https://example.org/test",
@@ -107,13 +110,18 @@ mod tests {
     }
   }
 }"#;
-        
+
         // Write to file
         let schema_path = temp_dir.path().join("test_schema.json");
         fs.write(&schema_path, schema_content).await.unwrap();
-        
+
         // Parse using async trait - explicitly use AsyncSchemaParser trait
-        let schema = <JsonParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(&parser, &schema_path).await.unwrap();
+        let schema = <JsonParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
+            &parser,
+            &schema_path,
+        )
+        .await
+        .unwrap();
         assert_eq!(schema.name, "TestSchema");
         assert!(schema.classes.contains_key("Person"));
     }

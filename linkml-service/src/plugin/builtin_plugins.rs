@@ -1,14 +1,14 @@
 //! Built-in plugins for LinkML service
-//! 
+//!
 //! Since dynamic plugin loading is forbidden by RootReal's safety requirements,
 //! all plugins must be compiled into the application at build time.
 
 use super::*;
 use async_trait::async_trait;
-use std::collections::HashMap;
-use serde_json::Value;
-use semver::{Version, VersionReq};
 use linkml_core::error::Result;
+use semver::{Version, VersionReq};
+use serde_json::Value;
+use std::collections::HashMap;
 
 /// Registry of built-in plugins
 pub struct BuiltinPluginRegistry {
@@ -21,12 +21,12 @@ impl BuiltinPluginRegistry {
         let mut registry = Self {
             plugins: HashMap::new(),
         };
-        
+
         // Register all built-in plugins
         registry.register_builtin_plugins();
         registry
     }
-    
+
     /// Register all built-in plugins
     fn register_builtin_plugins(&mut self) {
         // Register JSON Schema generator plugin
@@ -34,36 +34,36 @@ impl BuiltinPluginRegistry {
             "json-schema-generator".to_string(),
             Box::new(JsonSchemaGeneratorPlugin::new()),
         );
-        
+
         // Register SQL generator plugin
         self.plugins.insert(
             "sql-generator".to_string(),
             Box::new(SqlGeneratorPlugin::new()),
         );
-        
+
         // Register TypeQL generator plugin
         self.plugins.insert(
             "typeql-generator".to_string(),
             Box::new(TypeQLGeneratorPlugin::new()),
         );
-        
+
         // Register validation plugin
         self.plugins.insert(
             "enhanced-validator".to_string(),
             Box::new(EnhancedValidatorPlugin::new()),
         );
     }
-    
+
     /// Get a plugin by name
     pub fn get_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
         self.plugins.get(name)
     }
-    
+
     /// Get mutable plugin by name
     pub fn get_plugin_mut(&mut self, name: &str) -> Option<&mut Box<dyn Plugin>> {
         self.plugins.get_mut(name)
     }
-    
+
     /// List all available plugins
     pub fn list_plugins(&self) -> Vec<String> {
         self.plugins.keys().cloned().collect()
@@ -102,21 +102,21 @@ impl Plugin for JsonSchemaGeneratorPlugin {
     fn info(&self) -> &PluginInfo {
         &self.info
     }
-    
+
     async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
-    
+
     async fn shutdown(&mut self) -> Result<()> {
         self.status = PluginStatus::Shutdown;
         Ok(())
     }
-    
+
     fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
-    
+
     fn status(&self) -> PluginStatus {
         self.status
     }
@@ -154,21 +154,21 @@ impl Plugin for SqlGeneratorPlugin {
     fn info(&self) -> &PluginInfo {
         &self.info
     }
-    
+
     async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
-    
+
     async fn shutdown(&mut self) -> Result<()> {
         self.status = PluginStatus::Shutdown;
         Ok(())
     }
-    
+
     fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
-    
+
     fn status(&self) -> PluginStatus {
         self.status
     }
@@ -206,21 +206,21 @@ impl Plugin for TypeQLGeneratorPlugin {
     fn info(&self) -> &PluginInfo {
         &self.info
     }
-    
+
     async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
-    
+
     async fn shutdown(&mut self) -> Result<()> {
         self.status = PluginStatus::Shutdown;
         Ok(())
     }
-    
+
     fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
-    
+
     fn status(&self) -> PluginStatus {
         self.status
     }
@@ -258,21 +258,21 @@ impl Plugin for EnhancedValidatorPlugin {
     fn info(&self) -> &PluginInfo {
         &self.info
     }
-    
+
     async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
-    
+
     async fn shutdown(&mut self) -> Result<()> {
         self.status = PluginStatus::Shutdown;
         Ok(())
     }
-    
+
     fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
-    
+
     fn status(&self) -> PluginStatus {
         self.status
     }

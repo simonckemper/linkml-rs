@@ -8,11 +8,11 @@
 //! - Interactive validation mode
 //! - Schema debugging
 
-pub mod stress_test;
 pub mod migration_engine;
+pub mod stress_test;
 
-pub use stress_test::{StressTestExecutor, StressTestConfig, StressTestResults};
-pub use migration_engine::{MigrationEngine, MigrationAnalysis, MigrationPlan};
+pub use migration_engine::{MigrationAnalysis, MigrationEngine, MigrationPlan};
+pub use stress_test::{StressTestConfig, StressTestExecutor, StressTestResults};
 
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
@@ -386,7 +386,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     ) -> Result<()> {
         println!("{}", "LinkML Validation".bold().blue());
         println!("{}", "=================".blue());
-        
+
         if strict {
             println!("{}", "Running in STRICT mode".yellow());
         }
@@ -457,7 +457,6 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         }
     }
 
-
     /// Display validation results
     fn display_validation_results(
         &self,
@@ -505,10 +504,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     if report.errors.len() > max_errors {
                         println!("\n... and {} more errors", report.errors.len() - max_errors);
                     }
-                    
+
                     // Show warnings in strict mode
                     if strict && !report.warnings.is_empty() {
-                        println!("\n{}", "Warnings (treated as errors in strict mode):".yellow());
+                        println!(
+                            "\n{}",
+                            "Warnings (treated as errors in strict mode):".yellow()
+                        );
                         for (i, warning) in report.warnings.iter().take(max_errors).enumerate() {
                             println!(
                                 "{:4}. [WARNING] {}: {}",
@@ -516,14 +518,17 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                                 warning.path.as_deref().unwrap_or(""),
                                 warning.message
                             );
-                            
+
                             if let Some(suggestion) = &warning.suggestion {
                                 println!("      {} {}", "Suggestion:".cyan(), suggestion);
                             }
                         }
-                        
+
                         if report.warnings.len() > max_errors {
-                            println!("\n... and {} more warnings", report.warnings.len() - max_errors);
+                            println!(
+                                "\n... and {} more warnings",
+                                report.warnings.len() - max_errors
+                            );
                         }
                     }
                 }
@@ -769,7 +774,8 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         );
 
         if memory {
-            let avg_memory: i64 = memory_usage.iter().sum::<i64>() / i64::try_from(memory_usage.len()).unwrap_or(i64::MAX);
+            let avg_memory: i64 = memory_usage.iter().sum::<i64>()
+                / i64::try_from(memory_usage.len()).unwrap_or(i64::MAX);
             println!("\n{}", "Memory:".bold());
             println!("  Average delta: {avg_memory} bytes");
         }
@@ -881,22 +887,18 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     }
 
     /// Interactive command implementation
-    fn interactive_command(
-        &self,
-        initial_schema: Option<&Path>,
-        history_file: Option<&Path>,
-    ) {
+    fn interactive_command(&self, initial_schema: Option<&Path>, history_file: Option<&Path>) {
         println!("{}", "LinkML Interactive Mode".bold().blue());
         println!("{}", "=======================".blue());
         println!("Type 'help' for commands, 'quit' to exit\n");
 
         // Log the interactive session start
         println!("Service: {:?}", &*self.service as *const _);
-        
+
         if let Some(schema_path) = initial_schema {
             println!("Initial schema: {}", schema_path.display());
         }
-        
+
         if let Some(history_path) = history_file {
             println!("History file: {}", history_path.display());
         }
@@ -930,7 +932,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             operations,
             chaos,
             chaos_failure_rate: if chaos { 0.05 } else { 0.0 }, // 5% failure rate
-            chaos_max_delay_ms: if chaos { 100 } else { 0 }, // Up to 100ms delay
+            chaos_max_delay_ms: if chaos { 100 } else { 0 },    // Up to 100ms delay
         };
 
         // Run actual stress test
@@ -971,7 +973,10 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     }
 
     /// Migration command implementation
-    async fn migrate_command(&self, command: &crate::migration::cli::MigrationCommands) -> Result<()> {
+    async fn migrate_command(
+        &self,
+        command: &crate::migration::cli::MigrationCommands,
+    ) -> Result<()> {
         use crate::migration::cli::MigrationCommands;
 
         match command {
@@ -1014,7 +1019,10 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if !analysis.data_migrations.is_empty() {
                     println!("\n{}", "Data Migrations Required:".yellow());
                     for migration in &analysis.data_migrations {
-                        println!("  - {:?} for {}", migration.migration_type, migration.entity);
+                        println!(
+                            "  - {:?} for {}",
+                            migration.migration_type, migration.entity
+                        );
                     }
                 }
 

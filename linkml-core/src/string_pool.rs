@@ -3,9 +3,9 @@
 //! This module provides a thread-safe string interning system to deduplicate
 //! common strings across schema definitions, significantly reducing memory usage.
 
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use once_cell::sync::Lazy;
 
 /// Global string pool for interning common LinkML strings
 static STRING_POOL: Lazy<StringPool> = Lazy::new(StringPool::new);
@@ -35,7 +35,7 @@ impl StringPool {
 
         // Need write lock to insert
         let mut pool = self.pool.write().expect("StringPool write lock poisoned");
-        
+
         // Double-check in case another thread interned while we waited
         if let Some(interned) = pool.get(s) {
             return Arc::clone(interned);
@@ -49,13 +49,19 @@ impl StringPool {
 
     /// Get current pool size for monitoring
     pub fn size(&self) -> usize {
-        self.pool.read().expect("StringPool read lock poisoned").len()
+        self.pool
+            .read()
+            .expect("StringPool read lock poisoned")
+            .len()
     }
 
     /// Clear the pool (mainly for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.pool.write().expect("StringPool write lock poisoned").clear();
+        self.pool
+            .write()
+            .expect("StringPool write lock poisoned")
+            .clear();
     }
 }
 
@@ -111,17 +117,17 @@ mod tests {
     #[test]
     fn test_string_interning() {
         let pool = StringPool::new();
-        
+
         let s1 = pool.intern("hello");
         let s2 = pool.intern("hello");
         let s3 = pool.intern("world");
-        
+
         // Same string should return same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
-        
+
         // Different strings should not
         assert!(!Arc::ptr_eq(&s1, &s3));
-        
+
         assert_eq!(pool.size(), 2);
     }
 
@@ -129,14 +135,14 @@ mod tests {
     fn test_global_pool() {
         // Clear to ensure clean state
         STRING_POOL.clear();
-        
+
         let s1 = intern("test");
         let s2 = intern("test");
         let s3 = intern("different");
-        
+
         assert!(Arc::ptr_eq(&s1, &s2));
         assert!(!Arc::ptr_eq(&s1, &s3));
-        
+
         assert!(pool_size() >= 2);
     }
 
@@ -144,7 +150,7 @@ mod tests {
     fn test_option_interning() {
         let some = intern_option(Some("value"));
         let none = intern_option(None);
-        
+
         assert_eq!(some.as_deref(), Some("value"));
         assert_eq!(none, None);
     }
@@ -153,7 +159,7 @@ mod tests {
     fn test_vec_interning() {
         let vec = vec!["one".to_string(), "two".to_string(), "one".to_string()];
         let interned = intern_vec(vec);
-        
+
         assert_eq!(interned.len(), 3);
         assert!(Arc::ptr_eq(&interned[0], &interned[2]));
     }

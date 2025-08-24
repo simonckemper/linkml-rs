@@ -4,28 +4,28 @@
 //! with custom generators, validators, loaders, and other components.
 
 use async_trait::async_trait;
+use linkml_core::error::{LinkMLError, Result};
+use linkml_core::prelude::*;
+use logger_core::{LoggerError, LoggerService};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use linkml_core::prelude::*;
-use linkml_core::error::{Result, LinkMLError};
-use logger_core::{LoggerService, LoggerError};
 
+pub mod api;
+pub mod builtin_plugins;
+pub mod compatibility;
 pub mod discovery;
 pub mod loader;
-pub mod api;
 pub mod registry;
-pub mod compatibility;
-pub mod builtin_plugins;
 
-pub use discovery::{PluginDiscovery, DiscoveryStrategy, PluginManifest, EntryPoint};
-pub use loader::{PluginLoader, DynamicLoader, PluginSandbox, ResourceLimits, FsAccessMode};
-pub use api::{PluginSDK, PluginCapability, PluginMetadata};
-pub use registry::{PluginRegistry, PluginRegistration};
-pub use compatibility::{CompatibilityChecker, CompatibilityRules};
+pub use api::{PluginCapability, PluginMetadata, PluginSDK};
 pub use builtin_plugins::BuiltinPluginRegistry;
+pub use compatibility::{CompatibilityChecker, CompatibilityRules};
+pub use discovery::{DiscoveryStrategy, EntryPoint, PluginDiscovery, PluginManifest};
+pub use loader::{DynamicLoader, FsAccessMode, PluginLoader, PluginSandbox, ResourceLimits};
+pub use registry::{PluginRegistration, PluginRegistry};
 
 /// Plugin type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -102,16 +102,16 @@ pub struct PluginContext {
 pub trait Plugin: Send + Sync {
     /// Get plugin information
     fn info(&self) -> &PluginInfo;
-    
+
     /// Initialize the plugin
     async fn initialize(&mut self, context: PluginContext) -> Result<()>;
-    
+
     /// Shutdown the plugin
     async fn shutdown(&mut self) -> Result<()>;
-    
+
     /// Validate plugin configuration
     fn validate_config(&self, config: &HashMap<String, serde_json::Value>) -> Result<()>;
-    
+
     /// Get plugin status
     fn status(&self) -> PluginStatus;
 }
@@ -138,7 +138,7 @@ pub enum PluginStatus {
 pub trait GeneratorPlugin: Plugin {
     /// Get supported output formats
     fn supported_formats(&self) -> Vec<String>;
-    
+
     /// Generate code from schema
     async fn generate(
         &self,
@@ -146,7 +146,7 @@ pub trait GeneratorPlugin: Plugin {
         format: &str,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<String>;
-    
+
     /// Get generator-specific options
     fn options_schema(&self) -> serde_json::Value;
 }
@@ -161,7 +161,7 @@ pub trait ValidatorPlugin: Plugin {
         data: &serde_json::Value,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<ValidationResult>;
-    
+
     /// Get validator-specific options
     fn options_schema(&self) -> serde_json::Value;
 }
@@ -171,7 +171,7 @@ pub trait ValidatorPlugin: Plugin {
 pub trait LoaderPlugin: Plugin {
     /// Get supported input formats
     fn supported_formats(&self) -> Vec<String>;
-    
+
     /// Load data from source
     async fn load(
         &self,
@@ -179,7 +179,7 @@ pub trait LoaderPlugin: Plugin {
         format: &str,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<Vec<serde_json::Value>>;
-    
+
     /// Get loader-specific options
     fn options_schema(&self) -> serde_json::Value;
 }
@@ -189,7 +189,7 @@ pub trait LoaderPlugin: Plugin {
 pub trait DumperPlugin: Plugin {
     /// Get supported output formats
     fn supported_formats(&self) -> Vec<String>;
-    
+
     /// Dump data to destination
     async fn dump(
         &self,
@@ -198,7 +198,7 @@ pub trait DumperPlugin: Plugin {
         format: &str,
         options: HashMap<String, serde_json::Value>,
     ) -> Result<()>;
-    
+
     /// Get dumper-specific options
     fn options_schema(&self) -> serde_json::Value;
 }
@@ -208,14 +208,14 @@ pub trait DumperPlugin: Plugin {
 pub trait FunctionPlugin: Plugin {
     /// Get provided function names
     fn function_names(&self) -> Vec<String>;
-    
+
     /// Execute a function
     async fn execute(
         &self,
         function: &str,
         args: Vec<serde_json::Value>,
     ) -> Result<serde_json::Value>;
-    
+
     /// Get function signatures
     fn signatures(&self) -> HashMap<String, FunctionSignature>;
 }
@@ -306,60 +306,65 @@ impl PluginManager {
             logger,
         }
     }
-    
+
     /// Discover and load plugins from a directory
     pub async fn discover_plugins(&mut self, path: &Path) -> Result<Vec<PluginInfo>> {
-        let plugin_paths = self.discovery.discover(path, DiscoveryStrategy::Recursive)?;
+        let plugin_paths = self
+            .discovery
+            .discover(path, DiscoveryStrategy::Recursive)?;
         let mut loaded_plugins = Vec::new();
-        
+
         for plugin_path in plugin_paths {
             match self.load_plugin(&plugin_path).await {
                 Ok(info) => loaded_plugins.push(info),
                 Err(e) => {
-                    self.logger.warn(&format!(
-                        "Failed to load plugin from {:?}: {}",
-                        plugin_path, e
-                    )).await.map_err(|le| LinkMLError::other(le.to_string()))?;
+                    self.logger
+                        .warn(&format!(
+                            "Failed to load plugin from {:?}: {}",
+                            plugin_path, e
+                        ))
+                        .await
+                        .map_err(|le| LinkMLError::other(le.to_string()))?;
                 }
             }
         }
-        
+
         Ok(loaded_plugins)
     }
-    
+
     /// Load a specific plugin
     pub async fn load_plugin(&mut self, path: &Path) -> Result<PluginInfo> {
         // Load plugin metadata
         let metadata = self.loader.load_metadata(path)?;
-        
+
         // Check compatibility
         self.compatibility.check_compatibility(&metadata)?;
-        
+
         // Load the plugin
         let plugin = self.loader.load_plugin(path, &metadata).await?;
         let info = plugin.info().clone();
-        
+
         // Register the plugin
         self.registry.register(plugin)?;
-        
+
         Ok(info)
     }
-    
+
     /// Get a plugin by ID
     pub fn get_plugin(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get(id)
     }
-    
+
     /// Get all plugins of a specific type
     pub fn get_plugins_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get_by_type(plugin_type)
     }
-    
+
     /// Initialize all plugins
     pub async fn initialize_all(&mut self, context: PluginContext) -> Result<()> {
         self.registry.initialize_all(context).await
     }
-    
+
     /// Shutdown all plugins
     pub async fn shutdown_all(&mut self) -> Result<()> {
         self.registry.shutdown_all().await
@@ -369,7 +374,7 @@ impl PluginManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_plugin_info_serialization() {
         let info = PluginInfo {
@@ -385,10 +390,11 @@ mod tests {
             dependencies: vec![],
             capabilities: vec![],
         };
-        
+
         let json = serde_json::to_string(&info).expect("should serialize PluginInfo");
-        let deserialized: PluginInfo = serde_json::from_str(&json).expect("should deserialize PluginInfo");
-        
+        let deserialized: PluginInfo =
+            serde_json::from_str(&json).expect("should deserialize PluginInfo");
+
         assert_eq!(info.id, deserialized.id);
         assert_eq!(info.version, deserialized.version);
     }

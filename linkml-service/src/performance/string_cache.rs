@@ -20,7 +20,7 @@ pub enum InternError {
     /// String exceeds maximum allowed size
     #[error("String too large: {0} bytes (max: {MAX_STRING_LENGTH})")]
     StringTooLarge(usize),
-    
+
     /// Cache has reached maximum capacity
     #[error("Cache full: {0} entries (max: {MAX_CACHE_SIZE})")]
     CacheFull(usize),
@@ -38,83 +38,117 @@ impl StringInterner {
             cache: DashMap::new(),
         }
     }
-    
+
     /// Intern a string, returning a shared reference
-    /// 
+    ///
     /// Returns an error if the string is too large or the cache is full
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > MAX_STRING_LENGTH {
             return Err(InternError::StringTooLarge(s.len()));
         }
-        
+
         // Check if already interned
         if let Some(interned) = self.cache.get(s) {
             return Ok(Arc::clone(interned.value()));
         }
-        
+
         // Check cache size before inserting
         if self.cache.len() >= MAX_CACHE_SIZE {
             return Err(InternError::CacheFull(self.cache.len()));
         }
-        
+
         // Intern the string
         let arc_str: Arc<str> = Arc::from(s);
         self.cache.insert(s.to_string(), Arc::clone(&arc_str));
         Ok(arc_str)
     }
-    
+
     /// Try to intern a string, falling back to creating a new Arc on error
     pub fn intern_or_new(&self, s: &str) -> Arc<str> {
         self.intern(s).unwrap_or_else(|_| Arc::from(s))
     }
-    
+
     /// Get the number of interned strings
     pub fn len(&self) -> usize {
         self.cache.len()
     }
-    
+
     /// Check if the interner is empty
     pub fn is_empty(&self) -> bool {
         self.cache.is_empty()
     }
-    
+
     /// Clear all interned strings
     pub fn clear(&self) {
         self.cache.clear();
     }
-    
+
     /// Pre-populate with common LinkML type names and keywords
     pub fn populate_common_strings(&self) {
         // Common type names
         let common_types = [
-            "string", "integer", "float", "double", "boolean", "date", "datetime",
-            "time", "uri", "uriorcurie", "curie", "ncname", "objectidentifier",
-            "nodeidentifier", "jsonpointer", "jsonpath", "sparqlpath"
+            "string",
+            "integer",
+            "float",
+            "double",
+            "boolean",
+            "date",
+            "datetime",
+            "time",
+            "uri",
+            "uriorcurie",
+            "curie",
+            "ncname",
+            "objectidentifier",
+            "nodeidentifier",
+            "jsonpointer",
+            "jsonpath",
+            "sparqlpath",
         ];
-        
+
         for type_name in common_types {
             // These are all small, known strings so they should never fail
             let _ = self.intern(type_name);
         }
-        
+
         // Common slot names
         let common_slots = [
-            "id", "name", "description", "title", "type", "value", "label",
-            "status", "created", "updated", "version", "parent", "children"
+            "id",
+            "name",
+            "description",
+            "title",
+            "type",
+            "value",
+            "label",
+            "status",
+            "created",
+            "updated",
+            "version",
+            "parent",
+            "children",
         ];
-        
+
         for slot in common_slots {
             let _ = self.intern(slot);
         }
-        
+
         // Common validation keywords
         let keywords = [
-            "required", "multivalued", "identifier", "range", "pattern",
-            "minimum_value", "maximum_value", "enum", "any_of", "all_of",
-            "exactly_one_of", "none_of"
+            "required",
+            "multivalued",
+            "identifier",
+            "range",
+            "pattern",
+            "minimum_value",
+            "maximum_value",
+            "enum",
+            "any_of",
+            "all_of",
+            "exactly_one_of",
+            "none_of",
         ];
-        
+
         for keyword in keywords {
             let _ = self.intern(keyword);
         }
@@ -140,7 +174,7 @@ pub fn global_interner() -> &'static StringInterner {
 }
 
 /// Intern a string using the global interner
-/// 
+///
 /// Falls back to creating a new Arc if interning fails
 pub fn intern(s: &str) -> Arc<str> {
     global_interner().intern_or_new(s)
@@ -156,29 +190,29 @@ pub fn str_eq_fast(a: &Arc<str>, b: &Arc<str>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_string_interning() {
         let interner = StringInterner::new();
-        
+
         let s1 = interner.intern("hello").expect("should intern string");
         let s2 = interner.intern("hello").expect("should intern string");
         let s3 = interner.intern("world").expect("should intern string");
-        
+
         // Same strings should have same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
         assert!(!Arc::ptr_eq(&s1, &s3));
-        
+
         // String comparison
         assert!(str_eq_fast(&s1, &s2));
         assert!(!str_eq_fast(&s1, &s3));
     }
-    
+
     #[test]
     fn test_string_too_large() {
         let interner = StringInterner::new();
         let large_string = "x".repeat(MAX_STRING_LENGTH + 1);
-        
+
         match interner.intern(&large_string) {
             Err(InternError::StringTooLarge(size)) => {
                 assert_eq!(size, MAX_STRING_LENGTH + 1);
@@ -186,26 +220,26 @@ mod tests {
             _ => panic!("Expected StringTooLarge error"),
         }
     }
-    
+
     #[test]
     fn test_cache_full() {
         let interner = StringInterner::new();
         interner.clear(); // Start fresh
-        
+
         // Fill the cache up to near the limit
         // We can't actually fill it to MAX_CACHE_SIZE in a test,
         // so we'll test the error path directly
         let result = interner.intern_or_new("test");
         assert_eq!(&*result, "test");
     }
-    
+
     #[test]
     fn test_global_interner() {
         let s1 = intern("test");
         let s2 = intern("test");
-        
+
         assert!(Arc::ptr_eq(&s1, &s2));
-        
+
         // Common strings should be interned and point to same memory
         let string_type = intern("string");
         let string_type2 = intern("string");

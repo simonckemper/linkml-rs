@@ -10,16 +10,16 @@ use std::time::Duration;
 pub struct LinkMLConfig {
     /// Schema loading configuration
     pub schema: SchemaConfig,
-    
+
     /// Validation configuration
     pub validation: ValidationConfig,
-    
+
     /// Performance configuration
     pub performance: PerformanceConfig,
-    
+
     /// Code generation configuration
     pub generation: GenerationConfig,
-    
+
     /// Integration configuration
     pub integration: IntegrationConfig,
 }
@@ -30,20 +30,20 @@ pub struct LinkMLConfig {
 pub struct SchemaConfig {
     /// Base directories for schema resolution
     pub search_paths: Vec<PathBuf>,
-    
+
     /// Enable schema caching
     pub enable_cache: bool,
-    
+
     /// Cache directory
     pub cache_dir: PathBuf,
-    
+
     /// Schema import timeout
     #[serde(with = "humantime_serde")]
     pub import_timeout: Duration,
-    
+
     /// Maximum import depth
     pub max_import_depth: usize,
-    
+
     /// Validate schemas on load
     pub validate_on_load: bool,
 }
@@ -67,23 +67,23 @@ impl Default for SchemaConfig {
 pub struct ValidationConfig {
     /// Enable strict mode
     pub strict_mode: bool,
-    
+
     /// Enable pattern validation
     pub enable_patterns: bool,
-    
+
     /// Enable instance validation
     pub enable_instances: bool,
-    
+
     /// Instance file search paths
     pub instance_paths: Vec<PathBuf>,
-    
+
     /// Maximum validation errors to collect
     pub max_errors: usize,
-    
+
     /// Validation timeout
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,
-    
+
     /// Enable type coercion
     pub enable_coercion: bool,
 }
@@ -108,19 +108,19 @@ impl Default for ValidationConfig {
 pub struct PerformanceConfig {
     /// Enable compiled validators
     pub enable_compilation: bool,
-    
+
     /// Thread pool size for parallel validation
     pub thread_pool_size: usize,
-    
+
     /// Maximum concurrent validations
     pub max_concurrent_validations: usize,
-    
+
     /// Buffer size for streaming operations
     pub stream_buffer_size: usize,
-    
+
     /// Enable memory mapping for large files
     pub enable_mmap: bool,
-    
+
     /// Cache size in MB
     pub cache_size_mb: usize,
 }
@@ -144,22 +144,22 @@ impl Default for PerformanceConfig {
 pub struct GenerationConfig {
     /// Output directory for generated code
     pub output_dir: PathBuf,
-    
+
     /// Enable `TypeQL` generation
     pub enable_typeql: bool,
-    
+
     /// Enable Rust generation
     pub enable_rust: bool,
-    
+
     /// Enable GraphQL generation
     pub enable_graphql: bool,
-    
+
     /// Enable documentation generation
     pub enable_docs: bool,
-    
+
     /// Documentation format
     pub doc_format: String,
-    
+
     /// Include source location comments
     pub include_source_info: bool,
 }
@@ -184,19 +184,19 @@ impl Default for GenerationConfig {
 pub struct IntegrationConfig {
     /// Enable Iceberg integration
     pub enable_iceberg: bool,
-    
+
     /// Iceberg service endpoint
     pub iceberg_endpoint: Option<String>,
-    
+
     /// Enable `TypeDB` integration
     pub enable_typedb: bool,
-    
+
     /// `TypeDB` connection string
     pub typedb_connection: Option<String>,
-    
+
     /// Enable monitoring
     pub enable_monitoring: bool,
-    
+
     /// Monitoring endpoint
     pub monitoring_endpoint: Option<String>,
 }
@@ -219,16 +219,16 @@ impl Default for IntegrationConfig {
 pub struct ValidationOptions {
     /// Target class for validation
     pub target_class: Option<String>,
-    
+
     /// Enable strict validation
     pub strict: bool,
-    
+
     /// Collect all errors (don't fail fast)
     pub collect_all: bool,
-    
+
     /// Maximum errors to collect
     pub max_errors: Option<usize>,
-    
+
     /// Include warnings
     pub include_warnings: bool,
 }
@@ -238,13 +238,13 @@ pub struct ValidationOptions {
 pub struct GenerationOptions {
     /// Include private fields
     pub include_private: bool,
-    
+
     /// Include documentation
     pub include_docs: bool,
-    
+
     /// Custom template path
     pub template_path: Option<PathBuf>,
-    
+
     /// Additional context data
     pub context: Option<serde_json::Value>,
 }
@@ -266,7 +266,7 @@ mod tests {
         let config = LinkMLConfig::default();
         let yaml = serde_yaml::to_string(&config)?;
         assert!(yaml.contains("enable_cache"));
-        
+
         let parsed: LinkMLConfig = serde_yaml::from_str(&yaml)?;
         assert_eq!(parsed.schema.enable_cache, config.schema.enable_cache);
         Ok(())

@@ -3,13 +3,10 @@
 //! This module provides generator traits that use Arc for efficient
 //! schema sharing across generator implementations.
 
-use std::sync::Arc;
 use async_trait::async_trait;
+use std::sync::Arc;
 
-use linkml_core::{
-    error::Result,
-    schema_arc::ArcSchema,
-};
+use linkml_core::{error::Result, schema_arc::ArcSchema};
 
 /// Options for code generation
 #[derive(Debug, Clone, Default)]
@@ -65,13 +62,13 @@ pub trait CodeGeneratorV2: Send + Sync {
         schema: ArcSchema,
         options: GeneratorOptions,
     ) -> Result<GenerationResult>;
-    
+
     /// Get the name of this generator
     fn name(&self) -> &'static str;
-    
+
     /// Get supported file extensions
     fn file_extensions(&self) -> Vec<&'static str>;
-    
+
     /// Check if generator supports a particular feature
     fn supports_feature(&self, _feature: &str) -> bool {
         false
@@ -88,7 +85,7 @@ pub trait IncrementalGenerator: CodeGeneratorV2 {
         class_names: &[String],
         options: GeneratorOptions,
     ) -> Result<GenerationResult>;
-    
+
     /// Generate only for changes between schemas
     async fn generate_diff(
         &self,
@@ -107,7 +104,10 @@ pub struct GeneratorBase {
 impl GeneratorBase {
     /// Create a new generator base with name and supported extensions
     pub fn new(name: &'static str, extensions: Vec<&'static str>) -> Self {
-        Self { _name: name, _extensions: extensions }
+        Self {
+            _name: name,
+            _extensions: extensions,
+        }
     }
 }
 
@@ -123,18 +123,18 @@ impl GeneratorRegistry {
             generators: dashmap::DashMap::new(),
         }
     }
-    
+
     /// Register a generator
     pub fn register<G: CodeGeneratorV2 + 'static>(&self, generator: G) {
         let name = generator.name().to_string();
         self.generators.insert(name, Arc::new(generator));
     }
-    
+
     /// Get a generator by name
     pub fn get(&self, name: &str) -> Option<Arc<dyn CodeGeneratorV2>> {
         self.generators.get(name).map(|g| Arc::clone(&g))
     }
-    
+
     /// List all registered generators
     pub fn list(&self) -> Vec<String> {
         self.generators.iter().map(|e| e.key().clone()).collect()
@@ -154,11 +154,11 @@ macro_rules! impl_generator_v2 {
             ) -> Result<GenerationResult> {
                 self.generate_impl(schema, options).await
             }
-            
+
             fn name(&self) -> &'static str {
                 $generator_name
             }
-            
+
             fn file_extensions(&self) -> Vec<&'static str> {
                 $extensions
             }
@@ -178,7 +178,7 @@ impl ExampleGeneratorV2 {
             _base: GeneratorBase::new("example", vec!["ex", "example"]),
         }
     }
-    
+
     async fn generate_impl(
         &self,
         schema: ArcSchema,
@@ -191,11 +191,11 @@ impl ExampleGeneratorV2 {
             warnings: Vec::new(),
             stats: GenerationStats::default(),
         };
-        
+
         // Process schema without cloning
         result.stats.classes_generated = schema.classes.len();
         result.stats.slots_generated = schema.slots.len();
-        
+
         Ok(result)
     }
 }
@@ -212,7 +212,7 @@ impl ParallelGeneratorExecutor {
     pub fn new(registry: Arc<GeneratorRegistry>) -> Self {
         Self { registry }
     }
-    
+
     /// Execute multiple generators in parallel
     pub async fn execute_all(
         &self,
@@ -221,27 +221,29 @@ impl ParallelGeneratorExecutor {
         options: GeneratorOptions,
     ) -> Vec<(String, Result<GenerationResult>)> {
         use futures::future::join_all;
-        
+
         let futures = generator_names.into_iter().map(|name| {
             let registry = Arc::clone(&self.registry);
             let schema = Arc::clone(&schema);
             let options = options.clone();
-            
+
             async move {
                 match registry.get(&name) {
                     Some(generator) => {
                         let result = generator.generate(schema, options).await;
                         (name, result)
                     }
-                    None => {
-                        (name.clone(), Err(linkml_core::error::LinkMLError::other(
-                            format!("Generator '{}' not found", name)
-                        )))
-                    }
+                    None => (
+                        name.clone(),
+                        Err(linkml_core::error::LinkMLError::other(format!(
+                            "Generator '{}' not found",
+                            name
+                        ))),
+                    ),
                 }
             }
         });
-        
+
         join_all(futures).await
     }
 }
@@ -258,18 +260,26 @@ mod tests {
             name: "TestSchema".to_string(),
             ..Default::default()
         });
-        
+
         let generator = ExampleGeneratorV2::new();
-        let result = generator.generate(schema, GeneratorOptions::default()).await.expect("should generate successfully");
-        
-        assert!(result.content.expect("should have content").contains("TestSchema"));
+        let result = generator
+            .generate(schema, GeneratorOptions::default())
+            .await
+            .expect("should generate successfully");
+
+        assert!(
+            result
+                .content
+                .expect("should have content")
+                .contains("TestSchema")
+        );
     }
 
     #[test]
     fn test_generator_registry() {
         let registry = GeneratorRegistry::new();
         registry.register(ExampleGeneratorV2::new());
-        
+
         assert!(registry.get("example").is_some());
         assert_eq!(registry.list(), vec!["example"]);
     }
@@ -278,16 +288,18 @@ mod tests {
     async fn test_parallel_execution() {
         let registry = Arc::new(GeneratorRegistry::new());
         registry.register(ExampleGeneratorV2::new());
-        
+
         let executor = ParallelGeneratorExecutor::new(registry);
         let schema = Arc::new(SchemaDefinition::default());
-        
-        let results = executor.execute_all(
-            schema,
-            vec!["example".to_string()],
-            GeneratorOptions::default(),
-        ).await;
-        
+
+        let results = executor
+            .execute_all(
+                schema,
+                vec!["example".to_string()],
+                GeneratorOptions::default(),
+            )
+            .await;
+
         assert_eq!(results.len(), 1);
         assert!(results[0].1.is_ok());
     }

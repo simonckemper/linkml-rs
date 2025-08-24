@@ -10,28 +10,28 @@ use thiserror::Error;
 pub mod limits {
     /// Maximum length for general string inputs
     pub const MAX_STRING_LENGTH: usize = 1_000_000; // 1MB
-    
+
     /// Maximum depth for nested expressions
     pub const MAX_EXPRESSION_DEPTH: usize = 100;
-    
+
     /// Maximum number of constraints in a single validation
     pub const MAX_CONSTRAINT_COUNT: usize = 1000;
-    
+
     /// Maximum number of cache entries
     pub const MAX_CACHE_ENTRIES: usize = 10_000;
-    
+
     /// Maximum number of function arguments
     pub const MAX_FUNCTION_ARGS: usize = 20;
-    
+
     /// Maximum length for identifiers (names, keys, etc.)
     pub const MAX_IDENTIFIER_LENGTH: usize = 256;
-    
+
     /// Maximum size for JSON payloads
     pub const MAX_JSON_SIZE: usize = 10_000_000; // 10MB
-    
+
     /// Maximum number of slots in a class
     pub const MAX_SLOTS_PER_CLASS: usize = 1000;
-    
+
     /// Maximum number of classes in a schema
     pub const MAX_CLASSES_PER_SCHEMA: usize = 10_000;
 }
@@ -41,68 +41,68 @@ pub mod limits {
 pub enum ValidationError {
     /// String exceeds maximum allowed size
     #[error("String too large: {size} bytes (max: {max})")]
-    StringTooLarge { 
+    StringTooLarge {
         /// Actual size in bytes
-        size: usize, 
+        size: usize,
         /// Maximum allowed size
-        max: usize 
+        max: usize,
     },
-    
+
     /// Identifier exceeds maximum allowed length
     #[error("Identifier too long: {size} characters (max: {max})")]
-    IdentifierTooLong { 
+    IdentifierTooLong {
         /// Actual size in characters
-        size: usize, 
+        size: usize,
         /// Maximum allowed size
-        max: usize 
+        max: usize,
     },
-    
+
     /// Expression nesting depth exceeds limit
     #[error("Expression too deep: {depth} levels (max: {max})")]
-    ExpressionTooDeep { 
+    ExpressionTooDeep {
         /// Actual depth
-        depth: usize, 
+        depth: usize,
         /// Maximum allowed depth
-        max: usize 
+        max: usize,
     },
-    
+
     /// Too many constraints in validation
     #[error("Too many constraints: {count} (max: {max})")]
-    TooManyConstraints { 
+    TooManyConstraints {
         /// Actual count
-        count: usize, 
+        count: usize,
         /// Maximum allowed count
-        max: usize 
+        max: usize,
     },
-    
+
     /// Too many function arguments
     #[error("Too many function arguments: {count} (max: {max})")]
-    TooManyFunctionArgs { 
+    TooManyFunctionArgs {
         /// Actual count
-        count: usize, 
+        count: usize,
         /// Maximum allowed count
-        max: usize 
+        max: usize,
     },
-    
+
     /// Invalid UTF-8 in string
     #[error("Invalid UTF-8 in string")]
     InvalidUtf8,
-    
+
     /// String contains control characters
     #[error("String contains control characters")]
     ControlCharacters,
-    
+
     /// String contains null bytes
     #[error("String contains null bytes")]
     NullBytes,
-    
+
     /// JSON payload too large
     #[error("JSON payload too large: {size} bytes (max: {max})")]
-    JsonTooLarge { 
+    JsonTooLarge {
         /// Actual size in bytes
-        size: usize, 
+        size: usize,
         /// Maximum allowed size
-        max: usize 
+        max: usize,
     },
 }
 
@@ -115,17 +115,19 @@ pub fn validate_string_input(s: &str) -> Result<(), ValidationError> {
             max: limits::MAX_STRING_LENGTH,
         });
     }
-    
+
     // Check for null bytes
     if s.contains('\0') {
         return Err(ValidationError::NullBytes);
     }
-    
+
     // Check for control characters (except common ones like newline, tab)
-    if s.chars().any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t') {
+    if s.chars()
+        .any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t')
+    {
         return Err(ValidationError::ControlCharacters);
     }
-    
+
     Ok(())
 }
 
@@ -138,17 +140,17 @@ pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
             max: limits::MAX_IDENTIFIER_LENGTH,
         });
     }
-    
+
     // Identifiers should not contain control characters
     if id.chars().any(|c| c.is_control()) {
         return Err(ValidationError::ControlCharacters);
     }
-    
+
     // Check for null bytes
     if id.contains('\0') {
         return Err(ValidationError::NullBytes);
     }
-    
+
     Ok(())
 }
 
@@ -182,62 +184,62 @@ pub fn truncate_for_log(s: &str, max_len: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_validate_string_input() {
         // Valid strings
         assert!(validate_string_input("hello world").is_ok());
         assert!(validate_string_input("multi\nline\nstring").is_ok());
         assert!(validate_string_input("with\ttabs").is_ok());
-        
+
         // Too large
         let large_string = "x".repeat(limits::MAX_STRING_LENGTH + 1);
         assert!(matches!(
             validate_string_input(&large_string),
             Err(ValidationError::StringTooLarge { .. })
         ));
-        
+
         // Null bytes
         assert!(matches!(
             validate_string_input("hello\0world"),
             Err(ValidationError::NullBytes)
         ));
-        
+
         // Control characters
         assert!(matches!(
             validate_string_input("hello\x01world"),
             Err(ValidationError::ControlCharacters)
         ));
     }
-    
+
     #[test]
     fn test_validate_identifier() {
         // Valid identifiers
         assert!(validate_identifier("my_class").is_ok());
         assert!(validate_identifier("MyClass123").is_ok());
         assert!(validate_identifier("some-identifier").is_ok());
-        
+
         // Too long
         let long_id = "x".repeat(limits::MAX_IDENTIFIER_LENGTH + 1);
         assert!(matches!(
             validate_identifier(&long_id),
             Err(ValidationError::IdentifierTooLong { .. })
         ));
-        
+
         // Control characters
         assert!(matches!(
             validate_identifier("my\nclass"),
             Err(ValidationError::ControlCharacters)
         ));
     }
-    
+
     #[test]
     fn test_sanitize_for_display() {
         assert_eq!(sanitize_for_display("hello\x01world"), "helloworld");
         assert_eq!(sanitize_for_display("multi\nline"), "multi\nline");
         assert_eq!(sanitize_for_display("with\ttabs"), "with\ttabs");
     }
-    
+
     #[test]
     fn test_truncate_for_log() {
         assert_eq!(truncate_for_log("short", 10), "short");

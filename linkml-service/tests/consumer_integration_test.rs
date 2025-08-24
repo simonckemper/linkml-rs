@@ -3,12 +3,12 @@
 //! This test suite verifies that consumer services can properly
 //! use LinkML schemas for their operations.
 
-use linkml_service::{LinkMLService};
-use linkml_core::{prelude::*, error::Result as LinkMLResult};
-use serde_json::json;
-use std::sync::Arc;
-use std::collections::HashMap;
 use async_trait::async_trait;
+use linkml_core::{error::Result as LinkMLResult, prelude::*};
+use linkml_service::LinkMLService;
+use serde_json::json;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 // RootReal service dependencies
 use logger_core::traits::LoggerService;
@@ -22,48 +22,51 @@ use monitoring_core::traits::MonitoringService;
 // Mock consumer services
 mod mock_consumers {
     use super::*;
-    
+
     pub struct MockTypeDBService {
         schemas: Arc<tokio::sync::RwLock<HashMap<String, String>>>,
     }
-    
+
     impl MockTypeDBService {
         pub fn new() -> Self {
             Self {
                 schemas: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
             }
         }
-        
+
         pub async fn define_schema(&self, name: &str, typeql: &str) -> Result<()> {
-            self.schemas.write().await.insert(name.to_string(), typeql.to_string());
+            self.schemas
+                .write()
+                .await
+                .insert(name.to_string(), typeql.to_string());
             Ok(())
         }
-        
+
         pub async fn get_schema(&self, name: &str) -> Option<String> {
             self.schemas.read().await.get(name).cloned()
         }
-        
+
         pub async fn validate_data(&self, _data: &serde_json::Value, _schema: &str) -> bool {
             // Simulate validation
             true
         }
     }
-    
+
     pub struct MockGraphQLService {
         schemas: HashMap<String, String>,
     }
-    
+
     impl MockGraphQLService {
         pub fn new() -> Self {
             Self {
                 schemas: HashMap::new(),
             }
         }
-        
+
         pub fn register_schema(&mut self, name: &str, graphql: &str) {
             self.schemas.insert(name.to_string(), graphql.to_string());
         }
-        
+
         pub fn execute_query(&self, _query: &str, _schema: &str) -> Result<serde_json::Value> {
             // Simulate query execution
             Ok(json!({
@@ -73,9 +76,9 @@ mod mock_consumers {
             }))
         }
     }
-    
+
     pub struct MockParseService;
-    
+
     impl MockParseService {
         pub async fn parse_with_schema(
             &self,
@@ -90,10 +93,10 @@ mod mock_consumers {
                     if lines.len() < 2 {
                         return Err(LinkMLError::ServiceError("No data rows".to_string()));
                     }
-                    
+
                     let headers: Vec<&str> = lines[0].split(',').collect();
                     let mut results = Vec::new();
-                    
+
                     for line in lines.iter().skip(1) {
                         // Simple CSV parsing that handles JSON in fields
                         let mut obj = serde_json::Map::new();
@@ -102,7 +105,7 @@ mod mock_consumers {
                         let mut in_quotes = false;
                         let mut in_json = false;
                         let mut brace_count = 0;
-                        
+
                         for ch in line.chars() {
                             match ch {
                                 '"' if !in_json => in_quotes = !in_quotes,
@@ -129,7 +132,7 @@ mod mock_consumers {
                         if !current_field.is_empty() {
                             field_values.push(current_field.trim().to_string());
                         }
-                        
+
                         // Build the object
                         for (i, header) in headers.iter().enumerate() {
                             if let Some(value) = field_values.get(i) {
@@ -144,35 +147,41 @@ mod mock_consumers {
                                 obj.insert(header.to_string(), json_val);
                             }
                         }
-                        
+
                         results.push(serde_json::Value::Object(obj));
                     }
-                    
+
                     Ok(results)
                 }
                 "json" => {
                     // Simulate JSON parsing
                     match serde_json::from_str::<Vec<serde_json::Value>>(data) {
                         Ok(values) => Ok(values),
-                        Err(e) => Err(LinkMLError::ServiceError(format!("JSON parse error: {}", e))),
+                        Err(e) => Err(LinkMLError::ServiceError(format!(
+                            "JSON parse error: {}",
+                            e
+                        ))),
                     }
                 }
-                _ => Err(LinkMLError::ServiceError(format!("Unsupported format: {}", format))),
+                _ => Err(LinkMLError::ServiceError(format!(
+                    "Unsupported format: {}",
+                    format
+                ))),
             }
         }
     }
-    
+
     pub struct MockLakehouseService {
         tables: Arc<tokio::sync::RwLock<HashMap<String, Vec<serde_json::Value>>>>,
     }
-    
+
     impl MockLakehouseService {
         pub fn new() -> Self {
             Self {
                 tables: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
             }
         }
-        
+
         pub async fn create_table_from_schema(
             &self,
             table_name: &str,
@@ -181,37 +190,46 @@ mod mock_consumers {
         ) -> Result<()> {
             // Validate class exists
             if !schema.classes.contains_key(class_name) {
-                return Err(LinkMLError::ServiceError(format!("Class {} not found in schema", class_name)));
+                return Err(LinkMLError::ServiceError(format!(
+                    "Class {} not found in schema",
+                    class_name
+                )));
             }
-            
+
             // Create empty table
-            self.tables.write().await.insert(table_name.to_string(), Vec::new());
+            self.tables
+                .write()
+                .await
+                .insert(table_name.to_string(), Vec::new());
             Ok(())
         }
-        
+
         pub async fn insert_validated_data(
             &self,
             table_name: &str,
             data: Vec<serde_json::Value>,
         ) -> Result<usize> {
             let mut tables = self.tables.write().await;
-            
+
             if let Some(table) = tables.get_mut(table_name) {
                 let count = data.len();
                 table.extend(data);
                 Ok(count)
             } else {
-                Err(LinkMLError::ServiceError(format!("Table {} not found", table_name)))
+                Err(LinkMLError::ServiceError(format!(
+                    "Table {} not found",
+                    table_name
+                )))
             }
         }
-        
+
         pub async fn query_table(&self, table_name: &str) -> Option<Vec<serde_json::Value>> {
             self.tables.read().await.get(table_name).cloned()
         }
     }
-    
+
     pub struct MockValidationService;
-    
+
     impl MockValidationService {
         pub async fn validate_with_linkml<S: LinkMLService>(
             &self,
@@ -240,29 +258,36 @@ impl LinkMLService for MockLinkMLService {
     async fn load_schema(&self, _path: &std::path::Path) -> LinkMLResult<SchemaDefinition> {
         Ok(SchemaDefinition::default())
     }
-    
-    async fn load_schema_str(&self, content: &str, format: linkml_core::traits::SchemaFormat) -> LinkMLResult<SchemaDefinition> {
+
+    async fn load_schema_str(
+        &self,
+        content: &str,
+        format: linkml_core::traits::SchemaFormat,
+    ) -> LinkMLResult<SchemaDefinition> {
         // Parse the schema based on format
         let schema: SchemaDefinition = match format {
             linkml_core::traits::SchemaFormat::Yaml => {
-                serde_yaml::from_str(content)
-                    .map_err(|e| LinkMLError::parse(e.to_string()))?
+                serde_yaml::from_str(content).map_err(|e| LinkMLError::parse(e.to_string()))?
             }
             linkml_core::traits::SchemaFormat::Json => {
-                serde_json::from_str(content)
-                    .map_err(|e| LinkMLError::parse(e.to_string()))?
+                serde_json::from_str(content).map_err(|e| LinkMLError::parse(e.to_string()))?
             }
         };
-        
+
         // Ensure schema has required fields
         if schema.name.is_empty() {
             return Err(LinkMLError::schema_validation("Schema must have a name"));
         }
-        
+
         Ok(schema)
     }
-    
-    async fn validate(&self, _data: &serde_json::Value, _schema: &SchemaDefinition, _target_class: &str) -> LinkMLResult<ValidationReport> {
+
+    async fn validate(
+        &self,
+        _data: &serde_json::Value,
+        _schema: &SchemaDefinition,
+        _target_class: &str,
+    ) -> LinkMLResult<ValidationReport> {
         // Always return valid for mock
         Ok(ValidationReport {
             valid: true,
@@ -272,10 +297,16 @@ impl LinkMLService for MockLinkMLService {
             schema_id: None,
         })
     }
-    
-    async fn validate_typed<T>(&self, data: &serde_json::Value, _schema: &SchemaDefinition, _target_class: &str) -> LinkMLResult<T>
+
+    async fn validate_typed<T>(
+        &self,
+        data: &serde_json::Value,
+        _schema: &SchemaDefinition,
+        _target_class: &str,
+    ) -> LinkMLResult<T>
     where
-        T: serde::de::DeserializeOwned {
+        T: serde::de::DeserializeOwned,
+    {
         serde_json::from_value(data.clone())
             .map_err(|e| LinkMLError::SerializationError(e.to_string()))
     }
@@ -285,156 +316,231 @@ impl LinkMLService for MockLinkMLService {
 mod test_mocks {
     use super::*;
     use async_trait::async_trait;
-    
+
     // Mock logger for testing
     pub struct MockLogger;
-    
+
     #[async_trait]
     impl LoggerService for MockLogger {
         type Error = logger_core::error::LoggerError;
-        
+
         async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
+
         async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
+
         async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
+
         async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
+
+        async fn log(
+            &self,
+            _level: logger_core::LogLevel,
+            _message: &str,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
+
+        async fn log_entry(
+            &self,
+            _entry: &logger_core::LogEntry,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
     }
-    
+
     // Mock timestamp service
     pub struct MockTimestamp;
-    
+
     #[async_trait]
     impl TimestampService for MockTimestamp {
         type Error = timestamp_core::error::TimestampError;
-        
+
         async fn now_utc(&self) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(chrono::Utc::now())
         }
-        
-        async fn now_local(&self) -> std::result::Result<chrono::DateTime<chrono::Local>, Self::Error> {
+
+        async fn now_local(
+            &self,
+        ) -> std::result::Result<chrono::DateTime<chrono::Local>, Self::Error> {
             Ok(chrono::Local::now())
         }
-        
+
         async fn system_time(&self) -> std::result::Result<std::time::SystemTime, Self::Error> {
             Ok(std::time::SystemTime::now())
         }
-        
-        async fn parse_iso8601(&self, _timestamp: &str) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+        async fn parse_iso8601(
+            &self,
+            _timestamp: &str,
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(chrono::Utc::now())
         }
-        
-        async fn format_iso8601(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> std::result::Result<String, Self::Error> {
+
+        async fn format_iso8601(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+        ) -> std::result::Result<String, Self::Error> {
             Ok(timestamp.to_rfc3339())
         }
-        
-        async fn duration_since(&self, earlier: &chrono::DateTime<chrono::Utc>) -> std::result::Result<chrono::TimeDelta, Self::Error> {
+
+        async fn duration_since(
+            &self,
+            earlier: &chrono::DateTime<chrono::Utc>,
+        ) -> std::result::Result<chrono::TimeDelta, Self::Error> {
             let now = chrono::Utc::now();
             Ok(now - *earlier)
         }
-        
-        async fn add_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::TimeDelta) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+        async fn add_duration(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+            duration: chrono::TimeDelta,
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp + duration)
         }
-        
-        async fn subtract_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::TimeDelta) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+        async fn subtract_duration(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+            duration: chrono::TimeDelta,
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp - duration)
         }
-        
-        async fn duration_between(&self, from: &chrono::DateTime<chrono::Utc>, to: &chrono::DateTime<chrono::Utc>) -> std::result::Result<chrono::TimeDelta, Self::Error> {
+
+        async fn duration_between(
+            &self,
+            from: &chrono::DateTime<chrono::Utc>,
+            to: &chrono::DateTime<chrono::Utc>,
+        ) -> std::result::Result<chrono::TimeDelta, Self::Error> {
             Ok(*to - *from)
         }
     }
-    
+
     // Mock cache service
     pub struct MockCache;
-    
+
     #[async_trait]
     impl CacheService for MockCache {
         type Error = cache_core::error::CacheError;
-        
-        async fn get(&self, _key: &cache_core::types::CacheKey) -> std::result::Result<Option<cache_core::types::CacheValue>, Self::Error> {
+
+        async fn get(
+            &self,
+            _key: &cache_core::types::CacheKey,
+        ) -> std::result::Result<Option<cache_core::types::CacheValue>, Self::Error> {
             Ok(None)
         }
-        
-        async fn set(&self, _key: &cache_core::types::CacheKey, _value: &cache_core::types::CacheValue, _ttl: Option<cache_core::types::CacheTtl>) -> std::result::Result<(), Self::Error> {
+
+        async fn set(
+            &self,
+            _key: &cache_core::types::CacheKey,
+            _value: &cache_core::types::CacheValue,
+            _ttl: Option<cache_core::types::CacheTtl>,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn delete(&self, _key: &cache_core::types::CacheKey) -> std::result::Result<bool, Self::Error> {
+
+        async fn delete(
+            &self,
+            _key: &cache_core::types::CacheKey,
+        ) -> std::result::Result<bool, Self::Error> {
             Ok(true)
         }
-        
-        async fn exists(&self, _key: &cache_core::types::CacheKey) -> std::result::Result<bool, Self::Error> {
+
+        async fn exists(
+            &self,
+            _key: &cache_core::types::CacheKey,
+        ) -> std::result::Result<bool, Self::Error> {
             Ok(false)
         }
-        
+
         async fn clear(&self) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn get_many(&self, _keys: &[cache_core::types::CacheKey]) -> std::result::Result<std::collections::HashMap<cache_core::types::CacheKey, cache_core::types::CacheValue>, Self::Error> {
+
+        async fn get_many(
+            &self,
+            _keys: &[cache_core::types::CacheKey],
+        ) -> std::result::Result<
+            std::collections::HashMap<cache_core::types::CacheKey, cache_core::types::CacheValue>,
+            Self::Error,
+        > {
             Ok(HashMap::new())
         }
-        
-        async fn set_many(&self, _entries: &[(cache_core::types::CacheKey, cache_core::types::CacheValue, Option<cache_core::types::CacheTtl>)]) -> std::result::Result<(), Self::Error> {
+
+        async fn set_many(
+            &self,
+            _entries: &[(
+                cache_core::types::CacheKey,
+                cache_core::types::CacheValue,
+                Option<cache_core::types::CacheTtl>,
+            )],
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn delete_many(&self, _keys: &[cache_core::types::CacheKey]) -> std::result::Result<u64, Self::Error> {
+
+        async fn delete_many(
+            &self,
+            _keys: &[cache_core::types::CacheKey],
+        ) -> std::result::Result<u64, Self::Error> {
             Ok(0)
         }
-        
+
         async fn delete_by_pattern(&self, _pattern: &str) -> std::result::Result<u64, Self::Error> {
             Ok(0)
         }
-        
-        async fn scan_keys(&self, _pattern: &str, _limit: Option<u64>) -> std::result::Result<Vec<cache_core::types::CacheKey>, Self::Error> {
+
+        async fn scan_keys(
+            &self,
+            _pattern: &str,
+            _limit: Option<u64>,
+        ) -> std::result::Result<Vec<cache_core::types::CacheKey>, Self::Error> {
             Ok(Vec::new())
         }
-        
+
         async fn flush(&self) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn execute_lua_script(&self, _script: &str, _keys: Vec<String>, _args: Vec<String>) -> std::result::Result<cache_core::types::CacheValue, Self::Error> {
+
+        async fn execute_lua_script(
+            &self,
+            _script: &str,
+            _keys: Vec<String>,
+            _args: Vec<String>,
+        ) -> std::result::Result<cache_core::types::CacheValue, Self::Error> {
             Ok(cache_core::types::CacheValue::String("null".to_string()))
         }
     }
-    
+
     // Mock monitoring service
     pub struct MockMonitor;
-    
+
     #[async_trait]
     impl MonitoringService for MockMonitor {
         type Error = monitoring_core::error::MonitoringError;
-        
-        async fn initialize(&self, _config: &monitoring_core::MonitoringConfig) -> std::result::Result<(), Self::Error> {
+
+        async fn initialize(
+            &self,
+            _config: &monitoring_core::MonitoringConfig,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
+
         async fn shutdown(&self) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn check_service_health(&self, _service_name: &str) -> std::result::Result<monitoring_core::types::HealthReport, Self::Error> {
+
+        async fn check_service_health(
+            &self,
+            _service_name: &str,
+        ) -> std::result::Result<monitoring_core::types::HealthReport, Self::Error> {
             Ok(monitoring_core::types::HealthReport {
                 service_name: _service_name.to_string(),
                 status: monitoring_core::types::HealthStatus::Healthy,
@@ -444,8 +550,10 @@ mod test_mocks {
                 metrics: Vec::new(),
             })
         }
-        
-        async fn check_all_services_health(&self) -> std::result::Result<monitoring_core::types::SystemHealthReport, Self::Error> {
+
+        async fn check_all_services_health(
+            &self,
+        ) -> std::result::Result<monitoring_core::types::SystemHealthReport, Self::Error> {
             Ok(monitoring_core::types::SystemHealthReport {
                 overall_status: monitoring_core::types::HealthStatus::Healthy,
                 overall_score: 100.0,
@@ -461,16 +569,24 @@ mod test_mocks {
                 },
             })
         }
-        
-        async fn register_service_for_monitoring(&self, _service_name: &str) -> std::result::Result<(), Self::Error> {
+
+        async fn register_service_for_monitoring(
+            &self,
+            _service_name: &str,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn unregister_service_from_monitoring(&self, _service_name: &str) -> std::result::Result<(), Self::Error> {
+
+        async fn unregister_service_from_monitoring(
+            &self,
+            _service_name: &str,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn collect_performance_metrics(&self) -> std::result::Result<monitoring_core::types::PerformanceReport, Self::Error> {
+
+        async fn collect_performance_metrics(
+            &self,
+        ) -> std::result::Result<monitoring_core::types::PerformanceReport, Self::Error> {
             Ok(monitoring_core::types::PerformanceReport {
                 timestamp: chrono::Utc::now(),
                 service_metrics: Vec::new(),
@@ -489,16 +605,25 @@ mod test_mocks {
                 },
             })
         }
-        
-        async fn collect_service_performance_metrics(&self, _service_name: &str) -> std::result::Result<Vec<monitoring_core::types::PerformanceMetric>, Self::Error> {
+
+        async fn collect_service_performance_metrics(
+            &self,
+            _service_name: &str,
+        ) -> std::result::Result<Vec<monitoring_core::types::PerformanceMetric>, Self::Error>
+        {
             Ok(Vec::new())
         }
-        
-        async fn detect_bottlenecks(&self) -> std::result::Result<Vec<monitoring_core::types::BottleneckReport>, Self::Error> {
+
+        async fn detect_bottlenecks(
+            &self,
+        ) -> std::result::Result<Vec<monitoring_core::types::BottleneckReport>, Self::Error>
+        {
             Ok(Vec::new())
         }
-        
-        async fn start_real_time_monitoring(&self) -> std::result::Result<monitoring_core::types::MonitoringSession, Self::Error> {
+
+        async fn start_real_time_monitoring(
+            &self,
+        ) -> std::result::Result<monitoring_core::types::MonitoringSession, Self::Error> {
             Ok(monitoring_core::types::MonitoringSession {
                 id: "test-session".to_string(),
                 name: "Test Session".to_string(),
@@ -516,23 +641,35 @@ mod test_mocks {
                 alerts_generated: 0,
             })
         }
-        
-        async fn stop_real_time_monitoring(&self, _session_id: &str) -> std::result::Result<(), Self::Error> {
+
+        async fn stop_real_time_monitoring(
+            &self,
+            _session_id: &str,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn get_monitoring_session_status(&self, _session_id: &str) -> std::result::Result<monitoring_core::types::MonitoringSessionStatus, Self::Error> {
+
+        async fn get_monitoring_session_status(
+            &self,
+            _session_id: &str,
+        ) -> std::result::Result<monitoring_core::types::MonitoringSessionStatus, Self::Error>
+        {
             Ok(monitoring_core::types::MonitoringSessionStatus::Running)
         }
-        
-        async fn process_alert(&self, _alert: monitoring_core::types::Alert) -> std::result::Result<(), Self::Error> {
+
+        async fn process_alert(
+            &self,
+            _alert: monitoring_core::types::Alert,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
-        
-        async fn get_active_alerts(&self) -> std::result::Result<Vec<monitoring_core::types::Alert>, Self::Error> {
+
+        async fn get_active_alerts(
+            &self,
+        ) -> std::result::Result<Vec<monitoring_core::types::Alert>, Self::Error> {
             Ok(Vec::new())
         }
-        
+
         async fn health_check(&self) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
@@ -542,17 +679,20 @@ mod test_mocks {
 // Helper function to create LinkML service with test dependencies
 async fn create_test_services() -> TestServices {
     use test_mocks::*;
-    
+
     // Create mock services for testing
-    let _logger: Arc<dyn LoggerService<Error = logger_core::error::LoggerError>> = Arc::new(MockLogger);
-    let _timestamp: Arc<dyn TimestampService<Error = timestamp_core::error::TimestampError>> = Arc::new(MockTimestamp);
+    let _logger: Arc<dyn LoggerService<Error = logger_core::error::LoggerError>> =
+        Arc::new(MockLogger);
+    let _timestamp: Arc<dyn TimestampService<Error = timestamp_core::error::TimestampError>> =
+        Arc::new(MockTimestamp);
     let _cache: Arc<dyn CacheService<Error = cache_core::error::CacheError>> = Arc::new(MockCache);
-    let _monitor: Arc<dyn MonitoringService<Error = monitoring_core::error::MonitoringError>> = Arc::new(MockMonitor);
-    
+    let _monitor: Arc<dyn MonitoringService<Error = monitoring_core::error::MonitoringError>> =
+        Arc::new(MockMonitor);
+
     // Note: For non-dyn-compatible services (task_manager, error_handler, config_service),
     // the LinkML service factory would need concrete types. This is typically handled
     // at the application initialization level.
-    
+
     TestServices {
         linkml_service: Arc::new(MockLinkMLService),
     }
@@ -563,7 +703,7 @@ async fn test_typedb_service_integration() {
     let test_services = create_test_services().await;
     let linkml_service = test_services.linkml_service;
     let typedb_service = MockTypeDBService::new();
-    
+
     // Define a schema for TypeDB
     let schema_yaml = r#"
 id: https://example.org/typedb-schema
@@ -670,14 +810,20 @@ slots:
     range: string
     required: true
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Generate TypeQL schema
-    use linkml_service::generator::{TypeQLGenerator, Generator, GeneratorOptions};
+    use linkml_service::generator::{Generator, GeneratorOptions, TypeQLGenerator};
     let typeql_gen = TypeQLGenerator::new();
-    let typeql = typeql_gen.generate(&schema, &GeneratorOptions::default()).await.unwrap();
-    
+    let typeql = typeql_gen
+        .generate(&schema, &GeneratorOptions::default())
+        .await
+        .unwrap();
+
     // Define schema in TypeDB
     // Extract the generated TypeQL content (assuming first output is the main schema)
     let typeql_content = if !typeql.is_empty() {
@@ -685,13 +831,16 @@ slots:
     } else {
         ""
     };
-    typedb_service.define_schema(&schema.name, typeql_content).await.unwrap();
-    
+    typedb_service
+        .define_schema(&schema.name, typeql_content)
+        .await
+        .unwrap();
+
     // Verify schema was stored
     let stored_schema = typedb_service.get_schema(&schema.name).await;
     assert!(stored_schema.is_some());
     assert!(stored_schema.unwrap().contains("define"));
-    
+
     // Validate data using TypeDB service
     let person_data = json!({
         "person_id": "P001",
@@ -699,8 +848,10 @@ slots:
         "email": "john.doe@example.com",
         "age": 30
     });
-    
-    let is_valid = typedb_service.validate_data(&person_data, &schema.name).await;
+
+    let is_valid = typedb_service
+        .validate_data(&person_data, &schema.name)
+        .await;
     assert!(is_valid);
 }
 
@@ -709,7 +860,7 @@ async fn test_graphql_service_integration() {
     let test_services = create_test_services().await;
     let linkml_service = test_services.linkml_service;
     let mut graphql_service = MockGraphQLService::new();
-    
+
     // Define a schema for GraphQL
     let schema_yaml = r#"
 id: https://example.org/graphql-schema
@@ -786,14 +937,20 @@ slots:
     range: datetime
     required: true
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Generate GraphQL schema
-    use linkml_service::generator::{GraphQLGenerator, Generator, GeneratorOptions};
+    use linkml_service::generator::{Generator, GeneratorOptions, GraphQLGenerator};
     let graphql_gen = GraphQLGenerator::new();
-    let graphql = graphql_gen.generate(&schema, &GeneratorOptions::default()).await.unwrap();
-    
+    let graphql = graphql_gen
+        .generate(&schema, &GeneratorOptions::default())
+        .await
+        .unwrap();
+
     // Register with GraphQL service
     // Extract the generated GraphQL content (assuming first output is the main schema)
     let graphql_content = if !graphql.is_empty() {
@@ -802,7 +959,7 @@ slots:
         ""
     };
     graphql_service.register_schema(&schema.name, graphql_content);
-    
+
     // Execute a query
     let query = r#"
         query GetUser($id: ID!) {
@@ -818,7 +975,7 @@ slots:
             }
         }
     "#;
-    
+
     let result = graphql_service.execute_query(query, &schema.name).unwrap();
     assert!(result["data"].is_object());
 }
@@ -828,7 +985,7 @@ async fn test_parse_service_integration() {
     let test_services = create_test_services().await;
     let linkml_service = test_services.linkml_service;
     let parse_service = MockParseService;
-    
+
     // Define a schema for parsing
     let schema_yaml = r#"
 id: https://example.org/parse-schema
@@ -883,24 +1040,33 @@ slots:
     range: string
     required: true
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Test CSV parsing
     let csv_data = r#"device_id,timestamp,temperature,humidity,location
 SENSOR-0001,2024-01-20T10:00:00Z,22.5,65.3,Room A
 SENSOR-0002,2024-01-20T10:00:00Z,23.1,62.8,Room B
 SENSOR-0003,2024-01-20T10:00:00Z,21.9,68.5,Room C"#;
-    
-    let parsed_data = parse_service.parse_with_schema(csv_data, &schema, "csv").await.unwrap();
+
+    let parsed_data = parse_service
+        .parse_with_schema(csv_data, &schema, "csv")
+        .await
+        .unwrap();
     assert_eq!(parsed_data.len(), 3);
-    
+
     // Validate parsed data
     for record in &parsed_data {
-        let report = linkml_service.validate(record, &schema, "SensorReading").await.unwrap();
+        let report = linkml_service
+            .validate(record, &schema, "SensorReading")
+            .await
+            .unwrap();
         assert!(report.valid, "Validation failed: {:?}", report.errors);
     }
-    
+
     // Test JSON parsing
     let json_data = r#"[
         {
@@ -911,11 +1077,17 @@ SENSOR-0003,2024-01-20T10:00:00Z,21.9,68.5,Room C"#;
             "location": "Room D"
         }
     ]"#;
-    
-    let parsed_json = parse_service.parse_with_schema(json_data, &schema, "json").await.unwrap();
+
+    let parsed_json = parse_service
+        .parse_with_schema(json_data, &schema, "json")
+        .await
+        .unwrap();
     assert_eq!(parsed_json.len(), 1);
-    
-    let report = linkml_service.validate(&parsed_json[0], &schema, "SensorReading").await.unwrap();
+
+    let report = linkml_service
+        .validate(&parsed_json[0], &schema, "SensorReading")
+        .await
+        .unwrap();
     assert!(report.valid);
 }
 
@@ -924,7 +1096,7 @@ async fn test_lakehouse_service_integration() {
     let test_services = create_test_services().await;
     let linkml_service = test_services.linkml_service;
     let lakehouse_service = MockLakehouseService::new();
-    
+
     // Define a schema for lakehouse tables
     let schema_yaml = r#"
 id: https://example.org/lakehouse-schema
@@ -1012,12 +1184,18 @@ enums:
       - failed
       - cancelled
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Create table from schema
-    lakehouse_service.create_table_from_schema("transactions", &schema, "Transaction").await.unwrap();
-    
+    lakehouse_service
+        .create_table_from_schema("transactions", &schema, "Transaction")
+        .await
+        .unwrap();
+
     // Prepare transaction data
     let transactions = vec![
         json!({
@@ -1048,32 +1226,38 @@ enums:
             "status": "pending"
         }),
     ];
-    
+
     // Validate all transactions before inserting
     let mut valid_transactions = Vec::new();
     for transaction in &transactions {
-        let report = linkml_service.validate(transaction, &schema, "Transaction").await.unwrap();
+        let report = linkml_service
+            .validate(transaction, &schema, "Transaction")
+            .await
+            .unwrap();
         if report.valid {
             valid_transactions.push(transaction.clone());
         } else {
             panic!("Transaction validation failed: {:?}", report.errors);
         }
     }
-    
+
     // Insert validated data
     let inserted_count = lakehouse_service
         .insert_validated_data("transactions", valid_transactions)
         .await
         .unwrap();
     assert_eq!(inserted_count, 3);
-    
+
     // Query the table
     let stored_data = lakehouse_service.query_table("transactions").await.unwrap();
     assert_eq!(stored_data.len(), 3);
-    
+
     // Verify data integrity
     for record in &stored_data {
-        let report = linkml_service.validate(record, &schema, "Transaction").await.unwrap();
+        let report = linkml_service
+            .validate(record, &schema, "Transaction")
+            .await
+            .unwrap();
         assert!(report.valid);
     }
 }
@@ -1083,7 +1267,7 @@ async fn test_validation_service_delegation() {
     let test_services = create_test_services().await;
     let linkml_service = test_services.linkml_service;
     let validation_service = MockValidationService;
-    
+
     // Define a complex validation schema
     let schema_yaml = r#"
 id: https://example.org/validation-schema
@@ -1163,9 +1347,12 @@ slots:
     multivalued: true
     pattern: "^[a-z0-9-]+$"
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Test valid product
     let valid_product = json!({
         "sku": "AB-123456",
@@ -1176,13 +1363,13 @@ slots:
         "categories": ["electronics", "computers"],
         "tags": ["laptop", "portable", "high-performance"]
     });
-    
+
     let report = validation_service
         .validate_with_linkml(&valid_product, &schema, "Product", linkml_service.as_ref())
         .await
         .unwrap();
     assert!(report.valid);
-    
+
     // Test invalid product (wrong final price)
     let invalid_product = json!({
         "sku": "CD-789012",
@@ -1193,16 +1380,21 @@ slots:
         "categories": ["books"],
         "tags": ["fiction"]
     });
-    
+
     let _report = validation_service
-        .validate_with_linkml(&invalid_product, &schema, "Product", linkml_service.as_ref())
+        .validate_with_linkml(
+            &invalid_product,
+            &schema,
+            "Product",
+            linkml_service.as_ref(),
+        )
         .await
         .unwrap();
     // TODO: Rule validation is not yet implemented in the validator
     // For now, we skip this assertion until rule validation is implemented
     // assert!(!report.valid);
     // assert!(report.errors.iter().any(|e| e.message.contains("final_price")));
-    
+
     // Test batch validation
     let products = vec![
         json!({
@@ -1221,7 +1413,7 @@ slots:
             "categories": ["sports", "outdoor"]
         }),
     ];
-    
+
     let mut validation_results = Vec::new();
     for product in &products {
         let report = validation_service
@@ -1230,7 +1422,7 @@ slots:
             .unwrap();
         validation_results.push(report.valid);
     }
-    
+
     assert_eq!(validation_results, vec![true, true]);
 }
 
@@ -1242,7 +1434,7 @@ async fn test_multi_consumer_workflow() {
     let parse_service = MockParseService;
     let lakehouse_service = Arc::new(MockLakehouseService::new());
     let validation_service = MockValidationService;
-    
+
     // Define a schema used by multiple consumers
     let schema_yaml = r#"
 id: https://example.org/multi-consumer-schema
@@ -1318,18 +1510,24 @@ enums:
       - low
       - info
 "#;
-    
-    let schema = linkml_service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = linkml_service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Step 1: Parse incoming events from CSV
     let csv_events = r#"event_id,event_type,timestamp,source_system,payload,severity
 EVT-202401200001,user_login,2024-01-20T08:00:00Z,auth_service,{"user_id":"U123"},info
 EVT-202401200002,error,2024-01-20T08:15:00Z,api_gateway,{"error":"timeout"},high
 EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"},low"#;
-    
-    let parsed_events = parse_service.parse_with_schema(csv_events, &schema, "csv").await.unwrap();
+
+    let parsed_events = parse_service
+        .parse_with_schema(csv_events, &schema, "csv")
+        .await
+        .unwrap();
     assert_eq!(parsed_events.len(), 3);
-    
+
     // Step 2: Validate all events
     let mut valid_events = Vec::new();
     for event in &parsed_events {
@@ -1337,31 +1535,37 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
             .validate_with_linkml(event, &schema, "Event", linkml_service.as_ref())
             .await
             .unwrap();
-        
+
         if report.valid {
             valid_events.push(event.clone());
         }
     }
     assert_eq!(valid_events.len(), 3);
-    
+
     // Step 3: Store in lakehouse
-    lakehouse_service.create_table_from_schema("events", &schema, "Event").await.unwrap();
+    lakehouse_service
+        .create_table_from_schema("events", &schema, "Event")
+        .await
+        .unwrap();
     let stored_count = lakehouse_service
         .insert_validated_data("events", valid_events.clone())
         .await
         .unwrap();
     assert_eq!(stored_count, 3);
-    
+
     // Step 4: Query and verify
     let stored_events = lakehouse_service.query_table("events").await.unwrap();
     assert_eq!(stored_events.len(), 3);
-    
+
     // Verify all stored events are still valid
     for event in &stored_events {
-        let report = linkml_service.validate(event, &schema, "Event").await.unwrap();
+        let report = linkml_service
+            .validate(event, &schema, "Event")
+            .await
+            .unwrap();
         assert!(report.valid);
     }
-    
+
     // Step 5: Filter critical events
     let critical_events: Vec<_> = stored_events
         .iter()

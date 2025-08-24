@@ -396,10 +396,13 @@ mod tests {
         assert_eq!(cache.stats().misses, 1);
 
         // Compile and cache
-        let validator =
-            CompiledValidator::compile_class(&schema, "TestClass", &class, &options).expect("should compile validator");
+        let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, &options)
+            .expect("should compile validator");
 
-        cache.put(key.clone(), validator).await.expect("should cache validator");
+        cache
+            .put(key.clone(), validator)
+            .await
+            .expect("should cache validator");
 
         // Cache hit
         assert!(cache.get(&key).await.is_some());
@@ -423,9 +426,13 @@ mod tests {
 
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator =
-                CompiledValidator::compile_class(&schema, &class.name, &class, &options).expect("should compile validator");
+                CompiledValidator::compile_class(&schema, &class.name, &class, &options)
+                    .expect("should compile validator");
 
-            cache.put(key, validator).await.expect("should cache validator");
+            cache
+                .put(key, validator)
+                .await
+                .expect("should cache validator");
         }
 
         assert_eq!(cache.stats().cached_validators, 2);

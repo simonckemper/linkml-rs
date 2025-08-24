@@ -47,17 +47,17 @@ impl PluginDiscovery {
             ],
         }
     }
-    
+
     /// Add a file pattern to search for
     pub fn add_pattern(&mut self, pattern: String) {
         self.patterns.push(pattern);
     }
-    
+
     /// Add a directory to exclude
     pub fn exclude_dir(&mut self, dir: String) {
         self.exclude_dirs.push(dir);
     }
-    
+
     /// Discover plugins using the specified strategy
     pub fn discover(&self, path: &Path, strategy: DiscoveryStrategy) -> Result<Vec<PathBuf>> {
         match strategy {
@@ -67,105 +67,116 @@ impl PluginDiscovery {
             DiscoveryStrategy::System => self.discover_system(),
         }
     }
-    
+
     /// Discover plugins in a single directory
     fn discover_shallow(&self, path: &Path) -> Result<Vec<PathBuf>> {
         let mut plugins = Vec::new();
-        
+
         if !path.is_dir() {
             return Err(LinkMLError::IoError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                format!("Path is not a directory: {:?}", path)
+                format!("Path is not a directory: {:?}", path),
             )));
         }
-        
+
         for entry in fs::read_dir(path)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             if self.is_plugin_manifest(&path) {
                 plugins.push(path);
             }
         }
-        
+
         Ok(plugins)
     }
-    
+
     /// Discover plugins recursively
     fn discover_recursive(&self, path: &Path) -> Result<Vec<PathBuf>> {
         let mut plugins = Vec::new();
-        
+
         for entry in WalkDir::new(path)
             .follow_links(true)
             .into_iter()
             .filter_entry(|e| !self.should_exclude(e.path()))
         {
-            let entry = entry.map_err(|e| LinkMLError::IoError(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to read directory entry: {}", e)
-            )))?;
+            let entry = entry.map_err(|e| {
+                LinkMLError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Failed to read directory entry: {}", e),
+                ))
+            })?;
             let path = entry.path();
-            
+
             if path.is_file() && self.is_plugin_manifest(path) {
                 plugins.push(path.to_path_buf());
             }
         }
-        
+
         Ok(plugins)
     }
-    
+
     /// Discover plugins using glob patterns
     fn discover_glob(&self, base_path: &Path) -> Result<Vec<PathBuf>> {
         let mut plugins = Vec::new();
-        
+
         for pattern in &self.patterns {
             let full_pattern = base_path.join(pattern);
             let pattern_str = full_pattern.to_string_lossy();
-            
-            for entry in glob(&pattern_str).map_err(|e| LinkMLError::IoError(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("Invalid glob pattern: {}", e)
-            )))? {
-                let path = entry.map_err(|e| LinkMLError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to read glob entry: {}", e)
-                )))?;
+
+            for entry in glob(&pattern_str).map_err(|e| {
+                LinkMLError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Invalid glob pattern: {}", e),
+                ))
+            })? {
+                let path = entry.map_err(|e| {
+                    LinkMLError::IoError(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to read glob entry: {}", e),
+                    ))
+                })?;
                 if path.is_file() {
                     plugins.push(path);
                 }
             }
         }
-        
+
         Ok(plugins)
     }
-    
+
     /// Discover plugins in system directories
     fn discover_system(&self) -> Result<Vec<PathBuf>> {
         let mut plugins = Vec::new();
-        
+
         // Check common system plugin directories
         let system_dirs = self.get_system_plugin_dirs();
-        
+
         for dir in system_dirs {
             if dir.exists() {
                 let mut dir_plugins = self.discover_recursive(&dir)?;
                 plugins.append(&mut dir_plugins);
             }
         }
-        
+
         Ok(plugins)
     }
-    
+
     /// Get system plugin directories
     fn get_system_plugin_dirs(&self) -> Vec<PathBuf> {
         let mut dirs = Vec::new();
-        
+
         // User home directory
         if let Some(home) = dirs::home_dir() {
             dirs.push(home.join(".linkml").join("plugins"));
-            dirs.push(home.join(".local").join("share").join("linkml").join("plugins"));
+            dirs.push(
+                home.join(".local")
+                    .join("share")
+                    .join("linkml")
+                    .join("plugins"),
+            );
         }
-        
+
         // System directories
         #[cfg(unix)]
         {
@@ -173,7 +184,7 @@ impl PluginDiscovery {
             dirs.push(PathBuf::from("/usr/share/linkml/plugins"));
             dirs.push(PathBuf::from("/opt/linkml/plugins"));
         }
-        
+
         #[cfg(windows)]
         {
             if let Ok(program_files) = std::env::var("ProgramFiles") {
@@ -183,17 +194,17 @@ impl PluginDiscovery {
                 dirs.push(PathBuf::from(app_data).join("LinkML").join("plugins"));
             }
         }
-        
+
         // Environment variable override
         if let Ok(plugin_path) = std::env::var("LINKML_PLUGIN_PATH") {
             for path in plugin_path.split(':') {
                 dirs.push(PathBuf::from(path));
             }
         }
-        
+
         dirs
     }
-    
+
     /// Check if a path should be excluded
     fn should_exclude(&self, path: &Path) -> bool {
         if let Some(name) = path.file_name() {
@@ -203,13 +214,13 @@ impl PluginDiscovery {
             false
         }
     }
-    
+
     /// Check if a file is a plugin manifest
     fn is_plugin_manifest(&self, path: &Path) -> bool {
         if !path.is_file() {
             return false;
         }
-        
+
         if let Some(name) = path.file_name() {
             let name_str = name.to_string_lossy();
             self.patterns.iter().any(|pattern| {
@@ -306,32 +317,30 @@ pub struct Requirements {
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    
+
     #[test]
     fn test_plugin_discovery_shallow() -> Result<()> {
-        let temp_dir = TempDir::new()
-            .map_err(|e| LinkMLError::IoError(e))?;
+        let temp_dir = TempDir::new().map_err(|e| LinkMLError::IoError(e))?;
         let plugin_file = temp_dir.path().join("plugin.toml");
-        fs::write(&plugin_file, "# Plugin manifest")
-            .map_err(|e| LinkMLError::IoError(e))?;
-        
+        fs::write(&plugin_file, "# Plugin manifest").map_err(|e| LinkMLError::IoError(e))?;
+
         let discovery = PluginDiscovery::new();
         let plugins = discovery.discover(temp_dir.path(), DiscoveryStrategy::Shallow)?;
-        
+
         assert_eq!(plugins.len(), 1);
         assert_eq!(plugins[0], plugin_file);
         Ok(())
     }
-    
+
     #[test]
     fn test_pattern_matching() {
         let discovery = PluginDiscovery::new();
         let path = Path::new("linkml-plugin-test.toml");
         assert!(discovery.is_plugin_manifest(path));
-        
+
         let path = Path::new("something.linkml-plugin");
         assert!(discovery.is_plugin_manifest(path));
-        
+
         let path = Path::new("not-a-plugin.txt");
         assert!(!discovery.is_plugin_manifest(path));
     }

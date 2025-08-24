@@ -1,9 +1,9 @@
 //! Real migration engine implementation for LinkML CLI
 
-use std::collections::HashSet;
-use serde::{Serialize, Deserialize};
 use linkml_core::error::Result;
-use linkml_core::types::{SchemaDefinition, PermissibleValue};
+use linkml_core::types::{PermissibleValue, SchemaDefinition};
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// Migration analysis result
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,59 +28,59 @@ pub struct MigrationAnalysis {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BreakingChange {
     /// A class was removed from the schema
-    ClassRemoved { 
+    ClassRemoved {
         /// Name of the removed class
-        name: String 
+        name: String,
     },
     /// A slot was removed from a class
-    SlotRemoved { 
+    SlotRemoved {
         /// Name of the class containing the slot
-        class_name: String, 
+        class_name: String,
         /// Name of the removed slot
-        slot_name: String 
+        slot_name: String,
     },
     /// The type of an entity changed
-    TypeChanged { 
+    TypeChanged {
         /// Name of the entity
-        entity: String, 
+        entity: String,
         /// Original type
-        from_type: String, 
+        from_type: String,
         /// New type
-        to_type: String 
+        to_type: String,
     },
     /// A required field was added to a class
-    RequiredFieldAdded { 
+    RequiredFieldAdded {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Name of the new required field
-        field_name: String 
+        field_name: String,
     },
     /// Cardinality of a slot was reduced
-    CardinalityReduced { 
+    CardinalityReduced {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Name of the slot
-        slot_name: String, 
+        slot_name: String,
         /// Original cardinality
-        from: String, 
+        from: String,
         /// New cardinality
-        to: String 
+        to: String,
     },
     /// An enum value was removed
-    EnumValueRemoved { 
+    EnumValueRemoved {
         /// Name of the enum
-        enum_name: String, 
+        enum_name: String,
         /// Removed value
-        value: String 
+        value: String,
     },
     /// Inheritance hierarchy changed
-    InheritanceChanged { 
+    InheritanceChanged {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Original parent class
-        old_parent: String, 
+        old_parent: String,
         /// New parent class
-        new_parent: String 
+        new_parent: String,
     },
 }
 
@@ -88,49 +88,49 @@ pub enum BreakingChange {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NonBreakingChange {
     /// A new class was added to the schema
-    ClassAdded { 
+    ClassAdded {
         /// Name of the new class
-        name: String 
+        name: String,
     },
     /// A new slot was added to a class
-    SlotAdded { 
+    SlotAdded {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Name of the new slot
-        slot_name: String 
+        slot_name: String,
     },
     /// An optional field was added to a class
-    OptionalFieldAdded { 
+    OptionalFieldAdded {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Name of the new optional field
-        field_name: String 
+        field_name: String,
     },
     /// Description of an entity changed
-    DescriptionChanged { 
+    DescriptionChanged {
         /// Name of the entity
-        entity: String 
+        entity: String,
     },
     /// An alias was added to an entity
-    AliasAdded { 
+    AliasAdded {
         /// Name of the entity
-        entity: String, 
+        entity: String,
         /// New alias
-        alias: String 
+        alias: String,
     },
     /// A new enum value was added
-    EnumValueAdded { 
+    EnumValueAdded {
         /// Name of the enum
-        enum_name: String, 
+        enum_name: String,
         /// New value
-        value: String 
+        value: String,
     },
     /// Default value of a slot changed
-    DefaultValueChanged { 
+    DefaultValueChanged {
         /// Name of the class
-        class_name: String, 
+        class_name: String,
         /// Name of the slot
-        slot_name: String 
+        slot_name: String,
     },
 }
 
@@ -256,37 +256,46 @@ impl MigrationEngine {
             to_schema,
         }
     }
-    
+
     /// Analyze schema changes
     pub fn analyze(&self) -> Result<MigrationAnalysis> {
         let mut breaking_changes = Vec::new();
         let mut non_breaking_changes = Vec::new();
         let mut data_migrations = Vec::new();
-        
+
         // Analyze class changes
         self.analyze_class_changes(&mut breaking_changes, &mut non_breaking_changes)?;
-        
+
         // Analyze slot changes
         self.analyze_slot_changes(&mut breaking_changes, &mut non_breaking_changes)?;
-        
+
         // Analyze type changes
         self.analyze_type_changes(&mut breaking_changes, &mut non_breaking_changes)?;
-        
+
         // Analyze enum changes
         self.analyze_enum_changes(&mut breaking_changes, &mut non_breaking_changes)?;
-        
+
         // Generate data migrations
         self.generate_data_migrations(&breaking_changes, &mut data_migrations)?;
-        
+
         // Assess risk level
         let risk_level = self.assess_risk_level(&breaking_changes);
-        
+
         // Estimate duration
-        let estimated_duration = self.estimate_duration(&breaking_changes, &non_breaking_changes, &data_migrations);
-        
+        let estimated_duration =
+            self.estimate_duration(&breaking_changes, &non_breaking_changes, &data_migrations);
+
         Ok(MigrationAnalysis {
-            from_version: self.from_schema.version.clone().unwrap_or_else(|| "unknown".to_string()),
-            to_version: self.to_schema.version.clone().unwrap_or_else(|| "unknown".to_string()),
+            from_version: self
+                .from_schema
+                .version
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string()),
+            to_version: self
+                .to_schema
+                .version
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string()),
             breaking_changes,
             non_breaking_changes,
             data_migrations,
@@ -294,7 +303,7 @@ impl MigrationEngine {
             estimated_duration,
         })
     }
-    
+
     /// Analyze class changes
     fn analyze_class_changes(
         &self,
@@ -303,26 +312,26 @@ impl MigrationEngine {
     ) -> Result<()> {
         let from_classes: HashSet<_> = self.from_schema.classes.keys().cloned().collect();
         let to_classes: HashSet<_> = self.to_schema.classes.keys().cloned().collect();
-        
+
         // Find removed classes (breaking)
         for removed in from_classes.difference(&to_classes) {
             breaking_changes.push(BreakingChange::ClassRemoved {
                 name: removed.clone(),
             });
         }
-        
+
         // Find added classes (non-breaking)
         for added in to_classes.difference(&from_classes) {
             non_breaking_changes.push(NonBreakingChange::ClassAdded {
                 name: added.clone(),
             });
         }
-        
+
         // Check for inheritance changes
         for class_name in from_classes.intersection(&to_classes) {
             let from_class = &self.from_schema.classes[class_name];
             let to_class = &self.to_schema.classes[class_name];
-            
+
             if from_class.is_a != to_class.is_a {
                 if let (Some(old_parent), Some(new_parent)) = (&from_class.is_a, &to_class.is_a) {
                     if old_parent != new_parent {
@@ -335,10 +344,10 @@ impl MigrationEngine {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Analyze slot changes
     fn analyze_slot_changes(
         &self,
@@ -350,7 +359,7 @@ impl MigrationEngine {
             if let Some(to_class) = self.to_schema.classes.get(class_name) {
                 let from_slots: HashSet<_> = from_class.slots.iter().cloned().collect();
                 let to_slots: HashSet<_> = to_class.slots.iter().cloned().collect();
-                
+
                 // Find removed slots (breaking)
                 for removed in from_slots.difference(&to_slots) {
                     breaking_changes.push(BreakingChange::SlotRemoved {
@@ -358,7 +367,7 @@ impl MigrationEngine {
                         slot_name: removed.clone(),
                     });
                 }
-                
+
                 // Find added slots
                 for added in to_slots.difference(&from_slots) {
                     // Check if the new slot is required
@@ -378,10 +387,10 @@ impl MigrationEngine {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Analyze type changes
     fn analyze_type_changes(
         &self,
@@ -402,11 +411,11 @@ impl MigrationEngine {
                         }
                     }
                 }
-                
+
                 // Check cardinality changes
                 let from_multivalued = from_slot.multivalued.unwrap_or(false);
                 let to_multivalued = to_slot.multivalued.unwrap_or(false);
-                
+
                 if from_multivalued && !to_multivalued {
                     breaking_changes.push(BreakingChange::CardinalityReduced {
                         class_name: "global".to_string(),
@@ -417,10 +426,10 @@ impl MigrationEngine {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Analyze enum changes
     fn analyze_enum_changes(
         &self,
@@ -429,19 +438,23 @@ impl MigrationEngine {
     ) -> Result<()> {
         for (enum_name, from_enum) in &self.from_schema.enums {
             if let Some(to_enum) = self.to_schema.enums.get(enum_name) {
-                let from_values: HashSet<_> = from_enum.permissible_values.iter()
+                let from_values: HashSet<_> = from_enum
+                    .permissible_values
+                    .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
                         PermissibleValue::Complex { text, .. } => text.clone(),
                     })
                     .collect();
-                let to_values: HashSet<_> = to_enum.permissible_values.iter()
+                let to_values: HashSet<_> = to_enum
+                    .permissible_values
+                    .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
                         PermissibleValue::Complex { text, .. } => text.clone(),
                     })
                     .collect();
-                
+
                 // Removed enum values are breaking
                 for removed in from_values.difference(&to_values) {
                     breaking_changes.push(BreakingChange::EnumValueRemoved {
@@ -449,7 +462,7 @@ impl MigrationEngine {
                         value: removed.clone(),
                     });
                 }
-                
+
                 // Added enum values are non-breaking
                 for added in to_values.difference(&from_values) {
                     non_breaking_changes.push(NonBreakingChange::EnumValueAdded {
@@ -459,10 +472,10 @@ impl MigrationEngine {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate data migrations
     fn generate_data_migrations(
         &self,
@@ -479,16 +492,28 @@ impl MigrationEngine {
                         validation: format!("SELECT COUNT(*) FROM archive.{};", name),
                     });
                 }
-                BreakingChange::TypeChanged { entity, from_type, to_type } => {
+                BreakingChange::TypeChanged {
+                    entity,
+                    from_type,
+                    to_type,
+                } => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Transform,
                         entity: entity.clone(),
-                        script: format!("-- Convert {} from {} to {}\nALTER TABLE data MODIFY COLUMN {} {};", 
-                                      entity, from_type, to_type, entity, to_type),
-                        validation: format!("SELECT COUNT(*) FROM data WHERE {} IS NOT NULL;", entity),
+                        script: format!(
+                            "-- Convert {} from {} to {}\nALTER TABLE data MODIFY COLUMN {} {};",
+                            entity, from_type, to_type, entity, to_type
+                        ),
+                        validation: format!(
+                            "SELECT COUNT(*) FROM data WHERE {} IS NOT NULL;",
+                            entity
+                        ),
                     });
                 }
-                BreakingChange::SlotRemoved { class_name, slot_name } => {
+                BreakingChange::SlotRemoved {
+                    class_name,
+                    slot_name,
+                } => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Delete,
                         entity: format!("{}.{}", class_name, slot_name),
@@ -501,10 +526,10 @@ impl MigrationEngine {
                 _ => {}
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Assess risk level
     fn assess_risk_level(&self, breaking_changes: &[BreakingChange]) -> RiskLevel {
         if breaking_changes.is_empty() {
@@ -517,7 +542,7 @@ impl MigrationEngine {
             RiskLevel::Critical
         }
     }
-    
+
     /// Estimate migration duration
     fn estimate_duration(
         &self,
@@ -525,8 +550,9 @@ impl MigrationEngine {
         non_breaking_changes: &[NonBreakingChange],
         data_migrations: &[DataMigration],
     ) -> String {
-        let total_changes = breaking_changes.len() + non_breaking_changes.len() + data_migrations.len();
-        
+        let total_changes =
+            breaking_changes.len() + non_breaking_changes.len() + data_migrations.len();
+
         if total_changes == 0 {
             "< 1 minute".to_string()
         } else if total_changes <= 5 {
@@ -537,13 +563,13 @@ impl MigrationEngine {
             "> 2 hours".to_string()
         }
     }
-    
+
     /// Create migration plan
     pub fn create_plan(&self, analysis: &MigrationAnalysis) -> Result<MigrationPlan> {
         let mut steps = Vec::new();
         let mut rollback_steps = Vec::new();
         let mut step_counter = 0;
-        
+
         // Create backup step
         step_counter += 1;
         steps.push(MigrationStep {
@@ -551,12 +577,13 @@ impl MigrationEngine {
             description: "Create full backup".to_string(),
             step_type: StepType::Backup,
             script: "CREATE BACKUP OF DATABASE;".to_string(),
-            validation: "SELECT backup_status FROM system.backups WHERE id = LAST_INSERT_ID();".to_string(),
+            validation: "SELECT backup_status FROM system.backups WHERE id = LAST_INSERT_ID();"
+                .to_string(),
             depends_on: vec![],
             parallel: false,
             estimated_duration: "5 minutes".to_string(),
         });
-        
+
         // Create schema migration steps
         for change in &analysis.breaking_changes {
             step_counter += 1;
@@ -564,7 +591,7 @@ impl MigrationEngine {
             rollback_steps.push(self.create_rollback_step(step_counter, change)?);
             steps.push(step);
         }
-        
+
         // Create data migration steps
         for migration in &analysis.data_migrations {
             step_counter += 1;
@@ -579,7 +606,7 @@ impl MigrationEngine {
                 estimated_duration: "Variable".to_string(),
             });
         }
-        
+
         // Create validation step
         step_counter += 1;
         steps.push(MigrationStep {
@@ -587,12 +614,14 @@ impl MigrationEngine {
             description: "Validate migration".to_string(),
             step_type: StepType::Validation,
             script: "CALL validate_migration();".to_string(),
-            validation: "SELECT validation_status FROM system.validations WHERE id = LAST_INSERT_ID();".to_string(),
+            validation:
+                "SELECT validation_status FROM system.validations WHERE id = LAST_INSERT_ID();"
+                    .to_string(),
             depends_on: steps.iter().map(|s| s.id.clone()).collect(),
             parallel: false,
             estimated_duration: "2 minutes".to_string(),
         });
-        
+
         Ok(MigrationPlan {
             id: uuid::Uuid::new_v4().to_string(),
             from_version: analysis.from_version.clone(),
@@ -614,24 +643,43 @@ impl MigrationEngine {
             created_at: chrono::Utc::now().to_rfc3339(),
         })
     }
-    
+
     /// Create migration step for a breaking change
     fn create_migration_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
         let (description, script, validation) = match change {
             BreakingChange::ClassRemoved { name } => (
                 format!("Remove class {}", name),
                 format!("DROP TABLE IF EXISTS {};", name),
-                format!("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{}';", name),
+                format!(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{}';",
+                    name
+                ),
             ),
-            BreakingChange::SlotRemoved { class_name, slot_name } => (
+            BreakingChange::SlotRemoved {
+                class_name,
+                slot_name,
+            } => (
                 format!("Remove slot {} from {}", slot_name, class_name),
                 format!("ALTER TABLE {} DROP COLUMN {};", class_name, slot_name),
-                format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';", class_name, slot_name),
+                format!(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';",
+                    class_name, slot_name
+                ),
             ),
-            BreakingChange::TypeChanged { entity, from_type, to_type } => (
-                format!("Change type of {} from {} to {}", entity, from_type, to_type),
+            BreakingChange::TypeChanged {
+                entity,
+                from_type,
+                to_type,
+            } => (
+                format!(
+                    "Change type of {} from {} to {}",
+                    entity, from_type, to_type
+                ),
                 format!("ALTER TABLE data MODIFY COLUMN {} {};", entity, to_type),
-                format!("SELECT data_type FROM information_schema.columns WHERE column_name = '{}';", entity),
+                format!(
+                    "SELECT data_type FROM information_schema.columns WHERE column_name = '{}';",
+                    entity
+                ),
             ),
             _ => (
                 "Generic migration step".to_string(),
@@ -639,7 +687,7 @@ impl MigrationEngine {
                 "SELECT 1;".to_string(),
             ),
         };
-        
+
         Ok(MigrationStep {
             id: format!("step_{:03}", id),
             description,
@@ -651,7 +699,7 @@ impl MigrationEngine {
             estimated_duration: "1 minute".to_string(),
         })
     }
-    
+
     /// Create rollback step for a breaking change
     fn create_rollback_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
         let (description, script, validation) = match change {
@@ -666,7 +714,7 @@ impl MigrationEngine {
                 "SELECT 1;".to_string(),
             ),
         };
-        
+
         Ok(MigrationStep {
             id: format!("rollback_{:03}", id),
             description,

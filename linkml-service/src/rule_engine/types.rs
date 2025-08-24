@@ -3,8 +3,8 @@
 //! This module defines internal representations and compiled forms of rules
 //! for efficient evaluation.
 
-use linkml_core::error::{Result, LinkMLError};
-use linkml_core::types::{Rule, RuleConditions, SlotCondition, CompositeConditions};
+use linkml_core::error::{LinkMLError, Result};
+use linkml_core::types::{CompositeConditions, Rule, RuleConditions, SlotCondition};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -35,25 +35,25 @@ impl CompiledRule {
     pub fn compile(rule: Rule, source_class: String) -> Result<Self> {
         let priority = rule.priority.unwrap_or(0);
         let deactivated = rule.deactivated.unwrap_or(false);
-        
+
         let precondition_ast = if let Some(ref conditions) = rule.preconditions {
             Some(CompiledCondition::compile(conditions)?)
         } else {
             None
         };
-        
+
         let postcondition_ast = if let Some(ref conditions) = rule.postconditions {
             Some(CompiledCondition::compile(conditions)?)
         } else {
             None
         };
-        
+
         let else_condition_ast = if let Some(ref conditions) = rule.else_conditions {
             Some(CompiledCondition::compile(conditions)?)
         } else {
             None
         };
-        
+
         Ok(Self {
             original: rule,
             precondition_ast,
@@ -89,73 +89,95 @@ pub enum CompiledCondition {
 impl CompiledCondition {
     /// Compile conditions from their definition
     pub fn compile(conditions: &RuleConditions) -> Result<Self> {
-        let has_slots = conditions.slot_conditions.as_ref()
+        let has_slots = conditions
+            .slot_conditions
+            .as_ref()
             .map(|sc| !sc.is_empty())
             .unwrap_or(false);
-        let has_exprs = conditions.expression_conditions.as_ref()
+        let has_exprs = conditions
+            .expression_conditions
+            .as_ref()
             .map(|ec| !ec.is_empty())
             .unwrap_or(false);
         let has_composite = conditions.composite_conditions.is_some();
-        
+
         match (has_slots, has_exprs, has_composite) {
             (true, false, false) => {
-                let slot_conditions = conditions.slot_conditions.as_ref()
-                    .ok_or_else(|| LinkMLError::service("Rule error: Slot conditions expected but not found"))?;
+                let slot_conditions = conditions.slot_conditions.as_ref().ok_or_else(|| {
+                    LinkMLError::service("Rule error: Slot conditions expected but not found")
+                })?;
                 let mut compiled = HashMap::new();
                 for (slot_name, condition) in slot_conditions {
                     compiled.insert(
                         slot_name.clone(),
-                        CompiledSlotCondition::compile(condition)?
+                        CompiledSlotCondition::compile(condition)?,
                     );
                 }
                 Ok(CompiledCondition::SlotConditions(compiled))
             }
             (false, true, false) => {
-                let expressions = conditions.expression_conditions.as_ref()
-                    .ok_or_else(|| LinkMLError::service("Rule error: Expression conditions expected but not found"))?;
+                let expressions = conditions.expression_conditions.as_ref().ok_or_else(|| {
+                    LinkMLError::service("Rule error: Expression conditions expected but not found")
+                })?;
                 let mut compiled = Vec::new();
                 for expr_str in expressions {
                     let parser = crate::expression::parser::Parser::new();
-                    compiled.push(parser.parse(expr_str).map_err(|e| {
-                        LinkMLError::ParseError {
-                            message: format!("Failed to parse expression '{}': {}", expr_str, e),
-                            location: None,
-                        }
-                    })?);
+                    compiled.push(
+                        parser
+                            .parse(expr_str)
+                            .map_err(|e| LinkMLError::ParseError {
+                                message: format!(
+                                    "Failed to parse expression '{}': {}",
+                                    expr_str, e
+                                ),
+                                location: None,
+                            })?,
+                    );
                 }
                 Ok(CompiledCondition::ExpressionConditions(compiled))
             }
             (false, false, true) => {
-                let composite = conditions.composite_conditions.as_ref()
-                    .ok_or_else(|| LinkMLError::service("Rule error: Composite conditions expected but not found"))?;
-                Ok(CompiledCondition::Composite(CompiledCompositeCondition::compile(composite)?))
+                let composite = conditions.composite_conditions.as_ref().ok_or_else(|| {
+                    LinkMLError::service("Rule error: Composite conditions expected but not found")
+                })?;
+                Ok(CompiledCondition::Composite(
+                    CompiledCompositeCondition::compile(composite)?,
+                ))
             }
             _ => {
                 // Combined conditions
                 let slot_conditions = if has_slots {
-                    let slot_conditions = conditions.slot_conditions.as_ref()
-                        .ok_or_else(|| LinkMLError::service("Rule error: Slot conditions expected but not found"))?;
+                    let slot_conditions = conditions.slot_conditions.as_ref().ok_or_else(|| {
+                        LinkMLError::service("Rule error: Slot conditions expected but not found")
+                    })?;
                     let mut compiled = HashMap::new();
                     for (slot_name, condition) in slot_conditions {
                         compiled.insert(
                             slot_name.clone(),
-                            CompiledSlotCondition::compile(condition)?
+                            CompiledSlotCondition::compile(condition)?,
                         );
                     }
                     Some(compiled)
                 } else {
                     None
                 };
-                
+
                 let expression_conditions = if has_exprs {
-                    let expressions = conditions.expression_conditions.as_ref()
-                        .ok_or_else(|| LinkMLError::service("Rule error: Expression conditions expected but not found"))?;
+                    let expressions =
+                        conditions.expression_conditions.as_ref().ok_or_else(|| {
+                            LinkMLError::service(
+                                "Rule error: Expression conditions expected but not found",
+                            )
+                        })?;
                     let mut compiled = Vec::new();
                     for expr_str in expressions {
                         let parser = crate::expression::parser::Parser::new();
                         compiled.push(parser.parse(expr_str).map_err(|e| {
                             LinkMLError::ParseError {
-                                message: format!("Failed to parse expression '{}': {}", expr_str, e),
+                                message: format!(
+                                    "Failed to parse expression '{}': {}",
+                                    expr_str, e
+                                ),
                                 location: None,
                             }
                         })?);
@@ -164,15 +186,18 @@ impl CompiledCondition {
                 } else {
                     None
                 };
-                
+
                 let composite_conditions = if has_composite {
-                    let composite = conditions.composite_conditions.as_ref()
-                        .ok_or_else(|| LinkMLError::service("Rule error: Composite conditions expected but not found"))?;
+                    let composite = conditions.composite_conditions.as_ref().ok_or_else(|| {
+                        LinkMLError::service(
+                            "Rule error: Composite conditions expected but not found",
+                        )
+                    })?;
                     Some(Box::new(CompiledCompositeCondition::compile(composite)?))
                 } else {
                     None
                 };
-                
+
                 Ok(CompiledCondition::Combined {
                     slot_conditions,
                     expression_conditions,
@@ -197,16 +222,18 @@ impl CompiledSlotCondition {
     pub fn compile(condition: &SlotCondition) -> Result<Self> {
         let equals_expression_ast = if let Some(ref expr_str) = condition.equals_expression {
             let parser = crate::expression::parser::Parser::new();
-            Some(parser.parse(expr_str).map_err(|e| {
-                LinkMLError::ParseError {
-                    message: format!("Failed to parse expression '{}': {}", expr_str, e),
-                    location: None,
-                }
-            })?)
+            Some(
+                parser
+                    .parse(expr_str)
+                    .map_err(|e| LinkMLError::ParseError {
+                        message: format!("Failed to parse expression '{}': {}", expr_str, e),
+                        location: None,
+                    })?,
+            )
         } else {
             None
         };
-        
+
         Ok(Self {
             original: condition.clone(),
             equals_expression_ast,
@@ -256,7 +283,7 @@ impl CompiledCompositeCondition {
             Ok(CompiledCompositeCondition::NoneOf(compiled))
         } else {
             Err(LinkMLError::schema_validation(
-                "CompositeConditions must have at least one condition type"
+                "CompositeConditions must have at least one condition type",
             ))
         }
     }
@@ -278,7 +305,11 @@ pub struct RuleExecutionContext<'a> {
 
 impl<'a> RuleExecutionContext<'a> {
     /// Create a new execution context
-    pub fn new(instance: Value, class_name: String, validation_context: &'a mut ValidationContext) -> Self {
+    pub fn new(
+        instance: Value,
+        class_name: String,
+        validation_context: &'a mut ValidationContext,
+    ) -> Self {
         Self {
             instance,
             class_name,
@@ -287,42 +318,44 @@ impl<'a> RuleExecutionContext<'a> {
             current_rule: None,
         }
     }
-    
+
     /// Mark a rule as matched
     pub fn mark_matched(&mut self, rule_desc: String) {
         self.matched_rules.push(rule_desc);
     }
-    
+
     /// Get expression evaluation context
     pub fn get_expression_context(&self) -> HashMap<String, Value> {
         let mut context = HashMap::new();
-        
+
         // First, add all slots for the class with null defaults
-        let effective_slots = self.validation_context.get_effective_slots(&self.class_name);
+        let effective_slots = self
+            .validation_context
+            .get_effective_slots(&self.class_name);
         for (slot_name, _slot_def) in effective_slots {
             context.insert(slot_name.to_string(), Value::Null);
         }
-        
+
         // Then override with actual instance data
         if let Value::Object(map) = &self.instance {
             for (key, value) in map {
                 context.insert(key.clone(), value.clone());
             }
         }
-        
+
         // Add special variables
         context.insert("_instance".to_string(), self.instance.clone());
         context.insert("_class".to_string(), Value::String(self.class_name.clone()));
-        
+
         // Add parent/root from validation context
         if let Some(parent) = self.validation_context.parent() {
             context.insert("parent".to_string(), parent.clone());
         }
-        
+
         if let Some(root) = self.validation_context.root() {
             context.insert("root".to_string(), root.clone());
         }
-        
+
         context
     }
 }
@@ -349,7 +382,7 @@ impl Default for RuleExecutionStrategy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_compiled_rule_creation() {
         let rule = Rule {
@@ -357,30 +390,33 @@ mod tests {
             priority: Some(10),
             ..Default::default()
         };
-        
+
         let compiled = CompiledRule::compile(rule, "TestClass".to_string()).unwrap();
         assert_eq!(compiled.priority, 10);
         assert_eq!(compiled.source_class, "TestClass");
         assert!(!compiled.deactivated);
     }
-    
+
     #[test]
     fn test_execution_context() {
         let instance = serde_json::json!({
             "name": "test",
             "value": 42
         });
-        
+
         let mut validation_ctx = ValidationContext::new(Default::default());
         let ctx = RuleExecutionContext::new(
             instance.clone(),
             "TestClass".to_string(),
             &mut validation_ctx,
         );
-        
+
         let expr_ctx = ctx.get_expression_context();
         assert_eq!(expr_ctx.get("name"), Some(&serde_json::json!("test")));
         assert_eq!(expr_ctx.get("value"), Some(&serde_json::json!(42)));
-        assert_eq!(expr_ctx.get("_class"), Some(&serde_json::json!("TestClass")));
+        assert_eq!(
+            expr_ctx.get("_class"),
+            Some(&serde_json::json!("TestClass"))
+        );
     }
 }

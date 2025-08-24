@@ -42,7 +42,7 @@ impl RuleEngine {
             rule_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     /// Create a rule engine with a custom expression engine
     pub fn with_expression_engine(
         schema: Arc<SchemaDefinition>,
@@ -54,7 +54,7 @@ impl RuleEngine {
             rule_cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     /// Validate an instance against all applicable rules for its class
     pub fn validate(
         &self,
@@ -63,7 +63,7 @@ impl RuleEngine {
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
-        
+
         // Get all applicable rules (including inherited)
         let rules = match self.get_applicable_rules(class_name) {
             Ok(rules) => rules,
@@ -76,18 +76,15 @@ impl RuleEngine {
                 return issues;
             }
         };
-        
+
         // Create execution context
-        let mut exec_context = RuleExecutionContext::new(
-            instance.clone(),
-            class_name.to_string(),
-            context,
-        );
-        
+        let mut exec_context =
+            RuleExecutionContext::new(instance.clone(), class_name.to_string(), context);
+
         // Execute rules based on strategy
         let strategy = RuleExecutionStrategy::Sequential; // TODO: Make configurable
         let executor = executor::RuleExecutor::new(self.expression_engine.clone());
-        
+
         match executor.execute_rules(&rules, &mut exec_context, strategy) {
             Ok(rule_issues) => issues.extend(rule_issues),
             Err(e) => {
@@ -98,10 +95,10 @@ impl RuleEngine {
                 ));
             }
         }
-        
+
         issues
     }
-    
+
     /// Get all applicable rules for a class (including inherited)
     fn get_applicable_rules(&self, class_name: &str) -> Result<Vec<CompiledRule>> {
         // Check cache first
@@ -111,24 +108,24 @@ impl RuleEngine {
                 return Ok(cached_rules.clone());
             }
         }
-        
+
         // Compile rules for this class
         let compiled_rules = self.compile_class_rules(class_name)?;
-        
+
         // Cache the compiled rules
         {
             let mut cache = self.rule_cache.write();
             cache.insert(class_name.to_string(), compiled_rules.clone());
         }
-        
+
         Ok(compiled_rules)
     }
-    
+
     /// Compile all rules for a class (including inherited)
     fn compile_class_rules(&self, class_name: &str) -> Result<Vec<CompiledRule>> {
         let mut inheritance_resolver = inheritance::RuleInheritanceResolver::new(&self.schema);
         let rules = inheritance_resolver.get_all_rules(class_name)?;
-        
+
         let mut compiled_rules = Vec::new();
         for (rule, source_class) in rules {
             match CompiledRule::compile(rule, source_class) {
@@ -139,13 +136,13 @@ impl RuleEngine {
                 }
             }
         }
-        
+
         // Sort by priority (higher priority first)
         compiled_rules.sort_by(|a, b| b.priority.cmp(&a.priority));
-        
+
         Ok(compiled_rules)
     }
-    
+
     /// Clear the rule cache
     pub fn clear_cache(&self) {
         self.rule_cache.write().clear();
@@ -156,14 +153,14 @@ impl RuleEngine {
 mod tests {
     use super::*;
     use linkml_core::types::{ClassDefinition, Rule};
-    
+
     #[test]
     fn test_rule_engine_creation() {
         let schema = Arc::new(SchemaDefinition::default());
         let engine = RuleEngine::new(schema);
         assert!(engine.rule_cache.read().is_empty());
     }
-    
+
     #[test]
     fn test_rule_compilation() {
         let mut schema = SchemaDefinition::default();
@@ -171,7 +168,7 @@ mod tests {
             name: "TestClass".to_string(),
             ..Default::default()
         };
-        
+
         // Add a simple rule
         let rule = Rule {
             description: Some("Test rule".to_string()),
@@ -179,9 +176,9 @@ mod tests {
             ..Default::default()
         };
         class_def.rules.push(rule);
-        
+
         schema.classes.insert("TestClass".to_string(), class_def);
-        
+
         let engine = RuleEngine::new(Arc::new(schema));
         let rules = engine.get_applicable_rules("TestClass").unwrap();
         assert_eq!(rules.len(), 1);

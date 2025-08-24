@@ -1,38 +1,38 @@
 //! Tests for annotation support
 
 use linkml_core::{
-    annotations::{Annotatable, AnnotationValue, Annotations}, 
-    types::{ClassDefinition, SchemaDefinition, SlotDefinition}
+    annotations::{Annotatable, AnnotationValue, Annotations},
+    types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
 use linkml_service::parser::{SchemaParser, YamlParser};
 
 #[test]
 fn test_annotations_api() {
     let mut schema = SchemaDefinition::new("test_schema");
-    
+
     // Initially no annotations
     assert!(schema.annotations().is_none());
-    
+
     // Add annotations
     schema.annotations = Some(Annotations::new());
     schema.set_annotation("author", "John Doe".into());
     schema.set_annotation("version", 2.into());
     schema.set_annotation("deprecated", false.into());
-    
+
     // Check annotations
     assert!(schema.has_annotation("author"));
     assert_eq!(
         schema.get_annotation("author"),
         Some(&AnnotationValue::String("John Doe".to_string()))
     );
-    
+
     // Update annotation
     schema.set_annotation("version", 3.into());
     assert_eq!(
         schema.get_annotation("version"),
         Some(&AnnotationValue::Number(3.into()))
     );
-    
+
     // Remove annotation
     let removed = schema.remove_annotation("deprecated");
     assert_eq!(removed, Some(AnnotationValue::Bool(false)));
@@ -42,12 +42,12 @@ fn test_annotations_api() {
 #[test]
 fn test_class_annotations() {
     let mut class = ClassDefinition::new("Person");
-    
+
     // Add annotations
     class.annotations = Some(Annotations::new());
     class.set_annotation("ui:hidden", false.into());
     class.set_annotation("db:table", "persons".into());
-    
+
     assert_eq!(
         class.get_annotation("db:table"),
         Some(&AnnotationValue::String("persons".to_string()))
@@ -57,12 +57,12 @@ fn test_class_annotations() {
 #[test]
 fn test_slot_annotations() {
     let mut slot = SlotDefinition::new("email");
-    
+
     // Add annotations
     slot.annotations = Some(Annotations::new());
     slot.set_annotation("pattern:type", "email".into());
     slot.set_annotation("ui:widget", "email-input".into());
-    
+
     assert!(slot.has_annotation("pattern:type"));
     assert!(slot.has_annotation("ui:widget"));
 }
@@ -103,7 +103,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(yaml_content).unwrap();
-    
+
     // Check schema annotations
     assert!(schema.annotations.is_some());
     assert_eq!(
@@ -114,7 +114,7 @@ slots:
         schema.get_annotation("version"),
         Some(&AnnotationValue::String("1.0.0".to_string()))
     );
-    
+
     // Check array annotation
     if let Some(AnnotationValue::Array(tags)) = schema.get_annotation("tags") {
         assert_eq!(tags.len(), 2);
@@ -123,7 +123,7 @@ slots:
     } else {
         panic!("Expected array annotation");
     }
-    
+
     // Check class annotations
     let person_class = schema.classes.get("Person").unwrap();
     assert_eq!(
@@ -134,7 +134,7 @@ slots:
         person_class.get_annotation("ui:icon"),
         Some(&AnnotationValue::String("user".to_string()))
     );
-    
+
     // Check slot annotations
     let email_slot = schema.slots.get("email").unwrap();
     assert_eq!(
@@ -169,23 +169,23 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(yaml_content).unwrap();
-    
+
     let dataset_class = schema.classes.get("Dataset").unwrap();
-    
+
     // Check nested object annotation
     if let Some(AnnotationValue::Object(metadata)) = dataset_class.get_annotation("metadata") {
         assert_eq!(
             metadata.get("created_by"),
             Some(&AnnotationValue::String("Data Team".to_string()))
         );
-        
+
         // Check nested array
         if let Some(AnnotationValue::Array(tags)) = metadata.get("tags") {
             assert_eq!(tags.len(), 2);
         } else {
             panic!("Expected tags array");
         }
-        
+
         // Check nested object
         if let Some(AnnotationValue::Object(config)) = metadata.get("config") {
             assert_eq!(
@@ -210,11 +210,11 @@ fn test_annotation_serialization() {
     schema.annotations = Some(Annotations::new());
     schema.set_annotation("version", "1.0.0".into());
     schema.set_annotation("experimental", true.into());
-    
+
     let json = serde_json::to_string_pretty(&schema).unwrap();
     assert!(json.contains(r#""version": "1.0.0""#));
     assert!(json.contains(r#""experimental": true"#));
-    
+
     // Deserialize back
     let parsed: SchemaDefinition = serde_json::from_str(&json).unwrap();
     assert_eq!(

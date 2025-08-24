@@ -278,10 +278,7 @@ impl Generator for JsonSchemaGenerator {
         vec![".json", ".schema.json"]
     }
 
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Validate schema
         self.validate_schema(schema)?;
 
@@ -340,11 +337,11 @@ impl Generator for JsonSchemaGenerator {
 
         Ok(content)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "json"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "schema"
     }
@@ -417,15 +414,13 @@ mod tests {
 
         schema.classes.insert("Person".to_string(), class);
 
-        let options = GeneratorOptions::new().set_custom("pretty_print", "true");
-
-        let outputs = generator.generate(&schema).expect("should generate JSON schema");
-
-        assert_eq!(outputs.len(), 1);
-        let json_content = &outputs[0].content;
+        let json_content = generator
+            .generate(&schema)
+            .expect("should generate JSON schema");
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(json_content).expect("should parse as valid JSON");
+        let parsed: JsonValue =
+            serde_json::from_str(&json_content).expect("should parse as valid JSON");
 
         // Check basic structure
         assert_eq!(parsed["$schema"], "http://json-schema.org/draft-07/schema#");
@@ -438,7 +433,17 @@ mod tests {
 
         // Check enum values
         let status_enum = &parsed["definitions"]["Status"]["enum"];
-        assert!(status_enum.as_array().expect("enum should be array").contains(&json!("ACTIVE")));
-        assert!(status_enum.as_array().expect("enum should be array").contains(&json!("INACTIVE")));
+        assert!(
+            status_enum
+                .as_array()
+                .expect("enum should be array")
+                .contains(&json!("ACTIVE"))
+        );
+        assert!(
+            status_enum
+                .as_array()
+                .expect("enum should be array")
+                .contains(&json!("INACTIVE"))
+        );
     }
 }

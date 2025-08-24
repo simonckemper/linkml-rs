@@ -16,18 +16,18 @@ enum Token {
     Boolean(bool),
     Number(f64),
     String(String),
-    
+
     // Identifiers and variables
     Identifier(String),
     Variable(String), // {name}
-    
+
     // Operators
     Plus,
     Minus,
     Star,
     Slash,
     Percent,
-    
+
     // Comparison
     Equal,
     NotEqual,
@@ -35,23 +35,23 @@ enum Token {
     Greater,
     LessEqual,
     GreaterEqual,
-    
+
     // Logical
     And,
     Or,
     Not,
-    
+
     // Delimiters
     LeftParen,
     RightParen,
     LeftBrace,
     RightBrace,
     Comma,
-    
+
     // Keywords
     If,
     Else,
-    
+
     // End of input
     Eof,
 }
@@ -71,10 +71,10 @@ impl<'a> Tokenizer<'a> {
             position: 0,
         }
     }
-    
+
     fn next_token(&mut self) -> Result<Token, ParseError> {
         self.skip_whitespace();
-        
+
         if let Some(&ch) = self.chars.peek() {
             match ch {
                 '+' => {
@@ -167,7 +167,7 @@ impl<'a> Tokenizer<'a> {
             Ok(Token::Eof)
         }
     }
-    
+
     fn advance(&mut self) -> Option<char> {
         if let Some(ch) = self.chars.next() {
             self.position += ch.len_utf8();
@@ -176,7 +176,7 @@ impl<'a> Tokenizer<'a> {
             None
         }
     }
-    
+
     fn skip_whitespace(&mut self) {
         while let Some(&ch) = self.chars.peek() {
             if ch.is_whitespace() {
@@ -186,11 +186,11 @@ impl<'a> Tokenizer<'a> {
             }
         }
     }
-    
+
     fn read_number(&mut self) -> Result<Token, ParseError> {
         let start = self.position;
         let mut num_str = String::new();
-        
+
         // Read integer part
         while let Some(&ch) = self.chars.peek() {
             if ch.is_numeric() {
@@ -200,12 +200,12 @@ impl<'a> Tokenizer<'a> {
                 break;
             }
         }
-        
+
         // Read decimal part if present
         if self.chars.peek() == Some(&'.') {
             num_str.push('.');
             self.advance();
-            
+
             while let Some(&ch) = self.chars.peek() {
                 if ch.is_numeric() {
                     num_str.push(ch);
@@ -215,7 +215,7 @@ impl<'a> Tokenizer<'a> {
                 }
             }
         }
-        
+
         // Parse the number
         match num_str.parse::<f64>() {
             Ok(num) => Ok(Token::Number(num)),
@@ -225,14 +225,14 @@ impl<'a> Tokenizer<'a> {
             }),
         }
     }
-    
+
     fn read_string(&mut self) -> Result<Token, ParseError> {
         let start = self.position;
         self.advance(); // Skip opening quote
-        
+
         let mut string = String::new();
         let mut escaped = false;
-        
+
         loop {
             match self.chars.peek() {
                 Some(&'"') if !escaped => {
@@ -274,10 +274,10 @@ impl<'a> Tokenizer<'a> {
             }
         }
     }
-    
+
     fn read_identifier(&mut self) -> Result<Token, ParseError> {
         let mut ident = String::new();
-        
+
         while let Some(&ch) = self.chars.peek() {
             if ch.is_alphanumeric() || ch == '_' {
                 ident.push(ch);
@@ -286,7 +286,7 @@ impl<'a> Tokenizer<'a> {
                 break;
             }
         }
-        
+
         // Check for keywords
         let token = match ident.as_str() {
             "null" => Token::Null,
@@ -299,14 +299,14 @@ impl<'a> Tokenizer<'a> {
             "else" => Token::Else,
             _ => Token::Identifier(ident),
         };
-        
+
         Ok(token)
     }
-    
+
     fn read_variable(&mut self) -> Result<Token, ParseError> {
         let start = self.position - 1;
         let mut var_name = String::new();
-        
+
         // First character must be alphabetic or underscore
         if let Some(&ch) = self.chars.peek() {
             if ch.is_alphabetic() || ch == '_' {
@@ -333,7 +333,7 @@ impl<'a> Tokenizer<'a> {
                 });
             }
         }
-        
+
         while let Some(&ch) = self.chars.peek() {
             if ch == '}' {
                 self.advance();
@@ -348,7 +348,7 @@ impl<'a> Tokenizer<'a> {
                 });
             }
         }
-        
+
         Err(ParseError::MissingDelimiter {
             delimiter: '}',
             position: start,
@@ -371,7 +371,7 @@ impl Parser {
             max_length: 10_000,
         }
     }
-    
+
     /// Create a parser with custom limits
     pub fn with_limits(max_depth: usize, max_length: usize) -> Self {
         Self {
@@ -379,7 +379,7 @@ impl Parser {
             max_length,
         }
     }
-    
+
     /// Parse an expression string
     pub fn parse(&self, input: &str) -> Result<Expression, ParseError> {
         if input.len() > self.max_length {
@@ -388,7 +388,7 @@ impl Parser {
                 max: self.max_length,
             });
         }
-        
+
         let tokenizer = Tokenizer::new(input);
         let mut parser = ParserState {
             tokenizer,
@@ -396,16 +396,16 @@ impl Parser {
             depth: 0,
             max_depth: self.max_depth,
         };
-        
+
         parser.advance()?;
         let expr = parser.parse_expression()?;
-        
+
         if parser.current != Token::Eof {
             return Err(ParseError::TrailingInput {
                 input: input[parser.tokenizer.position..].to_string(),
             });
         }
-        
+
         Ok(expr)
     }
 }
@@ -429,7 +429,7 @@ impl<'a> ParserState<'a> {
         self.current = self.tokenizer.next_token()?;
         Ok(())
     }
-    
+
     fn check_depth(&mut self) -> Result<(), ParseError> {
         self.depth += 1;
         if self.depth > self.max_depth {
@@ -440,20 +440,20 @@ impl<'a> ParserState<'a> {
         }
         Ok(())
     }
-    
+
     fn parse_expression(&mut self) -> Result<Expression, ParseError> {
         self.parse_ternary()
     }
-    
+
     fn parse_ternary(&mut self) -> Result<Expression, ParseError> {
         let expr = self.parse_or()?;
-        
+
         if self.current == Token::If {
             self.check_depth()?;
             self.advance()?;
-            
+
             let condition = self.parse_or()?;
-            
+
             if self.current != Token::Else {
                 return Err(ParseError::UnexpectedToken {
                     token: format!("{:?}", self.current),
@@ -461,10 +461,10 @@ impl<'a> ParserState<'a> {
                 });
             }
             self.advance()?;
-            
+
             let else_expr = self.parse_ternary()?;
             self.depth -= 1;
-            
+
             Ok(Expression::Conditional {
                 condition: Box::new(condition),
                 then_expr: Box::new(expr),
@@ -474,10 +474,10 @@ impl<'a> ParserState<'a> {
             Ok(expr)
         }
     }
-    
+
     fn parse_or(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_and()?;
-        
+
         while self.current == Token::Or {
             self.check_depth()?;
             self.advance()?;
@@ -485,13 +485,13 @@ impl<'a> ParserState<'a> {
             left = Expression::Or(Box::new(left), Box::new(right));
             self.depth -= 1;
         }
-        
+
         Ok(left)
     }
-    
+
     fn parse_and(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_comparison()?;
-        
+
         while self.current == Token::And {
             self.check_depth()?;
             self.advance()?;
@@ -499,13 +499,13 @@ impl<'a> ParserState<'a> {
             left = Expression::And(Box::new(left), Box::new(right));
             self.depth -= 1;
         }
-        
+
         Ok(left)
     }
-    
+
     fn parse_comparison(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_addition()?;
-        
+
         loop {
             let op = match self.current {
                 Token::Equal => Expression::Equal,
@@ -516,40 +516,40 @@ impl<'a> ParserState<'a> {
                 Token::GreaterEqual => Expression::GreaterOrEqual,
                 _ => break,
             };
-            
+
             self.check_depth()?;
             self.advance()?;
             let right = self.parse_addition()?;
             left = op(Box::new(left), Box::new(right));
             self.depth -= 1;
         }
-        
+
         Ok(left)
     }
-    
+
     fn parse_addition(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_multiplication()?;
-        
+
         loop {
             let op = match self.current {
                 Token::Plus => Expression::Add,
                 Token::Minus => Expression::Subtract,
                 _ => break,
             };
-            
+
             self.check_depth()?;
             self.advance()?;
             let right = self.parse_multiplication()?;
             left = op(Box::new(left), Box::new(right));
             self.depth -= 1;
         }
-        
+
         Ok(left)
     }
-    
+
     fn parse_multiplication(&mut self) -> Result<Expression, ParseError> {
         let mut left = self.parse_unary()?;
-        
+
         loop {
             let op = match self.current {
                 Token::Star => Expression::Multiply,
@@ -557,17 +557,17 @@ impl<'a> ParserState<'a> {
                 Token::Percent => Expression::Modulo,
                 _ => break,
             };
-            
+
             self.check_depth()?;
             self.advance()?;
             let right = self.parse_unary()?;
             left = op(Box::new(left), Box::new(right));
             self.depth -= 1;
         }
-        
+
         Ok(left)
     }
-    
+
     fn parse_unary(&mut self) -> Result<Expression, ParseError> {
         match &self.current {
             Token::Not => {
@@ -587,7 +587,7 @@ impl<'a> ParserState<'a> {
             _ => self.parse_primary(),
         }
     }
-    
+
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
         match &self.current.clone() {
             Token::Null => {
@@ -617,7 +617,7 @@ impl<'a> ParserState<'a> {
             Token::Identifier(name) => {
                 let ident = name.clone();
                 self.advance()?;
-                
+
                 if self.current == Token::LeftParen {
                     self.parse_function_call(ident)
                 } else {
@@ -631,7 +631,7 @@ impl<'a> ParserState<'a> {
                 self.check_depth()?;
                 self.advance()?;
                 let expr = self.parse_expression()?;
-                
+
                 if self.current != Token::RightParen {
                     return Err(ParseError::MissingDelimiter {
                         delimiter: ')',
@@ -640,7 +640,7 @@ impl<'a> ParserState<'a> {
                 }
                 self.advance()?;
                 self.depth -= 1;
-                
+
                 Ok(expr)
             }
             _ => Err(ParseError::UnexpectedToken {
@@ -649,17 +649,17 @@ impl<'a> ParserState<'a> {
             }),
         }
     }
-    
+
     fn parse_function_call(&mut self, name: String) -> Result<Expression, ParseError> {
         self.check_depth()?;
         self.advance()?; // Skip '('
-        
+
         let mut args = Vec::new();
-        
+
         if self.current != Token::RightParen {
             loop {
                 args.push(self.parse_expression()?);
-                
+
                 match self.current {
                     Token::Comma => {
                         self.advance()?;
@@ -674,7 +674,7 @@ impl<'a> ParserState<'a> {
                 }
             }
         }
-        
+
         if self.current != Token::RightParen {
             return Err(ParseError::MissingDelimiter {
                 delimiter: ')',
@@ -683,7 +683,7 @@ impl<'a> ParserState<'a> {
         }
         self.advance()?;
         self.depth -= 1;
-        
+
         Ok(Expression::FunctionCall { name, args })
     }
 }
@@ -691,41 +691,60 @@ impl<'a> ParserState<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_parse_literals() {
         let parser = Parser::new();
-        
-        assert_eq!(parser.parse("null").expect("should parse null"), Expression::Null);
-        assert_eq!(parser.parse("true").expect("should parse true"), Expression::Boolean(true));
-        assert_eq!(parser.parse("false").expect("should parse false"), Expression::Boolean(false));
-        assert_eq!(parser.parse("42").expect("should parse integer"), Expression::Number(42.0));
-        assert_eq!(parser.parse("3.14").expect("should parse float"), Expression::Number(3.14));
+
+        assert_eq!(
+            parser.parse("null").expect("should parse null"),
+            Expression::Null
+        );
+        assert_eq!(
+            parser.parse("true").expect("should parse true"),
+            Expression::Boolean(true)
+        );
+        assert_eq!(
+            parser.parse("false").expect("should parse false"),
+            Expression::Boolean(false)
+        );
+        assert_eq!(
+            parser.parse("42").expect("should parse integer"),
+            Expression::Number(42.0)
+        );
+        assert_eq!(
+            parser.parse("3.14").expect("should parse float"),
+            Expression::Number(3.14)
+        );
         assert_eq!(
             parser.parse("\"hello\"").expect("should parse string"),
             Expression::String("hello".to_string())
         );
     }
-    
+
     #[test]
     fn test_parse_variables() {
         let parser = Parser::new();
-        
+
         assert_eq!(
             parser.parse("{x}").expect("should parse variable"),
             Expression::Variable("x".to_string())
         );
         assert_eq!(
-            parser.parse("{user_name}").expect("should parse variable with underscore"),
+            parser
+                .parse("{user_name}")
+                .expect("should parse variable with underscore"),
             Expression::Variable("user_name".to_string())
         );
     }
-    
+
     #[test]
     fn test_parse_arithmetic() {
         let parser = Parser::new();
-        
-        let expr = parser.parse("1 + 2").expect("should parse binary expression");
+
+        let expr = parser
+            .parse("1 + 2")
+            .expect("should parse binary expression");
         assert_eq!(
             expr,
             Expression::Add(
@@ -733,8 +752,10 @@ mod tests {
                 Box::new(Expression::Number(2.0))
             )
         );
-        
-        let expr = parser.parse("3 * 4 + 5").expect("should parse expression with precedence");
+
+        let expr = parser
+            .parse("3 * 4 + 5")
+            .expect("should parse expression with precedence");
         assert_eq!(
             expr,
             Expression::Add(
@@ -746,11 +767,11 @@ mod tests {
             )
         );
     }
-    
+
     #[test]
     fn test_parse_comparison() {
         let parser = Parser::new();
-        
+
         let expr = parser.parse("{x} > 5").expect("should parse comparison");
         assert_eq!(
             expr,
@@ -759,8 +780,10 @@ mod tests {
                 Box::new(Expression::Number(5.0))
             )
         );
-        
-        let expr = parser.parse("{age} >= 18 and {age} < 65").expect("should parse logical expression");
+
+        let expr = parser
+            .parse("{age} >= 18 and {age} < 65")
+            .expect("should parse logical expression");
         assert_eq!(
             expr,
             Expression::And(
@@ -775,12 +798,14 @@ mod tests {
             )
         );
     }
-    
+
     #[test]
     fn test_parse_function_call() {
         let parser = Parser::new();
-        
-        let expr = parser.parse("len({items})").expect("should parse function call");
+
+        let expr = parser
+            .parse("len({items})")
+            .expect("should parse function call");
         assert_eq!(
             expr,
             Expression::FunctionCall {
@@ -788,8 +813,10 @@ mod tests {
                 args: vec![Expression::Variable("items".to_string())],
             }
         );
-        
-        let expr = parser.parse("max(1, 2, 3)").expect("should parse function with multiple args");
+
+        let expr = parser
+            .parse("max(1, 2, 3)")
+            .expect("should parse function with multiple args");
         assert_eq!(
             expr,
             Expression::FunctionCall {
@@ -802,21 +829,21 @@ mod tests {
             }
         );
     }
-    
+
     #[test]
     fn test_parse_errors() {
         let parser = Parser::new();
-        
+
         assert!(matches!(
             parser.parse("{"),
             Err(ParseError::MissingDelimiter { delimiter: '}', .. })
         ));
-        
+
         assert!(matches!(
             parser.parse("1 +"),
             Err(ParseError::UnexpectedToken { .. })
         ));
-        
+
         assert!(matches!(
             parser.parse("1 + 2 extra"),
             Err(ParseError::TrailingInput { .. })

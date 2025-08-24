@@ -1,7 +1,9 @@
 //! SQL DDL generation for `LinkML` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
-use super::traits::{AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
+use super::traits::{
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
+};
 use async_trait::async_trait;
 use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
@@ -22,7 +24,7 @@ impl SQLGenerator {
             name: "sql".to_string(),
         }
     }
-    
+
     /// Convert fmt::Error to GeneratorError
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
@@ -55,7 +57,8 @@ impl SQLGenerator {
         }
 
         // CREATE TABLE statement
-        writeln!(&mut output, "CREATE TABLE {table_name} (").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "CREATE TABLE {table_name} (")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Primary key (ID column)
         writeln!(
@@ -291,7 +294,8 @@ impl SQLGenerator {
 
                                 // Only generate once
                                 if generated.insert(junction_name.clone()) {
-                                    writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
+                                    writeln!(&mut output)
+                                        .map_err(Self::fmt_error_to_generator_error)?;
                                     writeln!(
                                         &mut output,
                                         "-- Junction table for {class_name} <-> {range}"
@@ -345,7 +349,8 @@ impl SQLGenerator {
                                     )
                                     .map_err(Self::fmt_error_to_generator_error)?;
 
-                                    writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
+                                    writeln!(&mut output, ");")
+                                        .map_err(Self::fmt_error_to_generator_error)?;
 
                                     // Create indexes
                                     writeln!(&mut output, "CREATE INDEX idx_{junction_name}_{table1}_id ON {junction_name}({table1}_id);").map_err(Self::fmt_error_to_generator_error)?;
@@ -382,12 +387,14 @@ impl SQLGenerator {
             for (enum_name, enum_def) in &schema.enums {
                 if options.include_docs {
                     if let Some(desc) = &enum_def.description {
-                        writeln!(&mut output, "-- {desc}").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "-- {desc}")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 let type_name = self.convert_table_name(enum_name);
-                write!(&mut output, "CREATE TYPE {type_name} AS ENUM (").map_err(Self::fmt_error_to_generator_error)?;
+                write!(&mut output, "CREATE TYPE {type_name} AS ENUM (")
+                    .map_err(Self::fmt_error_to_generator_error)?;
 
                 let values: Vec<String> = enum_def
                     .permissible_values
@@ -398,21 +405,25 @@ impl SQLGenerator {
                     })
                     .collect();
 
-                write!(&mut output, "{}", values.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
+                write!(&mut output, "{}", values.join(", "))
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
             }
         } else {
             // Standard SQL - create lookup tables
-            writeln!(&mut output, "-- Enum Lookup Tables").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "-- Enum Lookup Tables")
+                .map_err(Self::fmt_error_to_generator_error)?;
             for (enum_name, enum_def) in &schema.enums {
                 if options.include_docs {
                     if let Some(desc) = &enum_def.description {
-                        writeln!(&mut output, "-- {desc}").map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "-- {desc}")
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
 
                 let table_name = format!("{}_enum", self.convert_table_name(enum_name));
-                writeln!(&mut output, "CREATE TABLE {table_name} (").map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "CREATE TABLE {table_name} (")
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     &mut output,
                     "{}code VARCHAR(255) PRIMARY KEY,",
@@ -425,7 +436,8 @@ impl SQLGenerator {
                     indent.single()
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "{}description TEXT", indent.single()).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "{}description TEXT", indent.single())
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, ");").map_err(Self::fmt_error_to_generator_error)?;
 
                 // Insert enum values
@@ -637,16 +649,20 @@ impl AsyncGenerator for SQLGenerator {
         let indent = &options.indent;
 
         // Header
-        writeln!(&mut output, "-- SQL DDL generated from LinkML schema").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "-- SQL DDL generated from LinkML schema")
+            .map_err(Self::fmt_error_to_generator_error)?;
         if !schema.name.is_empty() {
-            writeln!(&mut output, "-- Schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "-- Schema: {}", schema.name)
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "-- Description: {desc}").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "-- Description: {desc}")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         let dialect = options.get_custom("dialect").unwrap_or("standard");
-        writeln!(&mut output, "-- Dialect: {dialect}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "-- Dialect: {dialect}")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate enum types/tables first
@@ -671,7 +687,8 @@ impl AsyncGenerator for SQLGenerator {
         // Generate junction tables for many-to-many relationships
         let junction_output = self.generate_junction_tables(schema, options, indent)?;
         if !junction_output.is_empty() {
-            writeln!(&mut output, "-- Junction Tables").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "-- Junction Tables")
+                .map_err(Self::fmt_error_to_generator_error)?;
             output.push_str(&junction_output);
         }
 
@@ -704,22 +721,24 @@ impl Generator for SQLGenerator {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
-        
+
         let options = GeneratorOptions::new();
-        let outputs = runtime.block_on(AsyncGenerator::generate(self, schema, &options))
+        let outputs = runtime
+            .block_on(AsyncGenerator::generate(self, schema, &options))
             .map_err(|e| LinkMLError::service(e.to_string()))?;
-        
+
         // Concatenate all outputs into a single string
-        Ok(outputs.into_iter()
+        Ok(outputs
+            .into_iter()
             .map(|output| output.content)
             .collect::<Vec<_>>()
             .join("\n"))
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "txt"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "generated.txt"
     }
@@ -786,7 +805,9 @@ mod tests {
         schema.classes.insert("Person".to_string(), class);
 
         let options = GeneratorOptions::new();
-        let outputs = generator.generate(&schema, &options).await.expect("should generate SQL output");
+        let outputs = AsyncGenerator::generate(&generator, &schema, &options)
+            .await
+            .expect("should generate SQL output");
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("CREATE TABLE person"));

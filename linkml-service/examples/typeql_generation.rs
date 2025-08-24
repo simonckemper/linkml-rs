@@ -1,14 +1,14 @@
 //! TypeQL Generation Example
-//! 
+//!
 //! This example demonstrates how to use the LinkML TypeQL generator to convert
 //! LinkML schemas into TypeDB schemas with exceptional performance.
 
 use linkml_core::prelude::*;
-use linkml_service::prelude::*;
 use linkml_service::generator::{
     Generator, GeneratorOptions,
     typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
 };
+use linkml_service::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,17 +57,17 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser.parse_str(simple_schema)?;
-    
+
     // Generate TypeQL using the factory function
     let generator = create_enhanced_typeql_generator();
     let options = GeneratorOptions::default();
-    
+
     println!("Generating TypeQL for simple schema...");
     let outputs = generator.generate(&schema, &options).await?;
-    
+
     println!("Generated TypeQL:\n");
     println!("{}", outputs[0].content);
-    
+
     // Example 2: Complex relations
     let relation_schema = r#"
 id: https://example.com/relations
@@ -145,13 +145,13 @@ slots:
 "#;
 
     let relation_schema = parser.parse_str(relation_schema)?;
-    
+
     println!("\n\nGenerating TypeQL for relation schema...");
     let outputs = generator.generate(&relation_schema, &options).await?;
-    
+
     println!("Generated TypeQL with relations:\n");
     println!("{}", outputs[0].content);
-    
+
     // Example 3: Schema with rules and constraints
     let rule_schema = r#"
 id: https://example.com/rules
@@ -196,65 +196,68 @@ enums:
 "#;
 
     let rule_schema = parser.parse_str(rule_schema)?;
-    
+
     println!("\n\nGenerating TypeQL with rules...");
     let outputs = generator.generate(&rule_schema, &options).await?;
-    
+
     println!("Generated TypeQL with validation rules:\n");
     println!("{}", outputs[0].content);
-    
+
     // Performance demonstration
     println!("\n\nPerformance Demonstration");
     println!("------------------------");
-    
+
     let mut large_schema = SchemaDefinition::default();
     large_schema.name = "LargeSchema".to_string();
-    
+
     // Create 100 classes
     for i in 0..100 {
         let mut class = ClassDefinition::default();
         class.description = Some(format!("Class number {}", i));
         class.slots = vec!["id".to_string(), "name".to_string()];
-        
+
         if i > 0 && i % 10 == 0 {
             class.is_a = Some(format!("Class{}", i - 1));
         }
-        
+
         large_schema.classes.insert(format!("Class{}", i), class);
     }
-    
+
     // Add slots
     let mut id_slot = SlotDefinition::default();
     id_slot.range = Some("string".to_string());
     id_slot.identifier = Some(true);
     large_schema.slots.insert("id".to_string(), id_slot);
-    
+
     let mut name_slot = SlotDefinition::default();
     name_slot.range = Some("string".to_string());
     large_schema.slots.insert("name".to_string(), name_slot);
-    
+
     use std::time::Instant;
     let start = Instant::now();
     let outputs = generator.generate(&large_schema, &options).await?;
     let duration = start.elapsed();
-    
+
     println!("Generated TypeQL for 100 classes in {:?}", duration);
     println!("Output size: {} bytes", outputs[0].content.len());
-    println!("Performance: {:.2} classes/ms", 100.0 / duration.as_millis() as f64);
-    
+    println!(
+        "Performance: {:.2} classes/ms",
+        100.0 / duration.as_millis() as f64
+    );
+
     // Migration example
     println!("\n\nSchema Migration Example");
     println!("-----------------------");
-    
+
     let mut options_with_migration = GeneratorOptions::default();
     options_with_migration.set_custom("generate_migration", "true");
-    
+
     let outputs = generator.generate(&schema, &options_with_migration).await?;
-    
+
     if outputs.len() > 1 {
         println!("Migration script generated:");
         println!("{}", outputs[1].content);
     }
-    
+
     Ok(())
 }

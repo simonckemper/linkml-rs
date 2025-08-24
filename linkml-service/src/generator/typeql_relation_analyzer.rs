@@ -5,8 +5,8 @@
 //! nested relations, and role detection.
 
 use linkml_core::prelude::*;
-use std::collections::{HashMap, HashSet};
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 
 /// Information about a detected relation
 #[derive(Debug, Clone)]
@@ -90,7 +90,8 @@ impl RelationAnalyzer {
         };
 
         // Cache the result
-        self.relation_cache.insert(class_name.to_string(), relation_info.clone());
+        self.relation_cache
+            .insert(class_name.to_string(), relation_info.clone());
 
         // Update role player map
         self.update_role_player_map(&relation_info);
@@ -107,17 +108,18 @@ impl RelationAnalyzer {
     ) -> bool {
         // Check name patterns
         let name_lower = class_name.to_lowercase();
-        if name_lower.contains("relationship") 
+        if name_lower.contains("relationship")
             || name_lower.contains("association")
             || name_lower.contains("membership")
             || name_lower.contains("enrollment")
-            || name_lower.contains("employment") {
+            || name_lower.contains("employment")
+        {
             return true;
         }
 
         // Count object-valued slots
         let object_slots = self.count_object_valued_slots(class, schema);
-        
+
         // If has 2+ object-valued slots, likely a relation
         if object_slots >= 2 {
             return true;
@@ -126,10 +128,11 @@ impl RelationAnalyzer {
         // Check description for relation indicators
         if let Some(desc) = &class.description {
             let desc_lower = desc.to_lowercase();
-            if desc_lower.contains("relation") 
+            if desc_lower.contains("relation")
                 || desc_lower.contains("links")
                 || desc_lower.contains("connects")
-                || desc_lower.contains("between") {
+                || desc_lower.contains("between")
+            {
                 return true;
             }
         }
@@ -138,11 +141,20 @@ impl RelationAnalyzer {
     }
 
     /// Count object-valued slots in a class
-    fn count_object_valued_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> usize {
-        class.slots.iter()
+    fn count_object_valued_slots(
+        &self,
+        class: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> usize {
+        class
+            .slots
+            .iter()
             .filter(|slot_name| {
-                if let Some(slot) = schema.slots.get(*slot_name)
-                    .or_else(|| class.slot_usage.get(*slot_name)) {
+                if let Some(slot) = schema
+                    .slots
+                    .get(*slot_name)
+                    .or_else(|| class.slot_usage.get(*slot_name))
+                {
                     if let Some(range) = &slot.range {
                         // Check if range is a class (not a type)
                         return schema.classes.contains_key(range);
@@ -163,9 +175,11 @@ impl RelationAnalyzer {
         let mut attributes = Vec::new();
 
         for slot_name in &class.slots {
-            if let Some(slot) = schema.slots.get(slot_name)
-                .or_else(|| class.slot_usage.get(slot_name)) {
-                
+            if let Some(slot) = schema
+                .slots
+                .get(slot_name)
+                .or_else(|| class.slot_usage.get(slot_name))
+            {
                 if let Some(range) = &slot.range {
                     if schema.classes.contains_key(range) {
                         // This is a role
@@ -220,8 +234,11 @@ impl RelationAnalyzer {
         // Check if any other class has a slot with this class as range
         for (_, other_class) in &schema.classes {
             for slot_name in &other_class.slots {
-                if let Some(slot) = schema.slots.get(slot_name)
-                    .or_else(|| other_class.slot_usage.get(slot_name)) {
+                if let Some(slot) = schema
+                    .slots
+                    .get(slot_name)
+                    .or_else(|| other_class.slot_usage.get(slot_name))
+                {
                     if let Some(range) = &slot.range {
                         if range == class_name {
                             return true;
@@ -261,7 +278,8 @@ impl RelationAnalyzer {
         // Check if relation inherits from another
         if let Some(parent_name) = &class.is_a {
             if let Some(parent_class) = schema.classes.get(parent_name) {
-                if let Some(parent_info) = self.analyze_relation(parent_name, parent_class, schema) {
+                if let Some(parent_info) = self.analyze_relation(parent_name, parent_class, schema)
+                {
                     // Mark inherited roles
                     for role in &mut relation_info.roles {
                         if parent_info.roles.iter().any(|pr| pr.name == role.name) {
@@ -274,7 +292,10 @@ impl RelationAnalyzer {
     }
 
     /// Detect polymorphic roles (multiple types playing same role)
-    pub fn detect_polymorphic_roles(&self, schema: &SchemaDefinition) -> HashMap<String, Vec<String>> {
+    pub fn detect_polymorphic_roles(
+        &self,
+        schema: &SchemaDefinition,
+    ) -> HashMap<String, Vec<String>> {
         let mut polymorphic_roles: HashMap<String, HashSet<String>> = HashMap::new();
 
         // Analyze all relations
@@ -292,7 +313,8 @@ impl RelationAnalyzer {
         }
 
         // Convert to Vec
-        polymorphic_roles.into_iter()
+        polymorphic_roles
+            .into_iter()
             .map(|(k, v)| (k, v.into_iter().collect()))
             .collect()
     }
@@ -324,11 +346,14 @@ mod tests {
     fn test_relation_detection() {
         let mut analyzer = RelationAnalyzer::new();
         let schema = create_test_schema();
-        
+
         // Test employment relation detection
-        let employment_class = schema.classes.get("Employment").expect("Employment class should exist");
+        let employment_class = schema
+            .classes
+            .get("Employment")
+            .expect("Employment class should exist");
         let relation_info = analyzer.analyze_relation("Employment", employment_class, &schema);
-        
+
         assert!(relation_info.is_some());
         let info = relation_info.expect("relation info should exist");
         assert_eq!(info.roles.len(), 2);
@@ -339,11 +364,14 @@ mod tests {
     fn test_multiway_relation() {
         let mut analyzer = RelationAnalyzer::new();
         let schema = create_multiway_schema();
-        
+
         // Test enrollment relation (student, course, instructor)
-        let enrollment_class = schema.classes.get("Enrollment").expect("Enrollment class should exist");
+        let enrollment_class = schema
+            .classes
+            .get("Enrollment")
+            .expect("Enrollment class should exist");
         let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
-        
+
         assert!(relation_info.is_some());
         let info = relation_info.expect("relation info should exist");
         assert_eq!(info.roles.len(), 3);
@@ -352,36 +380,46 @@ mod tests {
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        
+
         // Add basic classes
-        schema.classes.insert("Person".to_string(), ClassDefinition::default());
-        schema.classes.insert("Organization".to_string(), ClassDefinition::default());
-        
+        schema
+            .classes
+            .insert("Person".to_string(), ClassDefinition::default());
+        schema
+            .classes
+            .insert("Organization".to_string(), ClassDefinition::default());
+
         // Add employment relation
         let mut employment = ClassDefinition::default();
         employment.slots = vec!["employee".to_string(), "employer".to_string()];
-        
+
         // Add slots
         let mut employee_slot = SlotDefinition::default();
         employee_slot.range = Some("Person".to_string());
         schema.slots.insert("employee".to_string(), employee_slot);
-        
+
         let mut employer_slot = SlotDefinition::default();
         employer_slot.range = Some("Organization".to_string());
         schema.slots.insert("employer".to_string(), employer_slot);
-        
+
         schema.classes.insert("Employment".to_string(), employment);
         schema
     }
 
     fn create_multiway_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        
+
         // Add entity classes
-        schema.classes.insert("Student".to_string(), ClassDefinition::default());
-        schema.classes.insert("Course".to_string(), ClassDefinition::default());
-        schema.classes.insert("Instructor".to_string(), ClassDefinition::default());
-        
+        schema
+            .classes
+            .insert("Student".to_string(), ClassDefinition::default());
+        schema
+            .classes
+            .insert("Course".to_string(), ClassDefinition::default());
+        schema
+            .classes
+            .insert("Instructor".to_string(), ClassDefinition::default());
+
         // Add enrollment relation
         let mut enrollment = ClassDefinition::default();
         enrollment.slots = vec![
@@ -390,25 +428,27 @@ mod tests {
             "instructor".to_string(),
             "grade".to_string(),
         ];
-        
+
         // Add role slots
         let mut student_slot = SlotDefinition::default();
         student_slot.range = Some("Student".to_string());
         schema.slots.insert("student".to_string(), student_slot);
-        
+
         let mut course_slot = SlotDefinition::default();
         course_slot.range = Some("Course".to_string());
         schema.slots.insert("course".to_string(), course_slot);
-        
+
         let mut instructor_slot = SlotDefinition::default();
         instructor_slot.range = Some("Instructor".to_string());
-        schema.slots.insert("instructor".to_string(), instructor_slot);
-        
+        schema
+            .slots
+            .insert("instructor".to_string(), instructor_slot);
+
         // Add attribute slot
         let mut grade_slot = SlotDefinition::default();
         grade_slot.range = Some("string".to_string());
         schema.slots.insert("grade".to_string(), grade_slot);
-        
+
         schema.classes.insert("Enrollment".to_string(), enrollment);
         schema
     }

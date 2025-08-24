@@ -3,11 +3,11 @@
 //! This module provides tools to profile and optimize performance-critical
 //! sections of the LinkML validation engine.
 
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use std::collections::HashMap;
 use parking_lot::Mutex;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 /// Performance counter for tracking function call metrics
 #[derive(Debug, Default)]
@@ -26,10 +26,10 @@ impl PerfCounter {
     /// Record a timing measurement
     pub fn record(&self, duration: Duration) {
         let nanos = duration.as_nanos() as u64;
-        
+
         self.call_count.fetch_add(1, Ordering::Relaxed);
         self.total_time_ns.fetch_add(nanos, Ordering::Relaxed);
-        
+
         // Update max
         let mut current_max = self.max_time_ns.load(Ordering::Relaxed);
         while nanos > current_max {
@@ -43,7 +43,7 @@ impl PerfCounter {
                 Err(x) => current_max = x,
             }
         }
-        
+
         // Update min
         let mut current_min = self.min_time_ns.load(Ordering::Relaxed);
         if current_min == 0 || nanos < current_min {
@@ -60,7 +60,7 @@ impl PerfCounter {
             }
         }
     }
-    
+
     /// Get average time per call in nanoseconds
     pub fn avg_time_ns(&self) -> f64 {
         let count = self.call_count.load(Ordering::Relaxed);
@@ -70,7 +70,7 @@ impl PerfCounter {
             self.total_time_ns.load(Ordering::Relaxed) as f64 / count as f64
         }
     }
-    
+
     /// Get a summary of the counter
     pub fn summary(&self) -> String {
         let count = self.call_count.load(Ordering::Relaxed);
@@ -78,7 +78,7 @@ impl PerfCounter {
         let max_ns = self.max_time_ns.load(Ordering::Relaxed);
         let min_ns = self.min_time_ns.load(Ordering::Relaxed);
         let avg_ns = self.avg_time_ns();
-        
+
         format!(
             "calls: {}, total: {:.3}ms, avg: {:.3}µs, min: {:.3}µs, max: {:.3}µs",
             count,
@@ -104,32 +104,34 @@ impl Profiler {
             enabled: AtomicU64::new(1),
         }
     }
-    
+
     /// Enable or disable profiling
     pub fn set_enabled(&self, enabled: bool) {
-        self.enabled.store(if enabled { 1 } else { 0 }, Ordering::Relaxed);
+        self.enabled
+            .store(if enabled { 1 } else { 0 }, Ordering::Relaxed);
     }
-    
+
     /// Check if profiling is enabled
     pub fn is_enabled(&self) -> bool {
         self.enabled.load(Ordering::Relaxed) != 0
     }
-    
+
     /// Get or create a counter for the given key
     pub fn get_counter(&self, key: &str) -> Arc<PerfCounter> {
         let mut counters = self.counters.lock();
-        counters.entry(key.to_string())
+        counters
+            .entry(key.to_string())
             .or_insert_with(|| Arc::new(PerfCounter::default()))
             .clone()
     }
-    
+
     /// Record a timing for the given key
     pub fn record(&self, key: &str, duration: Duration) {
         if self.is_enabled() {
             self.get_counter(key).record(duration);
         }
     }
-    
+
     /// Time a function and record the result
     pub fn time<F, R>(&self, key: &str, f: F) -> R
     where
@@ -145,29 +147,29 @@ impl Profiler {
             f()
         }
     }
-    
+
     /// Get a report of all counters
     pub fn report(&self) -> String {
         let mut report = String::from("Performance Profile Report\n");
         report.push_str("==========================\n\n");
-        
+
         let counters = self.counters.lock();
         let mut entries: Vec<_> = counters.iter().collect();
-        
+
         // Sort by total time descending
         entries.sort_by(|a, b| {
             let a_time = a.1.total_time_ns.load(Ordering::Relaxed);
             let b_time = b.1.total_time_ns.load(Ordering::Relaxed);
             b_time.cmp(&a_time)
         });
-        
+
         for (key, counter) in entries {
             report.push_str(&format!("{}: {}\n", key, counter.summary()));
         }
-        
+
         report
     }
-    
+
     /// Clear all counters
     pub fn clear(&self) {
         self.counters.lock().clear();
@@ -208,8 +210,7 @@ impl<'a> Drop for TimingGuard<'a> {
 }
 
 /// Global profiler instance
-static GLOBAL_PROFILER: once_cell::sync::Lazy<Profiler> = 
-    once_cell::sync::Lazy::new(Profiler::new);
+static GLOBAL_PROFILER: once_cell::sync::Lazy<Profiler> = once_cell::sync::Lazy::new(Profiler::new);
 
 /// Get the global profiler
 pub fn global_profiler() -> &'static Profiler {
@@ -222,7 +223,7 @@ macro_rules! profile_scope {
     ($key:expr) => {
         let _guard = $crate::performance::profiling::TimingGuard::new(
             $crate::performance::profiling::global_profiler(),
-            $key
+            $key,
         );
     };
 }
@@ -239,56 +240,56 @@ macro_rules! profile_fn {
 mod tests {
     use super::*;
     use std::thread;
-    
+
     #[test]
     fn test_perf_counter() {
         let counter = PerfCounter::default();
-        
+
         counter.record(Duration::from_millis(10));
         counter.record(Duration::from_millis(20));
         counter.record(Duration::from_millis(5));
-        
+
         assert_eq!(counter.call_count.load(Ordering::Relaxed), 3);
         assert_eq!(counter.min_time_ns.load(Ordering::Relaxed), 5_000_000);
         assert_eq!(counter.max_time_ns.load(Ordering::Relaxed), 20_000_000);
         assert!((counter.avg_time_ns() - 11_666_666.0).abs() < 1000.0);
     }
-    
+
     #[test]
     fn test_profiler() {
         let profiler = Profiler::new();
-        
+
         // Time some operations
         profiler.time("test_op", || {
             thread::sleep(Duration::from_millis(1));
         });
-        
+
         profiler.time("test_op", || {
             thread::sleep(Duration::from_millis(2));
         });
-        
+
         let counter = profiler.get_counter("test_op");
         assert_eq!(counter.call_count.load(Ordering::Relaxed), 2);
-        
+
         // Test disabling
         profiler.set_enabled(false);
         profiler.time("test_op", || {
             thread::sleep(Duration::from_millis(1));
         });
-        
+
         // Count should still be 2
         assert_eq!(counter.call_count.load(Ordering::Relaxed), 2);
     }
-    
+
     #[test]
     fn test_timing_guard() {
         let profiler = Profiler::new();
-        
+
         {
             let _guard = TimingGuard::new(&profiler, "test_scope");
             thread::sleep(Duration::from_millis(1));
         }
-        
+
         let counter = profiler.get_counter("test_scope");
         assert_eq!(counter.call_count.load(Ordering::Relaxed), 1);
     }

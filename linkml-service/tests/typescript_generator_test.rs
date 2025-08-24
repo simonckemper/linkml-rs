@@ -1,7 +1,7 @@
 //! Tests for the TypeScript generator
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use linkml_service::generator::{TypeScriptGenerator, Generator};
+use linkml_service::generator::{Generator, TypeScriptGenerator};
 use serde_json::json;
 
 fn generate_typescript(schema: SchemaDefinition) -> String {
@@ -30,30 +30,39 @@ async fn test_simple_interface_generation() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        description: Some("Unique identifier".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            description: Some("Unique identifier".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        description: Some("Person's full name".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            description: Some("Person's full name".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        description: Some("Age in years".to_string()),
-        range: Some("integer".to_string()),
-        minimum_value: Some(json!(0)),
-        maximum_value: Some(json!(150)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            description: Some("Age in years".to_string()),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            maximum_value: Some(json!(150)),
+            ..Default::default()
+        },
+    );
 
     let output = generate_typescript(schema).await;
 
@@ -82,7 +91,9 @@ async fn test_simple_interface_generation() {
     assert!(output.contains("typeof (obj as any).id === 'string'"));
 
     // Check validator
-    assert!(output.contains("export function validatePerson(obj: unknown): ValidationResult<Person>"));
+    assert!(
+        output.contains("export function validatePerson(obj: unknown): ValidationResult<Person>")
+    );
     assert!(output.contains("const errors: ValidationError[] = []"));
     assert!(output.contains("if (obj.age !== undefined && obj.age < 0)"));
     assert!(output.contains("if (obj.age !== undefined && obj.age > 150)"));
@@ -99,34 +110,47 @@ async fn test_array_fields() {
     let group = ClassDefinition {
         name: "Group".to_string(),
         description: Some("A group of items".to_string()),
-        slots: vec!["name".to_string(), "members".to_string(), "tags".to_string()],
+        slots: vec![
+            "name".to_string(),
+            "members".to_string(),
+            "tags".to_string(),
+        ],
         ..Default::default()
     };
 
     schema.classes.insert("Group".to_string(), group);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("members".to_string(), SlotDefinition {
-        name: "members".to_string(),
-        description: Some("Group members".to_string()),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "members".to_string(),
+        SlotDefinition {
+            name: "members".to_string(),
+            description: Some("Group members".to_string()),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("tags".to_string(), SlotDefinition {
-        name: "tags".to_string(),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "tags".to_string(),
+        SlotDefinition {
+            name: "tags".to_string(),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        },
+    );
 
     let output = generate_typescript(schema).await;
 
@@ -151,23 +175,29 @@ async fn test_enum_generation() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("status".to_string(), SlotDefinition {
-        name: "status".to_string(),
-        description: Some("Current status".to_string()),
-        permissible_values: vec![
-            PermissibleValue::Simple("active".to_string()),
-            PermissibleValue::Simple("inactive".to_string()),
-            PermissibleValue::Simple("pending".to_string()),
-        ],
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "status".to_string(),
+        SlotDefinition {
+            name: "status".to_string(),
+            description: Some("Current status".to_string()),
+            permissible_values: vec![
+                PermissibleValue::Simple("active".to_string()),
+                PermissibleValue::Simple("inactive".to_string()),
+                PermissibleValue::Simple("pending".to_string()),
+            ],
+            ..Default::default()
+        },
+    );
 
     let output = generate_typescript(schema).await;
 
@@ -210,31 +240,43 @@ async fn test_inheritance() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        range: Some("integer".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_typescript(schema).await;
 
@@ -246,7 +288,7 @@ async fn test_inheritance() {
     let person_section = output.split("export interface Person").nth(1).unwrap();
     let person_end = person_section.find("}").unwrap();
     let person_body = &person_section[..person_end];
-    
+
     // Should have age and email but not id and name
     assert!(person_body.contains("age?: number;"));
     assert!(person_body.contains("email?: string;"));
@@ -270,19 +312,25 @@ async fn test_pattern_validation() {
 
     schema.classes.insert("Contact".to_string(), contact);
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("phone".to_string(), SlotDefinition {
-        name: "phone".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "phone".to_string(),
+        SlotDefinition {
+            name: "phone".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_typescript(schema).await;
 
@@ -309,19 +357,22 @@ async fn test_type_guard_without_validators() {
 
     schema.classes.insert("SimpleType".to_string(), simple);
 
-    schema.slots.insert("value".to_string(), SlotDefinition {
-        name: "value".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "value".to_string(),
+        SlotDefinition {
+            name: "value".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
     let generator = TypeScriptGenerator::new();
     let options = GeneratorOptions::new()
         .set_custom("generate_validators", "false")
         .set_custom("generate_type_guards", "true");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
+    let outputs = generator.generate(&schema).unwrap();
     let output = &outputs[0].content;
 
     // Should have type guard but no validator

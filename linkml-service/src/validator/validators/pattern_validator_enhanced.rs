@@ -46,7 +46,8 @@ impl EnhancedPatternValidator {
     /// Panics if `NonZeroUsize::new(100)` somehow returns `None` (should not happen).
     #[must_use]
     pub fn with_cache_size(size: usize) -> Self {
-        let cache_size = NonZeroUsize::new(size).unwrap_or(NonZeroUsize::new(100).expect("100 is a valid non-zero usize"));
+        let cache_size = NonZeroUsize::new(size)
+            .unwrap_or(NonZeroUsize::new(100).expect("100 is a valid non-zero usize"));
         Self {
             name: "enhanced_pattern_validator".to_string(),
             pattern_cache: Arc::new(Mutex::new(LruCache::new(cache_size))),
@@ -56,7 +57,10 @@ impl EnhancedPatternValidator {
 
     /// Get or compile a regex pattern with caching
     fn get_regex(&self, pattern: &str) -> Result<Arc<Regex>, regex::Error> {
-        let mut cache = self.pattern_cache.lock().expect("pattern cache mutex should not be poisoned");
+        let mut cache = self
+            .pattern_cache
+            .lock()
+            .expect("pattern cache mutex should not be poisoned");
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(Arc::clone(regex));
@@ -268,9 +272,18 @@ mod tests {
         assert!(captures.is_some());
 
         let caps = captures.expect("should have captured groups for date pattern");
-        assert_eq!(caps.get("year").expect("should have year capture"), &json!("2025"));
-        assert_eq!(caps.get("month").expect("should have month capture"), &json!("01"));
-        assert_eq!(caps.get("day").expect("should have day capture"), &json!("31"));
+        assert_eq!(
+            caps.get("year").expect("should have year capture"),
+            &json!("2025")
+        );
+        assert_eq!(
+            caps.get("month").expect("should have month capture"),
+            &json!("01")
+        );
+        assert_eq!(
+            caps.get("day").expect("should have day capture"),
+            &json!("31")
+        );
     }
 
     #[test]
@@ -281,17 +294,29 @@ mod tests {
         let pattern3 = r"^[A-Z]+$";
 
         // First access - compiles and caches
-        let _ = validator.get_regex(pattern1).expect("should compile valid regex");
-        let _ = validator.get_regex(pattern2).expect("should compile valid regex");
+        let _ = validator
+            .get_regex(pattern1)
+            .expect("should compile valid regex");
+        let _ = validator
+            .get_regex(pattern2)
+            .expect("should compile valid regex");
 
         // Access again - should be cached
-        let _ = validator.get_regex(pattern1).expect("should get cached regex");
-        let _ = validator.get_regex(pattern2).expect("should get cached regex");
+        let _ = validator
+            .get_regex(pattern1)
+            .expect("should get cached regex");
+        let _ = validator
+            .get_regex(pattern2)
+            .expect("should get cached regex");
 
         // Third pattern - should evict the least recently used (pattern1)
-        let _ = validator.get_regex(pattern3).expect("should compile valid regex");
+        let _ = validator
+            .get_regex(pattern3)
+            .expect("should compile valid regex");
 
         // Accessing pattern2 should still be cached
-        let _ = validator.get_regex(pattern2).expect("should get cached regex");
+        let _ = validator
+            .get_regex(pattern2)
+            .expect("should get cached regex");
     }
 }

@@ -8,8 +8,8 @@ use linkml_core::prelude::*;
 use std::path::Path;
 use std::sync::Arc;
 
+use super::traits::{DataInstance, DumperError, LoaderError};
 use crate::file_system_adapter::FileSystemOperations;
-use super::traits::{DataInstance, LoaderError, DumperError};
 
 /// Result type for loader operations
 pub type LoaderResult<T> = std::result::Result<T, LoaderError>;
@@ -27,17 +27,17 @@ pub trait DataLoaderV2: Send + Sync {
         schema: &SchemaDefinition,
         fs: Arc<F>,
     ) -> LoaderResult<Vec<DataInstance>>;
-    
+
     /// Load data instances from string content
     async fn load_str(
         &mut self,
         content: &str,
         schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>>;
-    
+
     /// Get the name of this loader
     fn name(&self) -> &'static str;
-    
+
     /// Get supported file extensions
     fn supported_extensions(&self) -> Vec<&'static str>;
 }
@@ -53,17 +53,17 @@ pub trait DataDumperV2: Send + Sync {
         schema: &SchemaDefinition,
         fs: Arc<F>,
     ) -> DumperResult<()>;
-    
+
     /// Dump data instances to string
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
         schema: &SchemaDefinition,
     ) -> DumperResult<String>;
-    
+
     /// Get the name of this dumper
     fn name(&self) -> &'static str;
-    
+
     /// Get supported file extensions
     fn supported_extensions(&self) -> Vec<&'static str>;
 }
@@ -73,16 +73,16 @@ pub trait DataDumperV2: Send + Sync {
 pub struct LoaderOptionsV2 {
     /// Whether to validate data during loading
     pub validate: bool,
-    
+
     /// Whether to use strict mode
     pub strict: bool,
-    
+
     /// Target class name for validation
     pub target_class: Option<String>,
-    
+
     /// Maximum number of errors to collect
     pub max_errors: usize,
-    
+
     /// Custom options for specific loaders
     pub custom: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -98,19 +98,19 @@ impl LoaderOptionsV2 {
             custom: Default::default(),
         }
     }
-    
+
     /// Set validation enabled
     pub fn with_validation(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
     }
-    
+
     /// Set strict mode
     pub fn with_strict(mut self, strict: bool) -> Self {
         self.strict = strict;
         self
     }
-    
+
     /// Set target class
     pub fn with_target_class(mut self, class: String) -> Self {
         self.target_class = Some(class);

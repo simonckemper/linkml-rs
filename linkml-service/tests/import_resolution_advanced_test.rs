@@ -1,19 +1,19 @@
 //! Advanced tests for import resolution with aliases, mappings, and edge cases
 
 use linkml_core::{
-    settings::{ImportSettings, SchemaSettings, ImportResolutionStrategy},
+    settings::{ImportResolutionStrategy, ImportSettings, SchemaSettings},
     types::SchemaDefinition,
 };
 use linkml_service::parser::{ImportResolverV2, SchemaParser, YamlParser};
+use std::collections::HashMap;
 use tempfile::TempDir;
 use tokio::fs;
-use std::collections::HashMap;
 
 #[tokio::test]
 async fn test_import_aliases_and_mappings() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create common schema
     let common_v2 = r#"
 id: https://example.org/common/v2
@@ -22,15 +22,17 @@ classes:
   CommonBase:
     description: Common base class v2
 "#;
-    
+
     let common_dir = base_path.join("common");
     fs::create_dir_all(&common_dir).await.unwrap();
-    fs::write(common_dir.join("v2.yaml"), common_v2).await.unwrap();
-    
+    fs::write(common_dir.join("v2.yaml"), common_v2)
+        .await
+        .unwrap();
+
     // Create base schemas directory
     let base_schemas_dir = base_path.join("base_schemas");
     fs::create_dir_all(&base_schemas_dir).await.unwrap();
-    
+
     let entity_schema = r#"
 id: https://base.example.org/schemas/entity
 name: entity
@@ -38,8 +40,10 @@ classes:
   Entity:
     description: Base entity
 "#;
-    fs::write(base_schemas_dir.join("entity.yaml"), entity_schema).await.unwrap();
-    
+    fs::write(base_schemas_dir.join("entity.yaml"), entity_schema)
+        .await
+        .unwrap();
+
     // Create main schema with aliases and mappings
     let main_schema = r#"
 id: https://example.org/main
@@ -58,23 +62,33 @@ classes:
     is_a: CommonBase
     description: Uses aliased import
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
     // Create resolver and load schema
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("main.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("main.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     // Apply settings to resolver
     if let Some(ref settings) = schema.settings {
-        resolver.resolve_imports(&mut schema, Some(&settings.imports)).await.unwrap();
+        resolver
+            .resolve_imports(&mut schema, Some(&settings.imports))
+            .await
+            .unwrap();
     } else {
         resolver.resolve_imports(&mut schema, None).await.unwrap();
     }
-    
+
     // Verify imports were resolved
     assert!(schema.classes.contains_key("CommonBase"));
     assert!(schema.classes.contains_key("Entity"));
@@ -89,9 +103,9 @@ async fn test_url_import_resolution() {
         "https://w3id.org/linkml/types".to_string(),
         "https://example.org/schemas/base".to_string(),
     ];
-    
+
     let resolver = ImportResolverV2::new();
-    
+
     // The resolver should handle URL imports (actual implementation would fetch)
     // For now, we just verify the imports are recognized as URLs
     for import in &schema.imports {
@@ -103,7 +117,7 @@ async fn test_url_import_resolution() {
 async fn test_circular_import_detection() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create schema A that imports B
     let schema_a = r#"
 id: https://example.org/a
@@ -114,7 +128,7 @@ classes:
   ClassA:
     description: Class in schema A
 "#;
-    
+
     // Create schema B that imports C
     let schema_b = r#"
 id: https://example.org/b
@@ -125,7 +139,7 @@ classes:
   ClassB:
     description: Class in schema B
 "#;
-    
+
     // Create schema C that imports A (circular!)
     let schema_c = r#"
 id: https://example.org/c
@@ -136,25 +150,36 @@ classes:
   ClassC:
     description: Class in schema C
 "#;
-    
-    fs::write(base_path.join("schema_a.yaml"), schema_a).await.unwrap();
-    fs::write(base_path.join("schema_b.yaml"), schema_b).await.unwrap();
-    fs::write(base_path.join("schema_c.yaml"), schema_c).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("schema_a.yaml"), schema_a)
+        .await
+        .unwrap();
+    fs::write(base_path.join("schema_b.yaml"), schema_b)
+        .await
+        .unwrap();
+    fs::write(base_path.join("schema_c.yaml"), schema_c)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("schema_a.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("schema_a.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     // Should handle circular imports gracefully
     let result = resolver.resolve_imports(&mut schema, None).await;
-    
+
     // The resolver should either:
     // 1. Detect the cycle and return an error, or
     // 2. Handle it gracefully by tracking visited schemas
     // Both are valid approaches
-    
+
     if result.is_err() {
         // If it errors, it should be a circular dependency error
         let err = result.unwrap_err();
@@ -171,7 +196,7 @@ classes:
 async fn test_selective_imports() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a large schema to import from
     let large_schema = r#"
 id: https://example.org/large
@@ -195,9 +220,11 @@ slots:
   slot4:
     range: float
 "#;
-    
-    fs::write(base_path.join("large.yaml"), large_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("large.yaml"), large_schema)
+        .await
+        .unwrap();
+
     // Import with 'only' directive (mock - actual implementation would filter)
     let selective_schema = r#"
 id: https://example.org/selective
@@ -208,17 +235,24 @@ classes:
   MyClass:
     description: Uses selective import
 "#;
-    
-    fs::write(base_path.join("selective.yaml"), selective_schema).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("selective.yaml"), selective_schema)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("selective.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("selective.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     resolver.resolve_imports(&mut schema, None).await.unwrap();
-    
+
     // In a full implementation with selective imports, we would verify
     // only the requested elements were imported
     assert!(schema.classes.contains_key("ClassA"));
@@ -229,7 +263,7 @@ classes:
 async fn test_import_conflict_resolution() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create two schemas with conflicting definitions
     let schema1 = r#"
 id: https://example.org/schema1
@@ -247,7 +281,7 @@ slots:
   age:
     range: integer
 "#;
-    
+
     let schema2 = r#"
 id: https://example.org/schema2  
 name: schema2
@@ -263,10 +297,14 @@ slots:
   birth_date:
     range: date
 "#;
-    
-    fs::write(base_path.join("schema1.yaml"), schema1).await.unwrap();
-    fs::write(base_path.join("schema2.yaml"), schema2).await.unwrap();
-    
+
+    fs::write(base_path.join("schema1.yaml"), schema1)
+        .await
+        .unwrap();
+    fs::write(base_path.join("schema2.yaml"), schema2)
+        .await
+        .unwrap();
+
     // Schema that imports both (conflict!)
     let main_schema = r#"
 id: https://example.org/main
@@ -279,17 +317,24 @@ classes:
     is_a: Person  # Which Person?
     description: Employee class
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("main.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("main.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     resolver.resolve_imports(&mut schema, None).await.unwrap();
-    
+
     // Last import wins strategy - schema2's Person should override
     let person = schema.classes.get("Person").unwrap();
     assert_eq!(person.description.as_deref(), Some("Person from schema2"));
@@ -300,11 +345,15 @@ classes:
 async fn test_nested_import_resolution() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create deeply nested directory structure
-    let deep_path = base_path.join("org").join("example").join("schemas").join("v1");
+    let deep_path = base_path
+        .join("org")
+        .join("example")
+        .join("schemas")
+        .join("v1");
     fs::create_dir_all(&deep_path).await.unwrap();
-    
+
     let nested_schema = r#"
 id: https://example.org/nested
 name: nested
@@ -312,9 +361,11 @@ classes:
   NestedClass:
     description: Deeply nested class
 "#;
-    
-    fs::write(deep_path.join("nested.yaml"), nested_schema).await.unwrap();
-    
+
+    fs::write(deep_path.join("nested.yaml"), nested_schema)
+        .await
+        .unwrap();
+
     // Create schema with complex import path
     let main_schema = r#"
 id: https://example.org/main
@@ -328,17 +379,24 @@ classes:
   MainClass:
     is_a: NestedClass
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("main.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("main.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     resolver.resolve_imports(&mut schema, None).await.unwrap();
-    
+
     assert!(schema.classes.contains_key("NestedClass"));
     assert!(schema.classes.contains_key("MainClass"));
 }
@@ -347,37 +405,46 @@ classes:
 async fn test_import_with_different_strategies() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Test different resolution strategies
     let strategies = vec![
         ImportResolutionStrategy::Relative,
         ImportResolutionStrategy::Absolute,
         ImportResolutionStrategy::Mixed,
     ];
-    
+
     for strategy in strategies {
         let mut settings = ImportSettings::default();
         settings.resolution_strategy = strategy.clone();
-        
+
         // Create a simple schema
-        let test_schema = format!(r#"
+        let test_schema = format!(
+            r#"
 id: https://example.org/test_{}
 name: test_{}
 settings:
   imports:
     resolution_strategy: {:?}
-"#, 
+"#,
             format!("{:?}", strategy).to_lowercase(),
             format!("{:?}", strategy).to_lowercase(),
             strategy
         );
-        
+
         let filename = format!("test_{}.yaml", format!("{:?}", strategy).to_lowercase());
-        fs::write(base_path.join(&filename), test_schema).await.unwrap();
-        
+        fs::write(base_path.join(&filename), test_schema)
+            .await
+            .unwrap();
+
         let parser = YamlParser::new();
-        let schema = parser.parse(&tokio::fs::read_to_string(base_path.join(&filename)).await.unwrap()).unwrap();
-        
+        let schema = parser
+            .parse_str(
+                &tokio::fs::read_to_string(base_path.join(&filename))
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+
         // Verify strategy was parsed correctly
         if let Some(schema_settings) = schema.settings {
             assert_eq!(schema_settings.imports.resolution_strategy, strategy);
@@ -389,7 +456,7 @@ settings:
 async fn test_import_error_handling() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Schema with non-existent import
     let bad_schema = r#"
 id: https://example.org/bad
@@ -398,36 +465,45 @@ imports:
   - non_existent_schema
   - another_missing_schema
 "#;
-    
-    fs::write(base_path.join("bad.yaml"), bad_schema).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("bad.yaml"), bad_schema)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("bad.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("bad.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     let result = resolver.resolve_imports(&mut schema, None).await;
-    
+
     // Should fail with clear error about missing imports
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert!(err.to_string().contains("non_existent_schema") || 
-           err.to_string().contains("not found") ||
-           err.to_string().contains("failed to load"));
+    assert!(
+        err.to_string().contains("non_existent_schema")
+            || err.to_string().contains("not found")
+            || err.to_string().contains("failed to load")
+    );
 }
 
 #[tokio::test]
 async fn test_import_with_version_specifiers() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create versioned schemas
     let v1_dir = base_path.join("common").join("v1");
     let v2_dir = base_path.join("common").join("v2");
     fs::create_dir_all(&v1_dir).await.unwrap();
     fs::create_dir_all(&v2_dir).await.unwrap();
-    
+
     let common_v1 = r#"
 id: https://example.org/common/v1
 name: common_v1
@@ -438,7 +514,7 @@ classes:
     slots:
       - id
 "#;
-    
+
     let common_v2 = r#"
 id: https://example.org/common/v2
 name: common_v2
@@ -450,10 +526,14 @@ classes:
       - identifier
       - name
 "#;
-    
-    fs::write(v1_dir.join("common.yaml"), common_v1).await.unwrap();
-    fs::write(v2_dir.join("common.yaml"), common_v2).await.unwrap();
-    
+
+    fs::write(v1_dir.join("common.yaml"), common_v1)
+        .await
+        .unwrap();
+    fs::write(v2_dir.join("common.yaml"), common_v2)
+        .await
+        .unwrap();
+
     // Schema that uses version-specific import
     let main_schema = r#"
 id: https://example.org/main
@@ -465,19 +545,29 @@ settings:
 imports:
   - common
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
-    let resolver = ImportResolverV2::new()
-        .with_base_path(base_path.to_path_buf());
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
+    let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
+
     let parser = YamlParser::new();
-    let mut schema = parser.parse(&tokio::fs::read_to_string(base_path.join("main.yaml")).await.unwrap()).unwrap();
-    
+    let mut schema = parser
+        .parse_str(
+            &tokio::fs::read_to_string(base_path.join("main.yaml"))
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+
     if let Some(ref settings) = schema.settings {
-        resolver.resolve_imports(&mut schema, Some(&settings.imports)).await.unwrap();
+        resolver
+            .resolve_imports(&mut schema, Some(&settings.imports))
+            .await
+            .unwrap();
     }
-    
+
     // Should have v2 Base class
     let base_class = schema.classes.get("Base").unwrap();
     assert_eq!(base_class.description.as_deref(), Some("Base class v2"));

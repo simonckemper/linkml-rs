@@ -289,7 +289,11 @@ impl CacheKeyOptimizer {
         hasher_input.extend_from_slice(&[0]); // Separator
 
         // Include class count and names for change detection
-        hasher_input.extend_from_slice(&u32::try_from(schema.classes.len()).unwrap_or(u32::MAX).to_le_bytes());
+        hasher_input.extend_from_slice(
+            &u32::try_from(schema.classes.len())
+                .unwrap_or(u32::MAX)
+                .to_le_bytes(),
+        );
         for (name, _) in &schema.classes {
             hasher_input.extend_from_slice(name.as_bytes());
             hasher_input.extend_from_slice(&[0]);

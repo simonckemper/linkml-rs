@@ -71,24 +71,36 @@ impl SparqlGenerator {
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
-    
+
     /// Create a new SPARQL generator
     #[must_use]
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
-        
+
         // Standard prefixes
-        prefixes.insert("rdf".to_string(), "http://www.w3.org/1999/02/22-rdf-syntax-ns#".to_string());
-        prefixes.insert("rdfs".to_string(), "http://www.w3.org/2000/01/rdf-schema#".to_string());
-        prefixes.insert("xsd".to_string(), "http://www.w3.org/2001/XMLSchema#".to_string());
-        prefixes.insert("owl".to_string(), "http://www.w3.org/2002/07/owl#".to_string());
-        
+        prefixes.insert(
+            "rdf".to_string(),
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#".to_string(),
+        );
+        prefixes.insert(
+            "rdfs".to_string(),
+            "http://www.w3.org/2000/01/rdf-schema#".to_string(),
+        );
+        prefixes.insert(
+            "xsd".to_string(),
+            "http://www.w3.org/2001/XMLSchema#".to_string(),
+        );
+        prefixes.insert(
+            "owl".to_string(),
+            "http://www.w3.org/2002/07/owl#".to_string(),
+        );
+
         Self {
             options: SparqlOptions::default(),
             prefixes,
         }
     }
-    
+
     /// Create with custom options
     #[must_use]
     pub fn with_options(options: SparqlOptions) -> Self {
@@ -96,22 +108,22 @@ impl SparqlGenerator {
         generator.options = options;
         generator
     }
-    
+
     /// Set the query type
     #[must_use]
     pub fn with_query_type(mut self, query_type: SparqlQueryType) -> Self {
         self.options.query_type = query_type;
         self
     }
-    
+
     /// Generate SPARQL queries for the schema
     fn generate_sparql(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
-        
+
         // Add schema prefix
         let schema_prefix = self.to_snake_case(&schema.name);
         self.add_schema_prefix(&schema_prefix, schema);
-        
+
         match self.options.query_type {
             SparqlQueryType::Select => self.generate_select_queries(&mut output, schema)?,
             SparqlQueryType::Construct => self.generate_construct_queries(&mut output, schema)?,
@@ -119,30 +131,48 @@ impl SparqlGenerator {
             SparqlQueryType::Insert => self.generate_insert_queries(&mut output, schema)?,
             SparqlQueryType::Delete => self.generate_delete_queries(&mut output, schema)?,
         }
-        
+
         Ok(output)
     }
-    
+
     /// Generate SELECT queries for each class
-    fn generate_select_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL SELECT queries for {}", if schema.name.is_empty() { "schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
+    fn generate_select_queries(
+        &self,
+        output: &mut String,
+        schema: &SchemaDefinition,
+    ) -> GeneratorResult<()> {
+        writeln!(
+            output,
+            "# SPARQL SELECT queries for {}",
+            if schema.name.is_empty() {
+                "schema"
+            } else {
+                &schema.name
+            }
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue; // Skip abstract classes
             }
-            
+
             if self.options.include_comments {
-                writeln!(output, "# Query to retrieve all instances of {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(
+                    output,
+                    "# Query to retrieve all instances of {}",
+                    class_name
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
                 if let Some(desc) = &class_def.description {
                     writeln!(output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-            
+
             // Generate prefixes
             self.write_prefixes(output)?;
-            
+
             // SELECT clause
             write!(output, "SELECT").map_err(Self::fmt_error_to_generator_error)?;
             let vars = self.collect_query_variables(class_name, class_def, schema);
@@ -150,121 +180,181 @@ impl SparqlGenerator {
                 write!(output, " ?{}", var).map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // WHERE clause
             writeln!(output, "WHERE {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Type assertion
             let class_uri = self.get_class_uri(class_name, schema);
-            writeln!(output, "  ?instance a {} .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
-            
+            writeln!(output, "  ?instance a {} .", class_uri)
+                .map_err(Self::fmt_error_to_generator_error)?;
+
             // Generate triple patterns for slots
             self.generate_triple_patterns(output, "instance", class_name, class_def, schema)?;
-            
+
             // Add filters if enabled
             if self.options.include_filters {
                 self.generate_filters(output, class_name, class_def, schema)?;
             }
-            
+
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Add modifiers
             if let Some(limit) = self.options.limit {
                 writeln!(output, "LIMIT {}", limit).map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate CONSTRUCT queries
-    fn generate_construct_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL CONSTRUCT queries for {}", if schema.name.is_empty() { "schema" } else { &schema.name }).map_err(Self::fmt_error_to_generator_error)?;
+    fn generate_construct_queries(
+        &self,
+        output: &mut String,
+        schema: &SchemaDefinition,
+    ) -> GeneratorResult<()> {
+        writeln!(
+            output,
+            "# SPARQL CONSTRUCT queries for {}",
+            if schema.name.is_empty() {
+                "schema"
+            } else {
+                &schema.name
+            }
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             if self.options.include_comments {
-                writeln!(output, "# Construct {} instances with all properties", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(
+                    output,
+                    "# Construct {} instances with all properties",
+                    class_name
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             self.write_prefixes(output)?;
-            
+
             writeln!(output, "CONSTRUCT {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Construct template
             let class_uri = self.get_class_uri(class_name, schema);
-            writeln!(output, "  ?instance a {} .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
-            
+            writeln!(output, "  ?instance a {} .", class_uri)
+                .map_err(Self::fmt_error_to_generator_error)?;
+
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     let prop_uri = self.get_property_uri(slot_name, schema);
-                    
+
                     if slot_def.multivalued.unwrap_or(false) {
-                        writeln!(output, "  ?instance {} ?{} .", prop_uri, self.to_var_name(slot_name)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "  ?instance {} ?{} .",
+                            prop_uri,
+                            self.to_var_name(slot_name)
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(output, "  ?instance {} ?{} .", prop_uri, self.to_var_name(slot_name)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "  ?instance {} ?{} .",
+                            prop_uri,
+                            self.to_var_name(slot_name)
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
-            
+
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "WHERE {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Where patterns (same as construct template)
-            writeln!(output, "  ?instance a {} .", class_uri).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "  ?instance a {} .", class_uri)
+                .map_err(Self::fmt_error_to_generator_error)?;
             self.generate_triple_patterns(output, "instance", class_name, class_def, schema)?;
-            
+
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate ASK queries for validation
-    fn generate_ask_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL ASK queries for validation").map_err(Self::fmt_error_to_generator_error)?;
+    fn generate_ask_queries(
+        &self,
+        output: &mut String,
+        schema: &SchemaDefinition,
+    ) -> GeneratorResult<()> {
+        writeln!(output, "# SPARQL ASK queries for validation")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             // Check if instance exists
             if self.options.include_comments {
-                writeln!(output, "# Check if any {} instances exist", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output, "# Check if any {} instances exist", class_name)
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             self.write_prefixes(output)?;
-            
+
             writeln!(output, "ASK {{").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(output, "  ?instance a {} .", self.get_class_uri(class_name, schema)).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(
+                output,
+                "  ?instance a {} .",
+                self.get_class_uri(class_name, schema)
+            )
+            .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Validation queries for required slots
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     if slot_def.required.unwrap_or(false) {
                         if self.options.include_comments {
-                            writeln!(output, "# Check if all {} instances have required property {}", class_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                            writeln!(
+                                output,
+                                "# Check if all {} instances have required property {}",
+                                class_name, slot_name
+                            )
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         }
-                        
+
                         self.write_prefixes(output)?;
-                        
+
                         writeln!(output, "ASK {{").map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "  ?instance a {} .", self.get_class_uri(class_name, schema)).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "  FILTER NOT EXISTS {{").map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "    ?instance {} ?value .", self.get_property_uri(slot_name, schema)).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "  ?instance a {} .",
+                            self.get_class_uri(class_name, schema)
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "  FILTER NOT EXISTS {{")
+                            .map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "    ?instance {} ?value .",
+                            self.get_property_uri(slot_name, schema)
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -272,153 +362,203 @@ impl SparqlGenerator {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate INSERT DATA queries
-    fn generate_insert_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL INSERT DATA templates").map_err(Self::fmt_error_to_generator_error)?;
+    fn generate_insert_queries(
+        &self,
+        output: &mut String,
+        schema: &SchemaDefinition,
+    ) -> GeneratorResult<()> {
+        writeln!(output, "# SPARQL INSERT DATA templates")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             if self.options.include_comments {
-                writeln!(output, "# Template for inserting {} instances", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output, "# Template for inserting {} instances", class_name)
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             self.write_prefixes(output)?;
-            
+
             writeln!(output, "INSERT DATA {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Example instance URI
-            let instance_uri = format!("<{}{}/example>", self.options.base_uri, self.to_snake_case(class_name));
-            
-            writeln!(output, "  {} a {} .", instance_uri, self.get_class_uri(class_name, schema)).map_err(Self::fmt_error_to_generator_error)?;
-            
+            let instance_uri = format!(
+                "<{}{}/example>",
+                self.options.base_uri,
+                self.to_snake_case(class_name)
+            );
+
+            writeln!(
+                output,
+                "  {} a {} .",
+                instance_uri,
+                self.get_class_uri(class_name, schema)
+            )
+            .map_err(Self::fmt_error_to_generator_error)?;
+
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     let prop_uri = self.get_property_uri(slot_name, schema);
-                    
+
                     // Show example values
                     let example_value = self.get_example_value(&slot_def.range);
-                    
+
                     if slot_def.required.unwrap_or(false) {
-                        writeln!(output, "  {} {} {} .", instance_uri, prop_uri, example_value).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "  {} {} {} .",
+                            instance_uri, prop_uri, example_value
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(output, "  # {} {} {} . # optional", instance_uri, prop_uri, example_value).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "  # {} {} {} . # optional",
+                            instance_uri, prop_uri, example_value
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
-            
+
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate DELETE WHERE queries
-    fn generate_delete_queries(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
-        writeln!(output, "# SPARQL DELETE WHERE templates").map_err(Self::fmt_error_to_generator_error)?;
+    fn generate_delete_queries(
+        &self,
+        output: &mut String,
+        schema: &SchemaDefinition,
+    ) -> GeneratorResult<()> {
+        writeln!(output, "# SPARQL DELETE WHERE templates")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             if self.options.include_comments {
-                writeln!(output, "# Delete all {} instances", class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(output, "# Delete all {} instances", class_name)
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             self.write_prefixes(output)?;
-            
+
             writeln!(output, "DELETE WHERE {{").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(output, "  ?instance a {} .", self.get_class_uri(class_name, schema)).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(
+                output,
+                "  ?instance a {} .",
+                self.get_class_uri(class_name, schema)
+            )
+            .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "  ?instance ?p ?o .").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate triple patterns for a class
     fn generate_triple_patterns(
-        &self, 
-        output: &mut String, 
+        &self,
+        output: &mut String,
         subject_var: &str,
         class_name: &str,
-        class_def: &ClassDefinition, 
-        schema: &SchemaDefinition
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         let all_slots = self.collect_all_slots(class_name, class_def, schema);
-        
+
         for slot_name in &all_slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 let prop_uri = self.get_property_uri(slot_name, schema);
                 let var_name = self.to_var_name(slot_name);
-                
+
                 if slot_def.required.unwrap_or(false) || !self.options.include_optional {
                     // Required property
-                    writeln!(output, "  ?{} {} ?{} .", subject_var, prop_uri, var_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  ?{} {} ?{} .", subject_var, prop_uri, var_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
                     // Optional property
-                    writeln!(output, "  OPTIONAL {{ ?{} {} ?{} . }}", subject_var, prop_uri, var_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "  OPTIONAL {{ ?{} {} ?{} . }}",
+                        subject_var, prop_uri, var_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 // Add type constraints for object properties
                 if let Some(range) = &slot_def.range {
                     if schema.classes.contains_key(range) {
                         let range_uri = self.get_class_uri(range, schema);
-                        writeln!(output, "  OPTIONAL {{ ?{} a {} . }}", var_name, range_uri).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "  OPTIONAL {{ ?{} a {} . }}", var_name, range_uri)
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate FILTER constraints
     fn generate_filters(
         &self,
         output: &mut String,
         _class_name: &str,
         class_def: &ClassDefinition,
-        schema: &SchemaDefinition
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         let all_slots = self.collect_all_slots(_class_name, class_def, schema);
-        
+
         for slot_name in &all_slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 let var_name = self.to_var_name(slot_name);
-                
+
                 // Pattern constraint
                 if let Some(pattern) = &slot_def.pattern {
-                    writeln!(output, "  FILTER(REGEX(?{}, \"{}\"))", var_name, pattern).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  FILTER(REGEX(?{}, \"{}\"))", var_name, pattern)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 // Range constraints
                 if let Some(min) = &slot_def.minimum_value {
-                    writeln!(output, "  FILTER(?{} >= {})", var_name, min).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  FILTER(?{} >= {})", var_name, min)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 if let Some(max) = &slot_def.maximum_value {
-                    writeln!(output, "  FILTER(?{} <= {})", var_name, max).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  FILTER(?{} <= {})", var_name, max)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 // Enum constraints
                 if let Some(range) = &slot_def.range {
                     if let Some(enum_def) = schema.enums.get(range) {
-                        write!(output, "  FILTER(?{} IN (", var_name).map_err(Self::fmt_error_to_generator_error)?;
-                        
-                        let values: Vec<String> = enum_def.permissible_values.iter()
+                        write!(output, "  FILTER(?{} IN (", var_name)
+                            .map_err(Self::fmt_error_to_generator_error)?;
+
+                        let values: Vec<String> = enum_def
+                            .permissible_values
+                            .iter()
                             .map(|pv| {
                                 let value = match pv {
                                     PermissibleValue::Simple(s) => s,
@@ -427,61 +567,80 @@ impl SparqlGenerator {
                                 format!("\"{}\"", value)
                             })
                             .collect();
-                        
-                        write!(output, "{}", values.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
+
+                        write!(output, "{}", values.join(", "))
+                            .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "))").map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Write namespace prefixes
     fn write_prefixes(&self, output: &mut String) -> GeneratorResult<()> {
         for (prefix, uri) in &self.prefixes {
-            writeln!(output, "PREFIX {}: <{}>", prefix, uri).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "PREFIX {}: <{}>", prefix, uri)
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
     }
-    
+
     /// Add schema-specific prefix
     fn add_schema_prefix(&self, _prefix: &str, schema: &SchemaDefinition) {
-        let _uri = format!("{}#", if schema.id.is_empty() { &self.options.base_uri } else { &schema.id });
+        let _uri = format!(
+            "{}#",
+            if schema.id.is_empty() {
+                &self.options.base_uri
+            } else {
+                &schema.id
+            }
+        );
         // Note: In real implementation, would need mutable access to prefixes
     }
-    
+
     /// Get URI for a class
     fn get_class_uri(&self, class_name: &str, schema: &SchemaDefinition) -> String {
         let prefix = self.to_snake_case(&schema.name);
         format!("{}:{}", prefix, self.to_pascal_case(class_name))
     }
-    
+
     /// Get URI for a property
     fn get_property_uri(&self, slot_name: &str, _schema: &SchemaDefinition) -> String {
         let prefix = self.to_snake_case(&_schema.name);
         format!("{}:{}", prefix, self.to_snake_case(slot_name))
     }
-    
+
     /// Collect query variables for a class
-    fn collect_query_variables(&self, class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn collect_query_variables(
+        &self,
+        class_name: &str,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> Vec<String> {
         let mut vars = vec!["instance".to_string()];
-        
+
         let all_slots = self.collect_all_slots(class_name, class_def, schema);
         for slot_name in &all_slots {
             vars.push(self.to_var_name(slot_name));
         }
-        
+
         vars
     }
-    
+
     /// Collect all slots including inherited ones
-    fn collect_all_slots(&self, _class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn collect_all_slots(
+        &self,
+        _class_name: &str,
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
+    ) -> Vec<String> {
         let mut all_slots = Vec::new();
         let mut seen = HashSet::new();
-        
+
         // First, get slots from parent if any
         if let Some(parent_name) = &class_def.is_a {
             if let Some(parent_class) = schema.classes.get(parent_name) {
@@ -493,24 +652,24 @@ impl SparqlGenerator {
                 }
             }
         }
-        
+
         // Then add direct slots
         for slot in &class_def.slots {
             if seen.insert(slot.clone()) {
                 all_slots.push(slot.clone());
             }
         }
-        
+
         // Add attributes
         for (attr_name, _) in &class_def.attributes {
             if seen.insert(attr_name.clone()) {
                 all_slots.push(attr_name.clone());
             }
         }
-        
+
         all_slots
     }
-    
+
     /// Get example value for a range type
     fn get_example_value(&self, range: &Option<String>) -> &'static str {
         match range.as_deref() {
@@ -524,30 +683,40 @@ impl SparqlGenerator {
             _ => "\"value\"",
         }
     }
-    
+
     /// Convert to variable name
     fn to_var_name(&self, name: &str) -> String {
         name.chars()
-            .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect()
     }
-    
+
     /// Convert to snake_case
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
-        
+
         for (i, ch) in s.chars().enumerate() {
             if ch.is_uppercase() && i > 0 && !prev_upper {
                 result.push('_');
             }
-            result.push(ch.to_lowercase().next().expect("char to_lowercase always produces at least one char"));
+            result.push(
+                ch.to_lowercase()
+                    .next()
+                    .expect("char to_lowercase always produces at least one char"),
+            );
             prev_upper = ch.is_uppercase();
         }
-        
+
         result
     }
-    
+
     /// Convert to PascalCase
     fn to_pascal_case(&self, s: &str) -> String {
         s.split(|c| c == '_' || c == '-')
@@ -572,28 +741,25 @@ impl Generator for SparqlGenerator {
     fn name(&self) -> &str {
         "sparql"
     }
-    
+
     fn description(&self) -> &str {
         "Generates SPARQL queries from LinkML schemas"
     }
-    
+
     fn file_extensions(&self) -> Vec<&str> {
         vec![".sparql", ".rq"]
     }
-    
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_sparql(schema)?;
-        
+
         Ok(content)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "sparql"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "queries"
     }
@@ -602,82 +768,81 @@ impl Generator for SparqlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
-        schema.id = Some("http://example.org/test".to_string());
-        
+        schema.name = "TestSchema".to_string();
+        schema.id = "http://example.org/test".to_string();
+
         // Person class
         let mut person_class = ClassDefinition::default();
         person_class.slots = vec!["name".to_string(), "age".to_string(), "email".to_string()];
         schema.classes.insert("Person".to_string(), person_class);
-        
+
         // Define slots
         let mut name_slot = SlotDefinition::default();
         name_slot.range = Some("string".to_string());
         name_slot.required = Some(true);
         schema.slots.insert("name".to_string(), name_slot);
-        
+
         let mut age_slot = SlotDefinition::default();
         age_slot.range = Some("integer".to_string());
         age_slot.minimum_value = Some(serde_json::json!(0));
         age_slot.maximum_value = Some(serde_json::json!(150));
         schema.slots.insert("age".to_string(), age_slot);
-        
+
         let mut email_slot = SlotDefinition::default();
         email_slot.range = Some("string".to_string());
         email_slot.pattern = Some(r"^\S+@\S+\.\S+$".to_string());
         schema.slots.insert("email".to_string(), email_slot);
-        
+
         schema
     }
-    
+
     #[tokio::test]
     async fn test_select_query_generation() {
         let schema = create_test_schema();
         let generator = SparqlGenerator::new();
         // GeneratorOptions not needed for new generate signature
-        
-        let result = generator.generate(&schema).expect("should generate queries");
-        assert_eq!(result.len(), 1);
-        
-        let output = &result[0];
-        assert_eq!(output.filename, "TestSchema.sparql");
-        
+
+        let output = generator
+            .generate(&schema)
+            .expect("should generate queries");
+
         // Check content
-        assert!(output.content.contains("SELECT"));
-        assert!(output.content.contains("WHERE"));
-        assert!(output.content.contains("?instance a"));
-        assert!(output.content.contains("PREFIX"));
+        assert!(output.contains("SELECT"));
+        assert!(output.contains("WHERE"));
+        assert!(output.contains("?instance a"));
+        assert!(output.contains("PREFIX"));
     }
-    
+
     #[tokio::test]
     async fn test_construct_query_generation() {
         let schema = create_test_schema();
-        let generator = SparqlGenerator::new()
-            .with_query_type(SparqlQueryType::Construct);
+        let generator = SparqlGenerator::new().with_query_type(SparqlQueryType::Construct);
         // GeneratorOptions not needed for new generate signature
-        
-        let result = generator.generate(&schema).expect("should generate queries");
-        let output = &result[0];
-        
-        assert!(output.content.contains("CONSTRUCT"));
+
+        let output = generator
+            .generate(&schema)
+            .expect("should generate queries");
+
+        assert!(output.contains("CONSTRUCT"));
     }
-    
+
     #[tokio::test]
     async fn test_filter_generation() {
         let schema = create_test_schema();
         let generator = SparqlGenerator::new();
         // GeneratorOptions not needed for new generate signature
-        
-        let result = generator.generate(&schema).expect("should generate queries");
-        let output = &result[0];
-        
+
+        let output = generator
+            .generate(&schema)
+            .expect("should generate queries");
+
         // Should contain filters for constraints
-        assert!(output.content.contains("FILTER"));
-        assert!(output.content.contains("REGEX")); // For email pattern
-        assert!(output.content.contains(">=")); // For age minimum
-        assert!(output.content.contains("<=")); // For age maximum
+        assert!(output.contains("FILTER"));
+        assert!(output.contains("REGEX")); // For email pattern
+        assert!(output.contains(">=")); // For age minimum
+        assert!(output.contains("<=")); // For age maximum
     }
 }

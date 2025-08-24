@@ -3,8 +3,8 @@
 //! This module provides mechanisms to limit resource usage during
 //! validation and expression evaluation to prevent DoS attacks.
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use thiserror::Error;
 
@@ -13,38 +13,38 @@ use thiserror::Error;
 pub enum ResourceError {
     /// Validation timeout exceeded
     #[error("Validation timeout exceeded: {elapsed:.2}s (max: {max:.2}s)")]
-    Timeout { 
+    Timeout {
         /// Elapsed time in seconds
-        elapsed: f64, 
+        elapsed: f64,
         /// Maximum allowed time in seconds
-        max: f64 
+        max: f64,
     },
-    
+
     /// Memory limit exceeded
     #[error("Memory limit exceeded: {used} bytes (max: {max} bytes)")]
-    MemoryExceeded { 
+    MemoryExceeded {
         /// Memory used in bytes
-        used: usize, 
+        used: usize,
         /// Maximum allowed memory in bytes
-        max: usize 
+        max: usize,
     },
-    
+
     /// Too many parallel operations
     #[error("Too many parallel operations: {current} (max: {max})")]
-    TooManyParallelOps { 
+    TooManyParallelOps {
         /// Current number of operations
-        current: usize, 
+        current: usize,
         /// Maximum allowed operations
-        max: usize 
+        max: usize,
     },
-    
+
     /// Cache memory exceeded
     #[error("Cache memory exceeded: {used} bytes (max: {max} bytes)")]
-    CacheMemoryExceeded { 
+    CacheMemoryExceeded {
         /// Cache memory used in bytes
-        used: usize, 
+        used: usize,
         /// Maximum allowed cache memory in bytes
-        max: usize 
+        max: usize,
     },
 }
 
@@ -53,19 +53,19 @@ pub enum ResourceError {
 pub struct ResourceLimits {
     /// Maximum validation time
     pub max_validation_time: Duration,
-    
+
     /// Maximum memory usage (approximate)
     pub max_memory_usage: usize,
-    
+
     /// Maximum number of parallel validators
     pub max_parallel_validators: usize,
-    
+
     /// Maximum cache memory
     pub max_cache_memory: usize,
-    
+
     /// Maximum expression evaluation time
     pub max_expression_time: Duration,
-    
+
     /// Maximum number of validation errors to collect
     pub max_validation_errors: usize,
 }
@@ -85,7 +85,9 @@ impl Default for ResourceLimits {
 
 impl ResourceLimits {
     /// Create resource limits from LinkML service configuration
-    pub fn from_service_config(config: &linkml_core::configuration_v2::SecurityLimitsConfig) -> Self {
+    pub fn from_service_config(
+        config: &linkml_core::configuration_v2::SecurityLimitsConfig,
+    ) -> Self {
         Self {
             max_validation_time: Duration::from_millis(config.max_validation_time_ms),
             max_memory_usage: config.max_memory_usage_bytes,
@@ -120,7 +122,7 @@ impl ResourceMonitor {
             validation_errors: AtomicUsize::new(0),
         }
     }
-    
+
     /// Check if validation has timed out
     pub fn check_timeout(&self) -> Result<(), ResourceError> {
         let elapsed = self.start_time.elapsed();
@@ -132,7 +134,7 @@ impl ResourceMonitor {
         }
         Ok(())
     }
-    
+
     /// Check if expression evaluation has timed out
     pub fn check_expression_timeout(&self, start: Instant) -> Result<(), ResourceError> {
         let elapsed = start.elapsed();
@@ -144,7 +146,7 @@ impl ResourceMonitor {
         }
         Ok(())
     }
-    
+
     /// Track memory allocation
     pub fn allocate_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.memory_used.fetch_add(bytes, Ordering::Relaxed) + bytes;
@@ -157,12 +159,12 @@ impl ResourceMonitor {
         }
         Ok(())
     }
-    
+
     /// Release tracked memory
     pub fn release_memory(&self, bytes: usize) {
         self.memory_used.fetch_sub(bytes, Ordering::Relaxed);
     }
-    
+
     /// Start a parallel operation
     pub fn start_parallel_op(&self) -> Result<ParallelOpGuard, ResourceError> {
         let current = self.parallel_ops.fetch_add(1, Ordering::Relaxed) + 1;
@@ -175,7 +177,7 @@ impl ResourceMonitor {
         }
         Ok(ParallelOpGuard { monitor: self })
     }
-    
+
     /// Track cache memory usage
     pub fn allocate_cache_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.cache_memory.fetch_add(bytes, Ordering::Relaxed) + bytes;
@@ -188,18 +190,18 @@ impl ResourceMonitor {
         }
         Ok(())
     }
-    
+
     /// Release cache memory
     pub fn release_cache_memory(&self, bytes: usize) {
         self.cache_memory.fetch_sub(bytes, Ordering::Relaxed);
     }
-    
+
     /// Track validation error count
     pub fn add_validation_error(&self) -> bool {
         let count = self.validation_errors.fetch_add(1, Ordering::Relaxed) + 1;
         count <= self.limits.max_validation_errors
     }
-    
+
     /// Get current resource usage
     pub fn current_usage(&self) -> ResourceUsage {
         ResourceUsage {
@@ -264,7 +266,7 @@ pub fn create_monitor(limits: ResourceLimits) -> SharedResourceMonitor {
 mod tests {
     use super::*;
     use std::thread;
-    
+
     #[test]
     fn test_timeout_check() {
         let limits = ResourceLimits {
@@ -272,10 +274,10 @@ mod tests {
             ..Default::default()
         };
         let monitor = ResourceMonitor::new(limits);
-        
+
         // Should not timeout immediately
         assert!(monitor.check_timeout().is_ok());
-        
+
         // Sleep and check timeout
         thread::sleep(Duration::from_millis(150));
         assert!(matches!(
@@ -283,20 +285,20 @@ mod tests {
             Err(ResourceError::Timeout { .. })
         ));
     }
-    
+
     #[test]
     fn test_memory_tracking() {
         let monitor = ResourceMonitor::new(ResourceLimits::default());
-        
+
         // Allocate some memory
         assert!(monitor.allocate_memory(1000).is_ok());
         assert_eq!(monitor.current_usage().memory_used, 1000);
-        
+
         // Release memory
         monitor.release_memory(500);
         assert_eq!(monitor.current_usage().memory_used, 500);
     }
-    
+
     #[test]
     fn test_parallel_ops() {
         let limits = ResourceLimits {
@@ -304,20 +306,20 @@ mod tests {
             ..Default::default()
         };
         let monitor = Arc::new(ResourceMonitor::new(limits));
-        
+
         // Start two ops (should succeed)
         let _guard1 = monitor.start_parallel_op().unwrap();
         let _guard2 = monitor.start_parallel_op().unwrap();
-        
+
         // Third should fail
         assert!(matches!(
             monitor.start_parallel_op(),
             Err(ResourceError::TooManyParallelOps { .. })
         ));
-        
+
         // Drop one guard
         drop(_guard1);
-        
+
         // Now we can start another
         let _guard3 = monitor.start_parallel_op().unwrap();
     }

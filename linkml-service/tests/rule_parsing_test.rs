@@ -1,6 +1,6 @@
 //! Tests for parsing rules from YAML schemas
 
-use linkml_service::parser::{YamlParser, SchemaParser};
+use linkml_service::parser::{SchemaParser, YamlParser};
 
 #[test]
 fn test_parse_simple_rule() {
@@ -47,37 +47,46 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Failed to parse schema");
-    
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Failed to parse schema");
+
     // Verify schema basics
     assert_eq!(schema.name, "test_schema");
-    
+
     // Check that Person class exists
-    let person_class = schema.classes.get("Person").expect("Person class not found");
-    
+    let person_class = schema
+        .classes
+        .get("Person")
+        .expect("Person class not found");
+
     // Verify rule was parsed
     assert_eq!(person_class.rules.len(), 1);
     let rule = &person_class.rules[0];
-    
-    assert_eq!(rule.description.as_deref(), Some("Minors require guardian information"));
+
+    assert_eq!(
+        rule.description.as_deref(),
+        Some("Minors require guardian information")
+    );
     assert_eq!(rule.priority, Some(100));
-    
+
     // Check preconditions
     assert!(rule.preconditions.is_some());
     let preconditions = rule.preconditions.as_ref().unwrap();
     assert!(preconditions.slot_conditions.is_some());
     let slot_conditions = preconditions.slot_conditions.as_ref().unwrap();
-    
+
     let age_condition = slot_conditions.get("age").expect("age condition not found");
     assert_eq!(age_condition.maximum_value, Some(serde_json::json!(17)));
-    
+
     // Check postconditions
     assert!(rule.postconditions.is_some());
     let postconditions = rule.postconditions.as_ref().unwrap();
     assert!(postconditions.slot_conditions.is_some());
     let post_slot_conditions = postconditions.slot_conditions.as_ref().unwrap();
-    
-    let guardian_name_condition = post_slot_conditions.get("guardian_name")
+
+    let guardian_name_condition = post_slot_conditions
+        .get("guardian_name")
         .expect("guardian_name condition not found");
     assert_eq!(guardian_name_condition.required, Some(true));
 }
@@ -157,11 +166,13 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Failed to parse complex schema");
-    
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Failed to parse complex schema");
+
     let order_class = schema.classes.get("Order").expect("Order class not found");
     assert_eq!(order_class.rules.len(), 3);
-    
+
     // Test expression-based rule
     let expr_rule = &order_class.rules[0];
     assert!(expr_rule.preconditions.is_some());
@@ -170,7 +181,7 @@ slots:
     let expressions = preconditions.expression_conditions.as_ref().unwrap();
     assert_eq!(expressions.len(), 1);
     assert_eq!(expressions[0], "{total_amount} > 10000");
-    
+
     // Test composite conditions
     let composite_rule = &order_class.rules[1];
     assert!(composite_rule.preconditions.is_some());
@@ -178,7 +189,7 @@ slots:
     assert!(preconditions.composite_conditions.is_some());
     let composite = preconditions.composite_conditions.as_ref().unwrap();
     assert!(composite.all_of.is_some());
-    
+
     // Test else conditions
     let else_rule = &order_class.rules[2];
     assert!(else_rule.else_conditions.is_some());
@@ -230,20 +241,27 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Failed to parse conditional requirements");
-    
-    let address_class = schema.classes.get("Address").expect("Address class not found");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Failed to parse conditional requirements");
+
+    let address_class = schema
+        .classes
+        .get("Address")
+        .expect("Address class not found");
     assert!(address_class.if_required.is_some());
-    
+
     let if_required = address_class.if_required.as_ref().unwrap();
     assert_eq!(if_required.len(), 2);
-    
+
     // Check US requirements
-    let us_req = if_required.get("country_us").expect("country_us requirement not found");
+    let us_req = if_required
+        .get("country_us")
+        .expect("country_us requirement not found");
     assert!(us_req.condition.is_some());
     let condition = us_req.condition.as_ref().unwrap();
     assert_eq!(condition.equals_string.as_deref(), Some("USA"));
-    
+
     assert!(us_req.then_required.is_some());
     let then_required = us_req.then_required.as_ref().unwrap();
     assert_eq!(then_required.len(), 2);

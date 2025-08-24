@@ -7,10 +7,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::expression::ExpressionEngine;
-use crate::validator::{
-    context::ValidationContext,
-    report::ValidationIssue,
-};
+use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 use super::Validator;
 
@@ -36,10 +33,10 @@ impl Validator for ExpressionValidator {
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
-        
+
         // Build expression context from current data
         let expr_context = build_expression_context(value, context);
-        
+
         // Validate equals_expression if present
         if let Some(equals_expr) = &slot.equals_expression {
             match self.engine.evaluate(equals_expr, &expr_context) {
@@ -70,12 +67,12 @@ impl Validator for ExpressionValidator {
                         )
                         .with_code("EXPRESSION_EVALUATION_ERROR")
                         .with_context("expression", equals_expr.as_str().into())
-                        .with_context("error", e.to_string().into())
+                        .with_context("error", e.to_string().into()),
                     );
                 }
             }
         }
-        
+
         // Validate rules if present
         if let Some(rules) = &slot.rules {
             for (i, rule) in rules.iter().enumerate() {
@@ -91,19 +88,23 @@ impl Validator for ExpressionValidator {
                                 )
                                 .with_code("RULE_VIOLATION")
                                 .with_context("rule_index", (i + 1).into())
-                                .with_context("rule", rule.as_str().into())
+                                .with_context("rule", rule.as_str().into()),
                             );
                         } else if !result.is_boolean() {
                             issues.push(
                                 ValidationIssue::error(
-                                    &format!("Rule {} did not evaluate to boolean: {}", i + 1, rule),
+                                    &format!(
+                                        "Rule {} did not evaluate to boolean: {}",
+                                        i + 1,
+                                        rule
+                                    ),
                                     context.path(),
                                     self.name(),
                                 )
                                 .with_code("RULE_TYPE_ERROR")
                                 .with_context("rule_index", (i + 1).into())
                                 .with_context("rule", rule.as_str().into())
-                                .with_context("result_type", result.type_name().into())
+                                .with_context("result_type", result.type_name().into()),
                             );
                         }
                     }
@@ -117,16 +118,16 @@ impl Validator for ExpressionValidator {
                             .with_code("RULE_EVALUATION_ERROR")
                             .with_context("rule_index", (i + 1).into())
                             .with_context("rule", rule.as_str().into())
-                            .with_context("error", e.to_string().into())
+                            .with_context("error", e.to_string().into()),
                         );
                     }
                 }
             }
         }
-        
+
         issues
     }
-    
+
     fn name(&self) -> &str {
         "ExpressionValidator"
     }
@@ -135,26 +136,26 @@ impl Validator for ExpressionValidator {
 /// Build expression context from current validation state
 fn build_expression_context(value: &Value, context: &ValidationContext) -> HashMap<String, Value> {
     let mut expr_context = HashMap::new();
-    
+
     // Add current value
     expr_context.insert("value".to_string(), value.clone());
-    
+
     // Add parent object if available
     if let Some(parent) = context.parent() {
         expr_context.insert("parent".to_string(), parent.clone());
     }
-    
+
     // Add root object
     if let Some(root) = context.root() {
         expr_context.insert("root".to_string(), root.clone());
     }
-    
+
     // Add path information
     expr_context.insert("path".to_string(), context.path().into());
-    
+
     // Add any other context variables that might be useful
     // This could be extended to include schema metadata, etc.
-    
+
     expr_context
 }
 
@@ -182,13 +183,13 @@ mod tests {
     use crate::validator::report::Severity;
     use serde_json::json;
     use std::sync::Arc;
-    
+
     #[test]
     fn test_equals_expression_validation() {
         let validator = ExpressionValidator::new();
         let schema = Default::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Set up parent context
         context.push_path("person");
         context.set_parent(json!({
@@ -196,31 +197,34 @@ mod tests {
             "last_name": "Doe"
         }));
         context.push_path("full_name");
-        
+
         // Slot with equals_expression
         let slot = SlotDefinition {
             name: "full_name".to_string(),
             equals_expression: Some("{parent.first_name} + \" \" + {parent.last_name}".to_string()),
             ..Default::default()
         };
-        
+
         // Test correct value
         let issues = validator.validate(&json!("John Doe"), &slot, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test incorrect value
         let issues = validator.validate(&json!("Jane Doe"), &slot, &mut context);
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].severity, Severity::Error);
-        assert_eq!(issues[0].code, Some("EQUALS_EXPRESSION_MISMATCH".to_string()));
+        assert_eq!(
+            issues[0].code,
+            Some("EQUALS_EXPRESSION_MISMATCH".to_string())
+        );
     }
-    
+
     #[test]
     fn test_rules_validation() {
         let validator = ExpressionValidator::new();
         let schema = Default::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Slot with validation rules
         let slot = SlotDefinition {
             name: "age".to_string(),
@@ -230,28 +234,28 @@ mod tests {
             ]),
             ..Default::default()
         };
-        
+
         // Test valid value
         let issues = validator.validate(&json!(25), &slot, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test invalid value (negative)
         let issues = validator.validate(&json!(-5), &slot, &mut context);
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
-        
+
         // Test invalid value (too large)
         let issues = validator.validate(&json!(200), &slot, &mut context);
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
     }
-    
+
     #[test]
     fn test_complex_rule_expressions() {
         let validator = ExpressionValidator::new();
         let schema = Default::default();
         let mut context = ValidationContext::new(Arc::new(schema));
-        
+
         // Set up parent context with password policy
         context.set_parent(json!({
             "password_policy": {
@@ -259,7 +263,7 @@ mod tests {
                 "require_special": true
             }
         }));
-        
+
         let slot = SlotDefinition {
             name: "password".to_string(),
             rules: Some(vec![
@@ -268,15 +272,15 @@ mod tests {
             ]),
             ..Default::default()
         };
-        
+
         // Test valid password
         let issues = validator.validate(&json!("secure@123"), &slot, &mut context);
         assert!(issues.is_empty());
-        
+
         // Test too short password
         let issues = validator.validate(&json!("pass@"), &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        
+
         // Test missing special character
         let issues = validator.validate(&json!("securepwd123"), &slot, &mut context);
         assert_eq!(issues.len(), 1);

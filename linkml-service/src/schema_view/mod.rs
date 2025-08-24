@@ -5,10 +5,14 @@
 //! imports, and slot usage patterns.
 
 pub mod analysis;
+pub mod class_view;
 pub mod navigation;
+pub mod slot_view;
 pub mod view;
 
-pub use view::{SchemaView, SchemaViewError, ElementType};
+pub use class_view::{ClassView, ClassViewBuilder};
+pub use slot_view::{SlotView, SlotViewBuilder};
+pub use view::{ElementType, SchemaView, SchemaViewError};
 
 // Re-export commonly used types
 pub use analysis::{SchemaStatistics, UsageInfo};

@@ -1,8 +1,8 @@
 //! Parser tests for LinkML service
 
 use linkml_service::parser::Parser;
-use tempfile::TempDir;
 use std::fs;
+use tempfile::TempDir;
 
 #[test]
 fn test_parse_simple_yaml_schema() {
@@ -35,23 +35,23 @@ slots:
     let temp_dir = TempDir::new().unwrap();
     let schema_path = temp_dir.path().join("test_schema.yaml");
     fs::write(&schema_path, yaml_content).unwrap();
-    
+
     // Test parsing
     let parser = Parser::new();
     let schema = parser.parse_file(&schema_path).unwrap();
-    
+
     assert_eq!(schema.name, "test_schema");
     assert_eq!(schema.id, "https://example.org/test");
     assert!(schema.classes.contains_key("Person"));
     assert_eq!(schema.slots.len(), 2);
     assert!(schema.slots.contains_key("name"));
     assert!(schema.slots.contains_key("age"));
-    
+
     // Check slot details
     let name_slot = &schema.slots["name"];
     assert_eq!(name_slot.range.as_ref().unwrap(), "string");
     assert_eq!(name_slot.required, Some(true));
-    
+
     let age_slot = &schema.slots["age"];
     assert_eq!(age_slot.range.as_ref().unwrap(), "integer");
 }
@@ -88,11 +88,11 @@ fn test_parse_json_schema() {
     let temp_dir = TempDir::new().unwrap();
     let schema_path = temp_dir.path().join("test_schema.json");
     fs::write(&schema_path, json_content).unwrap();
-    
+
     // Test parsing
     let parser = Parser::new();
     let schema = parser.parse_file(&schema_path).unwrap();
-    
+
     assert_eq!(schema.name, "test_schema");
     assert_eq!(schema.id, "https://example.org/test");
     assert!(schema.classes.contains_key("Person"));
@@ -138,16 +138,16 @@ slots:
     let temp_dir = TempDir::new().unwrap();
     let schema_path = temp_dir.path().join("test_schema.yaml");
     fs::write(&schema_path, yaml_content).unwrap();
-    
+
     let parser = Parser::new();
     let schema = parser.parse_file(&schema_path).unwrap();
-    
+
     // Check types
     assert!(schema.types.contains_key("EmailAddress"));
     let email_type = &schema.types["EmailAddress"];
     assert_eq!(email_type.base_type.as_ref().unwrap(), "string");
     assert!(email_type.pattern.is_some());
-    
+
     // Check enums
     assert!(schema.enums.contains_key("StatusEnum"));
     let status_enum = &schema.enums["StatusEnum"];
@@ -157,14 +157,14 @@ slots:
 #[test]
 fn test_parse_invalid_yaml() {
     let yaml_content = "invalid: yaml: content: bad";
-    
+
     let temp_dir = TempDir::new().unwrap();
     let schema_path = temp_dir.path().join("invalid.yaml");
     fs::write(&schema_path, yaml_content).unwrap();
-    
+
     let parser = Parser::new();
     let result = parser.parse_file(&schema_path);
-    
+
     assert!(result.is_err());
 }
 
@@ -174,10 +174,10 @@ fn test_parse_string_directly() {
 id: https://example.org/test
 name: direct_parse_test
 "#;
-    
+
     let parser = Parser::new();
     let schema = parser.parse_str(yaml, "yaml").unwrap();
-    
+
     assert_eq!(schema.name, "direct_parse_test");
     assert_eq!(schema.id, "https://example.org/test");
 }

@@ -1,16 +1,9 @@
 //! JavaScript (ES6) code generator for LinkML schemas
 
-use super::base::{
-    collect_all_slots, is_optional_slot, BaseCodeFormatter, TypeMapper,
-};
-use super::traits::{
-    CodeFormatter, Generator, GeneratorError, GeneratorResult,
-};
+use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
 use super::options::{GeneratorOptions, IndentStyle};
-use linkml_core::{
-    error::LinkMLError,
-    prelude::*,
-};
+use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
+use linkml_core::{error::LinkMLError, prelude::*};
 use std::fmt::Write;
 
 /// JavaScript generator
@@ -30,7 +23,7 @@ impl JavaScriptGenerator {
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
-    
+
     /// Create a new JavaScript generator
     pub fn new() -> Self {
         Self {
@@ -54,9 +47,11 @@ impl JavaScriptGenerator {
             writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 70, " * ");
-                writeln!(&mut output, " * {}", wrapped).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, " * {}", wrapped)
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
-            writeln!(&mut output, " * @generated from LinkML schema").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " * @generated from LinkML schema")
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -67,15 +62,24 @@ impl JavaScriptGenerator {
             String::new()
         };
 
-        writeln!(&mut output, "export class {}{} {{", class_name, extends_clause).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut output,
+            "export class {}{} {{",
+            class_name, extends_clause
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate constructor JSDoc
         writeln!(&mut output, "  /**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @param {{Object}} data - Initialization data").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut output,
+            "   * @param {{Object}} data - Initialization data"
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
 
         // Collect all slots including inherited
         let all_slots = collect_all_slots(class, schema)?;
-        
+
         // Get direct slots only for constructor params
         let direct_slots: Vec<String> = if let Some(ref parent) = class.is_a {
             let parent_slots = if let Some(parent_class) = schema.classes.get(parent) {
@@ -83,7 +87,8 @@ impl JavaScriptGenerator {
             } else {
                 vec![]
             };
-            all_slots.into_iter()
+            all_slots
+                .into_iter()
                 .filter(|slot| !parent_slots.contains(slot))
                 .collect()
         } else {
@@ -96,17 +101,29 @@ impl JavaScriptGenerator {
                 let type_str = self.get_jsdoc_type(slot, schema)?;
                 let optional = if is_optional_slot(slot) { "[" } else { "" };
                 let optional_close = if is_optional_slot(slot) { "]" } else { "" };
-                
-                write!(&mut output, "   * @param {{{}{}{}}} ", optional, type_str, optional_close).map_err(Self::fmt_error_to_generator_error)?;
+
+                write!(
+                    &mut output,
+                    "   * @param {{{}{}{}}} ",
+                    optional, type_str, optional_close
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
                 if is_optional_slot(slot) {
-                    write!(&mut output, "[data.{}] - ", slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(&mut output, "[data.{}] - ", slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(&mut output, "data.{} - ", slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(&mut output, "data.{} - ", slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if let Some(ref desc) = slot.description {
                     write!(&mut output, "{}", desc).map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(&mut output, "{} value", BaseCodeFormatter::to_pascal_case(&slot_name)).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(
+                        &mut output,
+                        "{} value",
+                        BaseCodeFormatter::to_pascal_case(&slot_name)
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -114,25 +131,39 @@ impl JavaScriptGenerator {
         writeln!(&mut output, "   */").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate constructor
-        writeln!(&mut output, "  constructor(data = {{}}) {{").map_err(Self::fmt_error_to_generator_error)?;
-        
+        writeln!(&mut output, "  constructor(data = {{}}) {{")
+            .map_err(Self::fmt_error_to_generator_error)?;
+
         // Call super if has parent
         if class.is_a.is_some() {
-            writeln!(&mut output, "    super(data);").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    super(data);")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Validate data
-        writeln!(&mut output, "    this.#validate(data);").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    this.#validate(data);")
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Initialize fields
         for slot_name in &direct_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.multivalued.unwrap_or(false) {
-                    writeln!(&mut output, "    this.{} = data.{} || [];", slot_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        &mut output,
+                        "    this.{} = data.{} || [];",
+                        slot_name, slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 } else if is_optional_slot(slot) {
-                    writeln!(&mut output, "    this.{} = data.{} || null;", slot_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        &mut output,
+                        "    this.{} = data.{} || null;",
+                        slot_name, slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(&mut output, "    this.{} = data.{};", slot_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    this.{} = data.{};", slot_name, slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -145,36 +176,51 @@ impl JavaScriptGenerator {
 
         // Generate static fromJSON method
         writeln!(&mut output, "  /**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * Create from JSON").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @param {{string}} json - JSON string").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @returns {{{}}}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * Create from JSON")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * @param {{string}} json - JSON string")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * @returns {{{}}}", class_name)
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "   */").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "  static fromJSON(json) {{").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "    return new {}(JSON.parse(json));", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "  static fromJSON(json) {{")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut output,
+            "    return new {}(JSON.parse(json));",
+            class_name
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate toObject method
         writeln!(&mut output, "  /**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * Convert to plain object").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @returns {{Object}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * Convert to plain object")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * @returns {{Object}}")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "   */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  toObject() {{").map_err(Self::fmt_error_to_generator_error)?;
-        
+
         if class.is_a.is_some() {
-            writeln!(&mut output, "    const parentData = super.toObject();").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "    const parentData = super.toObject();")
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "    return {{").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "      ...parentData,").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "      ...parentData,")
+                .map_err(Self::fmt_error_to_generator_error)?;
         } else {
             writeln!(&mut output, "    return {{").map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         for (i, slot_name) in direct_slots.iter().enumerate() {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.multivalued.unwrap_or(false) {
-                    write!(&mut output, "      {}: [...this.{}]", slot_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(&mut output, "      {}: [...this.{}]", slot_name, slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(&mut output, "      {}: this.{}", slot_name, slot_name).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(&mut output, "      {}: this.{}", slot_name, slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if i < direct_slots.len() - 1 {
                     writeln!(&mut output, ",").map_err(Self::fmt_error_to_generator_error)?;
@@ -183,18 +229,21 @@ impl JavaScriptGenerator {
                 }
             }
         }
-        
+
         writeln!(&mut output, "    }};").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate toJSON method
         writeln!(&mut output, "  /**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * Convert to JSON string").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @returns {{string}}").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * Convert to JSON string")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "   * @returns {{string}}")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "   */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  toJSON() {{").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "    return JSON.stringify(this.toObject());").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "    return JSON.stringify(this.toObject());")
+            .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
 
         writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -210,34 +259,46 @@ impl JavaScriptGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         writeln!(output, "  #validate(data) {{").map_err(Self::fmt_error_to_generator_error)?;
-        
+
         let mut has_validations = false;
 
         for slot_name in slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 // Required field validation
                 if slot.required.unwrap_or(false) {
-                    writeln!(output, "    if (!data.{} || typeof data.{} !== '{}') {{", 
-                        slot_name, 
+                    writeln!(
+                        output,
+                        "    if (!data.{} || typeof data.{} !== '{}') {{",
+                        slot_name,
                         slot_name,
                         self.get_js_type_check(&slot.range)
-                    ).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "      throw new TypeError('{} must be a non-empty {}');", 
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "      throw new TypeError('{} must be a non-empty {}');",
                         slot_name,
                         self.get_js_type_name(&slot.range)
-                    ).map_err(Self::fmt_error_to_generator_error)?;
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
                     has_validations = true;
                 }
 
                 // Pattern validation
                 if let Some(ref pattern) = slot.pattern {
-                    writeln!(output, "    if (data.{} && !/{}/u.test(data.{})) {{", 
+                    writeln!(
+                        output,
+                        "    if (data.{} && !/{}/u.test(data.{})) {{",
                         slot_name, pattern, slot_name
-                    ).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "      throw new TypeError('{} does not match pattern: {}');", 
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "      throw new TypeError('{} does not match pattern: {}');",
                         slot_name, pattern
-                    ).map_err(Self::fmt_error_to_generator_error)?;
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
                     has_validations = true;
                 }
@@ -245,22 +306,34 @@ impl JavaScriptGenerator {
                 // Range validation
                 if slot.minimum_value.is_some() || slot.maximum_value.is_some() {
                     if let Some(ref min) = slot.minimum_value {
-                        writeln!(output, "    if (typeof data.{} === 'number' && data.{} < {}) {{", 
+                        writeln!(
+                            output,
+                            "    if (typeof data.{} === 'number' && data.{} < {}) {{",
                             slot_name, slot_name, min
-                        ).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "      throw new RangeError('{} must be >= {}');", 
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "      throw new RangeError('{} must be >= {}');",
                             slot_name, min
-                        ).map_err(Self::fmt_error_to_generator_error)?;
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
                         has_validations = true;
                     }
                     if let Some(ref max) = slot.maximum_value {
-                        writeln!(output, "    if (typeof data.{} === 'number' && data.{} > {}) {{", 
+                        writeln!(
+                            output,
+                            "    if (typeof data.{} === 'number' && data.{} > {}) {{",
                             slot_name, slot_name, max
-                        ).map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(output, "      throw new RangeError('{} must be <= {}');", 
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(
+                            output,
+                            "      throw new RangeError('{} must be <= {}');",
                             slot_name, max
-                        ).map_err(Self::fmt_error_to_generator_error)?;
+                        )
+                        .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
                         has_validations = true;
                     }
@@ -268,12 +341,18 @@ impl JavaScriptGenerator {
 
                 // Array validation
                 if slot.multivalued.unwrap_or(false) {
-                    writeln!(output, "    if (data.{} && !Array.isArray(data.{})) {{", 
+                    writeln!(
+                        output,
+                        "    if (data.{} && !Array.isArray(data.{})) {{",
                         slot_name, slot_name
-                    ).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "      throw new TypeError('{} must be an array');", 
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "      throw new TypeError('{} must be an array');",
                         slot_name
-                    ).map_err(Self::fmt_error_to_generator_error)?;
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
                     has_validations = true;
                 }
@@ -281,7 +360,8 @@ impl JavaScriptGenerator {
         }
 
         if !has_validations {
-            writeln!(output, "    // No validation required").map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "    // No validation required")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -350,7 +430,7 @@ impl JavaScriptGenerator {
         slot: &SlotDefinition,
     ) -> GeneratorResult<()> {
         let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
-        
+
         writeln!(output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = slot.description {
             writeln!(output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
@@ -358,17 +438,20 @@ impl JavaScriptGenerator {
         writeln!(output, " * @readonly").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, " * @enum {{string}}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, " */").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "export const {} = Object.freeze({{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "export const {} = Object.freeze({{", enum_name)
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         for value in &slot.permissible_values {
             match value {
                 PermissibleValue::Simple(text) => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "  {}: \"{}\",", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  {}: \"{}\",", const_name, text)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "  {}: \"{}\",", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  {}: \"{}\",", const_name, text)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -391,17 +474,19 @@ impl Generator for JavaScriptGenerator {
         vec!["js", "mjs"]
     }
 
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         self.validate_schema(schema)?;
 
         let mut content = String::new();
 
         // File header
         writeln!(&mut content, "/**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut content, " * Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut content,
+            " * Generated from LinkML schema: {}",
+            schema.name
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
             writeln!(&mut content, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -422,48 +507,63 @@ impl Generator for JavaScriptGenerator {
 
         // Generate classes
         for (class_name, class_def) in &schema.classes {
-            let class_code = self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
+            let class_code =
+                self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
             content.push_str(&class_code);
             writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate CommonJS exports (default to ESM)
-        if false {  // Default to ESM module type
-            writeln!(&mut content, "// CommonJS exports").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut content, "if (typeof module !== 'undefined' && module.exports) {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+        if false {
+            // Default to ESM module type
+            writeln!(&mut content, "// CommonJS exports")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(
+                &mut content,
+                "if (typeof module !== 'undefined' && module.exports) {{"
+            )
+            .map_err(Self::fmt_error_to_generator_error)?;
+
             // Export enums
             for (slot_name, slot) in &schema.slots {
                 if !slot.permissible_values.is_empty() {
                     let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
-                    writeln!(&mut content, "  module.exports.{} = {};", enum_name, enum_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        &mut content,
+                        "  module.exports.{} = {};",
+                        enum_name, enum_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-            
+
             // Export classes
             for class_name in schema.classes.keys() {
-                writeln!(&mut content, "  module.exports.{} = {};", class_name, class_name).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(
+                    &mut content,
+                    "  module.exports.{} = {};",
+                    class_name, class_name
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
             }
-            
+
             writeln!(&mut content, "}}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         Ok(content)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "js"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "schema"
     }
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(LinkMLError::service(
-                "Schema must have a name".to_string(),
-            ));
+            return Err(LinkMLError::service("Schema must have a name".to_string()));
         }
 
         if schema.classes.is_empty() {
@@ -480,7 +580,7 @@ impl CodeFormatter for JavaScriptGenerator {
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();
-        
+
         let mut result = format!("{}/**", indent_str);
         for line in lines {
             result.push('\n');
@@ -547,8 +647,10 @@ mod tests {
         schema.slots.insert("age".to_string(), age_slot);
 
         let generator = JavaScriptGenerator::new();
-        
-        let output = generator.generate(&schema).expect("should generate JavaScript");
+
+        let output = generator
+            .generate(&schema)
+            .expect("should generate JavaScript");
         assert!(output.contains("export class Person"));
         assert!(output.contains("constructor(data = {})"));
         assert!(output.contains("#validate(data)"));

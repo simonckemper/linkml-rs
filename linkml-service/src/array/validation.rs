@@ -12,16 +12,16 @@ use std::collections::HashSet;
 pub struct ArrayValidationContext<'a> {
     /// The slot definition being validated
     pub slot: &'a SlotDefinition,
-    
+
     /// Type definitions for type checking
     pub types: &'a std::collections::HashMap<String, TypeDefinition>,
-    
+
     /// Whether to allow missing values
     pub allow_missing: bool,
-    
+
     /// Whether to check uniqueness
     pub check_unique: bool,
-    
+
     /// Custom validators
     pub custom_validators: Vec<Box<dyn Fn(&Value) -> Result<(), String> + 'a>>,
 }
@@ -31,10 +31,10 @@ pub struct ArrayValidationContext<'a> {
 pub struct ArrayValidationResult {
     /// Whether validation passed
     pub valid: bool,
-    
+
     /// Validation errors
     pub errors: Vec<ArrayValidationError>,
-    
+
     /// Validation warnings
     pub warnings: Vec<String>,
 }
@@ -44,10 +44,10 @@ pub struct ArrayValidationResult {
 pub struct ArrayValidationError {
     /// Error location (indices)
     pub location: Option<Vec<usize>>,
-    
+
     /// Error message
     pub message: String,
-    
+
     /// Error type
     pub error_type: ArrayValidationErrorType,
 }
@@ -82,7 +82,7 @@ impl ArrayValidatorV2 {
     ) -> ArrayValidationResult {
         let mut errors = Vec::new();
         let mut warnings = Vec::new();
-        
+
         // Basic shape validation
         if let Err(e) = data.spec.validate_shape(&data.shape) {
             errors.push(ArrayValidationError {
@@ -91,20 +91,22 @@ impl ArrayValidatorV2 {
                 error_type: ArrayValidationErrorType::ShapeError,
             });
         }
-        
+
         // Validate each element
         for (i, value) in data.data.iter().enumerate() {
             let indices = data.spec.flat_to_indices(i, &data.shape);
-            
+
             // Type validation
-            if let Err(e) = Self::validate_element_type(value, &data.spec.element_type, context.types) {
+            if let Err(e) =
+                Self::validate_element_type(value, &data.spec.element_type, context.types)
+            {
                 errors.push(ArrayValidationError {
                     location: Some(indices.clone()),
                     message: e,
                     error_type: ArrayValidationErrorType::TypeError,
                 });
             }
-            
+
             // Missing value check
             if !context.allow_missing && value.is_null() {
                 errors.push(ArrayValidationError {
@@ -113,7 +115,7 @@ impl ArrayValidatorV2 {
                     error_type: ArrayValidationErrorType::MissingError,
                 });
             }
-            
+
             // Range validation
             if let Some(min_value) = context.slot.minimum_value.as_ref() {
                 let min_str = match min_value {
@@ -131,7 +133,7 @@ impl ArrayValidatorV2 {
                     }
                 }
             }
-            
+
             if let Some(max_value) = context.slot.maximum_value.as_ref() {
                 let max_str = match max_value {
                     Value::String(s) => s.as_str(),
@@ -148,7 +150,7 @@ impl ArrayValidatorV2 {
                     }
                 }
             }
-            
+
             // Pattern validation
             if let Some(pattern) = &context.slot.pattern {
                 if let Value::String(s) = value {
@@ -161,7 +163,7 @@ impl ArrayValidatorV2 {
                     }
                 }
             }
-            
+
             // Custom validators
             for validator in &context.custom_validators {
                 if let Err(e) = validator(value) {
@@ -173,7 +175,7 @@ impl ArrayValidatorV2 {
                 }
             }
         }
-        
+
         // Uniqueness check
         if context.check_unique {
             if let Some(duplicate_indices) = Self::find_duplicates(data) {
@@ -186,7 +188,7 @@ impl ArrayValidatorV2 {
                 }
             }
         }
-        
+
         // Dimension-specific validation
         for (i, dim) in data.spec.dimensions.iter().enumerate() {
             if let Some(actual_size) = data.shape.get(i) {
@@ -195,14 +197,14 @@ impl ArrayValidatorV2 {
                 }
             }
         }
-        
+
         ArrayValidationResult {
             valid: errors.is_empty(),
             errors,
             warnings,
         }
     }
-    
+
     /// Validate element type
     fn validate_element_type(
         value: &Value,
@@ -213,7 +215,7 @@ impl ArrayValidatorV2 {
         if value.is_null() {
             return Ok(()); // Null handling is done separately
         }
-        
+
         // Check against built-in types
         let valid = match expected_type {
             "string" => value.is_string(),
@@ -231,7 +233,7 @@ impl ArrayValidatorV2 {
                 true // Unknown types pass by default
             }
         };
-        
+
         if valid {
             Ok(())
         } else {
@@ -249,7 +251,7 @@ impl ArrayValidatorV2 {
             ))
         }
     }
-    
+
     /// Validate minimum value
     fn validate_minimum(value: &Value, minimum: &str) -> Result<(), String> {
         if let Value::Number(n) = value {
@@ -262,7 +264,7 @@ impl ArrayValidatorV2 {
         }
         Ok(())
     }
-    
+
     /// Validate maximum value
     fn validate_maximum(value: &Value, maximum: &str) -> Result<(), String> {
         if let Value::Number(n) = value {
@@ -275,35 +277,38 @@ impl ArrayValidatorV2 {
         }
         Ok(())
     }
-    
+
     /// Validate against pattern
     fn validate_pattern(value: &str, pattern: &str) -> Result<(), String> {
         // Simple pattern matching - in production, use regex
         if pattern.starts_with('^') && pattern.ends_with('$') {
             // Full match pattern
-            let pattern_content = &pattern[1..pattern.len()-1];
+            let pattern_content = &pattern[1..pattern.len() - 1];
             if !value.contains(pattern_content) {
-                return Err(format!("Value '{}' doesn't match pattern '{}'", value, pattern));
+                return Err(format!(
+                    "Value '{}' doesn't match pattern '{}'",
+                    value, pattern
+                ));
             }
         }
         Ok(())
     }
-    
+
     /// Find duplicate values and their indices
     fn find_duplicates(data: &ArrayData) -> Option<Vec<Vec<usize>>> {
         let mut seen = HashSet::new();
         let mut duplicates = Vec::new();
-        
+
         for (i, value) in data.data.iter().enumerate() {
             // Convert to comparable string representation
             let key = serde_json::to_string(value).unwrap_or_default();
-            
+
             if !seen.insert(key) {
                 let indices = data.spec.flat_to_indices(i, &data.shape);
                 duplicates.push(indices);
             }
         }
-        
+
         if duplicates.is_empty() {
             None
         } else {
@@ -317,12 +322,9 @@ pub struct DimensionValidator;
 
 impl DimensionValidator {
     /// Validate array dimensions against constraints
-    pub fn validate_dimensions(
-        dimensions: &[ArrayDimension],
-        shape: &[usize],
-    ) -> Vec<String> {
+    pub fn validate_dimensions(dimensions: &[ArrayDimension], shape: &[usize]) -> Vec<String> {
         let mut errors = Vec::new();
-        
+
         if dimensions.len() != shape.len() {
             errors.push(format!(
                 "Dimension count mismatch: expected {}, got {}",
@@ -331,7 +333,7 @@ impl DimensionValidator {
             ));
             return errors;
         }
-        
+
         for (i, (dim, &size)) in dimensions.iter().zip(shape.iter()).enumerate() {
             // Check fixed size
             if let Some(expected) = dim.size {
@@ -342,7 +344,7 @@ impl DimensionValidator {
                     ));
                 }
             }
-            
+
             // Check minimum
             if let Some(min) = dim.min_size {
                 if size < min {
@@ -352,7 +354,7 @@ impl DimensionValidator {
                     ));
                 }
             }
-            
+
             // Check maximum
             if let Some(max) = dim.max_size {
                 if size > max {
@@ -363,7 +365,7 @@ impl DimensionValidator {
                 }
             }
         }
-        
+
         errors
     }
 }
@@ -388,31 +390,31 @@ impl<'a> ArrayValidationContextBuilder<'a> {
             custom_validators: Vec::new(),
         }
     }
-    
+
     /// Set the slot definition
     pub fn slot(mut self, slot: &'a SlotDefinition) -> Self {
         self.slot = Some(slot);
         self
     }
-    
+
     /// Set type definitions
     pub fn types(mut self, types: &'a std::collections::HashMap<String, TypeDefinition>) -> Self {
         self.types = Some(types);
         self
     }
-    
+
     /// Allow missing values
     pub fn allow_missing(mut self, allow: bool) -> Self {
         self.allow_missing = allow;
         self
     }
-    
+
     /// Enable uniqueness checking
     pub fn check_unique(mut self, check: bool) -> Self {
         self.check_unique = check;
         self
     }
-    
+
     /// Add a custom validator
     pub fn add_validator<F>(mut self, validator: F) -> Self
     where
@@ -421,12 +423,12 @@ impl<'a> ArrayValidationContextBuilder<'a> {
         self.custom_validators.push(Box::new(validator));
         self
     }
-    
+
     /// Build the validation context
     pub fn build(self) -> Result<ArrayValidationContext<'a>, &'static str> {
         let slot = self.slot.ok_or("Slot definition is required")?;
         let types = self.types.ok_or("Type definitions are required")?;
-        
+
         Ok(ArrayValidationContext {
             slot,
             types,
@@ -442,7 +444,7 @@ mod tests {
     use super::*;
     use crate::array::ArraySpec;
     use serde_json::json;
-    
+
     fn create_test_slot() -> SlotDefinition {
         SlotDefinition {
             name: "test_array".to_string(),
@@ -452,99 +454,103 @@ mod tests {
             ..Default::default()
         }
     }
-    
+
     fn create_test_types() -> std::collections::HashMap<String, TypeDefinition> {
         let mut types = std::collections::HashMap::new();
-        types.insert("float".to_string(), TypeDefinition {
-            name: "float".to_string(),
-            base_type: Some("float".to_string()),
-            ..Default::default()
-        });
+        types.insert(
+            "float".to_string(),
+            TypeDefinition {
+                name: "float".to_string(),
+                base_type: Some("float".to_string()),
+                ..Default::default()
+            },
+        );
         types
     }
-    
+
     #[test]
     fn test_basic_validation() {
-        let spec = ArraySpec::new("float")
-            .with_dimension(ArrayDimension::fixed("x", 3));
-        
+        let spec = ArraySpec::new("float").with_dimension(ArrayDimension::fixed("x", 3));
+
         let data = vec![json!(1.0), json!(2.0), json!(3.0)];
         let array = ArrayData::new(spec, vec![3], data)
             .expect("test data should create valid array - basic validation");
-        
+
         let slot = create_test_slot();
         let types = create_test_types();
-        
+
         let context = ArrayValidationContextBuilder::new()
             .slot(&slot)
             .types(&types)
             .build()
             .expect("validation context should build with valid inputs - basic");
-        
+
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(result.valid);
         assert!(result.errors.is_empty());
     }
-    
+
     #[test]
     fn test_range_validation() {
-        let spec = ArraySpec::new("float")
-            .with_dimension(ArrayDimension::fixed("x", 3));
-        
+        let spec = ArraySpec::new("float").with_dimension(ArrayDimension::fixed("x", 3));
+
         let data = vec![json!(50.0), json!(150.0), json!(-10.0)];
         let array = ArrayData::new(spec, vec![3], data)
             .expect("test data should create valid array - range validation");
-        
+
         let slot = create_test_slot();
         let types = create_test_types();
-        
+
         let context = ArrayValidationContextBuilder::new()
             .slot(&slot)
             .types(&types)
             .build()
             .expect("validation context should build with valid inputs - range");
-        
+
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
         assert_eq!(result.errors.len(), 2); // One too high, one too low
     }
-    
+
     #[test]
     fn test_uniqueness_validation() {
-        let spec = ArraySpec::new("integer")
-            .with_dimension(ArrayDimension::fixed("x", 4));
-        
+        let spec = ArraySpec::new("integer").with_dimension(ArrayDimension::fixed("x", 4));
+
         let data = vec![json!(1), json!(2), json!(2), json!(3)];
         let array = ArrayData::new(spec, vec![4], data)
             .expect("test data should create valid array - uniqueness");
-        
+
         let slot = create_test_slot();
         let types = create_test_types();
-        
+
         let context = ArrayValidationContextBuilder::new()
             .slot(&slot)
             .types(&types)
             .check_unique(true)
             .build()
             .expect("validation context should build with valid inputs - unique");
-        
+
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
-        assert!(result.errors.iter().any(|e| e.error_type == ArrayValidationErrorType::UniquenessError));
+        assert!(
+            result
+                .errors
+                .iter()
+                .any(|e| e.error_type == ArrayValidationErrorType::UniquenessError)
+        );
     }
-    
+
     #[test]
     fn test_custom_validator() {
-        let spec = ArraySpec::new("integer")
-            .with_dimension(ArrayDimension::fixed("x", 3));
-        
+        let spec = ArraySpec::new("integer").with_dimension(ArrayDimension::fixed("x", 3));
+
         let data = vec![json!(2), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![3], data)
             .expect("test data should create valid array - custom validator");
-        
+
         let slot = create_test_slot();
         let types = create_test_types();
-        
+
         // Custom validator that only allows even numbers
         let context = ArrayValidationContextBuilder::new()
             .slot(&slot)
@@ -562,7 +568,7 @@ mod tests {
             })
             .build()
             .expect("validation context should build with valid inputs - custom");
-        
+
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
         assert_eq!(result.errors.len(), 1); // Only 5 is odd

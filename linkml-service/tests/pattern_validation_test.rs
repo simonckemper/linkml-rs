@@ -1,7 +1,7 @@
 //! Tests for enhanced pattern validation with named capture groups
 
-use linkml_service::validator::{validate_as_class, ValidationEngine};
 use linkml_service::parser::Parser;
+use linkml_service::validator::{ValidationEngine, validate_as_class};
 use serde_json::json;
 
 #[tokio::test]
@@ -43,27 +43,42 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Valid data with different date formats
     let valid_data = json!({
         "iso_date": "2025-01-31",
         "us_date": "01/31/2025",
         "custom_date": "Fri, 31 Jan 2025"
     });
-    
+
     let engine = ValidationEngine::new(&schema).unwrap();
-    let report = engine.validate_as_class(&valid_data, "DateRecord", None).await.unwrap();
+    let report = engine
+        .validate_as_class(&valid_data, "DateRecord", None)
+        .await
+        .unwrap();
+
+    // Debug validation errors
+    if !report.valid {
+        println!("Validation failed for valid data:");
+        for issue in &report.issues {
+            println!("  - {}: {}", issue.path, issue.message);
+        }
+    }
+
     assert!(report.valid);
     assert_eq!(report.stats.error_count, 0);
-    
+
     // Invalid patterns
     let invalid_data = json!({
         "iso_date": "2025-1-31",     // Missing leading zeros
         "us_date": "1/31/2025",      // Missing leading zero
         "custom_date": "Friday, 31 January 2025"  // Full names instead of abbreviations
     });
-    
-    let report = engine.validate_as_class(&invalid_data, "DateRecord", None).await.unwrap();
+
+    let report = engine
+        .validate_as_class(&invalid_data, "DateRecord", None)
+        .await
+        .unwrap();
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 3); // All three fields invalid
 }
@@ -95,23 +110,27 @@ slots:
 
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Valid semantic version strings
     let valid_data = json!({
         "email": "john.doe@example.com",
         "version_string": "v1.2.3-beta.1+build.123"
     });
-    
-    let report = validate_as_class(&schema, &valid_data, "EmailRecord", None).await.unwrap();
+
+    let report = validate_as_class(&schema, &valid_data, "EmailRecord", None)
+        .await
+        .unwrap();
     assert!(report.valid);
-    
+
     // Test simpler version
     let simple_version = json!({
         "email": "admin@test.org",
         "version_string": "v2.0.0"
     });
-    
-    let report = validate_as_class(&schema, &simple_version, "EmailRecord", None).await.unwrap();
+
+    let report = validate_as_class(&schema, &simple_version, "EmailRecord", None)
+        .await
+        .unwrap();
     assert!(report.valid);
 }
 
@@ -137,7 +156,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Valid phone numbers in different formats
     let valid_data = json!({
         "phone_numbers": [
@@ -147,8 +166,10 @@ slots:
             "5551234567"
         ]
     });
-    
-    let report = validate_as_class(&schema, &valid_data, "PhoneDirectory", None).await.unwrap();
+
+    let report = validate_as_class(&schema, &valid_data, "PhoneDirectory", None)
+        .await
+        .unwrap();
     if !report.valid {
         println!("Validation failed!");
         for error in report.errors() {
@@ -156,7 +177,7 @@ slots:
         }
     }
     assert!(report.valid);
-    
+
     // Mix of valid and invalid
     let mixed_data = json!({
         "phone_numbers": [
@@ -165,8 +186,10 @@ slots:
             "123"               // Invalid - too short
         ]
     });
-    
-    let report = validate_as_class(&schema, &mixed_data, "PhoneDirectory", None).await.unwrap();
+
+    let report = validate_as_class(&schema, &mixed_data, "PhoneDirectory", None)
+        .await
+        .unwrap();
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 2); // Two invalid entries
 }
@@ -193,30 +216,37 @@ slots:
 
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Generate large array of items to test caching
     let mut items = Vec::new();
     for i in 0..1000 {
         items.push(json!(format!("TEST-{:06}-ABC123", i)));
     }
-    
+
     let data = json!({
         "items": items
     });
-    
+
     // First validation (compiles pattern)
     let start = std::time::Instant::now();
-    let report = validate_as_class(&schema, &data, "BulkData", None).await.unwrap();
+    let report = validate_as_class(&schema, &data, "BulkData", None)
+        .await
+        .unwrap();
     let first_duration = start.elapsed();
     assert!(report.valid);
-    
+
     // Second validation (uses cached pattern)
     let start = std::time::Instant::now();
-    let report = validate_as_class(&schema, &data, "BulkData", None).await.unwrap();
+    let report = validate_as_class(&schema, &data, "BulkData", None)
+        .await
+        .unwrap();
     let second_duration = start.elapsed();
     assert!(report.valid);
-    
+
     // Second validation should be faster due to caching
     // (This is a loose check as timing can vary)
-    println!("First validation: {:?}, Second validation: {:?}", first_duration, second_duration);
+    println!(
+        "First validation: {:?}, Second validation: {:?}",
+        first_duration, second_duration
+    );
 }

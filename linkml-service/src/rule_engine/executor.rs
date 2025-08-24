@@ -10,9 +10,9 @@ use std::sync::Arc;
 use crate::expression::ExpressionEngine;
 use crate::validator::report::ValidationIssue;
 
-use super::types::{CompiledRule, RuleExecutionContext, RuleExecutionStrategy};
-use super::matcher::RuleMatcher;
 use super::evaluator::RuleEvaluator;
+use super::matcher::RuleMatcher;
+use super::types::{CompiledRule, RuleExecutionContext, RuleExecutionStrategy};
 
 /// Executor for rule-based validation
 pub struct RuleExecutor {
@@ -25,10 +25,10 @@ impl RuleExecutor {
     pub fn new(expression_engine: Arc<ExpressionEngine>) -> Self {
         let matcher = RuleMatcher::new((*expression_engine).clone());
         let evaluator = RuleEvaluator::new((*expression_engine).clone());
-        
+
         Self { matcher, evaluator }
     }
-    
+
     /// Execute a set of rules with the specified strategy
     pub fn execute_rules(
         &self,
@@ -43,7 +43,7 @@ impl RuleExecutor {
             RuleExecutionStrategy::CollectAll => self.execute_collect_all(rules, context),
         }
     }
-    
+
     /// Execute rules sequentially in priority order
     fn execute_sequential(
         &self,
@@ -51,19 +51,19 @@ impl RuleExecutor {
         context: &mut RuleExecutionContext,
     ) -> Result<Vec<ValidationIssue>> {
         let mut all_issues = Vec::new();
-        
+
         for rule in rules {
             if rule.deactivated {
                 continue;
             }
-            
+
             let issues = self.execute_single_rule(rule, context)?;
             all_issues.extend(issues);
         }
-        
+
         Ok(all_issues)
     }
-    
+
     /// Execute rules in parallel (future enhancement)
     fn execute_parallel(
         &self,
@@ -74,7 +74,7 @@ impl RuleExecutor {
         // TODO: Implement true parallel execution using rayon or tokio
         self.execute_sequential(rules, context)
     }
-    
+
     /// Execute rules but stop on first failure
     fn execute_fail_fast(
         &self,
@@ -85,16 +85,16 @@ impl RuleExecutor {
             if rule.deactivated {
                 continue;
             }
-            
+
             let issues = self.execute_single_rule(rule, context)?;
             if !issues.is_empty() {
                 return Ok(issues);
             }
         }
-        
+
         Ok(Vec::new())
     }
-    
+
     /// Execute all rules and collect all issues
     fn execute_collect_all(
         &self,
@@ -104,7 +104,7 @@ impl RuleExecutor {
         // This is the same as sequential for now
         self.execute_sequential(rules, context)
     }
-    
+
     /// Execute a single rule
     fn execute_single_rule(
         &self,
@@ -112,14 +112,17 @@ impl RuleExecutor {
         context: &mut RuleExecutionContext,
     ) -> Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
-        
+
         // Set current rule for recursion detection
-        let rule_id = rule.original.title.clone()
+        let rule_id = rule
+            .original
+            .title
+            .clone()
             .or_else(|| rule.original.description.clone())
             .unwrap_or_else(|| format!("Rule from {}", rule.source_class));
-        
+
         context.current_rule = Some(rule_id.clone());
-        
+
         // Check preconditions
         let preconditions_match = if let Some(ref preconditions) = rule.precondition_ast {
             self.matcher.matches(preconditions, context)?
@@ -127,16 +130,19 @@ impl RuleExecutor {
             // No preconditions means rule always applies
             true
         };
-        
+
         if preconditions_match {
             // Mark rule as matched
             context.mark_matched(rule_id.clone());
-            
+
             // Evaluate postconditions
             if let Some(ref postconditions) = rule.postcondition_ast {
-                let rule_desc = rule.original.description.as_deref()
+                let rule_desc = rule
+                    .original
+                    .description
+                    .as_deref()
                     .or(rule.original.title.as_deref());
-                
+
                 issues.extend(self.evaluator.evaluate_postconditions(
                     postconditions,
                     context,
@@ -146,10 +152,13 @@ impl RuleExecutor {
         } else {
             // Preconditions didn't match, check else conditions
             if let Some(ref else_conditions) = rule.else_condition_ast {
-                let rule_desc = rule.original.description.as_deref()
+                let rule_desc = rule
+                    .original
+                    .description
+                    .as_deref()
                     .or(rule.original.title.as_deref())
                     .map(|d| format!("{} (else)", d));
-                
+
                 issues.extend(self.evaluator.evaluate_postconditions(
                     else_conditions,
                     context,
@@ -157,10 +166,10 @@ impl RuleExecutor {
                 )?);
             }
         }
-        
+
         // Clear current rule
         context.current_rule = None;
-        
+
         Ok(issues)
     }
 }
@@ -193,18 +202,18 @@ impl RuleExecutor {
             total_rules: rules.len(),
             ..Default::default()
         };
-        
+
         // Count deactivated rules
         stats.skipped_rules = rules.iter().filter(|r| r.deactivated).count();
-        
+
         // Execute rules
         let issues = self.execute_rules(rules, context, strategy)?;
-        
+
         // Update stats
         stats.matched_rules = context.matched_rules.len();
         stats.total_issues = issues.len();
         stats.execution_time_ms = start.elapsed().as_millis() as u64;
-        
+
         Ok((issues, stats))
     }
 }
@@ -212,11 +221,11 @@ impl RuleExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::types::{Rule, RuleConditions, SlotCondition};
-    use serde_json::json;
     use crate::validator::context::ValidationContext;
     use indexmap::IndexMap;
-    
+    use linkml_core::types::{Rule, RuleConditions, SlotCondition};
+    use serde_json::json;
+
     fn create_test_rule() -> CompiledRule {
         let mut slot_conditions = IndexMap::new();
         slot_conditions.insert(
@@ -224,9 +233,9 @@ mod tests {
             SlotCondition {
                 minimum_value: Some(json!(18)),
                 ..Default::default()
-            }
+            },
         );
-        
+
         let rule = Rule {
             description: Some("Adults must have ID".to_string()),
             priority: Some(10),
@@ -242,7 +251,7 @@ mod tests {
                         SlotCondition {
                             required: Some(true),
                             ..Default::default()
-                        }
+                        },
                     );
                     conditions
                 }),
@@ -250,15 +259,15 @@ mod tests {
             }),
             ..Default::default()
         };
-        
+
         CompiledRule::compile(rule, "Person".to_string()).expect("should compile test rule")
     }
-    
+
     #[test]
     fn test_rule_execution() {
         let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
         let rule = create_test_rule();
-        
+
         // Test with adult without ID
         let mut validation_ctx = ValidationContext::new(Default::default());
         let mut context = RuleExecutionContext::new(
@@ -269,11 +278,13 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx,
         );
-        
-        let issues = executor.execute_single_rule(&rule, &mut context).expect("should execute rule");
+
+        let issues = executor
+            .execute_single_rule(&rule, &mut context)
+            .expect("should execute rule");
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("required"));
-        
+
         // Test with adult with ID
         let mut validation_ctx2 = ValidationContext::new(Default::default());
         let mut context2 = RuleExecutionContext::new(
@@ -285,10 +296,12 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx2,
         );
-        
-        let issues2 = executor.execute_single_rule(&rule, &mut context2).expect("should execute rule for adult with ID");
+
+        let issues2 = executor
+            .execute_single_rule(&rule, &mut context2)
+            .expect("should execute rule for adult with ID");
         assert!(issues2.is_empty());
-        
+
         // Test with minor (rule shouldn't apply)
         let mut validation_ctx3 = ValidationContext::new(Default::default());
         let mut context3 = RuleExecutionContext::new(
@@ -299,16 +312,18 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx3,
         );
-        
-        let issues3 = executor.execute_single_rule(&rule, &mut context3).expect("should execute rule for minor");
+
+        let issues3 = executor
+            .execute_single_rule(&rule, &mut context3)
+            .expect("should execute rule for minor");
         assert!(issues3.is_empty());
     }
-    
+
     #[test]
     fn test_execution_strategies() {
         let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
         let rules = vec![create_test_rule()];
-        
+
         let mut validation_ctx = ValidationContext::new(Default::default());
         let mut context = RuleExecutionContext::new(
             json!({
@@ -318,11 +333,13 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx,
         );
-        
+
         // Test different strategies
-        let sequential_issues = executor.execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential).expect("should execute rules sequentially");
+        let sequential_issues = executor
+            .execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential)
+            .expect("should execute rules sequentially");
         assert_eq!(sequential_issues.len(), 1);
-        
+
         let mut validation_ctx2 = ValidationContext::new(Default::default());
         let mut context2 = RuleExecutionContext::new(
             json!({
@@ -332,7 +349,9 @@ mod tests {
             "Person".to_string(),
             &mut validation_ctx2,
         );
-        let fail_fast_issues = executor.execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast).expect("should execute rules with fail-fast");
+        let fail_fast_issues = executor
+            .execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast)
+            .expect("should execute rules with fail-fast");
         assert_eq!(fail_fast_issues.len(), 1);
     }
 }

@@ -1,9 +1,7 @@
 //! Comprehensive tests for enhanced import resolution
 
-use linkml_core::{
-    settings::{ImportSettings, ImportResolutionStrategy},
-};
-use linkml_service::parser::{ImportResolverV2, SchemaParser, YamlParser, SchemaLoader};
+use linkml_core::settings::{ImportResolutionStrategy, ImportSettings};
+use linkml_service::parser::{ImportResolverV2, SchemaLoader, SchemaParser, YamlParser};
 use tempfile::TempDir;
 use tokio::fs;
 
@@ -11,7 +9,7 @@ use tokio::fs;
 async fn test_basic_file_import() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create base schema
     let base_schema = r#"
 id: https://example.org/base
@@ -28,9 +26,11 @@ slots:
     range: string
     required: true
 "#;
-    
-    fs::write(base_path.join("base.yaml"), base_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("base.yaml"), base_schema)
+        .await
+        .unwrap();
+
     // Create main schema that imports base
     let main_schema = r#"
 id: https://example.org/main
@@ -49,19 +49,21 @@ slots:
     name: age
     range: integer
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
     // Load and resolve
     let loader = SchemaLoader::new();
     let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
-    
+
     // Verify imports were resolved
     assert!(schema.classes.contains_key("BaseClass"));
     assert!(schema.classes.contains_key("Person"));
     assert!(schema.slots.contains_key("name"));
     assert!(schema.slots.contains_key("age"));
-    
+
     // Verify inheritance
     let person = &schema.classes["Person"];
     assert_eq!(person.is_a, Some("BaseClass".to_string()));
@@ -71,11 +73,11 @@ slots:
 async fn test_import_aliases() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create schemas in subdirectory
     let schemas_dir = base_path.join("schemas");
     fs::create_dir_all(&schemas_dir).await.unwrap();
-    
+
     let common_schema = r#"
 id: https://example.org/common
 name: common
@@ -85,9 +87,11 @@ types:
     typeof: string
     pattern: "^[A-Z][0-9]+$"
 "#;
-    
-    fs::write(schemas_dir.join("common.yaml"), common_schema).await.unwrap();
-    
+
+    fs::write(schemas_dir.join("common.yaml"), common_schema)
+        .await
+        .unwrap();
+
     // Main schema with import alias
     let main_schema = r#"
 id: https://example.org/main
@@ -108,27 +112,32 @@ slots:
     name: id
     range: Identifier
 "#;
-    
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
     // No need to add alias since it's in the schema settings
-    
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Verify alias resolution
     assert!(resolved.types.contains_key("Identifier"));
-    assert_eq!(resolved.types["Identifier"].pattern, Some("^[A-Z][0-9]+$".to_string()));
+    assert_eq!(
+        resolved.types["Identifier"].pattern,
+        Some("^[A-Z][0-9]+$".to_string())
+    );
 }
 
 #[tokio::test]
 async fn test_selective_imports() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a large schema with many elements
     let library_schema = r#"
 id: https://example.org/library
@@ -165,9 +174,11 @@ enums:
       - text: available
       - text: checked_out
 "#;
-    
-    fs::write(base_path.join("library.yaml"), library_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("library.yaml"), library_schema)
+        .await
+        .unwrap();
+
     // For now, we'll test basic import functionality
     // TODO: Implement selective import syntax parsing (e.g., "library[Book,Author]")
     let main_schema = r#"
@@ -186,16 +197,18 @@ slots:
     range: Book
     multivalued: true
 "#;
-    
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
-    
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // All elements should be imported for now
     assert!(resolved.classes.contains_key("Book"));
     assert!(resolved.classes.contains_key("Author"));
@@ -207,7 +220,7 @@ slots:
 async fn test_conflict_resolution() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Schema A with Status class
     let schema_a = r#"
 id: https://example.org/a
@@ -227,9 +240,9 @@ slots:
     name: message
     range: string
 "#;
-    
+
     fs::write(base_path.join("a.yaml"), schema_a).await.unwrap();
-    
+
     // Schema B with different Status class
     let schema_b = r#"
 id: https://example.org/b
@@ -249,9 +262,9 @@ slots:
     name: timestamp
     range: datetime
 "#;
-    
+
     fs::write(base_path.join("b.yaml"), schema_b).await.unwrap();
-    
+
     // Main schema importing both
     let main_schema = r#"
 id: https://example.org/main
@@ -264,20 +277,22 @@ classes:
     name: System
     description: Uses both status types
 "#;
-    
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
-    
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Should have Status from first import and qualified name for second
     assert!(resolved.classes.contains_key("Status"));
     assert!(resolved.classes.contains_key("b_Status"));
-    
+
     // Check that both versions have their correct slots
     assert!(resolved.slots.contains_key("code"));
     assert!(resolved.slots.contains_key("message"));
@@ -289,7 +304,7 @@ classes:
 async fn test_import_with_prefix() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a schema to be imported with prefix
     let geo_schema = r#"
 id: https://example.org/geo
@@ -319,9 +334,11 @@ slots:
     name: city
     range: string
 "#;
-    
-    fs::write(base_path.join("geo.yaml"), geo_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("geo.yaml"), geo_schema)
+        .await
+        .unwrap();
+
     // For now, test basic import without prefix
     // TODO: Implement prefix syntax parsing (e.g., "geo as geo_")
     let main_schema = r#"
@@ -339,16 +356,18 @@ slots:
     name: location
     range: Location
 "#;
-    
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
-    
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Verify import worked
     assert!(resolved.classes.contains_key("Location"));
     assert!(resolved.classes.contains_key("Address"));
@@ -358,13 +377,13 @@ slots:
 async fn test_import_resolution_strategies() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create directory structure
     let lib_dir = base_path.join("lib");
     let local_dir = base_path.join("local");
     fs::create_dir_all(&lib_dir).await.unwrap();
     fs::create_dir_all(&local_dir).await.unwrap();
-    
+
     // Same filename in different locations
     let lib_common = r#"
 id: https://example.org/lib/common
@@ -376,9 +395,11 @@ types:
     typeof: string
     pattern: "lib-v[0-9]+"
 "#;
-    
-    fs::write(lib_dir.join("common.yaml"), lib_common).await.unwrap();
-    
+
+    fs::write(lib_dir.join("common.yaml"), lib_common)
+        .await
+        .unwrap();
+
     let local_common = r#"
 id: https://example.org/local/common
 name: common
@@ -389,9 +410,11 @@ types:
     typeof: string
     pattern: "local-v[0-9]+"
 "#;
-    
-    fs::write(local_dir.join("common.yaml"), local_common).await.unwrap();
-    
+
+    fs::write(local_dir.join("common.yaml"), local_common)
+        .await
+        .unwrap();
+
     // Test relative strategy (should find local first)
     let main_schema = r#"
 id: https://example.org/main
@@ -399,12 +422,14 @@ name: main
 imports:
   - common
 "#;
-    
-    fs::write(local_dir.join("main.yaml"), main_schema).await.unwrap();
-    
+
+    fs::write(local_dir.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     // Test relative resolution
     let mut settings = ImportSettings::default();
     settings.search_paths = vec![
@@ -412,31 +437,37 @@ imports:
         lib_dir.to_str().unwrap().to_string(),
     ];
     settings.resolution_strategy = Some(ImportResolutionStrategy::Relative);
-    
+
     let resolver = ImportResolverV2::with_settings(settings.clone());
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Should get local version with relative strategy
     assert!(resolved.types.contains_key("Version"));
-    assert_eq!(resolved.types["Version"].pattern, Some("local-v[0-9]+".to_string()));
-    
+    assert_eq!(
+        resolved.types["Version"].pattern,
+        Some("local-v[0-9]+".to_string())
+    );
+
     // Test absolute resolution (search paths only)
     settings.resolution_strategy = Some(ImportResolutionStrategy::Absolute);
     settings.search_paths = vec![lib_dir.to_str().unwrap().to_string()];
-    
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Should get lib version with absolute strategy
     assert!(resolved.types.contains_key("Version"));
-    assert_eq!(resolved.types["Version"].pattern, Some("lib-v[0-9]+".to_string()));
+    assert_eq!(
+        resolved.types["Version"].pattern,
+        Some("lib-v[0-9]+".to_string())
+    );
 }
 
 #[tokio::test]
 async fn test_deep_import_chain() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a chain of imports: main -> middle -> base
     let base_schema = r#"
 id: https://example.org/base
@@ -446,9 +477,11 @@ types:
     name: BaseType
     typeof: string
 "#;
-    
-    fs::write(base_path.join("base.yaml"), base_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("base.yaml"), base_schema)
+        .await
+        .unwrap();
+
     let middle_schema = r#"
 id: https://example.org/middle
 name: middle
@@ -464,9 +497,11 @@ slots:
     name: base_field
     range: BaseType
 "#;
-    
-    fs::write(base_path.join("middle.yaml"), middle_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("middle.yaml"), middle_schema)
+        .await
+        .unwrap();
+
     let main_schema = r#"
 id: https://example.org/main
 name: main
@@ -477,12 +512,14 @@ classes:
     name: MainClass
     is_a: MiddleClass
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
     let loader = SchemaLoader::new();
     let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
-    
+
     // Verify entire chain was resolved
     assert!(schema.types.contains_key("BaseType"));
     assert!(schema.classes.contains_key("MiddleClass"));
@@ -494,19 +531,23 @@ classes:
 async fn test_import_depth_limit() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a deep chain that exceeds max depth
     for i in 0..15 {
         let schema = if i == 0 {
-            format!(r#"
+            format!(
+                r#"
 id: https://example.org/schema{}
 name: schema{}
 classes:
   Class{}:
     name: Class{}
-"#, i, i, i, i)
+"#,
+                i, i, i, i
+            )
         } else {
-            format!(r#"
+            format!(
+                r#"
 id: https://example.org/schema{}
 name: schema{}
 imports:
@@ -514,14 +555,24 @@ imports:
 classes:
   Class{}:
     name: Class{}
-"#, i, i, i-1, i, i)
+"#,
+                i,
+                i,
+                i - 1,
+                i,
+                i
+            )
         };
-        
-        fs::write(base_path.join(format!("schema{}.yaml", i)), schema).await.unwrap();
+
+        fs::write(base_path.join(format!("schema{}.yaml", i)), schema)
+            .await
+            .unwrap();
     }
-    
+
     let parser = YamlParser::new();
-    let schema = parser.parse_str(&format!(r#"
+    let schema = parser
+        .parse_str(&format!(
+            r#"
 id: https://example.org/schema14
 name: schema14
 imports:
@@ -529,22 +580,29 @@ imports:
 classes:
   Class14:
     name: Class14
-"#)).unwrap();
-    
+"#
+        ))
+        .unwrap();
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
     settings.max_import_depth = Some(5); // Set low limit
-    
+
     let resolver = ImportResolverV2::with_settings(settings);
     let result = resolver.resolve_imports(&schema).await;
-    
+
     // Should fail due to depth limit
     match result {
         Ok(_) => panic!("Expected error due to depth limit, but got success"),
         Err(err) => {
-            assert!(err.to_string().contains("Maximum import depth") || 
-                    err.to_string().contains("exceeded"),
-                    "Expected depth limit error, got: {}", err);
+            assert!(
+                err.to_string().contains("Maximum import depth")
+                    || err.to_string().contains("exceeded"),
+                "Expected depth limit error, got: {}",
+                err
+            );
         }
     }
 }
@@ -553,7 +611,7 @@ classes:
 async fn test_cache_behavior() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create a schema that's imported multiple times
     let shared_schema = r#"
 id: https://example.org/shared
@@ -563,9 +621,11 @@ types:
     name: SharedType
     typeof: string
 "#;
-    
-    fs::write(base_path.join("shared.yaml"), shared_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("shared.yaml"), shared_schema)
+        .await
+        .unwrap();
+
     // Two schemas that both import shared
     let schema_a = r#"
 id: https://example.org/a
@@ -576,9 +636,9 @@ classes:
   ClassA:
     name: ClassA
 "#;
-    
+
     fs::write(base_path.join("a.yaml"), schema_a).await.unwrap();
-    
+
     let schema_b = r#"
 id: https://example.org/b
 name: b
@@ -588,9 +648,9 @@ classes:
   ClassB:
     name: ClassB
 "#;
-    
+
     fs::write(base_path.join("b.yaml"), schema_b).await.unwrap();
-    
+
     // Main imports both a and b (which both import shared)
     let main_schema = r#"
 id: https://example.org/main
@@ -599,26 +659,28 @@ imports:
   - a
   - b
 "#;
-    
+
     let parser = YamlParser::new();
     let schema = parser.parse_str(main_schema).unwrap();
-    
+
     let mut settings = ImportSettings::default();
-    settings.search_paths.push(base_path.to_str().unwrap().to_string());
+    settings
+        .search_paths
+        .push(base_path.to_str().unwrap().to_string());
     settings.cache_imports = Some(true);
-    
+
     let resolver = ImportResolverV2::with_settings(settings);
     let resolved = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Should have all elements without duplication
     assert!(resolved.types.contains_key("SharedType"));
     assert!(resolved.classes.contains_key("ClassA"));
     assert!(resolved.classes.contains_key("ClassB"));
-    
+
     // Clear cache and resolve again
     resolver.clear_cache();
     let resolved2 = resolver.resolve_imports(&schema).await.unwrap();
-    
+
     // Should get same result
     assert_eq!(resolved.types.len(), resolved2.types.len());
     assert_eq!(resolved.classes.len(), resolved2.classes.len());
@@ -628,11 +690,11 @@ imports:
 async fn test_schema_settings_override() {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path();
-    
+
     // Create lib directory
     let lib_dir = base_path.join("lib");
     fs::create_dir_all(&lib_dir).await.unwrap();
-    
+
     let lib_schema = r#"
 id: https://example.org/lib
 name: lib
@@ -640,9 +702,11 @@ classes:
   LibClass:
     name: LibClass
 "#;
-    
-    fs::write(lib_dir.join("lib.yaml"), lib_schema).await.unwrap();
-    
+
+    fs::write(lib_dir.join("lib.yaml"), lib_schema)
+        .await
+        .unwrap();
+
     // Schema with its own import settings
     let main_schema = r#"
 id: https://example.org/main
@@ -657,12 +721,14 @@ settings:
 imports:
   - lib
 "#;
-    
-    fs::write(base_path.join("main.yaml"), main_schema).await.unwrap();
-    
+
+    fs::write(base_path.join("main.yaml"), main_schema)
+        .await
+        .unwrap();
+
     let loader = SchemaLoader::new();
     let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
-    
+
     // Verify settings were used
     assert!(schema.classes.contains_key("LibClass"));
 }

@@ -1,11 +1,11 @@
 //! Tests for JSON-LD generation
 
 use linkml_core::types::{
-    SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, 
-    PermissibleValue, TypeDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    TypeDefinition,
 };
-use linkml_service::generator::{JsonLdGenerator, Generator, GeneratorOptions};
-use serde_json::{json, Value};
+use linkml_service::generator::{Generator, GeneratorOptions, JsonLdGenerator};
+use serde_json::{Value, json};
 
 #[tokio::test]
 async fn test_basic_json_ld_context() {
@@ -13,61 +13,53 @@ async fn test_basic_json_ld_context() {
     schema.id = "https://example.org/person".to_string();
     schema.version = Some("1.0.0".to_string());
     schema.description = Some("Schema for person data".to_string());
-    
+
     // Add basic slots
     let mut name_slot = SlotDefinition::new("name");
     name_slot.range = Some("string".to_string());
     name_slot.required = Some(true);
     name_slot.description = Some("Person's full name".to_string());
     schema.slots.insert("name".to_string(), name_slot);
-    
+
     let mut age_slot = SlotDefinition::new("age");
     age_slot.range = Some("integer".to_string());
     schema.slots.insert("age".to_string(), age_slot);
-    
+
     let mut email_slot = SlotDefinition::new("email");
     email_slot.range = Some("string".to_string());
     email_slot.multivalued = Some(true);
     schema.slots.insert("email".to_string(), email_slot);
-    
+
     // Add a class
     let mut person_class = ClassDefinition::new("Person");
     person_class.description = Some("A human being".to_string());
     person_class.slots = vec!["name".to_string(), "age".to_string(), "email".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default().set_custom("pretty_print", "true");
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    // Should generate context and schema files
-    assert!(results.len() >= 2);
-    
-    // Find context file
-    let context_file = results.iter()
-        .find(|r| r.filename == "person_schema.context.jsonld")
-        .expect("Context file not found");
-    
-    let context: Value = serde_json::from_str(&context_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let context: Value = serde_json::from_str(&output).unwrap();
+
     // Check basic context structure
     assert_eq!(context["@vocab"], "https://example.org/person#");
     assert_eq!(context["xsd"], "http://www.w3.org/2001/XMLSchema#");
     assert_eq!(context["person_schema"], "https://example.org/person#");
-    
+
     // Check class mapping
     assert_eq!(context["Person"], "person_schema:Person");
-    
+
     // Check property mappings
     assert!(context["name"].is_object());
     assert_eq!(context["name"]["@id"], "person_schema:name");
     assert_eq!(context["name"]["@type"], "xsd:string");
-    
+
     assert!(context["age"].is_object());
     assert_eq!(context["age"]["@id"], "person_schema:age");
     assert_eq!(context["age"]["@type"], "xsd:integer");
-    
+
     // Check multivalued field
     assert!(context["email"].is_object());
     assert_eq!(context["email"]["@id"], "person_schema:email");
@@ -78,37 +70,33 @@ async fn test_basic_json_ld_context() {
 async fn test_json_ld_schema_document() {
     let mut schema = SchemaDefinition::new("org_schema");
     schema.id = "https://example.org/organization".to_string();
-    
+
     // Add classes
     let person_class = ClassDefinition::new("Person");
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     let org_class = ClassDefinition::new("Organization");
     schema.classes.insert("Organization".to_string(), org_class);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    // Find schema document
-    let schema_file = results.iter()
-        .find(|r| r.filename == "org_schema.schema.jsonld")
-        .expect("Schema file not found");
-    
-    let schema_doc: Value = serde_json::from_str(&schema_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let schema_doc: Value = serde_json::from_str(&output).unwrap();
+
     // Check graph structure
     assert!(schema_doc["@context"].is_object());
     assert!(schema_doc["@graph"].is_array());
-    
+
     let graph = schema_doc["@graph"].as_array().unwrap();
-    
+
     // Find schema metadata
-    let schema_meta = graph.iter()
+    let schema_meta = graph
+        .iter()
         .find(|item| item["@type"] == "owl:Ontology")
         .expect("Schema metadata not found");
-    
+
     assert_eq!(schema_meta["@id"], "https://example.org/organization");
     assert_eq!(schema_meta["rdfs:label"], "org_schema");
 }
@@ -117,7 +105,7 @@ async fn test_json_ld_schema_document() {
 async fn test_enum_json_ld() {
     let mut schema = SchemaDefinition::new("status_schema");
     schema.id = "https://example.org/status".to_string();
-    
+
     // Add enum
     let status_enum = EnumDefinition {
         name: "OrderStatus".to_string(),
@@ -129,26 +117,22 @@ async fn test_enum_json_ld() {
         ..Default::default()
     };
     schema.enums.insert("OrderStatus".to_string(), status_enum);
-    
+
     // Add slot using enum
     let mut status_slot = SlotDefinition::new("status");
     status_slot.range = Some("OrderStatus".to_string());
     schema.slots.insert("status".to_string(), status_slot);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    let context_file = results.iter()
-        .find(|r| r.filename == "status_schema.context.jsonld")
-        .unwrap();
-    
-    let context: Value = serde_json::from_str(&context_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let context: Value = serde_json::from_str(&output).unwrap();
+
     // Check enum mapping
     assert_eq!(context["OrderStatus"], "status_schema:OrderStatus");
-    
+
     // Check that enum range uses @id type
     assert!(context["status"].is_object());
     assert_eq!(context["status"]["@type"], "@id");
@@ -158,42 +142,39 @@ async fn test_enum_json_ld() {
 async fn test_inheritance_json_ld() {
     let mut schema = SchemaDefinition::new("entity_schema");
     schema.id = "https://example.org/entity".to_string();
-    
+
     // Base class
     let mut entity_class = ClassDefinition::new("Entity");
     entity_class.slots = vec!["id".to_string()];
     schema.classes.insert("Entity".to_string(), entity_class);
-    
+
     // Derived class
     let mut person_class = ClassDefinition::new("Person");
     person_class.is_a = Some("Entity".to_string());
     person_class.slots = vec!["name".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     // Slots
     let id_slot = SlotDefinition::new("id");
     schema.slots.insert("id".to_string(), id_slot);
-    
+
     let name_slot = SlotDefinition::new("name");
     schema.slots.insert("name".to_string(), name_slot);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    let schema_file = results.iter()
-        .find(|r| r.filename == "entity_schema.schema.jsonld")
-        .unwrap();
-    
-    let schema_doc: Value = serde_json::from_str(&schema_file.content).unwrap();
+    let output = generator.generate(&schema).unwrap();
+
+    let schema_doc: Value = serde_json::from_str(&output).unwrap();
     let graph = schema_doc["@graph"].as_array().unwrap();
-    
+
     // Find Person class
-    let person = graph.iter()
+    let person = graph
+        .iter()
         .find(|item| item["@id"] == "entity_schema:Person")
         .unwrap();
-    
+
     assert_eq!(person["rdfs:subClassOf"], "entity_schema:Entity");
 }
 
@@ -201,31 +182,27 @@ async fn test_inheritance_json_ld() {
 async fn test_object_references_json_ld() {
     let mut schema = SchemaDefinition::new("org_schema");
     schema.id = "https://example.org/org".to_string();
-    
+
     // Classes
     let person_class = ClassDefinition::new("Person");
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     let mut org_class = ClassDefinition::new("Organization");
     org_class.slots = vec!["ceo".to_string()];
     schema.classes.insert("Organization".to_string(), org_class);
-    
+
     // Object reference slot
     let mut ceo_slot = SlotDefinition::new("ceo");
     ceo_slot.range = Some("Person".to_string());
     schema.slots.insert("ceo".to_string(), ceo_slot);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    let context_file = results.iter()
-        .find(|r| r.filename == "org_schema.context.jsonld")
-        .unwrap();
-    
-    let context: Value = serde_json::from_str(&context_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let context: Value = serde_json::from_str(&output).unwrap();
+
     // Check object reference uses @id type
     assert!(context["ceo"].is_object());
     assert_eq!(context["ceo"]["@type"], "@id");
@@ -235,35 +212,30 @@ async fn test_object_references_json_ld() {
 async fn test_json_ld_frames() {
     let mut schema = SchemaDefinition::new("person_schema");
     schema.id = "https://example.org/person".to_string();
-    
+
     // Add slots
     let mut name_slot = SlotDefinition::new("name");
     name_slot.required = Some(true);
     schema.slots.insert("name".to_string(), name_slot);
-    
+
     let age_slot = SlotDefinition::new("age");
     schema.slots.insert("age".to_string(), age_slot);
-    
+
     // Add class
     let mut person_class = ClassDefinition::new("Person");
     person_class.slots = vec!["name".to_string(), "age".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    // Find frame file
-    let frame_file = results.iter()
-        .find(|r| r.filename == "person_schema.person.frame.jsonld")
-        .expect("Frame file not found");
-    
-    let frame: Value = serde_json::from_str(&frame_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let frame: Value = serde_json::from_str(&output).unwrap();
+
     // Check frame structure
     assert_eq!(frame["@type"], "person_schema:Person");
-    
+
     // Required fields should have @default
     assert!(frame["name"].is_object());
     assert_eq!(frame["name"]["@default"], json!(null));
@@ -273,35 +245,29 @@ async fn test_json_ld_frames() {
 async fn test_json_ld_examples() {
     let mut schema = SchemaDefinition::new("person_schema");
     schema.id = "https://example.org/person".to_string();
-    
+
     // Add slots
     let mut name_slot = SlotDefinition::new("name");
     name_slot.range = Some("string".to_string());
     name_slot.required = Some(true);
     schema.slots.insert("name".to_string(), name_slot);
-    
+
     let mut age_slot = SlotDefinition::new("age");
     age_slot.range = Some("integer".to_string());
     schema.slots.insert("age".to_string(), age_slot);
-    
+
     // Add class
     let mut person_class = ClassDefinition::new("Person");
     person_class.slots = vec!["name".to_string(), "age".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
-    
+
     // Generate JSON-LD with examples
     let generator = JsonLdGenerator::new();
-    let options = GeneratorOptions::default()
-        .set_custom("generate_examples", "true");
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    // Find example file
-    let example_file = results.iter()
-        .find(|r| r.filename == "person_schema.person.example.jsonld")
-        .expect("Example file not found");
-    
-    let example: Value = serde_json::from_str(&example_file.content).unwrap();
-    
+    let options = GeneratorOptions::default().set_custom("generate_examples", "true");
+    let output = generator.generate(&schema).unwrap();
+
+    let example: Value = serde_json::from_str(&output).unwrap();
+
     // Check example structure
     assert_eq!(example["@context"], "person_schema.context.jsonld");
     assert_eq!(example["@type"], "Person");
@@ -313,7 +279,7 @@ async fn test_json_ld_examples() {
 async fn test_custom_types_json_ld() {
     let mut schema = SchemaDefinition::new("product_schema");
     schema.id = "https://example.org/product".to_string();
-    
+
     // Add custom type
     let url_type = TypeDefinition {
         name: "URL".to_string(),
@@ -322,28 +288,24 @@ async fn test_custom_types_json_ld() {
         ..Default::default()
     };
     schema.types.insert("URL".to_string(), url_type);
-    
+
     // Add slot using custom type
     let mut website_slot = SlotDefinition::new("website");
     website_slot.range = Some("URL".to_string());
     schema.slots.insert("website".to_string(), website_slot);
-    
+
     // Add class
     let mut product_class = ClassDefinition::new("Product");
     product_class.slots = vec!["website".to_string()];
     schema.classes.insert("Product".to_string(), product_class);
-    
+
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema, &options).await.unwrap();
-    
-    let context_file = results.iter()
-        .find(|r| r.filename == "product_schema.context.jsonld")
-        .unwrap();
-    
-    let context: Value = serde_json::from_str(&context_file.content).unwrap();
-    
+    let output = generator.generate(&schema).unwrap();
+
+    let context: Value = serde_json::from_str(&output).unwrap();
+
     // Check custom type resolves to base type
     assert!(context["website"].is_object());
     assert_eq!(context["website"]["@type"], "xsd:string");

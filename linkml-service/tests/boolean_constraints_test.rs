@@ -17,10 +17,10 @@ slots:
       - range: string
       - range: integer
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     assert!(slot.any_of.is_some());
     let constraints = slot.any_of.as_ref().unwrap();
@@ -42,10 +42,10 @@ slots:
         maximum_value: 100
       - pattern: "^\\d+$"
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     assert!(slot.all_of.is_some());
     let constraints = slot.all_of.as_ref().unwrap();
@@ -69,10 +69,10 @@ slots:
         minimum_value: 0
         maximum_value: 1
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     assert!(slot.exactly_one_of.is_some());
     let constraints = slot.exactly_one_of.as_ref().unwrap();
@@ -95,10 +95,10 @@ slots:
       - pattern: "^test"
       - pattern: "^demo"
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     assert!(slot.none_of.is_some());
     let constraints = slot.none_of.as_ref().unwrap();
@@ -123,22 +123,22 @@ slots:
           - range: string
           - pattern: "^[A-Z]"
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     assert!(slot.any_of.is_some());
     let any_constraints = slot.any_of.as_ref().unwrap();
     assert_eq!(any_constraints.len(), 2);
-    
+
     // First any_of constraint has all_of
     assert!(any_constraints[0].all_of.is_some());
     let all_constraints_1 = any_constraints[0].all_of.as_ref().unwrap();
     assert_eq!(all_constraints_1.len(), 2);
     assert_eq!(all_constraints_1[0].range, Some("integer".to_string()));
     assert_eq!(all_constraints_1[1].minimum_value, Some(json!(0)));
-    
+
     // Second any_of constraint has all_of
     assert!(any_constraints[1].all_of.is_some());
     let all_constraints_2 = any_constraints[1].all_of.as_ref().unwrap();
@@ -170,10 +170,12 @@ async fn test_validation_with_boolean_constraints() {
                 ]),
                 ..Default::default()
             },
-        )].into_iter().collect(),
+        )]
+        .into_iter()
+        .collect(),
         ..Default::default()
     };
-    
+
     // Add a class to the schema so validation knows what to validate
     let mut schema_with_class = schema;
     schema_with_class.classes.insert(
@@ -184,22 +186,26 @@ async fn test_validation_with_boolean_constraints() {
             ..Default::default()
         },
     );
-    
+
     let data = json!({
         "test_slot": "hello"
     });
-    
+
     let options = ValidationOptions::default();
     let report = linkml_service::validator::validate_as_class(
         &schema_with_class,
         &data,
         "TestClass",
-        Some(options)
-    ).await.unwrap();
-    
+        Some(options),
+    )
+    .await
+    .unwrap();
+
     // Should have warnings from placeholder implementation
     assert!(!report.issues.is_empty());
-    let constraint_issues: Vec<_> = report.issues.iter()
+    let constraint_issues: Vec<_> = report
+        .issues
+        .iter()
         .filter(|i| i.code == Some("BOOLEAN_CONSTRAINT_PLACEHOLDER".to_string()))
         .collect();
     assert!(!constraint_issues.is_empty());
@@ -226,12 +232,12 @@ slots:
       - minimum_value: 5
       - maximum_value: 10
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
-    
+
     // Verify all constraints are present
     assert_eq!(slot.required, Some(true));
     assert_eq!(slot.range, Some("string".to_string()));
@@ -265,14 +271,14 @@ slots:
         inlined: true
         inlined_as_list: false
 "#;
-    
+
     let parser = linkml_service::parser::YamlParser::new();
     let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
-    
+
     let slot = schema.slots.get("test_slot").unwrap();
     let constraints = slot.any_of.as_ref().unwrap();
     let expr = &constraints[0];
-    
+
     assert_eq!(expr.range, Some("string".to_string()));
     assert_eq!(expr.pattern, Some("^test".to_string()));
     assert_eq!(expr.minimum_value, Some(json!(5)));

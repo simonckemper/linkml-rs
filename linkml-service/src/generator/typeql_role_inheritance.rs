@@ -84,11 +84,9 @@ impl RoleInheritanceResolver {
         if let Some(parent_name) = &relation_class.is_a {
             if let Some(parent_class) = schema.classes.get(parent_name) {
                 // Analyze parent relation first
-                if let Some(parent_hierarchy) = self.analyze_relation_inheritance(
-                    parent_name,
-                    parent_class,
-                    schema,
-                ) {
+                if let Some(parent_hierarchy) =
+                    self.analyze_relation_inheritance(parent_name, parent_class, schema)
+                {
                     // Inherit parent's role structure
                     hierarchy = self.merge_hierarchies(hierarchy, parent_hierarchy);
                 }
@@ -116,7 +114,8 @@ impl RoleInheritanceResolver {
         }
 
         // Cache the hierarchy
-        self.hierarchies.insert(relation_name.to_string(), hierarchy.clone());
+        self.hierarchies
+            .insert(relation_name.to_string(), hierarchy.clone());
 
         Some(hierarchy)
     }
@@ -138,19 +137,21 @@ impl RoleInheritanceResolver {
         // Check for role specializations
         for (child_role, child_type) in &child_roles {
             // Check if this might be a specialization
-            if let Some((parent_role, _parent_type)) = self.find_matching_parent_role(
-                child_role,
-                child_type,
-                &parent_roles,
-                schema,
-            ) {
+            if let Some((parent_role, _parent_type)) =
+                self.find_matching_parent_role(child_role, child_type, &parent_roles, schema)
+            {
                 // This is a specialization
                 let spec_key = format!("{}:{}", child_relation, child_role);
-                hierarchy.specializations.insert(spec_key, parent_role.clone());
-                
+                hierarchy
+                    .specializations
+                    .insert(spec_key, parent_role.clone());
+
                 // Update parent-child relationships
-                hierarchy.parent.insert(child_role.clone(), parent_role.clone());
-                hierarchy.children
+                hierarchy
+                    .parent
+                    .insert(child_role.clone(), parent_role.clone());
+                hierarchy
+                    .children
                     .entry(parent_role.clone())
                     .or_insert_with(Vec::new)
                     .push(child_role.clone());
@@ -176,9 +177,10 @@ impl RoleInheritanceResolver {
 
         // Check for naming patterns (e.g., "participant" -> "student")
         for (parent_role, parent_type) in parent_roles {
-            if (child_role.contains(parent_role) || 
-               self.is_semantic_specialization(child_role, parent_role)) && 
-               self.is_subtype_of(child_type, parent_type, schema) {
+            if (child_role.contains(parent_role)
+                || self.is_semantic_specialization(child_role, parent_role))
+                && self.is_subtype_of(child_type, parent_type, schema)
+            {
                 return Some((parent_role.clone(), parent_type.clone()));
             }
         }
@@ -237,8 +239,11 @@ impl RoleInheritanceResolver {
         let mut roles = HashMap::new();
 
         for slot_name in &class.slots {
-            if let Some(slot) = schema.slots.get(slot_name)
-                .or_else(|| class.slot_usage.get(slot_name)) {
+            if let Some(slot) = schema
+                .slots
+                .get(slot_name)
+                .or_else(|| class.slot_usage.get(slot_name))
+            {
                 if let Some(range) = &slot.range {
                     if schema.classes.contains_key(range) {
                         roles.insert(slot_name.clone(), range.clone());
@@ -261,14 +266,11 @@ impl RoleInheritanceResolver {
     }
 
     /// Merge two role hierarchies
-    fn merge_hierarchies(
-        &self,
-        mut child: RoleHierarchy,
-        parent: RoleHierarchy,
-    ) -> RoleHierarchy {
+    fn merge_hierarchies(&self, mut child: RoleHierarchy, parent: RoleHierarchy) -> RoleHierarchy {
         // Merge children
         for (role, children) in parent.children {
-            child.children
+            child
+                .children
                 .entry(role)
                 .or_insert_with(Vec::new)
                 .extend(children);
@@ -299,7 +301,7 @@ impl RoleInheritanceResolver {
     /// Get all abstract roles in the schema
     pub fn get_abstract_roles(&self) -> Vec<String> {
         let mut abstract_roles = Vec::new();
-        
+
         for (_, hierarchy) in &self.hierarchies {
             abstract_roles.extend(hierarchy.abstract_roles.iter().cloned());
         }
@@ -312,7 +314,7 @@ impl RoleInheritanceResolver {
     /// Check if a role can be played by multiple types (polymorphic)
     pub fn is_polymorphic_role(&self, relation: &str, role: &str) -> bool {
         let role_key = format!("{}:{}", relation, role);
-        
+
         if let Some(role_def) = self.global_roles.get(&role_key) {
             // Polymorphic if multiple types can play it or if base type has subtypes
             role_def.allowed_players.len() > 1
@@ -329,7 +331,7 @@ mod tests {
     #[test]
     fn test_role_specialization_detection() {
         let resolver = RoleInheritanceResolver::new();
-        
+
         // Test semantic specialization
         assert!(resolver.is_semantic_specialization("student", "participant"));
         assert!(resolver.is_semantic_specialization("buyer", "party"));
@@ -339,17 +341,17 @@ mod tests {
     #[test]
     fn test_subtype_checking() {
         let mut schema = SchemaDefinition::default();
-        
+
         // Create type hierarchy
         let person = ClassDefinition::default();
         schema.classes.insert("Person".to_string(), person);
-        
+
         let mut student = ClassDefinition::default();
         student.is_a = Some("Person".to_string());
         schema.classes.insert("Student".to_string(), student);
-        
+
         let resolver = RoleInheritanceResolver::new();
-        
+
         assert!(resolver.is_subtype_of("Student", "Person", &schema));
         assert!(resolver.is_subtype_of("Person", "Person", &schema));
         assert!(!resolver.is_subtype_of("Person", "Student", &schema));

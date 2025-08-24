@@ -3,18 +3,16 @@
 //! This module provides memory-optimized versions of LinkML types that use
 //! Arc<str> for commonly duplicated strings to reduce memory usage.
 
-use std::sync::Arc;
-use std::collections::HashMap;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::string_pool::{intern, intern_option, intern_vec};
-use crate::types::{
-    StructuredPattern, PermissibleValue
-};
 use crate::annotations::{Annotation, AnnotationValue};
 use crate::metadata::Example;
+use crate::string_pool::{intern, intern_option, intern_vec};
+use crate::types::{PermissibleValue, StructuredPattern};
 
 /// Memory-optimized Schema Definition using interned strings
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,19 +20,19 @@ pub struct SchemaDefinitionV2 {
     // Core identification - always interned
     pub id: Arc<str>,
     pub name: Arc<str>,
-    
+
     // Common references - always interned
     pub default_prefix: Option<Arc<str>>,
     pub default_range: Option<Arc<str>>,
     pub metamodel_version: Option<Arc<str>>,
     pub status: Option<Arc<str>>,
-    
+
     // Lists of references - always interned
     pub imports: Vec<Arc<str>>,
     pub categories: Vec<Arc<str>>,
     pub keywords: Vec<Arc<str>>,
     pub see_also: Vec<Arc<str>>,
-    
+
     // Potentially unique strings - not interned by default
     pub title: Option<String>,
     pub description: Option<String>,
@@ -42,7 +40,7 @@ pub struct SchemaDefinitionV2 {
     pub license: Option<String>,
     pub generation_date: Option<String>,
     pub source_file: Option<String>,
-    
+
     // Complex types
     pub prefixes: IndexMap<Arc<str>, PrefixDefinitionV2>,
     pub classes: IndexMap<Arc<str>, ClassDefinitionV2>,
@@ -50,7 +48,7 @@ pub struct SchemaDefinitionV2 {
     pub types: IndexMap<Arc<str>, TypeDefinitionV2>,
     pub enums: IndexMap<Arc<str>, EnumDefinitionV2>,
     pub subsets: IndexMap<Arc<str>, SubsetDefinitionV2>,
-    
+
     // Settings and metadata
     pub settings: Option<SchemaSettingsV2>,
     pub annotations: Option<IndexMap<String, AnnotationValue>>,
@@ -63,29 +61,29 @@ pub struct ClassDefinitionV2 {
     // Core identification
     pub name: Arc<str>,
     pub class_uri: Option<Arc<str>>,
-    
+
     // References - always interned
     pub is_a: Option<Arc<str>>,
     pub mixins: Vec<Arc<str>>,
     pub slots: Vec<Arc<str>>,
     pub subclass_of: Vec<Arc<str>>,
-    
+
     // Potentially unique strings
     pub description: Option<String>,
     pub deprecated: Option<String>,
-    
+
     // Lists that might be unique
     pub aliases: Vec<String>,
     pub notes: Vec<String>,
     pub comments: Vec<String>,
     pub todos: Vec<String>,
-    
+
     // Boolean flags
     pub abstract_: Option<bool>,
     pub mixin: Option<bool>,
     pub values_from: Vec<Arc<str>>,
     pub id_prefixes: Vec<Arc<str>>,
-    
+
     // Other fields
     pub see_also: Vec<Arc<str>>,
     pub annotations: Option<IndexMap<String, AnnotationValue>>,
@@ -103,7 +101,7 @@ pub struct SlotDefinitionV2 {
     // Core identification
     pub name: Arc<str>,
     pub slot_uri: Option<Arc<str>>,
-    
+
     // Type references - always interned
     pub range: Option<Arc<str>>,
     pub is_a: Option<Arc<str>>,
@@ -112,23 +110,23 @@ pub struct SlotDefinitionV2 {
     pub domain: Option<Arc<str>>,
     pub subproperty_of: Option<Arc<str>>,
     pub symmetric: Option<Arc<str>>,
-    
+
     // Patterns and expressions - often repeated
     pub pattern: Option<Arc<str>>,
     pub equals_expression: Option<Arc<str>>,
     pub equals_string_in: Option<Vec<Arc<str>>>,
-    
+
     // Potentially unique strings
     pub description: Option<String>,
     pub title: Option<String>,
     pub deprecated: Option<String>,
-    
+
     // Lists that might be unique
     pub aliases: Vec<String>,
     pub notes: Vec<String>,
     pub comments: Vec<String>,
     pub todos: Vec<String>,
-    
+
     // Boolean and numeric properties
     pub required: Option<bool>,
     pub recommended: Option<bool>,
@@ -150,18 +148,18 @@ pub struct SlotDefinitionV2 {
     pub reflexive: Option<bool>,
     pub irreflexive: Option<bool>,
     pub transitive: Option<bool>,
-    
+
     // Numeric constraints
     pub minimum_value: Option<Value>,
     pub maximum_value: Option<Value>,
     pub minimum_cardinality: Option<i32>,
     pub maximum_cardinality: Option<i32>,
-    
+
     // Other references
     pub see_also: Vec<Arc<str>>,
     pub values_from: Vec<Arc<str>>,
     pub id_prefixes: Vec<Arc<str>>,
-    
+
     // Complex types
     pub structured_pattern: Option<StructuredPattern>,
     pub examples: Vec<Example>,
@@ -267,7 +265,7 @@ impl From<crate::types::SchemaDefinition> for SchemaDefinitionV2 {
             categories: intern_vec(v1.categories),
             keywords: intern_vec(v1.keywords),
             see_also: intern_vec(v1.see_also),
-            
+
             // Keep potentially unique strings as-is
             title: v1.title,
             description: v1.description,
@@ -275,27 +273,39 @@ impl From<crate::types::SchemaDefinition> for SchemaDefinitionV2 {
             license: v1.license,
             generation_date: v1.generation_date,
             source_file: v1.source_file,
-            
+
             // Convert complex types
-            prefixes: v1.prefixes.into_iter()
+            prefixes: v1
+                .prefixes
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            classes: v1.classes.into_iter()
+            classes: v1
+                .classes
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            slots: v1.slots.into_iter()
+            slots: v1
+                .slots
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            types: v1.types.into_iter()
+            types: v1
+                .types
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            enums: v1.enums.into_iter()
+            enums: v1
+                .enums
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            subsets: v1.subsets.into_iter()
+            subsets: v1
+                .subsets
+                .into_iter()
                 .map(|(k, v)| (intern(&k), v.into()))
                 .collect(),
-            
+
             settings: v1.settings.map(Into::into),
             annotations: v1.annotations,
             contributors: v1.contributors.into_iter().map(Into::into).collect(),
@@ -312,27 +322,27 @@ impl From<crate::types::ClassDefinition> for ClassDefinitionV2 {
             mixins: intern_vec(v1.mixins),
             slots: intern_vec(v1.slots),
             subclass_of: intern_vec(v1.subclass_of),
-            
+
             description: v1.description,
             deprecated: v1.deprecated,
             aliases: v1.aliases,
             notes: v1.notes,
             comments: v1.comments,
             todos: v1.todos,
-            
+
             abstract_: v1.abstract_,
             mixin: v1.mixin,
             values_from: vec![], // Not present in v1
             id_prefixes: vec![], // Not present in v1
             see_also: intern_vec(v1.see_also),
-            
+
             annotations: v1.annotations,
             extensions: HashMap::new(), // Not present in v1
-            from_schema: None, // Not present in v1
-            imported_from: None, // Not present in v1
-            source: None, // Not present in v1
-            in_language: None, // Not present in v1
-            rank: None, // Not present in v1
+            from_schema: None,          // Not present in v1
+            imported_from: None,        // Not present in v1
+            source: None,               // Not present in v1
+            in_language: None,          // Not present in v1
+            rank: None,                 // Not present in v1
         }
     }
 }
@@ -346,14 +356,14 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             is_a: intern_option(v1.is_a.as_deref()),
             mixins: intern_vec(v1.mixins),
             inverse: intern_option(v1.inverse.as_deref()),
-            domain: None, // Not in v1
+            domain: None,         // Not in v1
             subproperty_of: None, // Not in v1
-            symmetric: None, // Not in v1
-            
+            symmetric: None,      // Not in v1
+
             pattern: intern_option(v1.pattern.as_deref()),
             equals_expression: intern_option(v1.equals_expression.as_deref()),
             equals_string_in: v1.equals_string_in.map(intern_vec),
-            
+
             description: v1.description,
             title: None, // Not in v1
             deprecated: v1.deprecated,
@@ -361,7 +371,7 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             notes: v1.notes,
             comments: v1.comments,
             todos: v1.todos,
-            
+
             required: v1.required,
             recommended: None, // Not in v1
             multivalued: v1.multivalued,
@@ -369,47 +379,49 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             inlined_as_list: v1.inlined_as_list,
             key: None, // Not in v1
             identifier: v1.identifier,
-            designates_type: None, // Not in v1
-            alias: None, // Not in v1
-            owner: None, // Not in v1
-            readonly: None, // Not in v1
-            ifabsent: None, // Not in v1
-            list_elements_unique: None, // Not in v1
+            designates_type: None,       // Not in v1
+            alias: None,                 // Not in v1
+            owner: None,                 // Not in v1
+            readonly: None,              // Not in v1
+            ifabsent: None,              // Not in v1
+            list_elements_unique: None,  // Not in v1
             list_elements_ordered: None, // Not in v1
-            shared: None, // Not in v1
-            locally_defined: None, // Not in v1
-            asymmetric: None, // Not in v1
-            reflexive: None, // Not in v1
-            irreflexive: None, // Not in v1
-            transitive: None, // Not in v1
-            
+            shared: None,                // Not in v1
+            locally_defined: None,       // Not in v1
+            asymmetric: None,            // Not in v1
+            reflexive: None,             // Not in v1
+            irreflexive: None,           // Not in v1
+            transitive: None,            // Not in v1
+
             minimum_value: v1.minimum_value,
             maximum_value: v1.maximum_value,
-            minimum_cardinality: None, // Not in v1 SlotDefinition 
+            minimum_cardinality: None, // Not in v1 SlotDefinition
             maximum_cardinality: None, // Not in v1 SlotDefinition
-            
+
             see_also: intern_vec(v1.see_also),
             values_from: vec![], // Not in v1
             id_prefixes: vec![], // Not in v1
-            
+
             structured_pattern: v1.structured_pattern,
             examples: v1.examples,
             annotations: v1.annotations.map(|a| {
                 // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
-                a.into_iter().map(|(k, v)| {
-                    // Create simple annotation since Annotation is an enum
-                    let annotation = Annotation::Complex {
-                        tag: k.clone(),
-                        value: v,
-                    };
-                    (k, annotation)
-                }).collect()
+                a.into_iter()
+                    .map(|(k, v)| {
+                        // Create simple annotation since Annotation is an enum
+                        let annotation = Annotation::Complex {
+                            tag: k.clone(),
+                            value: v,
+                        };
+                        (k, annotation)
+                    })
+                    .collect()
             }),
             extensions: HashMap::new(), // Not in v1
-            from_schema: None, // Not in v1
-            imported_from: None, // Not in v1
-            source: None, // Not in v1
-            in_language: None, // Not in v1
+            from_schema: None,          // Not in v1
+            imported_from: None,        // Not in v1
+            source: None,               // Not in v1
+            in_language: None,          // Not in v1
             rank: v1.rank,
         }
     }
@@ -429,19 +441,21 @@ impl From<crate::types::TypeDefinition> for TypeDefinitionV2 {
             maximum_value: v1.maximum_value,
             annotations: v1.annotations.map(|a| {
                 // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
-                a.into_iter().map(|(k, v)| {
-                    // Create simple annotation since Annotation is an enum
-                    let annotation = Annotation::Complex {
-                        tag: k.clone(),
-                        value: v,
-                    };
-                    (k, annotation)
-                }).collect()
+                a.into_iter()
+                    .map(|(k, v)| {
+                        // Create simple annotation since Annotation is an enum
+                        let annotation = Annotation::Complex {
+                            tag: k.clone(),
+                            value: v,
+                        };
+                        (k, annotation)
+                    })
+                    .collect()
             }),
             extensions: HashMap::new(), // Not in v1
-            from_schema: None, // Not in v1
-            imported_from: None, // Not in v1
-            rank: None, // Not in v1
+            from_schema: None,          // Not in v1
+            imported_from: None,        // Not in v1
+            rank: None,                 // Not in v1
         }
     }
 }
@@ -456,30 +470,45 @@ impl From<crate::types::EnumDefinition> for EnumDefinitionV2 {
             code_set_version: intern_option(v1.code_set_version.as_deref()),
             pv_formula: None, // Not in v1
             description: v1.description,
-            title: None, // Not in v1
+            title: None,      // Not in v1
             deprecated: None, // Not in v1
-            permissible_values: v1.permissible_values.into_iter().map(|pv| {
-                match pv {
-                    crate::types::PermissibleValue::Simple(s) => (s.clone(), PermissibleValue::Simple(s)),
-                    crate::types::PermissibleValue::Complex { text, description, meaning } => {
-                        (text.clone(), PermissibleValue::Complex { text, description, meaning })
+            permissible_values: v1
+                .permissible_values
+                .into_iter()
+                .map(|pv| match pv {
+                    crate::types::PermissibleValue::Simple(s) => {
+                        (s.clone(), PermissibleValue::Simple(s))
                     }
-                }
-            }).collect(),
+                    crate::types::PermissibleValue::Complex {
+                        text,
+                        description,
+                        meaning,
+                    } => (
+                        text.clone(),
+                        PermissibleValue::Complex {
+                            text,
+                            description,
+                            meaning,
+                        },
+                    ),
+                })
+                .collect(),
             annotations: v1.annotations.map(|a| {
                 // Convert from IndexMap<String, AnnotationValue> to HashMap<String, Annotation>
-                a.into_iter().map(|(k, v)| {
-                    // Create simple annotation since Annotation is an enum
-                    let annotation = Annotation::Complex {
-                        tag: k.clone(),
-                        value: v,
-                    };
-                    (k, annotation)
-                }).collect()
+                a.into_iter()
+                    .map(|(k, v)| {
+                        // Create simple annotation since Annotation is an enum
+                        let annotation = Annotation::Complex {
+                            tag: k.clone(),
+                            value: v,
+                        };
+                        (k, annotation)
+                    })
+                    .collect()
             }),
             extensions: HashMap::new(), // Not in v1
-            from_schema: None, // Not in v1
-            rank: None, // Not in v1
+            from_schema: None,          // Not in v1
+            rank: None,                 // Not in v1
         }
     }
 }
@@ -489,10 +518,10 @@ impl From<crate::types::SubsetDefinition> for SubsetDefinitionV2 {
         Self {
             name: intern(&v1.name),
             description: v1.description,
-            annotations: None, // v1 doesn't have annotations 
+            annotations: None,          // v1 doesn't have annotations
             extensions: HashMap::new(), // Not in v1
-            from_schema: None, // Not in v1
-            rank: None, // Not in v1
+            from_schema: None,          // Not in v1
+            rank: None,                 // Not in v1
         }
     }
 }
@@ -504,9 +533,14 @@ impl From<crate::types::PrefixDefinition> for PrefixDefinitionV2 {
                 prefix_prefix: intern(&s),
                 prefix_reference: intern(&s), // PrefixDefinitionV2 requires Arc<str>, not Option
             },
-            crate::types::PrefixDefinition::Complex { prefix_prefix, prefix_reference } => Self {
+            crate::types::PrefixDefinition::Complex {
+                prefix_prefix,
+                prefix_reference,
+            } => Self {
                 prefix_prefix: intern(&prefix_prefix),
-                prefix_reference: intern(&prefix_reference.unwrap_or_else(|| prefix_prefix.clone())),
+                prefix_reference: intern(
+                    &prefix_reference.unwrap_or_else(|| prefix_prefix.clone()),
+                ),
             },
         }
     }

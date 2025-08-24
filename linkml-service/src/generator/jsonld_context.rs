@@ -5,8 +5,8 @@
 
 use crate::generator::traits::{Generator, GeneratorConfig};
 use linkml_core::error::LinkMLError;
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition, PrefixDefinition};
-use serde_json::{json, Map, Value};
+use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
+use serde_json::{Map, Value, json};
 
 /// JSON-LD Context generator configuration
 #[derive(Debug, Clone)]
@@ -51,66 +51,66 @@ impl JsonLdContextGenerator {
     pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
         Self { config }
     }
-    
+
     /// Generate the context object
     fn generate_context(&self, schema: &SchemaDefinition) -> Result<Value, LinkMLError> {
         let mut context = Map::new();
-        
+
         // Add base URI if provided
         if let Some(base) = &self.config.base_uri {
             context.insert("@base".to_string(), json!(base));
         }
-        
+
         // Add default language if specified
         if let Some(lang) = &self.config.default_language {
             context.insert("@language".to_string(), json!(lang));
         }
-        
+
         // Add prefix mappings
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
                 if prefix != "@base" && prefix != "@language" {
                     let reference = match expansion {
                         PrefixDefinition::Simple(url) => url.clone(),
-                        PrefixDefinition::Complex { prefix_reference, .. } => {
-                            prefix_reference.as_ref().cloned().unwrap_or_default()
-                        }
+                        PrefixDefinition::Complex {
+                            prefix_reference, ..
+                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
                     };
                     context.insert(prefix.clone(), json!(reference));
                 }
             }
         }
-        
+
         // Add default prefix if available
         if let Some(default_prefix) = &schema.default_prefix {
             if let Some(expansion) = schema.prefixes.get(default_prefix) {
                 let reference = match expansion {
                     PrefixDefinition::Simple(url) => url.clone(),
-                    PrefixDefinition::Complex { prefix_reference, .. } => {
-                        prefix_reference.as_ref().cloned().unwrap_or_default()
-                    }
+                    PrefixDefinition::Complex {
+                        prefix_reference, ..
+                    } => prefix_reference.as_ref().cloned().unwrap_or_default(),
                 };
                 context.insert("@vocab".to_string(), json!(reference));
             }
         }
-        
+
         // Add class mappings
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 self.add_class_to_context(class_name, class_def, &mut context, schema)?;
             }
         }
-        
+
         // Add slot mappings
         if !schema.slots.is_empty() {
             for (slot_name, slot_def) in &schema.slots {
                 self.add_slot_to_context(slot_name, slot_def, &mut context, schema)?;
             }
         }
-        
+
         Ok(Value::Object(context))
     }
-    
+
     /// Add a class to the context
     fn add_class_to_context(
         &self,
@@ -120,16 +120,16 @@ impl JsonLdContextGenerator {
         schema: &SchemaDefinition,
     ) -> Result<(), LinkMLError> {
         let mut class_mapping = Map::new();
-        
+
         // Determine the IRI for the class
         let class_iri = self.get_iri_for_element(class_name, &None, schema);
         class_mapping.insert("@id".to_string(), json!(class_iri));
-        
+
         // Add type if this represents an RDF type
         if class_def.class_uri.is_some() || class_def.is_a.is_none() {
             class_mapping.insert("@type".to_string(), json!("@id"));
         }
-        
+
         // Process class-specific slots
         if !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
@@ -138,22 +138,22 @@ impl JsonLdContextGenerator {
                 }
             }
         }
-        
+
         // Process attributes
         if !class_def.attributes.is_empty() {
             for (attr_name, attr_def) in &class_def.attributes {
                 self.add_slot_to_context(attr_name, attr_def, context, schema)?;
             }
         }
-        
+
         // Only add if there are actual mappings
         if !class_mapping.is_empty() {
             context.insert(class_name.to_string(), Value::Object(class_mapping));
         }
-        
+
         Ok(())
     }
-    
+
     /// Add a slot to the context
     fn add_slot_to_context(
         &self,
@@ -166,46 +166,46 @@ impl JsonLdContextGenerator {
         if context.contains_key(slot_name) {
             return Ok(());
         }
-        
+
         let mut slot_mapping = Map::new();
-        
+
         // Determine the IRI for the slot
         let slot_iri = if let Some(uri) = &slot_def.slot_uri {
             uri.clone()
         } else {
             self.get_iri_for_element(slot_name, &None, schema)
         };
-        
+
         // Simple string mapping if no special handling needed
         if !self.needs_complex_mapping(slot_def, schema) {
             context.insert(slot_name.to_string(), json!(slot_iri));
             return Ok(());
         }
-        
+
         // Complex mapping
         slot_mapping.insert("@id".to_string(), json!(slot_iri));
-        
+
         // Add type coercion if enabled
         if self.config.include_type_coercion {
             if let Some(type_value) = self.get_type_coercion(slot_def, schema) {
                 slot_mapping.insert("@type".to_string(), type_value);
             }
         }
-        
+
         // Add container mapping for multivalued slots
         if self.config.include_containers && slot_def.multivalued == Some(true) {
             slot_mapping.insert("@container".to_string(), json!("@list"));
         }
-        
+
         // Add language mapping if applicable
         if self.config.include_language_maps && self.is_translatable_slot(slot_def) {
             slot_mapping.insert("@container".to_string(), json!("@language"));
         }
-        
+
         context.insert(slot_name.to_string(), Value::Object(slot_mapping));
         Ok(())
     }
-    
+
     /// Determine if a slot needs complex mapping
     fn needs_complex_mapping(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> bool {
         // Needs complex mapping if:
@@ -213,30 +213,34 @@ impl JsonLdContextGenerator {
         // - It's multivalued and containers are enabled
         // - It's translatable and language maps are enabled
         // - It has a specific slot URI different from default
-        
+
         if self.config.include_type_coercion && self.get_type_coercion(slot_def, schema).is_some() {
             return true;
         }
-        
+
         if self.config.include_containers && slot_def.multivalued == Some(true) {
             return true;
         }
-        
+
         if self.config.include_language_maps && self.is_translatable_slot(slot_def) {
             return true;
         }
-        
+
         slot_def.slot_uri.is_some()
     }
-    
+
     /// Get type coercion for a slot
-    fn get_type_coercion(&self, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> Option<Value> {
+    fn get_type_coercion(
+        &self,
+        slot_def: &SlotDefinition,
+        schema: &SchemaDefinition,
+    ) -> Option<Value> {
         if let Some(range) = &slot_def.range {
             // Check if it's a class reference
             if schema.classes.contains_key(range) {
                 return Some(json!("@id"));
             }
-            
+
             // Check if it's a type
             if !schema.types.is_empty() {
                 if let Some(type_def) = schema.types.get(range) {
@@ -255,7 +259,7 @@ impl JsonLdContextGenerator {
                     };
                 }
             }
-            
+
             // Direct type mapping
             match range.as_str() {
                 "integer" | "int" => Some(json!("xsd:integer")),
@@ -272,7 +276,7 @@ impl JsonLdContextGenerator {
             None
         }
     }
-    
+
     /// Check if a slot is translatable
     fn is_translatable_slot(&self, slot_def: &SlotDefinition) -> bool {
         // A slot is translatable if it's a string type and marked as translatable
@@ -284,7 +288,7 @@ impl JsonLdContextGenerator {
         }
         false
     }
-    
+
     /// Get IRI for an element
     fn get_iri_for_element(
         &self,
@@ -298,27 +302,27 @@ impl JsonLdContextGenerator {
                 if let Some(expansion) = schema.prefixes.get(prefix) {
                     let reference = match expansion {
                         PrefixDefinition::Simple(url) => url.clone(),
-                        PrefixDefinition::Complex { prefix_reference, .. } => {
-                            prefix_reference.as_ref().cloned().unwrap_or_default()
-                        }
+                        PrefixDefinition::Complex {
+                            prefix_reference, ..
+                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
                     };
                     return format!("{}{}", reference, name);
                 }
             }
         }
-        
+
         // Use CURIE if enabled and default prefix exists
         if self.config.use_curies {
             if let Some(default_prefix) = &schema.default_prefix {
                 return format!("{}:{}", default_prefix, name);
             }
         }
-        
+
         // Use base URI if available
         if let Some(base) = &self.config.base_uri {
             return format!("{}{}", base, name);
         }
-        
+
         // Fallback to just the name
         name.to_string()
     }
@@ -327,20 +331,21 @@ impl JsonLdContextGenerator {
 impl Generator for JsonLdContextGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let context = self.generate_context(schema)?;
-        
+
         let output = json!({
             "@context": context
         });
-        
+
         // Pretty print the JSON
-        serde_json::to_string_pretty(&output)
-            .map_err(|e| LinkMLError::ServiceError(format!("Failed to serialize JSON-LD context: {}", e)))
+        serde_json::to_string_pretty(&output).map_err(|e| {
+            LinkMLError::ServiceError(format!("Failed to serialize JSON-LD context: {}", e))
+        })
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "jsonld"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "context"
     }
@@ -349,14 +354,14 @@ impl Generator for JsonLdContextGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::types::{PrefixDefinition, SchemaDefinition, ClassDefinition, SlotDefinition};
     use indexmap::IndexMap;
-    
+    use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
+
     #[test]
     fn test_jsonld_context_generation() {
         let mut schema = SchemaDefinition::default();
-        schema.name = Some("TestSchema".to_string());
-        
+        schema.name = "TestSchema".to_string();
+
         // Add prefixes
         let mut prefixes = IndexMap::new();
         prefixes.insert(
@@ -369,38 +374,40 @@ mod tests {
         );
         schema.prefixes = prefixes;
         schema.default_prefix = Some("ex".to_string());
-        
+
         // Add a class
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
-        person_class.slots = Some(vec!["name".to_string(), "age".to_string()]);
-        
+        person_class.slots = vec!["name".to_string(), "age".to_string()];
+
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
         schema.classes = classes;
-        
+
         // Add slots
         let mut name_slot = SlotDefinition::default();
         name_slot.description = Some("The person's name".to_string());
         name_slot.range = Some("string".to_string());
-        
+
         let mut age_slot = SlotDefinition::default();
         age_slot.description = Some("The person's age".to_string());
         age_slot.range = Some("integer".to_string());
-        
+
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);
         slots.insert("age".to_string(), age_slot);
         schema.slots = slots;
-        
+
         let config = JsonLdContextGeneratorConfig {
             base_uri: Some("https://example.com/".to_string()),
             ..Default::default()
         };
         let generator = JsonLdContextGenerator::new(config);
-        
-        let result = generator.generate(&schema).expect("should generate JSON-LD context");
-        
+
+        let result = generator
+            .generate(&schema)
+            .expect("should generate JSON-LD context");
+
         // Verify key elements
         assert!(result.contains("@context"));
         assert!(result.contains("@base"));

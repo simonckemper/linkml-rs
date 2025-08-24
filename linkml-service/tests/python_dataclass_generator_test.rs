@@ -1,7 +1,7 @@
 //! Tests for the Python dataclass generator
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use linkml_service::generator::{GeneratorOptions, PythonDataclassGenerator, Generator};
+use linkml_service::generator::{Generator, GeneratorOptions, PythonDataclassGenerator};
 use serde_json::json;
 
 async fn generate_python(schema: SchemaDefinition) -> String {
@@ -11,9 +11,7 @@ async fn generate_python(schema: SchemaDefinition) -> String {
         .with_examples(true)
         .set_custom("generate_validation", "true");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    assert_eq!(outputs.len(), 1);
-    outputs[0].content.clone()
+    generator.generate(&schema).unwrap()
 }
 
 #[tokio::test]
@@ -36,30 +34,39 @@ async fn test_simple_class_generation() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        description: Some("Unique identifier".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            description: Some("Unique identifier".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        description: Some("Person's full name".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            description: Some("Person's full name".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        description: Some("Age in years".to_string()),
-        range: Some("integer".to_string()),
-        minimum_value: Some(json!(0)),
-        maximum_value: Some(json!(150)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            description: Some("Age in years".to_string()),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            maximum_value: Some(json!(150)),
+            ..Default::default()
+        },
+    );
 
     let output = generate_python(schema).await;
 
@@ -100,20 +107,26 @@ async fn test_multivalued_fields() {
 
     schema.classes.insert("Group".to_string(), group);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("members".to_string(), SlotDefinition {
-        name: "members".to_string(),
-        description: Some("Group members".to_string()),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "members".to_string(),
+        SlotDefinition {
+            name: "members".to_string(),
+            description: Some("Group members".to_string()),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        },
+    );
 
     let output = generate_python(schema).await;
 
@@ -137,23 +150,29 @@ async fn test_enum_generation() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("status".to_string(), SlotDefinition {
-        name: "status".to_string(),
-        description: Some("Person's status".to_string()),
-        permissible_values: vec![
-            PermissibleValue::Simple("active".to_string()),
-            PermissibleValue::Simple("inactive".to_string()),
-            PermissibleValue::Simple("pending".to_string()),
-        ],
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "status".to_string(),
+        SlotDefinition {
+            name: "status".to_string(),
+            description: Some("Person's status".to_string()),
+            permissible_values: vec![
+                PermissibleValue::Simple("active".to_string()),
+                PermissibleValue::Simple("inactive".to_string()),
+                PermissibleValue::Simple("pending".to_string()),
+            ],
+            ..Default::default()
+        },
+    );
 
     let output = generate_python(schema).await;
 
@@ -197,25 +216,34 @@ async fn test_inheritance() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        range: Some("integer".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_python(schema).await;
 
@@ -246,26 +274,30 @@ async fn test_pattern_validation() {
 
     schema.classes.insert("Contact".to_string(), contact);
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("phone".to_string(), SlotDefinition {
-        name: "phone".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "phone".to_string(),
+        SlotDefinition {
+            name: "phone".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
+            ..Default::default()
+        },
+    );
 
     let generator = PythonDataclassGenerator::new();
-    let options = GeneratorOptions::new()
-        .set_custom("generate_validation", "true");
+    let options = GeneratorOptions::new().set_custom("generate_validation", "true");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let output = &outputs[0].content;
+    let output = generator.generate(&schema).unwrap();
 
     // Check pattern validation in __post_init__
     assert!(output.contains("import re"));

@@ -3,7 +3,7 @@
 //! All configuration values must be externalized through RootReal's Configuration Service.
 //! NO HARDCODED VALUES are allowed per RootReal architecture standards.
 
-use configuration_core::{Validate, ConfigurationError};
+use configuration_core::{ConfigurationError, Validate};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -12,19 +12,19 @@ use std::collections::HashMap;
 pub struct LinkMLServiceConfig {
     /// `TypeDB` configuration
     pub typedb: TypeDBConfig,
-    
+
     /// Parser configuration
     pub parser: ParserConfig,
-    
+
     /// Validator configuration
     pub validator: ValidatorConfig,
-    
+
     /// Generator configuration
     pub generator: GeneratorConfig,
-    
+
     /// Cache configuration
     pub cache: CacheConfig,
-    
+
     /// Performance configuration
     pub performance: PerformanceConfig,
 }
@@ -34,28 +34,28 @@ pub struct LinkMLServiceConfig {
 pub struct TypeDBConfig {
     /// `TypeDB` server address (e.g., "localhost:1729")
     pub server_address: String,
-    
+
     /// Default database name
     pub default_database: String,
-    
+
     /// Batch size for operations
     pub batch_size: usize,
-    
+
     /// Connection timeout in milliseconds
     pub connection_timeout_ms: u64,
-    
+
     /// Query timeout in milliseconds
     pub query_timeout_ms: u64,
-    
+
     /// Maximum retry attempts
     pub max_retries: u32,
-    
+
     /// Retry delay in milliseconds
     pub retry_delay_ms: u64,
-    
+
     /// Connection pool size
     pub pool_size: usize,
-    
+
     /// Include inferred attributes
     pub include_inferred: bool,
 }
@@ -65,16 +65,16 @@ pub struct TypeDBConfig {
 pub struct ParserConfig {
     /// Maximum recursion depth for imports
     pub max_recursion_depth: u32,
-    
+
     /// Enable schema caching
     pub enable_cache: bool,
-    
+
     /// Schema cache TTL in seconds
     pub cache_ttl_seconds: u64,
-    
+
     /// Maximum file size in bytes
     pub max_file_size_bytes: u64,
-    
+
     /// Supported schema formats
     pub supported_formats: Vec<String>,
 }
@@ -84,19 +84,19 @@ pub struct ParserConfig {
 pub struct ValidatorConfig {
     /// Enable parallel validation
     pub enable_parallel: bool,
-    
+
     /// Number of validation threads
     pub thread_count: usize,
-    
+
     /// Maximum validation batch size
     pub batch_size: usize,
-    
+
     /// Validation timeout in milliseconds
     pub timeout_ms: u64,
-    
+
     /// Maximum validation errors to collect
     pub max_errors: usize,
-    
+
     /// Stop on first error
     pub fail_fast: bool,
 }
@@ -106,13 +106,13 @@ pub struct ValidatorConfig {
 pub struct GeneratorConfig {
     /// Default output directory
     pub output_directory: String,
-    
+
     /// Enable code formatting
     pub enable_formatting: bool,
-    
+
     /// Include documentation comments
     pub include_docs: bool,
-    
+
     /// Generator-specific options
     pub generator_options: HashMap<String, GeneratorOptions>,
 }
@@ -122,7 +122,7 @@ pub struct GeneratorConfig {
 pub struct GeneratorOptions {
     /// Custom template path
     pub template_path: Option<String>,
-    
+
     /// Additional generator settings
     pub settings: HashMap<String, serde_json::Value>,
 }
@@ -132,13 +132,13 @@ pub struct GeneratorOptions {
 pub struct CacheConfig {
     /// Maximum cache entries
     pub max_entries: usize,
-    
+
     /// Cache TTL in seconds
     pub ttl_seconds: u64,
-    
+
     /// Enable cache compression
     pub enable_compression: bool,
-    
+
     /// Cache eviction policy
     pub eviction_policy: EvictionPolicy,
 }
@@ -157,79 +157,79 @@ pub enum EvictionPolicy {
 pub struct PerformanceConfig {
     /// Enable performance monitoring
     pub enable_monitoring: bool,
-    
+
     /// Memory limit in bytes
     pub memory_limit_bytes: Option<u64>,
-    
+
     /// CPU limit (percentage)
     pub cpu_limit_percent: Option<u8>,
-    
+
     /// Enable string interning
     pub enable_string_interning: bool,
-    
+
     /// String intern pool size
     pub string_pool_size: usize,
 }
 
 impl Validate for LinkMLServiceConfig {
     type Error = ConfigurationError;
-    
+
     fn validate(&self) -> Result<(), Self::Error> {
         // Validate TypeDB config
         if self.typedb.server_address.is_empty() {
             return Err(ConfigurationError::validation_error(
-                "TypeDB server address cannot be empty".to_string()
+                "TypeDB server address cannot be empty".to_string(),
             ));
         }
-        
+
         if self.typedb.batch_size == 0 {
             return Err(ConfigurationError::validation_error(
-                "TypeDB batch size must be greater than 0".to_string()
+                "TypeDB batch size must be greater than 0".to_string(),
             ));
         }
-        
+
         if self.typedb.pool_size == 0 {
             return Err(ConfigurationError::validation_error(
-                "TypeDB connection pool size must be greater than 0".to_string()
+                "TypeDB connection pool size must be greater than 0".to_string(),
             ));
         }
-        
+
         // Validate parser config
         if self.parser.max_recursion_depth == 0 {
             return Err(ConfigurationError::validation_error(
-                "Parser max recursion depth must be greater than 0".to_string()
+                "Parser max recursion depth must be greater than 0".to_string(),
             ));
         }
-        
+
         if self.parser.max_file_size_bytes == 0 {
             return Err(ConfigurationError::validation_error(
-                "Parser max file size must be greater than 0".to_string()
+                "Parser max file size must be greater than 0".to_string(),
             ));
         }
-        
+
         // Validate validator config
         if self.validator.thread_count == 0 {
             return Err(ConfigurationError::validation_error(
-                "Validator thread count must be greater than 0".to_string()
+                "Validator thread count must be greater than 0".to_string(),
             ));
         }
-        
+
         // Validate cache config
         if self.cache.max_entries == 0 {
             return Err(ConfigurationError::validation_error(
-                "Cache max entries must be greater than 0".to_string()
+                "Cache max entries must be greater than 0".to_string(),
             ));
         }
-        
+
         // Validate performance config
         if let Some(cpu_limit) = self.performance.cpu_limit_percent {
             if cpu_limit == 0 || cpu_limit > 100 {
                 return Err(ConfigurationError::validation_error(
-                    "CPU limit must be between 1 and 100 percent".to_string()
+                    "CPU limit must be between 1 and 100 percent".to_string(),
                 ));
             }
         }
-        
+
         Ok(())
     }
 }
@@ -257,11 +257,7 @@ impl Default for ParserConfig {
             enable_cache: true,
             cache_ttl_seconds: 3600,
             max_file_size_bytes: 10 * 1024 * 1024, // 10MB
-            supported_formats: vec![
-                "yaml".to_string(),
-                "yml".to_string(),
-                "json".to_string(),
-            ],
+            supported_formats: vec!["yaml".to_string(), "yml".to_string(), "json".to_string()],
         }
     }
 }
@@ -325,7 +321,7 @@ impl LinkMLServiceConfig {
         config.performance.enable_monitoring = true;
         config
     }
-    
+
     /// Testing environment configuration
     #[must_use]
     pub fn testing() -> Self {
@@ -336,7 +332,7 @@ impl LinkMLServiceConfig {
         config.cache.max_entries = 10;
         config
     }
-    
+
     /// Production environment configuration
     #[must_use]
     pub fn production() -> Self {

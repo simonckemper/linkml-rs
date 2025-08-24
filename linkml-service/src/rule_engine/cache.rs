@@ -50,7 +50,7 @@ impl CacheConfig {
         Self {
             max_entries: config.max_entries,
             ttl: Duration::from_secs(config.ttl_seconds),
-            use_lru: true,  // Default to LRU for rule cache
+            use_lru: true, // Default to LRU for rule cache
         }
     }
 }
@@ -83,7 +83,7 @@ impl RuleCache {
     pub fn new() -> Self {
         Self::with_config(CacheConfig::default())
     }
-    
+
     /// Create a new rule cache with custom configuration
     pub fn with_config(config: CacheConfig) -> Self {
         Self {
@@ -92,12 +92,12 @@ impl RuleCache {
             stats: Arc::new(RwLock::new(CacheStats::default())),
         }
     }
-    
+
     /// Get compiled rules from the cache
     pub fn get(&self, class_name: &str) -> Option<Vec<CompiledRule>> {
         let mut cache = self.cache.write();
         let mut stats = self.stats.write();
-        
+
         if let Some(entry) = cache.get_mut(class_name) {
             // Check if entry is still valid
             if entry.created_at.elapsed() > self.config.ttl {
@@ -107,11 +107,11 @@ impl RuleCache {
                 stats.misses += 1;
                 return None;
             }
-            
+
             // Update access time and count
             entry.last_accessed = Instant::now();
             entry.access_count += 1;
-            
+
             stats.hits += 1;
             Some(entry.rules.clone())
         } else {
@@ -119,17 +119,17 @@ impl RuleCache {
             None
         }
     }
-    
+
     /// Put compiled rules into the cache
     pub fn put(&self, class_name: String, rules: Vec<CompiledRule>) {
         let mut cache = self.cache.write();
         let mut stats = self.stats.write();
-        
+
         // Check if we need to evict entries
         if cache.len() >= self.config.max_entries && !cache.contains_key(&class_name) {
             self.evict_entry(&mut cache, &mut stats);
         }
-        
+
         // Insert new entry
         let entry = CacheEntry {
             rules,
@@ -137,69 +137,67 @@ impl RuleCache {
             last_accessed: Instant::now(),
             access_count: 0,
         };
-        
+
         cache.insert(class_name, entry);
         stats.entries = cache.len();
     }
-    
+
     /// Clear the entire cache
     pub fn clear(&self) {
         let mut cache = self.cache.write();
         let mut stats = self.stats.write();
-        
+
         cache.clear();
         stats.entries = 0;
     }
-    
+
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
         self.stats.read().clone()
     }
-    
+
     /// Evict an entry based on the eviction policy
-    fn evict_entry(
-        &self,
-        cache: &mut HashMap<String, CacheEntry>,
-        stats: &mut CacheStats,
-    ) {
+    fn evict_entry(&self, cache: &mut HashMap<String, CacheEntry>, stats: &mut CacheStats) {
         if cache.is_empty() {
             return;
         }
-        
+
         let key_to_evict = if self.config.use_lru {
             // Find least recently used entry
-            cache.iter()
+            cache
+                .iter()
                 .min_by_key(|(_, entry)| entry.last_accessed)
                 .map(|(key, _)| key.clone())
         } else {
             // Find oldest entry
-            cache.iter()
+            cache
+                .iter()
                 .min_by_key(|(_, entry)| entry.created_at)
                 .map(|(key, _)| key.clone())
         };
-        
+
         if let Some(key) = key_to_evict {
             cache.remove(&key);
             stats.evictions += 1;
         }
     }
-    
+
     /// Remove expired entries
     pub fn cleanup_expired(&self) {
         let mut cache = self.cache.write();
         let mut stats = self.stats.write();
-        
+
         let expired_keys: Vec<String> = cache
             .iter()
             .filter(|(_, entry)| entry.created_at.elapsed() > self.config.ttl)
             .map(|(key, _)| key.clone())
             .collect();
-        
+
         for key in expired_keys {
             cache.remove(&key);
             stats.evictions += 1;
         }
-        
+
         stats.entries = cache.len();
     }
 }
@@ -233,7 +231,7 @@ impl CacheStats {
 mod tests {
     use super::*;
     use linkml_core::types::Rule;
-    
+
     fn create_test_rule() -> CompiledRule {
         CompiledRule::compile(
             Rule {
@@ -241,27 +239,28 @@ mod tests {
                 ..Default::default()
             },
             "TestClass".to_string(),
-        ).expect("should compile rule")
+        )
+        .expect("should compile rule")
     }
-    
+
     #[test]
     fn test_cache_basic_operations() {
         let cache = RuleCache::new();
         let rules = vec![create_test_rule()];
-        
+
         // Test miss
         assert!(cache.get("TestClass").is_none());
         assert_eq!(cache.stats().misses, 1);
-        
+
         // Test put and hit
         cache.put("TestClass".to_string(), rules.clone());
         assert_eq!(cache.stats().entries, 1);
-        
+
         let retrieved = cache.get("TestClass").expect("should retrieve cached rule");
         assert_eq!(retrieved.len(), 1);
         assert_eq!(cache.stats().hits, 1);
     }
-    
+
     #[test]
     fn test_cache_expiration() {
         let config = CacheConfig {
@@ -270,20 +269,20 @@ mod tests {
         };
         let cache = RuleCache::with_config(config);
         let rules = vec![create_test_rule()];
-        
+
         cache.put("TestClass".to_string(), rules);
-        
+
         // Should hit initially
         assert!(cache.get("TestClass").is_some());
-        
+
         // Wait for expiration
         std::thread::sleep(Duration::from_millis(150));
-        
+
         // Should miss after expiration
         assert!(cache.get("TestClass").is_none());
         assert_eq!(cache.stats().entries, 0);
     }
-    
+
     #[test]
     fn test_cache_eviction() {
         let config = CacheConfig {
@@ -292,17 +291,17 @@ mod tests {
             ..Default::default()
         };
         let cache = RuleCache::with_config(config);
-        
+
         // Fill cache
         cache.put("Class1".to_string(), vec![create_test_rule()]);
         cache.put("Class2".to_string(), vec![create_test_rule()]);
-        
+
         // Access Class2 to make it more recently used
         cache.get("Class2");
-        
+
         // Add third entry, should evict Class1 (LRU)
         cache.put("Class3".to_string(), vec![create_test_rule()]);
-        
+
         assert_eq!(cache.stats().entries, 2);
         assert_eq!(cache.stats().evictions, 1);
         assert!(cache.get("Class1").is_none());

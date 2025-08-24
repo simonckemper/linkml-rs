@@ -8,7 +8,7 @@ use linkml_service::generator::{
     traits::{Generator, GeneratorOptions},
     typeql_generator::TypeQLGenerator,
     python_dataclass::PythonDataclassGenerator,
-    sql::SqlGenerator,
+    sql::SQLGenerator,
     graphql_generator::GraphQLGenerator,
     markdown::MarkdownGenerator,
     json_schema::JsonSchemaGenerator,
@@ -32,7 +32,7 @@ use std::fs;
 
 /// Create a test schema with various edge cases
 fn create_test_schema() -> Schema {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.id = Some("https://example.org/test".to_string());
     schema.name = Some("TestSchema".to_string());
     
@@ -85,7 +85,7 @@ fn test_typeql_generator_error_handling() {
     }
     
     // Test with empty schema
-    let empty_schema = Schema::default();
+    let empty_schema = SchemaDefinition::default();
     let result = generator.generate(&empty_schema, &options);
     assert!(result.is_err() || result.unwrap().is_empty());
 }
@@ -110,7 +110,7 @@ fn test_python_generator_error_handling() {
     }
     
     // Test with schema missing required fields
-    let mut broken_schema = Schema::default();
+    let mut broken_schema = SchemaDefinition::default();
     let mut nameless_class = ClassDefinition::default();
     nameless_class.name = None; // Missing name
     broken_schema.classes.insert("".to_string(), nameless_class);
@@ -122,7 +122,7 @@ fn test_python_generator_error_handling() {
 /// Test SQL generator error handling
 #[test]
 fn test_sql_generator_error_handling() {
-    let generator = SqlGenerator::new();
+    let generator = SQLGenerator::new();
     let mut schema = create_test_schema();
     
     // Add slot with SQL reserved word as name
@@ -282,7 +282,7 @@ fn test_generator_registry_error_handling() {
     registry.register("test", Box::new(TypeQLGenerator::new()));
     
     // Try to register duplicate
-    let result = registry.register("test", Box::new(SqlGenerator::new()));
+    let result = registry.register("test", Box::new(SQLGenerator::new()));
     assert!(result.is_err());
     
     // Try to get non-existent generator
@@ -298,7 +298,7 @@ fn test_generator_registry_error_handling() {
 #[test]
 fn test_typescript_generator_complex_types() {
     let generator = TypeScriptGenerator::new();
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     
     // Add union type
     let mut union_slot = SlotDefinition::default();
@@ -337,7 +337,7 @@ async fn test_generator_concurrent_access() {
     let generators: Vec<Box<dyn Generator + Send + Sync>> = vec![
         Box::new(TypeQLGenerator::new()),
         Box::new(PythonDataclassGenerator::new()),
-        Box::new(SqlGenerator::new()),
+        Box::new(SQLGenerator::new()),
         Box::new(JsonSchemaGenerator::new()),
         Box::new(TypeScriptGenerator::new()),
     ];
@@ -363,7 +363,7 @@ async fn test_generator_concurrent_access() {
 #[test]
 fn test_csv_generator_special_cases() {
     let generator = CsvGenerator::new();
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     
     // Add class with CSV-problematic content
     let mut csv_class = ClassDefinition::default();
@@ -398,7 +398,7 @@ fn test_csv_generator_special_cases() {
 /// Test generators with missing dependencies
 #[test]
 fn test_generator_missing_dependencies() {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     
     // Create class that references non-existent parent
     let mut orphan_class = ClassDefinition::default();

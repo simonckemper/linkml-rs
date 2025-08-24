@@ -48,17 +48,17 @@ pub fn path_vec<T>() -> PathVec<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_small_vec_optimization() {
         // Test that small collections don't allocate
         let mut issues: IssueVec<String> = issue_vec();
         issues.push("error1".to_string());
         issues.push("error2".to_string());
-        
+
         // Should still be inline (no heap allocation)
         assert!(!issues.spilled());
-        
+
         // Adding more causes spill to heap
         issues.push("error3".to_string());
         assert!(issues.spilled());

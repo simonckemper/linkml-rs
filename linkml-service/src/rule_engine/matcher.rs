@@ -8,10 +8,12 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::expression::ExpressionEngine;
-use crate::validator::validators::{RangeValidator, PatternValidator, Validator as SlotValidator};
 use crate::validator::context::ValidationContext;
+use crate::validator::validators::{PatternValidator, RangeValidator, Validator as SlotValidator};
 
-use super::types::{CompiledCondition, CompiledSlotCondition, CompiledCompositeCondition, RuleExecutionContext};
+use super::types::{
+    CompiledCompositeCondition, CompiledCondition, CompiledSlotCondition, RuleExecutionContext,
+};
 
 /// Matcher for evaluating rule preconditions
 pub struct RuleMatcher {
@@ -23,7 +25,7 @@ impl RuleMatcher {
     pub fn new(expression_engine: ExpressionEngine) -> Self {
         Self { expression_engine }
     }
-    
+
     /// Check if a rule's preconditions match
     pub fn matches(
         &self,
@@ -51,24 +53,24 @@ impl RuleMatcher {
                         return Ok(false);
                     }
                 }
-                
+
                 if let Some(exprs) = expression_conditions {
                     if !self.match_expression_conditions(exprs, context)? {
                         return Ok(false);
                     }
                 }
-                
+
                 if let Some(composite) = composite_conditions {
                     if !self.match_composite_condition(composite, context)? {
                         return Ok(false);
                     }
                 }
-                
+
                 Ok(true)
             }
         }
     }
-    
+
     /// Match slot-based conditions
     fn match_slot_conditions(
         &self,
@@ -79,18 +81,18 @@ impl RuleMatcher {
             Value::Object(map) => map,
             _ => return Ok(false), // Non-object instances can't match slot conditions
         };
-        
+
         for (slot_name, condition) in conditions {
             let slot_value = instance_obj.get(slot_name).unwrap_or(&Value::Null);
-            
+
             if !self.match_slot_condition(slot_value, condition, context)? {
                 return Ok(false);
             }
         }
-        
+
         Ok(true)
     }
-    
+
     /// Match a single slot condition
     fn match_slot_condition(
         &self,
@@ -99,26 +101,26 @@ impl RuleMatcher {
         context: &RuleExecutionContext,
     ) -> Result<bool> {
         let original = &condition.original;
-        
+
         // Check required
         if let Some(required) = original.required {
             if required && value.is_null() {
                 return Ok(false);
             }
         }
-        
+
         // Skip further checks if value is null
         if value.is_null() {
             return Ok(true);
         }
-        
+
         // Check range/type
         if let Some(ref range) = original.range {
             if !self.check_range(value, range)? {
                 return Ok(false);
             }
         }
-        
+
         // Check pattern
         if let Some(ref pattern) = original.pattern {
             if let Value::String(_s) = value {
@@ -137,7 +139,7 @@ impl RuleMatcher {
                 return Ok(false);
             }
         }
-        
+
         // Check equals_string
         if let Some(ref expected) = original.equals_string {
             if let Value::String(actual) = value {
@@ -148,7 +150,7 @@ impl RuleMatcher {
                 return Ok(false);
             }
         }
-        
+
         // Check equals_number
         if let Some(expected) = original.equals_number {
             if let Value::Number(num) = value {
@@ -163,34 +165,36 @@ impl RuleMatcher {
                 return Ok(false);
             }
         }
-        
+
         // Check equals_expression
         if let Some(ref expr_ast) = condition.equals_expression_ast {
             let expr_context = context.get_expression_context();
-            let computed = self.expression_engine.evaluate_ast(expr_ast, &expr_context)?;
+            let computed = self
+                .expression_engine
+                .evaluate_ast(expr_ast, &expr_context)?;
             if value != &computed {
                 return Ok(false);
             }
         }
-        
+
         // Check min/max values
         if let Some(ref min) = original.minimum_value {
             if !self.compare_values(value, min, |a, b| a >= b)? {
                 return Ok(false);
             }
         }
-        
+
         if let Some(ref max) = original.maximum_value {
             if !self.compare_values(value, max, |a, b| a <= b)? {
                 return Ok(false);
             }
         }
-        
+
         // TODO: Implement any_of, all_of, exactly_one_of, none_of checks
-        
+
         Ok(true)
     }
-    
+
     /// Match expression-based conditions
     fn match_expression_conditions(
         &self,
@@ -198,24 +202,24 @@ impl RuleMatcher {
         context: &RuleExecutionContext,
     ) -> Result<bool> {
         let expr_context = context.get_expression_context();
-        
+
         for expr in expressions {
             let result = self.expression_engine.evaluate_ast(expr, &expr_context)?;
-            
+
             match result {
                 Value::Bool(false) => return Ok(false),
-                Value::Bool(true) => {},
+                Value::Bool(true) => {}
                 _ => {
                     return Err(LinkMLError::data_validation(
-                        "Rule expression must evaluate to boolean"
+                        "Rule expression must evaluate to boolean",
                     ));
                 }
             }
         }
-        
+
         Ok(true)
     }
-    
+
     /// Match composite conditions
     fn match_composite_condition(
         &self,
@@ -261,7 +265,7 @@ impl RuleMatcher {
             }
         }
     }
-    
+
     /// Check if a value matches a range/type constraint
     fn check_range(&self, value: &Value, range: &str) -> Result<bool> {
         // Use RangeValidator for consistency
@@ -275,7 +279,7 @@ impl RuleMatcher {
         let issues = validator.validate(value, &slot_def, &mut validation_context);
         Ok(issues.is_empty())
     }
-    
+
     /// Compare values using a comparison function
     fn compare_values<F>(&self, a: &Value, b: &Value, cmp: F) -> Result<bool>
     where
@@ -303,11 +307,11 @@ mod tests {
     use super::*;
     use linkml_core::types::SlotCondition;
     use serde_json::json;
-    
+
     #[test]
     fn test_slot_condition_matching() {
         let matcher = RuleMatcher::new(ExpressionEngine::new());
-        
+
         // Create a condition that checks age >= 18
         let condition = CompiledSlotCondition {
             original: SlotCondition {
@@ -316,42 +320,60 @@ mod tests {
             },
             equals_expression_ast: None,
         };
-        
+
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20}),
             "Person".to_string(),
             &mut validation_ctx,
         );
-        
-        assert!(matcher.match_slot_condition(&json!(20), &condition, &context).expect("should match age >= 18"));
-        assert!(!matcher.match_slot_condition(&json!(16), &condition, &context).expect("should not match age < 18"));
+
+        assert!(
+            matcher
+                .match_slot_condition(&json!(20), &condition, &context)
+                .expect("should match age >= 18")
+        );
+        assert!(
+            !matcher
+                .match_slot_condition(&json!(16), &condition, &context)
+                .expect("should not match age < 18")
+        );
     }
-    
+
     #[test]
     fn test_expression_condition_matching() {
         let matcher = RuleMatcher::new(ExpressionEngine::new());
-        
+
         // Parse expression
         let parser = crate::expression::parser::Parser::new();
-        let expr = parser.parse("{age} >= 18 and {status} == \"active\"").expect("should parse expression");
-        
+        let expr = parser
+            .parse("{age} >= 18 and {status} == \"active\"")
+            .expect("should parse expression");
+
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20, "status": "active"}),
             "Person".to_string(),
             &mut validation_ctx,
         );
-        
-        assert!(matcher.match_expression_conditions(&[expr.clone()], &context).expect("should match expression"));
-        
+
+        assert!(
+            matcher
+                .match_expression_conditions(&[expr.clone()], &context)
+                .expect("should match expression")
+        );
+
         let mut validation_ctx2 = ValidationContext::new(Default::default());
         let context2 = RuleExecutionContext::new(
             json!({"age": 16, "status": "active"}),
             "Person".to_string(),
             &mut validation_ctx2,
         );
-        
-        assert!(!matcher.match_expression_conditions(&[expr], &context2).expect("should not match expression"));
+
+        assert!(
+            !matcher
+                .match_expression_conditions(&[expr], &context2)
+                .expect("should not match expression")
+        );
     }
 }

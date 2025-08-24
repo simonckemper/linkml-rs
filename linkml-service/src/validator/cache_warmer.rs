@@ -61,14 +61,14 @@ impl CacheWarmingConfig {
         let max_entries = config.max_entries;
         let ttl_seconds = config.ttl_seconds;
         let enable_compression = config.enable_compression;
-        
+
         Self {
-            auto_warm: max_entries > 100,  // Enable if cache is large enough
-            batch_size: (max_entries / 20).max(10).min(100) as usize,  // 5% of max entries
+            auto_warm: max_entries > 100, // Enable if cache is large enough
+            batch_size: (max_entries / 20).max(10).min(100) as usize, // 5% of max entries
             max_concurrent: 4,
-            warming_interval: Duration::from_secs(ttl_seconds),  // Use TTL as warming interval
+            warming_interval: Duration::from_secs(ttl_seconds), // Use TTL as warming interval
             priority_threshold: 0.5,
-            predictive_warming: !enable_compression,  // Predictive warming if not compressing
+            predictive_warming: !enable_compression, // Predictive warming if not compressing
             history_size: 1000,
         }
     }
@@ -503,11 +503,14 @@ impl CacheWarmer {
                 if self.warming_in_progress.contains_key(&entry.key) {
                     continue;
                 }
-                
+
                 // Skip entries that would take too long
                 if entry.estimated_time > Duration::from_secs(1) {
-                    tracing::debug!("Skipping cache warming for {} due to long estimated time: {:?}", 
-                                   entry.key.class_name, entry.estimated_time);
+                    tracing::debug!(
+                        "Skipping cache warming for {} due to long estimated time: {:?}",
+                        entry.key.class_name,
+                        entry.estimated_time
+                    );
                     continue;
                 }
 

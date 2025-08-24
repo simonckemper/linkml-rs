@@ -5,16 +5,18 @@
 
 use linkml_core::*;
 use linkml_service::{
+    generator::{
+        GeneratorOptions, RustGenerator, TypeQLGenerator, typeql_generator::create_typeql_generator,
+    },
     parser::YamlParser,
-    validator::{Validator, ValidationReport},
-    generator::{TypeQLGenerator, typeql_generator::create_typeql_generator, RustGenerator, GeneratorOptions},
+    validator::{ValidationReport, Validator},
 };
 use serde_json::json;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("LinkML Standalone Usage Example\n");
-    
+
     // Define a schema
     let schema_yaml = r#"
 id: https://example.org/library
@@ -91,8 +93,11 @@ classes:
     println!("1. Parsing LinkML schema...");
     let parser = YamlParser::new();
     let schema = parser.parse_str(schema_yaml)?;
-    println!("   ✓ Schema parsed successfully: {}", schema.name.as_ref().unwrap());
-    
+    println!(
+        "   ✓ Schema parsed successfully: {}",
+        schema.name.as_ref().unwrap()
+    );
+
     // Create test data
     let valid_book = json!({
         "isbn": "9780134685991",
@@ -103,7 +108,7 @@ classes:
         "genres": ["Programming", "Java"],
         "available": true
     });
-    
+
     let invalid_book = json!({
         "isbn": "123",  // Invalid ISBN
         "title": "Test Book",
@@ -111,56 +116,83 @@ classes:
         "publication_year": 3000,  // Future year
         "pages": 0  // Invalid page count
     });
-    
+
     let library = json!({
         "name": "Tech Library",
         "books": [valid_book.clone()],
         "location": "Building A, Floor 3"
     });
-    
+
     // Validate data
     println!("\n2. Validating data...");
     let validator = Validator::new();
-    
+
     // Validate valid book
     let result = validator.validate(&valid_book, &schema, "Book")?;
-    println!("   Valid book: {}", if result.is_valid() { "✓ PASS" } else { "✗ FAIL" });
-    
+    println!(
+        "   Valid book: {}",
+        if result.is_valid() {
+            "✓ PASS"
+        } else {
+            "✗ FAIL"
+        }
+    );
+
     // Validate invalid book
     let result = validator.validate(&invalid_book, &schema, "Book")?;
-    println!("   Invalid book: {}", if result.is_valid() { "✓ PASS" } else { "✗ FAIL (expected)" });
+    println!(
+        "   Invalid book: {}",
+        if result.is_valid() {
+            "✓ PASS"
+        } else {
+            "✗ FAIL (expected)"
+        }
+    );
     if !result.is_valid() {
         for error in result.errors() {
             println!("     - {}: {}", error.field, error.message);
         }
     }
-    
+
     // Validate library
     let result = validator.validate(&library, &schema, "Library")?;
-    println!("   Library: {}", if result.is_valid() { "✓ PASS" } else { "✗ FAIL" });
-    
+    println!(
+        "   Library: {}",
+        if result.is_valid() {
+            "✓ PASS"
+        } else {
+            "✗ FAIL"
+        }
+    );
+
     // Generate TypeQL
     println!("\n3. Generating TypeQL for TypeDB...");
     let typeql_gen = create_typeql_generator();
     let typeql = typeql_gen.generate(&schema, &GeneratorOptions::default())?;
-    println!("   Generated TypeQL schema ({} lines)", typeql.lines().count());
+    println!(
+        "   Generated TypeQL schema ({} lines)",
+        typeql.lines().count()
+    );
     println!("\n--- TypeQL Preview ---");
     for line in typeql.lines().take(10) {
         println!("   {}", line);
     }
     println!("   ...");
-    
+
     // Generate Rust code
     println!("\n4. Generating Rust structs...");
     let rust_gen = RustGenerator::new();
     let rust_code = rust_gen.generate(&schema, &GeneratorOptions::default())?;
-    println!("   Generated Rust code ({} lines)", rust_code.lines().count());
+    println!(
+        "   Generated Rust code ({} lines)",
+        rust_code.lines().count()
+    );
     println!("\n--- Rust Code Preview ---");
     for line in rust_code.lines().take(15) {
         println!("   {}", line);
     }
     println!("   ...");
-    
+
     // Demonstrate batch validation
     println!("\n5. Batch validation example...");
     let books = vec![
@@ -184,39 +216,41 @@ classes:
             // Missing authors
         }),
     ];
-    
+
     let mut valid_count = 0;
     let mut invalid_count = 0;
-    
+
     for (i, book) in books.iter().enumerate() {
         match validator.validate(book, &schema, "Book") {
             Ok(report) if report.is_valid() => valid_count += 1,
             _ => invalid_count += 1,
         }
     }
-    
-    println!("   Validated {} books: {} valid, {} invalid", 
-            books.len(), valid_count, invalid_count);
-    
+
+    println!(
+        "   Validated {} books: {} valid, {} invalid",
+        books.len(),
+        valid_count,
+        invalid_count
+    );
+
     // Show memory efficiency
     println!("\n6. Performance characteristics:");
     println!("   - Schema parsing: ~0.5ms for typical schemas");
     println!("   - Validation: ~10µs per record");
     println!("   - TypeQL generation: ~1ms for 100 classes");
     println!("   - Memory usage: ~10KB per schema class");
-    
+
     println!("\n✓ Example completed successfully!");
-    
+
     Ok(())
 }
 
 // Example of implementing custom validation logic
 fn custom_isbn_validator(isbn: &str) -> bool {
     // Remove hyphens and spaces
-    let clean_isbn: String = isbn.chars()
-        .filter(|c| c.is_ascii_alphanumeric())
-        .collect();
-    
+    let clean_isbn: String = isbn.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
+
     match clean_isbn.len() {
         10 => validate_isbn10(&clean_isbn),
         13 => validate_isbn13(&clean_isbn),

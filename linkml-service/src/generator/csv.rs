@@ -57,31 +57,34 @@ impl CsvGenerator {
     }
 
     /// Generate CSV for a single class
-    fn generate_class_csv(&self, 
-        class_name: &str, 
+    fn generate_class_csv(
+        &self,
+        class_name: &str,
         class_def: &ClassDefinition,
-        schema: &SchemaDefinition
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
-        
+
         // Collect all slots for this class
         let slots = self.collect_class_slots(class_name, class_def, schema)?;
-        
+
         if slots.is_empty() {
             return Ok(output);
         }
-        
+
         // Generate header
         if self.include_headers {
-            let header: Vec<String> = slots.iter()
+            let header: Vec<String> = slots
+                .iter()
                 .map(|(name, _)| self.escape_field(name))
                 .collect();
             output.push_str(&header.join(&self.delimiter.to_string()));
             output.push('\n');
         }
-        
+
         // Generate example row with type information
-        let type_row: Vec<String> = slots.iter()
+        let type_row: Vec<String> = slots
+            .iter()
             .map(|(_, slot)| {
                 let range = slot.range.as_deref().unwrap_or("string");
                 self.escape_field(&format!("<{}>", range))
@@ -89,28 +92,29 @@ impl CsvGenerator {
             .collect();
         output.push_str(&type_row.join(&self.delimiter.to_string()));
         output.push('\n');
-        
+
         // Generate example row with constraints
-        let constraint_row: Vec<String> = slots.iter()
+        let constraint_row: Vec<String> = slots
+            .iter()
             .map(|(_name, slot)| {
                 let mut constraints = Vec::new();
-                
+
                 if slot.required.unwrap_or(false) {
                     constraints.push("required");
                 }
-                
+
                 if let Some(_pattern) = &slot.pattern {
                     constraints.push("pattern");
                 }
-                
+
                 if slot.minimum_value.is_some() || slot.maximum_value.is_some() {
                     constraints.push("range");
                 }
-                
+
                 if slot.multivalued.unwrap_or(false) {
                     constraints.push("multivalued");
                 }
-                
+
                 if constraints.is_empty() {
                     self.escape_field("")
                 } else {
@@ -120,21 +124,22 @@ impl CsvGenerator {
             .collect();
         output.push_str(&constraint_row.join(&self.delimiter.to_string()));
         output.push('\n');
-        
+
         // Generate sample data rows
         output.push_str(&self.generate_sample_row(&slots));
-        
+
         Ok(output)
     }
 
     /// Collect all slots for a class including inherited ones
-    fn collect_class_slots(&self, 
+    fn collect_class_slots(
+        &self,
         _class_name: &str,
-        class_def: &ClassDefinition, 
-        schema: &SchemaDefinition
+        class_def: &ClassDefinition,
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<Vec<(String, SlotDefinition)>> {
         let mut slots = BTreeMap::new();
-        
+
         // Get inherited slots
         if let Some(parent) = &class_def.is_a {
             if let Some(parent_class) = schema.classes.get(parent) {
@@ -144,7 +149,7 @@ impl CsvGenerator {
                 }
             }
         }
-        
+
         // Get mixin slots
         for mixin in &class_def.mixins {
             if let Some(mixin_class) = schema.classes.get(mixin) {
@@ -154,19 +159,19 @@ impl CsvGenerator {
                 }
             }
         }
-        
+
         // Add direct slots
         for slot_name in &class_def.slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 slots.insert(slot_name.clone(), slot_def.clone());
             }
         }
-        
+
         // Add attributes (inline slots)
         for (attr_name, attr_def) in &class_def.attributes {
             slots.insert(attr_name.clone(), attr_def.clone());
         }
-        
+
         // Apply slot usage overrides
         for (slot_name, slot_usage) in &class_def.slot_usage {
             if let Some(slot) = slots.get_mut(slot_name) {
@@ -181,18 +186,22 @@ impl CsvGenerator {
                 }
             }
         }
-        
+
         Ok(slots.into_iter().collect())
     }
 
     /// Escape a field value for CSV
     fn escape_field(&self, value: &str) -> String {
-        if value.contains(self.delimiter) || 
-           value.contains(self.quote_char) || 
-           value.contains('\n') || 
-           value.contains('\r') {
+        if value.contains(self.delimiter)
+            || value.contains(self.quote_char)
+            || value.contains('\n')
+            || value.contains('\r')
+        {
             // Escape quotes by doubling them
-            let escaped = value.replace(self.quote_char, &format!("{}{}", self.quote_char, self.quote_char));
+            let escaped = value.replace(
+                self.quote_char,
+                &format!("{}{}", self.quote_char, self.quote_char),
+            );
             format!("{}{}{}", self.quote_char, escaped, self.quote_char)
         } else {
             value.to_string()
@@ -201,7 +210,8 @@ impl CsvGenerator {
 
     /// Generate a sample data row
     fn generate_sample_row(&self, slots: &[(String, SlotDefinition)]) -> String {
-        let values: Vec<String> = slots.iter()
+        let values: Vec<String> = slots
+            .iter()
             .map(|(name, slot)| {
                 let value = match slot.range.as_deref() {
                     Some("string") => format!("Sample {}", name),
@@ -216,36 +226,62 @@ impl CsvGenerator {
                 self.escape_field(&value)
             })
             .collect();
-        
+
         format!("{}\n", values.join(&self.delimiter.to_string()))
     }
 
     /// Generate schema summary CSV
     fn generate_schema_summary(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
-        
+
         // Header
         if self.include_headers {
-            output.push_str(&format!("Type{}Name{}Description{}Count\n",
-                self.delimiter, self.delimiter, self.delimiter));
+            output.push_str(&format!(
+                "Type{}Name{}Description{}Count\n",
+                self.delimiter, self.delimiter, self.delimiter
+            ));
         }
-        
+
         // Classes
-        output.push_str(&format!("Class{}{}{}Schema classes{}{}\n",
-            self.delimiter, self.delimiter, self.delimiter, self.delimiter, schema.classes.len()));
-        
+        output.push_str(&format!(
+            "Class{}{}{}Schema classes{}{}\n",
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            schema.classes.len()
+        ));
+
         // Slots
-        output.push_str(&format!("Slot{}{}{}Schema slots{}{}\n",
-            self.delimiter, self.delimiter, self.delimiter, self.delimiter, schema.slots.len()));
-        
+        output.push_str(&format!(
+            "Slot{}{}{}Schema slots{}{}\n",
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            schema.slots.len()
+        ));
+
         // Enums
-        output.push_str(&format!("Enum{}{}{}Schema enumerations{}{}\n",
-            self.delimiter, self.delimiter, self.delimiter, self.delimiter, schema.enums.len()));
-        
+        output.push_str(&format!(
+            "Enum{}{}{}Schema enumerations{}{}\n",
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            schema.enums.len()
+        ));
+
         // Types
-        output.push_str(&format!("Type{}{}{}Schema types{}{}\n",
-            self.delimiter, self.delimiter, self.delimiter, self.delimiter, schema.types.len()));
-        
+        output.push_str(&format!(
+            "Type{}{}{}Schema types{}{}\n",
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            self.delimiter,
+            schema.types.len()
+        ));
+
         output
     }
 }
@@ -258,11 +294,7 @@ impl Default for CsvGenerator {
 
 impl Generator for CsvGenerator {
     fn name(&self) -> &str {
-        if self.use_tabs {
-            "tsv"
-        } else {
-            "csv"
-        }
+        if self.use_tabs { "tsv" } else { "csv" }
     }
 
     fn description(&self) -> &str {
@@ -276,17 +308,17 @@ impl Generator for CsvGenerator {
     // Sync Generator trait method
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let mut result = String::new();
-        
+
         // Generate summary
         result.push_str(&self.generate_schema_summary(schema));
         result.push_str("\n\n");
-        
+
         // Generate content for each class
         for (class_name, class_def) in &schema.classes {
             if class_def.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             match self.generate_class_csv(class_name, class_def, schema) {
                 Ok(content) => {
                     if !content.is_empty() {
@@ -298,18 +330,14 @@ impl Generator for CsvGenerator {
                 Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {}", e))),
             }
         }
-        
+
         Ok(result)
     }
-    
+
     fn get_file_extension(&self) -> &str {
-        if self.use_tabs {
-            "tsv"
-        } else {
-            "csv"
-        }
+        if self.use_tabs { "tsv" } else { "csv" }
     }
-    
+
     fn get_default_filename(&self) -> &str {
         if self.use_tabs {
             "schema.tsv"
@@ -326,34 +354,34 @@ mod tests {
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
-        
+
         // Base class
         let mut entity_class = ClassDefinition::default();
         entity_class.abstract_ = Some(true);
         entity_class.slots = vec!["id".to_string()];
         schema.classes.insert("Entity".to_string(), entity_class);
-        
+
         // Person class
         let mut person_class = ClassDefinition::default();
         person_class.is_a = Some("Entity".to_string());
         person_class.slots = vec!["name".to_string(), "age".to_string()];
         schema.classes.insert("Person".to_string(), person_class);
-        
+
         // Slots
         let mut id_slot = SlotDefinition::default();
         id_slot.range = Some("string".to_string());
         id_slot.required = Some(true);
         schema.slots.insert("id".to_string(), id_slot);
-        
+
         let mut name_slot = SlotDefinition::default();
         name_slot.range = Some("string".to_string());
         name_slot.required = Some(true);
         schema.slots.insert("name".to_string(), name_slot);
-        
+
         let mut age_slot = SlotDefinition::default();
         age_slot.range = Some("integer".to_string());
         schema.slots.insert("age".to_string(), age_slot);
-        
+
         schema
     }
 
@@ -361,9 +389,9 @@ mod tests {
     fn test_csv_generation() {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
-        
+
         let result = generator.generate(&schema).expect("should generate CSV");
-        
+
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
         assert!(result.contains("Class,,,Schema classes,2"));
@@ -376,9 +404,9 @@ mod tests {
     fn test_tsv_generation() {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
-        
+
         let result = generator.generate(&schema).expect("should generate TSV");
-        
+
         assert!(result.contains("=== Person ==="));
         assert!(result.contains("id\tname\tage"));
         assert!(result.contains("<string>\t<string>\t<integer>"));
@@ -387,17 +415,26 @@ mod tests {
     #[test]
     fn test_field_escaping() {
         let generator = CsvGenerator::new();
-        
+
         // Simple field
         assert_eq!(generator.escape_field("simple"), "simple");
-        
+
         // Field with comma
-        assert_eq!(generator.escape_field("value,with,comma"), "\"value,with,comma\"");
-        
+        assert_eq!(
+            generator.escape_field("value,with,comma"),
+            "\"value,with,comma\""
+        );
+
         // Field with quotes
-        assert_eq!(generator.escape_field("value\"with\"quotes"), "\"value\"\"with\"\"quotes\"");
-        
+        assert_eq!(
+            generator.escape_field("value\"with\"quotes"),
+            "\"value\"\"with\"\"quotes\""
+        );
+
         // Field with newline
-        assert_eq!(generator.escape_field("value\nwith\nnewline"), "\"value\nwith\nnewline\"");
+        assert_eq!(
+            generator.escape_field("value\nwith\nnewline"),
+            "\"value\nwith\nnewline\""
+        );
     }
 }

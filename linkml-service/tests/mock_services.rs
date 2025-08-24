@@ -3,25 +3,38 @@
 //! These mocks implement the required RootReal service traits
 //! for testing purposes only.
 
+use async_trait::async_trait;
+use std::collections::HashMap;
+use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
-use async_trait::async_trait;
-use std::future::Future;
 
 // Import core types and service traits
-use logger_core::{LogLevel, LogEntry, LoggerError, LoggerService};
-use timestamp_core::{TimestampError, TimestampService};
-use task_management_core::{TaskManagementError, TaskManagementService, TaskId, TaskOptions};
-use error_handling_core::{ErrorHandlingError, ErrorHandlingService, ErrorCategory, ErrorContext, ErrorPattern, RecoveryStrategy, TransientErrorType};
+use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
 use configuration_core::{ConfigurationError, ConfigurationService};
-use cache_core::{CacheError, CacheService, CacheKey, CacheValue, CacheTtl};
+use error_handling_core::{
+    ErrorCategory, ErrorContext, ErrorHandlingError, ErrorHandlingService, ErrorPattern,
+    RecoveryStrategy, TransientErrorType,
+};
+use logger_core::{LogEntry, LogLevel, LoggerError, LoggerService};
 use monitoring_core::{
-    MonitoringError, MonitoringService, MonitoringConfig,
-    HealthReport, HealthStatus, SystemHealthReport, PerformanceReport, 
-    PerformanceMetric, BottleneckReport, MonitoringSession, MonitoringSessionStatus, Alert,
-    HealthSummary, SystemPerformanceMetrics,
-    PerformanceAnalysisSummary, SessionConfiguration
+    Alert, BottleneckReport, HealthReport, HealthStatus, HealthSummary, MonitoringConfig,
+    MonitoringError, MonitoringService, MonitoringSession, MonitoringSessionStatus,
+    PerformanceAnalysisSummary, PerformanceMetric, PerformanceReport, SessionConfiguration,
+    SystemHealthReport, SystemPerformanceMetrics,
+};
+use task_management_core::{TaskId, TaskManagementError, TaskManagementService, TaskOptions};
+use timestamp_core::{TimestampError, TimestampService};
+
+// Import DBMS and Timeout services
+use dbms_core::{
+    config::DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus, 
+    HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation, SchemaVersion},
+    ConnectionPool, DatabaseConnection, DBMSError, DBMSService, DBMSResult,
+};
+use timeout_core::{
+    TimeoutConfig, TimeoutContext, TimeoutError, TimeoutHistory, TimeoutService, 
+    TimeoutStatistics, TimeoutValue,
 };
 
 pub struct MockLoggerService {
@@ -34,7 +47,7 @@ impl MockLoggerService {
             logs: Arc::new(RwLock::new(Vec::new())),
         }
     }
-    
+
     #[allow(dead_code)]
     pub async fn get_logs(&self) -> Vec<String> {
         self.logs.read().await.clone()
@@ -44,27 +57,27 @@ impl MockLoggerService {
 #[async_trait]
 impl LoggerService for MockLoggerService {
     type Error = LoggerError;
-    
+
     async fn debug(&self, message: &str) -> Result<(), Self::Error> {
         self.logs.write().await.push(format!("[DEBUG] {}", message));
         Ok(())
     }
-    
+
     async fn info(&self, message: &str) -> Result<(), Self::Error> {
         self.logs.write().await.push(format!("[INFO] {}", message));
         Ok(())
     }
-    
+
     async fn warn(&self, message: &str) -> Result<(), Self::Error> {
         self.logs.write().await.push(format!("[WARN] {}", message));
         Ok(())
     }
-    
+
     async fn error(&self, message: &str) -> Result<(), Self::Error> {
         self.logs.write().await.push(format!("[ERROR] {}", message));
         Ok(())
     }
-    
+
     async fn log(&self, level: LogLevel, message: &str) -> Result<(), Self::Error> {
         let level_str = match level {
             LogLevel::Debug => "DEBUG",
@@ -72,10 +85,13 @@ impl LoggerService for MockLoggerService {
             LogLevel::Warn => "WARN",
             LogLevel::Error => "ERROR",
         };
-        self.logs.write().await.push(format!("[{}] {}", level_str, message));
+        self.logs
+            .write()
+            .await
+            .push(format!("[{}] {}", level_str, message));
         Ok(())
     }
-    
+
     async fn log_entry(&self, entry: &LogEntry) -> Result<(), Self::Error> {
         self.log(entry.level, &entry.message).await
     }
@@ -86,43 +102,66 @@ pub struct MockTimestampService;
 #[async_trait]
 impl TimestampService for MockTimestampService {
     type Error = TimestampError;
-    
+
     async fn now_utc(&self) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         Ok(chrono::Utc::now())
     }
-    
+
     async fn now_local(&self) -> Result<chrono::DateTime<chrono::Local>, Self::Error> {
         Ok(chrono::Local::now())
     }
-    
+
     async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
         Ok(std::time::SystemTime::now())
     }
-    
-    async fn parse_iso8601(&self, timestamp: &str) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+    async fn parse_iso8601(
+        &self,
+        timestamp: &str,
+    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         use chrono::DateTime;
         Ok(DateTime::parse_from_rfc3339(timestamp)
-            .map_err(|e| TimestampError::ParseError { message: e.to_string() })?
+            .map_err(|e| TimestampError::ParseError {
+                message: e.to_string(),
+            })?
             .with_timezone(&chrono::Utc))
     }
-    
-    async fn format_iso8601(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<String, Self::Error> {
+
+    async fn format_iso8601(
+        &self,
+        timestamp: &chrono::DateTime<chrono::Utc>,
+    ) -> Result<String, Self::Error> {
         Ok(timestamp.to_rfc3339())
     }
-    
-    async fn duration_since(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+
+    async fn duration_since(
+        &self,
+        timestamp: &chrono::DateTime<chrono::Utc>,
+    ) -> Result<chrono::Duration, Self::Error> {
         Ok(chrono::Utc::now() - *timestamp)
     }
-    
-    async fn add_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+    async fn add_duration(
+        &self,
+        timestamp: &chrono::DateTime<chrono::Utc>,
+        duration: chrono::Duration,
+    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         Ok(*timestamp + duration)
     }
-    
-    async fn subtract_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+
+    async fn subtract_duration(
+        &self,
+        timestamp: &chrono::DateTime<chrono::Utc>,
+        duration: chrono::Duration,
+    ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         Ok(*timestamp - duration)
     }
-    
-    async fn duration_between(&self, from: &chrono::DateTime<chrono::Utc>, to: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+
+    async fn duration_between(
+        &self,
+        from: &chrono::DateTime<chrono::Utc>,
+        to: &chrono::DateTime<chrono::Utc>,
+    ) -> Result<chrono::Duration, Self::Error> {
         Ok(*to - *from)
     }
 }
@@ -132,7 +171,7 @@ pub struct MockTaskManagementService;
 #[async_trait]
 impl TaskManagementService for MockTaskManagementService {
     type Error = TaskManagementError;
-    
+
     async fn spawn_task<F, T>(
         &self,
         future: F,
@@ -146,26 +185,28 @@ impl TaskManagementService for MockTaskManagementService {
         tokio::spawn(future);
         Ok(TaskId::new())
     }
-    
+
     async fn cancel_task(&self, _task_id: &TaskId) -> Result<bool, Self::Error> {
         Ok(true)
     }
-    
+
     async fn wait_for_task<T>(&self, _task_id: &TaskId) -> Result<T, Self::Error>
     where
         T: Send + 'static,
     {
-        Err(TaskManagementError::TaskNotFound { task_id: "test-task".to_string() })
+        Err(TaskManagementError::TaskNotFound {
+            task_id: "test-task".to_string(),
+        })
     }
-    
+
     async fn is_task_running(&self, _task_id: &TaskId) -> Result<bool, Self::Error> {
         Ok(false)
     }
-    
+
     async fn active_task_count(&self) -> usize {
         0
     }
-    
+
     async fn spawn_blocking<F, T>(
         &self,
         func: F,
@@ -185,7 +226,7 @@ pub struct MockErrorHandlerService;
 #[async_trait]
 impl ErrorHandlingService for MockErrorHandlerService {
     type Error = ErrorHandlingError;
-    
+
     async fn categorize_error<E: std::error::Error + Send + Sync + 'static>(
         &self,
         _error: &E,
@@ -197,7 +238,7 @@ impl ErrorHandlingService for MockErrorHandlerService {
             retry_safe: true,
         })
     }
-    
+
     async fn determine_recovery_strategy(
         &self,
         _category: &ErrorCategory,
@@ -209,7 +250,7 @@ impl ErrorHandlingService for MockErrorHandlerService {
             backoff_ms: Some(100),
         })
     }
-    
+
     async fn enrich_error_context<E: std::error::Error + Send + Sync + 'static>(
         &self,
         error: &E,
@@ -229,7 +270,7 @@ impl ErrorHandlingService for MockErrorHandlerService {
             additional_data: HashMap::new(),
         })
     }
-    
+
     async fn analyze_error_patterns(
         &self,
         _time_window_minutes: u32,
@@ -237,14 +278,14 @@ impl ErrorHandlingService for MockErrorHandlerService {
     ) -> Result<Vec<ErrorPattern>, Self::Error> {
         Ok(Vec::new())
     }
-    
+
     async fn is_retryable<E: std::error::Error + Send + Sync + 'static>(
         &self,
         _error: &E,
     ) -> Result<bool, Self::Error> {
         Ok(true)
     }
-    
+
     async fn extract_error_metadata<E: std::error::Error + Send + Sync + 'static>(
         &self,
         _error: &E,
@@ -265,17 +306,17 @@ impl MockConfigurationService {
         config.insert("linkml.validation_timeout".to_string(), "30".to_string());
         config.insert("linkml.max_validation_depth".to_string(), "10".to_string());
         config.insert("linkml.parallel_validation".to_string(), "true".to_string());
-        
+
         Self { config }
     }
-    
+
     #[allow(dead_code)]
     pub fn set(&self, key: &str, value: &str) {
         // Since config is not mutable, this is a no-op for the mock
         // In a real implementation, you'd need Arc<RwLock<HashMap>> or similar
         let _ = (key, value);
     }
-    
+
     #[allow(dead_code)]
     pub fn get(&self, key: &str) -> Option<String> {
         self.config.get(key).cloned()
@@ -285,51 +326,76 @@ impl MockConfigurationService {
 #[async_trait]
 impl ConfigurationService for MockConfigurationService {
     type Error = ConfigurationError;
-    
+
     async fn load_configuration<T>(&self) -> Result<T, Self::Error>
     where
-        T: for<'de> serde::Deserialize<'de> + configuration_core::Validate + Clone + Send + Sync + 'static,
+        T: for<'de> serde::Deserialize<'de>
+            + configuration_core::Validate
+            + Clone
+            + Send
+            + Sync
+            + 'static,
     {
-        Err(ConfigurationError::LoadingError { message: "Mock load not implemented".to_string() })
+        Err(ConfigurationError::LoadingError {
+            message: "Mock load not implemented".to_string(),
+        })
     }
-    
+
     async fn load_configuration_from_source<T>(&self, _source: &str) -> Result<T, Self::Error>
     where
-        T: for<'de> serde::Deserialize<'de> + configuration_core::Validate + Clone + Send + Sync + 'static,
+        T: for<'de> serde::Deserialize<'de>
+            + configuration_core::Validate
+            + Clone
+            + Send
+            + Sync
+            + 'static,
     {
-        Err(ConfigurationError::LoadingError { message: "Mock load not implemented".to_string() })
+        Err(ConfigurationError::LoadingError {
+            message: "Mock load not implemented".to_string(),
+        })
     }
-    
+
     async fn get_configuration<T>(&self, key: &str) -> Result<T, Self::Error>
     where
         T: for<'de> serde::Deserialize<'de> + serde::Serialize + Clone + Send + Sync + 'static,
     {
-        let value = self.config.get(key)
-            .ok_or_else(|| ConfigurationError::ValidationError { message: format!("Key not found: {}", key) })?;
-        serde_json::from_str(value).map_err(|_| ConfigurationError::ParsingError { message: "Mock parse error".to_string() })
+        let value = self
+            .config
+            .get(key)
+            .ok_or_else(|| ConfigurationError::ValidationError {
+                message: format!("Key not found: {}", key),
+            })?;
+        serde_json::from_str(value).map_err(|_| ConfigurationError::ParsingError {
+            message: "Mock parse error".to_string(),
+        })
     }
-    
+
     async fn reload_configuration(&self) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn validate_configuration(&self, _source: &str) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn set_configuration<T>(&self, _key: &str, _value: &T) -> Result<(), Self::Error>
     where
         T: serde::Serialize + configuration_core::Validate + Clone + Send + Sync + 'static,
     {
         Ok(())
     }
-    
+
     async fn delete_configuration(&self, _key: &str) -> Result<bool, Self::Error> {
         Ok(true)
     }
-    
-    async fn get_configuration_metadata(&self, _source: &str) -> Result<configuration_core::ConfigurationMetadata, Self::Error> {
-        Err(ConfigurationError::SourceError { message: "Mock metadata not available".to_string() })
+
+    async fn get_configuration_metadata(
+        &self,
+        _source: &str,
+    ) -> Result<configuration_core::ConfigurationMetadata, Self::Error> {
+        Err(ConfigurationError::SourceError {
+            message: "Mock metadata not available".to_string(),
+        })
     }
 }
 
@@ -343,7 +409,7 @@ impl MockCacheService {
             cache: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     #[allow(dead_code)]
     pub async fn stats(&self) -> (usize, usize, usize) {
         let cache = self.cache.read().await;
@@ -356,25 +422,33 @@ impl MockCacheService {
 #[async_trait]
 impl CacheService for MockCacheService {
     type Error = CacheError;
-    
+
     async fn get(&self, key: &CacheKey) -> Result<Option<CacheValue>, Self::Error> {
         Ok(self.cache.read().await.get(key).cloned())
     }
-    
-    async fn set(&self, key: &CacheKey, value: &CacheValue, _ttl: Option<CacheTtl>) -> Result<(), Self::Error> {
+
+    async fn set(
+        &self,
+        key: &CacheKey,
+        value: &CacheValue,
+        _ttl: Option<CacheTtl>,
+    ) -> Result<(), Self::Error> {
         self.cache.write().await.insert(key.clone(), value.clone());
         Ok(())
     }
-    
+
     async fn delete(&self, key: &CacheKey) -> Result<bool, Self::Error> {
         Ok(self.cache.write().await.remove(key).is_some())
     }
-    
+
     async fn exists(&self, key: &CacheKey) -> Result<bool, Self::Error> {
         Ok(self.cache.read().await.contains_key(key))
     }
-    
-    async fn get_many(&self, keys: &[CacheKey]) -> Result<HashMap<CacheKey, CacheValue>, Self::Error> {
+
+    async fn get_many(
+        &self,
+        keys: &[CacheKey],
+    ) -> Result<HashMap<CacheKey, CacheValue>, Self::Error> {
         let cache = self.cache.read().await;
         let mut result = HashMap::new();
         for key in keys {
@@ -384,15 +458,18 @@ impl CacheService for MockCacheService {
         }
         Ok(result)
     }
-    
-    async fn set_many(&self, entries: &[(CacheKey, CacheValue, Option<CacheTtl>)]) -> Result<(), Self::Error> {
+
+    async fn set_many(
+        &self,
+        entries: &[(CacheKey, CacheValue, Option<CacheTtl>)],
+    ) -> Result<(), Self::Error> {
         let mut cache = self.cache.write().await;
         for (key, value, _ttl) in entries {
             cache.insert(key.clone(), value.clone());
         }
         Ok(())
     }
-    
+
     async fn delete_many(&self, keys: &[CacheKey]) -> Result<u64, Self::Error> {
         let mut cache = self.cache.write().await;
         let mut count = 0;
@@ -403,29 +480,34 @@ impl CacheService for MockCacheService {
         }
         Ok(count)
     }
-    
+
     async fn delete_by_pattern(&self, _pattern: &str) -> Result<u64, Self::Error> {
         Ok(0) // Mock implementation doesn't support patterns
     }
-    
-    async fn scan_keys(&self, _pattern: &str, limit: Option<u64>) -> Result<Vec<CacheKey>, Self::Error> {
+
+    async fn scan_keys(
+        &self,
+        _pattern: &str,
+        limit: Option<u64>,
+    ) -> Result<Vec<CacheKey>, Self::Error> {
         let cache = self.cache.read().await;
-        let keys: Vec<CacheKey> = cache.keys()
+        let keys: Vec<CacheKey> = cache
+            .keys()
             .take(limit.unwrap_or(u64::MAX) as usize)
             .cloned()
             .collect();
         Ok(keys)
     }
-    
+
     async fn clear(&self) -> Result<(), Self::Error> {
         self.cache.write().await.clear();
         Ok(())
     }
-    
+
     async fn flush(&self) -> Result<(), Self::Error> {
         Ok(()) // No-op for mock
     }
-    
+
     async fn execute_lua_script(
         &self,
         _script: &str,
@@ -446,15 +528,15 @@ impl MockMonitoringService {
             _metrics: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
-    pub async fn _record_metric(&self, name: &str, value: f64) {
+
+    pub async fn record_metric(&self, name: &str, value: f64) {
         let mut metrics = self._metrics.write().await;
         // Increment the metric value if it already exists
         let current = metrics.get(name).copied().unwrap_or(0.0);
         metrics.insert(name.to_string(), current + value);
     }
-    
-    pub async fn _get_all_metrics(&self) -> HashMap<String, f64> {
+
+    pub async fn get_all_metrics(&self) -> HashMap<String, f64> {
         self._metrics.read().await.clone()
     }
 }
@@ -462,15 +544,15 @@ impl MockMonitoringService {
 #[async_trait]
 impl MonitoringService for MockMonitoringService {
     type Error = MonitoringError;
-    
+
     async fn initialize(&self, _config: &MonitoringConfig) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn shutdown(&self) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn check_service_health(&self, _service_name: &str) -> Result<HealthReport, Self::Error> {
         Ok(HealthReport {
             service_name: "test".to_string(),
@@ -481,7 +563,7 @@ impl MonitoringService for MockMonitoringService {
             metrics: Vec::new(),
         })
     }
-    
+
     async fn check_all_services_health(&self) -> Result<SystemHealthReport, Self::Error> {
         Ok(SystemHealthReport {
             overall_status: HealthStatus::Healthy,
@@ -498,15 +580,21 @@ impl MonitoringService for MockMonitoringService {
             },
         })
     }
-    
-    async fn register_service_for_monitoring(&self, _service_name: &str) -> Result<(), Self::Error> {
+
+    async fn register_service_for_monitoring(
+        &self,
+        _service_name: &str,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
-    
-    async fn unregister_service_from_monitoring(&self, _service_name: &str) -> Result<(), Self::Error> {
+
+    async fn unregister_service_from_monitoring(
+        &self,
+        _service_name: &str,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn collect_performance_metrics(&self) -> Result<PerformanceReport, Self::Error> {
         Ok(PerformanceReport {
             timestamp: chrono::Utc::now(),
@@ -526,15 +614,18 @@ impl MonitoringService for MockMonitoringService {
             },
         })
     }
-    
-    async fn collect_service_performance_metrics(&self, _service_name: &str) -> Result<Vec<PerformanceMetric>, Self::Error> {
+
+    async fn collect_service_performance_metrics(
+        &self,
+        _service_name: &str,
+    ) -> Result<Vec<PerformanceMetric>, Self::Error> {
         Ok(Vec::new())
     }
-    
+
     async fn detect_bottlenecks(&self) -> Result<Vec<BottleneckReport>, Self::Error> {
         Ok(Vec::new())
     }
-    
+
     async fn start_real_time_monitoring(&self) -> Result<MonitoringSession, Self::Error> {
         Ok(MonitoringSession {
             id: "test-session".to_string(),
@@ -553,23 +644,26 @@ impl MonitoringService for MockMonitoringService {
             alerts_generated: 0,
         })
     }
-    
+
     async fn stop_real_time_monitoring(&self, _session_id: &str) -> Result<(), Self::Error> {
         Ok(())
     }
-    
-    async fn get_monitoring_session_status(&self, _session_id: &str) -> Result<MonitoringSessionStatus, Self::Error> {
+
+    async fn get_monitoring_session_status(
+        &self,
+        _session_id: &str,
+    ) -> Result<MonitoringSessionStatus, Self::Error> {
         Ok(MonitoringSessionStatus::Running)
     }
-    
+
     async fn process_alert(&self, _alert: Alert) -> Result<(), Self::Error> {
         Ok(())
     }
-    
+
     async fn get_active_alerts(&self) -> Result<Vec<Alert>, Self::Error> {
         Ok(Vec::new())
     }
-    
+
     async fn health_check(&self) -> Result<(), Self::Error> {
         Ok(())
     }
@@ -587,20 +681,248 @@ impl MockHealthCheckService {
             checks: Arc::new(RwLock::new(HashMap::new())),
         }
     }
-    
+
     pub async fn register_check(&self, name: &str) {
         self.checks.write().await.insert(name.to_string(), true);
     }
-    
+
     pub async fn set_health(&self, name: &str, healthy: bool) {
         self.checks.write().await.insert(name.to_string(), healthy);
     }
-    
+
     pub async fn is_healthy(&self, name: &str) -> bool {
         self.checks.read().await.get(name).copied().unwrap_or(false)
     }
-    
+
     pub async fn overall_health(&self) -> bool {
         self.checks.read().await.values().all(|&h| h)
+    }
+}
+
+// Mock DBMS Service
+pub struct MockDBMSService;
+
+#[async_trait]
+impl DBMSService for MockDBMSService {
+    type Error = DBMSError;
+
+    // Database Lifecycle Management
+    async fn create_database(&self, name: &str, _config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
+        Ok(DatabaseInfo {
+            name: name.to_string(),
+            status: DatabaseStatus::Running,
+            creation_time: chrono::Utc::now(),
+            last_modified: chrono::Utc::now(),
+            size_bytes: 0,
+            description: Some("Mock database".to_string()),
+        })
+    }
+
+    async fn delete_database(&self, _name: &str) -> DBMSResult<()> {
+        Ok(())
+    }
+
+    async fn list_databases(&self) -> DBMSResult<Vec<DatabaseInfo>> {
+        Ok(Vec::new())
+    }
+
+    async fn get_database_status(&self, name: &str) -> DBMSResult<DatabaseStatus> {
+        let _ = name;
+        Ok(DatabaseStatus::Running)
+    }
+
+    // Connection Management
+    async fn get_connection(
+        &self,
+        _database: &str,
+    ) -> DBMSResult<Arc<dyn DatabaseConnection<Error = Self::Error>>> {
+        Err(DBMSError::Configuration {
+            message: "Mock connection not implemented".to_string(),
+            field: None,
+            value: None,
+        })
+    }
+
+    async fn get_connection_pool(
+        &self,
+        _database: &str,
+    ) -> DBMSResult<Arc<dyn ConnectionPool<Error = Self::Error>>> {
+        Err(DBMSError::Configuration {
+            message: "Mock connection pool not implemented".to_string(),
+            field: None,
+            value: None,
+        })
+    }
+
+    async fn health_check(&self, _database: &str) -> DBMSResult<DBHealthStatus> {
+        Ok(DBHealthStatus {
+            state: dbms_core::types::HealthState::Healthy,
+            timestamp: chrono::Utc::now(),
+            details: HashMap::new(),
+            metrics: Vec::new(),
+        })
+    }
+
+    // Schema Management
+    async fn deploy_schema(&self, _database: &str, _schema: &str) -> DBMSResult<()> {
+        Ok(())
+    }
+
+    async fn validate_schema(&self, _schema: &str) -> DBMSResult<SchemaValidation> {
+        Ok(SchemaValidation {
+            is_valid: true,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+            complexity_score: 1.0,
+        })
+    }
+
+    async fn get_schema_version(&self, _database: &str) -> DBMSResult<SchemaVersion> {
+        Ok(SchemaVersion {
+            version: "1.0.0".to_string(),
+            timestamp: chrono::Utc::now(),
+            description: "Mock schema version".to_string(),
+            hash: "mock-hash".to_string(),
+        })
+    }
+
+    // Query Execution
+    async fn execute_string_query(&self, _database: &str, _query: &str) -> DBMSResult<String> {
+        Ok("{}".to_string())
+    }
+
+    // Performance Monitoring
+    async fn get_database_metrics(&self, _database: &str) -> DBMSResult<DatabaseMetrics> {
+        Ok(DatabaseMetrics {
+            connection_pool: dbms_core::types::ConnectionPoolMetrics {
+                active_connections: 1,
+                idle_connections: 4,
+                max_connections: 5,
+                connection_acquisition_time_ms: 1.0,
+                connection_utilization_percent: 20.0,
+            },
+            query_performance: dbms_core::types::QueryPerformanceMetrics {
+                average_latency_ms: 10.0,
+                queries_per_second: 100.0,
+                slow_query_count: 0,
+                failed_query_count: 0,
+                query_cache_hit_ratio: 0.8,
+            },
+            memory_usage: dbms_core::types::MemoryUsageMetrics {
+                used_memory_mb: 100.0,
+                available_memory_mb: 900.0,
+                memory_utilization_percent: 10.0,
+                gc_collection_count: 5,
+                gc_collection_time_ms: 50.0,
+            },
+            storage: dbms_core::types::StorageMetrics {
+                database_size_bytes: 1024 * 1024,
+                available_space_bytes: 1024 * 1024 * 1024,
+                storage_utilization_percent: 0.1,
+                io_operations_per_second: 500.0,
+                average_io_latency_ms: 1.0,
+            },
+        })
+    }
+
+    async fn optimize_database(&self, _database: &str) -> DBMSResult<OptimizationReport> {
+        Ok(OptimizationReport {
+            optimization_type: dbms_core::types::OptimizationType::IndexOptimization,
+            timestamp: chrono::Utc::now(),
+            duration_ms: 100,
+            performance_improvement_percent: 5.0,
+            recommendations: Vec::new(),
+            applied_optimizations: Vec::new(),
+        })
+    }
+
+    // Event Integration
+    async fn get_events(
+        &self,
+        _database: Option<&str>,
+        _since: chrono::DateTime<chrono::Utc>,
+        _limit: u32,
+    ) -> DBMSResult<Vec<DatabaseEvent>> {
+        Ok(Vec::new())
+    }
+
+    // Database Export/Import Operations
+    async fn export_database(&self, _database: &str, _include_data: bool) -> DBMSResult<String> {
+        Ok("define\n  entity sub entity;".to_string())
+    }
+
+    async fn import_database(
+        &self,
+        _database: &str,
+        _content: &str,
+        _create_if_not_exists: bool,
+    ) -> DBMSResult<u64> {
+        Ok(0)
+    }
+}
+
+// Mock Timeout Service
+use std::time::Duration;
+use std::pin::Pin;
+
+pub struct MockTimeoutService;
+
+#[async_trait]
+impl TimeoutService for MockTimeoutService {
+    type Error = TimeoutError;
+
+    async fn calculate_timeout(
+        &self,
+        _operation: &str,
+        _context: Option<&TimeoutContext>,
+    ) -> Result<TimeoutValue, Self::Error> {
+        Ok(TimeoutValue {
+            duration: Duration::from_secs(30),
+            confidence: 0.8,
+            source: timeout_core::TimeoutSource::Default,
+        })
+    }
+
+    async fn record_duration(
+        &self,
+        _operation: &str,
+        _duration: Duration,
+        _success: bool,
+        _context: Option<&TimeoutContext>,
+    ) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    async fn get_history(
+        &self,
+        _operation: &str,
+        _limit: Option<usize>,
+    ) -> Result<TimeoutHistory, Self::Error> {
+        Ok(TimeoutHistory {
+            operation: "test".to_string(),
+            entries: Vec::new(),
+        })
+    }
+
+    async fn get_statistics(&self, _operation: &str) -> Result<TimeoutStatistics, Self::Error> {
+        Ok(TimeoutStatistics {
+            operation: "test".to_string(),
+            count: 0,
+            success_rate: 1.0,
+            average_duration: Duration::from_secs(1),
+            min_duration: Duration::from_secs(1),
+            max_duration: Duration::from_secs(1),
+            p50_duration: Duration::from_secs(1),
+            p95_duration: Duration::from_secs(1),
+            p99_duration: Duration::from_secs(1),
+        })
+    }
+
+    async fn clear_history(&self, _operation: &str) -> Result<(), Self::Error> {
+        Ok(())
+    }
+
+    async fn update_config(&self, _config: TimeoutConfig) -> Result<(), Self::Error> {
+        Ok(())
     }
 }

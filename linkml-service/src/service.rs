@@ -24,10 +24,10 @@ use std::collections::HashMap;
 use cache_core::CacheService;
 use configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::{ErrorHandlingService, ErrorContext};
+use error_handling_core::{ErrorContext, ErrorHandlingService};
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
-use task_management_core::{TaskManagementService, TaskId};
+use task_management_core::{TaskId, TaskManagementService};
 use timeout_core::TimeoutService;
 use timestamp_core::TimestampService;
 
@@ -61,7 +61,7 @@ where
 
     // Compiled validator cache
     validator_cache: Arc<CompiledValidatorCache>,
-    
+
     // Background task handle for cleanup
     background_task_handle: RwLock<Option<TaskId>>,
 
@@ -162,12 +162,13 @@ where
     /// - Service initialization fails
     pub async fn initialize(&self) -> Result<()> {
         // Record initialization start time
-        let start_time = self.timestamp
+        let start_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        
+
         self.logger
             .info("Initializing LinkML service")
             .await
@@ -175,60 +176,66 @@ where
 
         // Register configuration hot-reload handler
         self.setup_config_reload().await?;
-        
+
         // Load built-in schemas into cache
         self.load_builtin_schemas().await?;
-        
+
         // Initialize caches with configuration
         self.initialize_caches().await?;
-        
+
         // Register with monitoring service
         self.register_monitoring().await?;
-        
+
         // Start background tasks if caching is enabled
         if self.config.performance.enable_compilation {
             self.start_background_tasks().await?;
         }
 
         // Record initialization time in monitoring
-        let end_time = self.timestamp
+        let end_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000; // Convert ns to ms
-        
+
         // Register service with monitoring system
-        let _ = self.monitor
+        let _ = self
+            .monitor
             .register_service_for_monitoring("linkml-service")
             .await;
-        
+
         // Check initial health status
-        let _ = self.monitor
-            .check_service_health("linkml-service")
-            .await;
-        
+        let _ = self.monitor.check_service_health("linkml-service").await;
+
         self.logger
-            .info(&format!("LinkML service initialized successfully in {}ms", duration_ms))
+            .info(&format!(
+                "LinkML service initialized successfully in {}ms",
+                duration_ms
+            ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
         Ok(())
     }
-    
+
     /// Load built-in schemas
     async fn load_builtin_schemas(&self) -> Result<()> {
         self.logger
             .debug("Loading built-in LinkML schemas")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Built-in schema definitions
         let builtin_schemas = vec![
             ("linkml:types", include_str!("../schemas/types.yaml")),
             ("linkml:meta", include_str!("../schemas/meta.yaml")),
-            ("linkml:annotations", include_str!("../schemas/annotations.yaml")),
+            (
+                "linkml:annotations",
+                include_str!("../schemas/annotations.yaml"),
+            ),
         ];
-        
+
         for (name, content) in builtin_schemas {
             match self.parser.parse_str(content, "yaml") {
                 Ok(schema) => {
@@ -243,20 +250,20 @@ where
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Initialize caches
     async fn initialize_caches(&self) -> Result<()> {
         self.logger
             .debug("Initializing caches")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Initialize validator cache
         let _ = self.validator_cache.clear().await;
-        
+
         // Pre-warm cache if configured
         // Check if we should pre-warm the cache service
         if self.config.performance.enable_compilation {
@@ -266,47 +273,51 @@ where
                     serde_json::json!({
                         "initialized": true,
                         "timestamp": chrono::Utc::now().to_rfc3339()
-                    }).to_string()
+                    })
+                    .to_string(),
                 );
-                
+
                 // Attempt to warm the cache (ignore errors as this is optional)
                 let ttl = Some(cache_core::CacheTtl::Seconds(3600)); // 1 hour TTL
                 let _ = self.cache.set(&cache_key, &warmup_value, ttl).await;
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Register with monitoring service
     async fn register_monitoring(&self) -> Result<()> {
         self.logger
             .debug("Registering with monitoring service")
             .await
-            .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;        // Signal service readiness through monitoring
+            .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?; // Signal service readiness through monitoring
         // Set readiness gauge
         self.logger
             .info("LinkML service registered and ready")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Record initial cache sizes
         let schema_cache_size = self.schema_cache.read().len();
         self.logger
-            .debug(&format!("Schema cache initialized with {} entries", schema_cache_size))
+            .debug(&format!(
+                "Schema cache initialized with {} entries",
+                schema_cache_size
+            ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         Ok(())
     }
-    
+
     /// Start background tasks
     async fn start_background_tasks(&self) -> Result<()> {
         self.logger
             .debug("Starting background tasks")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Start monitoring and cleanup task
         let validator_cache = self.validator_cache.clone();
         let schema_cache = self.schema_cache.clone();
@@ -315,48 +326,65 @@ where
         let error_handler = self.error_handler.clone();
         let timestamp = self.timestamp.clone();
         let interval_secs = 60; // 1 minute for health checks
-        
-        let task_handle = self.task_manager
+
+        let task_handle = self
+            .task_manager
             .spawn_task(
                 Box::pin(async move {
-                    let mut interval = tokio::time::interval(std::time::Duration::from_secs(interval_secs));
+                    let mut interval =
+                        tokio::time::interval(std::time::Duration::from_secs(interval_secs));
                     let mut iteration_count = 0u64;
-                    
+
                     loop {
                         interval.tick().await;
                         iteration_count += 1;
-                        
+
                         // Record health check
                         if let Ok(now) = timestamp.now_utc().await {
-                            let _ = logger.debug(&format!("Health check #{} at {}", iteration_count, now)).await;
+                            let _ = logger
+                                .debug(&format!("Health check #{} at {}", iteration_count, now))
+                                .await;
                         }
-                        
+
                         // Monitor cache sizes and log if too large
                         let schema_count = schema_cache.read().len();
                         if schema_count > 100 {
-                            let _ = logger.warn(&format!("Schema cache has {} entries, consider cleanup", schema_count)).await;
+                            let _ = logger
+                                .warn(&format!(
+                                    "Schema cache has {} entries, consider cleanup",
+                                    schema_count
+                                ))
+                                .await;
                         }
-                        
+
                         // Check memory usage and cleanup if needed (every 5 iterations = 5 minutes)
                         if iteration_count % 5 == 0 {
                             if let Err(e) = logger.debug("Running periodic cache cleanup").await {
                                 eprintln!("Logger error in cache cleanup: {}", e);
                             }
-                            
+
                             // Clear validator cache if it's grown too large
                             let cache_stats = validator_cache.stats();
                             if cache_stats.cached_validators > 1000 {
                                 let _ = validator_cache.clear().await;
-                                let _ = logger.info("Cleared validator cache due to size limit").await;
-                                
+                                let _ = logger
+                                    .info("Cleared validator cache due to size limit")
+                                    .await;
+
                                 // Report cleanup to error handler for tracking
                                 let cleanup_msg = "Cache cleanup triggered due to size limit";
-                                let _ = error_handler.categorize_error(
-                                    &LinkMLError::service(cleanup_msg),
-                                    Some(ErrorContext::new("linkml-service".to_string(), "cache_cleanup".to_string()))
-                                ).await;
-                            }                            }
-                        
+                                let _ = error_handler
+                                    .categorize_error(
+                                        &LinkMLError::service(cleanup_msg),
+                                        Some(ErrorContext::new(
+                                            "linkml-service".to_string(),
+                                            "cache_cleanup".to_string(),
+                                        )),
+                                    )
+                                    .await;
+                            }
+                        }
+
                         // Report service health status periodically
                         if iteration_count % 10 == 0 {
                             // Check overall health
@@ -368,49 +396,53 @@ where
             )
             .await
             .map_err(|e| LinkMLError::service(format!("Task management error: {e}")))?;
-        
+
         // Store task handle for proper cleanup on shutdown
         {
             let mut handle_guard = self.background_task_handle.write();
             *handle_guard = Some(task_handle);
         }
-        
+
         Ok(())
     }
-    
+
     /// Get the DBMS service
     pub fn dbms_service(&self) -> &Arc<D> {
         &self.dbms_service
     }
-    
+
     /// Get the timeout service
     pub fn timeout_service(&self) -> &Arc<O> {
         &self.timeout_service
     }
-    
+
     /// Setup configuration hot-reload
     async fn setup_config_reload(&self) -> Result<()> {
         self.logger
             .debug("Setting up configuration hot-reload")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Note: ConfigurationService hot-reload requires redesign for interior mutability
         // The service would need to support watch/subscription patterns
         Ok(())
     }
-    
+
     /// Check if configuration service has updates available
-    /// 
+    ///
     /// Note: Actually updating configuration would require interior mutability
     /// or a redesign of the service structure.
     pub async fn has_config_updates(&self) -> Result<bool> {
         // Fetch latest configuration
-        if let Ok(new_config) = self.config_service.get_configuration::<LinkMLConfig>("linkml").await {
+        if let Ok(new_config) = self
+            .config_service
+            .get_configuration::<LinkMLConfig>("linkml")
+            .await
+        {
             // Check if configuration has changed by comparing search paths
             let current_paths = &self.config.schema.search_paths;
             let new_paths = &new_config.schema.search_paths;
-            
+
             if current_paths != new_paths {
                 self.logger
                     .debug("LinkML configuration has updates available")
@@ -421,7 +453,7 @@ where
         }
         Ok(false)
     }
-    
+
     /// Create a sandboxed plugin using the service's timeout service
     pub fn create_sandboxed_plugin(
         &self,
@@ -430,24 +462,25 @@ where
     ) -> crate::plugin::loader::SandboxedPlugin<O> {
         crate::plugin::loader::SandboxedPlugin::new(plugin, sandbox, self.timeout_service.clone())
     }
-    
+
     /// Shutdown the service and clean up resources
     ///
     /// # Errors
     ///
     /// Returns an error if cleanup fails
     pub async fn shutdown(&self) -> Result<()> {
-        let shutdown_start = self.timestamp
+        let shutdown_start = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        
+
         self.logger
             .info("Shutting down LinkML service")
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Record shutdown event
         // Cancel background task if it exists
         if let Some(task_id) = self.background_task_handle.write().take() {
@@ -455,7 +488,7 @@ where
                 .debug("Cancelling background monitoring task")
                 .await
                 .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-            
+
             match self.task_manager.cancel_task(&task_id).await {
                 Ok(cancelled) => {
                     if cancelled {
@@ -472,10 +505,17 @@ where
                 }
                 Err(e) => {
                     // Track task cancellation error
-                    let _ = self.error_handler
-                        .categorize_error(&e, Some(ErrorContext::new("linkml-service".to_string(), "shutdown".to_string())))
+                    let _ = self
+                        .error_handler
+                        .categorize_error(
+                            &e,
+                            Some(ErrorContext::new(
+                                "linkml-service".to_string(),
+                                "shutdown".to_string(),
+                            )),
+                        )
                         .await;
-                    
+
                     self.logger
                         .warn(&format!("Failed to cancel background task: {}", e))
                         .await
@@ -483,33 +523,40 @@ where
                 }
             }
         }
-        
+
         // Record final cache statistics before clearing
         let schema_cache_final_size = self.schema_cache.read().len();
-        
+
         self.logger
-            .debug(&format!("Clearing {} cached schemas on shutdown", schema_cache_final_size))
+            .debug(&format!(
+                "Clearing {} cached schemas on shutdown",
+                schema_cache_final_size
+            ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Clear caches
         self.schema_cache.write().clear();
         let _ = self.validator_cache.clear().await;
-        
+
         // Record shutdown duration
-        let shutdown_end = self.timestamp
+        let shutdown_end = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let shutdown_duration_ms = (shutdown_end - shutdown_start) / 1_000_000;
-        
+
         // Set service ready status to 0 (not ready)
         self.logger
-            .info(&format!("LinkML service shutdown complete in {}ms", shutdown_duration_ms))
+            .info(&format!(
+                "LinkML service shutdown complete in {}ms",
+                shutdown_duration_ms
+            ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         Ok(())
     }
 }
@@ -527,12 +574,13 @@ where
         // Track operation with error handler
         let operation_id = format!("load_schema_{}", path.display());
         // Record start time
-        let start_time = self.timestamp
+        let start_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        
+
         self.logger
             .debug(&format!("Loading schema from: {}", path.display()))
             .await
@@ -549,9 +597,10 @@ where
             self.logger
                 .debug("Schema found in cache")
                 .await
-                .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;            return Ok(schema);
+                .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
+            return Ok(schema);
         }
-        
+
         // Record cache miss
         // Parse the schema with error handling
         let schema = match self.parser.parse_file(path) {
@@ -564,15 +613,26 @@ where
                     ("path".to_string(), path.to_string_lossy().to_string()),
                     ("severity".to_string(), "high".to_string()),
                 ]);
-                
+
                 // Track error with error handler service
-                let _ = self.error_handler
-                    .categorize_error(&e, Some(ErrorContext::new("linkml-service".to_string(), "load_schema".to_string())))
-                    .await;                self.logger
-                    .error(&format!("Failed to parse schema: {} - Context: {:?}", e, error_context))
+                let _ = self
+                    .error_handler
+                    .categorize_error(
+                        &e,
+                        Some(ErrorContext::new(
+                            "linkml-service".to_string(),
+                            "load_schema".to_string(),
+                        )),
+                    )
+                    .await;
+                self.logger
+                    .error(&format!(
+                        "Failed to parse schema: {} - Context: {:?}",
+                        e, error_context
+                    ))
                     .await
                     .map_err(|log_err| LinkMLError::service(format!("Logger error: {log_err}")))?;
-                
+
                 return Err(e);
             }
         };
@@ -597,15 +657,20 @@ where
             let mut cache = self.schema_cache.write();
             cache.insert(path_str, schema.clone());
         }
-        
+
         // Record operation duration
-        let end_time = self.timestamp
+        let end_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        let duration_ms = (end_time - start_time) / 1_000_000;        self.logger
-            .info(&format!("Successfully loaded schema: {} ({}ms)", schema.name, duration_ms))
+        let duration_ms = (end_time - start_time) / 1_000_000;
+        self.logger
+            .info(&format!(
+                "Successfully loaded schema: {} ({}ms)",
+                schema.name, duration_ms
+            ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
@@ -617,12 +682,13 @@ where
         content: &str,
         format: SchemaFormat,
     ) -> Result<SchemaDefinition> {
-        let start_time = self.timestamp
+        let start_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        
+
         self.logger
             .debug(&format!("Loading schema from string, format: {format:?}"))
             .await
@@ -638,10 +704,17 @@ where
             Ok(s) => s,
             Err(e) => {
                 // Track parse error
-                let _ = self.error_handler
-                    .categorize_error(&e, Some(ErrorContext::new("linkml-service".to_string(), "load_schema_str".to_string())))
+                let _ = self
+                    .error_handler
+                    .categorize_error(
+                        &e,
+                        Some(ErrorContext::new(
+                            "linkml-service".to_string(),
+                            "load_schema_str".to_string(),
+                        )),
+                    )
                     .await;
-                
+
                 return Err(e);
             }
         };
@@ -657,16 +730,18 @@ where
                     .debug("Validating against meta-schema")
                     .await
                     .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-                
+
                 // Track validation attempt
-                }
-        }        let end_time = self.timestamp
+            }
+        }
+        let end_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000;
-        
+
         self.logger
             .info(&format!(
                 "Successfully loaded schema from string: {} ({}ms)",
@@ -685,12 +760,13 @@ where
         target_class: &str,
     ) -> Result<ValidationReport> {
         // Record validation start
-        let start_time = self.timestamp
+        let start_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
-        
+
         self.logger
             .debug(&format!("Validating data against class: {target_class}"))
             .await
@@ -720,30 +796,38 @@ where
                 "Validation failed for class: {target_class} with {} errors",
                 report.stats.error_count
             )
-        };        let end_time = self.timestamp
+        };
+        let end_time = self
+            .timestamp
             .now_utc()
             .await
             .map(|dt| dt.timestamp_nanos_opt().unwrap_or(0))
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000;
-        
+
         // Log validation performance
         self.logger
             .debug(&format!("Validation completed in {}ms", duration_ms))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
-        
+
         // Track validation results
         // If validation failed, track error details
         if !report.valid {
             // Create validation error for categorization
             let validation_error = LinkMLError::data_validation(format!(
                 "Validation failed for {}: {} errors",
-                target_class,
-                report.stats.error_count
+                target_class, report.stats.error_count
             ));
-            let _ = self.error_handler
-                .categorize_error(&validation_error, Some(ErrorContext::new("linkml-service".to_string(), "validate".to_string())))
+            let _ = self
+                .error_handler
+                .categorize_error(
+                    &validation_error,
+                    Some(ErrorContext::new(
+                        "linkml-service".to_string(),
+                        "validate".to_string(),
+                    )),
+                )
                 .await;
         }
 

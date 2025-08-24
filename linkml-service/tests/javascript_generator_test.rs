@@ -1,17 +1,14 @@
 //! Tests for the JavaScript ES6 generator
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use linkml_service::generator::{GeneratorOptions, JavaScriptGenerator, Generator};
+use linkml_service::generator::{Generator, GeneratorOptions, JavaScriptGenerator};
 use serde_json::json;
 
 async fn generate_javascript(schema: SchemaDefinition) -> String {
     let generator = JavaScriptGenerator::new();
-    let options = GeneratorOptions::new()
-        .with_docs(true);
+    let options = GeneratorOptions::new().with_docs(true);
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    assert_eq!(outputs.len(), 1);
-    outputs[0].content.clone()
+    generator.generate(&schema).unwrap()
 }
 
 #[tokio::test]
@@ -34,30 +31,39 @@ async fn test_simple_class_generation() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        description: Some("Unique identifier".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            description: Some("Unique identifier".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        description: Some("Person's full name".to_string()),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            description: Some("Person's full name".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        description: Some("Age in years".to_string()),
-        range: Some("integer".to_string()),
-        minimum_value: Some(json!(0)),
-        maximum_value: Some(json!(150)),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            description: Some("Age in years".to_string()),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            maximum_value: Some(json!(150)),
+            ..Default::default()
+        },
+    );
 
     let output = generate_javascript(schema).await;
 
@@ -115,19 +121,25 @@ async fn test_array_fields() {
 
     schema.classes.insert("Group".to_string(), group);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("members".to_string(), SlotDefinition {
-        name: "members".to_string(),
-        range: Some("string".to_string()),
-        multivalued: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "members".to_string(),
+        SlotDefinition {
+            name: "members".to_string(),
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        },
+    );
 
     let output = generate_javascript(schema).await;
 
@@ -158,23 +170,29 @@ async fn test_enum_generation() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("status".to_string(), SlotDefinition {
-        name: "status".to_string(),
-        description: Some("Current status".to_string()),
-        permissible_values: vec![
-            PermissibleValue::Simple("active".to_string()),
-            PermissibleValue::Simple("inactive".to_string()),
-            PermissibleValue::Simple("pending".to_string()),
-        ],
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "status".to_string(),
+        SlotDefinition {
+            name: "status".to_string(),
+            description: Some("Current status".to_string()),
+            permissible_values: vec![
+                PermissibleValue::Simple("active".to_string()),
+                PermissibleValue::Simple("inactive".to_string()),
+                PermissibleValue::Simple("pending".to_string()),
+            ],
+            ..Default::default()
+        },
+    );
 
     let output = generate_javascript(schema).await;
 
@@ -219,25 +237,34 @@ async fn test_inheritance() {
     schema.classes.insert("Person".to_string(), person);
 
     // Define slots
-    schema.slots.insert("id".to_string(), SlotDefinition {
-        name: "id".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "id".to_string(),
+        SlotDefinition {
+            name: "id".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("name".to_string(), SlotDefinition {
-        name: "name".to_string(),
-        range: Some("string".to_string()),
-        required: Some(true),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "name".to_string(),
+        SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("age".to_string(), SlotDefinition {
-        name: "age".to_string(),
-        range: Some("integer".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "age".to_string(),
+        SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_javascript(schema).await;
 
@@ -247,7 +274,7 @@ async fn test_inheritance() {
 
     // Check Person only initializes its own fields
     assert!(output.contains("this.age = data.age || null;"));
-    
+
     // Check toObject includes parent data
     assert!(output.contains("const parentData = super.toObject();"));
     assert!(output.contains("...parentData,"));
@@ -269,19 +296,25 @@ async fn test_pattern_validation() {
 
     schema.classes.insert("Contact".to_string(), contact);
 
-    schema.slots.insert("email".to_string(), SlotDefinition {
-        name: "email".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "email".to_string(),
+        SlotDefinition {
+            name: "email".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string()),
+            ..Default::default()
+        },
+    );
 
-    schema.slots.insert("phone".to_string(), SlotDefinition {
-        name: "phone".to_string(),
-        range: Some("string".to_string()),
-        pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "phone".to_string(),
+        SlotDefinition {
+            name: "phone".to_string(),
+            range: Some("string".to_string()),
+            pattern: Some(r"^\+?[\d\s\-()]+$".to_string()),
+            ..Default::default()
+        },
+    );
 
     let output = generate_javascript(schema).await;
 
@@ -307,26 +340,30 @@ async fn test_commonjs_export() {
 
     schema.classes.insert("SimpleClass".to_string(), simple);
 
-    schema.slots.insert("value".to_string(), SlotDefinition {
-        name: "value".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "value".to_string(),
+        SlotDefinition {
+            name: "value".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
     let generator = JavaScriptGenerator::new();
-    let options = GeneratorOptions::new()
-        .set_custom("module_type", "commonjs");
+    let options = GeneratorOptions::new().set_custom("module_type", "commonjs");
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let output = &outputs[0];
+    let output = generator.generate(&schema).unwrap();
 
     // Check CommonJS exports
-    assert!(output.content.contains("// CommonJS exports"));
-    assert!(output.content.contains("if (typeof module !== 'undefined' && module.exports)"));
-    assert!(output.content.contains("module.exports.SimpleClass = SimpleClass;"));
-
-    // Check filename extension
-    assert_eq!(output.filename, "test_commonjs.js");
+    assert!(output.contains("// CommonJS exports"));
+    assert!(
+        output
+            .contains("if (typeof module !== 'undefined' && module.exports)")
+    );
+    assert!(
+        output
+            .contains("module.exports.SimpleClass = SimpleClass;")
+    );
 }
 
 #[tokio::test]
@@ -345,21 +382,20 @@ async fn test_esm_module() {
 
     schema.classes.insert("SimpleClass".to_string(), simple);
 
-    schema.slots.insert("value".to_string(), SlotDefinition {
-        name: "value".to_string(),
-        range: Some("string".to_string()),
-        ..Default::default()
-    });
+    schema.slots.insert(
+        "value".to_string(),
+        SlotDefinition {
+            name: "value".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        },
+    );
 
     let generator = JavaScriptGenerator::new();
     let options = GeneratorOptions::new(); // Default is ESM
 
-    let outputs = generator.generate(&schema, &options).await.unwrap();
-    let output = &outputs[0];
+    let output = generator.generate(&schema).unwrap();
 
     // Should not have CommonJS exports
-    assert!(!output.content.contains("module.exports"));
-
-    // Check filename extension
-    assert_eq!(output.filename, "test_esm.mjs");
+    assert!(!output.contains("module.exports"));
 }

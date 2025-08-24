@@ -3,10 +3,10 @@
 //! This test suite verifies integration with all RootReal services
 //! and ensures proper functionality in the service ecosystem.
 
-use linkml_service::{LinkMLService, create_linkml_service};
 use linkml_core::prelude::*;
-use std::sync::Arc;
+use linkml_service::{LinkMLService, create_linkml_service};
 use serde_json::json;
+use std::sync::Arc;
 use std::time::Instant;
 
 // Import the logger trait for error() method
@@ -24,9 +24,13 @@ async fn test_logger_service_integration() {
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service with all dependencies
     let service = create_linkml_service(
         logger.clone(),
@@ -34,14 +38,18 @@ async fn test_logger_service_integration() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test schema loading with logging
     use logger_core::LoggerService;
     logger.info("Loading test schema").await.unwrap();
-    
+
     let schema_yaml = r#"
 id: https://example.org/test-schema
 name: TestSchema
@@ -73,27 +81,45 @@ slots:
     range: string
     required: true
 "#;
-    
+
     // Load the schema using the service
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    logger.info(&format!("Schema loaded: {}", schema.name)).await.unwrap();
-    
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+    logger
+        .info(&format!("Schema loaded: {}", schema.name))
+        .await
+        .unwrap();
+
     // Test validation with logging
     let data = json!({"id": "test1", "name": "Test"});
-    println!("JSON data being validated: {}", serde_json::to_string_pretty(&data).unwrap());
+    println!(
+        "JSON data being validated: {}",
+        serde_json::to_string_pretty(&data).unwrap()
+    );
     let report = service.validate(&data, &schema, "TestClass").await.unwrap();
-    
-    println!("Validation report: valid={}, errors={:?}", report.valid, report.errors);
-    
+
+    println!(
+        "Validation report: valid={}, errors={:?}",
+        report.valid, report.errors
+    );
+
     if report.valid {
         logger.info("Validation passed").await.unwrap();
     } else {
-        logger.error(&format!("Validation failed with {} errors", report.errors.len())).await.unwrap();
+        logger
+            .error(&format!(
+                "Validation failed with {} errors",
+                report.errors.len()
+            ))
+            .await
+            .unwrap();
         for error in &report.errors {
             println!("Validation error: {:?}", error);
         }
     }
-    
+
     // Verify logs
     let logs = logger.get_logs().await;
     println!("Logs captured: {:?}", logs);
@@ -103,7 +129,10 @@ slots:
     assert!(logs.iter().any(|l| l.contains("Loading test schema")));
     assert!(logs.iter().any(|l| l.contains("Schema loaded: TestSchema")));
     // Check if validation passed or failed
-    assert!(logs.iter().any(|l| l.contains("Validation passed") || l.contains("Validation failed")));
+    assert!(
+        logs.iter()
+            .any(|l| l.contains("Validation passed") || l.contains("Validation failed"))
+    );
 }
 
 #[tokio::test]
@@ -112,16 +141,20 @@ async fn test_timestamp_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     // Create all required service dependencies
     let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -129,14 +162,18 @@ async fn test_timestamp_service_integration() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Record start time
     use timestamp_core::TimestampService;
     let start = timestamp.now_utc().await.unwrap();
-    
+
     // Perform some operations
     let schema_yaml = r#"
 id: https://example.org/timestamp-test
@@ -175,27 +212,37 @@ slots:
     description: Event description
     range: string
 "#;
-    
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Validate data with timestamp
-    let current_time = timestamp.format_iso8601(&timestamp.now_utc().await.unwrap()).await.unwrap();
+    let current_time = timestamp
+        .format_iso8601(&timestamp.now_utc().await.unwrap())
+        .await
+        .unwrap();
     let data = json!({
         "event_id": "evt001",
         "timestamp": current_time,
         "description": "Test event"
     });
-    
+
     let report = service.validate(&data, &schema, "Event").await.unwrap();
     if !report.valid {
         println!("Validation errors:");
         for error in &report.errors {
-            println!("  - {}: {}", error.path.as_ref().unwrap_or(&"".to_string()), error.message);
+            println!(
+                "  - {}: {}",
+                error.path.as_ref().unwrap_or(&"".to_string()),
+                error.message
+            );
         }
         println!("Timestamp format: {}", current_time);
     }
     assert!(report.valid);
-    
+
     // Record end time and calculate duration
     let end = timestamp.now_utc().await.unwrap();
     let duration = end - start;
@@ -211,9 +258,11 @@ async fn test_configuration_service_integration() {
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -223,8 +272,10 @@ async fn test_configuration_service_integration() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test with configuration
     let schema_yaml = r#"
 id: https://example.org/config-test
@@ -256,9 +307,12 @@ slots:
     description: Item value
     range: integer
 "#;
-    
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Test validation with the loaded schema
     let data = json!({
         "id": "item1",
@@ -266,13 +320,16 @@ slots:
     });
     let report = service.validate(&data, &schema, "Item").await.unwrap();
     assert!(report.valid);
-    
+
     // Test configuration-driven behavior (e.g., strict validation)
     let invalid_data = json!({
         "id": "item2"
         // Missing required "value" field which is not marked as required
     });
-    let report = service.validate(&invalid_data, &schema, "Item").await.unwrap();
+    let report = service
+        .validate(&invalid_data, &schema, "Item")
+        .await
+        .unwrap();
     // Should be valid because value is not marked as required
     assert!(report.valid);
 }
@@ -283,16 +340,18 @@ async fn test_cache_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     // Create mock services
     let logger = Arc::new(MockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -302,8 +361,10 @@ async fn test_cache_service_integration() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test schema caching
     let schema_yaml = r#"
 id: https://example.org/cache-test
@@ -336,24 +397,36 @@ slots:
     description: Item data
     range: string
 "#;
-    
+
     // Load schema multiple times to test caching behavior
-    let schema1 = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    let schema2 = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
-    
+    let schema1 = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+    let schema2 = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
+
     // Both should be the same
     assert_eq!(schema1.id, schema2.id);
     assert_eq!(schema1.name, schema2.name);
-    
+
     // Test validation caching
     let data = json!({"id": "item1", "data": "test"});
-    let report1 = service.validate(&data, &schema1, "CachedItem").await.unwrap();
-    let report2 = service.validate(&data, &schema1, "CachedItem").await.unwrap();
-    
+    let report1 = service
+        .validate(&data, &schema1, "CachedItem")
+        .await
+        .unwrap();
+    let report2 = service
+        .validate(&data, &schema1, "CachedItem")
+        .await
+        .unwrap();
+
     // Both should be valid
     assert!(report1.valid);
     assert!(report2.valid);
-    
+
     // Skip cache verification - mock cache service doesn't integrate with real cache adapter
     // In a real integration test with a real cache service, this would be checked
 }
@@ -364,17 +437,19 @@ async fn test_monitoring_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     // Create mock services
     let logger = Arc::new(MockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
     let monitor_ref = monitor.clone();
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -384,8 +459,10 @@ async fn test_monitoring_service_integration() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test performance monitoring
     let schema_yaml = r#"
 id: https://example.org/monitoring-test
@@ -423,42 +500,59 @@ slots:
     description: Metric timestamp
     range: datetime
 "#;
-    
+
     // Monitor schema loading
     let start = Instant::now();
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let load_duration = start.elapsed();
-    monitor_ref.record_metric("linkml.schema.load_time_ms", load_duration.as_millis() as f64).await;
-    
+    monitor_ref
+        .record_metric(
+            "linkml.schema.load_time_ms",
+            load_duration.as_millis() as f64,
+        )
+        .await;
+
     // Monitor validation performance
     let test_data = vec![
         json!({"id": "m1", "value": 10.5, "timestamp": "2024-01-20T10:00:00Z"}),
         json!({"id": "m2", "value": 20.3, "timestamp": "2024-01-20T10:01:00Z"}),
         json!({"id": "m3", "value": 15.7, "timestamp": "2024-01-20T10:02:00Z"}),
     ];
-    
+
     let mut total_validation_time = 0.0;
     let mut validation_count = 0;
-    
+
     for data in test_data {
         let start = Instant::now();
-        let report = service.validate(&data, &schema, "MetricData").await.unwrap();
+        let report = service
+            .validate(&data, &schema, "MetricData")
+            .await
+            .unwrap();
         let duration = start.elapsed();
-        
+
         total_validation_time += duration.as_millis() as f64;
         validation_count += 1;
-        
+
         if report.valid {
-            monitor_ref.record_metric("linkml.validation.success", 1.0).await;
+            monitor_ref
+                .record_metric("linkml.validation.success", 1.0)
+                .await;
         } else {
-            monitor_ref.record_metric("linkml.validation.failure", 1.0).await;
+            monitor_ref
+                .record_metric("linkml.validation.failure", 1.0)
+                .await;
         }
     }
-    
+
     // Record average validation time
     let avg_validation_time = total_validation_time / validation_count as f64;
-    monitor_ref.record_metric("linkml.validation.avg_time_ms", avg_validation_time).await;
-    
+    monitor_ref
+        .record_metric("linkml.validation.avg_time_ms", avg_validation_time)
+        .await;
+
     // Verify metrics
     let metrics = monitor_ref.get_all_metrics().await;
     assert!(metrics.contains_key("linkml.schema.load_time_ms"));
@@ -472,18 +566,20 @@ async fn test_health_check_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     let health_service = Arc::new(MockHealthCheckService::new());
-    
+
     // Create mock services
     let logger = Arc::new(MockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -493,11 +589,13 @@ async fn test_health_check_service_integration() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Register LinkML service health check
     health_service.register_check("linkml_service").await;
-    
+
     // Test service health
     let schema_yaml = r#"
 id: https://example.org/health-test
@@ -529,9 +627,12 @@ slots:
     description: Health status
     range: boolean
 "#;
-    
+
     // Try to load schema and update health
-    match service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await {
+    match service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+    {
         Ok(_) => {
             health_service.set_health("linkml_service", true).await;
         }
@@ -539,21 +640,28 @@ slots:
             health_service.set_health("linkml_service", false).await;
         }
     }
-    
+
     // Verify health status
     assert!(health_service.is_healthy("linkml_service").await);
-    
+
     // Test with invalid schema
     let invalid_schema = "invalid yaml content {{{";
-    match service.load_schema_str(invalid_schema, SchemaFormat::Yaml).await {
+    match service
+        .load_schema_str(invalid_schema, SchemaFormat::Yaml)
+        .await
+    {
         Ok(_) => {
-            health_service.set_health("linkml_schema_parser", true).await;
+            health_service
+                .set_health("linkml_schema_parser", true)
+                .await;
         }
         Err(_) => {
-            health_service.set_health("linkml_schema_parser", false).await;
+            health_service
+                .set_health("linkml_schema_parser", false)
+                .await;
         }
     }
-    
+
     // Overall health should reflect individual checks
     assert!(!health_service.overall_health().await); // One check failed
 }
@@ -564,18 +672,20 @@ async fn test_error_handling_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     // Create mock services
     let logger = Arc::new(MockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
     let logger_ref = logger.clone();
     let monitor_ref = monitor.clone();
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -585,16 +695,25 @@ async fn test_error_handling_service_integration() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Test various error scenarios
-    
+
     // 1. Invalid schema format
-    let result = service.load_schema_str("not valid yaml", SchemaFormat::Yaml).await;
+    let result = service
+        .load_schema_str("not valid yaml", SchemaFormat::Yaml)
+        .await;
     assert!(result.is_err());
-    logger_ref.error("Failed to parse invalid YAML schema").await.unwrap();
-    monitor_ref.record_metric("linkml.error.schema_parse", 1.0).await;
-    
+    logger_ref
+        .error("Failed to parse invalid YAML schema")
+        .await
+        .unwrap();
+    monitor_ref
+        .record_metric("linkml.error.schema_parse", 1.0)
+        .await;
+
     // 2. Missing required fields
     let incomplete_schema = r#"
 name: IncompleteSchema
@@ -606,13 +725,20 @@ classes:
     slots:
       - unknown_slot
 "#;
-    
-    let result = service.load_schema_str(incomplete_schema, SchemaFormat::Yaml).await;
+
+    let result = service
+        .load_schema_str(incomplete_schema, SchemaFormat::Yaml)
+        .await;
     if result.is_err() {
-        logger_ref.error("Schema missing required 'id' field").await.unwrap();
-        monitor_ref.record_metric("linkml.error.schema_validation", 1.0).await;
+        logger_ref
+            .error("Schema missing required 'id' field")
+            .await
+            .unwrap();
+        monitor_ref
+            .record_metric("linkml.error.schema_validation", 1.0)
+            .await;
     }
-    
+
     // 3. Validation errors
     let schema_yaml = r#"
 id: https://example.org/error-test
@@ -645,23 +771,34 @@ slots:
     range: string
     required: true
 "#;
-    
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
+
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let invalid_data = json!({"id": "test1"}); // Missing required field
-    
-    let report = service.validate(&invalid_data, &schema, "Strict").await.unwrap();
+
+    let report = service
+        .validate(&invalid_data, &schema, "Strict")
+        .await
+        .unwrap();
     assert!(!report.valid);
-    
+
     for error in &report.errors {
-        logger_ref.error(&format!("Validation error: {}", error.message)).await.unwrap();
-        monitor_ref.record_metric("linkml.validation.error", 1.0).await;
+        logger_ref
+            .error(&format!("Validation error: {}", error.message))
+            .await
+            .unwrap();
+        monitor_ref
+            .record_metric("linkml.validation.error", 1.0)
+            .await;
     }
-    
+
     // Verify error tracking
     let logs = logger_ref.get_logs().await;
     let error_logs: Vec<_> = logs.iter().filter(|l| l.starts_with("[ERROR]")).collect();
     assert!(error_logs.len() >= 3);
-    
+
     let metrics = monitor_ref.get_all_metrics().await;
     assert!(metrics.get("linkml.error.schema_parse").is_some());
 }
@@ -672,27 +809,33 @@ async fn test_task_management_service_integration() {
     // 1. Create all required service dependencies
     // 2. Pass them to create_linkml_service()
     // 3. Test the integration
-    
+
     // Create mock services
     let logger = Arc::new(MockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
-    
+
     // Create LinkML service
-    let service = Arc::new(create_linkml_service(
-        logger,
-        timestamp_svc,
-        task_manager,
-        error_handler,
-        config_service,
-        cache,
-        monitor,
-    ).await.unwrap());
-    
+    let service = Arc::new(
+        create_linkml_service(
+            logger,
+            timestamp_svc,
+            task_manager,
+            error_handler,
+            config_service,
+            cache,
+            monitor,
+        )
+        .await
+        .unwrap(),
+    );
+
     // Test concurrent validation tasks
     let schema_yaml = r#"
 id: https://example.org/task-test
@@ -724,15 +867,20 @@ slots:
     description: Task status
     range: string
 "#;
-    
-    let schema = Arc::new(service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap());
-    
+
+    let schema = Arc::new(
+        service
+            .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+            .await
+            .unwrap(),
+    );
+
     // Create multiple validation tasks
     let mut tasks = Vec::new();
     for i in 0..10 {
         let schema_clone = schema.clone();
         let service_clone = service.clone();
-        
+
         tasks.push(tokio::spawn(async move {
             let data = json!({
                 "id": format!("task_{}", i),
@@ -741,14 +889,14 @@ slots:
             service_clone.validate(&data, &schema_clone, "Task").await
         }));
     }
-    
+
     // Wait for all tasks to complete
     let mut results = Vec::new();
     for task in tasks {
         let result = task.await.unwrap().unwrap();
         results.push(result);
     }
-    
+
     // Verify all validations succeeded
     assert_eq!(results.len(), 10);
     assert!(results.iter().all(|r| r.valid));
@@ -762,13 +910,15 @@ async fn test_end_to_end_workflow() {
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
     let cache_service = cache.clone();
     let health_service = Arc::new(MockHealthCheckService::new());
     let logger_ref = logger.clone();
     let monitor_ref = monitor.clone();
-    
+
     // Create LinkML service
     let service = create_linkml_service(
         logger,
@@ -778,13 +928,18 @@ async fn test_end_to_end_workflow() {
         config_service,
         cache,
         monitor,
-    ).await.unwrap();
-    
+    )
+    .await
+    .unwrap();
+
     // Register health check
     health_service.register_check("linkml_workflow").await;
-    
-    logger_ref.info("Starting end-to-end workflow test").await.unwrap();
-    
+
+    logger_ref
+        .info("Starting end-to-end workflow test")
+        .await
+        .unwrap();
+
     // Load schema
     let schema_yaml = r#"
 id: https://example.org/workflow-test
@@ -881,17 +1036,25 @@ enums:
       - delivered
       - cancelled
 "#;
-    
+
     let start = Instant::now();
-    let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await.unwrap();
+    let schema = service
+        .load_schema_str(schema_yaml, SchemaFormat::Yaml)
+        .await
+        .unwrap();
     let load_time = start.elapsed();
-    
-    logger_ref.info(&format!("Schema loaded in {:?}", load_time)).await.unwrap();
-    monitor_ref.record_metric("workflow.schema.load_time_ms", load_time.as_millis() as f64).await;
-    
+
+    logger_ref
+        .info(&format!("Schema loaded in {:?}", load_time))
+        .await
+        .unwrap();
+    monitor_ref
+        .record_metric("workflow.schema.load_time_ms", load_time.as_millis() as f64)
+        .await;
+
     // Cache service integration is tested above, no need to test here
     // Just continue with the workflow
-    
+
     // Validate order data
     let order_data = json!({
         "order_id": "ORD-123456",
@@ -911,25 +1074,39 @@ enums:
         "total_amount": 109.97,
         "status": "pending"
     });
-    
+
     let validation_start = Instant::now();
-    let report = service.validate(&order_data, &schema, "Order").await.unwrap();
+    let report = service
+        .validate(&order_data, &schema, "Order")
+        .await
+        .unwrap();
     let validation_time = validation_start.elapsed();
-    
-    monitor_ref.record_metric("workflow.validation.time_ms", validation_time.as_millis() as f64).await;
-    
+
+    monitor_ref
+        .record_metric(
+            "workflow.validation.time_ms",
+            validation_time.as_millis() as f64,
+        )
+        .await;
+
     if report.valid {
         logger_ref.info("Order validation passed").await.unwrap();
         health_service.set_health("linkml_workflow", true).await;
     } else {
-        logger_ref.error(&format!("Order validation failed with {} errors", report.errors.len())).await.unwrap();
+        logger_ref
+            .error(&format!(
+                "Order validation failed with {} errors",
+                report.errors.len()
+            ))
+            .await
+            .unwrap();
         health_service.set_health("linkml_workflow", false).await;
     }
-    
+
     // Test batch processing
     let batch_size = 50;
     let mut batch_results = Vec::new();
-    
+
     for i in 0..batch_size {
         let order = json!({
             "order_id": format!("ORD-{:06}", i),
@@ -942,26 +1119,45 @@ enums:
             "total_amount": 9.99,
             "status": "pending"
         });
-        
+
         let result = service.validate(&order, &schema, "Order").await.unwrap();
         batch_results.push(result.valid);
     }
-    
+
     let valid_count = batch_results.iter().filter(|&&v| v).count();
-    logger_ref.info(&format!("Batch validation: {}/{} valid", valid_count, batch_size)).await.unwrap();
-    monitor_ref.record_metric("workflow.batch.success_rate", valid_count as f64 / batch_size as f64).await;
-    
+    logger_ref
+        .info(&format!(
+            "Batch validation: {}/{} valid",
+            valid_count, batch_size
+        ))
+        .await
+        .unwrap();
+    monitor_ref
+        .record_metric(
+            "workflow.batch.success_rate",
+            valid_count as f64 / batch_size as f64,
+        )
+        .await;
+
     // Final health check
     assert!(health_service.is_healthy("linkml_workflow").await);
-    
+
     // Summary
     let (cache_size, cache_hits, cache_misses) = cache_service.stats().await;
-    logger_ref.info(&format!("Workflow complete - Cache stats: size={}, hits={}, misses={}", 
-        cache_size, cache_hits, cache_misses)).await.unwrap();
-    
+    logger_ref
+        .info(&format!(
+            "Workflow complete - Cache stats: size={}, hits={}, misses={}",
+            cache_size, cache_hits, cache_misses
+        ))
+        .await
+        .unwrap();
+
     let all_metrics = monitor_ref.get_all_metrics().await;
-    logger_ref.info(&format!("Total metrics recorded: {}", all_metrics.len())).await.unwrap();
-    
+    logger_ref
+        .info(&format!("Total metrics recorded: {}", all_metrics.len()))
+        .await
+        .unwrap();
+
     // Verify workflow success
     let logs = logger_ref.get_logs().await;
     assert!(logs.iter().any(|l| l.contains("Workflow complete")));

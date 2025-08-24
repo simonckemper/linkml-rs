@@ -57,9 +57,9 @@ impl TtlConfig {
             l3_base_ttl: Duration::from_secs(config.cache_ttl_levels.l3_seconds),
             min_ttl: Duration::from_secs(config.cache_ttl_levels.min_ttl_seconds),
             max_ttl: Duration::from_secs(config.cache_ttl_levels.max_ttl_seconds),
-            ttl_extension_factor: 1.5,  // Could be added to config
-            adaptive_ttl: true,  // Could be added to config
-            promotion_threshold: 5,  // Could be added to config
+            ttl_extension_factor: 1.5, // Could be added to config
+            adaptive_ttl: true,        // Could be added to config
+            promotion_threshold: 5,    // Could be added to config
         }
     }
 }

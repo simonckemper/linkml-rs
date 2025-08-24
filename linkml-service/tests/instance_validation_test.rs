@@ -1,9 +1,9 @@
 //! Tests for instance-based validation
 
-use linkml_service::validator::{
-    validate_as_class, ValidationEngine, InstanceLoader, InstanceConfig,
-};
 use linkml_service::parser::Parser;
+use linkml_service::validator::{
+    InstanceConfig, InstanceLoader, ValidationEngine, validate_as_class,
+};
 use serde_json::json;
 use tempfile::TempDir;
 use tokio::fs;
@@ -36,7 +36,7 @@ slots:
 
     // Create instance data files
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Country codes
     let countries_file = temp_dir.path().join("countries.json");
     let countries_data = json!([
@@ -47,10 +47,13 @@ slots:
         {"code": "FR", "name": "France"},
         {"code": "DE", "name": "Germany"}
     ]);
-    fs::write(&countries_file, serde_json::to_string_pretty(&countries_data).unwrap())
-        .await
-        .unwrap();
-    
+    fs::write(
+        &countries_file,
+        serde_json::to_string_pretty(&countries_data).unwrap(),
+    )
+    .await
+    .unwrap();
+
     // US states
     let states_file = temp_dir.path().join("us_states.json");
     let states_data = json!([
@@ -59,17 +62,20 @@ slots:
         {"code": "NY", "name": "New York"},
         {"code": "FL", "name": "Florida"}
     ]);
-    fs::write(&states_file, serde_json::to_string_pretty(&states_data).unwrap())
-        .await
-        .unwrap();
+    fs::write(
+        &states_file,
+        serde_json::to_string_pretty(&states_data).unwrap(),
+    )
+    .await
+    .unwrap();
 
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Create engine with instance validation
     let _engine = ValidationEngine::new(&schema).unwrap();
-    
+
     // Load instance data
     let loader = InstanceLoader::new();
     let country_config = InstanceConfig {
@@ -77,30 +83,43 @@ slots:
         value_field: None,
         filter: None,
     };
-    
-    let country_data = loader.load_json_file(&countries_file, &country_config).await.unwrap();
-    let state_data = loader.load_json_file(&states_file, &country_config).await.unwrap();
-    
+
+    let country_data = loader
+        .load_json_file(&countries_file, &country_config)
+        .await
+        .unwrap();
+    let state_data = loader
+        .load_json_file(&states_file, &country_config)
+        .await
+        .unwrap();
+
     // Create combined instance data
-    let mut instance_values: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
-    instance_values.insert("country".to_string(), 
-        country_data.values.keys().cloned().collect());
-    instance_values.insert("state".to_string(), 
-        state_data.values.keys().cloned().collect());
-    
+    let mut instance_values: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    instance_values.insert(
+        "country".to_string(),
+        country_data.values.keys().cloned().collect(),
+    );
+    instance_values.insert(
+        "state".to_string(),
+        state_data.values.keys().cloned().collect(),
+    );
+
     // Set instance data on engine (this would be a method we'd add)
     // For now, we'll test without the full integration
-    
+
     // Valid data
     let valid_data = json!({
         "country": "US",
         "state": "CA"
     });
-    
+
     // This test demonstrates the concept - full integration would require
     // modifying ValidationEngine to support instance data
-    let report = validate_as_class(&schema, &valid_data, "Address", None).await.unwrap();
-    
+    let report = validate_as_class(&schema, &valid_data, "Address", None)
+        .await
+        .unwrap();
+
     // Without instance validation integration, this would pass
     // With it, it would validate against loaded data
     assert!(report.valid);
@@ -132,13 +151,13 @@ slots:
     // Create CSV instance data
     let temp_dir = TempDir::new().unwrap();
     let categories_file = temp_dir.path().join("categories.csv");
-    
+
     let csv_data = "id,name,parent\nELEC,Electronics,\nCOMP,Computers,ELEC\nPHON,Phones,ELEC\nCLOT,Clothing,\nMENS,Mens,CLOT\nWOMN,Womens,CLOT\n";
     fs::write(&categories_file, csv_data).await.unwrap();
 
     let parser = Parser::new();
     let _schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Load CSV data
     let loader = InstanceLoader::new();
     let config = InstanceConfig {
@@ -146,16 +165,22 @@ slots:
         value_field: None,
         filter: None,
     };
-    
-    let category_data = loader.load_csv_file(&categories_file, &config).await.unwrap();
-    
+
+    let category_data = loader
+        .load_csv_file(&categories_file, &config)
+        .await
+        .unwrap();
+
     // Check that data was loaded correctly
     assert!(category_data.values.contains_key("ELEC"));
     assert!(category_data.values.contains_key("COMP"));
     assert_eq!(category_data.values.len(), 6);
-    
+
     // Test caching
-    let category_data2 = loader.load_csv_file(&categories_file, &config).await.unwrap();
+    let category_data2 = loader
+        .load_csv_file(&categories_file, &config)
+        .await
+        .unwrap();
     assert!(std::sync::Arc::ptr_eq(&category_data, &category_data2));
 }
 
@@ -182,7 +207,7 @@ slots:
     // Create tag vocabulary
     let temp_dir = TempDir::new().unwrap();
     let tags_file = temp_dir.path().join("tags.json");
-    
+
     let tags_data = json!({
         "tags": [
             {"id": "important", "label": "Important"},
@@ -192,13 +217,16 @@ slots:
             {"id": "draft", "label": "Draft"}
         ]
     });
-    fs::write(&tags_file, serde_json::to_string_pretty(&tags_data).unwrap())
-        .await
-        .unwrap();
+    fs::write(
+        &tags_file,
+        serde_json::to_string_pretty(&tags_data).unwrap(),
+    )
+    .await
+    .unwrap();
 
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Load instance data
     let loader = InstanceLoader::new();
     let config = InstanceConfig {
@@ -206,19 +234,24 @@ slots:
         value_field: Some("label".to_string()),
         filter: None,
     };
-    
+
     let tag_data = loader.load_json_file(&tags_file, &config).await.unwrap();
-    
+
     // Verify loading worked
     assert_eq!(tag_data.values.len(), 5);
-    assert_eq!(tag_data.values.get("important").unwrap(), &vec!["Important"]);
-    
+    assert_eq!(
+        tag_data.values.get("important").unwrap(),
+        &vec!["Important"]
+    );
+
     // Test data with multiple tags
     let data = json!({
         "tags": ["important", "urgent", "approved"]
     });
-    
+
     // This would validate each tag against the loaded vocabulary
-    let report = validate_as_class(&schema, &data, "TaggedItem", None).await.unwrap();
+    let report = validate_as_class(&schema, &data, "TaggedItem", None)
+        .await
+        .unwrap();
     assert!(report.valid);
 }

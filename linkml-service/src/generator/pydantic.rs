@@ -1,13 +1,10 @@
 //! Pydantic v2 code generator for LinkML schemas
 
 use super::base::{
-    collect_all_slots, is_optional_slot, BaseCodeFormatter, ImportManager,
-    TypeMapper,
-};
-use super::traits::{
-    CodeFormatter, Generator, GeneratorError, GeneratorResult,
+    BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, is_optional_slot,
 };
 use super::options::{GeneratorOptions, IndentStyle};
+use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
 use std::fmt::Write;
@@ -32,7 +29,7 @@ impl PydanticGenerator {
             description: "Generate Pydantic v2 models from LinkML schemas".to_string(),
         }
     }
-    
+
     /// Convert fmt::Error to GeneratorError
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
@@ -60,41 +57,50 @@ impl PydanticGenerator {
         };
 
         // Generate class definition
-        writeln!(&mut output, "class {}({}):", class_name, base_class).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "class {}({}):", class_name, base_class)
+            .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate class documentation
         if options.include_docs && class.description.is_some() {
             writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 72, "    ");
-                writeln!(&mut output, "    {}", wrapped).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "    {}", wrapped)
+                    .map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate model config
-        writeln!(&mut output, "    model_config = {{").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "        \"validate_assignment\": True,").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "        \"use_enum_values\": True,").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "        \"str_strip_whitespace\": True,").map_err(Self::fmt_error_to_generator_error)?;
-        
+        writeln!(&mut output, "    model_config = {{")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        \"validate_assignment\": True,")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        \"use_enum_values\": True,")
+            .map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "        \"str_strip_whitespace\": True,")
+            .map_err(Self::fmt_error_to_generator_error)?;
+
         if options.include_examples {
-            writeln!(&mut output, "        \"json_schema_extra\": {{").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "            \"examples\": [").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "                {{").map_err(Self::fmt_error_to_generator_error)?;
-            
+            writeln!(&mut output, "        \"json_schema_extra\": {{")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "            \"examples\": [")
+                .map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "                {{")
+                .map_err(Self::fmt_error_to_generator_error)?;
+
             // Generate example values for slots
             let slots = collect_all_slots(class, schema)?;
             for (i, slot_name) in slots.iter().enumerate() {
                 if let Some(slot) = schema.slots.get(slot_name) {
                     let example_value = self.get_example_value(slot);
                     write!(
-                        &mut output, 
-                        "                    \"{}\": {}", 
-                        slot_name,
-                        example_value
-                    ).map_err(Self::fmt_error_to_generator_error)?;
+                        &mut output,
+                        "                    \"{}\": {}",
+                        slot_name, example_value
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                     if i < slots.len() - 1 {
                         writeln!(&mut output, ",").map_err(Self::fmt_error_to_generator_error)?;
                     } else {
@@ -102,12 +108,13 @@ impl PydanticGenerator {
                     }
                 }
             }
-            
-            writeln!(&mut output, "                }}").map_err(Self::fmt_error_to_generator_error)?;
+
+            writeln!(&mut output, "                }}")
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "            ]").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "        }}").map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         writeln!(&mut output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -147,7 +154,8 @@ impl PydanticGenerator {
         let mut final_output = String::new();
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_output, "{}", import_block).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut final_output, "{}", import_block)
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -175,7 +183,7 @@ impl PydanticGenerator {
 
         // Determine the type
         let base_type = self.get_field_type(slot, schema, imports)?;
-        
+
         // Handle optional and multivalued
         let field_type = if slot.multivalued.unwrap_or(false) {
             imports.add_import("typing", "List");
@@ -205,8 +213,10 @@ impl PydanticGenerator {
 
         // Add description
         if let Some(ref desc) = slot.description {
-            field_args.push(format!("description=\"{}\"", 
-                BaseCodeFormatter::escape_python_string(desc)));
+            field_args.push(format!(
+                "description=\"{}\"",
+                BaseCodeFormatter::escape_python_string(desc)
+            ));
         }
 
         // Add pattern
@@ -226,7 +236,8 @@ impl PydanticGenerator {
         // These would be handled by pattern or custom validators if needed
 
         // Write the field
-        write!(output, "    {}: {} = Field(", slot_name, final_type).map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "    {}: {} = Field(", slot_name, final_type)
+            .map_err(Self::fmt_error_to_generator_error)?;
         write!(output, "{}", field_args.join(", ")).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, ")").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -277,7 +288,7 @@ impl PydanticGenerator {
 
             // Otherwise map as primitive
             let py_type = TypeMapper::to_python(range);
-            
+
             // Add datetime imports if needed
             match range.as_str() {
                 "datetime" => {
@@ -291,7 +302,7 @@ impl PydanticGenerator {
                 }
                 _ => {}
             }
-            
+
             if py_type == "Any" {
                 imports.add_import("typing", "Any");
             }
@@ -314,7 +325,8 @@ impl PydanticGenerator {
                 "datetime" => "\"2024-01-01T12:00:00Z\"".to_string(),
                 _ => {
                     if !slot.permissible_values.is_empty() {
-                        if let Some(PermissibleValue::Simple(val)) = slot.permissible_values.first() {
+                        if let Some(PermissibleValue::Simple(val)) = slot.permissible_values.first()
+                        {
                             format!("\"{}\"", val)
                         } else {
                             "null".to_string()
@@ -350,18 +362,29 @@ impl PydanticGenerator {
                     }
                     validators_added = true;
 
-                    writeln!(output, "    @field_validator('{}', mode='after')", slot_name).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "    @classmethod").map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "    def validate_{}(cls, v):", slot_name).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "        if v is None:").map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "            return v").map_err(Self::fmt_error_to_generator_error)?;
-                    
+                    writeln!(
+                        output,
+                        "    @field_validator('{}', mode='after')",
+                        slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "    @classmethod")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "    def validate_{}(cls, v):", slot_name)
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "        if v is None:")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "            return v")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+
                     // Add custom validation logic
                     if let Some(ref desc) = slot.description {
-                        writeln!(output, "        # {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(output, "        # {}", desc)
+                            .map_err(Self::fmt_error_to_generator_error)?;
                     }
-                    
-                    writeln!(output, "        return v").map_err(Self::fmt_error_to_generator_error)?;
+
+                    writeln!(output, "        return v")
+                        .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
@@ -384,10 +407,7 @@ impl Generator for PydanticGenerator {
         vec!["py"]
     }
 
-    fn generate(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> std::result::Result<String, LinkMLError> {
+    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         self.validate_schema(schema)?;
 
         // Generate a single file with all classes
@@ -396,7 +416,12 @@ impl Generator for PydanticGenerator {
 
         // File header
         writeln!(&mut content, "\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut content, "Generated from LinkML schema: {}", schema.name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut content,
+            "Generated from LinkML schema: {}",
+            schema.name
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
             writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut content, "{}", desc).map_err(Self::fmt_error_to_generator_error)?;
@@ -414,7 +439,8 @@ impl Generator for PydanticGenerator {
         // Generate classes
         let mut class_content = String::new();
         for (class_name, class_def) in &schema.classes {
-            let class_code = self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
+            let class_code =
+                self.generate_class(class_name, class_def, schema, &GeneratorOptions::default())?;
             writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut class_content).map_err(Self::fmt_error_to_generator_error)?;
             class_content.push_str(&class_code);
@@ -422,16 +448,21 @@ impl Generator for PydanticGenerator {
 
         // Combine everything
         let mut final_content = String::new();
-        
+
         // Imports
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_content, "{}", import_block).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut final_content, "{}", import_block)
+                .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Add generated content marker
-        writeln!(&mut final_content, "# Generated by LinkML Pydantic Generator").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(
+            &mut final_content,
+            "# Generated by LinkML Pydantic Generator"
+        )
+        .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
 
         // Enums
@@ -448,9 +479,7 @@ impl Generator for PydanticGenerator {
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(LinkMLError::service(
-                "Schema must have a name".to_string(),
-            ));
+            return Err(LinkMLError::service("Schema must have a name".to_string()));
         }
 
         if schema.classes.is_empty() {
@@ -461,11 +490,11 @@ impl Generator for PydanticGenerator {
 
         Ok(())
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "py"
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "schema_pydantic"
     }
@@ -484,21 +513,25 @@ impl PydanticGenerator {
 
         let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "class {}(str, Enum):", enum_name).map_err(Self::fmt_error_to_generator_error)?;
-        
+        writeln!(output, "class {}(str, Enum):", enum_name)
+            .map_err(Self::fmt_error_to_generator_error)?;
+
         if let Some(ref desc) = slot.description {
-            writeln!(output, "    \"\"\"{}\"\"\"", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "    \"\"\"{}\"\"\"", desc)
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         for value in &slot.permissible_values {
             match value {
                 PermissibleValue::Simple(text) => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "    {} = \"{}\"", const_name, text)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "    {} = \"{}\"", const_name, text)
+                        .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -511,7 +544,7 @@ impl CodeFormatter for PydanticGenerator {
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();
-        
+
         if lines.len() == 1 {
             format!("{}\"\"\"{}\"\"\"", indent_str, lines[0])
         } else {
@@ -582,7 +615,9 @@ mod tests {
 
         let generator = PydanticGenerator::new();
 
-        let output = generator.generate(&schema).expect("should generate Pydantic output");
+        let output = generator
+            .generate(&schema)
+            .expect("should generate Pydantic output");
         assert!(output.contains("from pydantic import BaseModel"));
         assert!(output.contains("class Person(BaseModel):"));
         assert!(output.contains("name: str = Field(...)"));

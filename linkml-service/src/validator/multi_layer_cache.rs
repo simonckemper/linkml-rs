@@ -588,7 +588,11 @@ impl DiskCache {
                 if let Ok(metadata) = entry.metadata().await {
                     if metadata.is_file() {
                         if let Ok(modified) = metadata.modified() {
-                            entries.push((entry.path(), usize::try_from(metadata.len()).unwrap_or(usize::MAX), modified));
+                            entries.push((
+                                entry.path(),
+                                usize::try_from(metadata.len()).unwrap_or(usize::MAX),
+                                modified,
+                            ));
                         }
                     }
                 }
@@ -661,7 +665,10 @@ mod tests {
         let validator = Arc::new(CompiledValidator::new());
 
         // Put and get
-        cache.put(key.clone(), validator.clone()).await.expect("should put into cache");
+        cache
+            .put(key.clone(), validator.clone())
+            .await
+            .expect("should put into cache");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
 
@@ -686,8 +693,14 @@ mod tests {
         let validator = Arc::new(CompiledValidator::new());
 
         // Put, invalidate, and try to get
-        cache.put(key.clone(), validator).await.expect("should put into cache");
-        cache.invalidate(&key).await.expect("should invalidate cache");
+        cache
+            .put(key.clone(), validator)
+            .await
+            .expect("should put into cache");
+        cache
+            .invalidate(&key)
+            .await
+            .expect("should invalidate cache");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
     }

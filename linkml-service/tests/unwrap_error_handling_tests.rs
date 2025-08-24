@@ -16,7 +16,7 @@ use linkml_service::{
     generator::{
         typeql_generator::TypeQLGenerator,
         python_dataclass::PythonDataclassGenerator,
-        sql::SqlGenerator,
+        sql::SQLGenerator,
         traits::{Generator, GeneratorOptions},
         registry::GeneratorRegistry,
     },
@@ -82,7 +82,7 @@ fn test_parser_handles_invalid_json() {
 
 #[test]
 fn test_validator_handles_invalid_pattern() {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.name = Some("test".to_string());
     
     let mut slot = SlotDefinition::default();
@@ -97,7 +97,7 @@ fn test_validator_handles_invalid_pattern() {
     schema.classes.insert("Person".to_string(), class);
     
     let engine = ValidationEngine::new();
-    let context = ValidationContext::new(&schema);
+    let context = // ValidationContext removed(&schema);
     let options = ValidationOptions::default();
     
     // Should handle regex compilation error gracefully
@@ -134,7 +134,7 @@ fn test_expression_handles_division_by_zero() {
 
 #[test]
 fn test_generator_handles_special_characters() {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.name = Some("test".to_string());
     
     // Class with special characters that could break code generation
@@ -153,7 +153,7 @@ fn test_generator_handles_special_characters() {
     let generators: Vec<Box<dyn Generator>> = vec![
         Box::new(TypeQLGenerator::new()),
         Box::new(PythonDataclassGenerator::new()),
-        Box::new(SqlGenerator::new()),
+        Box::new(SQLGenerator::new()),
     ];
     
     let options = GeneratorOptions::default();
@@ -193,7 +193,7 @@ fn test_loader_handles_missing_files() {
 
 #[test]
 fn test_schema_view_handles_missing_elements() {
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.name = Some("test".to_string());
     
     // Add class that references non-existent parent
@@ -223,7 +223,7 @@ fn test_generator_registry_duplicate_registration() {
     assert!(result.is_ok());
     
     // Second registration with same name should fail gracefully
-    let result = registry.register("test", Box::new(SqlGenerator::new()));
+    let result = registry.register("test", Box::new(SQLGenerator::new()));
     assert!(result.is_err());
 }
 
@@ -282,7 +282,7 @@ slots:
     
     // Validate schema
     let engine = ValidationEngine::new();
-    let context = ValidationContext::new(&schema);
+    let context = // ValidationContext removed(&schema);
     let options = ValidationOptions {
         strict: false,
         ..Default::default()
@@ -319,7 +319,7 @@ slots:
 async fn test_concurrent_operations_no_panic() {
     use tokio::task::JoinSet;
     
-    let mut schema = Schema::default();
+    let mut schema = SchemaDefinition::default();
     schema.name = Some("concurrent_test".to_string());
     
     let mut class = ClassDefinition::default();
@@ -338,7 +338,7 @@ async fn test_concurrent_operations_no_panic() {
                 0 => {
                     // Validation
                     let engine = ValidationEngine::new();
-                    let context = ValidationContext::new(&schema_clone);
+                    let context = // ValidationContext removed(&schema_clone);
                     let options = ValidationOptions::default();
                     let _ = engine.validate_schema(&schema_clone, &context, &options);
                 }

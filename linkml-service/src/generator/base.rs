@@ -86,7 +86,11 @@ impl ImportManager {
             if let Some(items) = self.imports.get(*module) {
                 let mut sorted_items: Vec<_> = items.iter().cloned().collect();
                 sorted_items.sort();
-                imports.push(format!("from {} import {}", module, sorted_items.join(", ")));
+                imports.push(format!(
+                    "from {} import {}",
+                    module,
+                    sorted_items.join(", ")
+                ));
             }
         }
 
@@ -95,7 +99,11 @@ impl ImportManager {
             if !stdlib.contains(&module.as_str()) {
                 let mut sorted_items: Vec<_> = items.iter().cloned().collect();
                 sorted_items.sort();
-                imports.push(format!("from {} import {}", module, sorted_items.join(", ")));
+                imports.push(format!(
+                    "from {} import {}",
+                    module,
+                    sorted_items.join(", ")
+                ));
             }
         }
 
@@ -322,8 +330,14 @@ mod tests {
 
     #[test]
     fn test_case_conversions() {
-        assert_eq!(BaseCodeFormatter::to_pascal_case("hello_world"), "HelloWorld");
-        assert_eq!(BaseCodeFormatter::to_camel_case("hello_world"), "helloWorld");
+        assert_eq!(
+            BaseCodeFormatter::to_pascal_case("hello_world"),
+            "HelloWorld"
+        );
+        assert_eq!(
+            BaseCodeFormatter::to_camel_case("hello_world"),
+            "helloWorld"
+        );
         assert_eq!(BaseCodeFormatter::to_pascal_case("simple"), "Simple");
         assert_eq!(BaseCodeFormatter::to_camel_case("simple"), "simple");
     }

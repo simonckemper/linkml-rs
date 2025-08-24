@@ -1,6 +1,8 @@
 //! Example of generating complete projects from LinkML schemas
 
-use linkml_service::generator::{ProjectGenerator, ProjectGeneratorConfig, ProjectTarget, LicenseType};
+use linkml_service::generator::{
+    LicenseType, ProjectGenerator, ProjectGeneratorConfig, ProjectTarget,
+};
 use linkml_service::parser::SchemaParser;
 
 #[tokio::main]
@@ -147,9 +149,9 @@ enums:
     // Parse the schema
     let mut parser = SchemaParser::new();
     let schema = parser.parse(schema_yaml)?;
-    
+
     println!("Generating projects for research data model...\n");
-    
+
     // Generate Python project
     let python_config = ProjectGeneratorConfig {
         project_name: Some("research-data-model".to_string()),
@@ -165,14 +167,14 @@ enums:
         version: "0.1.0".to_string(),
         ..Default::default()
     };
-    
+
     let python_generator = ProjectGenerator::new(python_config);
     let python_manifest = python_generator.generate(&schema)?;
-    
+
     println!("=== Python Project Structure ===");
     println!("{}", &python_manifest[..python_manifest.len().min(2000)]);
     println!("... (truncated)\n");
-    
+
     // Generate TypeScript project
     let typescript_config = ProjectGeneratorConfig {
         project_name: Some("research-data-model".to_string()),
@@ -185,18 +187,23 @@ enums:
         author_email: Some("team@research.org".to_string()),
         ..Default::default()
     };
-    
+
     let typescript_generator = ProjectGenerator::new(typescript_config);
     let typescript_manifest = typescript_generator.generate(&schema)?;
-    
+
     println!("=== TypeScript Project Structure ===");
     // Show just the file list
     if let Some(structure_start) = typescript_manifest.find("## Project Structure") {
-        if let Some(structure_end) = typescript_manifest[structure_start..].find("## Generated Files") {
-            println!("{}", &typescript_manifest[structure_start..structure_start + structure_end]);
+        if let Some(structure_end) =
+            typescript_manifest[structure_start..].find("## Generated Files")
+        {
+            println!(
+                "{}",
+                &typescript_manifest[structure_start..structure_start + structure_end]
+            );
         }
     }
-    
+
     // Generate Rust project
     let rust_config = ProjectGeneratorConfig {
         project_name: Some("research-data-model".to_string()),
@@ -207,17 +214,20 @@ enums:
         author: Some("Research Team".to_string()),
         ..Default::default()
     };
-    
+
     let rust_generator = ProjectGenerator::new(rust_config);
     let rust_manifest = rust_generator.generate(&schema)?;
-    
+
     println!("\n=== Rust Project Structure ===");
     if let Some(structure_start) = rust_manifest.find("## Project Structure") {
         if let Some(structure_end) = rust_manifest[structure_start..].find("## Generated Files") {
-            println!("{}", &rust_manifest[structure_start..structure_start + structure_end]);
+            println!(
+                "{}",
+                &rust_manifest[structure_start..structure_start + structure_end]
+            );
         }
     }
-    
+
     // Generate multi-language project
     let multi_config = ProjectGeneratorConfig {
         project_name: Some("research-data-model-multi".to_string()),
@@ -227,23 +237,26 @@ enums:
         license: LicenseType::Apache2,
         ..Default::default()
     };
-    
+
     let multi_generator = ProjectGenerator::new(multi_config);
     let multi_manifest = multi_generator.generate(&schema)?;
-    
+
     println!("\n=== Multi-Language Project Structure ===");
     if let Some(structure_start) = multi_manifest.find("## Project Structure") {
         if let Some(structure_end) = multi_manifest[structure_start..].find("## Generated Files") {
-            println!("{}", &multi_manifest[structure_start..structure_start + structure_end]);
+            println!(
+                "{}",
+                &multi_manifest[structure_start..structure_start + structure_end]
+            );
         }
     }
-    
+
     // Save manifests to files
     std::fs::write("python_project_manifest.txt", &python_manifest)?;
     std::fs::write("typescript_project_manifest.txt", &typescript_manifest)?;
     std::fs::write("rust_project_manifest.txt", &rust_manifest)?;
     std::fs::write("multi_project_manifest.txt", &multi_manifest)?;
-    
+
     println!("\nProject manifests saved to:");
     println!("  - python_project_manifest.txt");
     println!("  - typescript_project_manifest.txt");
@@ -251,6 +264,6 @@ enums:
     println!("  - multi_project_manifest.txt");
     println!("\nNote: The manifest shows what files would be generated. In a real scenario,");
     println!("these files would be written to disk in the appropriate directory structure.");
-    
+
     Ok(())
 }

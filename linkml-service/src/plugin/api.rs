@@ -93,7 +93,7 @@ pub struct ConfigSchema {
 pub trait HealthCheck: Send + Sync {
     /// Check if the plugin is healthy
     async fn check_health(&self) -> HealthStatus;
-    
+
     /// Get detailed health metrics
     async fn health_metrics(&self) -> HealthMetrics;
 }
@@ -144,7 +144,7 @@ pub struct HealthMetrics {
 pub trait PluginExtension: Send + Sync {
     /// Get extension type identifier
     fn extension_type(&self) -> &str;
-    
+
     /// Execute extension functionality
     async fn execute(&self, input: ExtensionInput) -> Result<ExtensionOutput>;
 }
@@ -183,12 +183,12 @@ impl PluginSDK {
     pub fn builder() -> PluginBuilder {
         PluginBuilder::new()
     }
-    
+
     /// Get current API version
     pub fn api_version() -> u32 {
         PLUGIN_API_VERSION
     }
-    
+
     /// Create plugin metadata
     pub fn metadata() -> PluginMetadata {
         PluginMetadata {
@@ -229,49 +229,49 @@ impl PluginBuilder {
             config_schema: None,
         }
     }
-    
+
     /// Set plugin ID
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.info.id = id.into();
         self
     }
-    
+
     /// Set plugin name
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.info.name = name.into();
         self
     }
-    
+
     /// Set plugin description
     pub fn description(mut self, description: impl Into<String>) -> Self {
         self.info.description = description.into();
         self
     }
-    
+
     /// Set plugin version
     pub fn version(mut self, major: u64, minor: u64, patch: u64) -> Self {
         self.info.version = Version::new(major, minor, patch);
         self
     }
-    
+
     /// Set plugin type
     pub fn plugin_type(mut self, plugin_type: PluginType) -> Self {
         self.info.plugin_type = plugin_type;
         self
     }
-    
+
     /// Add a capability
     pub fn capability(mut self, capability: PluginCapability) -> Self {
         self.capabilities.push(capability);
         self
     }
-    
+
     /// Set configuration schema
     pub fn config_schema(mut self, schema: ConfigSchema) -> Self {
         self.config_schema = Some(schema);
         self
     }
-    
+
     /// Build plugin info
     pub fn build(mut self) -> PluginInfo {
         self.info.capabilities = self.capabilities;
@@ -288,7 +288,7 @@ macro_rules! export_plugin {
             let plugin = <$plugin_type>::new();
             Box::into_raw(Box::new(plugin) as Box<dyn $crate::plugin::Plugin>)
         }
-        
+
         #[no_mangle]
         pub extern "C" fn plugin_api_version() -> u32 {
             $crate::plugin::PLUGIN_API_VERSION
@@ -299,7 +299,7 @@ macro_rules! export_plugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_plugin_builder() {
         let info = PluginSDK::builder()
@@ -311,12 +311,12 @@ mod tests {
             .capability(PluginCapability::CodeGeneration)
             .capability(PluginCapability::AsyncOperations)
             .build();
-        
+
         assert_eq!(info.id, "test-plugin");
         assert_eq!(info.capabilities.len(), 2);
         assert_eq!(info.version, Version::new(1, 0, 0));
     }
-    
+
     #[test]
     fn test_health_status() {
         let status = HealthStatus {
@@ -324,7 +324,7 @@ mod tests {
             message: Some("All systems operational".to_string()),
             components: HashMap::new(),
         };
-        
+
         assert_eq!(status.status, HealthState::Healthy);
         assert!(status.message.is_some());
     }

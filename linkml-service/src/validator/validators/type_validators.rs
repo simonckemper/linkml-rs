@@ -175,7 +175,12 @@ impl TypeValidator {
                             &self.name,
                         ));
                     } else if s.is_empty()
-                        || (!s.chars().next().expect("non-empty string has first char").is_alphabetic() && !s.starts_with('_'))
+                        || (!s
+                            .chars()
+                            .next()
+                            .expect("non-empty string has first char")
+                            .is_alphabetic()
+                            && !s.starts_with('_'))
                     {
                         issues.push(ValidationIssue::error(
                             format!("NCName must start with letter or underscore: '{s}'"),

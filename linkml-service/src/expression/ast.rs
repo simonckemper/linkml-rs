@@ -55,10 +55,10 @@ pub enum Expression {
     Number(f64),
     /// String literal
     String(String),
-    
+
     /// Variable reference
     Variable(String),
-    
+
     /// Addition operation
     Add(Box<Expression>, Box<Expression>),
     /// Subtraction operation
@@ -69,10 +69,10 @@ pub enum Expression {
     Divide(Box<Expression>, Box<Expression>),
     /// Modulo operation
     Modulo(Box<Expression>, Box<Expression>),
-    
+
     /// Unary negation operation
     Negate(Box<Expression>),
-    
+
     /// Equality comparison
     Equal(Box<Expression>, Box<Expression>),
     /// Inequality comparison
@@ -85,14 +85,14 @@ pub enum Expression {
     LessOrEqual(Box<Expression>, Box<Expression>),
     /// Greater than or equal comparison
     GreaterOrEqual(Box<Expression>, Box<Expression>),
-    
+
     /// Logical AND operation
     And(Box<Expression>, Box<Expression>),
     /// Logical OR operation
     Or(Box<Expression>, Box<Expression>),
     /// Logical NOT operation
     Not(Box<Expression>),
-    
+
     /// Function call expression
     FunctionCall {
         /// Function name
@@ -100,7 +100,7 @@ pub enum Expression {
         /// Function arguments
         args: Vec<Expression>,
     },
-    
+
     /// Conditional expression (ternary)
     Conditional {
         /// Condition to evaluate
@@ -117,22 +117,22 @@ impl Expression {
     pub fn var(name: impl Into<String>) -> Self {
         Expression::Variable(name.into())
     }
-    
+
     /// Create a new string literal
     pub fn string(value: impl Into<String>) -> Self {
         Expression::String(value.into())
     }
-    
+
     /// Create a new number literal
     pub fn number(value: f64) -> Self {
         Expression::Number(value)
     }
-    
+
     /// Create a new boolean literal
     pub fn boolean(value: bool) -> Self {
         Expression::Boolean(value)
     }
-    
+
     /// Get the depth of the expression tree
     pub fn depth(&self) -> usize {
         match self {
@@ -141,10 +141,9 @@ impl Expression {
             | Expression::Number(_)
             | Expression::String(_)
             | Expression::Variable(_) => 1,
-            
-            Expression::Negate(expr)
-            | Expression::Not(expr) => 1 + expr.depth(),
-            
+
+            Expression::Negate(expr) | Expression::Not(expr) => 1 + expr.depth(),
+
             Expression::Add(left, right)
             | Expression::Subtract(left, right)
             | Expression::Multiply(left, right)
@@ -158,11 +157,11 @@ impl Expression {
             | Expression::GreaterOrEqual(left, right)
             | Expression::And(left, right)
             | Expression::Or(left, right) => 1 + left.depth().max(right.depth()),
-            
+
             Expression::FunctionCall { args, .. } => {
                 1 + args.iter().map(|arg| arg.depth()).max().unwrap_or(0)
             }
-            
+
             Expression::Conditional {
                 condition,
                 then_expr,
@@ -175,7 +174,7 @@ impl Expression {
             }
         }
     }
-    
+
     /// Count the total number of nodes in the expression tree
     pub fn node_count(&self) -> usize {
         match self {
@@ -184,10 +183,9 @@ impl Expression {
             | Expression::Number(_)
             | Expression::String(_)
             | Expression::Variable(_) => 1,
-            
-            Expression::Negate(expr)
-            | Expression::Not(expr) => 1 + expr.node_count(),
-            
+
+            Expression::Negate(expr) | Expression::Not(expr) => 1 + expr.node_count(),
+
             Expression::Add(left, right)
             | Expression::Subtract(left, right)
             | Expression::Multiply(left, right)
@@ -201,11 +199,11 @@ impl Expression {
             | Expression::GreaterOrEqual(left, right)
             | Expression::And(left, right)
             | Expression::Or(left, right) => 1 + left.node_count() + right.node_count(),
-            
+
             Expression::FunctionCall { args, .. } => {
                 1 + args.iter().map(|arg| arg.node_count()).sum::<usize>()
             }
-            
+
             Expression::Conditional {
                 condition,
                 then_expr,
@@ -223,26 +221,26 @@ impl fmt::Display for Expression {
             Expression::Number(n) => write!(f, "{}", n),
             Expression::String(s) => write!(f, "\"{}\"", s),
             Expression::Variable(name) => write!(f, "{{{}}}", name),
-            
+
             Expression::Add(left, right) => write!(f, "({} + {})", left, right),
             Expression::Subtract(left, right) => write!(f, "({} - {})", left, right),
             Expression::Multiply(left, right) => write!(f, "({} * {})", left, right),
             Expression::Divide(left, right) => write!(f, "({} / {})", left, right),
             Expression::Modulo(left, right) => write!(f, "({} % {})", left, right),
-            
+
             Expression::Negate(expr) => write!(f, "-{}", expr),
-            
+
             Expression::Equal(left, right) => write!(f, "({} == {})", left, right),
             Expression::NotEqual(left, right) => write!(f, "({} != {})", left, right),
             Expression::Less(left, right) => write!(f, "({} < {})", left, right),
             Expression::Greater(left, right) => write!(f, "({} > {})", left, right),
             Expression::LessOrEqual(left, right) => write!(f, "({} <= {})", left, right),
             Expression::GreaterOrEqual(left, right) => write!(f, "({} >= {})", left, right),
-            
+
             Expression::And(left, right) => write!(f, "({} and {})", left, right),
             Expression::Or(left, right) => write!(f, "({} or {})", left, right),
             Expression::Not(expr) => write!(f, "not {}", expr),
-            
+
             Expression::FunctionCall { name, args } => {
                 write!(f, "{}(", name)?;
                 for (i, arg) in args.iter().enumerate() {
@@ -253,7 +251,7 @@ impl fmt::Display for Expression {
                 }
                 write!(f, ")")
             }
-            
+
             Expression::Conditional {
                 condition,
                 then_expr,
@@ -266,33 +264,33 @@ impl fmt::Display for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_expression_builders() {
         let var = Expression::var("x");
         assert_eq!(var, Expression::Variable("x".to_string()));
-        
+
         let num = Expression::number(42.0);
         assert_eq!(num, Expression::Number(42.0));
-        
+
         let string = Expression::string("hello");
         assert_eq!(string, Expression::String("hello".to_string()));
-        
+
         let boolean = Expression::boolean(true);
         assert_eq!(boolean, Expression::Boolean(true));
     }
-    
+
     #[test]
     fn test_expression_depth() {
         let simple = Expression::number(42.0);
         assert_eq!(simple.depth(), 1);
-        
+
         let binary = Expression::Add(
             Box::new(Expression::number(1.0)),
             Box::new(Expression::number(2.0)),
         );
         assert_eq!(binary.depth(), 2);
-        
+
         let nested = Expression::Add(
             Box::new(Expression::Multiply(
                 Box::new(Expression::number(2.0)),
@@ -302,7 +300,7 @@ mod tests {
         );
         assert_eq!(nested.depth(), 3);
     }
-    
+
     #[test]
     fn test_expression_display() {
         let expr = Expression::Add(
@@ -310,7 +308,7 @@ mod tests {
             Box::new(Expression::Number(5.0)),
         );
         assert_eq!(expr.to_string(), "({x} + 5)");
-        
+
         let func = Expression::FunctionCall {
             name: "len".to_string(),
             args: vec![Expression::Variable("items".to_string())],

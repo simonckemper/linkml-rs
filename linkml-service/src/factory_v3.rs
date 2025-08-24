@@ -10,8 +10,8 @@ use linkml_core::{
     error::{LinkMLError, Result},
 };
 
-use crate::service::LinkMLServiceImpl;
 use crate::factory::LinkMLServiceDependencies;
+use crate::service::LinkMLServiceImpl;
 
 // RootReal service dependencies
 use cache_core::CacheService;
@@ -77,11 +77,18 @@ where
     };
 
     // Load configuration from configuration service
-    let config = match configuration_service.get_configuration::<LinkMLConfig>("linkml").await {
+    let config = match configuration_service
+        .get_configuration::<LinkMLConfig>("linkml")
+        .await
+    {
         Ok(config) => config,
         Err(e) => {
             // Log warning and use default configuration
-            logger.warn(&format!("Failed to load LinkML config: {}, using defaults", e))
+            logger
+                .warn(&format!(
+                    "Failed to load LinkML config: {}, using defaults",
+                    e
+                ))
                 .await
                 .ok();
             LinkMLConfig::default()
@@ -93,9 +100,10 @@ where
 
     // Initialize the service
     service.initialize().await?;
-    
+
     // Log successful creation
-    logger.info("LinkML service with DBMS integration created successfully")
+    logger
+        .info("LinkML service with DBMS integration created successfully")
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
@@ -158,9 +166,10 @@ where
 
     // Initialize the service
     service.initialize().await?;
-    
+
     // Log successful creation
-    logger.info("LinkML service with DBMS integration and custom config created successfully")
+    logger
+        .info("LinkML service with DBMS integration and custom config created successfully")
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 

@@ -2,10 +2,13 @@
 //!
 //! This module provides functionality to load and dump LinkML data in YAML format.
 
-use super::traits::{DataLoader, DataDumper, LoaderError, LoaderResult, DumperError, DumperResult, DataInstance, LoadOptions, DumpOptions};
-use linkml_core::prelude::*;
+use super::traits::{
+    DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
+    LoaderError, LoaderResult,
+};
 use async_trait::async_trait;
-use serde_json::{Value, Map};
+use linkml_core::prelude::*;
+use serde_json::{Map, Value};
 use serde_yaml;
 use std::collections::HashMap;
 
@@ -18,11 +21,9 @@ pub struct YamlLoader {
 impl YamlLoader {
     /// Create a new YAML loader
     pub fn new() -> Self {
-        Self {
-            file_path: None,
-        }
+        Self { file_path: None }
     }
-    
+
     /// Set the input file path
     pub fn with_file(mut self, path: &str) -> Self {
         self.file_path = Some(path.to_string());
@@ -41,42 +42,40 @@ impl DataLoader for YamlLoader {
     fn name(&self) -> &str {
         "yaml"
     }
-    
+
     fn description(&self) -> &str {
         "Load data from YAML files"
     }
-    
+
     fn supported_extensions(&self) -> Vec<&str> {
         vec!["yaml", "yml"]
     }
-    
+
     async fn load_file(
         &self,
         path: &std::path::Path,
         schema: &SchemaDefinition,
         _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| LoaderError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
         self.load_string(&content, schema, _options).await
     }
-    
+
     async fn load_string(
         &self,
         content: &str,
         schema: &SchemaDefinition,
         _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        
-        let yaml_value: serde_yaml::Value = serde_yaml::from_str(content)
-            .map_err(|e| LoaderError::Parse(e.to_string()))?;
-        
+        let yaml_value: serde_yaml::Value =
+            serde_yaml::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
+
         // Convert YAML to JSON for easier processing
-        let json_str = serde_json::to_string(&yaml_value)
-            .map_err(|e| LoaderError::Parse(e.to_string()))?;
-        let json: Value = serde_json::from_str(&json_str)
-            .map_err(|e| LoaderError::Parse(e.to_string()))?;
-        
+        let json_str =
+            serde_json::to_string(&yaml_value).map_err(|e| LoaderError::Parse(e.to_string()))?;
+        let json: Value =
+            serde_json::from_str(&json_str).map_err(|e| LoaderError::Parse(e.to_string()))?;
+
         let instances = match json {
             Value::Array(arr) => {
                 // Array of instances
@@ -95,25 +94,25 @@ impl DataLoader for YamlLoader {
             }
             _ => {
                 return Err(LoaderError::InvalidFormat(
-                    "YAML must be a mapping or sequence of mappings".to_string()
+                    "YAML must be a mapping or sequence of mappings".to_string(),
                 ));
             }
         };
-        
+
         Ok(instances)
     }
-    
+
     async fn load_bytes(
         &self,
         data: &[u8],
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = String::from_utf8(data.to_vec())
-            .map_err(|e| LoaderError::Parse(e.to_string()))?;
+        let content =
+            String::from_utf8(data.to_vec()).map_err(|e| LoaderError::Parse(e.to_string()))?;
         self.load_string(&content, schema, options).await
     }
-    
+
     fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
@@ -121,7 +120,11 @@ impl DataLoader for YamlLoader {
 
 impl YamlLoader {
     /// Convert object to DataInstance
-    fn object_to_instance(&self, obj: Map<String, Value>, schema: &SchemaDefinition) -> LoaderResult<DataInstance> {
+    fn object_to_instance(
+        &self,
+        obj: Map<String, Value>,
+        schema: &SchemaDefinition,
+    ) -> LoaderResult<DataInstance> {
         // Try to determine class from @type field or structure
         let class_name = if let Some(Value::String(type_val)) = obj.get("@type") {
             type_val.clone()
@@ -131,7 +134,7 @@ impl YamlLoader {
             // Try to infer from structure
             self.infer_class(&obj, schema)?
         };
-        
+
         Ok(DataInstance {
             class_name,
             data: obj.into_iter().collect(),
@@ -139,28 +142,33 @@ impl YamlLoader {
             metadata: HashMap::new(),
         })
     }
-    
+
     /// Infer class from object structure
-    fn infer_class(&self, obj: &Map<String, Value>, schema: &SchemaDefinition) -> LoaderResult<String> {
+    fn infer_class(
+        &self,
+        obj: &Map<String, Value>,
+        schema: &SchemaDefinition,
+    ) -> LoaderResult<String> {
         let obj_keys: std::collections::HashSet<_> = obj.keys().cloned().collect();
-        
+
         // Find best matching class
         let mut best_match = None;
         let mut best_score = 0;
-        
+
         for (class_name, class_def) in &schema.classes {
-            let class_slots: std::collections::HashSet<_> = class_def.slots.iter().cloned().collect();
+            let class_slots: std::collections::HashSet<_> =
+                class_def.slots.iter().cloned().collect();
             let intersection = obj_keys.intersection(&class_slots).count();
-            
+
             if intersection > best_score {
                 best_score = intersection;
                 best_match = Some(class_name.clone());
             }
         }
-        
-        best_match.ok_or_else(|| LoaderError::SchemaValidation(
-            "Could not infer class from object structure".to_string()
-        ))
+
+        best_match.ok_or_else(|| {
+            LoaderError::SchemaValidation("Could not infer class from object structure".to_string())
+        })
     }
 }
 
@@ -177,7 +185,7 @@ impl YamlDumper {
             include_markers: true,
         }
     }
-    
+
     /// Set whether to include document markers
     pub fn with_markers(mut self, include: bool) -> Self {
         self.include_markers = include;
@@ -196,15 +204,15 @@ impl DataDumper for YamlDumper {
     fn name(&self) -> &str {
         "yaml"
     }
-    
+
     fn description(&self) -> &str {
         "Dump data to YAML format"
     }
-    
+
     fn supported_extensions(&self) -> Vec<&str> {
         vec!["yaml", "yml"]
     }
-    
+
     async fn dump_file(
         &self,
         instances: &[DataInstance],
@@ -213,42 +221,45 @@ impl DataDumper for YamlDumper {
         options: &DumpOptions,
     ) -> DumperResult<()> {
         let content = self.dump_string(instances, schema, options).await?;
-        std::fs::write(path, content)
-            .map_err(|e| DumperError::Io(e))?;
+        std::fs::write(path, content).map_err(|e| DumperError::Io(e))?;
         Ok(())
     }
-    
+
     async fn dump_string(
         &self,
         instances: &[DataInstance],
         _schema: &SchemaDefinition,
         _options: &DumpOptions,
     ) -> DumperResult<String> {
-        let yaml_instances: Vec<serde_yaml::Value> = instances.iter()
+        let yaml_instances: Vec<serde_yaml::Value> = instances
+            .iter()
             .map(|instance| {
                 let mut obj = instance.data.clone();
                 if !obj.contains_key("@type") && !obj.contains_key("type") {
-                    obj.insert("@type".to_string(), Value::String(instance.class_name.clone()));
+                    obj.insert(
+                        "@type".to_string(),
+                        Value::String(instance.class_name.clone()),
+                    );
                 }
-                
+
                 // Convert to YAML value
                 let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
-                let json_str = serde_json::to_string(&json_obj)
-                    .expect("valid JSON object should serialize");
-                serde_yaml::from_str(&json_str)
-                    .expect("valid JSON should parse as YAML")
+                let json_str =
+                    serde_json::to_string(&json_obj).expect("valid JSON object should serialize");
+                serde_yaml::from_str(&json_str).expect("valid JSON should parse as YAML")
             })
             .collect();
-        
+
         let yaml_str = if yaml_instances.len() == 1 {
             serde_yaml::to_string(&yaml_instances[0])
         } else {
             serde_yaml::to_string(&yaml_instances)
-        }.map_err(|e| DumperError::Serialization(e.to_string()))?;
-        
+        }
+        .map_err(|e| DumperError::Serialization(e.to_string()))?;
+
         Ok(yaml_str)
     }
-    
+
     async fn dump_bytes(
         &self,
         instances: &[DataInstance],
@@ -258,7 +269,7 @@ impl DataDumper for YamlDumper {
         let result = self.dump_string(instances, schema, options).await?;
         Ok(result.into_bytes())
     }
-    
+
     fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
@@ -267,7 +278,7 @@ impl DataDumper for YamlDumper {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_yaml_loader() {
         let yaml_content = r#"
@@ -278,45 +289,63 @@ emails:
   - john@example.com
   - johndoe@work.com
 "#;
-        
+
         // Create temp file
         let temp_file = tempfile::NamedTempFile::new().expect("should create temporary file");
         std::fs::write(temp_file.path(), yaml_content).expect("should write YAML content");
-        
+
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
         class.slots = vec!["name".to_string(), "age".to_string(), "emails".to_string()];
         schema.classes.insert("Person".to_string(), class);
-        
-        let mut loader = YamlLoader::new().with_file(temp_file.path().to_str().expect("temp file path should be valid UTF-8"));
-        let instances = loader.load(&schema).await.expect("should load YAML instances");
-        
+
+        let loader = YamlLoader::new();
+        let options = LoadOptions::default();
+        let instances = loader
+            .load_file(temp_file.path(), &schema, &options)
+            .await
+            .expect("should load YAML instances");
+
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
-        assert_eq!(instances[0].data.get("name"), Some(&Value::String("John Doe".to_string())));
-        assert!(instances[0].data.get("emails").expect("should have emails field").is_array());
+        assert_eq!(
+            instances[0].data.get("name"),
+            Some(&Value::String("John Doe".to_string()))
+        );
+        assert!(
+            instances[0]
+                .data
+                .get("emails")
+                .expect("should have emails field")
+                .is_array()
+        );
     }
-    
+
     #[tokio::test]
     async fn test_yaml_dumper() {
-        let instances = vec![
-            DataInstance {
-                class_name: "Person".to_string(),
-                data: serde_json::from_str(r#"{
-                    "name": "Alice",
-                    "age": 25,
-                    "active": true
-                }"#).expect("should parse valid JSON"),
+        let instances = vec![DataInstance {
+            class_name: "Person".to_string(),
+            data: {
+                let mut map = HashMap::new();
+                map.insert("name".to_string(), serde_json::json!("Alice"));
+                map.insert("age".to_string(), serde_json::json!(25));
+                map.insert("active".to_string(), serde_json::json!(true));
+                map
             },
-        ];
-        
+            id: Some("person_1".to_string()),
+            metadata: HashMap::new(),
+        }];
+
         let schema = SchemaDefinition::default();
-        let mut dumper = YamlDumper::new();
-        let result = dumper.dump(&instances, &schema).await.expect("should dump instances to YAML");
-        
-        let yaml_str = String::from_utf8(result).expect("YAML should be valid UTF-8");
-        let parsed: serde_yaml::Value = serde_yaml::from_str(&yaml_str).expect("should parse dumped YAML");
-        
+        let dumper = YamlDumper::new();
+        let options = DumpOptions::default();
+        let yaml_str = dumper
+            .dump_string(&instances, &schema, &options)
+            .await
+            .expect("should dump instances to YAML");
+        let parsed: serde_yaml::Value =
+            serde_yaml::from_str(&yaml_str).expect("should parse dumped YAML");
+
         assert_eq!(parsed["@type"], "Person");
         assert_eq!(parsed["name"], "Alice");
         assert_eq!(parsed["age"], 25);

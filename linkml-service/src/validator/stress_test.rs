@@ -390,8 +390,9 @@ impl StressTestRunner {
                     latencies
                         .iter()
                         .map(std::time::Duration::as_nanos)
-                        .sum::<u128>()
-                ).unwrap_or(u64::MAX)
+                        .sum::<u128>(),
+                )
+                .unwrap_or(u64::MAX)
                     / latencies.len() as u64,
             ),
         };

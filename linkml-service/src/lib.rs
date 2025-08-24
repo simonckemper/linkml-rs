@@ -92,6 +92,12 @@ pub mod cli_fs_adapter;
 /// Configuration loading and management
 pub mod config;
 
+/// Namespace and CURIE resolution
+pub mod namespace;
+
+/// Inheritance resolution for classes and mixins
+pub mod inheritance;
+
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
 pub use linkml_core::prelude::*;

@@ -66,19 +66,17 @@ impl InstanceValidator {
         if !self.check_value(value, &slot.name, context) {
             // Get available values for better error message
             let available = if let Some(instance_data) = context.instance_data.as_ref() {
-                instance_data
-                    .get(&slot.name)
-                    .map_or_else(
-                        || "none".to_string(),
-                        |values| {
-                            let preview: Vec<_> = values.iter().take(5).cloned().collect();
-                            if values.len() > 5 {
-                                format!("{:?} (and {} more)", preview, values.len() - 5)
-                            } else {
-                                format!("{preview:?}")
-                            }
+                instance_data.get(&slot.name).map_or_else(
+                    || "none".to_string(),
+                    |values| {
+                        let preview: Vec<_> = values.iter().take(5).cloned().collect();
+                        if values.len() > 5 {
+                            format!("{:?} (and {} more)", preview, values.len() - 5)
+                        } else {
+                            format!("{preview:?}")
                         }
-                    )
+                    },
+                )
             } else {
                 "no instance data loaded".to_string()
             };

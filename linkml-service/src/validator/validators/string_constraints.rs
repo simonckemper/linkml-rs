@@ -4,17 +4,14 @@
 //! `equals_string_in` and `structured_pattern`.
 
 use linkml_core::{
+    Value,
     error::{LinkMLError, Result},
     types::SlotDefinition,
-    Value,
 };
 use regex::Regex;
 use std::collections::HashSet;
 
-use crate::validator::{
-    context::ValidationContext,
-    report::ValidationIssue,
-};
+use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 use super::Validator;
 
@@ -64,7 +61,12 @@ impl Validator for EqualsStringInValidator {
                     issue.context.insert("value".to_string(), value.clone());
                     issue.context.insert(
                         "allowed_values".to_string(),
-                        Value::Array(allowed_values.iter().map(|s| Value::String(s.clone())).collect()),
+                        Value::Array(
+                            allowed_values
+                                .iter()
+                                .map(|s| Value::String(s.clone()))
+                                .collect(),
+                        ),
                     );
                     issues.push(issue);
                 }
@@ -124,7 +126,7 @@ impl Validator for EqualsStringInValidator {
 
         issues
     }
-    
+
     fn name(&self) -> &str {
         "EqualsStringInValidator"
     }
@@ -143,21 +145,18 @@ impl StructuredPatternValidator {
     }
 
     /// Apply pattern interpolation if enabled
-    fn interpolate_pattern(
-        &self,
-        pattern: &str,
-        context: &ValidationContext,
-    ) -> Result<String> {
+    fn interpolate_pattern(&self, pattern: &str, context: &ValidationContext) -> Result<String> {
         let mut result = pattern.to_string();
-        
+
         // Simple interpolation: replace {variable} with context values
-        let var_regex = Regex::new(r"\{(\w+)\}")
-            .map_err(|e| LinkMLError::data_validation(format!("Invalid interpolation pattern: {}", e)))?;
-        
+        let var_regex = Regex::new(r"\{(\w+)\}").map_err(|e| {
+            LinkMLError::data_validation(format!("Invalid interpolation pattern: {}", e))
+        })?;
+
         for cap in var_regex.captures_iter(pattern) {
             if let Some(var_match) = cap.get(1) {
                 let var_name = var_match.as_str();
-                
+
                 // Look up variable in multiple places:
                 // 1. Context data (highest priority)
                 if let Some(value) = context.get_data(var_name) {
@@ -170,7 +169,7 @@ impl StructuredPatternValidator {
                     result = result.replace(&format!("{{{}}}", var_name), &replacement);
                     continue;
                 }
-                
+
                 // 2. Current object being validated (if available)
                 if let Some(parent) = context.parent() {
                     if let Some(obj) = parent.as_object() {
@@ -186,7 +185,7 @@ impl StructuredPatternValidator {
                         }
                     }
                 }
-                
+
                 // 3. Root object (if available)
                 if let Some(root) = context.root() {
                     if let Some(obj) = root.as_object() {
@@ -201,24 +200,19 @@ impl StructuredPatternValidator {
                         }
                     }
                 }
-                
+
                 // If variable not found, leave as-is (could be an error in strict mode)
             }
         }
-        
+
         Ok(result)
     }
 
     /// Validate using regex syntax
-    fn validate_regex(
-        &self,
-        value: &str,
-        pattern: &str,
-        partial: bool,
-    ) -> Result<bool> {
+    fn validate_regex(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
         let regex = Regex::new(pattern)
             .map_err(|e| LinkMLError::data_validation(format!("Invalid regex pattern: {}", e)))?;
-        
+
         if partial {
             Ok(regex.is_match(value))
         } else {
@@ -228,22 +222,17 @@ impl StructuredPatternValidator {
     }
 
     /// Validate using glob syntax
-    fn validate_glob(
-        &self,
-        value: &str,
-        pattern: &str,
-        _partial: bool,
-    ) -> Result<bool> {
+    fn validate_glob(&self, value: &str, pattern: &str, _partial: bool) -> Result<bool> {
         // Simple glob implementation
         // In production, use a proper glob library
         let regex_pattern = pattern
             .replace(".", r"\.")
             .replace("*", ".*")
             .replace("?", ".");
-        
+
         let regex = Regex::new(&format!("^{}$", regex_pattern))
             .map_err(|e| LinkMLError::data_validation(format!("Invalid glob pattern: {}", e)))?;
-        
+
         Ok(regex.is_match(value))
     }
 }
@@ -287,7 +276,10 @@ impl Validator for StructuredPatternValidator {
             pattern.clone()
         };
 
-        let syntax = structured_pattern.syntax.as_deref().unwrap_or("regular_expression");
+        let syntax = structured_pattern
+            .syntax
+            .as_deref()
+            .unwrap_or("regular_expression");
         let partial = structured_pattern.partial_match.unwrap_or(false);
 
         match value {
@@ -308,21 +300,19 @@ impl Validator for StructuredPatternValidator {
                             }
                         }
                     }
-                    "glob" => {
-                        match self.validate_glob(s, &final_pattern, partial) {
-                            Ok(m) => m,
-                            Err(e) => {
-                                let mut issue = ValidationIssue::error(
-                                    format!("Pattern validation error: {}", e),
-                                    context.path(),
-                                    "StructuredPatternValidator",
-                                );
-                                issue.code = Some("PATTERN_ERROR".to_string());
-                                issues.push(issue);
-                                return issues;
-                            }
+                    "glob" => match self.validate_glob(s, &final_pattern, partial) {
+                        Ok(m) => m,
+                        Err(e) => {
+                            let mut issue = ValidationIssue::error(
+                                format!("Pattern validation error: {}", e),
+                                context.path(),
+                                "StructuredPatternValidator",
+                            );
+                            issue.code = Some("PATTERN_ERROR".to_string());
+                            issues.push(issue);
+                            return issues;
                         }
-                    }
+                    },
                     _ => {
                         let mut issue = ValidationIssue::error(
                             format!("Unsupported pattern syntax: {}", syntax),
@@ -346,8 +336,12 @@ impl Validator for StructuredPatternValidator {
                     );
                     issue.code = Some("STRUCTURED_PATTERN_VIOLATION".to_string());
                     issue.context.insert("value".to_string(), value.clone());
-                    issue.context.insert("pattern".to_string(), Value::String(final_pattern));
-                    issue.context.insert("syntax".to_string(), Value::String(syntax.to_string()));
+                    issue
+                        .context
+                        .insert("pattern".to_string(), Value::String(final_pattern));
+                    issue
+                        .context
+                        .insert("syntax".to_string(), Value::String(syntax.to_string()));
                     issues.push(issue);
                 }
             }
@@ -373,22 +367,20 @@ impl Validator for StructuredPatternValidator {
                                     }
                                 }
                             }
-                            "glob" => {
-                                match self.validate_glob(s, &final_pattern, partial) {
-                                    Ok(m) => m,
-                                    Err(e) => {
-                                        let mut issue = ValidationIssue::error(
-                                            format!("Pattern validation error: {}", e),
-                                            context.path(),
-                                            "StructuredPatternValidator",
-                                        );
-                                        issue.code = Some("PATTERN_ERROR".to_string());
-                                        issues.push(issue);
-                                        context.pop_path();
-                                        continue;
-                                    }
+                            "glob" => match self.validate_glob(s, &final_pattern, partial) {
+                                Ok(m) => m,
+                                Err(e) => {
+                                    let mut issue = ValidationIssue::error(
+                                        format!("Pattern validation error: {}", e),
+                                        context.path(),
+                                        "StructuredPatternValidator",
+                                    );
+                                    issue.code = Some("PATTERN_ERROR".to_string());
+                                    issues.push(issue);
+                                    context.pop_path();
+                                    continue;
                                 }
-                            }
+                            },
                             _ => {
                                 let mut issue = ValidationIssue::error(
                                     format!("Unsupported pattern syntax: {}", syntax),
@@ -428,7 +420,7 @@ impl Validator for StructuredPatternValidator {
 
         issues
     }
-    
+
     fn name(&self) -> &str {
         "StructuredPatternValidator"
     }
@@ -449,8 +441,8 @@ impl Default for StructuredPatternValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use linkml_core::types::{SchemaDefinition, StructuredPattern};
     use std::sync::Arc;
-    use linkml_core::types::{StructuredPattern, SchemaDefinition};
 
     #[test]
     fn test_equals_string_in_basic() {
@@ -589,11 +581,11 @@ mod tests {
         let validator = StructuredPatternValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
-        
+
         // Set up context data for interpolation
         context.set_data("prefix", Value::String("TEST".to_string()));
         context.set_data("suffix", Value::String("\\d+".to_string()));
-        
+
         let mut slot = SlotDefinition::new("code");
         slot.structured_pattern = Some(StructuredPattern {
             syntax: Some("regular_expression".to_string()),
@@ -611,26 +603,26 @@ mod tests {
         let value = Value::String("PROD-123".to_string());
         let issues = validator.validate(&value, &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        
+
         // Should not match TEST-ABC
         let value = Value::String("TEST-ABC".to_string());
         let issues = validator.validate(&value, &slot, &mut context);
         assert_eq!(issues.len(), 1);
     }
-    
+
     #[test]
     fn test_structured_pattern_interpolation_from_parent() {
         let validator = StructuredPatternValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
-        
+
         // Set up parent object with data to interpolate
         let parent_obj = serde_json::json!({
             "type": "email",
             "domain": "example\\.com"
         });
         context.set_parent(parent_obj);
-        
+
         let mut slot = SlotDefinition::new("address");
         slot.structured_pattern = Some(StructuredPattern {
             syntax: Some("regular_expression".to_string()),
