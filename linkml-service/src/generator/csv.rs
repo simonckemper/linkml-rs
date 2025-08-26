@@ -396,8 +396,9 @@ mod tests {
         assert!(result.contains("Type,Name,Description,Count"));
         assert!(result.contains("Class,,,Schema classes,2"));
         assert!(result.contains("=== Person ==="));
-        assert!(result.contains("id,name,age"));
-        assert!(result.contains("<string>,<string>,<integer>"));
+        // Slots are in alphabetical order due to BTreeMap
+        assert!(result.contains("age,id,name"));
+        assert!(result.contains("<integer>,<string>,<string>"));
     }
 
     #[test]
@@ -408,8 +409,9 @@ mod tests {
         let result = generator.generate(&schema).expect("should generate TSV");
 
         assert!(result.contains("=== Person ==="));
-        assert!(result.contains("id\tname\tage"));
-        assert!(result.contains("<string>\t<string>\t<integer>"));
+        // Slots are in alphabetical order due to BTreeMap
+        assert!(result.contains("age\tid\tname"));
+        assert!(result.contains("<integer>\t<string>\t<string>"));
     }
 
     #[test]

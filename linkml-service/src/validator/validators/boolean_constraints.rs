@@ -515,9 +515,11 @@ impl NoneOfValidator {
             match (range.as_str(), value) {
                 ("string", Value::String(_)) => {}
                 ("integer", Value::Number(n)) if n.is_i64() || n.is_u64() => {}
-                ("float" | "double", Value::Number(n)) if n.is_f64() => {}
+                ("float" | "double" | "number", Value::Number(_)) => {}
                 ("boolean", Value::Bool(_)) => {}
                 ("null", Value::Null) => {}
+                ("array", Value::Array(_)) => {}
+                ("object", Value::Object(_)) => {}
                 _ => return false, // Type mismatch, constraint not satisfied
             }
         }
@@ -542,7 +544,7 @@ impl NoneOfValidator {
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
-        let mut issues = Vec::new();
+        let mut issues: Vec<ValidationIssue> = Vec::new();
 
         // Create a temporary slot definition from the anonymous expression
         let temp_slot = SlotDefinition {
@@ -557,46 +559,65 @@ impl NoneOfValidator {
             ..Default::default()
         };
 
-        // Apply validators in order of typical performance (cheapest first)
-        // For none_of, we want to fail fast if any constraint is satisfied
-
-        // 1. Required check (cheapest)
-        if expr.required.is_some() {
-            let required_validator = RequiredValidator::new();
-            issues.extend(required_validator.validate(value, &temp_slot, context));
-            if issues.is_empty() {
-                return issues; // Constraint satisfied, none_of should fail
-            }
-            issues.clear(); // Clear issues for next check
+        // Check if this expression has any actual constraints
+        let has_constraints = expr.range.is_some()
+            || expr.pattern.is_some()
+            || expr.minimum_value.is_some()
+            || expr.maximum_value.is_some()
+            || expr.required.is_some();
+            
+        if !has_constraints {
+            // No constraints means the expression is always satisfied
+            // (any value passes when there are no constraints)
+            return Vec::new();
         }
 
-        // 2. Type check (cheap)
+        // Apply validators - for none_of, we check if ALL constraints pass
+        // If they all pass (no issues), the expression IS satisfied
+        // If any fail (have issues), the expression is NOT satisfied
+        
+        // Type check is the primary validator
         if expr.range.is_some() {
             let type_validator = TypeValidator::new();
-            issues.extend(type_validator.validate(value, &temp_slot, context));
-            if issues.is_empty() {
-                return issues; // Constraint satisfied, none_of should fail
+            let type_issues = type_validator.validate(value, &temp_slot, context);
+            if !type_issues.is_empty() {
+                // Type doesn't match - constraint NOT satisfied (good for none_of)
+                return type_issues;
             }
-            issues.clear(); // Clear issues for next check
         }
 
-        // 3. Range check (moderate)
+        // Required check  
+        if expr.required.is_some() {
+            let required_validator = RequiredValidator::new();
+            let required_issues = required_validator.validate(value, &temp_slot, context);
+            if !required_issues.is_empty() {
+                // Required check failed - constraint NOT satisfied (good for none_of)
+                return required_issues;
+            }
+        }
+
+        // Range check
         if expr.minimum_value.is_some() || expr.maximum_value.is_some() {
             let range_validator = RangeValidator::new();
-            issues.extend(range_validator.validate(value, &temp_slot, context));
-            if issues.is_empty() {
-                return issues; // Constraint satisfied, none_of should fail
+            let range_issues = range_validator.validate(value, &temp_slot, context);
+            if !range_issues.is_empty() {
+                // Range check failed - constraint NOT satisfied (good for none_of)
+                return range_issues;
             }
-            issues.clear(); // Clear issues for next check
         }
 
-        // 4. Pattern check (expensive)
+        // Pattern check
         if expr.pattern.is_some() {
             let pattern_validator = PatternValidator::new();
-            issues.extend(pattern_validator.validate(value, &temp_slot, context));
+            let pattern_issues = pattern_validator.validate(value, &temp_slot, context);
+            if !pattern_issues.is_empty() {
+                // Pattern check failed - constraint NOT satisfied (good for none_of)
+                return pattern_issues;
+            }
         }
 
-        issues
+        // All checks passed - the constraint IS satisfied (bad for none_of)
+        Vec::new()
     }
 }
 
@@ -1141,6 +1162,7 @@ mod tests {
         assert!(issues[0].message.contains("none_of[0]"));
 
         // Float value should pass (no constraint satisfied)
+        // 3.14 is a float/double, not integer, string, boolean, array, or object
         let issues = validator.validate(&json!(3.14), &slot, &mut context);
         assert!(issues.is_empty());
     }

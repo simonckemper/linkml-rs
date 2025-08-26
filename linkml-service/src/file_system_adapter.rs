@@ -76,15 +76,26 @@ impl TokioFileSystemAdapter {
     /// Resolve path within sandbox
     fn resolve_path(&self, path: &Path) -> Result<PathBuf> {
         if let Some(root) = &self.root {
-            // Ensure path doesn't escape sandbox
-            let resolved = root.join(path);
-            if !resolved.starts_with(root) {
+            // Check for obvious escape attempts
+            for component in path.components() {
+                if matches!(component, std::path::Component::ParentDir) {
+                    return Err(LinkMLError::IoError(std::io::Error::new(
+                        std::io::ErrorKind::PermissionDenied,
+                        format!("Path contains '..' which could escape sandbox: {:?}", path),
+                    )));
+                }
+            }
+            
+            // Also check if path is absolute (which would escape sandbox)
+            if path.is_absolute() {
                 return Err(LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
-                    "Path escapes sandbox",
+                    format!("Absolute paths not allowed in sandbox: {:?}", path),
                 )));
             }
-            Ok(resolved)
+            
+            // Safe to join
+            Ok(root.join(path))
         } else {
             Ok(path.to_path_buf())
         }

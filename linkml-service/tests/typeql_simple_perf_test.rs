@@ -56,6 +56,6 @@ async fn test_typeql_performance() {
     );
 
     let outputs = result.unwrap();
-    let total_size: usize = outputs.iter().map(|o| o.content.len()).sum();
+    let total_size: usize = outputs.iter().map(|o| o.len()).sum();
     println!("Output size: {} bytes", total_size);
 }

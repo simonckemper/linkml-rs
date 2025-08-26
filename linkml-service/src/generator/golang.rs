@@ -587,9 +587,17 @@ impl GoGenerator {
         name.to_case(Case::Pascal)
     }
 
-    /// Convert to Go constant name (SCREAMING_SNAKE_CASE)
+    /// Convert to Go constant name (PascalCase for Go enum constants)
     fn to_go_const_name(&self, name: &str) -> String {
-        name.to_case(Case::Pascal)
+        // For enum values that are already uppercase (like "ACTIVE"), keep them as-is
+        // For other cases, convert to PascalCase (Go convention for exported constants)
+        if name.chars().all(|c| c.is_uppercase() || !c.is_alphabetic()) {
+            // Already all uppercase, keep as-is (e.g., "ACTIVE" stays "ACTIVE")
+            name.to_string()
+        } else {
+            // Convert to PascalCase for Go enum constants
+            name.to_case(Case::Pascal)
+        }
     }
 
     /// Map LinkML type to Go type

@@ -282,7 +282,7 @@ mod tests {
     #[tokio::test]
     async fn test_yaml_loader() {
         let yaml_content = r#"
-@type: Person
+"@type": Person
 name: John Doe
 age: 30
 emails:

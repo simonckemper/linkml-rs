@@ -303,39 +303,32 @@ impl ProtobufGenerator {
 
     /// Convert to SCREAMING_SNAKE_CASE
     fn to_screaming_snake_case(&self, s: &str) -> String {
-        // Handle hyphens as well as camelCase
-        let mut result = String::new();
-        let mut prev_upper = false;
+        // Handle hyphens and underscores
         let with_underscores = s.replace('-', "_");
-        let mut chars = with_underscores.chars().peekable();
-
-        while let Some(ch) = chars.next() {
-            if ch.is_uppercase() {
-                // Don't add underscore before first character or between consecutive uppercase letters
-                if !result.is_empty() && !prev_upper {
-                    // Check if next character is lowercase (for cases like HTTPMethod)
-                    if let Some(&next_ch) = chars.peek() {
-                        if next_ch.is_lowercase() {
-                            result.push('_');
-                        }
-                    }
+        
+        // Simple approach: insert underscore before uppercase letters that follow lowercase
+        let mut result = String::new();
+        let mut prev_lowercase = false;
+        
+        for ch in with_underscores.chars() {
+            if ch == '_' {
+                // Keep existing underscores
+                result.push('_');
+                prev_lowercase = false;
+            } else if ch.is_uppercase() {
+                // Add underscore before uppercase if previous was lowercase
+                if prev_lowercase && !result.is_empty() {
+                    result.push('_');
                 }
                 result.push(ch);
-                prev_upper = true;
+                prev_lowercase = false;
             } else {
-                if ch.is_alphabetic() && prev_upper && !result.is_empty() {
-                    // We just transitioned from uppercase to lowercase, insert underscore before last char
-                    let last_char = result.pop().expect("result should not be empty");
-                    if result.len() > 0 {
-                        result.push('_');
-                    }
-                    result.push(last_char);
-                }
-                result.push(ch.to_uppercase().next().unwrap_or(ch));
-                prev_upper = false;
+                // Convert lowercase to uppercase
+                result.push(ch.to_ascii_uppercase());
+                prev_lowercase = ch.is_lowercase();
             }
         }
-
+        
         result
     }
 }

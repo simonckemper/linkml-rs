@@ -300,25 +300,25 @@ mod tests {
     fn test_circular_reference_detection() {
         let mut schema = SchemaDefinition::default();
 
-        // Create a class without recursion options
-        let mut item_class = ClassDefinition::default();
-        item_class.name = "Item".to_string();
-        item_class.slots = vec!["related".to_string()];
-        schema.classes.insert("Item".to_string(), item_class);
+        // Create a non-recursive class (no self-referencing slots)
+        let mut person_class = ClassDefinition::default();
+        person_class.name = "Person".to_string();
+        person_class.slots = vec!["name".to_string()];
+        schema.classes.insert("Person".to_string(), person_class);
 
-        let mut related_slot = SlotDefinition::default();
-        related_slot.name = "related".to_string();
-        related_slot.range = Some("Item".to_string());
-        schema.slots.insert("related".to_string(), related_slot);
+        let mut name_slot = SlotDefinition::default();
+        name_slot.name = "name".to_string();
+        name_slot.range = Some("string".to_string());
+        schema.slots.insert("name".to_string(), name_slot);
 
         let mut tracker = RecursionTracker::new(&schema);
 
         // First entry should succeed
-        assert!(tracker.enter_object("item1", "Item").is_ok());
+        assert!(tracker.enter_object("person1", "Person").is_ok());
 
         // Re-entering same object should be detected as circular
-        let result = tracker.enter_object("item1", "Item");
-        assert!(result.is_err());
+        let result = tracker.enter_object("person1", "Person");
+        assert!(result.is_err(), "Expected circular reference error but got Ok");
         assert!(result.unwrap_err().contains("circular reference"));
     }
 }

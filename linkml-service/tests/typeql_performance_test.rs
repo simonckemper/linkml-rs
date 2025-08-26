@@ -202,7 +202,7 @@ async fn test_memory_efficiency() {
     assert!(result.is_ok(), "Generation failed: {:?}", result.err());
 
     let outputs = result.unwrap();
-    let total_size: usize = outputs.iter().map(|o| o.content.len()).sum();
+    let total_size: usize = outputs.iter().map(|o| o.len()).sum();
 
     println!("Generated 5000 classes in {:?}", duration);
     println!(

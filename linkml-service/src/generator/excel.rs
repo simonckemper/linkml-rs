@@ -123,8 +123,10 @@ impl ExcelGenerator {
             self.generate_enums_sheet(&mut workbook, schema, &header_format)?;
         }
 
-        // Generate enums reference sheet (used for dropdown lists)
-        self.generate_enums_sheet(&mut workbook, schema, &header_format)?;
+        // Generate validation sheet if add_validation is enabled
+        if self.add_validation {
+            self.generate_validation_sheet(&mut workbook, schema, &header_format)?;
+        }
 
         // Convert workbook to bytes
         let buffer = workbook

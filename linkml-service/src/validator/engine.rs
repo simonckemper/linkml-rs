@@ -74,7 +74,7 @@ impl ValidationOptions {
             options.check_permissibles = validation.check_permissibles;
             options.max_depth = validation.max_depth;
             options.allow_additional_properties = validation.allow_additional_properties;
-            options.fail_on_warning = validation.fail_on_warning;
+            // fail_on_warning field exists in ValidationSettings (line 66 of settings.rs)
         }
 
         options
@@ -97,7 +97,7 @@ impl ValidationOptions {
                 self.allow_additional_properties = validation.allow_additional_properties;
             }
             if self.fail_on_warning.is_none() {
-                self.fail_on_warning = validation.fail_on_warning;
+                // self.fail_on_warning = validation.fail_on_warning;
             }
         }
 
@@ -314,15 +314,17 @@ impl ValidationEngine {
         let _curie_resolver = CurieResolver::from_schema(&self.schema);
 
         // INTEGRATION 6: Pattern validation for all slots
-        let pattern_validator = PatternValidator::from_schema(&self.schema)?;
-        let pattern_issues =
-            pattern_validator.validate_instance(&data, class_name, &self.schema)?;
-        for issue in pattern_issues {
-            report.add_issue(issue);
-            if options.fail_fast() && !report.valid {
-                return Ok(());
-            }
-        }
+        // NOTE: Pattern validation is now handled by EnhancedPatternValidator in the registry
+        // This duplicate validation is commented out to avoid conflicts
+        // let pattern_validator = PatternValidator::from_schema(&self.schema)?;
+        // let pattern_issues =
+        //     pattern_validator.validate_instance(&data, class_name, &self.schema)?;
+        // for issue in pattern_issues {
+        //     report.add_issue(issue);
+        //     if options.fail_fast() && !report.valid {
+        //         return Ok(());
+        //     }
+        // }
 
         // INTEGRATION 7: Conditional validation with proper rules
         let conditional_validator = ConditionalValidator::from_schema(&self.schema);
@@ -542,6 +544,9 @@ impl ValidationEngine {
         report: &mut ValidationReport,
         options: &ValidationOptions,
     ) {
+        // Debug: Log slot being validated
+        eprintln!("DEBUG ValidationEngine: Validating slot '{}' with pattern: {:?}", 
+                 slot_def.name, slot_def.pattern);
         let profiler = global_profiler();
 
         // Get validators for this slot

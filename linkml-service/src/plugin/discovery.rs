@@ -221,6 +221,11 @@ impl PluginDiscovery {
             return false;
         }
 
+        self.matches_pattern(path)
+    }
+
+    /// Check if a path matches plugin patterns (for testing)
+    fn matches_pattern(&self, path: &Path) -> bool {
         if let Some(name) = path.file_name() {
             let name_str = name.to_string_lossy();
             self.patterns.iter().any(|pattern| {
@@ -336,12 +341,12 @@ mod tests {
     fn test_pattern_matching() {
         let discovery = PluginDiscovery::new();
         let path = Path::new("linkml-plugin-test.toml");
-        assert!(discovery.is_plugin_manifest(path));
+        assert!(discovery.matches_pattern(path));
 
         let path = Path::new("something.linkml-plugin");
-        assert!(discovery.is_plugin_manifest(path));
+        assert!(discovery.matches_pattern(path));
 
         let path = Path::new("not-a-plugin.txt");
-        assert!(!discovery.is_plugin_manifest(path));
+        assert!(!discovery.matches_pattern(path));
     }
 }

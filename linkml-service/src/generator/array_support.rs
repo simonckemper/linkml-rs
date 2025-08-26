@@ -90,7 +90,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             } else {
                 writeln!(
                     &mut code,
-                    "{} = np.zeros(({},), dtype={})",
+                    "{} = np.zeros(({}), dtype={})",
                     var_name, shape_str, dtype
                 )
                 .expect("failed to format string");

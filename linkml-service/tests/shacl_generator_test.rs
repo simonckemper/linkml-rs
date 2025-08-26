@@ -57,26 +57,26 @@ async fn test_basic_shacl_generation() {
     );
 
     // Check PersonShape
-    assert!(shacl.content.contains("person_schema:PersonShape"));
-    assert!(shacl.content.contains("a sh:NodeShape"));
+    assert!(shacl.contains("person_schema:PersonShape"));
+    assert!(shacl.contains("a sh:NodeShape"));
     assert!(
         shacl
                         .contains("sh:targetClass person_schema:Person")
     );
-    assert!(shacl.content.contains("rdfs:comment \"A human being\""));
+    assert!(shacl.contains("rdfs:comment \"A human being\""));
 
     // Check property shapes
-    assert!(shacl.content.contains("sh:path person_schema:name"));
-    assert!(shacl.content.contains("sh:datatype xsd:string"));
-    assert!(shacl.content.contains("sh:minCount 1")); // required
-    assert!(shacl.content.contains("sh:maxCount 1")); // not multivalued
+    assert!(shacl.contains("sh:path person_schema:name"));
+    assert!(shacl.contains("sh:datatype xsd:string"));
+    assert!(shacl.contains("sh:minCount 1")); // required
+    assert!(shacl.contains("sh:maxCount 1")); // not multivalued
 
-    assert!(shacl.content.contains("sh:path person_schema:age"));
-    assert!(shacl.content.contains("sh:datatype xsd:integer"));
-    assert!(shacl.content.contains("sh:minInclusive 0"));
-    assert!(shacl.content.contains("sh:maxInclusive 150"));
+    assert!(shacl.contains("sh:path person_schema:age"));
+    assert!(shacl.contains("sh:datatype xsd:integer"));
+    assert!(shacl.contains("sh:minInclusive 0"));
+    assert!(shacl.contains("sh:maxInclusive 150"));
 
-    assert!(shacl.content.contains("sh:path person_schema:email"));
+    assert!(shacl.contains("sh:path person_schema:email"));
     assert!(
         shacl
                         .contains("sh:pattern \"^[^@]+@[^@]+\\.[^@]+$\"")
@@ -117,7 +117,7 @@ async fn test_enum_shacl() {
     let shacl = generator.generate(&schema).unwrap();
 
     // Check enum constraint using sh:in
-    assert!(shacl.content.contains("sh:path status_schema:status"));
+    assert!(shacl.contains("sh:path status_schema:status"));
     assert!(
         shacl
                         .contains("sh:in (\"pending\" \"processing\" \"shipped\" \"delivered\")")
@@ -162,16 +162,16 @@ async fn test_inheritance_shacl() {
     let shacl = generator.generate(&schema).unwrap();
 
     // Check PersonShape has all properties (inherited + own)
-    assert!(shacl.content.contains("entity_schema:PersonShape"));
-    assert!(shacl.content.contains("entity_schema:PersonShape-id"));
+    assert!(shacl.contains("entity_schema:PersonShape"));
+    assert!(shacl.contains("entity_schema:PersonShape-id"));
     assert!(
         shacl
                         .contains("entity_schema:PersonShape-created_at")
     );
-    assert!(shacl.content.contains("entity_schema:PersonShape-name"));
+    assert!(shacl.contains("entity_schema:PersonShape-name"));
 
     // Check datetime mapping
-    assert!(shacl.content.contains("sh:datatype xsd:dateTime"));
+    assert!(shacl.contains("sh:datatype xsd:dateTime"));
 }
 
 #[tokio::test]
@@ -202,10 +202,10 @@ async fn test_multivalued_shacl() {
     println!("Generated SHACL:\n{}", shacl.content);
 
     // Check that multivalued fields don't have maxCount
-    assert!(shacl.content.contains("sh:path team_schema:team_name"));
-    assert!(shacl.content.contains("sh:maxCount 1")); // single valued
+    assert!(shacl.contains("sh:path team_schema:team_name"));
+    assert!(shacl.contains("sh:maxCount 1")); // single valued
 
-    assert!(shacl.content.contains("sh:path team_schema:members"));
+    assert!(shacl.contains("sh:path team_schema:members"));
     // Check that members property shape doesn't have maxCount (since it's multivalued)
     let members_section = shacl
                 .split("team_schema:TeamShape-members")
@@ -259,10 +259,10 @@ async fn test_object_references_shacl() {
     let shacl = generator.generate(&schema).unwrap();
 
     // Check object references use sh:class
-    assert!(shacl.content.contains("sh:path org_schema:ceo"));
-    assert!(shacl.content.contains("sh:class org_schema:Person"));
+    assert!(shacl.contains("sh:path org_schema:ceo"));
+    assert!(shacl.contains("sh:class org_schema:Person"));
 
-    assert!(shacl.content.contains("sh:path org_schema:employees"));
+    assert!(shacl.contains("sh:path org_schema:employees"));
     assert!(
         shacl
                         .split("org_schema:OrganizationShape-employees")
@@ -318,11 +318,11 @@ async fn test_custom_types_shacl() {
     println!("Generated SHACL for custom types:\n{}", shacl.content);
 
     // Check custom types are resolved to base types with constraints
-    assert!(shacl.content.contains("sh:path product_schema:website"));
-    assert!(shacl.content.contains("sh:datatype xsd:string"));
-    assert!(shacl.content.contains("sh:pattern \"^https?://\""));
+    assert!(shacl.contains("sh:path product_schema:website"));
+    assert!(shacl.contains("sh:datatype xsd:string"));
+    assert!(shacl.contains("sh:pattern \"^https?://\""));
 
-    assert!(shacl.content.contains("sh:path product_schema:price"));
-    assert!(shacl.content.contains("sh:datatype xsd:double"));
-    assert!(shacl.content.contains("sh:minInclusive 0"));
+    assert!(shacl.contains("sh:path product_schema:price"));
+    assert!(shacl.contains("sh:datatype xsd:double"));
+    assert!(shacl.contains("sh:minInclusive 0"));
 }

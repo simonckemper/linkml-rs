@@ -97,13 +97,16 @@ mod tests {
   "description": "A test schema",
   "classes": {
     "Person": {
+      "name": "Person",
       "description": "A person",
       "attributes": {
         "name": {
+          "name": "name",
           "range": "string",
           "required": true
         },
         "age": {
+          "name": "age",
           "range": "integer"
         }
       }
@@ -111,14 +114,14 @@ mod tests {
   }
 }"#;
 
-        // Write to file
-        let schema_path = temp_dir.path().join("test_schema.json");
-        fs.write(&schema_path, schema_content).await.unwrap();
+        // Write to file using relative path within sandbox
+        let schema_path = Path::new("test_schema.json");
+        fs.write(schema_path, schema_content).await.unwrap();
 
         // Parse using async trait - explicitly use AsyncSchemaParser trait
         let schema = <JsonParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
             &parser,
-            &schema_path,
+            schema_path,
         )
         .await
         .unwrap();

@@ -621,10 +621,8 @@ impl<'a> ParserState<'a> {
                 if self.current == Token::LeftParen {
                     self.parse_function_call(ident)
                 } else {
-                    Err(ParseError::UnexpectedToken {
-                        token: format!("{:?}", self.current),
-                        position: self.tokenizer.position,
-                    })
+                    // Treat standalone identifiers as variable references
+                    Ok(Expression::Variable(ident))
                 }
             }
             Token::LeftParen => {

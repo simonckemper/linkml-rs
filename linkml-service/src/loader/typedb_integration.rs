@@ -888,7 +888,8 @@ mod tests {
         assert_eq!(options.batch_size, 1000);
         assert!(options.infer_types);
         assert!(!options.include_inferred);
-        assert_eq!(options.query_timeout_ms, 30000);
+        // Default timeout is 10000ms from config
+        assert_eq!(options.query_timeout_ms, 10000);
     }
 
     #[test]

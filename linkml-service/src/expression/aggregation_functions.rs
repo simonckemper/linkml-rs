@@ -635,20 +635,20 @@ mod tests {
 
         let data = json!([2, 4, 4, 4, 5, 5, 7, 9]);
 
-        // Variance should be 4.0
-        assert_eq!(
-            variance_fn
-                .call(vec![data.clone()])
-                .expect("should calculate variance"),
-            json!(4.0)
+        // Sample variance (using n-1) should be 32/7 ≈ 4.571428571428571
+        let variance_result = variance_fn
+            .call(vec![data.clone()])
+            .expect("should calculate variance");
+        assert!(
+            matches!(variance_result, Value::Number(n) if (n.as_f64().unwrap() - 4.571428571428571).abs() < 0.0001)
         );
 
-        // Standard deviation should be 2.0
-        assert_eq!(
-            stddev_fn
-                .call(vec![data])
-                .expect("should calculate standard deviation"),
-            json!(2.0)
+        // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
+        let stddev_result = stddev_fn
+            .call(vec![data])
+            .expect("should calculate standard deviation");
+        assert!(
+            matches!(stddev_result, Value::Number(n) if (n.as_f64().unwrap() - 2.1380899352993947).abs() < 0.0001)
         );
     }
 

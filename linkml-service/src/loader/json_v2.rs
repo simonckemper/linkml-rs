@@ -261,8 +261,8 @@ mod tests {
   {"name": "Bob", "age": 25}
 ]"#;
 
-        let file_path = temp_dir.path().join("data.json");
-        fs.write(&file_path, json_content)
+        let file_path = Path::new("data.json");
+        fs.write(file_path, json_content)
             .await
             .expect("should write JSON file");
 
@@ -307,33 +307,33 @@ mod tests {
         ];
 
         // Test regular JSON
-        let file_path = temp_dir.path().join("output.json");
+        let file_path = Path::new("output.json");
         let mut dumper = JsonDumperV2::new();
         let schema = SchemaDefinition::default();
 
         dumper
-            .dump_file(instances.clone(), &file_path, &schema, fs.clone())
+            .dump_file(instances.clone(), file_path, &schema, fs.clone())
             .await
             .expect("should dump instances to JSON");
 
         let content = fs
-            .read_to_string(&file_path)
+            .read_to_string(file_path)
             .await
             .expect("should read JSON file");
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
 
         // Test JSON Lines
-        let jsonl_path = temp_dir.path().join("output.jsonl");
+        let jsonl_path = Path::new("output.jsonl");
         let mut jsonl_dumper = JsonDumperV2::new().with_jsonl(true);
 
         jsonl_dumper
-            .dump_file(instances, &jsonl_path, &schema, fs.clone())
+            .dump_file(instances, jsonl_path, &schema, fs.clone())
             .await
             .expect("should dump instances to JSONL");
 
         let jsonl_content = fs
-            .read_to_string(&jsonl_path)
+            .read_to_string(jsonl_path)
             .await
             .expect("should read JSONL file");
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();

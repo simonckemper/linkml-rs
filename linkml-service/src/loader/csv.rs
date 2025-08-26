@@ -851,7 +851,7 @@ p2,Bob,25,bob@example.com,tag3
         let loader = CsvLoader::tsv();
 
         let tsv_content =
-            "id\tname\tage\nemail\ttags\np1\tAlice\t30\talice@example.com\ttag1;tag2\n";
+            "id\tname\tage\temail\ttags\np1\tAlice\t30\talice@example.com\ttag1;tag2\n";
 
         let options = LoadOptions {
             target_class: Some("Person".to_string()),

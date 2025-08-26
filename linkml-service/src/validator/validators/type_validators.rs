@@ -196,6 +196,24 @@ impl TypeValidator {
                     ));
                 }
             }
+            "array" => {
+                if !value.is_array() {
+                    issues.push(ValidationIssue::error(
+                        format!("Expected array, got {}", value_type_name(value)),
+                        path,
+                        &self.name,
+                    ));
+                }
+            }
+            "object" => {
+                if !value.is_object() {
+                    issues.push(ValidationIssue::error(
+                        format!("Expected object, got {}", value_type_name(value)),
+                        path,
+                        &self.name,
+                    ));
+                }
+            }
             _ => {
                 // Unknown type or custom type - for now, accept anything
                 // In a full implementation, we'd look up custom types in the schema

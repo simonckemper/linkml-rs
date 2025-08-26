@@ -13,8 +13,11 @@ use std::collections::HashMap;
 static CURIE_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^([a-zA-Z][a-zA-Z0-9_]*):([^:]*)$").unwrap());
 
-/// Regular expression for valid URI format
-static URI_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-zA-Z][a-zA-Z0-9+.-]*:").unwrap());
+/// Regular expression for valid URI format (matches absolute URIs with scheme://
+/// or well-known schemes like mailto:, urn:, etc.)
+static URI_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^([a-zA-Z][a-zA-Z0-9+.-]*://.+|mailto:.+|urn:.+|data:.+|file:.+)").unwrap()
+});
 
 /// CURIE/URI resolver for LinkML schemas
 #[derive(Debug, Clone)]
@@ -169,7 +172,7 @@ impl CurieResolver {
     /// Contract a URI to a CURIE if possible
     pub fn contract_uri(&self, uri: &str) -> String {
         // Check if it's already a CURIE
-        if self.is_curie(uri) {
+        if self.is_curie(uri) && !self.is_uri(uri) {
             return uri.to_string();
         }
 

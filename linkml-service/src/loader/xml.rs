@@ -320,8 +320,8 @@ mod tests {
             .expect("should dump XML");
         assert!(xml_str.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assert!(xml_str.contains("<data>"));
-        assert!(xml_str.contains("<Person id=\"person1\">"));
-        assert!(xml_str.contains("<name>Alice Smith</name>"));
+        // Name is an attribute, not a child element
+        assert!(xml_str.contains("<Person id=\"person1\" name=\"Alice Smith\">"));
         assert!(xml_str.contains("<age>25</age>"));
         assert!(xml_str.contains("<active>true</active>"));
         assert!(xml_str.contains("<description>"));

@@ -229,8 +229,8 @@ mod tests {
   age: 25
 "#;
 
-        let file_path = temp_dir.path().join("data.yaml");
-        fs.write(&file_path, yaml_content)
+        let file_path = Path::new("data.yaml");
+        fs.write(file_path, yaml_content)
             .await
             .expect("should write YAML file");
 
@@ -278,17 +278,17 @@ mod tests {
             },
         ];
 
-        let file_path = temp_dir.path().join("output.yaml");
+        let file_path = Path::new("output.yaml");
         let mut dumper = YamlDumperV2::new();
         let schema = SchemaDefinition::default();
 
         dumper
-            .dump_file(instances, &file_path, &schema, fs.clone())
+            .dump_file(instances, file_path, &schema, fs.clone())
             .await
             .expect("should dump instances to YAML");
 
         let content = fs
-            .read_to_string(&file_path)
+            .read_to_string(file_path)
             .await
             .expect("should read YAML file");
         assert!(content.contains("Alice"));

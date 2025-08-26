@@ -68,8 +68,9 @@ impl ImportResolver {
     /// - Circular dependencies are detected
     /// - Maximum import depth is exceeded
     pub fn resolve_imports(&self, schema: &SchemaDefinition) -> Result<SchemaDefinition> {
-        // For now, just return the schema without resolving imports
-        // This avoids the runtime-within-runtime issue
+        // For synchronous contexts, we can't easily resolve async file I/O
+        // Users should use resolve_imports_async for full functionality
+        // For now, return a clone to maintain API compatibility
         Ok(schema.clone())
     }
 
@@ -291,7 +292,8 @@ classes:
         // Resolve imports
         let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);
         let merged = resolver
-            .resolve_imports(&schema)
+            .resolve_imports_async(&schema)
+            .await
             .expect("should resolve imports");
 
         // Check that base elements were imported

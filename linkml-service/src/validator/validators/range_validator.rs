@@ -92,19 +92,23 @@ impl Validator for RangeValidator {
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
 
-        // Only validate numeric types
+        // Skip if no range constraints
+        if slot.minimum_value.is_none() && slot.maximum_value.is_none() {
+            return issues;
+        }
+
+        // Check if we should validate based on range type or actual value type
         let range_type = slot.range.as_deref().unwrap_or("string");
-        let is_numeric = matches!(
+        let is_numeric_type = matches!(
             range_type,
             "integer" | "int" | "float" | "double" | "decimal" | "number"
         );
-
-        if !is_numeric {
-            return issues; // Not applicable to non-numeric types
-        }
-
-        // Skip if no range constraints
-        if slot.minimum_value.is_none() && slot.maximum_value.is_none() {
+        
+        // Also check if the actual value is numeric (for cases where range isn't specified)
+        let is_numeric_value = value.is_number();
+        
+        if !is_numeric_type && !is_numeric_value {
+            // Skip if neither the declared type nor actual value is numeric
             return issues;
         }
 
