@@ -7,7 +7,7 @@ use std::path::Path;
 use crate::error::Result;
 use crate::types::{NamedCaptures, SchemaDefinition, ValidationReport};
 
-/// Main trait for LinkML service operations
+/// Main trait for `LinkML` service operations
 #[async_trait]
 pub trait LinkMLService: Send + Sync {
     /// Load a schema from a file path
@@ -105,7 +105,7 @@ pub trait ValidationOperations: Send + Sync {
 /// Operations for code generation
 #[async_trait]
 pub trait GenerationOperations: Send + Sync {
-    /// Generate TypeQL schema
+    /// Generate `TypeQL` schema
     async fn generate_typeql(&self, schema: &SchemaDefinition) -> Result<String>;
 
     /// Generate Rust code

@@ -154,7 +154,7 @@ pub struct CacheConfig {
     /// Expression cache configuration
     pub expression_cache: ExpressionCacheConfig,
 
-    /// Rule cache configuration  
+    /// Rule cache configuration
     pub rule_cache: RuleCacheConfig,
 }
 
@@ -363,13 +363,12 @@ impl Validate for LinkMLServiceConfig {
         }
 
         // Validate performance config
-        if let Some(cpu_limit) = self.performance.cpu_limit_percent {
-            if cpu_limit == 0 || cpu_limit > 100 {
+        if let Some(cpu_limit) = self.performance.cpu_limit_percent
+            && (cpu_limit == 0 || cpu_limit > 100) {
                 return Err(ConfigurationError::validation_error(
                     "CPU limit must be between 1 and 100 percent".to_string(),
                 ));
             }
-        }
 
         // Validate security limits
         if self.security_limits.max_string_length == 0 {

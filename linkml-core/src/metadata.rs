@@ -186,7 +186,7 @@ pub trait HasMetadata {
 }
 
 /// Merge two sets of element metadata
-pub fn merge_element_metadata(
+#[must_use] pub fn merge_element_metadata(
     base: &ElementMetadata,
     override_metadata: &ElementMetadata,
 ) -> ElementMetadata {

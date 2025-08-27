@@ -3,21 +3,26 @@
 //! This module provides a thread-safe string interning system to deduplicate
 //! common strings across schema definitions, significantly reducing memory usage.
 
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-/// Global string pool for interning common LinkML strings
-static STRING_POOL: Lazy<StringPool> = Lazy::new(StringPool::new);
+/// Global string pool for interning common `LinkML` strings
+static STRING_POOL: std::sync::LazyLock<StringPool> = std::sync::LazyLock::new(StringPool::new);
 
 /// Thread-safe string interning pool
 pub struct StringPool {
     pool: RwLock<HashMap<String, Arc<str>>>,
 }
 
+impl Default for StringPool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StringPool {
     /// Create a new string pool
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             pool: RwLock::new(HashMap::new()),
         }
@@ -76,7 +81,7 @@ pub fn intern_option(s: Option<&str>) -> Option<Arc<str>> {
 }
 
 /// Convenience function to intern a Vec<String>
-pub fn intern_vec(v: Vec<String>) -> Vec<Arc<str>> {
+#[must_use] pub fn intern_vec(v: Vec<String>) -> Vec<Arc<str>> {
     v.into_iter().map(|s| intern(&s)).collect()
 }
 

@@ -10,7 +10,7 @@ use crate::error::{LinkMLError, Result};
 use crate::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
 /// Check if a given name is a built-in type (no clone)
-pub fn is_builtin_type(name: &str) -> bool {
+#[must_use] pub fn is_builtin_type(name: &str) -> bool {
     matches!(
         name,
         "string"
@@ -70,8 +70,8 @@ pub fn get_class_slots<'a>(
     }
 
     // Add slots from parent class
-    if let Some(parent_name) = &class.is_a {
-        if let Some(parent_class) = schema.classes.get(parent_name) {
+    if let Some(parent_name) = &class.is_a
+        && let Some(parent_class) = schema.classes.get(parent_name) {
             let parent_slots = get_class_slots(parent_class, schema)?;
             for slot in parent_slots {
                 if seen.insert(slot) {
@@ -79,13 +79,12 @@ pub fn get_class_slots<'a>(
                 }
             }
         }
-    }
 
     Ok(slots)
 }
 
 /// Merge slot definitions efficiently using Cow
-pub fn merge_slot_definitions_cow<'a>(
+#[must_use] pub fn merge_slot_definitions_cow<'a>(
     base: &'a SlotDefinition,
     override_def: &'a SlotDefinition,
 ) -> Cow<'a, SlotDefinition> {
@@ -260,29 +259,27 @@ pub fn get_slot_definition<'a>(
     }
 
     // Check inherited slots
-    if let Some(parent_name) = &class.is_a {
-        if let Some(parent_class) = schema.classes.get(parent_name) {
+    if let Some(parent_name) = &class.is_a
+        && let Some(parent_class) = schema.classes.get(parent_name) {
             return get_slot_definition(schema, parent_class, slot_name);
         }
-    }
 
     // Check mixin slots
     for mixin_name in &class.mixins {
-        if let Some(mixin_class) = schema.classes.get(mixin_name) {
-            if let Ok(slot) = get_slot_definition(schema, mixin_class, slot_name) {
+        if let Some(mixin_class) = schema.classes.get(mixin_name)
+            && let Ok(slot) = get_slot_definition(schema, mixin_class, slot_name) {
                 return Ok(slot);
             }
-        }
     }
 
     Err(LinkMLError::Other {
-        message: format!("Slot '{}' not found", slot_name),
+        message: format!("Slot '{slot_name}' not found"),
         source: None,
     })
 }
 
 /// Check if a type is valid (no clone needed)
-pub fn is_valid_type<'a>(schema: &'a SchemaDefinition, type_name: &str) -> bool {
+#[must_use] pub fn is_valid_type(schema: &SchemaDefinition, type_name: &str) -> bool {
     is_builtin_type(type_name)
         || schema.types.contains_key(type_name)
         || schema.classes.contains_key(type_name)
@@ -318,7 +315,7 @@ pub fn get_class_hierarchy<'a>(
         if let Some(parent) = &class.is_a {
             if !seen.insert(parent.as_str()) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Circular inheritance detected at class '{}'", parent),
+                    message: format!("Circular inheritance detected at class '{parent}'"),
                     element: Some(parent.to_string()),
                 });
             }
@@ -332,8 +329,8 @@ pub fn get_class_hierarchy<'a>(
     Ok(hierarchy)
 }
 
-/// Convert camelCase to snake_case efficiently
-pub fn camel_to_snake(s: &str) -> String {
+/// Convert camelCase to `snake_case` efficiently
+#[must_use] pub fn camel_to_snake(s: &str) -> String {
     let mut result = String::with_capacity(s.len() + 5);
     let mut prev_upper = false;
 
@@ -348,8 +345,8 @@ pub fn camel_to_snake(s: &str) -> String {
     result
 }
 
-/// Convert snake_case to camelCase efficiently
-pub fn snake_to_camel(s: &str) -> String {
+/// Convert `snake_case` to camelCase efficiently
+#[must_use] pub fn snake_to_camel(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
     let mut capitalize_next = false;
 
@@ -368,7 +365,7 @@ pub fn snake_to_camel(s: &str) -> String {
 }
 
 /// Get all classes that inherit from a given class (returns references)
-pub fn get_subclasses<'a>(schema: &'a SchemaDefinition, parent_name: &str) -> Vec<&'a str> {
+#[must_use] pub fn get_subclasses<'a>(schema: &'a SchemaDefinition, parent_name: &str) -> Vec<&'a str> {
     schema
         .classes
         .iter()
@@ -381,12 +378,12 @@ pub fn get_subclasses<'a>(schema: &'a SchemaDefinition, parent_name: &str) -> Ve
 }
 
 /// Check if a class is abstract
-pub fn is_abstract_class(class: &ClassDefinition) -> bool {
+#[must_use] pub fn is_abstract_class(class: &ClassDefinition) -> bool {
     class.abstract_.unwrap_or(false) || class.mixin.unwrap_or(false)
 }
 
 /// Get URI for a given element efficiently
-pub fn get_element_uri<'a>(
+#[must_use] pub fn get_element_uri<'a>(
     element_name: &'a str,
     uri_field: Option<&'a str>,
     schema: &'a SchemaDefinition,
@@ -397,7 +394,7 @@ pub fn get_element_uri<'a>(
 
     // Generate URI from schema base
     if let Some(base) = schema.default_prefix.as_ref() {
-        Cow::Owned(format!("{}:{}", base, element_name))
+        Cow::Owned(format!("{base}:{element_name}"))
     } else {
         Cow::Borrowed(element_name)
     }

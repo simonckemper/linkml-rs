@@ -5,8 +5,8 @@ use crate::types::{SchemaDefinition, SlotDefinition};
 use indexmap::IndexMap;
 use std::collections::{HashSet, VecDeque};
 
-/// Check if a string is a valid LinkML identifier
-pub fn is_valid_identifier(s: &str) -> bool {
+/// Check if a string is a valid `LinkML` identifier
+#[must_use] pub fn is_valid_identifier(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
@@ -281,7 +281,7 @@ pub fn get_effective_slot(
         return Ok(slot.clone());
     }
 
-    Err(LinkMLError::other(format!("Slot not found: {}", slot_name)))
+    Err(LinkMLError::other(format!("Slot not found: {slot_name}")))
 }
 
 /// Topologically sort classes based on inheritance
@@ -303,8 +303,7 @@ pub fn topological_sort_classes(schema: &SchemaDefinition) -> Result<Vec<String>
 
         if visiting.contains(name) {
             return Err(LinkMLError::other(format!(
-                "Circular inheritance detected at: {}",
-                name
+                "Circular inheritance detected at: {name}"
             )));
         }
 

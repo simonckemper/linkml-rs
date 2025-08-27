@@ -98,7 +98,7 @@ pub trait Annotatable {
 
     /// Check if an annotation exists
     fn has_annotation(&self, key: &str) -> bool {
-        self.annotations().map_or(false, |a| a.contains_key(key))
+        self.annotations().is_some_and(|a| a.contains_key(key))
     }
 }
 
@@ -171,7 +171,7 @@ impl From<AnnotationValue> for Value {
 }
 
 /// Helper to merge annotations from multiple sources
-pub fn merge_annotations(
+#[must_use] pub fn merge_annotations(
     base: Option<&Annotations>,
     override_annotations: Option<&Annotations>,
 ) -> Option<Annotations> {

@@ -224,9 +224,9 @@ pub enum StringSerialization {
     Uppercase,
     /// Use camelCase
     CamelCase,
-    /// Use snake_case
+    /// Use `snake_case`
     SnakeCase,
-    /// Use PascalCase
+    /// Use `PascalCase`
     PascalCase,
 }
 
@@ -262,15 +262,15 @@ pub struct NamingSettings {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum NamingConvention {
-    /// snake_case
+    /// `snake_case`
     SnakeCase,
     /// camelCase
     CamelCase,
-    /// PascalCase
+    /// `PascalCase`
     PascalCase,
     /// kebab-case
     KebabCase,
-    /// SCREAMING_SNAKE_CASE
+    /// `SCREAMING_SNAKE_CASE`
     ScreamingSnakeCase,
     /// No convention enforced
     Any,
@@ -278,12 +278,12 @@ pub enum NamingConvention {
 
 impl SchemaSettings {
     /// Create new schema settings with defaults
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::default()
     }
 
     /// Create settings optimized for strict validation
-    pub fn strict() -> Self {
+    #[must_use] pub fn strict() -> Self {
         Self {
             validation: Some(ValidationSettings {
                 strict: Some(true),
@@ -300,7 +300,7 @@ impl SchemaSettings {
     }
 
     /// Create settings optimized for code generation
-    pub fn for_generation() -> Self {
+    #[must_use] pub fn for_generation() -> Self {
         Self {
             generation: Some(GenerationSettings {
                 generate_builders: Some(true),
@@ -316,7 +316,7 @@ impl SchemaSettings {
     }
 
     /// Merge two settings, with other taking precedence
-    pub fn merge(self, other: Self) -> Self {
+    #[must_use] pub fn merge(self, other: Self) -> Self {
         Self {
             validation: other.validation.or(self.validation),
             generation: other.generation.or(self.generation),
@@ -332,7 +332,7 @@ impl SchemaSettings {
     }
 
     /// Get a custom setting value
-    pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
+    #[must_use] pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
         self.custom
             .get(key)
             .and_then(|v| serde_json::from_value(v.clone()).ok())
@@ -352,19 +352,19 @@ impl SchemaSettings {
 
 impl ValidationSettings {
     /// Check if strict validation is enabled
-    pub fn is_strict(&self) -> bool {
+    #[must_use] pub fn is_strict(&self) -> bool {
         self.strict.unwrap_or(false)
     }
 
     /// Check if additional properties are allowed
-    pub fn allows_additional_properties(&self) -> bool {
+    #[must_use] pub fn allows_additional_properties(&self) -> bool {
         self.allow_additional_properties.unwrap_or(true)
     }
 }
 
 impl GenerationSettings {
     /// Get language-specific options
-    pub fn get_language_options(&self, language: &str) -> Option<&LanguageOptions> {
+    #[must_use] pub fn get_language_options(&self, language: &str) -> Option<&LanguageOptions> {
         self.language_options.get(language)
     }
 
@@ -376,12 +376,12 @@ impl GenerationSettings {
 
 impl ImportSettings {
     /// Check if imports should be followed
-    pub fn should_follow_imports(&self) -> bool {
+    #[must_use] pub fn should_follow_imports(&self) -> bool {
         self.follow_imports.unwrap_or(true)
     }
 
     /// Get the resolution strategy
-    pub fn get_resolution_strategy(&self) -> ImportResolutionStrategy {
+    #[must_use] pub fn get_resolution_strategy(&self) -> ImportResolutionStrategy {
         self.resolution_strategy
             .unwrap_or(ImportResolutionStrategy::Mixed)
     }

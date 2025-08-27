@@ -56,7 +56,7 @@ pub mod types_v2;
 /// Optimized utility functions that minimize cloning
 pub mod utils_v2;
 
-/// Optimized HashMap utilities
+/// Optimized `HashMap` utilities
 pub mod hashmap_utils;
 
 /// Arc-based schema handling
