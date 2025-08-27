@@ -220,7 +220,8 @@ impl CompiledValidatorCache {
     ///
     /// Returns a `LinkMLError` if:
     /// - Serialization fails
-    /// - Cache operations fail    pub async fn put(
+    /// - Cache operations fail
+    pub async fn put(
         &self,
         key: ValidatorCacheKey,
         validator: CompiledValidator,
