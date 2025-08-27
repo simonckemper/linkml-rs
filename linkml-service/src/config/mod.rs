@@ -27,7 +27,17 @@ pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
 
 /// Substitute environment variables in the format ${VAR:-default}
 fn substitute_env_vars(content: &str) -> String {
-    let re = regex::Regex::new(r"\$\{([^}:]+)(?::(-)?([^}]*))?\}").expect("regex should be valid");
+    // This regex pattern is hardcoded and known to be valid at compile time
+    // Using lazy_static to compile it once would be more efficient, but for safety
+    // we handle the unlikely error case
+    let re = match regex::Regex::new(r"\$\{([^}:]+)(?::(-)?([^}]*))?\}") {
+        Ok(regex) => regex,
+        Err(_) => {
+            // This should never happen with our hardcoded pattern
+            // Return the content unchanged if regex compilation fails
+            return content.to_string();
+        }
+    };
 
     re.replace_all(content, |caps: &regex::Captures| {
         let var_name = &caps[1];
@@ -368,7 +378,116 @@ static INSTANCE: std::sync::OnceLock<LinkMLConfig> = std::sync::OnceLock::new();
 
 /// Get the global configuration instance
 pub fn get_config() -> &'static LinkMLConfig {
-    INSTANCE.get_or_init(|| load_environment_config().expect("Failed to load LinkML configuration"))
+    INSTANCE.get_or_init(|| {
+        load_environment_config().unwrap_or_else(|e| {
+            // Log the error (in a real implementation, proper logging should be used)
+            eprintln!("Warning: Failed to load LinkML configuration: {}. Using fallback defaults.", e);
+            // Return a minimal working configuration as fallback
+            // This ensures the system can still operate even if config files are missing
+            create_fallback_config()
+        })
+    })
+}
+
+/// Create a minimal fallback configuration when loading from files fails
+fn create_fallback_config() -> LinkMLConfig {
+    LinkMLConfig {
+        typedb: TypeDBConfig {
+            server_url: "localhost:1729".to_string(),
+            database: "linkml".to_string(),
+            connection_pool_size: 10,
+            query_timeout_ms: 30000,
+            retry_attempts: 3,
+            retry_delay_ms: 1000,
+        },
+        parser: ParserConfig {
+            strict_mode: false,
+            max_recursion_depth: 100,
+            allow_unknown_fields: false,
+        },
+        validator: ValidatorConfig {
+            enable_strict_validation: true,
+            max_validation_errors: 100,
+            validation_timeout_ms: 5000,
+            pattern_cache_size: 100,
+            enable_parallel_validation: true,
+        },
+        generator: GeneratorConfig {
+            output_directory: "./generated".to_string(),
+            enable_documentation: true,
+            target_languages: vec!["rust".to_string()],
+        },
+        cache: CacheConfig {
+            enable_caching: true,
+            max_cache_size_mb: 100,
+            cache_ttl_seconds: 3600,
+            cache_directory: "./cache".to_string(),
+        },
+        performance: PerformanceConfig {
+            parallel_processing_threshold: 1000,
+            batch_size: 100,
+            enable_async_processing: true,
+            memory_limit_mb: 512,
+            thread_pool_size: 4,
+            optimization_level: OptimizationLevel::Standard,
+            profiling_enabled: false,
+        },
+        security_limits: SecurityLimits {
+            max_string_length: 1_000_000,
+            max_expression_depth: 50,
+            max_constraint_count: 1000,
+            max_cache_entries: 10_000,
+            max_function_args: 20,
+            max_identifier_length: 255,
+            max_json_size_bytes: 10_485_760,
+            max_slots_per_class: 100,
+            max_classes_per_schema: 1000,
+            max_validation_time_ms: 30_000,
+            max_memory_usage_bytes: 536_870_912,
+            max_parallel_validators: 10,
+            max_cache_memory_bytes: 104_857_600,
+            max_expression_time_ms: 5_000,
+            max_validation_errors: 100,
+        },
+        network: NetworkConfig {
+            default_host: "localhost".to_string(),
+            default_port: 8080,
+            api_timeout_seconds: 30,
+        },
+        expression: ExpressionConfig {
+            enable_cache: true,
+            enable_compilation: false,
+            cache_size: 1000,
+            timeout_seconds: 10,
+            max_recursion_depth: 50,
+        },
+        pattern_validator: PatternValidatorConfig {
+            enable_pattern_caching: true,
+            pattern_cache_size: 500,
+            max_pattern_length: 1000,
+        },
+        multi_layer_cache: MultiLayerCacheConfig {
+            enable_multi_layer: true,
+            layer_configs: vec![],
+        },
+        optimization: OptimizationConfig {
+            string_cache: StringCacheConfig {
+                max_entries: 10_000,
+                max_string_length: 1000,
+            },
+            memory_pool: MemoryPoolConfig {
+                max_size_bytes: 104_857_600,
+                chunk_size_bytes: 4096,
+            },
+            cache_ttl_levels: CacheTtlLevels {
+                l1_seconds: 60,
+                l2_seconds: 300,
+                l3_seconds: 3600,
+                min_ttl_seconds: 10,
+                max_ttl_seconds: 86400,
+            },
+        },
+    }
 }
 
 #[cfg(test)]

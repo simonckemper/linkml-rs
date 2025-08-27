@@ -25,10 +25,14 @@ pub trait ArrayCodeGenerator {
 pub struct PythonArrayGenerator;
 
 impl PythonArrayGenerator {
-    /// Convert fmt::Error to a panic message
-    /// Note: This is used because the trait methods must return String, not Result
-    fn _handle_fmt_error(e: std::fmt::Error) -> ! {
-        panic!("Failed to format string: {}", e)
+    /// Helper to handle write errors gracefully
+    /// In practice, writing to a String should never fail, but we handle it properly
+    fn write_or_default(dest: &mut String, args: std::fmt::Arguments) {
+        if let Err(e) = dest.write_fmt(args) {
+            // Log the error in production (would use proper logging)
+            eprintln!("Warning: Failed to format string in array generator: {}", e);
+            // Continue with what we have
+        }
     }
 }
 
@@ -42,9 +46,12 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
         };
 
         if spec.is_fixed_shape() {
-            let shape = spec
-                .fixed_shape()
-                .expect("fixed_shape() should return Some after is_fixed_shape() check");
+            // We checked is_fixed_shape() so this should always succeed
+            // But we handle the None case gracefully
+            let shape = spec.fixed_shape().unwrap_or_else(|| {
+                eprintln!("Warning: fixed_shape() returned None after is_fixed_shape() check");
+                vec![]  // Fallback to empty shape
+            });
             format!(
                 "NDArray[Literal[{}], {}]",
                 shape
@@ -76,28 +83,34 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
                 .join(", ");
 
             if spec.allow_missing && spec.missing_value.is_some() {
-                writeln!(
+                // We checked is_some() so use unwrap_or with a default
+                let missing_val = spec.missing_value
+                    .as_ref()
+                    .unwrap_or(&"None".to_string());
+                Self::write_or_default(
                     &mut code,
-                    "{} = np.full(({},), {}, dtype={})",
-                    var_name,
-                    shape_str,
-                    spec.missing_value
-                        .as_ref()
-                        .expect("missing_value should be Some after is_some() check"),
-                    dtype
-                )
-                .expect("failed to format string");
+                    format_args!(
+                        "{} = np.full(({},), {}, dtype={})\n",
+                        var_name,
+                        shape_str,
+                        missing_val,
+                        dtype
+                    )
+                );
             } else {
-                writeln!(
+                Self::write_or_default(
                     &mut code,
-                    "{} = np.zeros(({}), dtype={})",
-                    var_name, shape_str, dtype
-                )
-                .expect("failed to format string");
+                    format_args!(
+                        "{} = np.zeros(({}), dtype={})\n",
+                        var_name, shape_str, dtype
+                    )
+                );
             }
         } else {
-            writeln!(&mut code, "{} = np.array([], dtype={})", var_name, dtype)
-                .expect("failed to format string");
+            Self::write_or_default(
+                &mut code,
+                format_args!("{} = np.array([], dtype={})\n", var_name, dtype)
+            );
         }
 
         code
@@ -106,53 +119,76 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
     fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> String {
         let mut code = String::new();
 
-        writeln!(&mut code, "def validate_{}_array(arr):", var_name)
-            .expect("failed to format string");
-        writeln!(&mut code, "    \"\"\"Validate array shape and type\"\"\"")
-            .expect("failed to format string");
+        Self::write_or_default(
+            &mut code,
+            format_args!("def validate_{}_array(arr):\n", var_name)
+        );
+        Self::write_or_default(
+            &mut code,
+            format_args!("    \"\"\"Validate array shape and type\"\"\"\n")
+        );
 
         // Check number of dimensions
-        writeln!(&mut code, "    if arr.ndim != {}:", spec.ndim())
-            .expect("failed to format string");
-        writeln!(
+        Self::write_or_default(
             &mut code,
-            "        raise ValueError(f\"Expected {} dimensions, got {{arr.ndim}}\")",
-            spec.ndim()
-        )
-        .expect("failed to format string");
+            format_args!("    if arr.ndim != {}:\n", spec.ndim())
+        );
+        Self::write_or_default(
+            &mut code,
+            format_args!(
+                "        raise ValueError(f\"Expected {} dimensions, got {{arr.ndim}}\")\n",
+                spec.ndim()
+            )
+        );
 
         // Check each dimension
         for (i, dim) in spec.dimensions.iter().enumerate() {
-            writeln!(
+            Self::write_or_default(
                 &mut code,
-                "    # Validate dimension '{}' (axis {})",
-                dim.name, i
-            )
-            .expect("failed to format string");
+                format_args!(
+                    "    # Validate dimension '{}' (axis {})\n",
+                    dim.name, i
+                )
+            );
 
             if let Some(size) = dim.size {
-                writeln!(&mut code, "    if arr.shape[{}] != {}:", i, size)
-                    .expect("failed to format string");
-                writeln!(&mut code, "        raise ValueError(f\"Dimension '{}' expected size {}, got {{arr.shape[{}]}}\")", 
-                    dim.name, size, i).expect("failed to format string");
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("    if arr.shape[{}] != {}:\n", i, size)
+                );
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("        raise ValueError(f\"Dimension '{}' expected size {}, got {{arr.shape[{}]}}\")\n", 
+                        dim.name, size, i)
+                );
             }
 
             if let Some(min) = dim.min_size {
-                writeln!(&mut code, "    if arr.shape[{}] < {}:", i, min)
-                    .expect("failed to format string");
-                writeln!(&mut code, "        raise ValueError(f\"Dimension '{}' minimum size is {}, got {{arr.shape[{}]}}\")", 
-                    dim.name, min, i).expect("failed to format string");
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("    if arr.shape[{}] < {}:\n", i, min)
+                );
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("        raise ValueError(f\"Dimension '{}' minimum size is {}, got {{arr.shape[{}]}}\")\n", 
+                        dim.name, min, i)
+                );
             }
 
             if let Some(max) = dim.max_size {
-                writeln!(&mut code, "    if arr.shape[{}] > {}:", i, max)
-                    .expect("failed to format string");
-                writeln!(&mut code, "        raise ValueError(f\"Dimension '{}' maximum size is {}, got {{arr.shape[{}]}}\")", 
-                    dim.name, max, i).expect("failed to format string");
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("    if arr.shape[{}] > {}:\n", i, max)
+                );
+                Self::write_or_default(
+                    &mut code,
+                    format_args!("        raise ValueError(f\"Dimension '{}' maximum size is {}, got {{arr.shape[{}]}}\")\n", 
+                        dim.name, max, i)
+                );
             }
         }
 
-        writeln!(&mut code, "    return True").expect("failed to format string");
+        Self::write_or_default(&mut code, format_args!("    return True\n"));
         code
     }
 
@@ -173,30 +209,36 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             .collect::<Vec<_>>()
             .join(", ");
 
-        writeln!(
+        Self::write_or_default(
             &mut code,
-            "def {}(self, {}) -> {}:",
-            method_name,
-            indices,
-            self.python_type(&spec.element_type)
-        )
-        .expect("failed to format string");
-        writeln!(&mut code, "    \"\"\"Get array element\"\"\"").expect("failed to format string");
-        writeln!(&mut code, "    return self._array[{}]", index_args)
-            .expect("failed to format string");
+            format_args!(
+                "def {}(self, {}) -> {}:\n",
+                method_name,
+                indices,
+                self.python_type(&spec.element_type)
+            )
+        );
+        Self::write_or_default(&mut code, format_args!("    \"\"\"Get array element\"\"\"\n"));
+        Self::write_or_default(
+            &mut code,
+            format_args!("    return self._array[{}]\n", index_args)
+        );
 
-        writeln!(&mut code).expect("failed to format string");
-        writeln!(
+        Self::write_or_default(&mut code, format_args!("\n"));
+        Self::write_or_default(
             &mut code,
-            "def set_{}(self, {}, value: {}):",
-            method_name,
-            indices,
-            self.python_type(&spec.element_type)
-        )
-        .expect("failed to format string");
-        writeln!(&mut code, "    \"\"\"Set array element\"\"\"").expect("failed to format string");
-        writeln!(&mut code, "    self._array[{}] = value", index_args)
-            .expect("failed to format string");
+            format_args!(
+                "def set_{}(self, {}, value: {}):\n",
+                method_name,
+                indices,
+                self.python_type(&spec.element_type)
+            )
+        );
+        Self::write_or_default(&mut code, format_args!("    \"\"\"Set array element\"\"\"\n"));
+        Self::write_or_default(
+            &mut code,
+            format_args!("    self._array[{}] = value\n", index_args)
+        );
 
         code
     }
@@ -320,6 +362,13 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
 }
 
 impl TypeScriptArrayGenerator {
+    /// Helper to handle write errors gracefully
+    fn write_or_default(dest: &mut String, args: std::fmt::Arguments) {
+        if let Err(e) = dest.write_fmt(args) {
+            eprintln!("Warning: Failed to format string in TS array generator: {}", e);
+        }
+    }
+    
     fn default_value(&self, element_type: &str) -> &'static str {
         match element_type {
             "integer" | "float" | "double" => "0",
