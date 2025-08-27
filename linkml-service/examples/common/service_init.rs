@@ -281,11 +281,15 @@ mod mock_services {
 ///
 /// This creates a fully functional LinkML service using mock implementations
 /// of RootReal services, suitable for demonstration and testing purposes.
-pub async fn initialize_example_service() -> Arc<
-    LinkMLServiceImpl<MockTaskManager, MockErrorHandler, MockConfigService, MockDBMS, MockTimeout>,
-> {
-    // Create mock services
-    let logger = Arc::new(MockLogger);
+pub async fn initialize_example_service() -> Result<Arc<
+    LinkMLServiceImpl<MockTaskManager, MockErrorHandler, MockConfigService, MockDBMS, MockTimeout>
+>, Box<dyn std::error::Error>> {
+    // Create real logger service
+    let logger = {
+        use logger_service::factory::create_development_logger;
+        let logger = create_development_logger().await.expect("Failed to create logger");
+        Arc::new(logger) as Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>
+    };
     let timestamp = Arc::new(MockTimestamp);
     let cache = Arc::new(MockCache::new());
     let monitor = Arc::new(MockMonitor);
@@ -319,5 +323,5 @@ pub async fn initialize_example_service() -> Arc<
         .await
         .expect("Failed to initialize LinkML service");
 
-    Arc::new(service)
+    Ok(Arc::new(service))
 }

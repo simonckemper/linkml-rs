@@ -53,7 +53,6 @@ pub struct StringBuffer {
 
 impl StringBuffer {
     /// Get a mutable reference to the string
-    #[allow(clippy::should_implement_trait)]
     pub fn as_mut(&mut self) -> &mut String {
         &mut self.buffer
     }

@@ -725,7 +725,6 @@ impl ExcelGenerator {
     }
 
     /// DEPRECATED: Generate validation information sheet
-    #[allow(dead_code)]
     fn generate_validation_sheet(
         &self,
         workbook: &mut Workbook,

@@ -38,9 +38,7 @@ pub struct InteractiveSession<S> {
 }
 
 /// Interactive session configuration
-#[derive(Debug, Clone)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct InteractiveConfig {
+#[derive(Debug, Clone)]pub struct InteractiveConfig {
     /// History file path
     pub history_file: Option<PathBuf>,
     /// Maximum history entries

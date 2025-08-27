@@ -197,7 +197,7 @@ impl StringInterner {
             total_strings,
             total_bytes,
             average_length: if total_strings > 0 {
-                #[allow(clippy::cast_precision_loss)]
+                // Precision loss acceptable here
                 let avg = total_bytes as f64 / total_strings as f64;
                 avg
             } else {

@@ -27,9 +27,7 @@ use crate::namespace::CurieResolver;
 use crate::schema_view::SchemaView;
 
 /// Options for validation
-#[derive(Default)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct ValidationOptions {
+#[derive(Default)]pub struct ValidationOptions {
     /// Maximum depth for recursive validation
     pub max_depth: Option<usize>,
     /// Whether to fail fast on first error

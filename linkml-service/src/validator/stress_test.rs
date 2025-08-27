@@ -17,9 +17,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
 
 /// Stress test configuration
-#[derive(Debug, Clone)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct StressTestConfig {
+#[derive(Debug, Clone)]pub struct StressTestConfig {
     /// Number of concurrent operations
     pub concurrency: usize,
     /// Total number of operations
@@ -367,9 +365,9 @@ impl StressTestRunner {
     ) -> StressTestResults {
         let total_ops = results.len();
         let successful_ops = results.iter().filter(|r| r.success).count();
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let throughput = total_ops as f64 / total_duration.as_secs_f64();
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let success_rate = successful_ops as f64 / total_ops as f64;
 
         // Calculate latency percentiles

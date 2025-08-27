@@ -400,7 +400,6 @@ impl RdfLoader {
     }
 
     /// Convert term to string (reserved for future RDF-star support)
-    #[allow(dead_code)]
     fn _term_to_string(&self, term: &Term) -> String {
         match term {
             Term::NamedNode(n) => n.as_str().to_string(),

@@ -350,9 +350,7 @@ enum PatternComponent {
 
 impl CacheKeyPattern {
     /// Create a pattern from string
-    #[must_use]
-    #[allow(clippy::should_implement_trait)]
-    pub fn from_str(pattern: &str) -> Self {
+    #[must_use]    pub fn from_str(pattern: &str) -> Self {
         let components = pattern
             .split(':')
             .map(|part| {

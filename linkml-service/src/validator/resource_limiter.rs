@@ -368,7 +368,7 @@ impl ResourceLimiter {
             .filter(|u| now.duration_since(u.timestamp) <= window)
             .count();
 
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let result = count as f64 / window.as_secs_f64();
         result
     }
@@ -403,7 +403,7 @@ impl ResourceLimiter {
         let avg_memory =
             window_history.iter().map(|u| u.memory_bytes).sum::<usize>() / window_history.len();
 
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let avg_cpu =
             window_history.iter().map(|u| u.cpu_percent).sum::<f32>() / window_history.len() as f32;
 

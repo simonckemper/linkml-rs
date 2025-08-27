@@ -68,7 +68,6 @@ pub struct MultiLayerCache {
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,
     /// Background tasks handle  
-    #[allow(dead_code)]
     background_handle: Option<Arc<tokio::task::JoinHandle<()>>>,
 }
 
@@ -100,7 +99,7 @@ pub struct CacheStats {
 impl CacheStats {
     /// Calculate overall hit rate
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
+    // Precision loss acceptable here
     pub fn hit_rate(&self) -> f64 {
         let total_hits = self.l1_hits + self.l2_hits + self.l3_hits;
         let total_accesses = self.total_gets;
@@ -183,9 +182,7 @@ impl MultiLayerCache {
         })
     }
 
-    /// Get a validator from the cache
-    #[allow(clippy::await_holding_lock)]
-    pub async fn get(&self, key: &ValidatorCacheKey) -> Option<Arc<CompiledValidator>> {
+    /// Get a validator from the cache    pub async fn get(&self, key: &ValidatorCacheKey) -> Option<Arc<CompiledValidator>> {
         let start = Instant::now();
         let mut stats = self.stats.write();
         stats.total_gets += 1;
@@ -278,9 +275,7 @@ impl MultiLayerCache {
     ///
     /// # Errors
     ///
-    /// Returns an error if cache operations fail.
-    #[allow(clippy::unused_async)]
-    pub async fn put(
+    /// Returns an error if cache operations fail.    pub async fn put(
         &self,
         key: ValidatorCacheKey,
         validator: Arc<CompiledValidator>,

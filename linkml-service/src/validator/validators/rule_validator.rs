@@ -15,7 +15,6 @@ pub struct RuleValidator {
     /// The rule engine
     rule_engine: Arc<RuleEngine>,
     /// Execution strategy
-    #[allow(dead_code)]
     strategy: RuleExecutionStrategy,
 }
 

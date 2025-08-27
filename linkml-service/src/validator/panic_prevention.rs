@@ -18,9 +18,7 @@ use std::thread;
 use std::time::Duration;
 
 /// Panic prevention configuration
-#[derive(Debug, Clone)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct PanicPreventionConfig {
+#[derive(Debug, Clone)]pub struct PanicPreventionConfig {
     /// Enable panic catching
     pub catch_panics: bool,
     /// Maximum recursion depth

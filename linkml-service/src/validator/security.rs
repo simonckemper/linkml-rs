@@ -17,9 +17,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// Security configuration
-#[derive(Debug, Clone)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct SecurityConfig {
+#[derive(Debug, Clone)]pub struct SecurityConfig {
     /// Enable input sanitization
     pub sanitize_input: bool,
     /// Maximum allowed path depth

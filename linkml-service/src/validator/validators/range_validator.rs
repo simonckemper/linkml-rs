@@ -116,7 +116,7 @@ impl Validator for RangeValidator {
             if let Some(n) = v.as_f64() {
                 self.validate_range(n, slot, path)
             } else if let Some(n) = v.as_i64() {
-                #[allow(clippy::cast_precision_loss)]
+                // Precision loss acceptable here
                 let n_f64 = n as f64;
                 self.validate_range(n_f64, slot, path)
             } else if !v.is_null() {

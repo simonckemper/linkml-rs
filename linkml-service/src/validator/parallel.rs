@@ -330,7 +330,7 @@ impl StreamValidationResult {
         if self.duration_ms == 0 {
             0.0
         } else {
-            #[allow(clippy::cast_precision_loss)]
+            // Precision loss acceptable here
             let result = (self.items_processed as f64 * 1000.0) / self.duration_ms as f64;
             result
         }

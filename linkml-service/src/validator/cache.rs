@@ -123,7 +123,7 @@ pub struct CacheStats {
 impl CacheStats {
     /// Calculate cache hit rate
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
+    // Precision loss acceptable here
     pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
         if total == 0 {
@@ -220,9 +220,7 @@ impl CompiledValidatorCache {
     ///
     /// Returns a `LinkMLError` if:
     /// - Serialization fails
-    /// - Cache operations fail
-    #[allow(clippy::unused_async)]
-    pub async fn put(
+    /// - Cache operations fail    pub async fn put(
         &self,
         key: ValidatorCacheKey,
         validator: CompiledValidator,
@@ -265,9 +263,7 @@ impl CompiledValidatorCache {
     ///
     /// # Errors
     ///
-    /// Returns a `LinkMLError` if cache clearing fails
-    #[allow(clippy::unused_async)]
-    pub async fn clear(&self) -> LinkMLResult<()> {
+    /// Returns a `LinkMLError` if cache clearing fails    pub async fn clear(&self) -> LinkMLResult<()> {
         {
             let mut cache = self.local_cache.write();
             cache.clear();
@@ -327,7 +323,6 @@ impl CompiledValidatorCache {
     }
 
     /// Estimate memory usage of a validator
-    #[allow(dead_code)]
     fn estimate_validator_memory(validator: &CompiledValidator) -> usize {
         // Basic estimation - would need more sophisticated calculation
         std::mem::size_of::<CompiledValidator>()

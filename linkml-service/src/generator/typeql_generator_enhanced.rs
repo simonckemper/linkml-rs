@@ -66,7 +66,7 @@ struct SchemaAnalyzer {
 
 /// Type of TypeQL schema element
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
+
 enum TypeQLType {
     Entity,
     Relation,
@@ -76,7 +76,7 @@ enum TypeQLType {
 
 /// Relation role information
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
+
 struct RelationRole {
     name: String,
     players: Vec<String>,

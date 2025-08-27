@@ -42,7 +42,7 @@ pub struct RoleInheritanceResolver {
 
 /// Definition of a role
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
+
 struct RoleDefinition {
     /// Role name
     _name: String,

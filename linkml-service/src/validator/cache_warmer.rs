@@ -251,7 +251,7 @@ impl PredictiveStrategy {
                 continue;
             }
 
-            #[allow(clippy::cast_precision_loss)]
+            // Precision loss acceptable here
             let avg_interval = intervals
                 .iter()
                 .map(std::time::Duration::as_secs_f64)
@@ -336,9 +336,9 @@ impl WarmingStrategy for PredictiveStrategy {
             );
         }
 
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let mean = intervals.iter().sum::<f64>() / intervals.len() as f64;
-        #[allow(clippy::cast_precision_loss)]
+        // Precision loss acceptable here
         let variance =
             intervals.iter().map(|i| (i - mean).powi(2)).sum::<f64>() / intervals.len() as f64;
 

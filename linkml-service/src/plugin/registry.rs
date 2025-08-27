@@ -536,7 +536,7 @@ mod tests {
 }
 
 // Mock logger for testing
-#[allow(dead_code)]
+
 struct MockLogger;
 
 #[async_trait]
