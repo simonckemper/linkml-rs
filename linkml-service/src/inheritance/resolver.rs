@@ -411,7 +411,7 @@ mod tests {
 
         // Resolve inheritance
         let mut resolver = InheritanceResolver::new(&schema);
-        let resolved = resolver.resolve_class("Dog").unwrap();
+        let resolved = resolver.resolve_class("Dog")?;
 
         // Check that slots are inherited
         assert!(resolved.slots.contains(&"name".to_string()));
@@ -450,7 +450,7 @@ mod tests {
 
         // Resolve inheritance
         let mut resolver = InheritanceResolver::new(&schema);
-        let resolved = resolver.resolve_class("Person").unwrap();
+        let resolved = resolver.resolve_class("Person")?;
 
         // Check that all slots are inherited
         assert!(resolved.slots.contains(&"id".to_string())); // From Entity
@@ -496,7 +496,7 @@ mod tests {
 
         // Resolve inheritance
         let mut resolver = InheritanceResolver::new(&schema);
-        let resolved = resolver.resolve_class("D").unwrap();
+        let resolved = resolver.resolve_class("D")?;
 
         // Check that all slots are inherited (A's slot should appear only once)
         assert!(resolved.slots.contains(&"a_slot".to_string()));

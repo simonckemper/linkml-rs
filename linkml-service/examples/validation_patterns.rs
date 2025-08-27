@@ -260,7 +260,7 @@ enums:
         println!("✗ Pattern validation failures:");
         for error in &report.errors {
             if error.field.is_some() {
-                println!("  - {}: {}", error.field.as_ref().unwrap(), error.message);
+                println!("  - {}: {}", error.field.as_ref()?, error.message);
             }
         }
     }

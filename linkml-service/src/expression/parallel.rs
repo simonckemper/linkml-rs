@@ -4,6 +4,7 @@
 //! concurrently for improved performance.
 
 use super::{EvaluationError, Expression, ExpressionEngine};
+use anyhow::anyhow;
 use futures::future::join_all;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -100,7 +101,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 let _permit = semaphore
                     .acquire()
                     .await
-                    .expect("semaphore should not be closed");
+                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
 
                 // Parse and evaluate
                 let result = match engine.parse(&expr) {
@@ -198,7 +199,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 let _permit = semaphore
                     .acquire()
                     .await
-                    .expect("semaphore should not be closed");
+                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
 
                 let result = match engine.evaluate_ast(&ast, &context) {
                     Ok(value) => Ok(value),
@@ -268,7 +269,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 let _permit = semaphore
                     .acquire()
                     .await
-                    .expect("semaphore should not be closed");
+                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
                 let result =
                     engine
                         .evaluate_ast(&ast, &context)
@@ -443,9 +444,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref().unwrap(), &json!(2.0));
-        assert_eq!(results[1].as_ref().unwrap(), &json!(4.0));
-        assert_eq!(results[2].as_ref().unwrap(), &json!(6.0));
+        assert_eq!(results[0].as_ref()?, &json!(2.0));
+        assert_eq!(results[1].as_ref()?, &json!(4.0));
+        assert_eq!(results[2].as_ref()?, &json!(6.0));
     }
 
     #[tokio::test]
@@ -464,9 +465,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref().unwrap(), &json!(50.0));
-        assert_eq!(results[1].as_ref().unwrap(), &json!(60.0));
-        assert_eq!(results[2].as_ref().unwrap(), &json!(60.0));
+        assert_eq!(results[0].as_ref()?, &json!(50.0));
+        assert_eq!(results[1].as_ref()?, &json!(60.0));
+        assert_eq!(results[2].as_ref()?, &json!(60.0));
 
         // Test map-reduce
         let total = batch
@@ -477,7 +478,7 @@ mod tests {
                 &HashMap::new(),
             )
             .await
-            .unwrap();
+            ?;
 
         assert_eq!(total, json!(170.0));
     }

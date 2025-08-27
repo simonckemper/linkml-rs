@@ -1,6 +1,7 @@
 //! HTML documentation generation for `LinkML` schemas
 
 use super::options::IndentStyle;
+use anyhow::anyhow;
 use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::prelude::*;
 use std::fmt::Write;
@@ -871,7 +872,7 @@ mod tests {
 
         let html = generator
             .generate(&schema)
-            .expect("should generate HTML output");
+            .map_err(|e| anyhow::anyhow!("should generate HTML output": {}, e))?;
 
         // Check basic structure
         assert!(html.contains("<!DOCTYPE html>"));

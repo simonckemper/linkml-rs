@@ -4,6 +4,7 @@
 //! RootReal's Parse Service, avoiding direct file system access.
 
 use super::traits::{DataLoader, LoaderError, LoaderResult, DataInstance};
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use async_trait::async_trait;
 use serde_json::{Value, Map};
@@ -164,7 +165,7 @@ fn process_mixed_content(
     for (name, mut values) in elements_by_name {
         if values.len() == 1 {
             // Safe to use expect here because we just checked length is 1
-            data.insert(name, values.into_iter().next().expect("values should have exactly one element"));
+            data.insert(name, values.into_iter().next().map_err(|e| anyhow::anyhow!("values should have exactly one element": {}, e))?);
         } else {
             data.insert(name, Value::Array(values));
         }

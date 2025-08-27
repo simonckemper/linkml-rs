@@ -4,6 +4,7 @@
 //! enabling interoperability between different ontologies and vocabularies.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use chrono::Local;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
@@ -470,7 +471,7 @@ mod tests {
         // Test TSV generation
         let config = SssomGeneratorConfig::default();
         let generator = SssomGenerator::new(config);
-        let result = generator.generate(&schema).expect("should generate SSSOM");
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate SSSOM": {}, e))?;
 
         // Should contain header even with no mappings
         assert!(result.contains("subject_id\tsubject_label\tpredicate_id"));

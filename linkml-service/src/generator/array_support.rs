@@ -4,6 +4,7 @@
 //! in various programming languages.
 
 use crate::array::ArraySpec;
+use anyhow::anyhow;
 use std::fmt::Write;
 
 /// Language-specific array code generation
@@ -295,7 +296,7 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
                     .join(", "),
                 self.default_value(&spec.element_type)
             )
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         } else {
             writeln!(
                 &mut code,
@@ -303,7 +304,7 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
                 var_name,
                 self.generate_array_type(spec, "")
             )
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         }
 
         code
@@ -317,20 +318,20 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
             "function validate{}Array(arr: any): boolean {{",
             capitalize_first(var_name)
         )
-        .expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         writeln!(&mut code, "  if (!Array.isArray(arr)) return false;")
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         // For fixed dimensions, generate recursive validation
         if spec.is_fixed_shape() {
             let shape = spec
                 .fixed_shape()
-                .expect("fixed_shape() should return Some after is_fixed_shape() check");
+                .map_err(|e| anyhow::anyhow!("Error: {}", e))? should return Some after is_fixed_shape() check");
             self.generate_shape_validation(&mut code, &shape, 0, "arr");
         }
 
-        writeln!(&mut code, "  return true;").expect("failed to format string");
-        writeln!(&mut code, "}}").expect("failed to format string");
+        writeln!(&mut code, "  return true;").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         code
     }
@@ -353,9 +354,9 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
             .join("");
 
         writeln!(&mut code, "{}<T>({}): T {{", method_name, params)
-            .expect("failed to format string");
-        writeln!(&mut code, "  return this.array{};", indices).expect("failed to format string");
-        writeln!(&mut code, "}}").expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "  return this.array{};", indices).map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         code
     }
@@ -393,7 +394,7 @@ impl TypeScriptArrayGenerator {
                 var,
                 shape[depth]
             )
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
             if depth < shape.len() - 1 {
                 writeln!(
@@ -402,19 +403,19 @@ impl TypeScriptArrayGenerator {
                     "  ".repeat(depth + 1),
                     var
                 )
-                .expect("failed to format string");
+                .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
                 writeln!(
                     code,
                     "{}if (!Array.isArray({}[i])) return false;",
                     "  ".repeat(depth + 2),
                     var
                 )
-                .expect("failed to format string");
+                .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
                 let next_var = format!("{}[i]", var);
                 self.generate_shape_validation(code, shape, depth + 1, &next_var);
 
-                writeln!(code, "{}}}", "  ".repeat(depth + 1)).expect("failed to format string");
+                writeln!(code, "{}}}", "  ".repeat(depth + 1)).map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
             }
         }
     }
@@ -467,7 +468,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
                 self.generate_array_type(spec, ""),
                 shape_str
             )
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         } else {
             writeln!(
                 &mut code,
@@ -475,7 +476,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
                 var_name,
                 self.generate_array_type(spec, "")
             )
-            .expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         }
 
         code
@@ -485,33 +486,33 @@ impl ArrayCodeGenerator for RustArrayGenerator {
         let mut code = String::new();
 
         writeln!(&mut code, "impl {} {{", capitalize_first(var_name))
-            .expect("failed to format string");
-        writeln!(&mut code, "    /// Validate array dimensions").expect("failed to format string");
+            .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "    /// Validate array dimensions").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         writeln!(
             &mut code,
             "    pub fn validate_array(&self) -> Result<(), ArrayError> {{"
         )
-        .expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         writeln!(
             &mut code,
             "        if self.array.ndim() != {} {{",
             spec.ndim()
         )
-        .expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         writeln!(
             &mut code,
             "            return Err(ArrayError::InvalidShape("
         )
-        .expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
         writeln!(
             &mut code,
             "                format!(\"Expected {} dimensions, got {{}}\", self.array.ndim())",
             spec.ndim()
         )
-        .expect("failed to format string");
-        writeln!(&mut code, "            ));").expect("failed to format string");
-        writeln!(&mut code, "        }}").expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "            ));").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "        }}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         for (i, dim) in spec.dimensions.iter().enumerate() {
             if let Some(size) = dim.size {
@@ -520,28 +521,28 @@ impl ArrayCodeGenerator for RustArrayGenerator {
                     "        if self.array.shape()[{}] != {} {{",
                     i, size
                 )
-                .expect("failed to format string");
+                .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
                 writeln!(
                     &mut code,
                     "            return Err(ArrayError::ShapeMismatch {{"
                 )
-                .expect("failed to format string");
+                .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
                 writeln!(&mut code, "                expected: vec![{}],", size)
-                    .expect("failed to format string");
+                    .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
                 writeln!(
                     &mut code,
                     "                actual: vec![self.array.shape()[{}]],",
                     i
                 )
-                .expect("failed to format string");
-                writeln!(&mut code, "            }});").expect("failed to format string");
-                writeln!(&mut code, "        }}").expect("failed to format string");
+                .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+                writeln!(&mut code, "            }});").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+                writeln!(&mut code, "        }}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
             }
         }
 
-        writeln!(&mut code, "        Ok(())").expect("failed to format string");
-        writeln!(&mut code, "    }}").expect("failed to format string");
-        writeln!(&mut code, "}}").expect("failed to format string");
+        writeln!(&mut code, "        Ok(())").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "    }}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         code
     }
@@ -573,9 +574,9 @@ impl ArrayCodeGenerator for RustArrayGenerator {
             "pub fn {}(&self, {}) -> {} {{",
             method_name, params, return_type
         )
-        .expect("failed to format string");
-        writeln!(&mut code, "    self.array[[{}]]", indices).expect("failed to format string");
-        writeln!(&mut code, "}}").expect("failed to format string");
+        .map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "    self.array[[{}]]", indices).map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
+        writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string": {}, e))?;
 
         code
     }

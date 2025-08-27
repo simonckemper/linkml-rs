@@ -387,7 +387,7 @@ pub struct Loan {
 impl Book {
     pub fn validate(&self) -> Result<(), ValidationError> {
         // Validate ISBN pattern
-        let isbn_regex = regex::Regex::new(r"^(97[89])?\d{10}$").unwrap();
+        let isbn_regex = regex::Regex::new(r"^(97[89])?\d{10}$")?;
         if !isbn_regex.is_match(&self.isbn) {
             return Err(ValidationError::PatternMismatch {
                 field: "isbn".to_string(),

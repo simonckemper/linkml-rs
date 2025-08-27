@@ -308,8 +308,8 @@ mod tests {
         let monitor = Arc::new(ResourceMonitor::new(limits));
 
         // Start two ops (should succeed)
-        let _guard1 = monitor.start_parallel_op().unwrap();
-        let _guard2 = monitor.start_parallel_op().unwrap();
+        let _guard1 = monitor.start_parallel_op()?;
+        let _guard2 = monitor.start_parallel_op()?;
 
         // Third should fail
         assert!(matches!(
@@ -321,6 +321,6 @@ mod tests {
         drop(_guard1);
 
         // Now we can start another
-        let _guard3 = monitor.start_parallel_op().unwrap();
+        let _guard3 = monitor.start_parallel_op()?;
     }
 }

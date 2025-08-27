@@ -1,6 +1,7 @@
 //! JavaScript (ES6) code generator for LinkML schemas
 
 use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
+use anyhow::anyhow;
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::{error::LinkMLError, prelude::*};
@@ -650,7 +651,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate JavaScript");
+            .map_err(|e| anyhow::anyhow!("should generate JavaScript": {}, e))?;
         assert!(output.contains("export class Person"));
         assert!(output.contains("constructor(data = {})"));
         assert!(output.contains("#validate(data)"));

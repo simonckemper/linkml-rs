@@ -5,6 +5,7 @@
 //! evaluation process.
 
 use linkml_core::error::Result;
+use anyhow::anyhow;
 use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
@@ -260,7 +261,7 @@ mod tests {
             ..Default::default()
         };
 
-        CompiledRule::compile(rule, "Person".to_string()).expect("should compile test rule")
+        CompiledRule::compile(rule, "Person".to_string()).map_err(|e| anyhow::anyhow!("should compile test rule": {}, e))?
     }
 
     #[test]
@@ -281,7 +282,7 @@ mod tests {
 
         let issues = executor
             .execute_single_rule(&rule, &mut context)
-            .expect("should execute rule");
+            .map_err(|e| anyhow::anyhow!("should execute rule": {}, e))?;
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("required"));
 
@@ -299,7 +300,7 @@ mod tests {
 
         let issues2 = executor
             .execute_single_rule(&rule, &mut context2)
-            .expect("should execute rule for adult with ID");
+            .map_err(|e| anyhow::anyhow!("should execute rule for adult with ID": {}, e))?;
         assert!(issues2.is_empty());
 
         // Test with minor (rule shouldn't apply)
@@ -315,7 +316,7 @@ mod tests {
 
         let issues3 = executor
             .execute_single_rule(&rule, &mut context3)
-            .expect("should execute rule for minor");
+            .map_err(|e| anyhow::anyhow!("should execute rule for minor": {}, e))?;
         assert!(issues3.is_empty());
     }
 
@@ -337,7 +338,7 @@ mod tests {
         // Test different strategies
         let sequential_issues = executor
             .execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential)
-            .expect("should execute rules sequentially");
+            .map_err(|e| anyhow::anyhow!("should execute rules sequentially": {}, e))?;
         assert_eq!(sequential_issues.len(), 1);
 
         let mut validation_ctx2 = ValidationContext::new(Default::default());
@@ -351,7 +352,7 @@ mod tests {
         );
         let fail_fast_issues = executor
             .execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast)
-            .expect("should execute rules with fail-fast");
+            .map_err(|e| anyhow::anyhow!("should execute rules with fail-fast": {}, e))?;
         assert_eq!(fail_fast_issues.len(), 1);
     }
 }

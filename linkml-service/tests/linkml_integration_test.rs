@@ -23,6 +23,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
+use crate::factory::{create_logger_service};
 
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -510,7 +511,7 @@ enums:
 // TODO: Fix mock service implementations - need proper trait implementations
 // /// Helper function to create a test service with all dependencies
 // async fn create_test_service() -> Arc<dyn LinkMLService> {
-//     let logger = Arc::new(MockLoggerService::new());
+//     let logger = Arc::new(Mockcreate_logger_service());
 //     let timestamp = Arc::new(MockTimestampService);
 //     let task_manager = Arc::new(MockTaskManagementService);
 //     let error_handler = Arc::new(MockErrorHandlerService);
@@ -1656,7 +1657,7 @@ async fn test_configuration_management_system() {
         ..Default::default()
     };
 
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

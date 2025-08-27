@@ -1,6 +1,7 @@
 //! `TypeQL` generation implementation for `TypeDB` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
+use anyhow::anyhow;
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
 };
@@ -535,7 +536,7 @@ mod tests {
         let options = GeneratorOptions::new();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .expect("Failed to generate TypeQL");
+            .map_err(|e| anyhow::anyhow!("Failed to generate TypeQL": {}, e))?;
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("person sub entity"));

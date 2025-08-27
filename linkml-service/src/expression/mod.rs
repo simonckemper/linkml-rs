@@ -22,6 +22,7 @@ pub mod parallel;
 pub mod vm;
 
 use linkml_core::error::Result;
+use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -100,10 +101,10 @@ mod tests {
         // Test that engine can parse and evaluate
         let expr = engine
             .parse("1 + 2")
-            .expect("should parse simple expression");
+            .map_err(|e| anyhow::anyhow!("should parse simple expression": {}, e))?;
         let result = engine
             .evaluate_ast(&expr, &HashMap::new())
-            .expect("should evaluate simple expression");
+            .map_err(|e| anyhow::anyhow!("should evaluate simple expression": {}, e))?;
         assert_eq!(result, serde_json::json!(3.0));
     }
 }

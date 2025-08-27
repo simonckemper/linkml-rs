@@ -4,6 +4,7 @@
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition as Prefix, SchemaDefinition as Schema};
 
@@ -1091,7 +1092,7 @@ mod tests {
         let generator = NamespaceManagerGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .expect("should generate namespace manager");
+            .map_err(|e| anyhow::anyhow!("should generate namespace manager": {}, e))?;
 
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));

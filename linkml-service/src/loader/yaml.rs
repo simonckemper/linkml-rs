@@ -3,6 +3,7 @@
 //! This module provides functionality to load and dump LinkML data in YAML format.
 
 use super::traits::{
+use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
     LoaderError, LoaderResult,
 };
@@ -245,8 +246,8 @@ impl DataDumper for YamlDumper {
                 // Convert to YAML value
                 let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
                 let json_str =
-                    serde_json::to_string(&json_obj).expect("valid JSON object should serialize");
-                serde_yaml::from_str(&json_str).expect("valid JSON should parse as YAML")
+                    serde_json::to_string(&json_obj).map_err(|e| anyhow::anyhow!("valid JSON object should serialize": {}, e))?;
+                serde_yaml::from_str(&json_str).map_err(|e| anyhow::anyhow!("valid JSON should parse as YAML": {}, e))?
             })
             .collect();
 
@@ -291,8 +292,8 @@ emails:
 "#;
 
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().expect("should create temporary file");
-        std::fs::write(temp_file.path(), yaml_content).expect("should write YAML content");
+        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file": {}, e))?;
+        std::fs::write(temp_file.path(), yaml_content).map_err(|e| anyhow::anyhow!("should write YAML content": {}, e))?;
 
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
@@ -304,7 +305,7 @@ emails:
         let instances = loader
             .load_file(temp_file.path(), &schema, &options)
             .await
-            .expect("should load YAML instances");
+            .map_err(|e| anyhow::anyhow!("should load YAML instances": {}, e))?;
 
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -316,7 +317,7 @@ emails:
             instances[0]
                 .data
                 .get("emails")
-                .expect("should have emails field")
+                .map_err(|e| anyhow::anyhow!("should have emails field": {}, e))?
                 .is_array()
         );
     }
@@ -342,9 +343,9 @@ emails:
         let yaml_str = dumper
             .dump_string(&instances, &schema, &options)
             .await
-            .expect("should dump instances to YAML");
+            .map_err(|e| anyhow::anyhow!("should dump instances to YAML": {}, e))?;
         let parsed: serde_yaml::Value =
-            serde_yaml::from_str(&yaml_str).expect("should parse dumped YAML");
+            serde_yaml::from_str(&yaml_str).map_err(|e| anyhow::anyhow!("should parse dumped YAML": {}, e))?;
 
         assert_eq!(parsed["@type"], "Person");
         assert_eq!(parsed["name"], "Alice");

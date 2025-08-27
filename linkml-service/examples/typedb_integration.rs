@@ -308,7 +308,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "birth_date": "1985-03-15",
                 "age": 39
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Person".to_string(),
@@ -319,7 +319,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "birth_date": "1990-07-22",
                 "age": 34
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Organization".to_string(),
@@ -329,7 +329,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "founded_date": "2010-01-01",
                 "industry": "Technology"
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Employment".to_string(),
@@ -345,7 +345,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "start_date": "2020-06-01",
                 "role": "Senior Engineer"
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Friendship".to_string(),
@@ -360,7 +360,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 },
                 "since_date": "2018-09-15"
             }))
-            .unwrap(),
+            ?,
         },
     ]
 }

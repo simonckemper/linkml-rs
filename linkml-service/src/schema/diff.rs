@@ -3,6 +3,7 @@
 //! This module provides tools to compare schemas and identify differences.
 
 use linkml_core::annotations::{Annotatable, standard_annotations};
+use anyhow::anyhow;
 use linkml_core::error::Result;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -852,14 +853,14 @@ mod tests {
         schema2
             .classes
             .get_mut("Person")
-            .expect("Person class should exist")
+            .map_err(|e| anyhow::anyhow!("Person class should exist": {}, e))?
             .slots
             .push("email".to_string());
 
         let differ = SchemaDiff::new(DiffOptions::default());
         let result = differ
             .diff(&schema1, &schema2)
-            .expect("should diff schemas");
+            .map_err(|e| anyhow::anyhow!("should diff schemas": {}, e))?;
 
         assert_eq!(result.added_classes, vec!["Car"]);
         assert!(result.removed_classes.is_empty());

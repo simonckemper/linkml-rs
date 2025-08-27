@@ -9,6 +9,7 @@
 //! - Audit logging
 
 use dashmap::DashMap;
+use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -330,7 +331,7 @@ impl InjectionPrevention {
 
         for pattern in &dangerous_patterns {
             let re =
-                regex::Regex::new(pattern).expect("SQL injection pattern should be valid regex");
+                regex::Regex::new(pattern).map_err(|e| anyhow::anyhow!("SQL injection pattern should be valid regex": {}, e))?;
             if re.is_match(query) {
                 return Err(LinkMLError::service(
                     "Query contains potential SQL injection pattern",
@@ -430,15 +431,15 @@ impl SensitiveDataHandler {
     pub fn new(config: SecurityConfig) -> Self {
         let patterns = vec![
             regex::Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+")
-                .expect("password pattern regex"),
+                .map_err(|e| anyhow::anyhow!("password pattern regex": {}, e))?,
             regex::Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+")
-                .expect("API key pattern regex"),
+                .map_err(|e| anyhow::anyhow!("API key pattern regex": {}, e))?,
             regex::Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+")
-                .expect("secret/token pattern regex"),
+                .map_err(|e| anyhow::anyhow!("secret/token pattern regex": {}, e))?,
             regex::Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
-                .expect("email pattern regex"),
-            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b").expect("credit card pattern regex"), // Credit card
-            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").expect("SSN pattern regex"), // SSN
+                .map_err(|e| anyhow::anyhow!("email pattern regex": {}, e))?,
+            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b").map_err(|e| anyhow::anyhow!("credit card pattern regex": {}, e))?, // Credit card
+            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").map_err(|e| anyhow::anyhow!("SSN pattern regex": {}, e))?, // SSN
         ];
 
         Self {
@@ -779,14 +780,14 @@ mod tests {
     #[test]
     fn test_input_sanitizer() {
         let config = SecurityConfig::default();
-        let sanitizer = InputSanitizer::new(config).unwrap();
+        let sanitizer = InputSanitizer::new(config)?;
 
         // Normal input
-        assert_eq!(sanitizer.sanitize_string("hello").unwrap(), "hello");
+        assert_eq!(sanitizer.sanitize_string("hello")?, "hello");
 
         // Null bytes removed
         assert_eq!(
-            sanitizer.sanitize_string("hello\0world").unwrap(),
+            sanitizer.sanitize_string("hello\0world")?,
             "helloworld"
         );
 

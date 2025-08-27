@@ -1,6 +1,7 @@
 //! Generator registry for managing available generators
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
+use anyhow::anyhow;
 use crate::plugin::{GeneratorPlugin, PluginManager, PluginType};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -363,13 +364,13 @@ mod tests {
         registry
             .register(generator.clone())
             .await
-            .expect("should register generator");
+            .map_err(|e| anyhow::anyhow!("should register generator": {}, e))?;
 
         // Should be able to retrieve it
         let retrieved = registry
             .get("test")
             .await
-            .expect("should retrieve generator");
+            .map_err(|e| anyhow::anyhow!("should retrieve generator": {}, e))?;
         assert_eq!(retrieved.name(), "test");
 
         // List should include it
@@ -380,7 +381,7 @@ mod tests {
         let info = registry
             .get_info("test")
             .await
-            .expect("should get generator info");
+            .map_err(|e| anyhow::anyhow!("should get generator info": {}, e))?;
         assert_eq!(info.name, "test");
         assert_eq!(info.description, "Test generator");
 
@@ -388,7 +389,7 @@ mod tests {
         registry
             .unregister("test")
             .await
-            .expect("should unregister generator");
+            .map_err(|e| anyhow::anyhow!("should unregister generator": {}, e))?;
         assert!(registry.get("test").await.is_none());
     }
 
@@ -406,7 +407,7 @@ mod tests {
         registry
             .register(gen1)
             .await
-            .expect("should register first generator");
+            .map_err(|e| anyhow::anyhow!("should register first generator": {}, e))?;
 
         // Second registration should fail
         let result = registry.register(gen2).await;

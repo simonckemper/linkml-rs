@@ -1,6 +1,7 @@
 //! Python dataclass code generator for LinkML schemas
 
 use super::base::{
+use anyhow::anyhow;
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, get_default_value_str,
     is_optional_slot,
 };
@@ -531,7 +532,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate dataclass output");
+            .map_err(|e| anyhow::anyhow!("should generate dataclass output": {}, e))?;
         assert!(output.contains("@dataclass"));
         assert!(output.contains("class Person:"));
         assert!(output.contains("name: str"));

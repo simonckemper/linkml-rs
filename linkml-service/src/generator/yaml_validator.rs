@@ -4,6 +4,7 @@
 //! enabling validation of YAML data against LinkML-defined structures.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
@@ -731,14 +732,14 @@ impl YamlValidatorGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .expect("uppercase char should exist"),
+                        .map_err(|e| anyhow::anyhow!("uppercase char should exist": {}, e))?,
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .expect("lowercase char should exist"),
+                        .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
                 );
             } else {
                 result.push(ch);
@@ -804,7 +805,7 @@ mod tests {
         let generator = YamlValidatorGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .expect("should generate YAML validator");
+            .map_err(|e| anyhow::anyhow!("should generate YAML validator": {}, e))?;
 
         assert!(result.contains("$schema"));
         assert!(result.contains("definitions"));

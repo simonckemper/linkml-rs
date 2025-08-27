@@ -4,6 +4,7 @@
 //! performance by avoiding repeated compilation of the same rules.
 
 use parking_lot::RwLock;
+use anyhow::anyhow;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -240,7 +241,7 @@ mod tests {
             },
             "TestClass".to_string(),
         )
-        .expect("should compile rule")
+        .map_err(|e| anyhow::anyhow!("should compile rule": {}, e))?
     }
 
     #[test]
@@ -256,7 +257,7 @@ mod tests {
         cache.put("TestClass".to_string(), rules.clone());
         assert_eq!(cache.stats().entries, 1);
 
-        let retrieved = cache.get("TestClass").expect("should retrieve cached rule");
+        let retrieved = cache.get("TestClass").map_err(|e| anyhow::anyhow!("should retrieve cached rule": {}, e))?;
         assert_eq!(retrieved.len(), 1);
         assert_eq!(cache.stats().hits, 1);
     }

@@ -4,6 +4,7 @@
 //! and speed up string comparisons during validation.
 
 use dashmap::DashMap;
+use anyhow::anyhow;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -165,8 +166,8 @@ mod tests {
     fn test_basic_interning() {
         let interner = StringInterner::with_defaults();
         
-        let s1 = interner.intern("hello").expect("should intern string");
-        let s2 = interner.intern("hello").expect("should intern same string");
+        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
+        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern same string": {}, e))?;
         
         // Same string should return same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
@@ -191,8 +192,8 @@ mod tests {
     fn test_cache_full() {
         let interner = StringInterner::new(2, 100);
         
-        interner.intern("a").expect("should intern first string");
-        interner.intern("b").expect("should intern second string");
+        interner.intern("a").map_err(|e| anyhow::anyhow!("should intern first string": {}, e))?;
+        interner.intern("b").map_err(|e| anyhow::anyhow!("should intern second string": {}, e))?;
         
         match interner.intern("c") {
             Err(InternError::CacheFull { current, max }) => {

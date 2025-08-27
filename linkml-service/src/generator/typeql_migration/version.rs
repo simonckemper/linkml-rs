@@ -3,6 +3,7 @@
 //! Handles schema versioning, version comparison, and checksum generation.
 
 use chrono::{DateTime, Utc};
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
@@ -174,7 +175,7 @@ mod tests {
     
     #[test]
     fn test_version_parsing() {
-        let v = SchemaVersion::parse("1.2.3").expect("should parse valid version");
+        let v = SchemaVersion::parse("1.2.3").map_err(|e| anyhow::anyhow!("should parse valid version": {}, e))?;
         assert_eq!(v.major, 1);
         assert_eq!(v.minor, 2);
         assert_eq!(v.patch, 3);

@@ -4,6 +4,7 @@
 //! minimizes cloning and uses more efficient collection operations.
 
 use std::sync::{Arc, RwLock};
+use anyhow::anyhow;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -109,8 +110,8 @@ impl ExpressionCacheV2 {
         let key = intern(expression);
         let now = Instant::now();
         
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
         
         // Check if we need to evict
         if cache.len() >= self.capacity {
@@ -155,8 +156,8 @@ impl ExpressionCacheV2 {
     
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
         
         cache.clear();
         *stats = CacheStats::default();
@@ -164,13 +165,13 @@ impl ExpressionCacheV2 {
     
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().expect("stats lock poisoned").clone()
+        self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?.clone()
     }
     
     /// Clean up old entries (optimized version)
     pub fn cleanup(&self) {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
         
         let now = Instant::now();
         
@@ -251,7 +252,7 @@ impl GlobalExpressionCacheV2 {
     pub fn clear(&mut self) {
         self.primary.clear();
         self.hot.clear();
-        self.access_counts.write().expect("access_counts lock poisoned").clear();
+        self.access_counts.write().map_err(|e| anyhow::anyhow!("access_counts lock poisoned": {}, e))?.clear();
     }
 }
 
@@ -282,7 +283,7 @@ impl ThreadSafeGlobalCache {
     {
         self.inner
             .write()
-            .expect("inner cache lock poisoned")
+            .map_err(|e| anyhow::anyhow!("inner cache lock poisoned": {}, e))?
             .get_or_compute(expression, compute)
     }
 }

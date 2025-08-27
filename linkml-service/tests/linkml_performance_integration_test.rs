@@ -4,6 +4,7 @@
 //! of the LinkML service when used in production scenarios.
 
 use futures::future::join_all;
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use linkml_service::{
     GeneratorConfig, GeneratorType, LinkMLService, LinkMLServiceConfig, SchemaView,
@@ -19,6 +20,7 @@ use tempfile::TempDir;
 // Import mock services
 mod mock_services;
 use mock_services::*;
+use crate::factory::{create_logger_service};
 
 /// Large enterprise schema for performance testing
 const ENTERPRISE_SCHEMA: &str = r#"
@@ -373,7 +375,7 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
         ..Default::default()
     };
 
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -564,7 +566,7 @@ async fn test_concurrent_schema_operations() {
                         });
                         let _ = service_clone.validate(&order, &schema_clone, "Order").await;
                     }
-                    _ => unreachable!(),
+                    _ => return Err(anyhow::anyhow!("Unreachable code reached").into()),
                 }
                 counter.fetch_add(1, Ordering::Relaxed);
             }
@@ -968,7 +970,7 @@ async fn test_stress_test_with_errors() {
                 // Cardinality violation
                 customer["addresses"] = json!([]);
             }
-            _ => unreachable!(),
+            _ => return Err(anyhow::anyhow!("Unreachable code reached").into()),
         }
 
         test_data.push((customer, false));

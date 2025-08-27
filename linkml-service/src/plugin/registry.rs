@@ -471,20 +471,20 @@ mod tests {
                 author: None,
                 license: None,
                 homepage: None,
-                linkml_version: VersionReq::parse("*").unwrap(),
+                linkml_version: VersionReq::parse("*")?,
                 dependencies: vec![],
                 capabilities: vec![],
             },
         });
 
-        registry.register(plugin).unwrap();
+        registry.register(plugin)?;
 
         assert!(registry.get("test-plugin").is_some());
         assert_eq!(registry.get_by_type(PluginType::Generator).len(), 1);
 
         // Test that we can access the plugin through the mutex
         if let Some(plugin_mutex) = registry.get("test-plugin") {
-            let plugin = plugin_mutex.lock().unwrap();
+            let plugin = plugin_mutex.lock()?;
             assert_eq!(plugin.info().id, "test-plugin");
         }
     }
@@ -503,34 +503,34 @@ mod tests {
                 author: None,
                 license: None,
                 homepage: None,
-                linkml_version: VersionReq::parse("*").unwrap(),
+                linkml_version: VersionReq::parse("*")?,
                 dependencies: vec![],
                 capabilities: vec![],
             },
         });
 
-        registry.register(plugin).unwrap();
+        registry.register(plugin)?;
 
         // Create a test context
         let context = PluginContext {
             config: HashMap::new(),
-            working_dir: std::env::current_dir().unwrap(),
+            working_dir: std::env::current_dir()?,
             temp_dir: std::env::temp_dir(),
             logger: Arc::new(MockLogger),
         };
 
         // Test initialization
-        registry.initialize_all(context.clone()).await.unwrap();
+        registry.initialize_all(context.clone()).await?;
 
         // Verify plugin is initialized
-        let reg_info = registry.get_registration("lifecycle-test").unwrap();
+        let reg_info = registry.get_registration("lifecycle-test")?;
         assert!(reg_info.initialized);
 
         // Test shutdown
-        registry.shutdown_all().await.unwrap();
+        registry.shutdown_all().await?;
 
         // Verify plugin is shutdown
-        let reg_info = registry.get_registration("lifecycle-test").unwrap();
+        let reg_info = registry.get_registration("lifecycle-test")?;
         assert!(!reg_info.initialized);
     }
 }

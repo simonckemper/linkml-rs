@@ -4,6 +4,7 @@
 //! text-based UML diagramming tool that supports multiple diagram types.
 
 use linkml_core::{error::LinkMLError, prelude::*};
+use anyhow::anyhow;
 use std::collections::HashSet;
 use std::fmt::Write;
 
@@ -588,7 +589,7 @@ impl PlantUmlGenerator {
                     writeln!(
                         &mut output,
                         "{} --> [*]",
-                        states.last().expect("checked states is not empty")
+                        states.last().map_err(|e| anyhow::anyhow!("checked states is not empty": {}, e))?
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -934,7 +935,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate PlantUML");
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
 
         // Check content
         assert!(output.contains("@startuml"));
@@ -953,7 +954,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate PlantUML");
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
 
         assert!(output.contains("!define ENTITY"));
         assert!(output.contains("TABLE(Person)"));
@@ -967,7 +968,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate PlantUML");
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
 
         assert!(output.contains("@startmindmap"));
         assert!(output.contains("@endmindmap"));

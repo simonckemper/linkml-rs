@@ -1,6 +1,7 @@
 //! `OpenAPI` schema generation for `LinkML` schemas
 
 use super::options::IndentStyle;
+use anyhow::anyhow;
 use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::{error::LinkMLError, prelude::*};
 use serde_json::{Value as JsonValue, json};
@@ -731,10 +732,10 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .expect("should generate OpenAPI");
+            .map_err(|e| anyhow::anyhow!("should generate OpenAPI": {}, e))?;
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(&content).expect("should parse as valid JSON");
+        let parsed: JsonValue = serde_json::from_str(&content).map_err(|e| anyhow::anyhow!("should parse as valid JSON": {}, e))?;
 
         // Check basic structure
         assert_eq!(parsed["openapi"], "3.0.3");

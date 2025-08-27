@@ -4,6 +4,7 @@
 //! SHACL is a W3C standard for validating RDF graphs against a set of conditions.
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use anyhow::anyhow;
 use std::collections::HashMap;
 use std::fmt::Write;
 
@@ -372,7 +373,7 @@ impl ShaclGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }

@@ -18,6 +18,7 @@ use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
+use crate::factory::{create_logger_service};
 
 /// Biomedical research schema with complex relationships
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -103,7 +104,7 @@ async fn create_test_service() -> Arc<
         MockTimeoutService,
     >,
 > {
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

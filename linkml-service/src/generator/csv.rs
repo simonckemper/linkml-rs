@@ -4,6 +4,7 @@
 //! flattening the class hierarchy into tabular format.
 
 use super::traits::{Generator, GeneratorResult};
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use std::collections::BTreeMap;
 
@@ -390,7 +391,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
 
-        let result = generator.generate(&schema).expect("should generate CSV");
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate CSV": {}, e))?;
 
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
@@ -406,7 +407,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
 
-        let result = generator.generate(&schema).expect("should generate TSV");
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate TSV": {}, e))?;
 
         assert!(result.contains("=== Person ==="));
         // Slots are in alphabetical order due to BTreeMap

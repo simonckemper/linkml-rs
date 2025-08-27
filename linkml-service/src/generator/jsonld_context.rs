@@ -4,6 +4,7 @@
 //! enabling semantic web integration and linked data capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::{Map, Value, json};
@@ -406,7 +407,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .expect("should generate JSON-LD context");
+            .map_err(|e| anyhow::anyhow!("should generate JSON-LD context": {}, e))?;
 
         // Verify key elements
         assert!(result.contains("@context"));

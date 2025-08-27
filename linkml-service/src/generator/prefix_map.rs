@@ -4,6 +4,7 @@
 //! enabling efficient namespace management in semantic web applications.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition, SchemaDefinition as Schema};
 use serde_json::{Map, Value, json};
@@ -453,7 +454,7 @@ mod tests {
         let generator = PrefixMapGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .expect("should generate prefix map");
+            .map_err(|e| anyhow::anyhow!("should generate prefix map": {}, e))?;
 
         assert!(result.contains("\"ex\": \"https://example.com/\""));
         assert!(result.contains("\"test\": \"https://test.org/vocab#\""));
@@ -466,7 +467,7 @@ mod tests {
         let generator_ttl = PrefixMapGenerator::new(config_ttl);
         let result_ttl = generator_ttl
             .generate(&schema)
-            .expect("should generate turtle prefix map");
+            .map_err(|e| anyhow::anyhow!("should generate turtle prefix map": {}, e))?;
 
         assert!(result_ttl.contains("@prefix ex: <https://example.com/> ."));
         assert!(result_ttl.contains("@prefix test: <https://test.org/vocab#> ."));

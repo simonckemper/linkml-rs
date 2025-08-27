@@ -4,6 +4,7 @@
 //! and dump LinkML instances back to databases.
 
 use super::traits::{
+use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
 };
 use async_trait::async_trait;
@@ -955,7 +956,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .expect("to_lowercase() should produce at least one char"),
+                .map_err(|e| anyhow::anyhow!("Error: {}", e))? should produce at least one char"),
         );
         prev_upper = ch.is_uppercase();
     }

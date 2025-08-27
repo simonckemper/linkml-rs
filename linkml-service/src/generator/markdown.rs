@@ -4,6 +4,7 @@
 //! including class hierarchies, slot tables, enumerations, and cross-references.
 
 use super::traits::Generator;
+use anyhow::anyhow;
 use linkml_core::{error::LinkMLError, prelude::*};
 use std::collections::BTreeMap;
 use std::fmt::Write;
@@ -585,7 +586,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .expect("should generate markdown documentation");
+            .map_err(|e| anyhow::anyhow!("should generate markdown documentation": {}, e))?;
 
         // Check content includes expected sections
         assert!(result.contains("# TestSchema"));

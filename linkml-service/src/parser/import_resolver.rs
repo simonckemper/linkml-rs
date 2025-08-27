@@ -1,6 +1,7 @@
 //! Import resolution for `LinkML` schemas
 
 use linkml_core::{
+use anyhow::anyhow;
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
@@ -250,7 +251,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_import_resolver() {
-        let temp_dir = TempDir::new().expect("should create temp dir");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temp dir": {}, e))?;
         let base_path = temp_dir.path();
 
         // Create a base schema
@@ -267,7 +268,7 @@ slots:
     range: string
 ";
 
-        fs::write(base_path.join("base.yaml"), base_schema).expect("should write base schema");
+        fs::write(base_path.join("base.yaml"), base_schema).map_err(|e| anyhow::anyhow!("should write base schema": {}, e))?;
 
         // Create a schema that imports base
         let main_schema = r"
@@ -287,14 +288,14 @@ classes:
         let parser = YamlParser::new();
         let schema = parser
             .parse_str(main_schema)
-            .expect("should parse main schema");
+            .map_err(|e| anyhow::anyhow!("should parse main schema": {}, e))?;
 
         // Resolve imports
         let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);
         let merged = resolver
             .resolve_imports_async(&schema)
             .await
-            .expect("should resolve imports");
+            .map_err(|e| anyhow::anyhow!("should resolve imports": {}, e))?;
 
         // Check that base elements were imported
         assert!(merged.classes.contains_key("BaseClass"));

@@ -4,6 +4,7 @@
 //! supporting arithmetic, comparison, logical operations, and functions.
 
 use crate::expression::ast::Expression;
+use anyhow::anyhow;
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -443,7 +444,7 @@ mod tests {
         let expr = Expression::Variable("age".to_string());
         let result = translator
             .translate(&expr, &mut ctx)
-            .expect("should translate simple variable");
+            .map_err(|e| anyhow::anyhow!("should translate simple variable": {}, e))?;
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$p has age $v1"));
@@ -462,7 +463,7 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .expect("should translate comparison");
+            .map_err(|e| anyhow::anyhow!("should translate comparison": {}, e))?;
 
         assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1")));
         assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18")));
@@ -483,7 +484,7 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .expect("should translate contains function");
+            .map_err(|e| anyhow::anyhow!("should translate contains function": {}, e))?;
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$doc has tags \"important\""));

@@ -1,6 +1,7 @@
 //! Compiled validator for optimized validation performance
 
 use super::context::ValidationContext;
+use anyhow::anyhow;
 use super::report::{Severity, ValidationIssue};
 use super::validators::Validator;
 use linkml_core::error::{LinkMLError, Result as LinkMLResult};
@@ -224,8 +225,7 @@ impl CompiledValidator {
     }
 
     /// Execute a single validation instruction
-    #[allow(clippy::too_many_lines, clippy::only_used_in_recursion)]
-    fn execute_instruction(
+        fn execute_instruction(
         &self,
         instruction: &ValidationInstruction,
         value: &JsonValue,
@@ -875,7 +875,7 @@ mod tests {
         let options = CompilationOptions::default();
         let validator =
             CompiledValidator::compile_class(&schema, "Person", &person_class, &options)
-                .expect("Failed to compile validator");
+                .map_err(|e| anyhow::anyhow!("Failed to compile validator": {}, e))?;
 
         // Test valid data
         let valid_data = serde_json::json!({

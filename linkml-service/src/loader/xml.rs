@@ -3,6 +3,7 @@
 //! This module provides functionality to load and dump LinkML data in XML format.
 
 use super::traits::{
+use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
     LoaderError, LoaderResult,
 };
@@ -317,7 +318,7 @@ mod tests {
         let xml_str = dumper
             .dump_string(&instances, &schema, &options)
             .await
-            .expect("should dump XML");
+            .map_err(|e| anyhow::anyhow!("should dump XML": {}, e))?;
         assert!(xml_str.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assert!(xml_str.contains("<data>"));
         // Name is an attribute, not a child element

@@ -4,6 +4,7 @@
 //! avoiding circular dependencies while maintaining the single source of truth principle.
 
 use super::traits::{
+use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
     LoaderError, LoaderResult,
 };
@@ -842,7 +843,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .expect("lowercase char should exist"),
+                .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
         );
         prev_upper = ch.is_uppercase();
     }
@@ -914,15 +915,15 @@ mod tests {
     fn test_json_to_typeql() {
         assert_eq!(
             json_value_to_typeql(&Value::String("test".to_string()))
-                .expect("should convert string"),
+                .map_err(|e| anyhow::anyhow!("should convert string": {}, e))?,
             "\"test\""
         );
         assert_eq!(
-            json_value_to_typeql(&Value::Number(42.into())).expect("should convert number"),
+            json_value_to_typeql(&Value::Number(42.into())).map_err(|e| anyhow::anyhow!("should convert number": {}, e))?,
             "42"
         );
         assert_eq!(
-            json_value_to_typeql(&Value::Bool(true)).expect("should convert bool"),
+            json_value_to_typeql(&Value::Bool(true)).map_err(|e| anyhow::anyhow!("should convert bool": {}, e))?,
             "true"
         );
         assert!(json_value_to_typeql(&Value::Null).is_err());

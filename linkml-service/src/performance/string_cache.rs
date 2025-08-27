@@ -4,6 +4,7 @@
 //! and speed up string comparisons during validation.
 
 use dashmap::DashMap;
+use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 use thiserror::Error;
@@ -195,9 +196,9 @@ mod tests {
     fn test_string_interning() {
         let interner = StringInterner::new();
 
-        let s1 = interner.intern("hello").expect("should intern string");
-        let s2 = interner.intern("hello").expect("should intern string");
-        let s3 = interner.intern("world").expect("should intern string");
+        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
+        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
+        let s3 = interner.intern("world").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
 
         // Same strings should have same Arc
         assert!(Arc::ptr_eq(&s1, &s2));

@@ -49,8 +49,7 @@ impl MockLoggerService {
         }
     }
 
-    #[allow(dead_code)]
-    pub async fn get_logs(&self) -> Vec<String> {
+        pub async fn get_logs(&self) -> Vec<String> {
         self.logs.read().await.clone()
     }
 }
@@ -339,15 +338,13 @@ impl MockConfigurationService {
         Self { config }
     }
 
-    #[allow(dead_code)]
-    pub fn set(&self, key: &str, value: &str) {
+        pub fn set(&self, key: &str, value: &str) {
         // Since config is not mutable, this is a no-op for the mock
         // In a real implementation, you'd need Arc<RwLock<HashMap>> or similar
         let _ = (key, value);
     }
 
-    #[allow(dead_code)]
-    pub fn get(&self, key: &str) -> Option<String> {
+        pub fn get(&self, key: &str) -> Option<String> {
         self.config.get(key).cloned()
     }
 }
@@ -439,8 +436,7 @@ impl MockCacheService {
         }
     }
 
-    #[allow(dead_code)]
-    pub async fn stats(&self) -> (usize, usize, usize) {
+        pub async fn stats(&self) -> (usize, usize, usize) {
         let cache = self.cache.read().await;
         let size = cache.len();
         // For the mock, we'll just return simple stats
@@ -698,12 +694,10 @@ impl MonitoringService for MockMonitoringService {
     }
 }
 
-#[allow(dead_code)]
 pub struct MockHealthCheckService {
     checks: Arc<RwLock<HashMap<String, bool>>>,
 }
 
-#[allow(dead_code)]
 impl MockHealthCheckService {
     pub fn new() -> Self {
         Self {

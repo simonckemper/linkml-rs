@@ -4,6 +4,7 @@
 //! instead of direct file system access.
 
 use async_trait::async_trait;
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -197,7 +198,7 @@ impl DataDumperV2 for JsonDumperV2 {
                 let instance = instances
                     .into_iter()
                     .next()
-                    .expect("should have at least one instance after length check");
+                    .map_err(|e| anyhow::anyhow!("should have at least one instance after length check": {}, e))?;
                 let mut obj = instance.data;
                 obj.insert(
                     "@type".to_string(),
@@ -251,7 +252,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_loader_v2() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -264,14 +265,14 @@ mod tests {
         let file_path = Path::new("data.json");
         fs.write(file_path, json_content)
             .await
-            .expect("should write JSON file");
+            .map_err(|e| anyhow::anyhow!("should write JSON file": {}, e))?;
 
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
             .load_file(&file_path, &schema, fs)
             .await
-            .expect("should load JSON file");
+            .map_err(|e| anyhow::anyhow!("should load JSON file": {}, e))?;
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -280,7 +281,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_dumper_v2() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -314,12 +315,12 @@ mod tests {
         dumper
             .dump_file(instances.clone(), file_path, &schema, fs.clone())
             .await
-            .expect("should dump instances to JSON");
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSON": {}, e))?;
 
         let content = fs
             .read_to_string(file_path)
             .await
-            .expect("should read JSON file");
+            .map_err(|e| anyhow::anyhow!("should read JSON file": {}, e))?;
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
 
@@ -330,12 +331,12 @@ mod tests {
         jsonl_dumper
             .dump_file(instances, jsonl_path, &schema, fs.clone())
             .await
-            .expect("should dump instances to JSONL");
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSONL": {}, e))?;
 
         let jsonl_content = fs
             .read_to_string(jsonl_path)
             .await
-            .expect("should read JSONL file");
+            .map_err(|e| anyhow::anyhow!("should read JSONL file": {}, e))?;
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
         assert_eq!(lines.len(), 2);
     }

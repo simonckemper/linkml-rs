@@ -349,7 +349,7 @@ mod tests {
             json!({"id": "P001", "name": "Charlie"}), // Duplicate ID
         ];
 
-        let violations = validator.validate_collection(&instances, "Person").unwrap();
+        let violations = validator.validate_collection(&instances, "Person")?;
 
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].key_name, "person_id");
@@ -380,7 +380,7 @@ mod tests {
 
         let violations = validator
             .validate_collection(&instances, "Assignment")
-            .unwrap();
+            ?;
 
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].duplicate_indices, vec![0, 3]);
@@ -407,7 +407,7 @@ mod tests {
             json!({"username": "ALICE", "email": "alice2@example.com"}), // Should violate
         ];
 
-        let violations = validator.validate_collection(&instances, "User").unwrap();
+        let violations = validator.validate_collection(&instances, "User")?;
 
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].duplicate_indices, vec![0, 2]);
@@ -431,7 +431,7 @@ mod tests {
             json!({"id": "003", "name": "Charlie"}),
         ];
 
-        index.build(&instances).unwrap();
+        index.build(&instances)?;
 
         // Test lookups
         assert_eq!(index.lookup(&[json!("002")]), Some(1));

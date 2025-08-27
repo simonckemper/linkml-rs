@@ -8,6 +8,7 @@
 //! - Security features
 
 use linkml_service::{
+use anyhow::anyhow;
     expression::{Evaluator, parse_expression},
     generator::{
         JavaGenerator, ProtobufGenerator, PythonDataclassGenerator, RustGenerator, TypeQLGenerator,
@@ -529,6 +530,6 @@ mod tests {
 
     #[test]
     fn test_comprehensive_demo() {
-        main().expect("Comprehensive demo should run successfully");
+        main().map_err(|e| anyhow::anyhow!("Comprehensive demo should run successfully": {}, e))?;
     }
 }

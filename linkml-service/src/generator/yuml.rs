@@ -4,6 +4,7 @@
 //! online tool for creating UML diagrams using a text-based syntax.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
@@ -535,7 +536,7 @@ mod tests {
 
         let result = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .expect("should generate yuml");
+            .map_err(|e| anyhow::anyhow!("should generate yuml": {}, e))?;
         assert_eq!(result.len(), 1);
 
         let output = &result[0];
@@ -559,7 +560,7 @@ mod tests {
             let generator = YumlGenerator::with_options(yuml_options);
             let result = AsyncGenerator::generate(&generator, &schema, &options)
                 .await
-                .expect("should generate yuml");
+                .map_err(|e| anyhow::anyhow!("should generate yuml": {}, e))?;
 
             let output = &result[0];
             assert!(output.content.contains(&format!("diagram/{}/", style)));

@@ -4,6 +4,7 @@
 //! parsing, compilation, caching, and VM execution for optimal performance.
 
 use super::ast::Expression;
+use anyhow::anyhow;
 use super::cache::{ExpressionCache, ExpressionKey, GlobalExpressionCache};
 use super::compiler::{CompiledExpression, Compiler};
 use super::error::{ExpressionError, EvaluationError};
@@ -162,7 +163,7 @@ impl ExpressionEngineV2 {
         let (ast, compiled) = if self.config.use_caching {
             if let Some(cached) = self.cache.get(&key) {
                 if let Some(start) = start_time {
-                    let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+                    let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
                     metrics.cache_hit_rate = self.cache.overall_hit_rate();
                 }
                 (cached.ast, cached.compiled)
@@ -182,14 +183,14 @@ impl ExpressionEngineV2 {
         
         // Decide whether to use compiled or interpreted evaluation
         let result = if self.should_use_compiled(&compiled) {
-            self.evaluate_compiled(compiled.as_ref().expect("should have compiled expression when use_compiled is true"), context, start_time)?
+            self.evaluate_compiled(compiled.as_ref().map_err(|e| anyhow::anyhow!("should have compiled expression when use_compiled is true": {}, e))?, context, start_time)?
         } else {
             self.evaluate_interpreted(&ast, context, start_time)?
         };
         
         // Update metrics
         if self.config.collect_metrics {
-            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.total_evaluations += 1;
         }
         
@@ -208,7 +209,7 @@ impl ExpressionEngineV2 {
             .map_err(|e| ExpressionError::Parse(e.to_string()))?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.parse_time_us += parse_start.elapsed().as_micros() as u64;
         }
         
@@ -218,7 +219,7 @@ impl ExpressionEngineV2 {
             let compiled = self.compiler.compile(&ast, expression)?;
             
             if let Some(start) = start_time {
-                let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+                let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
                 metrics.compile_time_us += compile_start.elapsed().as_micros() as u64;
             }
             
@@ -251,7 +252,7 @@ impl ExpressionEngineV2 {
         let result = self.vm.execute(compiled, context)?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.compiled_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
@@ -271,7 +272,7 @@ impl ExpressionEngineV2 {
             .map_err(|e| ExpressionError::Evaluation(e))?;
         
         if let Some(start) = start_time {
-            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned");
+            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.interpreted_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
@@ -281,7 +282,7 @@ impl ExpressionEngineV2 {
     
     /// Get performance metrics
     pub fn metrics(&self) -> PerformanceMetrics {
-        self.metrics.read().expect("metrics lock should not be poisoned").clone()
+        self.metrics.read().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?.clone()
     }
     
     /// Clear the expression cache
@@ -406,7 +407,7 @@ mod tests {
         let engine = EngineBuilder::new().build();
         let context = HashMap::new();
         
-        let result = engine.evaluate("1 + 2 * 3", &context).expect("should evaluate simple expression");
+        let result = engine.evaluate("1 + 2 * 3", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression": {}, e))?;
         assert_eq!(result, Value::Number(serde_json::Number::from(7)));
     }
     
@@ -420,11 +421,11 @@ mod tests {
         let expr = "1 + 2 + 3 + 4 + 5";
         
         // First evaluation - cache miss
-        engine.evaluate(expr, &context).expect("should evaluate expression on first try");
+        engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate expression on first try": {}, e))?;
         
         // Subsequent evaluations - cache hits
         for _ in 0..10 {
-            engine.evaluate(expr, &context).expect("should evaluate cached expression");
+            engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate cached expression": {}, e))?;
         }
         
         let metrics = engine.metrics();
@@ -442,11 +443,11 @@ mod tests {
         let context = HashMap::new();
         
         // Simple expression - should use interpreter
-        engine.evaluate("1 + 2", &context).expect("should evaluate simple expression with interpreter");
+        engine.evaluate("1 + 2", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression with interpreter": {}, e))?;
         
         // Complex expression - should use VM
         let complex = "1 + 2 * 3 - 4 / 5 + 6 * 7 - 8 / 9 + 10";
-        engine.evaluate(complex, &context).expect("should evaluate complex expression with VM");
+        engine.evaluate(complex, &context).map_err(|e| anyhow::anyhow!("should evaluate complex expression with VM": {}, e))?;
         
         let metrics = engine.metrics();
         assert_eq!(metrics.interpreted_evaluations, 1);

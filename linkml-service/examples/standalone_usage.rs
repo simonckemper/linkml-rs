@@ -95,7 +95,7 @@ classes:
     let schema = parser.parse_str(schema_yaml)?;
     println!(
         "   ✓ Schema parsed successfully: {}",
-        schema.name.as_ref().unwrap()
+        schema.name.as_ref()?
     );
 
     // Create test data

@@ -4,6 +4,7 @@
 //! path representation and optimized traversal algorithms.
 
 use linkml_core::error::{LinkMLError, Result as LinkMLResult};
+use anyhow::anyhow;
 use serde_json::Value;
 use std::fmt;
 
@@ -63,7 +64,7 @@ impl JsonPath {
                         if next_ch == '.' || next_ch == '[' {
                             break;
                         }
-                        property.push(chars.next().expect("peek() ensured character exists"));
+                        property.push(chars.next().map_err(|e| anyhow::anyhow!("Error: {}", e))? ensured character exists"));
                     }
                     if property.is_empty() {
                         return Err(LinkMLError::parse(format!(
@@ -309,7 +310,7 @@ impl JsonNavigator {
             self.path_cache.insert(path.to_string(), parsed);
             self.path_cache
                 .get(path)
-                .expect("Just inserted path should exist")
+                .map_err(|e| anyhow::anyhow!("Just inserted path should exist": {}, e))?
         };
 
         Ok(json_path.navigate(value))
@@ -357,18 +358,18 @@ mod tests {
             ]
         });
 
-        let path = JsonPath::parse("$.name").expect("should parse valid path");
+        let path = JsonPath::parse("$.name").map_err(|e| anyhow::anyhow!("should parse valid path": {}, e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("John"));
 
-        let path = JsonPath::parse("$.items[0].name").expect("should parse valid path with index");
+        let path = JsonPath::parse("$.items[0].name").map_err(|e| anyhow::anyhow!("should parse valid path with index": {}, e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("Item 1"));
 
         let path =
-            JsonPath::parse("$.items[*].name").expect("should parse valid path with wildcard");
+            JsonPath::parse("$.items[*].name").map_err(|e| anyhow::anyhow!("should parse valid path with wildcard": {}, e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].0, &json!("Item 1"));
@@ -394,13 +395,13 @@ mod tests {
         // First call parses the path
         let result1 = navigator
             .navigate(&data, "$.name")
-            .expect("should navigate to name");
+            .map_err(|e| anyhow::anyhow!("should navigate to name": {}, e))?;
         assert_eq!(result1.len(), 1);
 
         // Second call uses cached path
         let result2 = navigator
             .navigate(&data, "$.name")
-            .expect("should navigate to name (cached)");
+            .map_err(|e| anyhow::anyhow!("Error: {}", e))?");
         assert_eq!(result2.len(), 1);
 
         // Verify cache contains the path

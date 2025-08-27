@@ -4,6 +4,7 @@
 //! validation support and builder patterns.
 
 use linkml_core::{
+use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };
@@ -459,7 +460,7 @@ impl JavaGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -479,14 +480,14 @@ impl JavaGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .expect("char to_uppercase always produces at least one char"),
+                        .map_err(|e| anyhow::anyhow!("char to_uppercase always produces at least one char": {}, e))?,
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .expect("char to_lowercase always produces at least one char"),
+                        .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
                 );
             } else {
                 result.push(ch);

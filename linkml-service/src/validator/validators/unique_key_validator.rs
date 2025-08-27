@@ -4,6 +4,7 @@
 //! single-field uniqueness, composite keys, and scoped uniqueness.
 
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
@@ -121,7 +122,7 @@ impl UniqueKeyValidator {
         let mut tracker = self
             .tracker
             .lock()
-            .expect("tracker mutex should not be poisoned");
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?;
 
         // Check identifier slot (if present)
         if let Some(identifier_slot) = class_def.slots.iter().find(|slot_name| {
@@ -205,7 +206,7 @@ impl UniqueKeyValidator {
     pub fn reset(&mut self) {
         self.tracker
             .lock()
-            .expect("tracker mutex should not be poisoned")
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?
             .clear();
     }
 
@@ -213,7 +214,7 @@ impl UniqueKeyValidator {
     pub fn reset_class(&mut self, class_name: &str) {
         self.tracker
             .lock()
-            .expect("tracker mutex should not be poisoned")
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?
             .clear_class(class_name);
     }
 

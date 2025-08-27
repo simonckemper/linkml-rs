@@ -1,6 +1,7 @@
 //! SQL DDL generation for `LinkML` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
+use anyhow::anyhow;
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
 };
@@ -807,7 +808,7 @@ mod tests {
         let options = GeneratorOptions::new();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .expect("should generate SQL output");
+            .map_err(|e| anyhow::anyhow!("should generate SQL output": {}, e))?;
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("CREATE TABLE person"));

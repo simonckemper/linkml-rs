@@ -7,6 +7,7 @@
 //! - Safe expression evaluation
 
 use linkml_service::{
+use anyhow::anyhow;
     expression::functions::{CustomFunction, FunctionRegistry},
     expression::{Evaluator, EvaluatorConfig, parse_expression},
     parser::yaml_parser::YamlParser,
@@ -204,6 +205,6 @@ mod tests {
     #[test]
     fn test_example_runs() {
         // Run the example to ensure it doesn't panic
-        main().expect("Example should run without errors");
+        main().map_err(|e| anyhow::anyhow!("Example should run without errors": {}, e))?;
     }
 }

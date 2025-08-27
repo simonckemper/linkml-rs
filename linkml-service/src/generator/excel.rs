@@ -12,6 +12,7 @@
 //! - Rich formatting options
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
+use anyhow::anyhow;
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use rust_xlsxwriter::{
@@ -1061,7 +1062,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ExcelGenerator::new();
 
-        let result = generator.generate(&schema).expect("should generate Excel");
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate Excel": {}, e))?;
         // The old Generator trait returns a String, not Vec<GeneratedOutput>
         assert!(!result.is_empty());
     }

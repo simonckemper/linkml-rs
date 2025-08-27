@@ -3,6 +3,7 @@
 //! This module provides tools to merge multiple schemas into one.
 
 use crate::cli_enhanced::{ConflictResolution, MergeStrategy};
+use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -392,11 +393,11 @@ impl SchemaMerge {
                 ConflictValue {
                     schema_index: 0,
                     value: serde_json::to_value(existing)
-                        .expect("should serialize existing element"),
+                        .map_err(|e| anyhow::anyhow!("should serialize existing element": {}, e))?,
                 },
                 ConflictValue {
                     schema_index,
-                    value: serde_json::to_value(new).expect("should serialize new element"),
+                    value: serde_json::to_value(new).map_err(|e| anyhow::anyhow!("should serialize new element": {}, e))?,
                 },
             ],
             resolution: format!("{:?}", self.options.conflict_resolution),
@@ -514,7 +515,7 @@ mod tests {
         let merger = SchemaMerge::new(options);
         let merged = merger
             .merge(&[schema1, schema2])
-            .expect("should merge schemas");
+            .map_err(|e| anyhow::anyhow!("should merge schemas": {}, e))?;
 
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
@@ -540,7 +541,7 @@ mod tests {
         let merger = SchemaMerge::new(options);
         let merged = merger
             .merge(&[schema1, schema2])
-            .expect("should merge schemas");
+            .map_err(|e| anyhow::anyhow!("should merge schemas": {}, e))?;
 
         assert_eq!(merged.classes.len(), 1);
         assert!(merged.classes.contains_key("Person"));

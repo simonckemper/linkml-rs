@@ -4,6 +4,7 @@
 //! computed attributes based on ``LinkML`` schema definitions.
 
 use super::traits::{GeneratorError, GeneratorResult};
+use anyhow::anyhow;
 use super::typeql_expression_translator::{ExpressionTranslator, TranslationContext};
 use linkml_core::prelude::*;
 use serde_json::Value;
@@ -553,7 +554,7 @@ mod tests {
         let mut generator = RuleGenerator::new();
         let rule = generator
             .generate_required_rule("Person", "name")
-            .expect("should generate required rule");
+            .map_err(|e| anyhow::anyhow!("should generate required rule": {}, e))?;
 
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.contains(&"$x isa person".to_string()));
@@ -573,7 +574,7 @@ mod tests {
 
         let rule = generator
             .generate_range_rule("Person", "age", &slot)
-            .expect("should generate range rule");
+            .map_err(|e| anyhow::anyhow!("should generate range rule": {}, e))?;
 
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.iter().any(|p| p.contains("$v < 0")));
@@ -594,7 +595,7 @@ mod tests {
             dependencies: vec![],
         };
 
-        let typeql = rule.to_typeql().expect("should generate TypeQL string");
+        let typeql = rule.to_typeql().map_err(|e| anyhow::anyhow!("should generate TypeQL string": {}, e))?;
 
         assert!(typeql.contains("# Test rule"));
         assert!(typeql.contains("rule test-rule:"));

@@ -101,7 +101,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_yaml_parser_v2() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -128,7 +128,7 @@ classes:
 
         // Write to file
         let schema_path = Path::new("test_schema.yaml");
-        fs.write(schema_path, schema_content).await.unwrap();
+        fs.write(schema_path, schema_content).await?;
 
         // Parse using async trait - explicitly use AsyncSchemaParser trait
         let schema = <YamlParserV2<TokioFileSystemAdapter> as AsyncSchemaParser>::parse_file(
@@ -136,7 +136,7 @@ classes:
             schema_path,
         )
         .await
-        .unwrap();
+        ?;
         assert_eq!(schema.name, "TestSchema");
         assert!(schema.classes.contains_key("Person"));
     }

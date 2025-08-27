@@ -3,6 +3,7 @@
 //! This module provides string manipulation functions like upper, lower, trim, etc.
 
 use super::functions::{BuiltinFunction, FunctionError};
+use anyhow::anyhow;
 use serde_json::Value;
 
 /// upper() - Convert string to uppercase
@@ -383,7 +384,7 @@ mod tests {
         assert_eq!(
             upper
                 .call(vec![json!("hello")])
-                .expect("should convert to uppercase"),
+                .map_err(|e| anyhow::anyhow!("should convert to uppercase": {}, e))?,
             json!("HELLO")
         );
 
@@ -391,14 +392,14 @@ mod tests {
         assert_eq!(
             lower
                 .call(vec![json!("HELLO")])
-                .expect("should convert to lowercase"),
+                .map_err(|e| anyhow::anyhow!("should convert to lowercase": {}, e))?,
             json!("hello")
         );
 
         let trim = TrimFunction;
         assert_eq!(
             trim.call(vec![json!("  hello  ")])
-                .expect("should trim whitespace"),
+                .map_err(|e| anyhow::anyhow!("should trim whitespace": {}, e))?,
             json!("hello")
         );
     }
@@ -409,13 +410,13 @@ mod tests {
         assert_eq!(
             starts_with
                 .call(vec![json!("hello world"), json!("hello")])
-                .expect("should check starts_with"),
+                .map_err(|e| anyhow::anyhow!("should check starts_with": {}, e))?,
             json!(true)
         );
         assert_eq!(
             starts_with
                 .call(vec![json!("hello world"), json!("world")])
-                .expect("should check starts_with"),
+                .map_err(|e| anyhow::anyhow!("should check starts_with": {}, e))?,
             json!(false)
         );
 
@@ -423,13 +424,13 @@ mod tests {
         assert_eq!(
             ends_with
                 .call(vec![json!("hello world"), json!("world")])
-                .expect("should check ends_with"),
+                .map_err(|e| anyhow::anyhow!("should check ends_with": {}, e))?,
             json!(true)
         );
         assert_eq!(
             ends_with
                 .call(vec![json!("hello world"), json!("hello")])
-                .expect("should check ends_with"),
+                .map_err(|e| anyhow::anyhow!("should check ends_with": {}, e))?,
             json!(false)
         );
     }
@@ -440,7 +441,7 @@ mod tests {
         assert_eq!(
             replace
                 .call(vec![json!("hello world"), json!("world"), json!("rust")])
-                .expect("should replace substring"),
+                .map_err(|e| anyhow::anyhow!("should replace substring": {}, e))?,
             json!("hello rust")
         );
     }
@@ -451,14 +452,14 @@ mod tests {
         assert_eq!(
             split
                 .call(vec![json!("a,b,c"), json!(",")])
-                .expect("should split string"),
+                .map_err(|e| anyhow::anyhow!("should split string": {}, e))?,
             json!(["a", "b", "c"])
         );
 
         let join = JoinFunction;
         assert_eq!(
             join.call(vec![json!(["a", "b", "c"]), json!("-")])
-                .expect("should join array"),
+                .map_err(|e| anyhow::anyhow!("should join array": {}, e))?,
             json!("a-b-c")
         );
     }
@@ -471,7 +472,7 @@ mod tests {
         assert_eq!(
             substring
                 .call(vec![json!("hello world"), json!(6), json!(5)])
-                .expect("should extract substring"),
+                .map_err(|e| anyhow::anyhow!("should extract substring": {}, e))?,
             json!("world")
         );
 
@@ -479,7 +480,7 @@ mod tests {
         assert_eq!(
             substring
                 .call(vec![json!("hello world"), json!(6)])
-                .expect("should extract substring to end"),
+                .map_err(|e| anyhow::anyhow!("should extract substring to end": {}, e))?,
             json!("world")
         );
     }

@@ -612,9 +612,9 @@ mod tests {
     fn test_stack_depth_tracker() {
         let tracker = StackDepthTracker::new(3);
 
-        let _g1 = tracker.enter().unwrap();
-        let _g2 = tracker.enter().unwrap();
-        let _g3 = tracker.enter().unwrap();
+        let _g1 = tracker.enter()?;
+        let _g2 = tracker.enter()?;
+        let _g3 = tracker.enter()?;
 
         // Fourth should fail
         assert!(tracker.enter().is_err());
@@ -626,7 +626,7 @@ mod tests {
 
         // Normal operation
         let result = wrapper.execute("test", || Ok(42));
-        assert_eq!(result.unwrap(), 42);
+        assert_eq!(result?, 42);
 
         // Panicking operation
         let result = wrapper.execute("panic_test", || -> Result<i32> {
@@ -645,19 +645,19 @@ mod tests {
         assert!(SafeArithmetic::sub(0u32, 1).is_err());
         assert!(SafeArithmetic::div(10, 0).is_err());
 
-        assert_eq!(SafeArithmetic::add(5, 3).unwrap(), 8);
-        assert_eq!(SafeArithmetic::div(10, 2).unwrap(), 5);
+        assert_eq!(SafeArithmetic::add(5, 3)?, 8);
+        assert_eq!(SafeArithmetic::div(10, 2)?, 5);
     }
 
     #[test]
     fn test_safe_bounds() {
         let vec = vec![1, 2, 3];
 
-        assert_eq!(*SafeBounds::get(&vec, 1).unwrap(), 2);
+        assert_eq!(*SafeBounds::get(&vec, 1)?, 2);
         assert!(SafeBounds::get(&vec, 10).is_err());
 
         let s = "hello";
-        assert_eq!(SafeBounds::slice_str(s, 0, 5).unwrap(), "hello");
+        assert_eq!(SafeBounds::slice_str(s, 0, 5)?, "hello");
         assert!(SafeBounds::slice_str(s, 1, 10).is_err());
     }
 }

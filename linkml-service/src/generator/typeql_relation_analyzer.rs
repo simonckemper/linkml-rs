@@ -5,6 +5,7 @@
 //! nested relations, and role detection.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 
@@ -351,11 +352,11 @@ mod tests {
         let employment_class = schema
             .classes
             .get("Employment")
-            .expect("Employment class should exist");
+            .map_err(|e| anyhow::anyhow!("Employment class should exist": {}, e))?;
         let relation_info = analyzer.analyze_relation("Employment", employment_class, &schema);
 
         assert!(relation_info.is_some());
-        let info = relation_info.expect("relation info should exist");
+        let info = relation_info.map_err(|e| anyhow::anyhow!("relation info should exist": {}, e))?;
         assert_eq!(info.roles.len(), 2);
         assert!(!info.is_multiway);
     }
@@ -369,11 +370,11 @@ mod tests {
         let enrollment_class = schema
             .classes
             .get("Enrollment")
-            .expect("Enrollment class should exist");
+            .map_err(|e| anyhow::anyhow!("Enrollment class should exist": {}, e))?;
         let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
 
         assert!(relation_info.is_some());
-        let info = relation_info.expect("relation info should exist");
+        let info = relation_info.map_err(|e| anyhow::anyhow!("relation info should exist": {}, e))?;
         assert_eq!(info.roles.len(), 3);
         assert!(info.is_multiway);
     }

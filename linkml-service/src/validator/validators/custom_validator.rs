@@ -4,6 +4,7 @@
 //! that can be registered with the validation engine.
 
 use linkml_core::{
+use anyhow::anyhow;
     Value,
     error::{LinkMLError, Result},
     types::SlotDefinition,
@@ -335,7 +336,7 @@ mod tests {
                 issues
             })
             .build()
-            .expect("should build custom validator");
+            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -372,7 +373,7 @@ mod tests {
                 issues
             })
             .build()
-            .expect("should build custom validator");
+            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -395,7 +396,7 @@ mod tests {
             // Simple phone validation
             s.chars().filter(|c| c.is_numeric()).count() >= 10
         })
-        .expect("should build format validator");
+        .map_err(|e| anyhow::anyhow!("should build format validator": {}, e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -418,7 +419,7 @@ mod tests {
             "priority_validator",
             vec!["low".to_string(), "medium".to_string(), "high".to_string()],
         )
-        .expect("should build custom enum validator");
+        .map_err(|e| anyhow::anyhow!("should build custom enum validator": {}, e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -455,7 +456,7 @@ mod tests {
                 issues
             })
             .build()
-            .expect("should build custom validator");
+            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -465,7 +466,7 @@ mod tests {
         int_slot.range = Some("integer".to_string());
 
         let value = Value::Number(
-            serde_json::Number::from_f64(3.14).expect("should create number from f64"),
+            serde_json::Number::from_f64(3.14).map_err(|e| anyhow::anyhow!("should create number from f64": {}, e))?,
         );
         let issues = validator.validate(&value, &int_slot, &mut context);
         assert_eq!(issues.len(), 1);

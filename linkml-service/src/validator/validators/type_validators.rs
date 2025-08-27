@@ -1,6 +1,7 @@
 //! Type validators for `LinkML` primitive types
 
 use super::{ValidationContext, ValidationIssue, Validator};
+use anyhow::anyhow;
 use chrono::{DateTime, NaiveDate};
 use linkml_core::types::SlotDefinition;
 use serde_json::Value;
@@ -176,7 +177,7 @@ impl TypeValidator {
                         || (!s
                             .chars()
                             .next()
-                            .expect("non-empty string has first char")
+                            .map_err(|e| anyhow::anyhow!("non-empty string has first char": {}, e))?
                             .is_alphabetic()
                             && !s.starts_with('_'))
                     {

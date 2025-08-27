@@ -984,12 +984,12 @@ mod tests {
     //     // );
     //
     //     // assert!(matches!(
-    //     //     session.parse_command("load test.yaml").unwrap(),
+    //     //     session.parse_command("load test.yaml")?,
     //     //     Command::Load { .. }
     //     // ));
     //
     //     // assert!(matches!(
-    //     //     session.parse_command("help").unwrap(),
+    //     //     session.parse_command("help")?,
     //     //     Command::Help
     //     // ));
     // }

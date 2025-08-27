@@ -8,6 +8,7 @@
 
 // Removed unused import
 use serde_json::json;
+use crate::factory::{create_logger_service};
 
 #[test]
 fn test_typedb_integration_pattern() {
@@ -230,7 +231,7 @@ fn _production_test_pattern() {
 #[tokio::test]
 async fn test_real_integration() {{
     // 1. Initialize all services using proper test patterns
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let linkml = create_linkml_service(...).await.unwrap();
     let typedb = Arc::new(MockTypeDBService::new());
     

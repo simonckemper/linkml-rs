@@ -4,6 +4,7 @@
 //! handling conflicts and preserving semantics.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::HashSet;
 use thiserror::Error;
 
@@ -120,13 +121,13 @@ impl SchemaMerger {
             return Ok(schemas
                 .into_iter()
                 .next()
-                .expect("checked that schemas has one element"));
+                .map_err(|e| anyhow::anyhow!("checked that schemas has one element": {}, e))?);
         }
 
         let mut schemas_iter = schemas.into_iter();
         let mut result = schemas_iter
             .next()
-            .expect("checked that schemas is not empty");
+            .map_err(|e| anyhow::anyhow!("checked that schemas is not empty": {}, e))?;
 
         for schema in schemas_iter {
             result = self.merge_two(result, schema)?;
@@ -729,7 +730,7 @@ mod tests {
 
         let result = merger
             .merge_two(schema1, schema2)
-            .expect("merge should succeed");
+            .map_err(|e| anyhow::anyhow!("merge should succeed": {}, e))?;
 
         // Should have both unique classes
         assert!(result.classes.contains_key("schema1_Class"));
@@ -785,10 +786,10 @@ mod tests {
 
         let result = merger
             .merge_two(schema1, schema2)
-            .expect("merge should succeed");
+            .map_err(|e| anyhow::anyhow!("merge should succeed": {}, e))?;
 
         // Should have schema2's version
-        let name_slot = result.slots.get("name").expect("name slot should exist");
+        let name_slot = result.slots.get("name").map_err(|e| anyhow::anyhow!("name slot should exist": {}, e))?;
         assert_eq!(name_slot.range, Some("text".to_string()));
     }
 
@@ -811,7 +812,7 @@ mod tests {
         let mut merger = SchemaMerger::with_defaults();
         let result = merger
             .merge_two(schema1, schema2)
-            .expect("merge should succeed");
+            .map_err(|e| anyhow::anyhow!("merge should succeed": {}, e))?;
 
         // Should have all unique imports
         assert_eq!(result.imports.len(), 3);

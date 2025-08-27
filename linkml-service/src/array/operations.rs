@@ -4,6 +4,7 @@
 //! and mathematical operations.
 
 use super::{ArrayData, ArrayError, ArrayResult};
+use anyhow::anyhow;
 use serde_json::Value;
 use std::cmp::Ordering;
 
@@ -442,7 +443,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(3)];
         let array =
-            ArrayData::new(spec, vec![3], data).expect("test data should create valid array");
+            ArrayData::new(spec, vec![3], data).map_err(|e| anyhow::anyhow!("test data should create valid array": {}, e))?;
 
         let doubled = array
             .map(|v| {
@@ -452,7 +453,7 @@ mod tests {
                     v.clone()
                 }
             })
-            .expect("map operation should succeed with valid data");
+            .map_err(|e| anyhow::anyhow!("map operation should succeed with valid data": {}, e))?;
 
         assert_eq!(doubled.data, vec![json!(2), json!(4), json!(6)]);
     }
@@ -463,7 +464,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(3), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![5], data)
-            .expect("test data should create valid array - filter test");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - filter test": {}, e))?;
 
         let evens = array
             .filter(|v| {
@@ -473,7 +474,7 @@ mod tests {
                     false
                 }
             })
-            .expect("filter operation should succeed with valid data");
+            .map_err(|e| anyhow::anyhow!("filter operation should succeed with valid data": {}, e))?;
 
         assert_eq!(evens.len(), 2);
         assert_eq!(evens[0].0, vec![1]); // index 1 -> value 2
@@ -486,13 +487,13 @@ mod tests {
 
         let data = vec![json!(1.0), json!(2.0), json!(3.0), json!(4.0), json!(5.0)];
         let array = ArrayData::new(spec, vec![5], data)
-            .expect("test data should create valid array - statistics test");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - statistics test": {}, e))?;
 
-        assert_eq!(array.sum().expect("sum should succeed"), 15.0);
-        assert_eq!(array.mean().expect("mean should succeed"), 3.0);
-        assert_eq!(array.min().expect("min should succeed"), 1.0);
-        assert_eq!(array.max().expect("max should succeed"), 5.0);
-        assert!((array.std_dev().expect("std_dev should succeed") - 1.58113883).abs() < 0.00001);
+        assert_eq!(array.sum().map_err(|e| anyhow::anyhow!("sum should succeed": {}, e))?, 15.0);
+        assert_eq!(array.mean().map_err(|e| anyhow::anyhow!("mean should succeed": {}, e))?, 3.0);
+        assert_eq!(array.min().map_err(|e| anyhow::anyhow!("min should succeed": {}, e))?, 1.0);
+        assert_eq!(array.max().map_err(|e| anyhow::anyhow!("max should succeed": {}, e))?, 5.0);
+        assert!((array.std_dev().map_err(|e| anyhow::anyhow!("std_dev should succeed": {}, e))? - 1.58113883).abs() < 0.00001);
     }
 
     #[test]
@@ -503,18 +504,18 @@ mod tests {
         let data2 = vec![json!(4), json!(5), json!(6)];
 
         let array1 = ArrayData::new(spec.clone(), vec![3], data1)
-            .expect("test data should create valid array1");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array1": {}, e))?;
         let array2 =
-            ArrayData::new(spec, vec![3], data2).expect("test data should create valid array2");
+            ArrayData::new(spec, vec![3], data2).map_err(|e| anyhow::anyhow!("test data should create valid array2": {}, e))?;
 
         let sum = array1
             .add(&array2)
-            .expect("add operation should succeed with matching shapes");
+            .map_err(|e| anyhow::anyhow!("add operation should succeed with matching shapes": {}, e))?;
         assert_eq!(sum.data, vec![json!(5.0), json!(7.0), json!(9.0)]);
 
         let product = array1
             .multiply(&array2)
-            .expect("multiply operation should succeed with matching shapes");
+            .map_err(|e| anyhow::anyhow!("multiply operation should succeed with matching shapes": {}, e))?;
         assert_eq!(product.data, vec![json!(4.0), json!(10.0), json!(18.0)]);
     }
 
@@ -524,11 +525,11 @@ mod tests {
 
         let data = vec![json!(3), json!(1), json!(4), json!(1), json!(5)];
         let array = ArrayData::new(spec, vec![5], data)
-            .expect("test data should create valid array - sorting test");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - sorting test": {}, e))?;
 
         let sorted = array
             .sort_along(0, false)
-            .expect("sort should succeed on 1D array");
+            .map_err(|e| anyhow::anyhow!("sort should succeed on 1D array": {}, e))?;
         assert_eq!(
             sorted.data,
             vec![json!(1), json!(1), json!(3), json!(4), json!(5)]
@@ -536,7 +537,7 @@ mod tests {
 
         let sorted_desc = array
             .sort_along(0, true)
-            .expect("descending sort should succeed on 1D array");
+            .map_err(|e| anyhow::anyhow!("descending sort should succeed on 1D array": {}, e))?;
         assert_eq!(
             sorted_desc.data,
             vec![json!(5), json!(4), json!(3), json!(1), json!(1)]

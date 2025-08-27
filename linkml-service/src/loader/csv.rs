@@ -4,6 +4,7 @@
 //! data instances and dump instances back to CSV/TSV format.
 
 use async_trait::async_trait;
+use anyhow::anyhow;
 use csv::{ReaderBuilder, StringRecord, WriterBuilder};
 use linkml_core::prelude::*;
 use serde_json::Value as JsonValue;
@@ -642,7 +643,7 @@ impl DataDumper for CsvDumper {
         let (class_name, class_instances) = by_class
             .into_iter()
             .next()
-            .expect("by_class should have at least one entry after check");
+            .map_err(|e| anyhow::anyhow!("by_class should have at least one entry after check": {}, e))?;
 
         // Apply limit if specified
         let instances_to_dump: Vec<&DataInstance> = if let Some(limit) = options.limit {
@@ -808,7 +809,7 @@ p2,Bob,25,bob@example.com,tag3
         let instances = loader
             .load_string(csv_content, &schema, &options)
             .await
-            .expect("should load CSV");
+            .map_err(|e| anyhow::anyhow!("should load CSV": {}, e))?;
         assert_eq!(instances.len(), 2);
 
         // Check first instance
@@ -837,7 +838,7 @@ p2,Bob,25,bob@example.com,tag3
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .expect("should dump to CSV");
+            .map_err(|e| anyhow::anyhow!("should dump to CSV": {}, e))?;
 
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -861,7 +862,7 @@ p2,Bob,25,bob@example.com,tag3
         let instances = loader
             .load_string(tsv_content, &schema, &options)
             .await
-            .expect("should load TSV");
+            .map_err(|e| anyhow::anyhow!("should load TSV": {}, e))?;
         assert_eq!(instances.len(), 1);
         assert_eq!(
             instances[0].data.get("name"),
@@ -899,7 +900,7 @@ p2,Bob,not_a_number,bob@example.com,
         let instances = loader
             .load_string(csv_content, &schema, &options_skip)
             .await
-            .expect("should load with skip_invalid");
+            .map_err(|e| anyhow::anyhow!("should load with skip_invalid": {}, e))?;
         assert_eq!(instances.len(), 1); // Only valid record
     }
 }

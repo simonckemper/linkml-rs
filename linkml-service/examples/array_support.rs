@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         imaging_spec
             .dimensions
             .iter()
-            .map(|d| format!("{} ({})", d.name, d.size.unwrap()))
+            .map(|d| format!("{} ({})", d.name, d.size?))
             .collect::<Vec<_>>()
     );
     println!("  Element type: {}", imaging_spec.element_type);

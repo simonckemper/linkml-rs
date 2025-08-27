@@ -3,6 +3,7 @@
 //! Loads permissible values from external data sources
 
 use linkml_core::error::{LinkMLError, Result};
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -353,7 +354,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_load_json_file() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[
@@ -364,7 +365,7 @@ mod tests {
 
         fs::write(&file_path, json_data)
             .await
-            .expect("should write test JSON file");
+            .map_err(|e| anyhow::anyhow!("should write test JSON file": {}, e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -376,41 +377,41 @@ mod tests {
         let instance_data = loader
             .load_json_file(&file_path, &config)
             .await
-            .expect("should load JSON instance data");
+            .map_err(|e| anyhow::anyhow!("should load JSON instance data": {}, e))?;
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
             instance_data
                 .values
                 .get("US")
-                .expect("should have US entry"),
+                .map_err(|e| anyhow::anyhow!("should have US entry": {}, e))?,
             &vec!["United States"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("UK")
-                .expect("should have UK entry"),
+                .map_err(|e| anyhow::anyhow!("should have UK entry": {}, e))?,
             &vec!["United Kingdom"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("CA")
-                .expect("should have CA entry"),
+                .map_err(|e| anyhow::anyhow!("should have CA entry": {}, e))?,
             &vec!["Canada"]
         );
     }
 
     #[tokio::test]
     async fn test_load_csv_file() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let file_path = temp_dir.path().join("instances.csv");
 
         let csv_data = "code,name\nUS,United States\nUK,United Kingdom\nCA,Canada\n";
         fs::write(&file_path, csv_data)
             .await
-            .expect("should write test CSV file");
+            .map_err(|e| anyhow::anyhow!("should write test CSV file": {}, e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -422,27 +423,27 @@ mod tests {
         let instance_data = loader
             .load_csv_file(&file_path, &config)
             .await
-            .expect("should load CSV instance data");
+            .map_err(|e| anyhow::anyhow!("should load CSV instance data": {}, e))?;
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
             instance_data
                 .values
                 .get("US")
-                .expect("should have US entry in CSV data"),
+                .map_err(|e| anyhow::anyhow!("should have US entry in CSV data": {}, e))?,
             &vec!["United States"]
         );
     }
 
     #[tokio::test]
     async fn test_caching() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[{"id": "1", "value": "test"}]"#;
         fs::write(&file_path, json_data)
             .await
-            .expect("should write test JSON file for caching");
+            .map_err(|e| anyhow::anyhow!("should write test JSON file for caching": {}, e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig::default();
@@ -451,13 +452,13 @@ mod tests {
         let data1 = loader
             .load_json_file(&file_path, &config)
             .await
-            .expect("should load JSON data first time");
+            .map_err(|e| anyhow::anyhow!("should load JSON data first time": {}, e))?;
 
         // Second load should be from cache
         let data2 = loader
             .load_json_file(&file_path, &config)
             .await
-            .expect("should load JSON data from cache");
+            .map_err(|e| anyhow::anyhow!("should load JSON data from cache": {}, e))?;
 
         // Should be the same Arc
         assert!(Arc::ptr_eq(&data1, &data2));

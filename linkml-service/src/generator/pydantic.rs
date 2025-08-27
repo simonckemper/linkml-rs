@@ -1,6 +1,7 @@
 //! Pydantic v2 code generator for LinkML schemas
 
 use super::base::{
+use anyhow::anyhow;
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, is_optional_slot,
 };
 use super::options::{GeneratorOptions, IndentStyle};
@@ -617,7 +618,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate Pydantic output");
+            .map_err(|e| anyhow::anyhow!("should generate Pydantic output": {}, e))?;
         assert!(output.contains("from pydantic import BaseModel"));
         assert!(output.contains("class Person(BaseModel):"));
         assert!(output.contains("name: str = Field(...)"));

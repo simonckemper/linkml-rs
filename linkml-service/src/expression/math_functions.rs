@@ -473,18 +473,18 @@ mod tests {
     #[test]
     fn test_abs_function() {
         let abs_fn = AbsFunction;
-        assert_eq!(abs_fn.call(vec![json!(-5)]).unwrap(), json!(5.0));
-        assert_eq!(abs_fn.call(vec![json!(5)]).unwrap(), json!(5.0));
-        assert_eq!(abs_fn.call(vec![json!(-3.14)]).unwrap(), json!(3.14));
+        assert_eq!(abs_fn.call(vec![json!(-5)])?, json!(5.0));
+        assert_eq!(abs_fn.call(vec![json!(5)])?, json!(5.0));
+        assert_eq!(abs_fn.call(vec![json!(-3.14)])?, json!(3.14));
     }
 
     #[test]
     fn test_sqrt_function() {
         let sqrt_fn = SqrtFunction;
-        assert_eq!(sqrt_fn.call(vec![json!(4)]).unwrap(), json!(2.0));
-        assert_eq!(sqrt_fn.call(vec![json!(9)]).unwrap(), json!(3.0));
+        assert_eq!(sqrt_fn.call(vec![json!(4)])?, json!(2.0));
+        assert_eq!(sqrt_fn.call(vec![json!(9)])?, json!(3.0));
         assert_eq!(
-            sqrt_fn.call(vec![json!(2)]).unwrap(),
+            sqrt_fn.call(vec![json!(2)])?,
             json!(1.4142135623730951)
         );
 
@@ -495,9 +495,9 @@ mod tests {
     #[test]
     fn test_pow_function() {
         let pow_fn = PowFunction;
-        assert_eq!(pow_fn.call(vec![json!(2), json!(3)]).unwrap(), json!(8.0));
-        assert_eq!(pow_fn.call(vec![json!(5), json!(2)]).unwrap(), json!(25.0));
-        assert_eq!(pow_fn.call(vec![json!(10), json!(0)]).unwrap(), json!(1.0));
+        assert_eq!(pow_fn.call(vec![json!(2), json!(3)])?, json!(8.0));
+        assert_eq!(pow_fn.call(vec![json!(5), json!(2)])?, json!(25.0));
+        assert_eq!(pow_fn.call(vec![json!(10), json!(0)])?, json!(1.0));
     }
 
     #[test]
@@ -507,19 +507,19 @@ mod tests {
         let tan_fn = TanFunction;
 
         // sin(0) = 0
-        assert_eq!(sin_fn.call(vec![json!(0)]).unwrap(), json!(0.0));
+        assert_eq!(sin_fn.call(vec![json!(0)])?, json!(0.0));
 
         // cos(0) = 1
-        assert_eq!(cos_fn.call(vec![json!(0)]).unwrap(), json!(1.0));
+        assert_eq!(cos_fn.call(vec![json!(0)])?, json!(1.0));
 
         // tan(0) = 0
-        assert_eq!(tan_fn.call(vec![json!(0)]).unwrap(), json!(0.0));
+        assert_eq!(tan_fn.call(vec![json!(0)])?, json!(0.0));
 
         // sin(π/2) ≈ 1
         let pi_2 = std::f64::consts::PI / 2.0;
-        let sin_result = sin_fn.call(vec![json!(pi_2)]).unwrap();
+        let sin_result = sin_fn.call(vec![json!(pi_2)])?;
         if let Value::Number(n) = sin_result {
-            assert!((n.as_f64().unwrap() - 1.0).abs() < 1e-10);
+            assert!((n.as_f64()? - 1.0).abs() < 1e-10);
         }
     }
 
@@ -529,11 +529,11 @@ mod tests {
 
         // Natural log
         let e = std::f64::consts::E;
-        assert_eq!(log_fn.call(vec![json!(e)]).unwrap(), json!(1.0));
+        assert_eq!(log_fn.call(vec![json!(e)])?, json!(1.0));
 
         // Log base 10
         assert_eq!(
-            log_fn.call(vec![json!(100), json!(10)]).unwrap(),
+            log_fn.call(vec![json!(100), json!(10)])?,
             json!(2.0)
         );
 
@@ -545,9 +545,9 @@ mod tests {
     #[test]
     fn test_exp_function() {
         let exp_fn = ExpFunction;
-        assert_eq!(exp_fn.call(vec![json!(0)]).unwrap(), json!(1.0));
+        assert_eq!(exp_fn.call(vec![json!(0)])?, json!(1.0));
         assert_eq!(
-            exp_fn.call(vec![json!(1)]).unwrap(),
+            exp_fn.call(vec![json!(1)])?,
             json!(std::f64::consts::E)
         );
     }
@@ -559,18 +559,18 @@ mod tests {
         let round_fn = RoundFunction;
 
         // Floor
-        assert_eq!(floor_fn.call(vec![json!(3.7)]).unwrap(), json!(3));
-        assert_eq!(floor_fn.call(vec![json!(-3.7)]).unwrap(), json!(-4));
+        assert_eq!(floor_fn.call(vec![json!(3.7)])?, json!(3));
+        assert_eq!(floor_fn.call(vec![json!(-3.7)])?, json!(-4));
 
         // Ceil
-        assert_eq!(ceil_fn.call(vec![json!(3.2)]).unwrap(), json!(4));
-        assert_eq!(ceil_fn.call(vec![json!(-3.2)]).unwrap(), json!(-3));
+        assert_eq!(ceil_fn.call(vec![json!(3.2)])?, json!(4));
+        assert_eq!(ceil_fn.call(vec![json!(-3.2)])?, json!(-3));
 
         // Round
-        assert_eq!(round_fn.call(vec![json!(3.5)]).unwrap(), json!(4.0));
-        assert_eq!(round_fn.call(vec![json!(3.2)]).unwrap(), json!(3.0));
+        assert_eq!(round_fn.call(vec![json!(3.5)])?, json!(4.0));
+        assert_eq!(round_fn.call(vec![json!(3.2)])?, json!(3.0));
         assert_eq!(
-            round_fn.call(vec![json!(3.14159), json!(2)]).unwrap(),
+            round_fn.call(vec![json!(3.14159), json!(2)])?,
             json!(3.14)
         );
     }
@@ -578,8 +578,8 @@ mod tests {
     #[test]
     fn test_mod_function() {
         let mod_fn = ModFunction;
-        assert_eq!(mod_fn.call(vec![json!(10), json!(3)]).unwrap(), json!(1.0));
-        assert_eq!(mod_fn.call(vec![json!(7), json!(4)]).unwrap(), json!(3.0));
+        assert_eq!(mod_fn.call(vec![json!(10), json!(3)])?, json!(1.0));
+        assert_eq!(mod_fn.call(vec![json!(7), json!(4)])?, json!(3.0));
 
         // Division by zero should error
         assert!(mod_fn.call(vec![json!(10), json!(0)]).is_err());

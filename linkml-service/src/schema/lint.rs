@@ -3,6 +3,7 @@
 //! This module provides tools to check schema quality and compliance.
 
 use linkml_core::error::Result;
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -113,7 +114,7 @@ impl LintOptions {
         // Store rule configurations
         for (key, value) in config {
             if key.starts_with("rule.") {
-                let rule_name = key.strip_prefix("rule.").expect("just checked starts_with");
+                let rule_name = key.strip_prefix("rule.").map_err(|e| anyhow::anyhow!("just checked starts_with": {}, e))?;
                 if let Some(rule_config) = value.as_object() {
                     let mut config_map = HashMap::new();
                     for (k, v) in rule_config {
@@ -285,7 +286,7 @@ impl LintRule for NamingConventionRule {
         let mut issues = Vec::new();
 
         // Check class names (should be PascalCase)
-        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").expect("valid regex pattern");
+        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").map_err(|e| anyhow::anyhow!("valid regex pattern": {}, e))?;
         for class_name in schema.classes.keys() {
             if !pascal_case.is_match(class_name) {
                 issues.push(LintIssue {
@@ -303,7 +304,7 @@ impl LintRule for NamingConventionRule {
         }
 
         // Check slot names (should be snake_case)
-        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").expect("valid regex pattern");
+        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").map_err(|e| anyhow::anyhow!("valid regex pattern": {}, e))?;
         for slot_name in schema.slots.keys() {
             if !snake_case.is_match(slot_name) {
                 issues.push(LintIssue {
@@ -730,7 +731,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .expect("to_lowercase() always produces at least one char"),
+                .map_err(|e| anyhow::anyhow!("Error: {}", e))? always produces at least one char"),
         );
         prev_upper = ch.is_uppercase();
     }

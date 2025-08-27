@@ -4,6 +4,7 @@
 //! using Arc, eliminating unnecessary cloning during validation.
 
 use std::sync::Arc;
+use anyhow::anyhow;
 use std::collections::HashMap;
 
 use async_trait::async_trait;
@@ -288,7 +289,7 @@ mod tests {
             "value": 42
         });
         
-        let result = engine.validate_with_class(&data, "TestClass").await.expect("should validate");
+        let result = engine.validate_with_class(&data, "TestClass").await.map_err(|e| anyhow::anyhow!("should validate": {}, e))?;
         assert!(result.valid || !result.valid); // Just check it runs
     }
 

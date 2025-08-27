@@ -3,6 +3,7 @@
 //! Handles class inheritance, mixins, and slot usage overrides
 
 use indexmap::IndexMap;
+use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::{HashMap, HashSet};
@@ -343,7 +344,7 @@ mod tests {
 
         let person = composer
             .resolve_class("Person")
-            .expect("should resolve Person class");
+            .map_err(|e| anyhow::anyhow!("should resolve Person class": {}, e))?;
 
         // Check inherited slots
         assert_eq!(person.effective_slots.len(), 5);

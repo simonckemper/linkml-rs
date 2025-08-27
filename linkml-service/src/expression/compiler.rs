@@ -4,6 +4,7 @@
 //! converting AST nodes into optimized bytecode for faster evaluation.
 
 use super::ast::Expression;
+use anyhow::anyhow;
 use super::error::{ExpressionError, ParseError};
 use super::functions::FunctionRegistry;
 use serde_json::Value;
@@ -672,10 +673,10 @@ mod tests {
         let parser = Parser::new();
 
         // Test arithmetic
-        let expr = parser.parse("1 + 2 * 3").expect("should parse expression");
+        let expr = parser.parse("1 + 2 * 3").map_err(|e| anyhow::anyhow!("should parse expression": {}, e))?;
         let compiled = compiler
             .compile(&expr, "1 + 2 * 3")
-            .expect("should compile expression");
+            .map_err(|e| anyhow::anyhow!("should compile expression": {}, e))?;
 
         // The compiler optimizes 2 * 3 to 6 at compile time
         // So we get: 1, 6, Add
@@ -703,10 +704,10 @@ mod tests {
         // Constants should be folded
         let expr = parser
             .parse("2 + 3")
-            .expect("should parse constant expression");
+            .map_err(|e| anyhow::anyhow!("should parse constant expression": {}, e))?;
         let compiled = compiler
             .compile(&expr, "2 + 3")
-            .expect("should compile constant expression");
+            .map_err(|e| anyhow::anyhow!("should compile constant expression": {}, e))?;
 
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
@@ -729,10 +730,10 @@ mod tests {
         // // Test short-circuit AND
         // let expr = parser
         //     .parse("false && expensive_func()")
-        //     .expect("should parse short-circuit expression");
+        //     .map_err(|e| anyhow::anyhow!("should parse short-circuit expression": {}, e))?;
         // let compiled = compiler
         //     .compile(&expr, "false && expensive_func()")
-        //     .expect("should compile short-circuit expression");
+        //     .map_err(|e| anyhow::anyhow!("should compile short-circuit expression": {}, e))?;
         //
         // // Should have jump instruction for short-circuit
         // assert!(

@@ -6,6 +6,7 @@
 //! async file operations.
 
 use async_trait::async_trait;
+use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -265,26 +266,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_sandboxed_operations() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let fs = sandboxed_fs(temp_dir.path());
 
         // Test write and read
         let test_path = Path::new("test.txt");
         fs.write(test_path, "Hello, World!")
             .await
-            .expect("should write file");
+            .map_err(|e| anyhow::anyhow!("should write file": {}, e))?;
         let content = fs
             .read_to_string(test_path)
             .await
-            .expect("should read file");
+            .map_err(|e| anyhow::anyhow!("should read file": {}, e))?;
         assert_eq!(content, "Hello, World!");
 
         // Test exists
-        assert!(fs.exists(test_path).await.expect("should check existence"));
+        assert!(fs.exists(test_path).await.map_err(|e| anyhow::anyhow!("should check existence": {}, e))?);
         assert!(
             !fs.exists(Path::new("nonexistent.txt"))
                 .await
-                .expect("should check non-existence")
+                .map_err(|e| anyhow::anyhow!("should check non-existence": {}, e))?
         );
 
         // Test sandbox escape prevention
@@ -294,26 +295,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_directory_operations() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let fs = sandboxed_fs(temp_dir.path());
 
         // Create nested directories
         let dir_path = Path::new("a/b/c");
         fs.create_dir_all(dir_path)
             .await
-            .expect("should create nested directories");
+            .map_err(|e| anyhow::anyhow!("should create nested directories": {}, e))?;
 
         // Write file in nested directory
         let file_path = Path::new("a/b/c/file.txt");
         fs.write(file_path, "nested content")
             .await
-            .expect("should write file in nested directory");
+            .map_err(|e| anyhow::anyhow!("should write file in nested directory": {}, e))?;
 
         // Read directory
         let entries = fs
             .read_dir(Path::new("a/b/c"))
             .await
-            .expect("should read directory");
+            .map_err(|e| anyhow::anyhow!("should read directory": {}, e))?;
         assert_eq!(entries.len(), 1);
     }
 }

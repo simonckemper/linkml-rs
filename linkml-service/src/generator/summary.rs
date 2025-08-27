@@ -4,6 +4,7 @@
 //! providing insights into schema structure, complexity, and usage patterns.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
@@ -883,7 +884,7 @@ mod tests {
         let generator = SummaryGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .expect("should generate summary");
+            .map_err(|e| anyhow::anyhow!("should generate summary": {}, e))?;
 
         assert!(result.contains("Total Classes\t2"));
         assert!(result.contains("Total Slots\t2"));

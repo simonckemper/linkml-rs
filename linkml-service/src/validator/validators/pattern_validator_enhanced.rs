@@ -1,6 +1,7 @@
 //! Enhanced pattern validation with named capture groups and LRU caching
 
 use super::{ValidationContext, ValidationIssue, Validator};
+use anyhow::anyhow;
 use linkml_core::types::SlotDefinition;
 use lru::LruCache;
 use regex::Regex;
@@ -47,7 +48,7 @@ impl EnhancedPatternValidator {
     #[must_use]
     pub fn with_cache_size(size: usize) -> Self {
         let cache_size = NonZeroUsize::new(size)
-            .unwrap_or(NonZeroUsize::new(100).expect("100 is a valid non-zero usize"));
+            .unwrap_or(NonZeroUsize::new(100).map_err(|e| anyhow::anyhow!("100 is a valid non-zero usize": {}, e))?);
         Self {
             name: "enhanced_pattern_validator".to_string(),
             pattern_cache: Arc::new(Mutex::new(LruCache::new(cache_size))),
@@ -60,7 +61,7 @@ impl EnhancedPatternValidator {
         let mut cache = self
             .pattern_cache
             .lock()
-            .expect("pattern cache mutex should not be poisoned");
+            .map_err(|e| anyhow::anyhow!("pattern cache mutex should not be poisoned": {}, e))?;
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(Arc::clone(regex));
@@ -275,17 +276,17 @@ mod tests {
         assert!(issues.is_empty());
         assert!(captures.is_some());
 
-        let caps = captures.expect("should have captured groups for date pattern");
+        let caps = captures.map_err(|e| anyhow::anyhow!("should have captured groups for date pattern": {}, e))?;
         assert_eq!(
-            caps.get("year").expect("should have year capture"),
+            caps.get("year").map_err(|e| anyhow::anyhow!("should have year capture": {}, e))?,
             &json!("2025")
         );
         assert_eq!(
-            caps.get("month").expect("should have month capture"),
+            caps.get("month").map_err(|e| anyhow::anyhow!("should have month capture": {}, e))?,
             &json!("01")
         );
         assert_eq!(
-            caps.get("day").expect("should have day capture"),
+            caps.get("day").map_err(|e| anyhow::anyhow!("should have day capture": {}, e))?,
             &json!("31")
         );
     }
@@ -300,27 +301,27 @@ mod tests {
         // First access - compiles and caches
         let _ = validator
             .get_regex(pattern1)
-            .expect("should compile valid regex");
+            .map_err(|e| anyhow::anyhow!("should compile valid regex": {}, e))?;
         let _ = validator
             .get_regex(pattern2)
-            .expect("should compile valid regex");
+            .map_err(|e| anyhow::anyhow!("should compile valid regex": {}, e))?;
 
         // Access again - should be cached
         let _ = validator
             .get_regex(pattern1)
-            .expect("should get cached regex");
+            .map_err(|e| anyhow::anyhow!("should get cached regex": {}, e))?;
         let _ = validator
             .get_regex(pattern2)
-            .expect("should get cached regex");
+            .map_err(|e| anyhow::anyhow!("should get cached regex": {}, e))?;
 
         // Third pattern - should evict the least recently used (pattern1)
         let _ = validator
             .get_regex(pattern3)
-            .expect("should compile valid regex");
+            .map_err(|e| anyhow::anyhow!("should compile valid regex": {}, e))?;
 
         // Accessing pattern2 should still be cached
         let _ = validator
             .get_regex(pattern2)
-            .expect("should get cached regex");
+            .map_err(|e| anyhow::anyhow!("should get cached regex": {}, e))?;
     }
 }

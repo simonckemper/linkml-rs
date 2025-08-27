@@ -16,6 +16,7 @@ use tempfile::TempDir;
 // Import mock services
 mod mock_services;
 use mock_services::*;
+use crate::factory::{create_logger_service};
 
 /// Helper to get test data directory
 fn test_data_dir() -> PathBuf {
@@ -24,7 +25,7 @@ fn test_data_dir() -> PathBuf {
 
 /// Helper to create test service
 async fn create_test_service() -> Arc<dyn LinkMLService> {
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

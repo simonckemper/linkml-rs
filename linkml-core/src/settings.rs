@@ -4,6 +4,7 @@
 //! validation rules, and code generation options.
 
 use serde::{Deserialize, Serialize};
+use anyhow::anyhow;
 use std::collections::HashMap;
 
 /// Schema settings that control processing behavior
@@ -404,7 +405,7 @@ mod tests {
         let settings = SchemaSettings::strict();
         let validation = settings
             .validation
-            .expect("validation settings should be present in strict settings - test invariant");
+            .map_err(|e| anyhow::anyhow!("validation settings should be present in strict settings - test invariant": {}, e))?;
         assert_eq!(validation.strict, Some(true));
         assert_eq!(validation.check_permissibles, Some(true));
         assert_eq!(validation.allow_additional_properties, Some(false));
@@ -413,9 +414,7 @@ mod tests {
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = settings.generation.expect(
-            "generation settings should be present in for_generation settings - test invariant",
-        );
+        let generation = settings.generation.map_err(|e| anyhow::anyhow!("Error: {}", e))?;
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
         assert_eq!(generation.generate_docs, Some(true));
@@ -428,7 +427,7 @@ mod tests {
         // Set a custom value
         settings
             .set_custom("max_items", 100)
-            .expect("setting custom value with valid data should not fail in test");
+            .map_err(|e| anyhow::anyhow!("setting custom value with valid data should not fail in test": {}, e))?;
 
         // Get the custom value
         let max_items: Option<i32> = settings.get_custom("max_items");
@@ -460,7 +459,7 @@ mod tests {
         assert_eq!(
             merged
                 .generation
-                .expect("generation settings should be present after merge - test invariant")
+                .map_err(|e| anyhow::anyhow!("generation settings should be present after merge - test invariant": {}, e))?
                 .generate_builders,
             Some(false)
         );
@@ -470,10 +469,10 @@ mod tests {
     fn test_serialization() {
         let settings = SchemaSettings::strict();
         let json = serde_json::to_string_pretty(&settings)
-            .expect("serialization of valid settings should not fail in test");
+            .map_err(|e| anyhow::anyhow!("serialization of valid settings should not fail in test": {}, e))?;
 
         let deserialized: SchemaSettings = serde_json::from_str(&json)
-            .expect("deserialization of valid JSON should not fail in test");
+            .map_err(|e| anyhow::anyhow!("deserialization of valid JSON should not fail in test": {}, e))?;
         assert_eq!(settings, deserialized);
     }
 }

@@ -15,6 +15,7 @@ pub use migration_engine::{MigrationAnalysis, MigrationEngine, MigrationPlan};
 pub use stress_test::{StressTestConfig, StressTestExecutor, StressTestResults};
 
 use clap::{Parser, Subcommand, ValueEnum};
+use anyhow::anyhow;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::error::Result;
@@ -396,7 +397,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         spinner.set_style(
             ProgressStyle::default_spinner()
                 .template("{spinner:.green} {msg}")
-                .expect("progress bar template should be valid"),
+                .map_err(|e| anyhow::anyhow!("progress bar template should be valid": {}, e))?,
         );
         spinner.set_message("Loading schema...");
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
@@ -545,13 +546,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
             OutputFormat::Json => {
                 let json = serde_json::to_string_pretty(&report)
-                    .expect("validation report should be serializable to JSON");
+                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to JSON": {}, e))?;
                 println!("{json}");
             }
 
             OutputFormat::Yaml => {
                 let yaml = serde_yaml::to_string(&report)
-                    .expect("validation report should be serializable to YAML");
+                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to YAML": {}, e))?;
                 println!("{yaml}");
             }
 
@@ -727,7 +728,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 .template(
                     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
                 )
-                .expect("progress bar template should be valid")
+                .map_err(|e| anyhow::anyhow!("progress bar template should be valid": {}, e))?
                 .progress_chars("#>-"),
         );
 

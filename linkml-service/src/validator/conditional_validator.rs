@@ -554,14 +554,14 @@ mod tests {
             "state": "CA",
             "city": "San Francisco"
         });
-        assert!(validator.validate(&valid_us, "Address").unwrap().is_empty());
+        assert!(validator.validate(&valid_us, "Address")?.is_empty());
 
         // Invalid US address (missing state)
         let invalid_us = json!({
             "country": "US",
             "city": "San Francisco"
         });
-        let violations = validator.validate(&invalid_us, "Address").unwrap();
+        let violations = validator.validate(&invalid_us, "Address")?;
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].rule_name, "us_requires_state");
 
@@ -573,7 +573,7 @@ mod tests {
         assert!(
             validator
                 .validate(&valid_other, "Address")
-                .unwrap()
+                ?
                 .is_empty()
         );
     }
@@ -611,7 +611,7 @@ mod tests {
             "country": "US",
             "name": "John"
         });
-        assert!(!validator.validate(&invalid, "Person").unwrap().is_empty());
+        assert!(!validator.validate(&invalid, "Person")?.is_empty());
 
         // US minor without SSN - should pass
         let valid_minor = json!({
@@ -622,7 +622,7 @@ mod tests {
         assert!(
             validator
                 .validate(&valid_minor, "Person")
-                .unwrap()
+                ?
                 .is_empty()
         );
 
@@ -635,7 +635,7 @@ mod tests {
         assert!(
             validator
                 .validate(&valid_foreign, "Person")
-                .unwrap()
+                ?
                 .is_empty()
         );
     }

@@ -211,7 +211,7 @@ fn bench_memory_allocation(c: &mut Criterion) {
         b.iter(|| {
             // This measures the full generation including string allocation
             let result = generator.generate(black_box(&schema), black_box(&options));
-            let output = result.unwrap();
+            let output = result?;
             // Ensure the string is actually used
             assert!(output.content.len() > 0);
         });

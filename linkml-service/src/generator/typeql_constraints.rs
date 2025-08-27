@@ -4,6 +4,7 @@
 //! supporting TypeDB 3.0 features including @card, @key, @unique, and regex patterns.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::HashMap;
 
 /// Enhanced constraint translator for TypeQL generation
@@ -319,7 +320,7 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .expect("should have regex constraint")
+                .map_err(|e| anyhow::anyhow!("should have regex constraint": {}, e))?
                 .contains("regex")
         );
 
@@ -329,7 +330,7 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .expect("should have regex constraint with quotes")
+                .map_err(|e| anyhow::anyhow!("should have regex constraint with quotes": {}, e))?
                 .contains(r#"\""#)
         );
     }

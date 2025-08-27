@@ -1,6 +1,7 @@
 //! Pattern validation using regex
 
 use super::{ValidationContext, ValidationIssue, Validator};
+use anyhow::anyhow;
 use linkml_core::types::SlotDefinition;
 use regex::Regex;
 use serde_json::Value;
@@ -35,7 +36,7 @@ impl PatternValidator {
         let mut cache = self
             .pattern_cache
             .lock()
-            .expect("pattern cache lock poisoned");
+            .map_err(|e| anyhow::anyhow!("pattern cache lock poisoned": {}, e))?;
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(regex.clone());

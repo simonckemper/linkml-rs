@@ -79,7 +79,7 @@ mod tests {
     
     #[tokio::test]
     async fn test_parser_v2_yaml() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         let parser = ParserV2::new(fs.clone());
         
@@ -94,19 +94,19 @@ classes:
 "#;
         
         // Test parse_str
-        let schema = parser.parse_str(schema_content, "yaml").await.unwrap();
+        let schema = parser.parse_str(schema_content, "yaml").await?;
         assert_eq!(schema.name, "TestSchema");
         
         // Test parse_file
         let schema_path = temp_dir.path().join("test.yaml");
-        fs.write(&schema_path, schema_content).await.unwrap();
-        let schema = parser.parse_file(&schema_path).await.unwrap();
+        fs.write(&schema_path, schema_content).await?;
+        let schema = parser.parse_file(&schema_path).await?;
         assert_eq!(schema.name, "TestSchema");
     }
     
     #[tokio::test]
     async fn test_parser_v2_json() {
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
         let parser = ParserV2::new(fs.clone());
         
@@ -125,13 +125,13 @@ classes:
 }"#;
         
         // Test parse_str
-        let schema = parser.parse_str(schema_content, "json").await.unwrap();
+        let schema = parser.parse_str(schema_content, "json").await?;
         assert_eq!(schema.name, "TestSchema");
         
         // Test parse_file
         let schema_path = temp_dir.path().join("test.json");
-        fs.write(&schema_path, schema_content).await.unwrap();
-        let schema = parser.parse_file(&schema_path).await.unwrap();
+        fs.write(&schema_path, schema_content).await?;
+        let schema = parser.parse_file(&schema_path).await?;
         assert_eq!(schema.name, "TestSchema");
     }
 }

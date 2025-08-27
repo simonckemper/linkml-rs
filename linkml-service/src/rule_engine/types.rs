@@ -391,7 +391,7 @@ mod tests {
             ..Default::default()
         };
 
-        let compiled = CompiledRule::compile(rule, "TestClass".to_string()).unwrap();
+        let compiled = CompiledRule::compile(rule, "TestClass".to_string())?;
         assert_eq!(compiled.priority, 10);
         assert_eq!(compiled.source_class, "TestClass");
         assert!(!compiled.deactivated);

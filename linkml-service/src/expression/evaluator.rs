@@ -3,6 +3,7 @@
 #![allow(missing_docs)]
 
 use super::ast::Expression;
+use anyhow::anyhow;
 use super::error::EvaluationError;
 use super::functions::FunctionRegistry;
 use lru::LruCache;
@@ -261,7 +262,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .expect("Cache size of 1000 should always be valid");
+                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid": {}, e))?;
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -280,7 +281,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .expect("Cache size of 1000 should always be valid");
+                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid": {}, e))?;
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -322,7 +323,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .expect("Cache size of 1000 should always be valid");
+                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid": {}, e))?;
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -960,25 +961,25 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Null, &context)
-                .expect("Should evaluate null"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate null": {}, e))?,
             Value::Null
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Boolean(true), &context)
-                .expect("Should evaluate boolean"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate boolean": {}, e))?,
             Value::Bool(true)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Number(42.0), &context)
-                .expect("Should evaluate number"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate number": {}, e))?,
             json!(42.0)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::String("hello".to_string()), &context)
-                .expect("Should evaluate string"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate string": {}, e))?,
             json!("hello")
         );
     }
@@ -993,13 +994,13 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Variable("x".to_string()), &context)
-                .expect("Should evaluate variable x"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate variable x": {}, e))?,
             json!(10)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Variable("name".to_string()), &context)
-                .expect("Should evaluate variable name"),
+                .map_err(|e| anyhow::anyhow!("Should evaluate variable name": {}, e))?,
             json!("Alice")
         );
 
@@ -1023,7 +1024,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(5.0)
         );
 
@@ -1035,7 +1036,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(6.0)
         );
 
@@ -1047,7 +1048,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(12.0)
         );
 
@@ -1059,7 +1060,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(5.0)
         );
 
@@ -1087,7 +1088,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(true)
         );
 
@@ -1099,7 +1100,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(false)
         );
 
@@ -1111,7 +1112,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(true)
         );
     }
@@ -1129,7 +1130,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(false)
         );
 
@@ -1141,7 +1142,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(true)
         );
 
@@ -1150,7 +1151,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!(false)
         );
     }
@@ -1174,7 +1175,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!("big")
         );
 
@@ -1183,7 +1184,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .expect("Test evaluation should succeed"),
+                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed": {}, e))?,
             json!("small")
         );
     }

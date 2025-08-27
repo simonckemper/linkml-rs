@@ -4,6 +4,7 @@
 //! into LinkML data instances and dump instances back to RDF format.
 
 use async_trait::async_trait;
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
 use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term};
@@ -829,7 +830,7 @@ impl RdfDumper {
                 let literal = Literal::new_typed_literal(
                     &b.to_string(),
                     NamedNode::new("http://www.w3.org/2001/XMLSchema#boolean")
-                        .expect("hardcoded XSD boolean datatype URI is valid"),
+                        .map_err(|e| anyhow::anyhow!("hardcoded XSD boolean datatype URI is valid": {}, e))?,
                 );
                 Ok(Term::Literal(literal))
             }
@@ -839,14 +840,14 @@ impl RdfDumper {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#integer")
-                            .expect("hardcoded XSD integer datatype URI is valid"),
+                            .map_err(|e| anyhow::anyhow!("hardcoded XSD integer datatype URI is valid": {}, e))?,
                     );
                     Ok(Term::Literal(literal))
                 } else {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#decimal")
-                            .expect("hardcoded XSD decimal datatype URI is valid"),
+                            .map_err(|e| anyhow::anyhow!("hardcoded XSD decimal datatype URI is valid": {}, e))?,
                     );
                     Ok(Term::Literal(literal))
                 }
@@ -1062,14 +1063,14 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(turtle_content, &schema, &options)
             .await
-            .expect("should load valid Turtle content");
+            .map_err(|e| anyhow::anyhow!("should load valid Turtle content": {}, e))?;
         assert_eq!(instances.len(), 2);
 
         // Find Alice
         let alice = instances
             .iter()
             .find(|i| i.id.as_deref() == Some("http://example.org/alice"))
-            .expect("should find alice instance");
+            .map_err(|e| anyhow::anyhow!("should find alice instance": {}, e))?;
         assert_eq!(alice.class_name, "Person");
         assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
         assert_eq!(
@@ -1082,7 +1083,7 @@ ex:bob rdf:type ex:Person ;
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .expect("should dump instances to Turtle");
+            .map_err(|e| anyhow::anyhow!("should dump instances to Turtle": {}, e))?;
 
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -1104,7 +1105,7 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(ntriples_content, &schema, &options)
             .await
-            .expect("should load valid N-Triples content");
+            .map_err(|e| anyhow::anyhow!("should load valid N-Triples content": {}, e))?;
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie")));
 
@@ -1113,7 +1114,7 @@ ex:bob rdf:type ex:Person ;
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .expect("should dump instances to N-Triples");
+            .map_err(|e| anyhow::anyhow!("should dump instances to N-Triples": {}, e))?;
 
         // N-Triples should have one triple per line
         let lines: Vec<&str> = dumped.trim().lines().collect();

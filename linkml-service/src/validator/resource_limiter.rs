@@ -8,6 +8,7 @@
 //! - Timeout enforcement
 
 use dashmap::DashMap;
+use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
@@ -386,7 +387,7 @@ impl ResourceLimiter {
             return ResourceStats::default();
         }
 
-        let latest = history.last().expect("just checked history is not empty");
+        let latest = history.last().map_err(|e| anyhow::anyhow!("just checked history is not empty": {}, e))?;
         let window_start = Instant::now()
             .checked_sub(Duration::from_secs(300))
             .unwrap_or(Instant::now()); // 5 min window
@@ -645,7 +646,7 @@ mod tests {
                 ResourceRequirements::estimate_from_size(100),
             )
             .await
-            .unwrap();
+            ?;
 
         // Acquire second resource
         let _guard2 = limiter
@@ -654,7 +655,7 @@ mod tests {
                 ResourceRequirements::estimate_from_size(100),
             )
             .await
-            .unwrap();
+            ?;
 
         // Third should wait (would block in real scenario)
         assert_eq!(limiter.active_operations.len(), 2);

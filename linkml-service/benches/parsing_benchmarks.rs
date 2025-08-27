@@ -197,15 +197,15 @@ fn bench_json_parsing(c: &mut Criterion) {
     let json_parser = JsonParser::new();
 
     // Convert YAML schemas to JSON
-    let small_schema = yaml_parser.parse(SMALL_YAML_SCHEMA).unwrap();
-    let small_json = serde_json::to_string(&small_schema).unwrap();
+    let small_schema = yaml_parser.parse(SMALL_YAML_SCHEMA)?;
+    let small_json = serde_json::to_string(&small_schema)?;
 
-    let medium_schema = yaml_parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
-    let medium_json = serde_json::to_string(&medium_schema).unwrap();
+    let medium_schema = yaml_parser.parse(MEDIUM_YAML_SCHEMA)?;
+    let medium_json = serde_json::to_string(&medium_schema)?;
 
     let large_yaml = generate_large_yaml_schema();
-    let large_schema = yaml_parser.parse(&large_yaml).unwrap();
-    let large_json = serde_json::to_string(&large_schema).unwrap();
+    let large_schema = yaml_parser.parse(&large_yaml)?;
+    let large_json = serde_json::to_string(&large_schema)?;
 
     let mut group = c.benchmark_group("json_parsing");
 
@@ -236,9 +236,9 @@ fn bench_json_parsing(c: &mut Criterion) {
 fn bench_inheritance_resolution(c: &mut Criterion) {
     let parser = YamlParser::new();
 
-    let small_schema = parser.parse(SMALL_YAML_SCHEMA).unwrap();
-    let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
-    let large_schema = parser.parse(&generate_large_yaml_schema()).unwrap();
+    let small_schema = parser.parse(SMALL_YAML_SCHEMA)?;
+    let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA)?;
+    let large_schema = parser.parse(&generate_large_yaml_schema())?;
 
     let mut group = c.benchmark_group("inheritance_resolution");
 
@@ -274,8 +274,8 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
 
 fn bench_schema_view_operations(c: &mut Criterion) {
     let parser = YamlParser::new();
-    let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
-    let large_schema = parser.parse(&generate_large_yaml_schema()).unwrap();
+    let medium_schema = parser.parse(MEDIUM_YAML_SCHEMA)?;
+    let large_schema = parser.parse(&generate_large_yaml_schema())?;
 
     let medium_view = SchemaView::new(medium_schema.clone());
     let large_view = SchemaView::new(large_schema.clone());
@@ -287,7 +287,7 @@ fn bench_schema_view_operations(c: &mut Criterion) {
         b.iter(|| {
             let slots = medium_view.induced_slots(black_box("Employee"));
             assert!(slots.is_some());
-            assert!(!slots.unwrap().is_empty());
+            assert!(!slots?.is_empty());
         })
     });
 
@@ -295,7 +295,7 @@ fn bench_schema_view_operations(c: &mut Criterion) {
         b.iter(|| {
             let slots = large_view.induced_slots(black_box("Class49"));
             assert!(slots.is_some());
-            assert!(!slots.unwrap().is_empty());
+            assert!(!slots?.is_empty());
         })
     });
 
@@ -351,8 +351,8 @@ fn bench_schema_merging(c: &mut Criterion) {
     let parser = YamlParser::new();
     let merger = SchemaMerger::new();
 
-    let schema1 = parser.parse(SMALL_YAML_SCHEMA).unwrap();
-    let schema2 = parser.parse(MEDIUM_YAML_SCHEMA).unwrap();
+    let schema1 = parser.parse(SMALL_YAML_SCHEMA)?;
+    let schema2 = parser.parse(MEDIUM_YAML_SCHEMA)?;
 
     c.bench_function("schema_merge", |b| {
         b.iter(|| {
@@ -367,8 +367,8 @@ fn bench_parsing_comparison(c: &mut Criterion) {
     let json_parser = JsonParser::new();
 
     let yaml_content = MEDIUM_YAML_SCHEMA;
-    let schema = yaml_parser.parse(yaml_content).unwrap();
-    let json_content = serde_json::to_string(&schema).unwrap();
+    let schema = yaml_parser.parse(yaml_content)?;
+    let json_content = serde_json::to_string(&schema)?;
 
     let mut group = c.benchmark_group("parsing_comparison");
 

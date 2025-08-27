@@ -6,6 +6,7 @@
 //! - L3: Persistent disk cache (optional, for large schemas)
 
 use super::{cache::ValidatorCacheKey, compiled::CompiledValidator};
+use anyhow::anyhow;
 use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
 use linkml_core::error::{LinkMLError, Result};
 use lru::LruCache;
@@ -649,7 +650,7 @@ mod tests {
     #[tokio::test]
     async fn test_multi_layer_cache_basic() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).expect("should create cache");
+        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache": {}, e))?;
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -663,7 +664,7 @@ mod tests {
         cache
             .put(key.clone(), validator.clone())
             .await
-            .expect("should put into cache");
+            .map_err(|e| anyhow::anyhow!("should put into cache": {}, e))?;
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
 
@@ -677,7 +678,7 @@ mod tests {
     #[tokio::test]
     async fn test_cache_invalidation() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).expect("should create cache");
+        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache": {}, e))?;
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -691,11 +692,11 @@ mod tests {
         cache
             .put(key.clone(), validator)
             .await
-            .expect("should put into cache");
+            .map_err(|e| anyhow::anyhow!("should put into cache": {}, e))?;
         cache
             .invalidate(&key)
             .await
-            .expect("should invalidate cache");
+            .map_err(|e| anyhow::anyhow!("should invalidate cache": {}, e))?;
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
     }

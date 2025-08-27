@@ -1,6 +1,7 @@
 //! GraphQL schema generation implementation for `LinkML` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
+use anyhow::anyhow;
 use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::prelude::*;
 use std::collections::HashSet;
@@ -877,7 +878,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate GraphQL output");
+            .map_err(|e| anyhow::anyhow!("should generate GraphQL output": {}, e))?;
 
         assert!(output.contains("type Person"));
         assert!(output.contains("name: String!"));

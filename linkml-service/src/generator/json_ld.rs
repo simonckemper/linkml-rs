@@ -4,6 +4,7 @@
 //! JSON-LD is a W3C standard for representing linked data in JSON format.
 
 use linkml_core::{
+use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };
@@ -544,7 +545,7 @@ impl JsonLdGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("lowercase char should exist"),
+                    .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }

@@ -4,6 +4,7 @@
 //! ShEx is a language for describing RDF graph structures as sets of constraints.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
@@ -283,7 +284,7 @@ impl ShExGenerator {
                 slot_def
                     .description
                     .as_ref()
-                    .expect("checked is_some() above")
+                    .map_err(|e| anyhow::anyhow!("Error: {}", e))? above")
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -596,7 +597,7 @@ ex:MyShape a shex:Shape ;
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -712,7 +713,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).expect("should generate ShEx");
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
 
         // Check content
         assert!(output.contains("PREFIX"));
@@ -726,7 +727,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).expect("should generate ShEx");
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
 
         // Check cardinality markers
         assert!(output.contains("?")); // optional age
@@ -740,7 +741,7 @@ mod tests {
         options.closed_shapes = true;
 
         let generator = ShExGenerator::with_options(options);
-        let output = generator.generate(&schema).expect("should generate ShEx");
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
 
         assert!(output.contains("CLOSED"));
     }

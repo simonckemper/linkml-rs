@@ -4,6 +4,7 @@
 //! common strings across schema definitions, significantly reducing memory usage.
 
 use std::collections::HashMap;
+use anyhow::anyhow;
 use std::sync::{Arc, RwLock};
 
 /// Global string pool for interning common `LinkML` strings
@@ -32,14 +33,14 @@ impl StringPool {
     pub fn intern(&self, s: &str) -> Arc<str> {
         // Try read lock first for common case
         {
-            let pool = self.pool.read().expect("StringPool read lock poisoned");
+            let pool = self.pool.read().map_err(|e| anyhow::anyhow!("StringPool read lock poisoned": {}, e))?;
             if let Some(interned) = pool.get(s) {
                 return Arc::clone(interned);
             }
         }
 
         // Need write lock to insert
-        let mut pool = self.pool.write().expect("StringPool write lock poisoned");
+        let mut pool = self.pool.write().map_err(|e| anyhow::anyhow!("StringPool write lock poisoned": {}, e))?;
 
         // Double-check in case another thread interned while we waited
         if let Some(interned) = pool.get(s) {
@@ -56,7 +57,7 @@ impl StringPool {
     pub fn size(&self) -> usize {
         self.pool
             .read()
-            .expect("StringPool read lock poisoned")
+            .map_err(|e| anyhow::anyhow!("StringPool read lock poisoned": {}, e))?
             .len()
     }
 
@@ -65,7 +66,7 @@ impl StringPool {
     pub fn clear(&self) {
         self.pool
             .write()
-            .expect("StringPool write lock poisoned")
+            .map_err(|e| anyhow::anyhow!("StringPool write lock poisoned": {}, e))?
             .clear();
     }
 }

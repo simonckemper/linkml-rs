@@ -4,6 +4,7 @@
 //! enabling cross-language serialization and RPC support.
 
 use linkml_core::types::{
+use anyhow::anyhow;
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
 };
 use std::collections::{HashMap, HashSet};
@@ -280,7 +281,7 @@ impl ProtobufGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -458,7 +459,7 @@ mod tests {
         let generator = ProtobufGenerator::new();
         let proto_content = generator
             .generate(&schema)
-            .expect("should generate protobuf");
+            .map_err(|e| anyhow::anyhow!("should generate protobuf": {}, e))?;
 
         assert!(proto_content.contains("syntax = \"proto3\""));
         assert!(proto_content.contains("package test_schema"));
@@ -500,31 +501,31 @@ mod tests {
         assert_eq!(
             generator
                 .get_proto_type(&Some("string".to_string()), &schema)
-                .expect("should get proto type"),
+                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
             "string"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("integer".to_string()), &schema)
-                .expect("should get proto type"),
+                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
             "int64"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("boolean".to_string()), &schema)
-                .expect("should get proto type"),
+                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
             "bool"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("CustomType".to_string()), &schema)
-                .expect("should get proto type"),
+                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
             "CustomType"
         );
         assert_eq!(
             generator
                 .get_proto_type(&None, &schema)
-                .expect("should get proto type"),
+                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
             "string"
         );
     }

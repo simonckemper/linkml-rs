@@ -180,7 +180,7 @@ mod tests {
         schema.classes.insert("TestClass".to_string(), class_def);
 
         let engine = RuleEngine::new(Arc::new(schema));
-        let rules = engine.get_applicable_rules("TestClass").unwrap();
+        let rules = engine.get_applicable_rules("TestClass")?;
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].priority, 10);
     }

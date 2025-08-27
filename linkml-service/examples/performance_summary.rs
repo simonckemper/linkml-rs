@@ -4,6 +4,7 @@
 //! implementation across various operations.
 
 use linkml_service::{
+use anyhow::anyhow;
     expression::{Evaluator, parse_expression},
     generator::{
         PythonDataclassGenerator, RustGenerator, TypeQLGenerator,
@@ -280,6 +281,6 @@ mod tests {
 
     #[test]
     fn test_performance_summary() {
-        main().expect("Performance summary should complete successfully");
+        main().map_err(|e| anyhow::anyhow!("Performance summary should complete successfully": {}, e))?;
     }
 }

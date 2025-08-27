@@ -4,6 +4,7 @@
 //! in LinkML schemas, including mixin composition and attribute inheritance.
 
 use indexmap::IndexMap;
+use anyhow::anyhow;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
@@ -296,7 +297,7 @@ impl InheritanceResolver {
             let pos = path
                 .iter()
                 .position(|x| x == class_name)
-                .expect("class_name should exist in path after contains() check");
+                .map_err(|e| anyhow::anyhow!("Error: {}", e))? check");
             let cycle = path[pos..].to_vec().join(" -> ");
             return Err(InheritanceError::CircularInheritance(format!(
                 "{} -> {}",
@@ -595,12 +596,12 @@ mod tests {
 
         resolver
             .resolve_schema(&mut schema)
-            .expect("resolution should succeed");
+            .map_err(|e| anyhow::anyhow!("resolution should succeed": {}, e))?;
 
         let person = schema
             .classes
             .get("Person")
-            .expect("Person class should exist");
+            .map_err(|e| anyhow::anyhow!("Person class should exist": {}, e))?;
 
         // Should have inherited attributes
         assert!(person.attributes.contains_key("id"));

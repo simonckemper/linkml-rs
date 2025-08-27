@@ -327,7 +327,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "last_name": "Smith",
                 "created_at": "2024-01-15T10:30:00Z"
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "User".to_string(),
@@ -338,7 +338,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "last_name": "Johnson",
                 "created_at": "2024-02-20T14:45:00Z"
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Product".to_string(),
@@ -349,7 +349,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "price": 1299.99,
                 "stock_quantity": 50
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Product".to_string(),
@@ -360,7 +360,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "price": 29.99,
                 "stock_quantity": 200
             }))
-            .unwrap(),
+            ?,
         },
     ]
 }

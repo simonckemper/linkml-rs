@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn test_excel_generation() {
-        let schema = create_research_schema().unwrap();
+        let schema = create_research_schema()?;
         let generator = ExcelGenerator::new();
 
         // Test basic generation

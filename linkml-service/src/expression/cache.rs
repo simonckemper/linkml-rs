@@ -4,6 +4,7 @@
 //! and compiled bytecode to avoid redundant parsing and compilation.
 
 use super::ast::Expression;
+use anyhow::anyhow;
 use super::compiler::CompiledExpression;
 use lru::LruCache;
 use std::hash::Hash;
@@ -66,7 +67,7 @@ impl ExpressionCache {
     /// Create a new expression cache with given capacity
     pub fn new(capacity: usize) -> Self {
         let capacity =
-            NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always non-zero");
+            NonZeroUsize::new(capacity.max(1)).map_err(|e| anyhow::anyhow!("Error: {}", e))? is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -80,7 +81,7 @@ impl ExpressionCache {
         config: &linkml_core::configuration_v2::ExpressionCacheConfig,
     ) -> Self {
         let capacity = NonZeroUsize::new(config.max_entries.max(1))
-            .expect("max_entries.max(1) is always non-zero");
+            .map_err(|e| anyhow::anyhow!("Error: {}", e))? is always non-zero");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -103,8 +104,8 @@ impl ExpressionCache {
 
     /// Get an expression from the cache
     pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
 
         if let Some(entry) = cache.get_mut(key) {
             // Check if entry is too old
@@ -137,8 +138,8 @@ impl ExpressionCache {
         ast: Expression,
         compiled: Option<Arc<CompiledExpression>>,
     ) {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
 
         let entry = CachedExpression {
             ast,
@@ -158,8 +159,8 @@ impl ExpressionCache {
 
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
 
         cache.clear();
         stats.entries = 0;
@@ -168,12 +169,12 @@ impl ExpressionCache {
 
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().expect("stats lock poisoned").clone()
+        self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?.clone()
     }
 
     /// Get cache hit rate (0.0 to 1.0)
     pub fn hit_rate(&self) -> f64 {
-        let stats = self.stats.read().expect("stats lock poisoned");
+        let stats = self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
         let total = stats.hits + stats.misses;
         if total == 0 {
             0.0
@@ -184,8 +185,8 @@ impl ExpressionCache {
 
     /// Prune old entries from the cache
     pub fn prune_old_entries(&self) {
-        let mut cache = self.cache.write().expect("cache lock poisoned");
-        let mut stats = self.stats.write().expect("stats lock poisoned");
+        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
+        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
 
         let now = Instant::now();
         let mut to_remove = Vec::new();
@@ -349,7 +350,7 @@ mod tests {
         cache.insert(key.clone(), ast.clone(), None);
 
         // Cache hit
-        let cached = cache.get(&key).expect("cached entry should exist");
+        let cached = cache.get(&key).map_err(|e| anyhow::anyhow!("cached entry should exist": {}, e))?;
         assert_eq!(cache.stats().hits, 1);
         assert_eq!(cached.hit_count, 1);
     }

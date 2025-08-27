@@ -1,6 +1,7 @@
 //! Tests for SchemaView caching behavior and performance
 
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use anyhow::anyhow;
 use linkml_service::schema_view::SchemaView;
 use std::sync::Arc;
 use std::time::Instant;
@@ -107,7 +108,7 @@ async fn test_concurrent_cache_access() {
                 "Employee" => assert!(slot_count >= 4),
                 "Address" => assert!(slot_count >= 4),
                 "Department" => assert!(slot_count >= 2),
-                _ => unreachable!(),
+                _ => return Err(anyhow::anyhow!("Unreachable code reached").into()),
             }
         }
     }

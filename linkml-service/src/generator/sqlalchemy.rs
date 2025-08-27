@@ -4,6 +4,7 @@
 //! enabling database persistence with full ORM capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
@@ -572,7 +573,7 @@ impl SQLAlchemyGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("lowercase char should exist"),
+                    .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -766,7 +767,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .expect("should generate SQLAlchemy models");
+            .map_err(|e| anyhow::anyhow!("should generate SQLAlchemy models": {}, e))?;
 
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));

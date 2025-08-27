@@ -4,6 +4,7 @@
 //! including structural differences, semantic changes, and breaking change detection.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -989,7 +990,7 @@ mod tests {
         let schema = create_test_schema("test");
         let mut differ = SchemaDiffer::with_defaults();
 
-        let diff = differ.diff(&schema, &schema).expect("diff should succeed");
+        let diff = differ.diff(&schema, &schema).map_err(|e| anyhow::anyhow!("diff should succeed": {}, e))?;
 
         assert_eq!(diff.stats.total_changes, 0);
         assert!(diff.changes.is_empty());
@@ -1011,7 +1012,7 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .expect("diff should succeed");
+            .map_err(|e| anyhow::anyhow!("diff should succeed": {}, e))?;
 
         assert_eq!(diff.stats.additions, 1);
         assert_eq!(diff.stats.compatible_changes, 1);
@@ -1034,7 +1035,7 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .expect("diff should succeed");
+            .map_err(|e| anyhow::anyhow!("diff should succeed": {}, e))?;
 
         assert_eq!(diff.stats.removals, 1);
         assert_eq!(diff.stats.breaking_changes, 1);
@@ -1052,7 +1053,7 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .expect("diff should succeed");
+            .map_err(|e| anyhow::anyhow!("diff should succeed": {}, e))?;
 
         assert_eq!(diff.stats.modifications, 1);
         assert_eq!(diff.stats.compatible_changes, 1); // Making required field optional is compatible
@@ -1070,7 +1071,7 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .expect("diff should succeed");
+            .map_err(|e| anyhow::anyhow!("diff should succeed": {}, e))?;
 
         assert_eq!(diff.stats.modifications, 1);
         assert_eq!(diff.stats.breaking_changes, 1);

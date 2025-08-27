@@ -12,6 +12,7 @@
 //! - JSON-LD (.jsonld)
 
 use linkml_core::{
+use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };
@@ -709,7 +710,7 @@ impl RdfGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -985,7 +986,7 @@ impl RdfGenerator {
             });
             doc["@graph"]
                 .as_array_mut()
-                .expect("@graph should be an array")
+                .map_err(|e| anyhow::anyhow!("@graph should be an array": {}, e))?
                 .push(class_obj);
         }
 

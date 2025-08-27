@@ -1,6 +1,7 @@
 //! JSON parser for `LinkML` schemas
 
 use linkml_core::{
+use anyhow::anyhow;
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };
@@ -54,7 +55,7 @@ mod tests {
         let parser = JsonParser::new();
         let schema = parser
             .parse_str(json)
-            .expect("Failed to parse minimal JSON schema");
+            .map_err(|e| anyhow::anyhow!("Failed to parse minimal JSON schema": {}, e))?;
 
         assert_eq!(schema.id, "https://example.org/test");
         assert_eq!(schema.name, "test_schema");

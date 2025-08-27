@@ -3,6 +3,7 @@
 //! This module provides functionality to load and dump LinkML data in JSON format.
 
 use super::traits::{
+use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
     LoaderError, LoaderResult,
 };
@@ -270,8 +271,8 @@ mod tests {
         "#;
 
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().expect("should create temporary file");
-        std::fs::write(temp_file.path(), json_content).expect("should write JSON content");
+        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file": {}, e))?;
+        std::fs::write(temp_file.path(), json_content).map_err(|e| anyhow::anyhow!("should write JSON content": {}, e))?;
 
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
@@ -283,7 +284,7 @@ mod tests {
         let instances = loader
             .load_file(temp_file.path(), &schema, &options)
             .await
-            .expect("should load JSON instances");
+            .map_err(|e| anyhow::anyhow!("should load JSON instances": {}, e))?;
 
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -330,9 +331,9 @@ mod tests {
         let json_str = dumper
             .dump_string(&instances, &schema, &options)
             .await
-            .expect("should dump instances to JSON");
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSON": {}, e))?;
 
-        let parsed: Vec<Value> = serde_json::from_str(&json_str).expect("should parse dumped JSON");
+        let parsed: Vec<Value> = serde_json::from_str(&json_str).map_err(|e| anyhow::anyhow!("should parse dumped JSON": {}, e))?;
 
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0]["@type"], "Person");

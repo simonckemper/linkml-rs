@@ -8,6 +8,7 @@
 //! - Performance optimized with zero-cost abstractions
 
 use super::base::{BaseCodeFormatter, collect_all_slots, is_optional_slot};
+use anyhow::anyhow;
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
@@ -1492,7 +1493,7 @@ impl AsyncGenerator for RustGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         &mut main_output,
-                        "    Regex::new(r\"{}\").expect(\"Invalid regex\")",
+                        "    Regex::new(r\"{}\").map_err(|e| anyhow::anyhow!("Error: {}", e))?",
                         pattern
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -1843,7 +1844,7 @@ mod tests {
         let options = GeneratorOptions::new().with_docs(true);
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .expect("should generate Rust output");
+            .map_err(|e| anyhow::anyhow!("should generate Rust output": {}, e))?;
 
         assert_eq!(outputs.len(), 1);
         let output = &outputs[0].content;

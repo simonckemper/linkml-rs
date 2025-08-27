@@ -14,6 +14,7 @@ use tokio::time::timeout;
 // Import mock services
 mod mock_services;
 use mock_services::*;
+use crate::factory::{create_logger_service};
 
 /// Helper to measure memory usage
 fn get_memory_usage() -> usize {
@@ -27,7 +28,7 @@ fn get_memory_usage() -> usize {
 #[tokio::test]
 async fn test_schema_compilation_performance() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -343,7 +344,7 @@ enums:
 #[tokio::test]
 async fn test_validation_throughput() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -444,7 +445,7 @@ slots:
 #[tokio::test]
 async fn test_parallel_validation_scaling() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -550,7 +551,7 @@ slots:
 #[tokio::test]
 async fn test_memory_efficiency() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -640,7 +641,7 @@ slots:
 #[tokio::test]
 async fn test_cache_effectiveness() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -736,7 +737,7 @@ slots:
 #[tokio::test]
 async fn test_timeout_handling() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -812,7 +813,7 @@ slots:
 #[tokio::test]
 async fn test_concurrent_schema_loading() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

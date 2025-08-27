@@ -4,6 +4,7 @@
 //! preserving structure and optionally comments.
 
 use super::traits::Generator;
+use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::metadata::Contributor;
 use linkml_core::prelude::*;
@@ -372,7 +373,7 @@ impl YamlGenerator {
                 subset
                     .description
                     .as_ref()
-                    .expect("description exists after is_some check")
+                    .map_err(|e| anyhow::anyhow!("description exists after is_some check": {}, e))?
                     .clone(),
             )
         } else {
@@ -497,7 +498,7 @@ impl YamlGenerator {
                     serde_yaml::Value::String(
                         description
                             .as_ref()
-                            .expect("description exists after is_some check")
+                            .map_err(|e| anyhow::anyhow!("description exists after is_some check": {}, e))?
                             .clone(),
                     )
                 } else if map.is_empty() {

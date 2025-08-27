@@ -5,6 +5,7 @@
 //! multiple diagram styles and customization options.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::HashSet;
 use std::fmt::Write;
 
@@ -647,7 +648,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .expect("should generate Graphviz output");
+            .map_err(|e| anyhow::anyhow!("should generate Graphviz output": {}, e))?;
 
         // Check content includes basic structure
         assert!(result.contains("digraph LinkMLSchema"));

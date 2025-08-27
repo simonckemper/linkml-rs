@@ -4,6 +4,7 @@
 //! and provides helper utilities for plugin development.
 
 use super::*;
+use anyhow::anyhow;
 use std::any::Any;
 
 /// Plugin API version
@@ -221,7 +222,7 @@ impl PluginBuilder {
                 author: None,
                 license: None,
                 homepage: None,
-                linkml_version: VersionReq::parse("*").expect("'*' is a valid version requirement"),
+                linkml_version: VersionReq::parse("*").map_err(|e| anyhow::anyhow!("'*' is a valid version requirement": {}, e))?,
                 dependencies: Vec::new(),
                 capabilities: Vec::new(),
             },

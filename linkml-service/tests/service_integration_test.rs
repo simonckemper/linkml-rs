@@ -15,11 +15,12 @@ use logger_core::LoggerService;
 // Import the complete mock implementations from the mock_services module
 mod mock_services;
 use mock_services::*;
+use crate::factory::{create_logger_service};
 
 #[tokio::test]
 async fn test_logger_service_integration() {
     // Create all required service dependencies
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -143,7 +144,7 @@ async fn test_timestamp_service_integration() {
     // 3. Test the integration
 
     // Create all required service dependencies
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -253,7 +254,7 @@ slots:
 #[tokio::test]
 async fn test_configuration_service_integration() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -342,7 +343,7 @@ async fn test_cache_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -439,7 +440,7 @@ async fn test_monitoring_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -570,7 +571,7 @@ async fn test_health_check_service_integration() {
     let health_service = Arc::new(MockHealthCheckService::new());
 
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -674,7 +675,7 @@ async fn test_error_handling_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -811,7 +812,7 @@ async fn test_task_management_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -905,7 +906,7 @@ slots:
 #[tokio::test]
 async fn test_end_to_end_workflow() {
     // Create mock services
-    let logger = Arc::new(MockLoggerService::new());
+    let logger = Arc::new(Mockcreate_logger_service());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

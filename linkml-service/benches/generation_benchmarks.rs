@@ -156,11 +156,11 @@ async fn bench_generator<G: Generator>(
             schema,
             |b, schema| {
                 b.iter(|| {
-                    let runtime = tokio::runtime::Runtime::new().unwrap();
+                    let runtime = tokio::runtime::Runtime::new()?;
                     runtime.block_on(async {
                         let result = generator.generate(black_box(schema), &options).await;
                         assert!(result.is_ok());
-                        result.unwrap()
+                        result?
                     })
                 })
             },
@@ -177,7 +177,7 @@ fn bench_python_dataclass_generation(c: &mut Criterion) {
         ("large".to_string(), create_large_schema()),
     ];
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async {
         bench_generator(
             c,
@@ -196,7 +196,7 @@ fn bench_pydantic_generation(c: &mut Criterion) {
         ("large".to_string(), create_large_schema()),
     ];
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async {
         bench_generator(c, "pydantic", PydanticGenerator::new(), &schemas).await;
     });
@@ -209,7 +209,7 @@ fn bench_typescript_generation(c: &mut Criterion) {
         ("large".to_string(), create_large_schema()),
     ];
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async {
         bench_generator(c, "typescript", TypeScriptGenerator::new(), &schemas).await;
     });
@@ -222,7 +222,7 @@ fn bench_rust_generation(c: &mut Criterion) {
         ("large".to_string(), create_large_schema()),
     ];
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async {
         bench_generator(c, "rust", RustGenerator::new(), &schemas).await;
     });
@@ -235,7 +235,7 @@ fn bench_json_schema_generation(c: &mut Criterion) {
         ("large".to_string(), create_large_schema()),
     ];
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(async {
         bench_generator(c, "json_schema", JsonSchemaGenerator::new(), &schemas).await;
     });
@@ -250,13 +250,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // Python Dataclass
     group.bench_function("python_dataclass", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = PythonDataclassGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -264,13 +264,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // Pydantic
     group.bench_function("pydantic", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = PydanticGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -278,13 +278,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // TypeScript
     group.bench_function("typescript", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = TypeScriptGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -292,13 +292,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // JavaScript
     group.bench_function("javascript", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JavaScriptGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -306,13 +306,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // Rust
     group.bench_function("rust", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = RustGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -320,13 +320,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // Java
     group.bench_function("java", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JavaGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -334,13 +334,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // JSON Schema
     group.bench_function("json_schema", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JsonSchemaGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });
@@ -348,13 +348,13 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
     // Protocol Buffers
     group.bench_function("protobuf", |b| {
         b.iter(|| {
-            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = ProtobufGenerator::new();
                 generator
                     .generate(black_box(&schema), &options)
                     .await
-                    .unwrap()
+                    ?
             })
         })
     });

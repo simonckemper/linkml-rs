@@ -325,7 +325,7 @@ mod tests {
         "#;
 
         let loader = XmlLoader::new();
-        let value = loader.parse_xml(xml).unwrap();
+        let value = loader.parse_xml(xml)?;
 
         assert!(value.is_object());
         if let Value::Object(obj) = value {
@@ -353,7 +353,7 @@ mod tests {
         "#;
 
         let loader = XmlLoader::new();
-        let value = loader.parse_xml(xml).unwrap();
+        let value = loader.parse_xml(xml)?;
 
         assert!(value.is_object());
     }

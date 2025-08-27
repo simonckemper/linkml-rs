@@ -5,6 +5,7 @@
 //! mappings to external ontologies, and documentation fields.
 
 use chrono::{DateTime, Utc};
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
 /// Metadata that can be attached to schema elements
@@ -282,9 +283,7 @@ mod tests {
             role: Some("maintainer".to_string()),
         };
 
-        let json = serde_json::to_string(&contributor).expect(
-            "Failed to serialize contributor in test - valid test data should always serialize",
-        );
+        let json = serde_json::to_string(&contributor).map_err(|e| anyhow::anyhow!("Error: {}", e))?;
         assert!(json.contains("Jane Doe"));
         assert!(json.contains("maintainer"));
     }

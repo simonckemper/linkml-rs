@@ -4,6 +4,7 @@
 //! and other dependencies.
 
 use super::*;
+use anyhow::anyhow;
 use crate::plugin::api::PLUGIN_API_VERSION;
 use semver::{Op, Version, VersionReq};
 
@@ -35,7 +36,7 @@ impl Default for CompatibilityRules {
             allow_wildcards: true,
             strict_mode: false,
             deprecated_versions: vec![
-                VersionReq::parse("<0.9.0").expect("valid version requirement"),
+                VersionReq::parse("<0.9.0").map_err(|e| anyhow::anyhow!("valid version requirement": {}, e))?,
             ],
         }
     }
@@ -46,7 +47,7 @@ impl CompatibilityChecker {
     pub fn new() -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
-                .expect("CARGO_PKG_VERSION should be a valid semver"),
+                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver": {}, e))?,
             rules: CompatibilityRules::default(),
         }
     }
@@ -55,7 +56,7 @@ impl CompatibilityChecker {
     pub fn with_rules(rules: CompatibilityRules) -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
-                .expect("CARGO_PKG_VERSION should be a valid semver"),
+                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver": {}, e))?,
             rules,
         }
     }
@@ -326,11 +327,11 @@ mod tests {
         let current_version = &checker.linkml_version;
 
         // Compatible version requirement
-        let req = VersionReq::parse(&format!(">={}.0.0", current_version.major)).unwrap();
+        let req = VersionReq::parse(&format!(">={}.0.0", current_version.major))?;
         assert!(checker.check_version_requirement(&req).is_ok());
 
         // Incompatible version requirement (requires newer major)
-        let req = VersionReq::parse(&format!(">={}.0.0", current_version.major + 1)).unwrap();
+        let req = VersionReq::parse(&format!(">={}.0.0", current_version.major + 1))?;
         assert!(checker.check_version_requirement(&req).is_err());
     }
 

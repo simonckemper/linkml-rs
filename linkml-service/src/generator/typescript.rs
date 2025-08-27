@@ -1,6 +1,7 @@
 //! TypeScript code generator for LinkML schemas
 
 use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
+use anyhow::anyhow;
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
@@ -620,7 +621,7 @@ mod tests {
 
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .expect("should generate TypeScript output");
+            .map_err(|e| anyhow::anyhow!("should generate TypeScript output": {}, e))?;
         assert_eq!(outputs.len(), 1);
 
         let output = &outputs[0];

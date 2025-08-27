@@ -3,6 +3,7 @@
 //! This module provides date/time functions for working with temporal data.
 
 use super::functions::{BuiltinFunction, FunctionError};
+use anyhow::anyhow;
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Utc};
 use serde_json::Value;
 
@@ -489,11 +490,11 @@ mod tests {
     #[test]
     fn test_now_today() {
         let now_fn = NowFunction;
-        let result = now_fn.call(vec![]).expect("now() should succeed");
+        let result = now_fn.call(vec![]).map_err(|e| anyhow::anyhow!("Error: {}", e))? should succeed");
         assert!(matches!(result, Value::String(_)));
 
         let today_fn = TodayFunction;
-        let result = today_fn.call(vec![]).expect("today() should succeed");
+        let result = today_fn.call(vec![]).map_err(|e| anyhow::anyhow!("Error: {}", e))? should succeed");
         assert!(matches!(result, Value::String(_)));
     }
 
@@ -504,13 +505,13 @@ mod tests {
         // Standard format
         let result = parse
             .call(vec![json!("2024-01-15")])
-            .expect("should parse standard date format");
+            .map_err(|e| anyhow::anyhow!("should parse standard date format": {}, e))?;
         assert_eq!(result, json!("2024-01-15"));
 
         // Custom format
         let result = parse
             .call(vec![json!("15/01/2024"), json!("%d/%m/%Y")])
-            .expect("should parse custom date format");
+            .map_err(|e| anyhow::anyhow!("should parse custom date format": {}, e))?;
         assert_eq!(result, json!("2024-01-15"));
     }
 
@@ -520,12 +521,12 @@ mod tests {
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%Y/%m/%d")])
-            .expect("should format date as Y/m/d");
+            .map_err(|e| anyhow::anyhow!("should format date as Y/m/d": {}, e))?;
         assert_eq!(result, json!("2024/01/15"));
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%B %d, %Y")])
-            .expect("should format date with month name");
+            .map_err(|e| anyhow::anyhow!("should format date with month name": {}, e))?;
         assert_eq!(result, json!("January 15, 2024"));
     }
 
@@ -536,13 +537,13 @@ mod tests {
         // Add days
         let result = add
             .call(vec![json!("2024-01-15"), json!(10), json!("days")])
-            .expect("should add days to date");
+            .map_err(|e| anyhow::anyhow!("should add days to date": {}, e))?;
         assert_eq!(result, json!("2024-01-25"));
 
         // Add months
         let result = add
             .call(vec![json!("2024-01-15"), json!(2), json!("months")])
-            .expect("should add months to date");
+            .map_err(|e| anyhow::anyhow!("should add months to date": {}, e))?;
         assert_eq!(result, json!("2024-03-15"));
     }
 
@@ -556,7 +557,7 @@ mod tests {
                 json!("2024-01-25"),
                 json!("days"),
             ])
-            .expect("should calculate date difference");
+            .map_err(|e| anyhow::anyhow!("should calculate date difference": {}, e))?;
         assert_eq!(result, json!(10));
     }
 
@@ -569,17 +570,17 @@ mod tests {
         let date = json!("2024-03-15");
 
         assert_eq!(
-            year.call(vec![date.clone()]).expect("should extract year"),
+            year.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract year": {}, e))?,
             json!(2024)
         );
         assert_eq!(
             month
                 .call(vec![date.clone()])
-                .expect("should extract month"),
+                .map_err(|e| anyhow::anyhow!("should extract month": {}, e))?,
             json!(3)
         );
         assert_eq!(
-            day.call(vec![date.clone()]).expect("should extract day"),
+            day.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract day": {}, e))?,
             json!(15)
         );
     }

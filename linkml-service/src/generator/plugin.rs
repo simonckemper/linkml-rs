@@ -1,6 +1,7 @@
 //! Plugin system for custom generators
 
 use super::registry::GeneratorRegistry;
+use anyhow::anyhow;
 use super::traits::{Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -293,7 +294,7 @@ mod tests {
         manager
             .register_plugin(plugin)
             .await
-            .expect("should register plugin");
+            .map_err(|e| anyhow::anyhow!("should register plugin": {}, e))?;
 
         // Verify plugin is loaded
         assert_eq!(manager.list_plugins().len(), 1);

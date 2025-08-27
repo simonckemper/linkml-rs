@@ -3,6 +3,7 @@
 //! This generator creates Go structs, interfaces, and validation code from LinkML schemas.
 
 use super::traits::{Generator, GeneratorError};
+use anyhow::anyhow;
 use crate::generator::GeneratorResult;
 use convert_case::{Case, Casing};
 use linkml_core::prelude::*;
@@ -805,7 +806,7 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .expect("should generate Go code");
+            .map_err(|e| anyhow::anyhow!("should generate Go code": {}, e))?;
 
         // Check content
         assert!(content.contains("package linkml"));

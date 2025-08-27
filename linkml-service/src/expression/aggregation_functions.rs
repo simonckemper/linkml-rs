@@ -3,6 +3,7 @@
 //! This module provides functions for aggregating values from arrays or collections.
 
 use super::functions::{BuiltinFunction, FunctionError};
+use anyhow::anyhow;
 use serde_json::Value;
 
 /// Convert f64 to serde_json::Number, returning error for non-finite values
@@ -519,13 +520,13 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![numbers.clone()])
-                .expect("should calculate sum"),
+                .map_err(|e| anyhow::anyhow!("should calculate sum": {}, e))?,
             json!(15.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![numbers])
-                .expect("should calculate average"),
+                .map_err(|e| anyhow::anyhow!("should calculate average": {}, e))?,
             json!(3.0)
         );
 
@@ -533,13 +534,13 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![json!([])])
-                .expect("should handle empty array sum"),
+                .map_err(|e| anyhow::anyhow!("should handle empty array sum": {}, e))?,
             json!(0.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![json!([])])
-                .expect("should handle empty array average"),
+                .map_err(|e| anyhow::anyhow!("should handle empty array average": {}, e))?,
             json!(null)
         );
     }
@@ -552,7 +553,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!([1, 2, 3, 4, 5])])
-                .expect("should count array elements"),
+                .map_err(|e| anyhow::anyhow!("should count array elements": {}, e))?,
             json!(5)
         );
 
@@ -560,7 +561,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!([1, null, 3, null, 5]), json!("non-null")])
-                .expect("should count non-null elements"),
+                .map_err(|e| anyhow::anyhow!("should count non-null elements": {}, e))?,
             json!(3)
         );
 
@@ -568,7 +569,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!(["a", "", "c", ""]), json!("non-empty")])
-                .expect("should count non-empty elements"),
+                .map_err(|e| anyhow::anyhow!("should count non-empty elements": {}, e))?,
             json!(2)
         );
     }
@@ -581,7 +582,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 3, 5, 7, 9])])
-                .expect("should calculate median of odd elements"),
+                .map_err(|e| anyhow::anyhow!("should calculate median of odd elements": {}, e))?,
             json!(5.0)
         );
 
@@ -589,7 +590,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 2, 3, 4])])
-                .expect("should calculate median of even elements"),
+                .map_err(|e| anyhow::anyhow!("should calculate median of even elements": {}, e))?,
             json!(2.5)
         );
 
@@ -597,7 +598,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([5, 1, 3, 9, 7])])
-                .expect("should calculate median of unsorted array"),
+                .map_err(|e| anyhow::anyhow!("should calculate median of unsorted array": {}, e))?,
             json!(5.0)
         );
     }
@@ -610,14 +611,14 @@ mod tests {
         assert_eq!(
             mode_fn
                 .call(vec![json!([1, 2, 2, 3, 2, 4])])
-                .expect("should find single mode"),
+                .map_err(|e| anyhow::anyhow!("should find single mode": {}, e))?,
             json!(2)
         );
 
         // Multiple modes
         let result = mode_fn
             .call(vec![json!([1, 1, 2, 2, 3])])
-            .expect("should find multiple modes");
+            .map_err(|e| anyhow::anyhow!("should find multiple modes": {}, e))?;
         match result {
             Value::Array(arr) => {
                 assert_eq!(arr.len(), 2);
@@ -638,17 +639,17 @@ mod tests {
         // Sample variance (using n-1) should be 32/7 ≈ 4.571428571428571
         let variance_result = variance_fn
             .call(vec![data.clone()])
-            .expect("should calculate variance");
+            .map_err(|e| anyhow::anyhow!("should calculate variance": {}, e))?;
         assert!(
-            matches!(variance_result, Value::Number(n) if (n.as_f64().unwrap() - 4.571428571428571).abs() < 0.0001)
+            matches!(variance_result, Value::Number(n) if (n.as_f64()? - 4.571428571428571).abs() < 0.0001)
         );
 
         // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
         let stddev_result = stddev_fn
             .call(vec![data])
-            .expect("should calculate standard deviation");
+            .map_err(|e| anyhow::anyhow!("should calculate standard deviation": {}, e))?;
         assert!(
-            matches!(stddev_result, Value::Number(n) if (n.as_f64().unwrap() - 2.1380899352993947).abs() < 0.0001)
+            matches!(stddev_result, Value::Number(n) if (n.as_f64()? - 2.1380899352993947).abs() < 0.0001)
         );
     }
 
@@ -658,13 +659,13 @@ mod tests {
 
         let result = unique_fn
             .call(vec![json!([1, 2, 2, 3, 1, 4, 3])])
-            .expect("should find unique numbers");
+            .map_err(|e| anyhow::anyhow!("should find unique numbers": {}, e))?;
         assert_eq!(result, json!([1, 2, 3, 4]));
 
         // With strings
         let result = unique_fn
             .call(vec![json!(["a", "b", "a", "c", "b"])])
-            .expect("should find unique strings");
+            .map_err(|e| anyhow::anyhow!("should find unique strings": {}, e))?;
         assert_eq!(result, json!(["a", "b", "c"]));
     }
 
@@ -681,7 +682,7 @@ mod tests {
 
         let result = group_by_fn
             .call(vec![data, json!("type")])
-            .expect("should group by type field");
+            .map_err(|e| anyhow::anyhow!("should group by type field": {}, e))?;
 
         match result {
             Value::Object(groups) => {

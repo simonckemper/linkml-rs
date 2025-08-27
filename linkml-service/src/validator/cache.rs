@@ -5,6 +5,7 @@
 //! `CacheService` for distributed caching support.
 
 use super::compiled::{CompilationOptions, CompiledValidator};
+use anyhow::anyhow;
 use blake3::Hasher;
 use linkml_core::error::Result as LinkMLResult;
 use linkml_core::prelude::*;
@@ -394,12 +395,12 @@ mod tests {
 
         // Compile and cache
         let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, &options)
-            .expect("should compile validator");
+            .map_err(|e| anyhow::anyhow!("should compile validator": {}, e))?;
 
         cache
             .put(key.clone(), validator)
             .await
-            .expect("should cache validator");
+            .map_err(|e| anyhow::anyhow!("should cache validator": {}, e))?;
 
         // Cache hit
         assert!(cache.get(&key).await.is_some());
@@ -424,12 +425,12 @@ mod tests {
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator =
                 CompiledValidator::compile_class(&schema, &class.name, &class, &options)
-                    .expect("should compile validator");
+                    .map_err(|e| anyhow::anyhow!("should compile validator": {}, e))?;
 
             cache
                 .put(key, validator)
                 .await
-                .expect("should cache validator");
+                .map_err(|e| anyhow::anyhow!("should cache validator": {}, e))?;
         }
 
         assert_eq!(cache.stats().cached_validators, 2);

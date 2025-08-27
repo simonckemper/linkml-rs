@@ -4,6 +4,7 @@
 //! schema sharing across generator implementations.
 
 use async_trait::async_trait;
+use anyhow::anyhow;
 use std::sync::Arc;
 
 use linkml_core::{error::Result, schema_arc::ArcSchema};
@@ -265,12 +266,12 @@ mod tests {
         let result = generator
             .generate(schema, GeneratorOptions::default())
             .await
-            .expect("should generate successfully");
+            .map_err(|e| anyhow::anyhow!("should generate successfully": {}, e))?;
 
         assert!(
             result
                 .content
-                .expect("should have content")
+                .map_err(|e| anyhow::anyhow!("should have content": {}, e))?
                 .contains("TestSchema")
         );
     }

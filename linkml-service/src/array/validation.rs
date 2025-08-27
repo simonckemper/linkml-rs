@@ -4,6 +4,7 @@
 //! including shape, type, uniqueness, and custom constraints.
 
 use super::{ArrayData, ArrayDimension};
+use anyhow::anyhow;
 use linkml_core::types::{SlotDefinition, TypeDefinition};
 use serde_json::Value;
 use std::collections::HashSet;
@@ -474,7 +475,7 @@ mod tests {
 
         let data = vec![json!(1.0), json!(2.0), json!(3.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .expect("test data should create valid array - basic validation");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - basic validation": {}, e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -483,7 +484,7 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .expect("validation context should build with valid inputs - basic");
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - basic": {}, e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(result.valid);
@@ -496,7 +497,7 @@ mod tests {
 
         let data = vec![json!(50.0), json!(150.0), json!(-10.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .expect("test data should create valid array - range validation");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - range validation": {}, e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -505,7 +506,7 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .expect("validation context should build with valid inputs - range");
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - range": {}, e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
@@ -518,7 +519,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(2), json!(3)];
         let array = ArrayData::new(spec, vec![4], data)
-            .expect("test data should create valid array - uniqueness");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - uniqueness": {}, e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -528,7 +529,7 @@ mod tests {
             .types(&types)
             .check_unique(true)
             .build()
-            .expect("validation context should build with valid inputs - unique");
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - unique": {}, e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
@@ -546,7 +547,7 @@ mod tests {
 
         let data = vec![json!(2), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![3], data)
-            .expect("test data should create valid array - custom validator");
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - custom validator": {}, e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -567,7 +568,7 @@ mod tests {
                 }
             })
             .build()
-            .expect("validation context should build with valid inputs - custom");
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - custom": {}, e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);

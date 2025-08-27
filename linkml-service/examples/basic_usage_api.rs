@@ -106,7 +106,7 @@ fn demonstrate_validation_basics() {
     });
 
     println!("Valid Person:");
-    println!("{}", serde_json::to_string_pretty(&valid_person).unwrap());
+    println!("{}", serde_json::to_string_pretty(&valid_person)?);
     println!("✓ Passes all validation rules");
 
     // Invalid data - missing required field
@@ -117,7 +117,7 @@ fn demonstrate_validation_basics() {
     });
 
     println!("\nInvalid - Missing required 'name':");
-    println!("{}", serde_json::to_string_pretty(&missing_name).unwrap());
+    println!("{}", serde_json::to_string_pretty(&missing_name)?);
     println!("✗ Error: Required field 'name' is missing");
 
     // Invalid data - pattern mismatch
@@ -129,7 +129,7 @@ fn demonstrate_validation_basics() {
     });
 
     println!("\nInvalid - Bad email format:");
-    println!("{}", serde_json::to_string_pretty(&invalid_email).unwrap());
+    println!("{}", serde_json::to_string_pretty(&invalid_email)?);
     println!("✗ Error: 'not-an-email' doesn't match email pattern");
 
     // Invalid data - range violation
@@ -141,7 +141,7 @@ fn demonstrate_validation_basics() {
     });
 
     println!("\nInvalid - Age out of range:");
-    println!("{}", serde_json::to_string_pretty(&invalid_age).unwrap());
+    println!("{}", serde_json::to_string_pretty(&invalid_age)?);
     println!("✗ Error: Age 200 exceeds maximum value 150");
 }
 
@@ -184,7 +184,7 @@ fn demonstrate_validation_reports() {
 
     for (i, error) in example_report.errors.iter().enumerate() {
         println!("\nError {}:", i + 1);
-        println!("  Path: {}", error.path.as_ref().unwrap());
+        println!("  Path: {}", error.path.as_ref()?);
         println!("  Severity: {:?}", error.severity);
         println!("  Message: {}", error.message);
         if let Some(expected) = &error.expected {

@@ -78,7 +78,7 @@ fn bench_expression_evaluation(c: &mut Criterion) {
     let mut group = c.benchmark_group("expression_evaluation");
 
     for (name, expr) in expressions {
-        let ast = parser.parse(expr).unwrap();
+        let ast = parser.parse(expr)?;
         group.bench_function(name, |b| {
             b.iter(|| {
                 let result = evaluator.evaluate(black_box(&ast), black_box(&context));
@@ -271,7 +271,7 @@ fn bench_expression_caching_impact(c: &mut Criterion) {
     // Complex expression that would benefit from caching
     let expr =
         "max({a}, {b}) + min({c}, {d}) * 2 + len({items}) - case({status} == 'active', 10, 20)";
-    let ast = parser.parse(expr).unwrap();
+    let ast = parser.parse(expr)?;
 
     // Multiple contexts to simulate real usage
     let contexts: Vec<_> = (0..100)

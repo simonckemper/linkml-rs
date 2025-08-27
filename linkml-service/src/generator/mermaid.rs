@@ -5,6 +5,7 @@
 //! diagrams dynamically in the browser.
 
 use linkml_core::{error::LinkMLError, prelude::*};
+use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
@@ -721,10 +722,10 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate mermaid diagram");
+            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram": {}, e))?;
         // The output might start with a comment or directive, not necessarily 'e'
         // Let's just check that it contains the expected content
-        // assert_eq!(output.chars().next().unwrap(), 'e');
+        // assert_eq!(output.chars().next()?, 'e');
 
         // Check ER diagram content
         assert!(output.contains("erDiagram"));
@@ -742,7 +743,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate mermaid diagram");
+            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram": {}, e))?;
 
         assert!(output.contains("classDiagram"));
         assert!(output.contains("class Person"));

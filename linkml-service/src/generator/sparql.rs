@@ -4,6 +4,7 @@
 //! querying RDF data that conforms to the schema structure.
 
 use linkml_core::prelude::*;
+use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
@@ -709,7 +710,7 @@ impl SparqlGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .expect("char to_lowercase always produces at least one char"),
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -807,7 +808,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate queries");
+            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
 
         // Check content
         assert!(output.contains("SELECT"));
@@ -824,7 +825,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate queries");
+            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
 
         assert!(output.contains("CONSTRUCT"));
     }
@@ -837,7 +838,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .expect("should generate queries");
+            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
 
         // Should contain filters for constraints
         assert!(output.contains("FILTER"));

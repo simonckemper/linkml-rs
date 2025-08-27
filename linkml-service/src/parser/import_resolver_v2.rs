@@ -8,6 +8,7 @@
 //! - Version checking
 
 use linkml_core::{
+use anyhow::anyhow;
     error::{LinkMLError, Result},
     settings::{ImportResolutionStrategy, ImportSettings},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
@@ -541,7 +542,7 @@ mod tests {
     #[tokio::test]
     async fn test_enhanced_import_resolver() {
         // Create test schemas
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let base_path = temp_dir.path();
 
         // Base schema
@@ -564,7 +565,7 @@ slots:
 
         tokio::fs::write(base_path.join("base.yaml"), base_schema)
             .await
-            .expect("should write base schema");
+            .map_err(|e| anyhow::anyhow!("should write base schema": {}, e))?;
 
         // Another schema with conflicts
         let other_schema = r#"
@@ -581,7 +582,7 @@ classes:
 
         tokio::fs::write(base_path.join("other.yaml"), other_schema)
             .await
-            .expect("should write other schema");
+            .map_err(|e| anyhow::anyhow!("should write other schema": {}, e))?;
 
         // Main schema with imports
         let main_schema = r#"
@@ -607,7 +608,7 @@ classes:
         let parser = YamlParser::new();
         let mut schema = parser
             .parse_str(main_schema)
-            .expect("should parse main schema");
+            .map_err(|e| anyhow::anyhow!("should parse main schema": {}, e))?;
 
         // Set base path for resolver
         if let Some(settings) = &mut schema.settings {
@@ -615,7 +616,7 @@ classes:
                 imports.search_paths = vec![
                     base_path
                         .to_str()
-                        .expect("temp dir path should be valid UTF-8")
+                        .map_err(|e| anyhow::anyhow!("temp dir path should be valid UTF-8": {}, e))?
                         .to_string(),
                 ];
             }
@@ -625,7 +626,7 @@ classes:
         let resolved = resolver
             .resolve_imports(&schema)
             .await
-            .expect("should resolve imports");
+            .map_err(|e| anyhow::anyhow!("should resolve imports": {}, e))?;
 
         // Check that all elements were imported
         assert!(resolved.classes.contains_key("BaseClass"));
@@ -641,7 +642,7 @@ classes:
 
     #[tokio::test]
     async fn test_circular_import_detection() {
-        let temp_dir = TempDir::new().expect("should create temporary directory");
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
         let base_path = temp_dir.path();
 
         // Schema A imports B
@@ -662,18 +663,18 @@ imports:
 
         tokio::fs::write(base_path.join("a.yaml"), schema_a)
             .await
-            .expect("should write schema a");
+            .map_err(|e| anyhow::anyhow!("should write schema a": {}, e))?;
         tokio::fs::write(base_path.join("b.yaml"), schema_b)
             .await
-            .expect("should write schema b");
+            .map_err(|e| anyhow::anyhow!("should write schema b": {}, e))?;
 
         // Try to resolve - should fail
         use crate::parser::{SchemaParser, YamlParser};
         let parser = YamlParser::new();
-        let schema = parser.parse_str(schema_a).expect("should parse schema a");
+        let schema = parser.parse_str(schema_a).map_err(|e| anyhow::anyhow!("should parse schema a": {}, e))?;
 
         let mut settings = ImportSettings::default();
-        settings.search_paths = vec![base_path.to_str().unwrap().to_string()];
+        settings.search_paths = vec![base_path.to_str()?.to_string()];
 
         let resolver = ImportResolverV2::with_settings(settings);
         let result = resolver.resolve_imports(&schema).await;

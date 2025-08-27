@@ -423,7 +423,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "status": "active",
                 "created_at": "2024-01-15T10:30:00Z"
             }))
-            .unwrap(),
+            ?,
         },
         DataInstance {
             class_name: "Post".to_string(),
@@ -434,7 +434,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "tags": ["linkml", "data-modeling", "schemas"],
                 "published_at": "2024-02-01T14:00:00Z"
             }))
-            .unwrap(),
+            ?,
         },
     ]
 }

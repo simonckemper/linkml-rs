@@ -459,7 +459,7 @@ mod tests {
                 &context,
                 Some("ID required for persons"),
             )
-            .unwrap();
+            ?;
 
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].code, Some("RULE_REQUIRED_FIELD".to_string()));
@@ -472,7 +472,7 @@ mod tests {
 
         // Parse a failing expression
         let parser = crate::expression::parser::Parser::new();
-        let expr = parser.parse("{age} >= 21").unwrap();
+        let expr = parser.parse("{age} >= 21")?;
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
@@ -483,7 +483,7 @@ mod tests {
 
         let issues = evaluator
             .evaluate_expression_conditions(&[expr], &context, Some("Must be 21 or older"))
-            .unwrap();
+            ?;
 
         assert_eq!(issues.len(), 1);
         assert_eq!(issues[0].code, Some("RULE_EXPRESSION_FAILED".to_string()));

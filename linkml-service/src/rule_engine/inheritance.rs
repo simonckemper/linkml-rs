@@ -4,6 +4,7 @@
 //! managing priority adjustments, and handling rule overrides.
 
 use linkml_core::error::{LinkMLError, Result};
+use anyhow::anyhow;
 use linkml_core::types::{Rule, SchemaDefinition};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -317,7 +318,7 @@ mod tests {
 
         let chain = resolver
             .get_inheritance_chain("Derived")
-            .expect("should get inheritance chain");
+            .map_err(|e| anyhow::anyhow!("should get inheritance chain": {}, e))?;
         assert_eq!(chain.len(), 2);
         assert_eq!(chain[0], "Derived");
         assert_eq!(chain[1], "Base");
@@ -330,7 +331,7 @@ mod tests {
 
         let rules = resolver
             .get_all_rules("Derived")
-            .expect("should get all rules");
+            .map_err(|e| anyhow::anyhow!("should get all rules": {}, e))?;
         assert_eq!(rules.len(), 2);
 
         // Check that derived rule comes first

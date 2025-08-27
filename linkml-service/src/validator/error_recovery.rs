@@ -594,7 +594,7 @@ mod tests {
         manager.record_failure("test_service");
 
         // Check circuit state
-        let breaker = manager.circuit_breakers.get("test_service").unwrap();
+        let breaker = manager.circuit_breakers.get("test_service")?;
         assert_eq!(breaker.read().state, CircuitState::Open);
     }
 
@@ -604,7 +604,7 @@ mod tests {
         let mut context = ErrorContext::new(LinkMLError::service("timeout"));
         context.error_type = Some(RecoverableErrorType::NetworkTimeout);
 
-        match strategy.recover(&context).unwrap() {
+        match strategy.recover(&context)? {
             RecoveryAction::Retry { delay } => {
                 assert!(delay.as_millis() >= 100);
             }
