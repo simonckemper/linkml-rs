@@ -264,7 +264,8 @@ impl CompiledValidatorCache {
     ///
     /// # Errors
     ///
-    /// Returns a `LinkMLError` if cache clearing fails    pub async fn clear(&self) -> LinkMLResult<()> {
+    /// Returns a `LinkMLError` if cache clearing fails
+    pub async fn clear(&self) -> LinkMLResult<()> {
         {
             let mut cache = self.local_cache.write();
             cache.clear();
