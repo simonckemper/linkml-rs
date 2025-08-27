@@ -3,7 +3,6 @@
 //! This module provides tools to compare schemas and identify differences.
 
 use linkml_core::annotations::{Annotatable, standard_annotations};
-use anyhow::anyhow;
 use linkml_core::error::Result;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};

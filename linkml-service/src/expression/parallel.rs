@@ -4,7 +4,6 @@
 //! concurrently for improved performance.
 
 use super::{EvaluationError, Expression, ExpressionEngine};
-use anyhow::anyhow;
 use futures::future::join_all;
 use serde_json::Value;
 use std::collections::HashMap;

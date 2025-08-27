@@ -4,7 +4,6 @@
 //! to validate multiple values concurrently while maintaining thread safety.
 
 use super::{
-use anyhow::anyhow;
     ValidationEngine, ValidationIssue, ValidationOptions, ValidationReport,
     buffer_pool::ValidationBufferPools, context::ValidationContext,
 };

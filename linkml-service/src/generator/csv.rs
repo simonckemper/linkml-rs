@@ -4,7 +4,6 @@
 //! flattening the class hierarchy into tabular format.
 
 use super::traits::{Generator, GeneratorResult};
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use std::collections::BTreeMap;
 

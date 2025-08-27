@@ -1,7 +1,6 @@
 //! `TypeQL` generation implementation for `TypeDB` schemas
 
 use super::options::{GeneratorOptions, IndentStyle};
-use anyhow::anyhow;
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
 };

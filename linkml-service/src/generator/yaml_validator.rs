@@ -4,7 +4,6 @@
 //! enabling validation of YAML data against LinkML-defined structures.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,

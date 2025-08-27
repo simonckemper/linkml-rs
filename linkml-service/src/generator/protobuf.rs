@@ -4,7 +4,6 @@
 //! enabling cross-language serialization and RPC support.
 
 use linkml_core::types::{
-use anyhow::anyhow;
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
 };
 use std::collections::{HashMap, HashSet};

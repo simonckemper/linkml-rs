@@ -4,7 +4,6 @@
 //! validation support and builder patterns.
 
 use linkml_core::{
-use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };

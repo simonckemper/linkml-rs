@@ -4,7 +4,6 @@
 //! for a given instance.
 
 use linkml_core::error::{LinkMLError, Result};
-use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::HashMap;
 

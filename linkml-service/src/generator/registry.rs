@@ -1,7 +1,6 @@
 //! Generator registry for managing available generators
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
-use anyhow::anyhow;
 use crate::plugin::{GeneratorPlugin, PluginManager, PluginType};
 use std::collections::HashMap;
 use std::sync::Arc;

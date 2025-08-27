@@ -4,7 +4,6 @@
 //! handling conflicts and preserving semantics.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::HashSet;
 use thiserror::Error;
 

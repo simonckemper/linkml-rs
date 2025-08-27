@@ -3,7 +3,6 @@
 #![allow(missing_docs)]
 
 use super::ast::Expression;
-use anyhow::anyhow;
 use super::error::EvaluationError;
 use super::functions::FunctionRegistry;
 use lru::LruCache;

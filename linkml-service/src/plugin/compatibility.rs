@@ -4,7 +4,6 @@
 //! and other dependencies.
 
 use super::*;
-use anyhow::anyhow;
 use crate::plugin::api::PLUGIN_API_VERSION;
 use semver::{Op, Version, VersionReq};
 

@@ -5,7 +5,6 @@
 //! evaluation process.
 
 use linkml_core::error::Result;
-use anyhow::anyhow;
 use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;

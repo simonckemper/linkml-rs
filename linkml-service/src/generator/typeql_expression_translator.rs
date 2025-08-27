@@ -4,7 +4,6 @@
 //! supporting arithmetic, comparison, logical operations, and functions.
 
 use crate::expression::ast::Expression;
-use anyhow::anyhow;
 use std::collections::HashMap;
 use thiserror::Error;
 

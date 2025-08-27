@@ -1,7 +1,6 @@
 //! Compiled validator for optimized validation performance
 
 use super::context::ValidationContext;
-use anyhow::anyhow;
 use super::report::{Severity, ValidationIssue};
 use super::validators::Validator;
 use linkml_core::error::{LinkMLError, Result as LinkMLResult};

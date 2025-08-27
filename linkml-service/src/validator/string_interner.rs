@@ -4,7 +4,6 @@
 //! frequently occurring strings like field names, type names, and error codes.
 
 use dashmap::DashMap;
-use anyhow::anyhow;
 use parking_lot::RwLock;
 use std::sync::Arc;
 

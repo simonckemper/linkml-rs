@@ -6,7 +6,6 @@
 //! async file operations.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;

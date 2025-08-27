@@ -3,7 +3,6 @@
 //! Handles schema versioning, version comparison, and checksum generation.
 
 use chrono::{DateTime, Utc};
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};

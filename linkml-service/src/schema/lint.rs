@@ -3,7 +3,6 @@
 //! This module provides tools to check schema quality and compliance.
 
 use linkml_core::error::Result;
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};

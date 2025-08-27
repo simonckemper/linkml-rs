@@ -1,7 +1,6 @@
 //! Type validators for `LinkML` primitive types
 
 use super::{ValidationContext, ValidationIssue, Validator};
-use anyhow::anyhow;
 use chrono::{DateTime, NaiveDate};
 use linkml_core::types::SlotDefinition;
 use serde_json::Value;

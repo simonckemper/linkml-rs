@@ -15,7 +15,6 @@ pub use migration_engine::{MigrationAnalysis, MigrationEngine, MigrationPlan};
 pub use stress_test::{StressTestConfig, StressTestExecutor, StressTestResults};
 
 use clap::{Parser, Subcommand, ValueEnum};
-use anyhow::anyhow;
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::error::Result;

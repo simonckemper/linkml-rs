@@ -4,7 +4,6 @@
 //! computed attributes based on ``LinkML`` schema definitions.
 
 use super::traits::{GeneratorError, GeneratorResult};
-use anyhow::anyhow;
 use super::typeql_expression_translator::{ExpressionTranslator, TranslationContext};
 use linkml_core::prelude::*;
 use serde_json::Value;

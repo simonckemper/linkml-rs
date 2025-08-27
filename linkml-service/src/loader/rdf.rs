@@ -4,7 +4,6 @@
 //! into LinkML data instances and dump instances back to RDF format.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
 use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term};

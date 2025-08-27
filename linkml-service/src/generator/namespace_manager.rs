@@ -4,7 +4,6 @@
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition as Prefix, SchemaDefinition as Schema};
 

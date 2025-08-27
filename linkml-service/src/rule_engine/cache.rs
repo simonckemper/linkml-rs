@@ -4,7 +4,6 @@
 //! performance by avoiding repeated compilation of the same rules.
 
 use parking_lot::RwLock;
-use anyhow::anyhow;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

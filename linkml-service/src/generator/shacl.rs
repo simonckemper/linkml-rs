@@ -4,7 +4,6 @@
 //! SHACL is a W3C standard for validating RDF graphs against a set of conditions.
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
-use anyhow::anyhow;
 use std::collections::HashMap;
 use std::fmt::Write;
 

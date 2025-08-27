@@ -4,7 +4,6 @@
 //! including shape, type, uniqueness, and custom constraints.
 
 use super::{ArrayData, ArrayDimension};
-use anyhow::anyhow;
 use linkml_core::types::{SlotDefinition, TypeDefinition};
 use serde_json::Value;
 use std::collections::HashSet;

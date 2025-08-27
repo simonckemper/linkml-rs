@@ -4,7 +4,6 @@
 //! minimizes cloning and uses more efficient collection operations.
 
 use std::sync::{Arc, RwLock};
-use anyhow::anyhow;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 

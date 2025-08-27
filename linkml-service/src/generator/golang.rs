@@ -3,7 +3,6 @@
 //! This generator creates Go structs, interfaces, and validation code from LinkML schemas.
 
 use super::traits::{Generator, GeneratorError};
-use anyhow::anyhow;
 use crate::generator::GeneratorResult;
 use convert_case::{Case, Casing};
 use linkml_core::prelude::*;

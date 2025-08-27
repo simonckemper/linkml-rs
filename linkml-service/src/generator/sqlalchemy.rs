@@ -4,7 +4,6 @@
 //! enabling database persistence with full ORM capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{

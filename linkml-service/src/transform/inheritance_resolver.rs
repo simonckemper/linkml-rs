@@ -4,7 +4,6 @@
 //! in LinkML schemas, including mixin composition and attribute inheritance.
 
 use indexmap::IndexMap;
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;

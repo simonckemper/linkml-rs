@@ -8,7 +8,6 @@
 //! - Security features
 
 use linkml_service::{
-use anyhow::anyhow;
     expression::{Evaluator, parse_expression},
     generator::{
         JavaGenerator, ProtobufGenerator, PythonDataclassGenerator, RustGenerator, TypeQLGenerator,

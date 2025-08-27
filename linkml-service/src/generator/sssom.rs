@@ -4,7 +4,6 @@
 //! enabling interoperability between different ontologies and vocabularies.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use chrono::Local;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};

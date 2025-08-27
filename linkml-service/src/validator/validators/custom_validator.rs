@@ -4,7 +4,6 @@
 //! that can be registered with the validation engine.
 
 use linkml_core::{
-use anyhow::anyhow;
     Value,
     error::{LinkMLError, Result},
     types::SlotDefinition,

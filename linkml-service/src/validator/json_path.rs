@@ -4,7 +4,6 @@
 //! path representation and optimized traversal algorithms.
 
 use linkml_core::error::{LinkMLError, Result as LinkMLResult};
-use anyhow::anyhow;
 use serde_json::Value;
 use std::fmt;
 

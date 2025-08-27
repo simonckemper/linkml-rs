@@ -3,7 +3,6 @@
 //! This module provides string manipulation functions like upper, lower, trim, etc.
 
 use super::functions::{BuiltinFunction, FunctionError};
-use anyhow::anyhow;
 use serde_json::Value;
 
 /// upper() - Convert string to uppercase

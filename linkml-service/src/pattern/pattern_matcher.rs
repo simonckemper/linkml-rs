@@ -4,7 +4,6 @@
 //! supporting regular expressions, structured patterns, and interpolation.
 
 use regex::Regex;
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

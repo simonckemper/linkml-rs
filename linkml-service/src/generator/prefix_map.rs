@@ -4,7 +4,6 @@
 //! enabling efficient namespace management in semantic web applications.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition, SchemaDefinition as Schema};
 use serde_json::{Map, Value, json};

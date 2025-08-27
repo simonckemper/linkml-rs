@@ -4,7 +4,6 @@
 //! text-based UML diagramming tool that supports multiple diagram types.
 
 use linkml_core::{error::LinkMLError, prelude::*};
-use anyhow::anyhow;
 use std::collections::HashSet;
 use std::fmt::Write;
 

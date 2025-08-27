@@ -4,7 +4,6 @@
 //! validation rules, and code generation options.
 
 use serde::{Deserialize, Serialize};
-use anyhow::anyhow;
 use std::collections::HashMap;
 
 /// Schema settings that control processing behavior

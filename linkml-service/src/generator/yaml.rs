@@ -4,7 +4,6 @@
 //! preserving structure and optionally comments.
 
 use super::traits::Generator;
-use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::metadata::Contributor;
 use linkml_core::prelude::*;

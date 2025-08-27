@@ -4,7 +4,6 @@
 //! of the LinkML service when used in production scenarios.
 
 use futures::future::join_all;
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use linkml_service::{
     GeneratorConfig, GeneratorType, LinkMLService, LinkMLServiceConfig, SchemaView,

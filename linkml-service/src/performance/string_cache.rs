@@ -4,7 +4,6 @@
 //! and speed up string comparisons during validation.
 
 use dashmap::DashMap;
-use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 use thiserror::Error;

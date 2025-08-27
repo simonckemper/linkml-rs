@@ -4,7 +4,6 @@
 //! instead of direct file system access.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use linkml_core::prelude::*;
 use serde_json::Value;
 use std::collections::HashMap;

@@ -12,7 +12,6 @@
 //! - Rich formatting options
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
-use anyhow::anyhow;
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use rust_xlsxwriter::{

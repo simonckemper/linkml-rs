@@ -6,7 +6,6 @@
 //! - L3: Persistent disk cache (optional, for large schemas)
 
 use super::{cache::ValidatorCacheKey, compiled::CompiledValidator};
-use anyhow::anyhow;
 use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
 use linkml_core::error::{LinkMLError, Result};
 use lru::LruCache;

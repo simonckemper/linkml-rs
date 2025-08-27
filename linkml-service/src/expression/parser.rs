@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 
 use super::ast::Expression;
-use anyhow::anyhow;
 use super::error::ParseError;
 use std::iter::Peekable;
 use std::str::Chars;

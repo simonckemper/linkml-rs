@@ -4,7 +4,6 @@
 //! enabling semantic web integration and linked data capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::{Map, Value, json};

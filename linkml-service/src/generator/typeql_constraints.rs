@@ -4,7 +4,6 @@
 //! supporting TypeDB 3.0 features including @card, @key, @unique, and regex patterns.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::HashMap;
 
 /// Enhanced constraint translator for TypeQL generation

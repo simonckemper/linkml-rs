@@ -4,7 +4,6 @@
 //! providing insights into schema structure, complexity, and usage patterns.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use anyhow::anyhow;
 use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{

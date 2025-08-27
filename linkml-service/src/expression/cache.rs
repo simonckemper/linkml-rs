@@ -4,7 +4,6 @@
 //! and compiled bytecode to avoid redundant parsing and compilation.
 
 use super::ast::Expression;
-use anyhow::anyhow;
 use super::compiler::CompiledExpression;
 use lru::LruCache;
 use std::hash::Hash;

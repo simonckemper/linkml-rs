@@ -3,7 +3,6 @@
 //! This module provides tools to merge multiple schemas into one.
 
 use crate::cli_enhanced::{ConflictResolution, MergeStrategy};
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};

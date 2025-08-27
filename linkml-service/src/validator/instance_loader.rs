@@ -3,7 +3,6 @@
 //! Loads permissible values from external data sources
 
 use linkml_core::error::{LinkMLError, Result};
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;

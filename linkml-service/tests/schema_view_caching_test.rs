@@ -1,7 +1,6 @@
 //! Tests for SchemaView caching behavior and performance
 
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
-use anyhow::anyhow;
 use linkml_service::schema_view::SchemaView;
 use std::sync::Arc;
 use std::time::Instant;

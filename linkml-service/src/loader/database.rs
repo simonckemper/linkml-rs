@@ -4,7 +4,6 @@
 //! and dump LinkML instances back to databases.
 
 use super::traits::{
-use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
 };
 use async_trait::async_trait;

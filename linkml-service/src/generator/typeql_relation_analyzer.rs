@@ -5,7 +5,6 @@
 //! nested relations, and role detection.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 

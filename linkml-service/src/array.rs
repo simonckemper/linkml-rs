@@ -7,7 +7,6 @@ pub mod operations;
 pub mod validation;
 
 use serde::{Deserialize, Serialize};
-use anyhow::anyhow;
 use thiserror::Error;
 
 /// Error type for array operations

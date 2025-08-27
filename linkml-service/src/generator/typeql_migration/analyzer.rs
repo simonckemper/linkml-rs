@@ -3,7 +3,6 @@
 //! Analyzes schema changes to determine their impact and categorize them.
 
 use std::collections::HashSet;
-use anyhow::anyhow;
 
 use super::MigrationResult;
 use super::diff::{

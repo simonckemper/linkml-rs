@@ -3,7 +3,6 @@
 //! This module provides functions for aggregating values from arrays or collections.
 
 use super::functions::{BuiltinFunction, FunctionError};
-use anyhow::anyhow;
 use serde_json::Value;
 
 /// Convert f64 to serde_json::Number, returning error for non-finite values

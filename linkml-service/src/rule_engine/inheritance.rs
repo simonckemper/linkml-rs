@@ -4,7 +4,6 @@
 //! managing priority adjustments, and handling rule overrides.
 
 use linkml_core::error::{LinkMLError, Result};
-use anyhow::anyhow;
 use linkml_core::types::{Rule, SchemaDefinition};
 use std::collections::{HashMap, HashSet, VecDeque};
 

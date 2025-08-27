@@ -7,7 +7,6 @@
 //! - Safe expression evaluation
 
 use linkml_service::{
-use anyhow::anyhow;
     expression::functions::{CustomFunction, FunctionRegistry},
     expression::{Evaluator, EvaluatorConfig, parse_expression},
     parser::yaml_parser::YamlParser,

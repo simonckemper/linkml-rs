@@ -4,7 +4,6 @@
 //! ShEx is a language for describing RDF graph structures as sets of constraints.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 

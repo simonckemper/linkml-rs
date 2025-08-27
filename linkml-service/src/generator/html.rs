@@ -1,7 +1,6 @@
 //! HTML documentation generation for `LinkML` schemas
 
 use super::options::IndentStyle;
-use anyhow::anyhow;
 use super::traits::{CodeFormatter, Generator, GeneratorResult};
 use linkml_core::prelude::*;
 use std::fmt::Write;

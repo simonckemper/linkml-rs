@@ -5,7 +5,6 @@
 //! mappings to external ontologies, and documentation fields.
 
 use chrono::{DateTime, Utc};
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
 /// Metadata that can be attached to schema elements

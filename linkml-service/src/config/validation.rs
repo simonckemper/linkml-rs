@@ -3,7 +3,6 @@
 //! This module validates configuration files against the LinkML configuration schema.
 
 use super::{LinkMLConfig, load_config};
-use anyhow::anyhow;
 use crate::parser::{SchemaParser, YamlParser};
 use crate::validator::{ValidationEngine, ValidationOptions};
 use linkml_core::error::{LinkMLError, Result};

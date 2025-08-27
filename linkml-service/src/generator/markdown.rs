@@ -4,7 +4,6 @@
 //! including class hierarchies, slot tables, enumerations, and cross-references.
 
 use super::traits::Generator;
-use anyhow::anyhow;
 use linkml_core::{error::LinkMLError, prelude::*};
 use std::collections::BTreeMap;
 use std::fmt::Write;

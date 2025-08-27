@@ -4,7 +4,6 @@
 //! querying RDF data that conforms to the schema structure.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 

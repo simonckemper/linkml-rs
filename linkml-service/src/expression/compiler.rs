@@ -4,7 +4,6 @@
 //! converting AST nodes into optimized bytecode for faster evaluation.
 
 use super::ast::Expression;
-use anyhow::anyhow;
 use super::error::{ExpressionError, ParseError};
 use super::functions::FunctionRegistry;
 use serde_json::Value;

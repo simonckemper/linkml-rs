@@ -3,7 +3,6 @@
 //! Generates `TypeQL` migration scripts from schema differences.
 
 use std::fmt::Write;
-use anyhow::anyhow;
 use chrono::Utc;
 
 use crate::generator::typeql_generator_enhanced::EnhancedTypeQLGenerator;

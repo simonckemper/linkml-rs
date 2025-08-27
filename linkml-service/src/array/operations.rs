@@ -4,7 +4,6 @@
 //! and mathematical operations.
 
 use super::{ArrayData, ArrayError, ArrayResult};
-use anyhow::anyhow;
 use serde_json::Value;
 use std::cmp::Ordering;
 

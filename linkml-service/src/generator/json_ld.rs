@@ -4,7 +4,6 @@
 //! JSON-LD is a W3C standard for representing linked data in JSON format.
 
 use linkml_core::{
-use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };

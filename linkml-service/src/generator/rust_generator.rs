@@ -8,7 +8,6 @@
 //! - Performance optimized with zero-cost abstractions
 
 use super::base::{BaseCodeFormatter, collect_all_slots, is_optional_slot};
-use anyhow::anyhow;
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,

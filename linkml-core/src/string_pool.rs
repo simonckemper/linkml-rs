@@ -4,7 +4,6 @@
 //! common strings across schema definitions, significantly reducing memory usage.
 
 use std::collections::HashMap;
-use anyhow::anyhow;
 use std::sync::{Arc, RwLock};
 
 /// Global string pool for interning common `LinkML` strings

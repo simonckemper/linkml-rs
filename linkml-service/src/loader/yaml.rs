@@ -3,7 +3,6 @@
 //! This module provides functionality to load and dump LinkML data in YAML format.
 
 use super::traits::{
-use anyhow::anyhow;
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
     LoaderError, LoaderResult,
 };

@@ -3,7 +3,6 @@
 //! Compares two schemas and identifies all changes between them.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::HashSet;
 
 use super::MigrationResult;

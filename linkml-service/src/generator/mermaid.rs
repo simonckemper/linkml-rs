@@ -5,7 +5,6 @@
 //! diagrams dynamically in the browser.
 
 use linkml_core::{error::LinkMLError, prelude::*};
-use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 

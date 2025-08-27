@@ -5,7 +5,6 @@
 //! multiple diagram styles and customization options.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::HashSet;
 use std::fmt::Write;
 

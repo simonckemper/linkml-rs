@@ -3,7 +3,6 @@
 #![allow(missing_docs)]
 
 use serde_json::Value;
-use anyhow::anyhow;
 use std::collections::HashMap;
 use std::fmt;
 

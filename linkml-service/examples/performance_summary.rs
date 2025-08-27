@@ -4,7 +4,6 @@
 //! implementation across various operations.
 
 use linkml_service::{
-use anyhow::anyhow;
     expression::{Evaluator, parse_expression},
     generator::{
         PythonDataclassGenerator, RustGenerator, TypeQLGenerator,

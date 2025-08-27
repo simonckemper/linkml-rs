@@ -3,7 +3,6 @@
 //! This module provides automatic configuration reloading when files change.
 
 use super::{LinkMLConfig, load_config, validation::validate_values};
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use notify::{Event, EventKind, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};

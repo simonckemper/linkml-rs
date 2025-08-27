@@ -1,7 +1,6 @@
 //! Enhanced pattern validation with named capture groups and LRU caching
 
 use super::{ValidationContext, ValidationIssue, Validator};
-use anyhow::anyhow;
 use linkml_core::types::SlotDefinition;
 use lru::LruCache;
 use regex::Regex;

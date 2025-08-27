@@ -3,7 +3,6 @@
 //! Handles class inheritance, mixins, and slot usage overrides
 
 use indexmap::IndexMap;
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::{HashMap, HashSet};

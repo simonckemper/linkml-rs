@@ -3,7 +3,6 @@
 //! This module provides date/time functions for working with temporal data.
 
 use super::functions::{BuiltinFunction, FunctionError};
-use anyhow::anyhow;
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Utc};
 use serde_json::Value;
 

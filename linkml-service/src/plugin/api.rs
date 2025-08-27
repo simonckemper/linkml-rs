@@ -4,7 +4,6 @@
 //! and provides helper utilities for plugin development.
 
 use super::*;
-use anyhow::anyhow;
 use std::any::Any;
 
 /// Plugin API version

@@ -1,7 +1,6 @@
 //! JavaScript (ES6) code generator for LinkML schemas
 
 use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
-use anyhow::anyhow;
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::{error::LinkMLError, prelude::*};

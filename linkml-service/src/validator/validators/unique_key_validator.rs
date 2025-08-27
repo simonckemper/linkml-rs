@@ -4,7 +4,6 @@
 //! single-field uniqueness, composite keys, and scoped uniqueness.
 
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
-use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;

@@ -1,7 +1,6 @@
 //! JSON parser for `LinkML` schemas
 
 use linkml_core::{
-use anyhow::anyhow;
     error::{LinkMLError, Result},
     types::SchemaDefinition,
 };

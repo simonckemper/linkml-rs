@@ -12,7 +12,6 @@
 //! - JSON-LD (.jsonld)
 
 use linkml_core::{
-use anyhow::anyhow;
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
 };

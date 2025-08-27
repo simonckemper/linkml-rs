@@ -4,7 +4,6 @@
 //! schema sharing across generator implementations.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use std::sync::Arc;
 
 use linkml_core::{error::Result, schema_arc::ArcSchema};

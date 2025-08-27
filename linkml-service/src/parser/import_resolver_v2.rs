@@ -8,7 +8,6 @@
 //! - Version checking
 
 use linkml_core::{
-use anyhow::anyhow;
     error::{LinkMLError, Result},
     settings::{ImportResolutionStrategy, ImportSettings},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},

@@ -1,7 +1,6 @@
 //! Pattern validation using regex
 
 use super::{ValidationContext, ValidationIssue, Validator};
-use anyhow::anyhow;
 use linkml_core::types::SlotDefinition;
 use regex::Regex;
 use serde_json::Value;

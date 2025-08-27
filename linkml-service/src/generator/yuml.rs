@@ -4,7 +4,6 @@
 //! online tool for creating UML diagrams using a text-based syntax.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 

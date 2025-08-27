@@ -4,7 +4,6 @@
 //! including structural differences, semantic changes, and breaking change detection.
 
 use linkml_core::prelude::*;
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt;

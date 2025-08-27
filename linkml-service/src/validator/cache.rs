@@ -5,7 +5,6 @@
 //! `CacheService` for distributed caching support.
 
 use super::compiled::{CompilationOptions, CompiledValidator};
-use anyhow::anyhow;
 use blake3::Hasher;
 use linkml_core::error::Result as LinkMLResult;
 use linkml_core::prelude::*;

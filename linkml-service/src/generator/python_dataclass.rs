@@ -1,7 +1,6 @@
 //! Python dataclass code generator for LinkML schemas
 
 use super::base::{
-use anyhow::anyhow;
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, get_default_value_str,
     is_optional_slot,
 };

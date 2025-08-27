@@ -4,7 +4,6 @@
 //! parsing, compilation, caching, and VM execution for optimal performance.
 
 use super::ast::Expression;
-use anyhow::anyhow;
 use super::cache::{ExpressionCache, ExpressionKey, GlobalExpressionCache};
 use super::compiler::{CompiledExpression, Compiler};
 use super::error::{ExpressionError, EvaluationError};

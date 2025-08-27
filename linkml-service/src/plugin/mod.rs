@@ -4,7 +4,6 @@
 //! with custom generators, validators, loaders, and other components.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use logger_core::{LoggerError, LoggerService};

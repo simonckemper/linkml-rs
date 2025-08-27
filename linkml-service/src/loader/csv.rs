@@ -4,7 +4,6 @@
 //! data instances and dump instances back to CSV/TSV format.
 
 use async_trait::async_trait;
-use anyhow::anyhow;
 use csv::{ReaderBuilder, StringRecord, WriterBuilder};
 use linkml_core::prelude::*;
 use serde_json::Value as JsonValue;

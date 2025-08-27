@@ -1,7 +1,6 @@
 //! Pydantic v2 code generator for LinkML schemas
 
 use super::base::{
-use anyhow::anyhow;
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, is_optional_slot,
 };
 use super::options::{GeneratorOptions, IndentStyle};

@@ -9,7 +9,6 @@
 //! - Audit logging
 
 use dashmap::DashMap;
-use anyhow::anyhow;
 use linkml_core::error::{LinkMLError, Result};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};

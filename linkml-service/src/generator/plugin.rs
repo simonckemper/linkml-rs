@@ -1,7 +1,6 @@
 //! Plugin system for custom generators
 
 use super::registry::GeneratorRegistry;
-use anyhow::anyhow;
 use super::traits::{Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use std::collections::HashMap;

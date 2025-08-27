@@ -4,7 +4,6 @@
 //! in various programming languages.
 
 use crate::array::ArraySpec;
-use anyhow::anyhow;
 use std::fmt::Write;
 
 /// Language-specific array code generation

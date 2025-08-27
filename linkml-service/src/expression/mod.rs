@@ -22,7 +22,6 @@ pub mod parallel;
 pub mod vm;
 
 use linkml_core::error::Result;
-use anyhow::anyhow;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
