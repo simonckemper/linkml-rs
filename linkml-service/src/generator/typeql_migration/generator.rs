@@ -70,16 +70,16 @@ impl MigrationScript {
             },
         }
     }
-    
+
     /// Convert fmt::Error to MigrationError
     fn fmt_error_to_migration_error(e: std::fmt::Error) -> super::MigrationError {
         super::MigrationError::GenerationError(e.to_string())
     }
-    
+
     /// Get the complete forward migration script
     pub fn forward_script(&self) -> MigrationResult<String> {
         let mut script = String::new();
-        
+
         // Header
         writeln!(&mut script, "# TypeQL Migration Script").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script, "# From: {} To: {}", self.metadata.from_version, self.metadata.to_version).map_err(Self::fmt_error_to_migration_error)?;
@@ -88,11 +88,11 @@ impl MigrationScript {
             writeln!(&mut script, "# WARNING: This migration contains breaking changes!").map_err(Self::fmt_error_to_migration_error)?;
         }
         writeln!(&mut script).map_err(Self::fmt_error_to_migration_error)?;
-        
+
         // Schema changes
         writeln!(&mut script, "## Schema Changes").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script, "{}", self.forward_script).map_err(Self::fmt_error_to_migration_error)?;
-        
+
         // Data migrations
         if !self.data_migrations.is_empty() {
             writeln!(&mut script, "\n## Data Migrations").map_err(Self::fmt_error_to_migration_error)?;
@@ -104,23 +104,23 @@ impl MigrationScript {
                 writeln!(&mut script, "{}", migration.query).map_err(Self::fmt_error_to_migration_error)?;
             }
         }
-        
+
         Ok(script)
     }
-    
+
     /// Get the complete rollback script
     pub fn rollback_script(&self) -> MigrationResult<String> {
         let mut script = String::new();
-        
+
         // Header
         writeln!(&mut script, "# TypeQL Rollback Script").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script, "# From: {} To: {}", self.metadata.to_version, self.metadata.from_version).map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script, "# Generated: {}", self.metadata.generated_at).map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script, "# WARNING: Data loss may occur during rollback!").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(&mut script).map_err(Self::fmt_error_to_migration_error)?;
-        
+
         writeln!(&mut script, "{}", self.rollback_script).map_err(Self::fmt_error_to_migration_error)?;
-        
+
         Ok(script)
     }
 }
@@ -138,7 +138,7 @@ impl MigrationGenerator {
             generator: EnhancedTypeQLGenerator::new(),
         }
     }
-    
+
     /// Generate migration scripts from a schema diff
     pub fn generate(
         &self,
@@ -150,77 +150,77 @@ impl MigrationGenerator {
         let mut migration = MigrationScript::new(from_version, to_version);
         migration.metadata.is_breaking = impact.has_breaking_changes();
         migration.metadata.complexity = impact.complexity_score;
-        
+
         // Generate forward migration
         self.generate_forward_migration(diff, &mut migration)?;
-        
+
         // Generate rollback migration
         self.generate_rollback_migration(diff, &mut migration)?;
-        
+
         // Generate data migrations if needed
         if impact.requires_data_migration {
             self.generate_data_migrations(diff, &mut migration)?;
         }
-        
+
         Ok(migration)
     }
-    
+
     /// Generate forward migration script
     fn generate_forward_migration(&self, diff: &SchemaDiff, migration: &mut MigrationScript) -> MigrationResult<()> {
         let script = &mut migration.forward_script;
-        
+
         // First, handle removals (undefine)
         if !diff.removed_types.is_empty() || !diff.removed_attributes.is_empty() {
             writeln!(script, "# Remove deprecated elements").map_err(Self::fmt_error_to_migration_error)?;
             writeln!(script, "undefine").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             // Remove types
             for type_change in &diff.removed_types {
                 let type_name = self.generator.convert_identifier(&type_change.name);
                 writeln!(script, "  {type_name} sub thing;").map_err(Self::fmt_error_to_migration_error)?;
             }
-            
+
             // Remove attributes
             for attr in &diff.removed_attributes {
                 let attr_name = self.generator.convert_identifier(&attr.name);
                 writeln!(script, "  {attr_name} sub attribute;").map_err(Self::fmt_error_to_migration_error)?;
             }
-            
+
             writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         // Handle modifications that require undefine/define
         self.generate_modifications(diff, script)?;
-        
+
         // Then, handle additions (define)
         if !diff.added_types.is_empty() || !diff.added_attributes.is_empty() {
             writeln!(script, "# Add new elements").map_err(Self::fmt_error_to_migration_error)?;
             writeln!(script, "define").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             // Add attributes first
             for attr in &diff.added_attributes {
                 if let Some(slot_def) = &attr.new_attr {
                     self.generate_attribute_definition(script, &attr.name, slot_def)?;
                 }
             }
-            
+
             // Add types
             for type_change in &diff.added_types {
                 if let Some(class_def) = &type_change.new_type {
                     self.generate_type_definition(script, &type_change.name, class_def)?;
                 }
             }
-            
+
             writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate modifications that require undefine/define
     fn generate_modifications(&self, diff: &SchemaDiff, script: &mut String) -> MigrationResult<()> {
         let mut has_modifications = false;
-        
+
         // Check for type modifications that require redefinition
         for type_change in &diff.modified_types {
             for change in &type_change.changes {
@@ -234,15 +234,15 @@ impl MigrationGenerator {
                 }
             }
         }
-        
+
         // Check for attribute modifications
         if !diff.modified_attributes.is_empty() {
             has_modifications = true;
         }
-        
+
         if has_modifications {
             writeln!(script, "# Modify existing elements").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             // First undefine
             writeln!(script, "undefine").map_err(Self::fmt_error_to_migration_error)?;
             for type_change in &diff.modified_types {
@@ -251,12 +251,12 @@ impl MigrationGenerator {
                     writeln!(script, "  {type_name} sub thing;").map_err(Self::fmt_error_to_migration_error)?;
                 }
             }
-            
+
             for attr in &diff.modified_attributes {
                 let attr_name = self.generator.convert_identifier(&attr.name);
                 writeln!(script, "  {attr_name} sub attribute;").map_err(Self::fmt_error_to_migration_error)?;
             }
-            
+
             // Then redefine
             writeln!(script, "\ndefine").map_err(Self::fmt_error_to_migration_error)?;
             for type_change in &diff.modified_types {
@@ -266,19 +266,19 @@ impl MigrationGenerator {
                     }
                 }
             }
-            
+
             for attr in &diff.modified_attributes {
                 if let Some(slot_def) = &attr.new_attr {
                     self.generate_attribute_definition(script, &attr.name, slot_def)?;
                 }
             }
-            
+
             writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Check if changes require redefinition
     fn needs_redefinition(changes: &[DetailedChange]) -> bool {
         changes.iter().any(|change| matches!(
@@ -288,47 +288,47 @@ impl MigrationGenerator {
             DetailedChange::RemovedSlot(_)
         ))
     }
-    
+
     /// Generate attribute definition
     fn generate_attribute_definition(&self, script: &mut String, name: &str, slot: &SlotDefinition) -> MigrationResult<()> {
         let attr_name = self.generator.convert_identifier(name);
         let value_type = self.map_slot_to_typeql_type(slot);
-        
+
         write!(script, "  {attr_name} sub attribute, value {value_type};").map_err(Self::fmt_error_to_migration_error)?;
-        
+
         // Add constraints
         if let Some(pattern) = &slot.pattern {
             write!(script, ", regex \"{}\"", self.escape_regex(pattern)).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         writeln!(script, ";").map_err(Self::fmt_error_to_migration_error)?;
         Ok(())
     }
-    
+
     /// Generate type definition
     fn generate_type_definition(&self, script: &mut String, name: &str, class: &ClassDefinition) -> MigrationResult<()> {
         let type_name = self.generator.convert_identifier(name);
         let is_abstract = class.abstract_.unwrap_or(false);
-        
+
         // Determine parent
         let parent = if let Some(parent_name) = &class.is_a {
             self.generator.convert_identifier(parent_name)
         } else {
             "entity".to_string()
         };
-        
+
         write!(script, "  {type_name}").map_err(Self::fmt_error_to_migration_error)?;
         if is_abstract {
             write!(script, " sub {parent}, abstract").map_err(Self::fmt_error_to_migration_error)?;
         } else {
             write!(script, " sub {parent}").map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         // Add owned attributes
         for slot_name in &class.slots {
             let attr_name = self.generator.convert_identifier(slot_name);
             write!(script, ",\n    owns {attr_name}").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             // Add constraints from slot_usage
             if let Some(slot_def) = class.slot_usage.get(slot_name) {
                 if slot_def.identifier == Some(true) {
@@ -338,61 +338,61 @@ impl MigrationGenerator {
                 }
             }
         }
-        
+
         writeln!(script, ";").map_err(Self::fmt_error_to_migration_error)?;
         Ok(())
     }
-    
+
     /// Generate rollback migration
     fn generate_rollback_migration(&self, diff: &SchemaDiff, migration: &mut MigrationScript) -> MigrationResult<()> {
         let script = &mut migration.rollback_script;
-        
+
         writeln!(script, "# WARNING: This rollback may cause data loss!").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(script, "# Backup your data before running this script.").map_err(Self::fmt_error_to_migration_error)?;
         writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
-        
+
         // Rollback is essentially the reverse of forward migration
         // First, undefine what was added
         if !diff.added_types.is_empty() || !diff.added_attributes.is_empty() {
             writeln!(script, "# Remove elements that were added").map_err(Self::fmt_error_to_migration_error)?;
             writeln!(script, "undefine").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             for type_change in &diff.added_types {
                 let type_name = self.generator.convert_identifier(&type_change.name);
                 writeln!(script, "  {type_name} sub thing;").map_err(Self::fmt_error_to_migration_error)?;
             }
-            
+
             for attr in &diff.added_attributes {
                 let attr_name = self.generator.convert_identifier(&attr.name);
                 writeln!(script, "  {attr_name} sub attribute;").map_err(Self::fmt_error_to_migration_error)?;
             }
-            
+
             writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         // Then, redefine what was removed
         if !diff.removed_types.is_empty() || !diff.removed_attributes.is_empty() {
             writeln!(script, "# Restore removed elements").map_err(Self::fmt_error_to_migration_error)?;
             writeln!(script, "define").map_err(Self::fmt_error_to_migration_error)?;
-            
+
             for attr in &diff.removed_attributes {
                 if let Some(slot_def) = &attr.old_attr {
                     self.generate_attribute_definition(script, &attr.name, slot_def)?;
                 }
             }
-            
+
             for type_change in &diff.removed_types {
                 if let Some(class_def) = &type_change.old_type {
                     self.generate_type_definition(script, &type_change.name, class_def)?;
                 }
             }
-            
+
             writeln!(script).map_err(Self::fmt_error_to_migration_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate data migration queries
     fn generate_data_migrations(&self, diff: &SchemaDiff, migration: &mut MigrationScript) -> MigrationResult<()> {
         // Handle attribute renames
@@ -412,7 +412,7 @@ impl MigrationGenerator {
                 }
             }
         }
-        
+
         // Handle required field additions
         for attr in &diff.added_attributes {
             if let Some(slot) = &attr.new_attr {
@@ -429,14 +429,14 @@ impl MigrationGenerator {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Generate type conversion query
     fn generate_type_conversion_query(&self, attr_name: &str, _old_type: &str, _new_type: &str) -> String {
         let attr = self.generator.convert_identifier(attr_name);
-        
+
         // Example: Convert string to integer
         format!(
             r"match
@@ -447,11 +447,11 @@ get $x, $old;
 # This requires application-level processing"
         )
     }
-    
+
     /// Generate default value insertion query
     fn generate_default_value_query(&self, attr_name: &str, default_value: &str) -> String {
         let attr = self.generator.convert_identifier(attr_name);
-        
+
         format!(
             r"match
   $x isa thing;
@@ -460,7 +460,7 @@ insert
   $x has {attr} {default_value};"
         )
     }
-    
+
     /// Get default value for a type
     fn get_default_value_for_type(&self, slot: &SlotDefinition) -> String {
         match slot.range.as_deref() {
@@ -472,7 +472,7 @@ insert
             _ => "\"\"".to_string(),
         }
     }
-    
+
     /// Map slot type to `TypeQL` value type
     fn map_slot_to_typeql_type(&self, slot: &SlotDefinition) -> &'static str {
         match slot.range.as_deref() {
@@ -484,7 +484,7 @@ insert
             _ => "string",
         }
     }
-    
+
     /// Escape regex for `TypeQL`
     fn escape_regex(&self, pattern: &str) -> String {
         pattern.replace('\\', "\\\\").replace('"', "\\\"")
@@ -504,57 +504,57 @@ mod tests {
         diff::SchemaDiffer,
         analyzer::MigrationAnalyzer,
     };
-    
-    
+
+
     #[test]
     fn test_simple_migration_generation() {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
-        
+
         // Add a new class
         let mut person = ClassDefinition::default();
         person.slots.push("name".to_string());
         new_schema.classes.insert("Person".to_string(), person);
-        
+
         // Add a new attribute
         let mut name_slot = SlotDefinition::default();
         name_slot.range = Some("string".to_string());
         new_schema.slots.insert("name".to_string(), name_slot);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
         let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact": {}, e))?;
-        
+
         let generator = MigrationGenerator::new();
         let migration = generator.generate(&diff, &impact, "1.0.0", "1.1.0").map_err(|e| anyhow::anyhow!("should generate migration": {}, e))?;
-        
+
         let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script": {}, e))?;
         assert!(forward.contains("define"));
         assert!(forward.contains("name sub attribute"));
         assert!(forward.contains("person sub entity"));
         assert!(forward.contains("owns name"));
     }
-    
+
     #[test]
     fn test_breaking_migration_generation() {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
-        
+
         // Add a class to old that's removed in new
         let removed_class = ClassDefinition::default();
         old_schema.classes.insert("OldClass".to_string(), removed_class);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
         let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact": {}, e))?;
-        
+
         let generator = MigrationGenerator::new();
         let migration = generator.generate(&diff, &impact, "1.0.0", "2.0.0").map_err(|e| anyhow::anyhow!("should generate migration": {}, e))?;
-        
+
         assert!(migration.metadata.is_breaking);
-        
+
         let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script": {}, e))?;
         assert!(forward.contains("undefine"));
         assert!(forward.contains("old-class sub thing"));
-        
+
         let rollback = migration.rollback_script().map_err(|e| anyhow::anyhow!("should generate rollback script": {}, e))?;
         assert!(rollback.contains("define"));
         assert!(rollback.contains("old-class sub entity"));

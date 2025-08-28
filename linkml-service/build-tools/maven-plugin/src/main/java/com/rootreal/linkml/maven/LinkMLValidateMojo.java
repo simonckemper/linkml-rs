@@ -136,7 +136,7 @@ public class LinkMLValidateMojo extends AbstractMojo {
     private List<File> findSchemaFiles() {
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setBasedir(schemaDirectory);
-        
+
         // Set includes
         if (includes != null && includes.length > 0) {
             scanner.setIncludes(includes);
@@ -147,19 +147,19 @@ public class LinkMLValidateMojo extends AbstractMojo {
                 "**/*.linkml"
             });
         }
-        
+
         // Set excludes
         if (excludes != null && excludes.length > 0) {
             scanner.setExcludes(excludes);
         }
-        
+
         scanner.scan();
-        
+
         List<File> files = new ArrayList<>();
         for (String filename : scanner.getIncludedFiles()) {
             files.add(new File(schemaDirectory, filename));
         }
-        
+
         return files;
     }
 
@@ -171,14 +171,14 @@ public class LinkMLValidateMojo extends AbstractMojo {
             // Build command
             CommandLine cmdLine = new CommandLine(linkmlExecutable);
             cmdLine.addArgument("validate");
-            
+
             // Add custom options
             if (validationOptions != null) {
                 for (String option : validationOptions) {
                     cmdLine.addArgument(option);
                 }
             }
-            
+
             cmdLine.addArgument(schemaFile.getAbsolutePath());
 
             // Execute command

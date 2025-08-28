@@ -32,14 +32,27 @@ impl StringPool {
     pub fn intern(&self, s: &str) -> Arc<str> {
         // Try read lock first for common case
         {
-            let pool = self.pool.read().map_err(|e| anyhow::anyhow!("StringPool read lock poisoned": {}, e))?;
-            if let Some(interned) = pool.get(s) {
-                return Arc::clone(interned);
+            // If lock is poisoned, we create a fresh string instead of panicking
+            // This allows the system to continue operating even after a panic
+            let pool_result = self.pool.read();
+            if let Ok(pool) = pool_result {
+                if let Some(interned) = pool.get(s) {
+                    return Arc::clone(interned);
+                }
             }
         }
 
         // Need write lock to insert
-        let mut pool = self.pool.write().map_err(|e| anyhow::anyhow!("StringPool write lock poisoned": {}, e))?;
+        // If the lock is poisoned, we still try to recover by clearing it
+        let write_result = self.pool.write();
+        let mut pool = match write_result {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                // Clear the poisoned state and continue
+                // This is safe because we're rebuilding the pool's integrity
+                poisoned.into_inner()
+            }
+        };
 
         // Double-check in case another thread interned while we waited
         if let Some(interned) = pool.get(s) {
@@ -54,19 +67,21 @@ impl StringPool {
 
     /// Get current pool size for monitoring
     pub fn size(&self) -> usize {
+        // If lock is poisoned, return 0 as a safe default
         self.pool
             .read()
-            .map_err(|e| anyhow::anyhow!("StringPool read lock poisoned": {}, e))?
-            .len()
+            .map(|guard| guard.len())
+            .unwrap_or(0)
     }
 
     /// Clear the pool (mainly for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.pool
-            .write()
-            .map_err(|e| anyhow::anyhow!("StringPool write lock poisoned": {}, e))?
-            .clear();
+        // If lock is poisoned, recover and clear anyway
+        match self.pool.write() {
+            Ok(mut guard) => guard.clear(),
+            Err(poisoned) => poisoned.into_inner().clear(),
+        }
     }
 }
 

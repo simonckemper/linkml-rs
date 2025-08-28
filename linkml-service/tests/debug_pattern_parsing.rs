@@ -25,13 +25,13 @@ slots:
     description: ISO format date
     range: string
     pattern: "^(?P<year>\\d{4})-(?P<month>\\d{2})-(?P<day>\\d{2})$"
-    
+
   us_date:
     name: us_date
     description: US format date
     range: string
     pattern: "^(?P<month>\\d{2})/(?P<day>\\d{2})/(?P<year>\\d{4})$"
-    
+
   custom_date:
     name: custom_date
     description: Custom date with named parts
@@ -42,17 +42,17 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Debug: Check patterns in parsed schema
     eprintln!("DEBUG: Checking parsed schema slots:");
     for (slot_name, slot_def) in &schema.slots {
         eprintln!("  Slot '{}': pattern = {:?}", slot_name, slot_def.pattern);
     }
-    
+
     // Check class slots
     if let Some(date_record) = schema.classes.get("DateRecord") {
         eprintln!("\nDEBUG: DateRecord class has slots: {:?}", date_record.slots);
-        
+
         for slot_name in &date_record.slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 eprintln!("  Slot '{}' from class: pattern = {:?}", slot_name, slot_def.pattern);
@@ -61,7 +61,7 @@ slots:
             }
         }
     }
-    
+
     // Verify each slot has the right pattern
     assert!(schema.slots.get("iso_date").unwrap().pattern.as_ref().unwrap().contains("year"));
     assert!(schema.slots.get("us_date").unwrap().pattern.as_ref().unwrap().contains("month"));

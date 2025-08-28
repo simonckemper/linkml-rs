@@ -26,7 +26,8 @@ impl TypeValidator {
         }
     }
 
-    /// Validate a value against a `LinkML` type    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Vec<ValidationIssue> {
+    /// Validate a value against a `LinkML` type
+    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
 
         match type_name {

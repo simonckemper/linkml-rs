@@ -271,11 +271,11 @@ async fn test_skolemnization() {
     // Test TTL with blank nodes
     let ttl_data = r#"
         @prefix ex: <http://example.org/> .
-        
+
         _:node1 a ex:Person ;
             ex:name "Alice" ;
             ex:knows _:node2 .
-        
+
         _:node2 a ex:Person ;
             ex:name "Bob" .
     "#;

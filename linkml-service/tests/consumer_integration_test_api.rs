@@ -22,26 +22,26 @@ classes:
       - person_id
       - name
       - friends
-      
+
   Company:
     slots:
       - company_id
       - name
       - employees
-      
+
 slots:
   person_id:
     identifier: true
     range: string
-    
+
   name:
     range: string
     required: true
-    
+
   friends:
     range: Person
     multivalued: true
-    
+
   employees:
     range: Person
     multivalued: true
@@ -79,7 +79,7 @@ classes:
       - username
       - email
       - posts
-      
+
   Post:
     slots:
       - id
@@ -119,12 +119,12 @@ classes:
       - timestamp
       - temperature
       - humidity
-      
+
 slots:
   device_id:
     identifier: true
     pattern: "^SENSOR-[0-9]{4}$"
-    
+
   temperature:
     range: float
     minimum_value: -50
@@ -163,19 +163,19 @@ classes:
       - currency
       - timestamp
       - status
-      
+
 slots:
   transaction_id:
     identifier: true
     pattern: "^TXN-[0-9]{10}$"
-    
+
   amount:
     range: decimal
     minimum_value: 0.01
-    
+
   status:
     range: TransactionStatus
-    
+
 enums:
   TransactionStatus:
     permissible_values:
@@ -234,22 +234,22 @@ async fn test_real_integration() {{
     let logger = Arc::new(Mockcreate_logger_service());
     let linkml = create_linkml_service(...).await.unwrap();
     let typedb = Arc::new(MockTypeDBService::new());
-    
+
     // 2. Load schema
     let _schema = linkml.load_schema_str(SCHEMA, SchemaFormat::Yaml).await.unwrap();
-    
+
     // 3. Generate TypeQL
     let typeql = linkml.generate_typeql(&schema).await.unwrap();
-    
+
     // 4. Define in TypeDB
     typedb.define_schema(&typeql).await.unwrap();
-    
+
     // 5. Validate and insert data
     let data = json!({{...}});
     let report = linkml.validate(&data, &schema, "Person").await.unwrap();
-    
+
     assert!(report.valid);
-    
+
     if report.valid {{
         typedb.insert(data).await.unwrap();
     }}

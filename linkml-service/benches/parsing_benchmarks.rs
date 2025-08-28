@@ -48,7 +48,7 @@ classes:
       - id
       - name
       - description
-  
+
   Person:
     is_a: NamedThing
     slots:
@@ -58,13 +58,13 @@ classes:
     slot_usage:
       name:
         required: true
-  
+
   Organization:
     is_a: NamedThing
     slots:
       - founded_date
       - employees
-  
+
   Employee:
     is_a: Person
     slots:

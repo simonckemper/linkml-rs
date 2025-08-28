@@ -11,28 +11,28 @@ import java.io.File
  * LinkML Gradle Plugin for schema validation and code generation.
  */
 class LinkMLPlugin : Plugin<Project> {
-    
+
     override fun apply(project: Project) {
         // Create extension
         val extension = project.extensions.create("linkml", LinkMLExtension::class.java, project)
-        
+
         // Register tasks
         registerValidateTask(project, extension)
         registerGenerateTask(project, extension)
         registerConvertTask(project, extension)
         registerFormatTask(project, extension)
-        
+
         // Configure source sets for Java projects
         project.plugins.withType(JavaPlugin::class.java) {
             configureJavaProject(project, extension)
         }
-        
+
         // Add default task dependencies
         project.afterEvaluate {
             configureTaskDependencies(project, extension)
         }
     }
-    
+
     private fun registerValidateTask(project: Project, extension: LinkMLExtension) {
         project.tasks.register("linkmlValidate", LinkMLValidateTask::class.java) { task ->
             task.group = "linkml"
@@ -45,7 +45,7 @@ class LinkMLPlugin : Plugin<Project> {
             task.verbose.set(extension.verbose)
         }
     }
-    
+
     private fun registerGenerateTask(project: Project, extension: LinkMLExtension) {
         project.tasks.register("linkmlGenerate", LinkMLGenerateTask::class.java) { task ->
             task.group = "linkml"
@@ -59,14 +59,14 @@ class LinkMLPlugin : Plugin<Project> {
             task.packageName.set(extension.packageName)
             task.validateFirst.set(extension.validateFirst)
             task.verbose.set(extension.verbose)
-            
+
             // Make generate task depend on validate if enabled
             if (extension.validateFirst.get()) {
                 task.dependsOn("linkmlValidate")
             }
         }
     }
-    
+
     private fun registerConvertTask(project: Project, extension: LinkMLExtension) {
         project.tasks.register("linkmlConvert", LinkMLConvertTask::class.java) { task ->
             task.group = "linkml"
@@ -79,7 +79,7 @@ class LinkMLPlugin : Plugin<Project> {
             task.linkmlExecutable.set(extension.executable)
         }
     }
-    
+
     private fun registerFormatTask(project: Project, extension: LinkMLExtension) {
         project.tasks.register("linkmlFormat", LinkMLFormatTask::class.java) { task ->
             task.group = "linkml"
@@ -91,17 +91,17 @@ class LinkMLPlugin : Plugin<Project> {
             task.inPlace.set(true)
         }
     }
-    
+
     private fun configureJavaProject(project: Project, extension: LinkMLExtension) {
         val javaExtension = project.extensions.getByType(JavaPluginExtension::class.java)
         val sourceSets = javaExtension.sourceSets
-        
+
         // Add generated sources to main source set
         sourceSets.getByName("main").java {
             srcDir(extension.outputDirectory)
         }
     }
-    
+
     private fun configureTaskDependencies(project: Project, extension: LinkMLExtension) {
         // Make compile depend on generate for Java projects
         if (project.plugins.hasPlugin(JavaPlugin::class.java) && extension.autoGenerate.get()) {
@@ -109,7 +109,7 @@ class LinkMLPlugin : Plugin<Project> {
                 it.dependsOn("linkmlGenerate")
             }
         }
-        
+
         // Make check depend on validate
         project.tasks.findByName("check")?.dependsOn("linkmlValidate")
     }

@@ -2,7 +2,7 @@ mod common;
 use common::initialize_example_service;
 
 //! Expression Language Example
-//! 
+//!
 //! This example demonstrates the LinkML expression language for validation rules,
 //! computed fields, and conditional logic.
 
@@ -67,10 +67,10 @@ slots:
     // Parse schema
     let parser = YamlParser::new();
     let schema = parser.parse_str(basic_schema)?;
-    
+
     // Create LinkML service (simplified for example)
     let service = create_example_linkml_service().await?;
-    
+
     // Example product data
     let product = json!({
         "id": "PROD001",
@@ -79,10 +79,10 @@ slots:
         "tax_rate": 0.08,
         "discount_percentage": 10.0
     });
-    
+
     println!("Validating product with computed fields...");
     let report = service.validate(&product, &schema, "Product").await?;
-    
+
     if report.valid {
         println!("✓ Product validation passed!");
         println!("  Base price: $100.00");
@@ -91,7 +91,7 @@ slots:
         println!("  Discount: 10%");
         println!("  Final price: $97.20 (computed)");
     }
-    
+
     // Example 2: Validation rules with expressions
     let validation_schema = r#"
 id: https://example.com/validation
@@ -157,7 +157,7 @@ slots:
 "#;
 
     let validation_schema = parser.parse_str(validation_schema)?;
-    
+
     // Test order that violates minimum value rule
     let small_order = json!({
         "id": "ORDER001",
@@ -170,17 +170,17 @@ slots:
         "total_value": 20.0,
         "express_shipping": false
     });
-    
+
     println!("\n\nValidating order with rule expressions...");
     let report = service.validate(&small_order, &validation_schema, "Order").await?;
-    
+
     if !report.valid {
         println!("✗ Order validation failed:");
         for error in &report.errors {
             println!("  - {}", error.message);
         }
     }
-    
+
     // Example 3: Conditional requirements
     let conditional_schema = r#"
 id: https://example.com/conditional
@@ -231,7 +231,7 @@ enums:
 "#;
 
     let conditional_schema = parser.parse_str(conditional_schema)?;
-    
+
     // Test business account
     let business_account = json!({
         "username": "acme_corp",
@@ -239,15 +239,15 @@ enums:
         "business_name": "ACME Corporation",
         "tax_id": "12-3456789"
     });
-    
+
     println!("\n\nValidating business account...");
     let report = service.validate(&business_account, &conditional_schema, "UserAccount").await?;
-    
+
     if report.valid {
         println!("✓ Business account validation passed!");
         println!("  Required business fields present");
     }
-    
+
     // Test personal account missing required field
     let incomplete_personal = json!({
         "username": "john_doe",
@@ -255,17 +255,17 @@ enums:
         "personal_email": "john@example.com"
         // Missing date_of_birth
     });
-    
+
     println!("\nValidating incomplete personal account...");
     let report = service.validate(&incomplete_personal, &conditional_schema, "UserAccount").await?;
-    
+
     if !report.valid {
         println!("✗ Personal account validation failed:");
         for error in &report.errors {
             println!("  - {}", error.message);
         }
     }
-    
+
     // Example 4: Complex expressions with functions
     println!("\n\nExpression Language Features");
     println!("---------------------------");
@@ -280,7 +280,7 @@ enums:
     println!("  - status == 'active' || override");
     println!("  - price * quantity * (1 - discount)");
     println!("  - matches(email, '^[\\w.-]+@[\\w.-]+\\.\\w+$')");
-    
+
     Ok(())
 }
 

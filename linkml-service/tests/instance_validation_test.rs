@@ -27,7 +27,7 @@ slots:
     name: country
     range: string
     description: Country code validated against instance data
-    
+
   state:
     name: state
     range: string
@@ -142,7 +142,7 @@ slots:
   category:
     name: category
     range: string
-    
+
   subcategory:
     name: subcategory
     range: string

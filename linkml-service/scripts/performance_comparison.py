@@ -54,20 +54,20 @@ classes:
       - age
       - email
       - address
-      
+
   Address:
     slots:
       - street
       - city
       - state
       - zip_code
-      
+
   Organization:
     slots:
       - name
       - employees
       - headquarters
-      
+
 slots:
   name:
     range: string
@@ -128,15 +128,15 @@ def measure_time(func, *args, **kwargs) -> Tuple[float, any]:
 def benchmark_python_linkml(schema_yaml: str, data: Dict, target_class: str) -> Dict[str, float]:
     """Benchmark Python LinkML operations"""
     results = {}
-    
+
     # Measure parsing time
     parse_time, schema = measure_time(yaml_loader.load, schema_yaml, target_class="SchemaDefinition")
     results['parse_ms'] = parse_time
-    
+
     # Measure SchemaView creation
     view_time, schema_view = measure_time(SchemaView, schema)
     results['schema_view_ms'] = view_time
-    
+
     # Measure validation time
     try:
         validate_time, _ = measure_time(validate, data, schema, target_class)
@@ -144,24 +144,24 @@ def benchmark_python_linkml(schema_yaml: str, data: Dict, target_class: str) -> 
     except Exception as e:
         print(f"Python validation error: {e}")
         results['validate_ms'] = -1
-    
+
     return results
 
 
 def benchmark_rust_linkml(schema_yaml: str, data: Dict, target_class: str) -> Dict[str, float]:
     """Benchmark Rust LinkML operations using the linkml-cli"""
     results = {}
-    
+
     # Create temporary files
     schema_file = "/tmp/test_schema.yaml"
     data_file = "/tmp/test_data.json"
-    
+
     with open(schema_file, 'w') as f:
         f.write(schema_yaml)
-    
+
     with open(data_file, 'w') as f:
         json.dump(data, f)
-    
+
     # Find the linkml-cli binary
     cli_path = None
     for path in [
@@ -173,11 +173,11 @@ def benchmark_rust_linkml(schema_yaml: str, data: Dict, target_class: str) -> Di
         if os.path.exists(path):
             cli_path = path
             break
-    
+
     if not cli_path:
         print("Error: linkml-cli binary not found. Please build the Rust project first.")
         return {'error': 'Binary not found'}
-    
+
     # Measure validation time (includes parsing)
     start = time.time()
     try:
@@ -187,7 +187,7 @@ def benchmark_rust_linkml(schema_yaml: str, data: Dict, target_class: str) -> Di
             "--data", data_file,
             "--target-class", target_class
         ], capture_output=True, text=True, timeout=10)
-        
+
         if result.returncode != 0:
             print(f"Rust validation error: {result.stderr}")
             results['validate_ms'] = -1
@@ -195,11 +195,11 @@ def benchmark_rust_linkml(schema_yaml: str, data: Dict, target_class: str) -> Di
             results['validate_ms'] = (time.time() - start) * 1000
     except subprocess.TimeoutExpired:
         results['validate_ms'] = -1
-    
+
     # Clean up
     os.unlink(schema_file)
     os.unlink(data_file)
-    
+
     return results
 
 
@@ -207,17 +207,17 @@ def print_comparison(name: str, python_results: Dict, rust_results: Dict):
     """Print performance comparison results"""
     print(f"\n{name} Performance Comparison")
     print("=" * 50)
-    
+
     metrics = [
         ('Parse time', 'parse_ms'),
         ('SchemaView creation', 'schema_view_ms'),
         ('Validation time', 'validate_ms')
     ]
-    
+
     for label, key in metrics:
         py_time = python_results.get(key, -1)
         rs_time = rust_results.get(key, -1)
-        
+
         if py_time > 0 and rs_time > 0:
             speedup = py_time / rs_time
             print(f"{label:20} Python: {py_time:8.2f}ms  Rust: {rs_time:8.2f}ms  Speedup: {speedup:6.1f}x")
@@ -231,26 +231,26 @@ def main():
     """Run performance comparison"""
     print("LinkML Performance Comparison: Python vs Rust")
     print("=" * 50)
-    
+
     # Test simple schema
     print("\nRunning simple schema benchmark...")
     py_simple = benchmark_python_linkml(SIMPLE_SCHEMA, TEST_DATA_SIMPLE, "Person")
     rs_simple = benchmark_rust_linkml(SIMPLE_SCHEMA, TEST_DATA_SIMPLE, "Person")
     print_comparison("Simple Schema", py_simple, rs_simple)
-    
+
     # Test medium schema
     print("\nRunning medium schema benchmark...")
     py_medium = benchmark_python_linkml(MEDIUM_SCHEMA, TEST_DATA_MEDIUM, "Organization")
     rs_medium = benchmark_rust_linkml(MEDIUM_SCHEMA, TEST_DATA_MEDIUM, "Organization")
     print_comparison("Medium Schema", py_medium, rs_medium)
-    
+
     # Summary
     print("\n" + "=" * 50)
     print("Summary:")
     print("- Rust LinkML typically shows significant performance improvements")
     print("- Actual speedup varies by operation and schema complexity")
     print("- For production workloads, consider running with larger schemas")
-    
+
     # Note about comprehensive testing
     print("\nNote: For comprehensive benchmarks, run:")
     print("  cargo bench -p linkml-service")

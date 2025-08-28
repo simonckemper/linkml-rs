@@ -67,7 +67,7 @@ classes:
     slots:
       - id
       - name
-      
+
 slots:
   id:
     name: id
@@ -75,7 +75,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   name:
     name: name
     description: Name field
@@ -193,7 +193,7 @@ classes:
       - event_id
       - timestamp
       - description
-      
+
 slots:
   event_id:
     name: event_id
@@ -201,13 +201,13 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   timestamp:
     name: timestamp
     description: Event timestamp
     range: datetime
     required: true
-    
+
   description:
     name: description
     description: Event description
@@ -294,7 +294,7 @@ classes:
     slots:
       - id
       - value
-      
+
 slots:
   id:
     name: id
@@ -302,7 +302,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   value:
     name: value
     description: Item value
@@ -384,7 +384,7 @@ classes:
     slots:
       - id
       - data
-      
+
 slots:
   id:
     name: id
@@ -392,7 +392,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   data:
     name: data
     description: Item data
@@ -482,7 +482,7 @@ classes:
       - id
       - value
       - timestamp
-      
+
 slots:
   id:
     name: id
@@ -490,12 +490,12 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   value:
     name: value
     description: Metric value
     range: float
-    
+
   timestamp:
     name: timestamp
     description: Metric timestamp
@@ -614,7 +614,7 @@ classes:
     slots:
       - id
       - healthy
-      
+
 slots:
   id:
     name: id
@@ -622,7 +622,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   healthy:
     name: healthy
     description: Health status
@@ -757,7 +757,7 @@ classes:
     slots:
       - id
       - required_field
-      
+
 slots:
   id:
     name: id
@@ -765,7 +765,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   required_field:
     name: required_field
     description: Required field
@@ -854,7 +854,7 @@ classes:
     slots:
       - id
       - status
-      
+
 slots:
   id:
     name: id
@@ -862,7 +862,7 @@ slots:
     identifier: true
     range: string
     required: true
-    
+
   status:
     name: status
     description: Task status
@@ -962,7 +962,7 @@ classes:
       - items
       - total_amount
       - status
-      
+
   OrderItem:
     name: OrderItem
     description: Order line item
@@ -970,7 +970,7 @@ classes:
       - product_id
       - quantity
       - unit_price
-      
+
 slots:
   order_id:
     name: order_id
@@ -979,53 +979,53 @@ slots:
     range: string
     pattern: "^ORD-[0-9]{6}$"
     required: true
-    
+
   customer_name:
     name: customer_name
     description: Customer name
     range: string
     required: true
     minimum_length: 2
-    
+
   items:
     name: items
     description: Order items
     range: OrderItem
     multivalued: true
     minimum_cardinality: 1
-    
+
   total_amount:
     name: total_amount
     description: Total order amount
     range: float
     minimum_value: 0
-    
+
   status:
     name: status
     description: Order status
     range: OrderStatus
     required: true
-    
+
   product_id:
     name: product_id
     description: Product identifier
     range: string
     required: true
-    
+
   quantity:
     name: quantity
     description: Item quantity
     range: integer
     minimum_value: 1
     required: true
-    
+
   unit_price:
     name: unit_price
     description: Unit price
     range: float
     minimum_value: 0
     required: true
-    
+
 enums:
   OrderStatus:
     name: OrderStatus

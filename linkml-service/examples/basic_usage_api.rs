@@ -45,7 +45,7 @@ classes:
       - name
       - email
       - age
-      
+
   Organization:
     description: A company or institution
     slots:
@@ -53,34 +53,34 @@ classes:
       - name
       - founded_year
       - employees
-      
+
 slots:
   id:
     identifier: true
     range: string
     description: Unique identifier
-    
+
   name:
     range: string
     required: true
     description: Full name
-    
+
   email:
     range: string
     pattern: "^[\\w._%+-]+@[\\w.-]+\\.[A-Z|a-z]{2,}$"
     description: Email address
-    
+
   age:
     range: integer
     minimum_value: 0
     maximum_value: 150
     description: Age in years
-    
+
   founded_year:
     range: integer
     minimum_value: 1800
     description: Year the organization was founded
-    
+
   employees:
     range: Person
     multivalued: true
@@ -204,7 +204,7 @@ classes:
     slots:
       - id
       - name
-      
+
   Person:
     is_a: NamedThing  # Inherits id and name
     slots:
@@ -221,7 +221,7 @@ enums:
       - active
       - inactive
       - pending
-      
+
 slots:
   status:
     range: StatusEnum
@@ -246,7 +246,7 @@ slots:
   phone:
     range: string
     pattern: "^\\+?[1-9]\\d{1,14}$"  # E.164 format
-    
+
   postal_code:
     range: string
     pattern: "^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$"  # UK format
@@ -267,21 +267,21 @@ async fn validate_person_data(
 ) -> Result<(), ValidationError> {{
     // Load schema (typically cached)
     let schema = linkml.load_schema_str(SCHEMA_YAML, SchemaFormat::Yaml).await?;
-    
+
     // Validate against Person class
     let report = linkml.validate(person_data, &schema, "Person").await?;
-    
+
     if !report.valid {{
         // Handle validation errors
         for error in &report.errors {{
-            log::error!("Validation error at {{}}: {{}}", 
+            log::error!("Validation error at {{}}: {{}}",
                 error.path.as_ref().unwrap_or(&"root".to_string()),
                 error.message
             );
         }}
         return Err(ValidationError::Invalid(report));
     }}
-    
+
     Ok(())
 }}
 

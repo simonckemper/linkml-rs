@@ -79,12 +79,12 @@ classes:
     slots:
       - id
       - name
-  
+
   Organization:
     slots:
       - id
       - name
-  
+
   Employment:
     description: Employment relationship
     slots:
@@ -100,7 +100,7 @@ classes:
       employer:
         range: Organization
         required: true
-  
+
   Meeting:
     description: Multi-way relation
     slots:

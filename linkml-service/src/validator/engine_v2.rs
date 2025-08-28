@@ -62,11 +62,11 @@ impl ValidationEngineV2 {
     pub fn new(schema: ArcSchema) -> Self {
         Self::with_config(schema, ValidationConfig::default())
     }
-    
+
     /// Create with custom configuration
     pub fn with_config(schema: ArcSchema, config: ValidationConfig) -> Self {
         let validators = Self::create_validators();
-        
+
         Self {
             schema,
             validators,
@@ -74,17 +74,17 @@ impl ValidationEngineV2 {
             config,
         }
     }
-    
+
     /// Create from owned schema
     pub fn from_schema(schema: SchemaDefinition) -> Self {
         Self::new(Arc::new(schema))
     }
-    
+
     /// Get the schema Arc (cheap clone)
     pub fn schema_arc(&self) -> ArcSchema {
         Arc::clone(&self.schema)
     }
-    
+
     /// Create default validators
     fn create_validators() -> Vec<Box<dyn Validator>> {
         vec![
@@ -93,7 +93,7 @@ impl ValidationEngineV2 {
             Box::new(PatternValidator),
         ]
     }
-    
+
     /// Get or create validation context for a class
     fn get_context(&self, class_name: &str) -> Arc<ValidationContext> {
         if self.config.cache_contexts {
@@ -101,13 +101,13 @@ impl ValidationEngineV2 {
             if let Some(context) = self.context_cache.get(class_name) {
                 return Arc::clone(&context);
             }
-            
+
             // Create and cache new context
             let context = Arc::new(ValidationContext::new(
                 Arc::clone(&self.schema),
                 class_name.to_string(),
             ));
-            
+
             // Evict old entries if at capacity
             if self.context_cache.len() >= self.config.max_cached_contexts {
                 // Simple FIFO eviction
@@ -115,7 +115,7 @@ impl ValidationEngineV2 {
                     self.context_cache.remove(&first_key);
                 }
             }
-            
+
             self.context_cache.insert(class_name.to_string(), Arc::clone(&context));
             context
         } else {
@@ -126,7 +126,7 @@ impl ValidationEngineV2 {
             ))
         }
     }
-    
+
     /// Validate data against a class
     pub async fn validate_with_class(
         &self,
@@ -135,7 +135,7 @@ impl ValidationEngineV2 {
     ) -> Result<ValidationResult> {
         let context = self.get_context(class_name);
         let mut errors = Vec::new();
-        
+
         // Run all validators
         for validator in &self.validators {
             match validator.validate(data, &context).await {
@@ -157,19 +157,19 @@ impl ValidationEngineV2 {
                 }
             }
         }
-        
+
         Ok(ValidationResult {
             valid: errors.is_empty(),
             errors,
             warnings: Vec::new(),
         })
     }
-    
+
     /// Clear context cache
     pub fn clear_cache(&self) {
         self.context_cache.clear();
     }
-    
+
     /// Get cache statistics
     pub fn cache_stats(&self) -> CacheStats {
         CacheStats {
@@ -216,7 +216,7 @@ impl ValidationEngineFactory {
             schema_cache: Arc::new(linkml_core::schema_arc::SchemaCache::new()),
         }
     }
-    
+
     /// Create engine from schema name (uses cache)
     pub async fn create_from_name(&self, schema_name: &str) -> Result<ValidationEngineV2> {
         let schema = self.schema_cache.get_or_insert(schema_name, || {
@@ -227,10 +227,10 @@ impl ValidationEngineFactory {
                 ..Default::default()
             }
         });
-        
+
         Ok(ValidationEngineV2::new(schema))
     }
-    
+
     /// Create engine from schema
     pub fn create_from_schema(&self, schema: SchemaDefinition) -> ValidationEngineV2 {
         let schema_arc = Arc::new(schema);
@@ -251,21 +251,21 @@ impl BatchValidator {
             engine: Arc::new(engine),
         }
     }
-    
+
     /// Validate multiple items in parallel
     pub async fn validate_batch(
         &self,
         items: Vec<(Value, String)>, // (data, class_name)
     ) -> Vec<Result<ValidationResult>> {
         use futures::future::join_all;
-        
+
         let futures = items.into_iter().map(|(data, class_name)| {
             let engine = Arc::clone(&self.engine);
             async move {
                 engine.validate_with_class(&data, &class_name).await
             }
         });
-        
+
         join_all(futures).await
     }
 }
@@ -281,13 +281,13 @@ mod tests {
             name: "test".to_string(),
             ..Default::default()
         };
-        
+
         let engine = ValidationEngineV2::from_schema(schema);
         let data = serde_json::json!({
             "name": "Test",
             "value": 42
         });
-        
+
         let result = engine.validate_with_class(&data, "TestClass").await.map_err(|e| anyhow::anyhow!("should validate": {}, e))?;
         assert!(result.valid || !result.valid); // Just check it runs
     }
@@ -297,7 +297,7 @@ mod tests {
         let schema = Arc::new(SchemaDefinition::default());
         let engine1 = ValidationEngineV2::new(Arc::clone(&schema));
         let engine2 = ValidationEngineV2::new(Arc::clone(&schema));
-        
+
         assert!(Arc::ptr_eq(&engine1.schema, &engine2.schema));
     }
 
@@ -305,7 +305,7 @@ mod tests {
     fn test_cache_stats() {
         let engine = ValidationEngineV2::from_schema(SchemaDefinition::default());
         let stats = engine.cache_stats();
-        
+
         assert_eq!(stats.contexts_cached, 0);
         assert!(stats.cache_enabled);
     }

@@ -28,13 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let simple_schema = r#"
     id: https://example.org/simple
     name: SimpleSchema
-    
+
     classes:
       Person:
         slots:
           - name
           - age
-    
+
     slots:
       name:
         range: string
@@ -47,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let complex_schema = r#"
     id: https://example.org/complex
     name: ComplexSchema
-    
+
     classes:
       Person:
         slots:
@@ -64,14 +64,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
               slot_conditions:
                 email:
                   required: true
-      
+
       Address:
         slots:
           - street
           - city
           - state
           - zip_code
-          
+
     slots:
       name:
         range: string

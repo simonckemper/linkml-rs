@@ -45,23 +45,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     name: ComprehensiveDemo
     title: Comprehensive LinkML Demo Schema
     description: Demonstrates all major LinkML features
-    
+
     prefixes:
       demo: https://example.org/demo/
       linkml: https://w3id.org/linkml/
-    
+
     default_prefix: demo
-    
+
     # Schema settings
     settings:
       validation:
         allow_additional_properties: false
         strict_mode: true
-    
+
     # Imports (example - would need actual files)
     # imports:
     #   - linkml:types
-    
+
     # Define custom types
     types:
       EmailType:
@@ -69,13 +69,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         base: str
         pattern: "^[\\w.-]+@[\\w.-]+\\.\\w+$"
         description: Valid email address
-        
+
       PhoneType:
         uri: xsd:string
         base: str
         pattern: "^\\+?\\d{1,3}[- ]?\\d{3,14}$"
         description: International phone number
-    
+
     # Define enums
     enums:
       EmploymentStatus:
@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             description: Independent contractor
           INTERN:
             description: Intern or trainee
-            
+
       DepartmentType:
         permissible_values:
           ENGINEERING:
@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           MARKETING:
           HR:
           FINANCE:
-    
+
     # Define classes
     classes:
       # Base class with metadata
@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         annotations:
           author: LinkML Team
           version: "1.0"
-          
+
       # Person class with advanced features
       Person:
         is_a: NamedThing
@@ -153,7 +153,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           email_key:
             unique_key_slots:
               - email
-              
+
       # Address class
       Address:
         is_a: NamedThing
@@ -167,7 +167,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         slot_usage:
           name:
             description: Address label (e.g., 'Home', 'Work')
-            
+
       # Organization class with expressions
       Organization:
         is_a: NamedThing
@@ -180,7 +180,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         slot_usage:
           name:
             description: Organization name
-            
+
     # Define slots with various constraints
     slots:
       id:
@@ -188,23 +188,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         range: string
         required: true
         description: Unique identifier
-        
+
       name:
         range: string
         required: true
         description: Display name
-        
+
       description:
         range: string
         description: Human-readable description
-        
+
       email:
         range: EmailType
         required: true
         description: Email address
         annotations:
           indexed: true
-          
+
       age:
         range: integer
         minimum_value: 0
@@ -212,16 +212,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         description: Age in years
         unit:
           ucum_code: a
-          
+
       phone:
         range: PhoneType
         description: Contact phone number
-        
+
       employment_status:
         range: EmploymentStatus
         required: true
         description: Current employment status
-        
+
       department:
         range: DepartmentType
         description: Department assignment
@@ -229,7 +229,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           - equals_string: ENGINEERING
           - equals_string: SALES
           - equals_string: MARKETING
-        
+
       salary:
         range: float
         minimum_value: 0
@@ -237,24 +237,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         description: Annual salary in USD
         unit:
           ucum_code: USD
-          
+
       manager:
         range: Person
         description: Direct manager
-        
+
       addresses:
         range: Address
         multivalued: true
         description: Associated addresses
-        
+
       street:
         range: string
         required: true
-        
+
       city:
         range: string
         required: true
-        
+
       state:
         range: string
         pattern: "^[A-Z]{2}$"
@@ -265,33 +265,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           - equals_string: TX
           - equals_string: WA
           - equals_string: FL
-          
+
       zip_code:
         range: string
         pattern: "^\\d{5}(-\\d{4})?$"
         description: ZIP or ZIP+4 code
-        
+
       country:
         range: string
         equals_string_in:
           - USA
           - Canada
           - Mexico
-        
+
       employees:
         range: Person
         multivalued: true
         description: Organization employees
-        
+
       headquarters:
         range: Address
         description: Main office location
-        
+
       total_budget:
         range: float
         minimum_value: 0
         description: Total annual budget
-        
+
       average_salary:
         range: float
         description: Computed average employee salary

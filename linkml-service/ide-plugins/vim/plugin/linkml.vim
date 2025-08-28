@@ -37,11 +37,11 @@ augroup linkml
   autocmd!
   autocmd BufNewFile,BufRead *.linkml.yaml,*.linkml.yml,*.linkml setfiletype linkml
   autocmd FileType linkml call linkml#Setup()
-  
+
   if g:linkml_validate_on_save
     autocmd BufWritePost *.linkml.yaml,*.linkml.yml,*.linkml call linkml#Validate()
   endif
-  
+
   if g:linkml_format_on_save
     autocmd BufWritePre *.linkml.yaml,*.linkml.yml,*.linkml call linkml#Format()
   endif

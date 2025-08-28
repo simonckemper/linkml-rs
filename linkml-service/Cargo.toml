@@ -160,4 +160,3 @@ harness = false
 [[bin]]
 name = "linkml"
 path = "src/bin/linkml.rs"
-

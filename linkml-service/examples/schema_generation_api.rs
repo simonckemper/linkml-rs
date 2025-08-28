@@ -50,7 +50,7 @@ classes:
       - authors
       - publication_year
       - genres
-      
+
   Author:
     description: Book author
     slots:
@@ -58,7 +58,7 @@ classes:
       - name
       - birth_year
       - biography
-      
+
   Member:
     description: Library member
     slots:
@@ -67,7 +67,7 @@ classes:
       - email
       - join_date
       - borrowed_books
-      
+
   Loan:
     description: Book loan record
     slots:
@@ -77,22 +77,22 @@ classes:
       - loan_date
       - due_date
       - return_date
-      
+
 slots:
   isbn:
     identifier: true
     range: string
     pattern: "^(97[89])?\\d{10}$"
-    
+
   title:
     range: string
     required: true
-    
+
   authors:
     range: Author
     multivalued: true
     minimum_cardinality: 1
-    
+
   # ... more slots defined ...
 "#;
 
@@ -315,16 +315,16 @@ use chrono::{DateTime, NaiveDate, Utc};
 pub struct Book {
     #[serde(rename = "isbn")]
     pub isbn: String,
-    
+
     #[serde(rename = "title")]
     pub title: String,
-    
+
     #[serde(rename = "authors")]
     pub authors: Vec<Author>,
-    
+
     #[serde(rename = "publication_year", skip_serializing_if = "Option::is_none")]
     pub publication_year: Option<i32>,
-    
+
     #[serde(rename = "genres", default, skip_serializing_if = "Vec::is_empty")]
     pub genres: Vec<String>,
 }
@@ -333,13 +333,13 @@ pub struct Book {
 pub struct Author {
     #[serde(rename = "author_id")]
     pub author_id: String,
-    
+
     #[serde(rename = "name")]
     pub name: String,
-    
+
     #[serde(rename = "birth_year", skip_serializing_if = "Option::is_none")]
     pub birth_year: Option<i32>,
-    
+
     #[serde(rename = "biography", skip_serializing_if = "Option::is_none")]
     pub biography: Option<String>,
 }
@@ -348,16 +348,16 @@ pub struct Author {
 pub struct Member {
     #[serde(rename = "member_id")]
     pub member_id: String,
-    
+
     #[serde(rename = "name")]
     pub name: String,
-    
+
     #[serde(rename = "email")]
     pub email: String,
-    
+
     #[serde(rename = "join_date")]
     pub join_date: NaiveDate,
-    
+
     #[serde(rename = "borrowed_books", default, skip_serializing_if = "Vec::is_empty")]
     pub borrowed_books: Vec<Loan>,
 }
@@ -366,19 +366,19 @@ pub struct Member {
 pub struct Loan {
     #[serde(rename = "loan_id")]
     pub loan_id: String,
-    
+
     #[serde(rename = "member")]
     pub member: Box<Member>,
-    
+
     #[serde(rename = "book")]
     pub book: Box<Book>,
-    
+
     #[serde(rename = "loan_date")]
     pub loan_date: DateTime<Utc>,
-    
+
     #[serde(rename = "due_date")]
     pub due_date: DateTime<Utc>,
-    
+
     #[serde(rename = "return_date", skip_serializing_if = "Option::is_none")]
     pub return_date: Option<DateTime<Utc>>,
 }
@@ -395,14 +395,14 @@ impl Book {
                 value: self.isbn.clone(),
             });
         }
-        
+
         // Validate required fields
         if self.title.is_empty() {
             return Err(ValidationError::RequiredField {
                 field: "title".to_string(),
             });
         }
-        
+
         // Validate minimum cardinality
         if self.authors.is_empty() {
             return Err(ValidationError::MinCardinality {
@@ -411,7 +411,7 @@ impl Book {
                 actual: 0,
             });
         }
-        
+
         Ok(())
     }
 }
@@ -490,20 +490,20 @@ let options = GeneratorOptions {{
     // Common options
     include_comments: true,
     include_examples: true,
-    
+
     // Language-specific options
     rust_options: RustOptions {{
         derive_traits: vec!["Debug", "Clone", "PartialEq"],
         use_builders: true,
         async_support: true,
     }},
-    
+
     sql_options: SqlOptions {{
         dialect: SqlDialect::PostgreSQL,
         include_indexes: true,
         include_constraints: true,
     }},
-    
+
     graphql_options: GraphQLOptions {{
         include_mutations: true,
         include_subscriptions: false,

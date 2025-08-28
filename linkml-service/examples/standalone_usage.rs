@@ -41,29 +41,29 @@ classes:
         identifier: true
         range: ISBN
         required: true
-        
+
       title:
         range: string
         required: true
-        
+
       authors:
         range: string
         multivalued: true
         minimum_cardinality: 1
-        
+
       publication_year:
         range: integer
         minimum_value: 1450  # Gutenberg press
         maximum_value: 2100
-        
+
       pages:
         range: integer
         minimum_value: 1
-        
+
       genres:
         range: string
         multivalued: true
-        
+
       available:
         range: boolean
         default_value: true
@@ -74,14 +74,14 @@ classes:
       name:
         identifier: true
         required: true
-        
+
       books:
         range: Book
         multivalued: true
-        
+
       location:
         range: string
-        
+
     rules:
       - description: Library must have at least one book
         minimum_cardinality:

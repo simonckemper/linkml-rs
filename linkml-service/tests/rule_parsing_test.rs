@@ -116,7 +116,7 @@ classes:
           slot_conditions:
             approval_required:
               equals_string: "yes"
-              
+
       # Composite conditions
       - description: Approved orders must have approver
         priority: 40
@@ -133,7 +133,7 @@ classes:
           slot_conditions:
             approved_by:
               required: true
-              
+
       # Else conditions
       - description: Cancelled orders cleared
         priority: 30

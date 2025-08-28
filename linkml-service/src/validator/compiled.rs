@@ -209,7 +209,8 @@ impl CompiledValidator {
         compiler.compile_class(class_name, class)
     }
 
-    /// Execute compiled validation instructions    pub fn execute(
+    /// Execute compiled validation instructions
+    pub fn execute(
         &self,
         value: &JsonValue,
         context: &mut ValidationContext,
@@ -565,7 +566,8 @@ impl CompiledValidator {
         }
     }
 
-    /// Update instruction path for nested validation    fn update_instruction_path(&self, instruction: &mut ValidationInstruction, new_path: &str) {
+    /// Update instruction path for nested validation
+    fn update_instruction_path(&self, instruction: &mut ValidationInstruction, new_path: &str) {
         match instruction {
             ValidationInstruction::CheckRequired { path, .. }
             | ValidationInstruction::ValidatePattern { path, .. }

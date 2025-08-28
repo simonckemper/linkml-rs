@@ -62,17 +62,17 @@ impl ChangeImpact {
             migration_strategy: String::new(),
         }
     }
-    
+
     /// Check if there are breaking changes
     #[must_use] pub fn has_breaking_changes(&self) -> bool {
         !self.breaking_changes.is_empty()
     }
-    
+
     /// Check if there are warnings
     #[must_use] pub fn has_warnings(&self) -> bool {
         !self.warnings.is_empty()
     }
-    
+
     /// Update category based on accumulated changes
     fn update_category(&mut self) {
         if !self.breaking_changes.is_empty() {
@@ -83,15 +83,15 @@ impl ChangeImpact {
             self.category = ChangeCategory::Safe;
         }
     }
-    
+
     /// Calculate complexity score
     fn calculate_complexity(&mut self) {
         let breaking_weight = 3;
         let warning_weight = 1;
-        
-        let score = (self.breaking_changes.len() * breaking_weight + 
+
+        let score = (self.breaking_changes.len() * breaking_weight +
                     self.warnings.len() * warning_weight) as u8;
-        
+
         self.complexity_score = score.min(10);
     }
 }
@@ -103,27 +103,27 @@ impl MigrationAnalyzer {
     /// Analyze the impact of schema changes
     pub fn analyze_impact(diff: &SchemaDiff) -> MigrationResult<ChangeImpact> {
         let mut impact = ChangeImpact::new();
-        
+
         // Analyze type changes
         Self::analyze_type_additions(&diff.added_types, &mut impact);
         Self::analyze_type_removals(&diff.removed_types, &mut impact);
         Self::analyze_type_modifications(&diff.modified_types, &mut impact);
-        
+
         // Analyze attribute changes
         Self::analyze_attribute_additions(&diff.added_attributes, &mut impact);
         Self::analyze_attribute_removals(&diff.removed_attributes, &mut impact);
         Self::analyze_attribute_modifications(&diff.modified_attributes, &mut impact);
-        
+
         // Generate migration strategy
         impact.migration_strategy = Self::recommend_strategy(&impact);
-        
+
         // Update final state
         impact.update_category();
         impact.calculate_complexity();
-        
+
         Ok(impact)
     }
-    
+
     /// Analyze added types
     fn analyze_type_additions(added: &[TypeChange], impact: &mut ChangeImpact) {
         for type_change in added {
@@ -131,24 +131,24 @@ impl MigrationAnalyzer {
             impact.affected_types.insert(type_change.name.clone());
         }
     }
-    
+
     /// Analyze removed types
     fn analyze_type_removals(removed: &[TypeChange], impact: &mut ChangeImpact) {
         for type_change in removed {
             impact.breaking_changes.push(format!(
-                "Removed type: {}. All instances will be lost!", 
+                "Removed type: {}. All instances will be lost!",
                 type_change.name
             ));
             impact.affected_types.insert(type_change.name.clone());
             impact.requires_data_migration = true;
         }
     }
-    
+
     /// Analyze modified types
     fn analyze_type_modifications(modified: &[TypeChange], impact: &mut ChangeImpact) {
         for type_change in modified {
             impact.affected_types.insert(type_change.name.clone());
-            
+
             for change in &type_change.changes {
                 match change {
                     DetailedChange::AddedInheritance(parent) => {
@@ -209,7 +209,7 @@ impl MigrationAnalyzer {
             }
         }
     }
-    
+
     /// Analyze changes to a slot
     fn analyze_slot_change(type_name: &str, slot_name: &str, change: &SlotChange, impact: &mut ChangeImpact) {
         if let Some((old_req, new_req)) = change.required_changed {
@@ -224,7 +224,7 @@ impl MigrationAnalyzer {
                 ));
             }
         }
-        
+
         if let Some((old_multi, new_multi)) = change.cardinality_changed {
             if old_multi && !new_multi {
                 impact.breaking_changes.push(format!(
@@ -237,14 +237,14 @@ impl MigrationAnalyzer {
                 ));
             }
         }
-        
+
         if let Some((old_range, new_range)) = &change.range_changed {
             impact.warnings.push(format!(
                 "Slot {slot_name} in type {type_name} changed type from {old_range} to {new_range}. Type conversion may be needed."
             ));
             impact.requires_data_migration = true;
         }
-        
+
         if let Some((old_pattern, new_pattern)) = &change.pattern_changed {
             if new_pattern.is_some() && old_pattern.is_none() {
                 impact.warnings.push(format!(
@@ -261,7 +261,7 @@ impl MigrationAnalyzer {
             }
         }
     }
-    
+
     /// Analyze added attributes
     fn analyze_attribute_additions(added: &[AttributeChange], impact: &mut ChangeImpact) {
         for attr in added {
@@ -275,7 +275,7 @@ impl MigrationAnalyzer {
             }
         }
     }
-    
+
     /// Analyze removed attributes
     fn analyze_attribute_removals(removed: &[AttributeChange], impact: &mut ChangeImpact) {
         for attr in removed {
@@ -286,7 +286,7 @@ impl MigrationAnalyzer {
             impact.requires_data_migration = true;
         }
     }
-    
+
     /// Analyze modified attributes
     fn analyze_attribute_modifications(modified: &[AttributeChange], impact: &mut ChangeImpact) {
         for attr in modified {
@@ -297,7 +297,7 @@ impl MigrationAnalyzer {
             }
         }
     }
-    
+
     /// Recommend migration strategy based on impact
     fn recommend_strategy(impact: &ChangeImpact) -> String {
         if impact.breaking_changes.is_empty() {
@@ -308,18 +308,18 @@ impl MigrationAnalyzer {
             }
         } else {
             let mut strategy = String::from("Complex migration required:\n");
-            
+
             if impact.requires_data_migration {
                 strategy.push_str("1. Backup all data before migration\n");
                 strategy.push_str("2. Create data transformation queries\n");
                 strategy.push_str("3. Validate data integrity after migration\n");
             }
-            
+
             if impact.complexity_score > 5 {
                 strategy.push_str("4. Consider phased migration due to high complexity\n");
                 strategy.push_str("5. Test migration on non-production environment first\n");
             }
-            
+
             strategy
         }
     }
@@ -330,56 +330,56 @@ mod tests {
     use super::*;
     use crate::generator::typeql_migration::diff::SchemaDiffer;
     use linkml_core::prelude::*;
-    
+
     #[test]
     fn test_safe_changes() {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
-        
+
         // Add a new optional field
         let mut slot = SlotDefinition::default();
         slot.required = Some(false);
         new_schema.slots.insert("new_field".to_string(), slot);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for safe changes": {}, e))?;
         let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for safe changes": {}, e))?;
-        
+
         assert_eq!(impact.category, ChangeCategory::Safe);
         assert!(!impact.has_breaking_changes());
         assert!(!impact.requires_data_migration);
     }
-    
+
     #[test]
     fn test_breaking_changes() {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
-        
+
         // Add a class to old schema that's removed in new
         let class = ClassDefinition::default();
         old_schema.classes.insert("RemovedClass".to_string(), class);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for breaking changes": {}, e))?;
         let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for breaking changes": {}, e))?;
-        
+
         assert_eq!(impact.category, ChangeCategory::Breaking);
         assert!(impact.has_breaking_changes());
         assert!(impact.requires_data_migration);
         assert_eq!(impact.breaking_changes.len(), 1);
     }
-    
+
     #[test]
     fn test_warning_changes() {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
-        
+
         // Add a required field
         let mut slot = SlotDefinition::default();
         slot.required = Some(true);
         new_schema.slots.insert("required_field".to_string(), slot);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for warning changes": {}, e))?;
         let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for warning changes": {}, e))?;
-        
+
         assert_eq!(impact.category, ChangeCategory::Warning);
         assert!(impact.has_warnings());
         assert!(!impact.has_breaking_changes());

@@ -155,12 +155,12 @@ impl DatabaseLoader {
             DatabaseType::PostgreSQL => {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
-                        "SELECT table_name FROM information_schema.tables 
+                        "SELECT table_name FROM information_schema.tables
                          WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
                         schema
                     )
                 } else {
-                    "SELECT table_name FROM information_schema.tables 
+                    "SELECT table_name FROM information_schema.tables
                      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
                         .to_string()
                 }
@@ -168,17 +168,17 @@ impl DatabaseLoader {
             DatabaseType::MySQL => {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
-                        "SELECT table_name FROM information_schema.tables 
+                        "SELECT table_name FROM information_schema.tables
                          WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
                         schema
                     )
                 } else {
-                    "SELECT table_name FROM information_schema.tables 
+                    "SELECT table_name FROM information_schema.tables
                      WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
                         .to_string()
                 }
             }
-            DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table' 
+            DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table'
                  AND name NOT LIKE 'sqlite_%'"
                 .to_string(),
             _ => {
@@ -242,8 +242,8 @@ impl DatabaseLoader {
         let query = match self.get_database_type()? {
             DatabaseType::PostgreSQL => {
                 format!(
-                    "SELECT column_name, data_type, is_nullable, column_default 
-                     FROM information_schema.columns 
+                    "SELECT column_name, data_type, is_nullable, column_default
+                     FROM information_schema.columns
                      WHERE table_name = '{}' {}
                      ORDER BY ordinal_position",
                     table_name,
@@ -256,8 +256,8 @@ impl DatabaseLoader {
             }
             DatabaseType::MySQL => {
                 format!(
-                    "SELECT column_name, data_type, is_nullable, column_default 
-                     FROM information_schema.columns 
+                    "SELECT column_name, data_type, is_nullable, column_default
+                     FROM information_schema.columns
                      WHERE table_name = '{}' {}
                      ORDER BY ordinal_position",
                     table_name,
@@ -327,11 +327,11 @@ impl DatabaseLoader {
         let query = match self.get_database_type()? {
             DatabaseType::PostgreSQL => {
                 format!(
-                    "SELECT kcu.column_name 
-                     FROM information_schema.table_constraints tc 
-                     JOIN information_schema.key_column_usage kcu 
-                     ON tc.constraint_name = kcu.constraint_name 
-                     WHERE tc.table_name = '{}' 
+                    "SELECT kcu.column_name
+                     FROM information_schema.table_constraints tc
+                     JOIN information_schema.key_column_usage kcu
+                     ON tc.constraint_name = kcu.constraint_name
+                     WHERE tc.table_name = '{}'
                      AND tc.constraint_type = 'PRIMARY KEY' {}",
                     table_name,
                     if let Some(schema) = &self.options.schema_name {
@@ -343,9 +343,9 @@ impl DatabaseLoader {
             }
             DatabaseType::MySQL => {
                 format!(
-                    "SELECT column_name 
-                     FROM information_schema.key_column_usage 
-                     WHERE table_name = '{}' 
+                    "SELECT column_name
+                     FROM information_schema.key_column_usage
+                     WHERE table_name = '{}'
                      AND constraint_name = 'PRIMARY' {}",
                     table_name,
                     if let Some(schema) = &self.options.schema_name {

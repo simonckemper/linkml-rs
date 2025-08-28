@@ -30,7 +30,7 @@ pub enum RdfFormat {
     RdfXml,
     /// N-Triples format
     NTriples,
-    /// JSON-LD format  
+    /// JSON-LD format
     JsonLd,
 }
 

@@ -543,7 +543,7 @@ impl ValidationEngine {
         options: &ValidationOptions,
     ) {
         // Debug: Log slot being validated
-        eprintln!("DEBUG ValidationEngine: Validating slot '{}' with pattern: {:?}", 
+        eprintln!("DEBUG ValidationEngine: Validating slot '{}' with pattern: {:?}",
                  slot_def.name, slot_def.pattern);
         let profiler = global_profiler();
 

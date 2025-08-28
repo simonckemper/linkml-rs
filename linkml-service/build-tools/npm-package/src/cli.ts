@@ -2,7 +2,7 @@
 
 /**
  * LinkML CLI for npm package
- * 
+ *
  * This provides a wrapper around the LinkML CLI with
  * additional JavaScript/TypeScript specific features.
  */
@@ -31,23 +31,23 @@ program
   .option('-a, --all', 'validate all schemas in directory')
   .action(async (schemaPath: string, options) => {
     const spinner = ora('Validating schema...').start();
-    
+
     try {
       const linkml = new LinkML({
         verbose: program.opts().verbose,
         executable: program.opts().executable
       });
-      
+
       if (options.all) {
         // Validate all schemas in directory
         const schemas = await findSchemas(schemaPath);
         spinner.text = `Validating ${schemas.length} schemas...`;
-        
+
         let errorCount = 0;
         for (const schema of schemas) {
           const result = await linkml.validate(schema);
           const relativePath = path.relative(process.cwd(), schema);
-          
+
           if (result.valid) {
             console.log(chalk.green('✓'), relativePath);
           } else {
@@ -57,16 +57,16 @@ program
               console.log('  ', chalk.red(error.message));
             }
           }
-          
+
           if (result.warnings.length > 0) {
             for (const warning of result.warnings) {
               console.log('  ', chalk.yellow('⚠'), warning.message);
             }
           }
         }
-        
+
         spinner.stop();
-        
+
         if (errorCount > 0) {
           console.log(chalk.red(`\n${errorCount} schema(s) failed validation`));
           process.exit(1);
@@ -76,10 +76,10 @@ program
       } else {
         // Validate single schema
         const result = await linkml.validate(schemaPath);
-        
+
         if (result.valid) {
           spinner.succeed('Schema is valid');
-          
+
           if (result.warnings.length > 0) {
             console.log(chalk.yellow('\nWarnings:'));
             for (const warning of result.warnings) {
@@ -88,12 +88,12 @@ program
           }
         } else {
           spinner.fail('Schema validation failed');
-          
+
           console.log(chalk.red('\nErrors:'));
           for (const error of result.errors) {
             console.log('  ', error.message);
           }
-          
+
           process.exit(1);
         }
       }
@@ -113,18 +113,18 @@ program
   .option('--no-validate', 'skip validation before generation')
   .action(async (schemaPath: string, options) => {
     const spinner = ora('Generating code...').start();
-    
+
     try {
       const linkml = new LinkML({
         verbose: program.opts().verbose,
         executable: program.opts().executable
       });
-      
+
       // Validate first if requested
       if (options.validate !== false) {
         spinner.text = 'Validating schema...';
         const result = await linkml.validate(schemaPath);
-        
+
         if (!result.valid) {
           spinner.fail('Schema validation failed');
           for (const error of result.errors) {
@@ -133,18 +133,18 @@ program
           process.exit(1);
         }
       }
-      
+
       // Generate code
       spinner.text = `Generating ${options.target} code...`;
-      
+
       await linkml.generate(schemaPath, {
         target: options.target,
         output: options.output,
         packageName: options.package
       });
-      
+
       spinner.succeed(`Generated ${options.target} code to ${options.output}`);
-      
+
       // Special handling for TypeScript/JavaScript
       if (options.target === 'typescript' || options.target === 'javascript') {
         console.log(chalk.blue('\nNext steps:'));
@@ -152,7 +152,7 @@ program
         console.log('  2. Import generated types in your code');
         console.log('  3. Use the types for type-safe data handling');
       }
-      
+
     } catch (error: any) {
       spinner.fail(error.message);
       process.exit(1);
@@ -167,20 +167,20 @@ program
   .requiredOption('-o, --output <path>', 'output file')
   .action(async (schemaPath: string, options) => {
     const spinner = ora('Converting schema...').start();
-    
+
     try {
       const linkml = new LinkML({
         verbose: program.opts().verbose,
         executable: program.opts().executable
       });
-      
+
       await linkml.convert(schemaPath, {
         format: options.format,
         output: options.output
       });
-      
+
       spinner.succeed(`Converted to ${options.format} format: ${options.output}`);
-      
+
     } catch (error: any) {
       spinner.fail(error.message);
       process.exit(1);
@@ -195,18 +195,18 @@ program
   .option('--no-in-place', 'output to stdout instead of modifying file')
   .action(async (schemaPath: string, options) => {
     const spinner = ora('Formatting schema...').start();
-    
+
     try {
       const linkml = new LinkML({
         verbose: program.opts().verbose,
         executable: program.opts().executable
       });
-      
+
       if (options.check) {
         // Just check formatting
         const formatted = await linkml.format(schemaPath, false);
         const original = await fs.readFile(schemaPath, 'utf8');
-        
+
         if (formatted === original) {
           spinner.succeed('Schema is properly formatted');
         } else {
@@ -217,7 +217,7 @@ program
         await linkml.format(schemaPath, options.inPlace !== false);
         spinner.succeed('Schema formatted');
       }
-      
+
     } catch (error: any) {
       spinner.fail(error.message);
       process.exit(1);
@@ -234,34 +234,34 @@ program
         verbose: program.opts().verbose,
         executable: program.opts().executable
       });
-      
+
       const info = await linkml.getSchemaInfo(schemaPath);
-      
+
       console.log(chalk.bold('\nSchema Information:'));
       console.log('  ID:', info.id || chalk.gray('(not specified)'));
       console.log('  Name:', info.name || chalk.gray('(not specified)'));
       console.log('  Version:', info.version || chalk.gray('(not specified)'));
-      
+
       if (info.description) {
         console.log('  Description:', info.description);
       }
-      
+
       console.log('\n' + chalk.bold('Contents:'));
       console.log('  Classes:', info.classes.length);
       if (info.classes.length > 0) {
-        console.log('    ', info.classes.slice(0, 5).join(', ') + 
+        console.log('    ', info.classes.slice(0, 5).join(', ') +
                     (info.classes.length > 5 ? `, ... (${info.classes.length - 5} more)` : ''));
       }
-      
+
       console.log('  Slots:', info.slots.length);
       if (info.slots.length > 0) {
-        console.log('    ', info.slots.slice(0, 5).join(', ') + 
+        console.log('    ', info.slots.slice(0, 5).join(', ') +
                     (info.slots.length > 5 ? `, ... (${info.slots.length - 5} more)` : ''));
       }
-      
+
       console.log('  Types:', info.types.length);
       console.log('  Enums:', info.enums.length);
-      
+
     } catch (error: any) {
       console.error(chalk.red('Error:'), error.message);
       process.exit(1);
@@ -277,19 +277,19 @@ program
   .option('-t, --typescript', 'set up for TypeScript')
   .action(async (options) => {
     const spinner = ora('Initializing LinkML project...').start();
-    
+
     try {
       const projectDir = path.resolve(options.dir);
       const schemaDir = path.join(projectDir, 'schemas');
       const schemaFile = path.join(schemaDir, `${options.name.toLowerCase()}.linkml.yaml`);
-      
+
       // Create directories
       await fs.ensureDir(schemaDir);
-      
+
       // Create schema
       const schema = createDefaultSchema(options.name);
       await saveSchema(schema, schemaFile);
-      
+
       // Create package.json if it doesn't exist
       const packageJsonPath = path.join(projectDir, 'package.json');
       if (!await fs.pathExists(packageJsonPath)) {
@@ -306,15 +306,15 @@ program
             '@rootreal/linkml': '^2.0.0'
           }
         };
-        
+
         if (options.typescript) {
           packageJson.devDependencies['typescript'] = '^5.3.3';
           packageJson.devDependencies['@types/node'] = '^20.10.5';
         }
-        
+
         await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
       }
-      
+
       // Create .gitignore
       const gitignorePath = path.join(projectDir, '.gitignore');
       if (!await fs.pathExists(gitignorePath)) {
@@ -324,10 +324,10 @@ program
           'src/generated/',
           '*.log'
         ].join('\n');
-        
+
         await fs.writeFile(gitignorePath, gitignore);
       }
-      
+
       // Create tsconfig.json if TypeScript
       if (options.typescript) {
         const tsconfigPath = path.join(projectDir, 'tsconfig.json');
@@ -350,13 +350,13 @@ program
             include: ['src/**/*'],
             exclude: ['node_modules', 'dist']
           };
-          
+
           await fs.writeJson(tsconfigPath, tsconfig, { spaces: 2 });
         }
       }
-      
+
       spinner.succeed('LinkML project initialized');
-      
+
       console.log(chalk.green('\nProject structure created:'));
       console.log('  schemas/');
       console.log(`    ${options.name.toLowerCase()}.linkml.yaml`);
@@ -365,13 +365,13 @@ program
       if (options.typescript) {
         console.log('  tsconfig.json');
       }
-      
+
       console.log(chalk.blue('\nNext steps:'));
       console.log('  1. cd', options.dir);
       console.log('  2. npm install');
       console.log('  3. npm run validate');
       console.log('  4. npm run generate');
-      
+
     } catch (error: any) {
       spinner.fail(error.message);
       process.exit(1);

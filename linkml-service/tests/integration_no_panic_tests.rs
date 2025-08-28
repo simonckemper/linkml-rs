@@ -91,54 +91,54 @@ slots:
   id:
     description: Unique identifier
     range: string
-    
+
   name:
     description: Full name
     range: string
-    
+
   age:
     description: Age in years
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   email:
     description: Email address
     range: string
-    
+
   street:
     description: Street address
     range: string
-    
+
   city:
     description: City name
     range: string
-    
+
   postal_code:
     description: Postal/ZIP code
     range: string
-    
+
   country:
     description: Country name
     range: string
-    
+
   address:
     description: Postal address
     range: Address
-    
+
   friends:
     description: List of friends
     range: Person
-    
+
   founded_year:
     description: Year organization was founded
     range: integer
     minimum_value: 1800
-    
+
   industry:
     description: Industry sector
     range: string
-    
+
   employees:
     description: List of employees
     range: Person
@@ -154,13 +154,13 @@ classes:
   LegalEntity:
     abstract: true
     description: Abstract base for legal entities
-    
+
   HasEmployees:
     mixin: true
     description: Mixin for entities with employees
     slots:
       - employee_count
-      
+
 slots:
   employee_count:
     range: PositiveInt
@@ -255,7 +255,7 @@ classes:
       - id
       - value
       - metadata
-      
+
 slots:
   id:
     identifier: true
@@ -448,7 +448,7 @@ classes:
     slots:
       - id
       - value
-      
+
 slots:
   id:
     range: string

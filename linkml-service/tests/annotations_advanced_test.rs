@@ -209,7 +209,7 @@ classes:
         - /api/people
     slots:
       - name
-      
+
 slots:
   name:
     annotations:

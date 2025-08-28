@@ -45,7 +45,7 @@ pub async fn init_linkml_service_with_real_deps(
         task_manager.clone()
     ).await?;
     let timeout = create_timeout_service(task_manager.clone());
-    
+
     // Create DBMS service (TypeDB)
     let dbms = create_dbms_service(
         logger.clone(),

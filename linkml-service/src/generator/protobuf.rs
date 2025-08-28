@@ -305,11 +305,11 @@ impl ProtobufGenerator {
     fn to_screaming_snake_case(&self, s: &str) -> String {
         // Handle hyphens and underscores
         let with_underscores = s.replace('-', "_");
-        
+
         // Simple approach: insert underscore before uppercase letters that follow lowercase
         let mut result = String::new();
         let mut prev_lowercase = false;
-        
+
         for ch in with_underscores.chars() {
             if ch == '_' {
                 // Keep existing underscores
@@ -328,7 +328,7 @@ impl ProtobufGenerator {
                 prev_lowercase = ch.is_lowercase();
             }
         }
-        
+
         result
     }
 }

@@ -260,7 +260,7 @@ impl HtmlGenerator {
                 .map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(parent) = &class.is_a {
-                writeln!(&mut output, "                    <p><strong>Inherits from:</strong> <a href=\"#class-{}\">{}</a></p>", 
+                writeln!(&mut output, "                    <p><strong>Inherits from:</strong> <a href=\"#class-{}\">{}</a></p>",
                     self.to_anchor(parent),
                     self.escape_html(parent)
                 ).map_err(Self::fmt_error_to_generator_error)?;
@@ -590,7 +590,7 @@ impl HtmlGenerator {
             min-height: 100vh;
             background: #f5f5f5;
         }
-        
+
         .sidebar {
             width: 250px;
             background: #2c3e50;
@@ -600,32 +600,32 @@ impl HtmlGenerator {
             height: 100vh;
             overflow-y: auto;
         }
-        
+
         .sidebar h2 {
             margin-top: 0;
             font-size: 1.2rem;
         }
-        
+
         .sidebar ul {
             list-style: none;
             padding-left: 0;
         }
-        
+
         .sidebar ul ul {
             padding-left: 20px;
         }
-        
+
         .sidebar a {
             color: #ecf0f1;
             text-decoration: none;
             display: block;
             padding: 5px 0;
         }
-        
+
         .sidebar a:hover {
             color: #3498db;
         }
-        
+
         .content {
             margin-left: 270px;
             flex: 1;
@@ -633,60 +633,60 @@ impl HtmlGenerator {
             background: white;
             min-height: 100vh;
         }
-        
+
         .section {
             margin-bottom: 40px;
         }
-        
+
         h1, h2, h3, h4 {
             color: #2c3e50;
         }
-        
+
         h1 {
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
         }
-        
+
         h2 {
             border-bottom: 1px solid #ecf0f1;
             padding-bottom: 8px;
             margin-top: 30px;
         }
-        
+
         .description {
             color: #7f8c8d;
             font-style: italic;
             margin: 10px 0;
         }
-        
+
         table {
             border-collapse: collapse;
             width: 100%;
             margin: 15px 0;
         }
-        
+
         th, td {
             text-align: left;
             padding: 10px;
             border: 1px solid #ecf0f1;
         }
-        
+
         th {
             background: #ecf0f1;
             font-weight: 600;
         }
-        
+
         tr:nth-child(even) {
             background: #f9f9f9;
         }
-        
+
         code {
             background: #f4f4f4;
             padding: 2px 6px;
             border-radius: 3px;
             font-family: "Consolas", "Monaco", monospace;
         }
-        
+
         .badge {
             display: inline-block;
             padding: 4px 8px;
@@ -694,33 +694,33 @@ impl HtmlGenerator {
             font-size: 0.85em;
             font-weight: 600;
         }
-        
+
         .badge.abstract {
             background: #9b59b6;
             color: white;
         }
-        
+
         .class, .slot, .enum {
             background: #f9f9f9;
             border-left: 4px solid #3498db;
             padding: 15px;
             margin: 20px 0;
         }
-        
+
         .enum-values {
             list-style: none;
             padding-left: 20px;
         }
-        
+
         .enum-values li {
             margin: 5px 0;
         }
-        
+
         .value-desc {
             color: #7f8c8d;
             font-size: 0.9em;
         }
-        
+
         footer {
             margin-left: 270px;
             padding: 20px 40px;
@@ -729,15 +729,15 @@ impl HtmlGenerator {
             color: #7f8c8d;
             font-size: 0.9em;
         }
-        
+
         .metadata table {
             max-width: 600px;
         }
-        
+
         .properties {
             margin-top: 15px;
         }
-        
+
         .slots {
             margin-top: 10px;
         }

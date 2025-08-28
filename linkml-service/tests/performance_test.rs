@@ -144,35 +144,35 @@ classes:
     name: BaseEntity
     abstract: true
     slots: [id, created_at, updated_at]
-    
+
   NamedEntity:
     name: NamedEntity
     abstract: true
     is_a: BaseEntity
     slots: [name, description]
-    
+
   Organization:
     name: Organization
     is_a: NamedEntity
     mixins: [Auditable]
     slots: [org_type, parent_org, sub_orgs, members]
-    
+
   Person:
     name: Person
     is_a: NamedEntity
     mixins: [ContactInfo, Auditable]
     slots: [birth_date, roles, affiliations]
-    
+
   Role:
     name: Role
     is_a: BaseEntity
     slots: [role_type, permissions, assigned_to]
-    
+
   Project:
     name: Project
     is_a: NamedEntity
     slots: [start_date, end_date, status, team_members, deliverables]
-    
+
   Deliverable:
     name: Deliverable
     is_a: NamedEntity
@@ -182,7 +182,7 @@ mixins:
   ContactInfo:
     name: ContactInfo
     slots: [email, phone, address]
-    
+
   Auditable:
     name: Auditable
     slots: [created_by, updated_by, audit_trail]

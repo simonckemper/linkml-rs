@@ -103,10 +103,10 @@ impl Validator for RangeValidator {
             range_type,
             "integer" | "int" | "float" | "double" | "decimal" | "number"
         );
-        
+
         // Also check if the actual value is numeric (for cases where range isn't specified)
         let is_numeric_value = value.is_number();
-        
+
         if !is_numeric_type && !is_numeric_value {
             // Skip if neither the declared type nor actual value is numeric
             return issues;

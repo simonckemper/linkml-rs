@@ -517,9 +517,9 @@ impl MigrationEngine {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Delete,
                         entity: format!("{}.{}", class_name, slot_name),
-                        script: format!("-- Remove column {}.{}\nALTER TABLE {} DROP COLUMN {};", 
+                        script: format!("-- Remove column {}.{}\nALTER TABLE {} DROP COLUMN {};",
                                       class_name, slot_name, class_name, slot_name),
-                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';", 
+                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';",
                                          class_name, slot_name),
                     });
                 }

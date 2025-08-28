@@ -283,7 +283,7 @@ impl ShExGenerator {
                 slot_def
                     .description
                     .as_ref()
-                    .map_err(|e| anyhow::anyhow!("Error: {}", e))? above")
+                    .unwrap_or(&String::new())
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -320,7 +320,7 @@ impl ShExGenerator {
                 let mut facets = Vec::new();
 
                 if let Some(pattern) = &slot_def.pattern {
-                    facets.push(format!("PATTERN \"{}\"", pattern));
+                    facets.push(format!(r#"PATTERN "{}""#, pattern));
                 }
 
                 if let Some(min_val) = &slot_def.minimum_value {

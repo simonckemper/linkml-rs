@@ -1,6 +1,6 @@
 /**
  * LinkML JavaScript/TypeScript API
- * 
+ *
  * This module provides programmatic access to LinkML functionality
  * for JavaScript and TypeScript projects.
  */
@@ -71,7 +71,7 @@ export class LinkML {
     this.executable = options.executable || 'linkml';
     this.verbose = options.verbose || false;
     this.cwd = options.cwd;
-    
+
     // Check if LinkML is available
     this.checkExecutable();
   }
@@ -92,18 +92,18 @@ export class LinkML {
    */
   private execute(args: string[]): string {
     const command = `${this.executable} ${args.join(' ')}`;
-    
+
     try {
       if (this.verbose) {
         console.log(`Executing: ${command}`);
       }
-      
+
       const output = execSync(command, {
         encoding: 'utf8',
         cwd: this.cwd,
         stdio: ['pipe', 'pipe', 'pipe']
       });
-      
+
       return output;
     } catch (error: any) {
       if (error.stderr) {
@@ -118,16 +118,16 @@ export class LinkML {
    */
   async validate(schemaPath: string): Promise<ValidationResult> {
     const args = ['validate'];
-    
+
     if (this.verbose) {
       args.push('--verbose');
     }
-    
+
     args.push(schemaPath);
-    
+
     try {
       const output = this.execute(args);
-      
+
       // Parse validation results
       return this.parseValidationOutput(output);
     } catch (error: any) {
@@ -142,12 +142,12 @@ export class LinkML {
   async validateAll(pattern: string): Promise<Map<string, ValidationResult>> {
     const files = await glob(pattern);
     const results = new Map<string, ValidationResult>();
-    
+
     for (const file of files) {
       const result = await this.validate(file);
       results.set(file, result);
     }
-    
+
     return results;
   }
 
@@ -156,11 +156,11 @@ export class LinkML {
    */
   async generate(schemaPath: string, options: GenerationOptions): Promise<void> {
     const args = ['generate', '-t', options.target, '-o', options.output];
-    
+
     if (options.packageName) {
       args.push('--package', options.packageName);
     }
-    
+
     if (options.options) {
       for (const [key, value] of Object.entries(options.options)) {
         args.push(`--${key}`);
@@ -169,9 +169,9 @@ export class LinkML {
         }
       }
     }
-    
+
     args.push(schemaPath);
-    
+
     this.execute(args);
   }
 
@@ -188,13 +188,13 @@ export class LinkML {
    */
   async format(schemaPath: string, inPlace: boolean = true): Promise<string> {
     const args = ['format'];
-    
+
     if (inPlace) {
       args.push('--in-place');
     }
-    
+
     args.push(schemaPath);
-    
+
     return this.execute(args);
   }
 
@@ -211,7 +211,7 @@ export class LinkML {
    */
   async getSchemaInfo(schemaPath: string): Promise<SchemaInfo> {
     const schema = await this.loadSchema(schemaPath);
-    
+
     return {
       id: schema.id,
       name: schema.name,
@@ -231,7 +231,7 @@ export class LinkML {
     // Simple parsing - in reality would be more sophisticated
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
-    
+
     const lines = output.split('\n');
     for (const line of lines) {
       if (line.includes('ERROR')) {
@@ -240,7 +240,7 @@ export class LinkML {
         warnings.push({ message: line });
       }
     }
-    
+
     return {
       valid: errors.length === 0,
       errors,
@@ -284,13 +284,13 @@ export async function findSchemas(dir: string): Promise<string[]> {
     path.join(dir, '**/*.linkml.yml'),
     path.join(dir, '**/*.linkml')
   ];
-  
+
   const files: string[] = [];
   for (const pattern of patterns) {
     const matches = await glob(pattern);
     files.push(...matches);
   }
-  
+
   return [...new Set(files)].sort();
 }
 
@@ -333,13 +333,13 @@ export function createDefaultSchema(name: string): any {
  * Save a schema to file
  */
 export async function saveSchema(schema: any, filePath: string): Promise<void> {
-  const content = yaml.dump(schema, { 
+  const content = yaml.dump(schema, {
     indent: 2,
     lineWidth: -1,
     noRefs: true,
     sortKeys: false
   });
-  
+
   await fs.writeFile(filePath, content, 'utf8');
 }
 

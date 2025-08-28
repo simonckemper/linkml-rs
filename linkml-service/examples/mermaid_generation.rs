@@ -263,7 +263,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 </head>
 <body>
     <h1>Library Management Schema Visualizations</h1>
-    
+
     <div class="diagram">
         <h2>Entity Relationship Diagram</h2>
         <pre class="mermaid">

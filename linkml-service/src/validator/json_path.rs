@@ -63,7 +63,7 @@ impl JsonPath {
                         if next_ch == '.' || next_ch == '[' {
                             break;
                         }
-                        property.push(chars.next().map_err(|e| anyhow::anyhow!("Error: {}", e))? ensured character exists"));
+                        property.push(ch);
                     }
                     if property.is_empty() {
                         return Err(LinkMLError::parse(format!(
@@ -309,7 +309,7 @@ impl JsonNavigator {
             self.path_cache.insert(path.to_string(), parsed);
             self.path_cache
                 .get(path)
-                .map_err(|e| anyhow::anyhow!("Just inserted path should exist": {}, e))?
+                .cloned()
         };
 
         Ok(json_path.navigate(value))
@@ -400,7 +400,7 @@ mod tests {
         // Second call uses cached path
         let result2 = navigator
             .navigate(&data, "$.name")
-            .map_err(|e| anyhow::anyhow!("Error: {}", e))?");
+            .map_err(|e| anyhow::anyhow!("Error: {}", e))?;
         assert_eq!(result2.len(), 1);
 
         // Verify cache contains the path

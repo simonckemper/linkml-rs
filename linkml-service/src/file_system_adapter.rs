@@ -85,7 +85,7 @@ impl TokioFileSystemAdapter {
                     )));
                 }
             }
-            
+
             // Also check if path is absolute (which would escape sandbox)
             if path.is_absolute() {
                 return Err(LinkMLError::IoError(std::io::Error::new(
@@ -93,7 +93,7 @@ impl TokioFileSystemAdapter {
                     format!("Absolute paths not allowed in sandbox: {:?}", path),
                 )));
             }
-            
+
             // Safe to join
             Ok(root.join(path))
         } else {

@@ -41,7 +41,7 @@ prefixes:
   biomed: https://example.org/biomedical/
   linkml: https://w3id.org/linkml/
   xsd: http://www.w3.org/2001/XMLSchema#
-  
+
 imports:
   - linkml:types
 
@@ -77,7 +77,7 @@ classes:
         range: datetime
         required: true
         ifabsent: 'datetime(now)'
-  
+
   Patient:
     is_a: NamedEntity
     description: Patient information with PHI protections
@@ -106,7 +106,7 @@ classes:
             medical_history:
               required: true
         description: Minors must have medical history documented
-  
+
   MedicalCondition:
     description: Medical condition with temporal information
     attributes:
@@ -123,7 +123,7 @@ classes:
       notes:
         range: string
         recommended: true
-  
+
   LabResult:
     is_a: NamedEntity
     description: Laboratory test results
@@ -157,7 +157,7 @@ classes:
             abnormal_flag:
               equals: true
         description: High values must be flagged as abnormal
-  
+
   ResearchStudy:
     is_a: NamedEntity
     description: Clinical research study
@@ -205,7 +205,7 @@ enums:
         description: Female gender
       other:
         description: Other gender
-  
+
   blood_type_enum:
     permissible_values:
       A_positive:
@@ -224,7 +224,7 @@ enums:
         text: AB+
       AB_negative:
         text: AB-
-  
+
   severity_enum:
     permissible_values:
       mild:
@@ -235,7 +235,7 @@ enums:
         description: Severe severity
       critical:
         description: Critical severity
-  
+
   unit_enum:
     permissible_values:
       mg_dl:
@@ -244,7 +244,7 @@ enums:
       mmol_l:
         text: mmol/L
         description: Millimoles per liter
-  
+
   study_status_enum:
     permissible_values:
       planning:
@@ -301,7 +301,7 @@ classes:
                 requests_per_minute:
                   greater_than_or_equals: 1000
         description: Advanced analytics requires higher rate limits
-  
+
   FeatureConfig:
     description: Feature flags for tenant
     attributes:
@@ -320,7 +320,7 @@ classes:
       api_access:
         range: boolean
         ifabsent: 'true'
-  
+
   ApiKeyConfig:
     description: API key configuration
     attributes:
@@ -340,7 +340,7 @@ classes:
         range: integer
         minimum_value: 0
         maximum_value: 10000
-  
+
   RateLimitConfig:
     description: Rate limiting configuration
     attributes:
@@ -873,7 +873,7 @@ classes:
       created:
         range: datetime
         required: true
-  
+
   Trackable:
     abstract: true
     attributes:
@@ -882,7 +882,7 @@ classes:
         required: true
       modified_by:
         range: string
-  
+
   Versioned:
     abstract: true
     attributes:
@@ -892,7 +892,7 @@ classes:
         ifabsent: '1'
       version_notes:
         range: string
-  
+
   Document:
     is_a: Entity
     mixins:
@@ -906,7 +906,7 @@ classes:
       published:
         range: boolean
         ifabsent: 'false'
-  
+
   SecureDocument:
     is_a: Document
     attributes:
@@ -1049,7 +1049,7 @@ classes:
         range: datetime
         required: true
         readonly: true
-  
+
   User:
     is_a: Resource
     attributes:
@@ -1064,7 +1064,7 @@ classes:
       roles:
         range: role_enum
         multivalued: true
-  
+
   Project:
     is_a: Resource
     attributes:
@@ -1087,7 +1087,7 @@ enums:
       admin:
       user:
       guest:
-  
+
   project_status_enum:
     permissible_values:
       draft:

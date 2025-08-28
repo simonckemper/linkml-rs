@@ -15,7 +15,7 @@ repositories {
 intellij {
     version.set("2023.3.2")
     type.set("IC") // IntelliJ IDEA Community Edition
-    
+
     plugins.set(listOf(
         "org.jetbrains.plugins.yaml",
         "com.intellij.java"
@@ -35,15 +35,15 @@ tasks {
         sourceCompatibility = "17"
         targetCompatibility = "17"
     }
-    
+
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "17"
     }
-    
+
     patchPluginXml {
         sinceBuild.set("233")
         untilBuild.set("241.*")
-        
+
         changeNotes.set("""
             <h3>2.0.0</h3>
             <ul>
@@ -59,13 +59,13 @@ tasks {
             </ul>
         """.trimIndent())
     }
-    
+
     signPlugin {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
-    
+
     publishPlugin {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }

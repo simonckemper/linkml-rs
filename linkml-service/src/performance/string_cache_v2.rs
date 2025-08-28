@@ -12,7 +12,7 @@ use thiserror::Error;
 pub enum InternError {
     #[error("String too large: {size} bytes (max: {max})")]
     StringTooLarge { size: usize, max: usize },
-    
+
     #[error("Cache full: {current} entries (max: {max})")]
     CacheFull { current: usize, max: usize },
 }
@@ -33,14 +33,14 @@ impl StringInterner {
             max_string_length,
         }
     }
-    
+
     /// Create with default configuration
     pub fn with_defaults() -> Self {
         Self::new(100_000, 10_000)
     }
-    
+
     /// Intern a string, returning a shared reference
-    /// 
+    ///
     /// Returns an error if the string is too large or the cache is full
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
@@ -50,12 +50,12 @@ impl StringInterner {
                 max: self.max_string_length,
             });
         }
-        
+
         // Check if already interned
         if let Some(interned) = self.cache.get(s) {
             return Ok(Arc::clone(&interned));
         }
-        
+
         // Check cache size
         if self.cache.len() >= self.max_entries {
             return Err(InternError::CacheFull {
@@ -63,34 +63,34 @@ impl StringInterner {
                 max: self.max_entries,
             });
         }
-        
+
         // Intern the string
         let arc_str: Arc<str> = Arc::from(s);
         self.cache.insert(s.to_string(), Arc::clone(&arc_str));
-        
+
         Ok(arc_str)
     }
-    
+
     /// Try to intern a string, returning None if it can't be interned
     pub fn try_intern(&self, s: &str) -> Option<Arc<str>> {
         self.intern(s).ok()
     }
-    
+
     /// Get the current number of interned strings
     pub fn len(&self) -> usize {
         self.cache.len()
     }
-    
+
     /// Check if the cache is empty
     pub fn is_empty(&self) -> bool {
         self.cache.is_empty()
     }
-    
+
     /// Clear all interned strings
     pub fn clear(&self) {
         self.cache.clear();
     }
-    
+
     /// Get cache statistics
     pub fn stats(&self) -> InternStats {
         InternStats {
@@ -132,19 +132,19 @@ impl StringInternerBuilder {
             max_string_length: 10_000,
         }
     }
-    
+
     /// Set maximum entries
     pub fn max_entries(mut self, max: usize) -> Self {
         self.max_entries = max;
         self
     }
-    
+
     /// Set maximum string length
     pub fn max_string_length(mut self, max: usize) -> Self {
         self.max_string_length = max;
         self
     }
-    
+
     /// Build the interner
     pub fn build(self) -> StringInterner {
         StringInterner::new(self.max_entries, self.max_string_length)
@@ -160,24 +160,24 @@ impl Default for StringInternerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_basic_interning() {
         let interner = StringInterner::with_defaults();
-        
+
         let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
         let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern same string": {}, e))?;
-        
+
         // Same string should return same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
         assert_eq!(interner.len(), 1);
     }
-    
+
     #[test]
     fn test_string_too_large() {
         let interner = StringInterner::new(100, 10);
         let large_string = "x".repeat(11);
-        
+
         match interner.intern(&large_string) {
             Err(InternError::StringTooLarge { size, max }) => {
                 assert_eq!(size, 11);
@@ -186,14 +186,14 @@ mod tests {
             _ => panic!("Expected StringTooLarge error"),
         }
     }
-    
+
     #[test]
     fn test_cache_full() {
         let interner = StringInterner::new(2, 100);
-        
+
         interner.intern("a").map_err(|e| anyhow::anyhow!("should intern first string": {}, e))?;
         interner.intern("b").map_err(|e| anyhow::anyhow!("should intern second string": {}, e))?;
-        
+
         match interner.intern("c") {
             Err(InternError::CacheFull { current, max }) => {
                 assert_eq!(current, 2);
@@ -202,14 +202,14 @@ mod tests {
             _ => panic!("Expected CacheFull error"),
         }
     }
-    
+
     #[test]
     fn test_builder() {
         let interner = StringInternerBuilder::new()
             .max_entries(500)
             .max_string_length(50)
             .build();
-        
+
         let stats = interner.stats();
         assert_eq!(stats.max_entries, 500);
         assert_eq!(stats.max_string_length, 50);

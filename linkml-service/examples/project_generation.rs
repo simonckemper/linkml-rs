@@ -17,7 +17,7 @@ prefixes:
   linkml: https://w3id.org/linkml/
   schema: https://schema.org/
   ex: https://example.com/ns/
-  
+
 default_prefix: ex
 
 imports:
@@ -56,7 +56,7 @@ classes:
         description: Datasets produced by the study
         range: Dataset
         multivalued: true
-        
+
   Person:
     description: A person involved in research
     attributes:
@@ -75,7 +75,7 @@ classes:
       affiliation:
         description: Institutional affiliation
         range: Organization
-        
+
   Organization:
     description: An organization or institution
     attributes:
@@ -90,7 +90,7 @@ classes:
       type:
         description: Type of organization
         range: OrganizationType
-        
+
   Dataset:
     description: A dataset produced by research
     attributes:
@@ -115,7 +115,7 @@ classes:
       license:
         description: Data license
         range: LicenseType
-        
+
 enums:
   OrganizationType:
     description: Types of organizations
@@ -130,7 +130,7 @@ enums:
         description: Commercial company
       nonprofit:
         description: Non-profit organization
-        
+
   LicenseType:
     description: Data licensing options
     permissible_values:

@@ -35,32 +35,32 @@ fn create_test_schema() -> Schema {
     let mut schema = SchemaDefinition::default();
     schema.id = Some("https://example.org/test".to_string());
     schema.name = Some("TestSchema".to_string());
-    
+
     // Add class with special characters in name
     let mut class1 = ClassDefinition::default();
     class1.name = Some("Test-Class.With Special*Chars".to_string());
     class1.description = Some("Class with problematic name".to_string());
-    
+
     // Add slot with very long name
     let mut slot1 = SlotDefinition::default();
     slot1.name = Some("a".repeat(300)); // Extremely long name
     slot1.range = Some("string".to_string());
-    
+
     class1.attributes.insert(slot1.name.clone().unwrap(), slot1);
     schema.classes.insert(class1.name.clone().unwrap(), class1);
-    
+
     // Add class with circular inheritance
     let mut class2 = ClassDefinition::default();
     class2.name = Some("CircularClass".to_string());
     class2.is_a = Some("CircularClass".to_string()); // Self-reference
     schema.classes.insert("CircularClass".to_string(), class2);
-    
+
     // Add type with invalid base
     let mut type1 = TypeDefinition::default();
     type1.name = Some("InvalidType".to_string());
     type1.typeof = Some("NonExistentBase".to_string());
     schema.types.insert("InvalidType".to_string(), type1);
-    
+
     schema
 }
 
@@ -70,7 +70,7 @@ fn test_typeql_generator_error_handling() {
     let generator = TypeQLGenerator::new();
     let schema = create_test_schema();
     let options = GeneratorOptions::default();
-    
+
     // Should handle special characters and edge cases
     let result = generator.generate(&schema, &options);
     match result {
@@ -83,7 +83,7 @@ fn test_typeql_generator_error_handling() {
             assert!(e.to_string().contains("name") || e.to_string().contains("invalid"));
         }
     }
-    
+
     // Test with empty schema
     let empty_schema = SchemaDefinition::default();
     let result = generator.generate(&empty_schema, &options);
@@ -96,7 +96,7 @@ fn test_python_generator_error_handling() {
     let generator = PythonDataclassGenerator::new();
     let schema = create_test_schema();
     let options = GeneratorOptions::default();
-    
+
     let result = generator.generate(&schema, &options);
     match result {
         Ok(output) => {
@@ -108,13 +108,13 @@ fn test_python_generator_error_handling() {
             // Error handling is fine
         }
     }
-    
+
     // Test with schema missing required fields
     let mut broken_schema = SchemaDefinition::default();
     let mut nameless_class = ClassDefinition::default();
     nameless_class.name = None; // Missing name
     broken_schema.classes.insert("".to_string(), nameless_class);
-    
+
     let result = generator.generate(&broken_schema, &options);
     assert!(result.is_err() || !result.unwrap().contains("class None"));
 }
@@ -124,21 +124,21 @@ fn test_python_generator_error_handling() {
 fn test_sql_generator_error_handling() {
     let generator = SQLGenerator::new();
     let mut schema = create_test_schema();
-    
+
     // Add slot with SQL reserved word as name
     let mut reserved_class = ClassDefinition::default();
     reserved_class.name = Some("SELECT".to_string());
-    
+
     let mut reserved_slot = SlotDefinition::default();
     reserved_slot.name = Some("FROM".to_string());
     reserved_slot.range = Some("WHERE".to_string()); // All SQL keywords
-    
+
     reserved_class.attributes.insert("FROM".to_string(), reserved_slot);
     schema.classes.insert("SELECT".to_string(), reserved_class);
-    
+
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
-    
+
     match result {
         Ok(output) => {
             // Should escape SQL keywords
@@ -156,21 +156,21 @@ fn test_sql_generator_error_handling() {
 fn test_graphql_generator_error_handling() {
     let generator = GraphQLGenerator::new();
     let mut schema = create_test_schema();
-    
+
     // Add class with GraphQL incompatible features
     let mut gql_class = ClassDefinition::default();
     gql_class.name = Some("__InvalidName".to_string()); // Starts with __
-    
+
     let mut gql_slot = SlotDefinition::default();
     gql_slot.name = Some("123_starts_with_number".to_string());
     gql_slot.range = Some("string".to_string());
-    
+
     gql_class.attributes.insert(gql_slot.name.clone().unwrap(), gql_slot);
     schema.classes.insert(gql_class.name.clone().unwrap(), gql_class);
-    
+
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
-    
+
     // Should either error or sanitize names
     match result {
         Ok(output) => {
@@ -188,11 +188,11 @@ fn test_graphql_generator_error_handling() {
 fn test_excel_generator_error_handling() {
     let generator = ExcelGenerator::new();
     let mut schema = create_test_schema();
-    
+
     // Add class with too many slots for Excel columns
     let mut huge_class = ClassDefinition::default();
     huge_class.name = Some("HugeClass".to_string());
-    
+
     // Excel has column limit (16,384 in modern versions)
     for i in 0..20000 {
         let mut slot = SlotDefinition::default();
@@ -200,17 +200,17 @@ fn test_excel_generator_error_handling() {
         slot.range = Some("string".to_string());
         huge_class.attributes.insert(slot.name.clone().unwrap(), slot);
     }
-    
+
     schema.classes.insert("HugeClass".to_string(), huge_class);
-    
+
     let temp_dir = TempDir::new().expect("create temp dir");
     let output_path = temp_dir.path().join("output.xlsx");
-    
+
     let mut options = GeneratorOptions::default();
     options.output_path = Some(output_path.to_string_lossy().to_string());
-    
+
     let result = generator.generate(&schema, &options);
-    
+
     // Should handle column limit gracefully
     match result {
         Ok(_) => {
@@ -228,22 +228,22 @@ fn test_excel_generator_error_handling() {
 fn test_markdown_generator_error_handling() {
     let generator = MarkdownGenerator::new();
     let mut schema = create_test_schema();
-    
+
     // Add class with markdown special characters
     let mut md_class = ClassDefinition::default();
     md_class.name = Some("Class|With|Pipes".to_string());
     md_class.description = Some("Description with **bold** and _italic_ and [links](http://example.com)".to_string());
-    
+
     let mut md_slot = SlotDefinition::default();
     md_slot.name = Some("slot*with*asterisks".to_string());
     md_slot.description = Some("Contains `code` and ```blocks```".to_string());
-    
+
     md_class.attributes.insert(md_slot.name.clone().unwrap(), md_slot);
     schema.classes.insert(md_class.name.clone().unwrap(), md_class);
-    
+
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
-    
+
     match result {
         Ok(output) => {
             // Should escape special characters in tables
@@ -263,11 +263,11 @@ fn test_markdown_generator_error_handling() {
 fn test_generator_file_system_errors() {
     let generator = RustGenerator::new();
     let schema = create_test_schema();
-    
+
     // Try to write to invalid path
     let mut options = GeneratorOptions::default();
     options.output_path = Some("/root/cannot_write_here/output.rs".to_string());
-    
+
     let result = generator.generate(&schema, &options);
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), LinkMLError::Io(_)));
@@ -277,18 +277,18 @@ fn test_generator_file_system_errors() {
 #[test]
 fn test_generator_registry_error_handling() {
     let mut registry = GeneratorRegistry::new();
-    
+
     // Register generators
     registry.register("test", Box::new(TypeQLGenerator::new()));
-    
+
     // Try to register duplicate
     let result = registry.register("test", Box::new(SQLGenerator::new()));
     assert!(result.is_err());
-    
+
     // Try to get non-existent generator
     let result = registry.get_generator("non_existent");
     assert!(result.is_err());
-    
+
     // Test with empty name
     let result = registry.register("", Box::new(PythonDataclassGenerator::new()));
     assert!(result.is_err());
@@ -299,7 +299,7 @@ fn test_generator_registry_error_handling() {
 fn test_typescript_generator_complex_types() {
     let generator = TypeScriptGenerator::new();
     let mut schema = SchemaDefinition::default();
-    
+
     // Add union type
     let mut union_slot = SlotDefinition::default();
     union_slot.name = Some("union_field".to_string());
@@ -308,15 +308,15 @@ fn test_typescript_generator_complex_types() {
         "integer".to_string(),
         "InvalidType".to_string(), // Non-existent type
     ]);
-    
+
     let mut class = ClassDefinition::default();
     class.name = Some("ComplexClass".to_string());
     class.attributes.insert("union_field".to_string(), union_slot);
     schema.classes.insert("ComplexClass".to_string(), class);
-    
+
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
-    
+
     // Should handle invalid type references
     match result {
         Ok(output) => {
@@ -332,7 +332,7 @@ fn test_typescript_generator_complex_types() {
 #[tokio::test]
 async fn test_generator_concurrent_access() {
     use tokio::task::JoinSet;
-    
+
     let schema = create_test_schema();
     let generators: Vec<Box<dyn Generator + Send + Sync>> = vec![
         Box::new(TypeQLGenerator::new()),
@@ -341,9 +341,9 @@ async fn test_generator_concurrent_access() {
         Box::new(JsonSchemaGenerator::new()),
         Box::new(TypeScriptGenerator::new()),
     ];
-    
+
     let mut tasks = JoinSet::new();
-    
+
     for generator in generators {
         let schema_clone = schema.clone();
         tasks.spawn(async move {
@@ -351,7 +351,7 @@ async fn test_generator_concurrent_access() {
             generator.generate(&schema_clone, &options)
         });
     }
-    
+
     // All should complete without panicking
     while let Some(result) = tasks.join_next().await {
         assert!(result.is_ok()); // Task didn't panic
@@ -364,26 +364,26 @@ async fn test_generator_concurrent_access() {
 fn test_csv_generator_special_cases() {
     let generator = CsvGenerator::new();
     let mut schema = SchemaDefinition::default();
-    
+
     // Add class with CSV-problematic content
     let mut csv_class = ClassDefinition::default();
     csv_class.name = Some("CSVClass".to_string());
-    
+
     let mut csv_slot1 = SlotDefinition::default();
     csv_slot1.name = Some("field_with_comma".to_string());
     csv_slot1.description = Some("Contains, commas, and \"quotes\"".to_string());
-    
+
     let mut csv_slot2 = SlotDefinition::default();
     csv_slot2.name = Some("field_with_newline".to_string());
     csv_slot2.description = Some("Contains\nnewlines\nand\rcarriage returns".to_string());
-    
+
     csv_class.attributes.insert("field1".to_string(), csv_slot1);
     csv_class.attributes.insert("field2".to_string(), csv_slot2);
     schema.classes.insert("CSVClass".to_string(), csv_class);
-    
+
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
-    
+
     match result {
         Ok(output) => {
             // Should properly escape CSV special characters
@@ -399,30 +399,30 @@ fn test_csv_generator_special_cases() {
 #[test]
 fn test_generator_missing_dependencies() {
     let mut schema = SchemaDefinition::default();
-    
+
     // Create class that references non-existent parent
     let mut orphan_class = ClassDefinition::default();
     orphan_class.name = Some("OrphanClass".to_string());
     orphan_class.is_a = Some("NonExistentParent".to_string());
     orphan_class.mixins = Some(vec!["Mixin1".to_string(), "Mixin2".to_string()]);
-    
+
     // Slot referencing non-existent type
     let mut orphan_slot = SlotDefinition::default();
     orphan_slot.name = Some("orphan_field".to_string());
     orphan_slot.range = Some("UndefinedType".to_string());
-    
+
     orphan_class.attributes.insert("orphan_field".to_string(), orphan_slot);
     schema.classes.insert("OrphanClass".to_string(), orphan_class);
-    
+
     let generators: Vec<Box<dyn Generator>> = vec![
         Box::new(JavaGenerator::new()),
         Box::new(GoGenerator::new()),
         Box::new(PlantUMLGenerator::new()),
         Box::new(MermaidGenerator::new()),
     ];
-    
+
     let options = GeneratorOptions::default();
-    
+
     for generator in generators {
         let result = generator.generate(&schema, &options);
         // Should handle missing dependencies gracefully

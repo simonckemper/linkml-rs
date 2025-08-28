@@ -18,7 +18,7 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.2")
     implementation("org.apache.commons:commons-exec:1.3")
     implementation("commons-io:commons-io:2.11.0")
-    
+
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.mockito:mockito-core:5.7.0")
     testImplementation(gradleTestKit())
@@ -27,7 +27,7 @@ dependencies {
 gradlePlugin {
     website.set("https://github.com/simonckemper/rootreal")
     vcsUrl.set("https://github.com/simonckemper/rootreal.git")
-    
+
     plugins {
         create("linkmlPlugin") {
             id = "com.rootreal.linkml"
@@ -56,21 +56,21 @@ publishing {
             groupId = project.group.toString()
             artifactId = project.name
             version = project.version.toString()
-            
+
             from(components["java"])
-            
+
             pom {
                 name.set("LinkML Gradle Plugin")
                 description.set("Gradle plugin for LinkML schema validation and code generation")
                 url.set("https://github.com/simonckemper/rootreal")
-                
+
                 licenses {
                     license {
                         name.set("MIT License")
                         url.set("https://opensource.org/licenses/MIT")
                     }
                 }
-                
+
                 developers {
                     developer {
                         id.set("rootreal")
@@ -78,7 +78,7 @@ publishing {
                         email.set("support@rootreal.com")
                     }
                 }
-                
+
                 scm {
                     url.set("https://github.com/simonckemper/rootreal")
                     connection.set("scm:git:git://github.com/simonckemper/rootreal.git")

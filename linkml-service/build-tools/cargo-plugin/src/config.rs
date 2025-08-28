@@ -8,10 +8,10 @@ use std::path::PathBuf;
 pub struct LinkMLConfig {
     /// Schema configuration
     pub schema: SchemaConfig,
-    
+
     /// Generation configuration
     pub generate: GenerateConfig,
-    
+
     /// Validation configuration
     pub validate: ValidateConfig,
 }
@@ -21,10 +21,10 @@ pub struct LinkMLConfig {
 pub struct SchemaConfig {
     /// Directory containing schemas
     pub directory: PathBuf,
-    
+
     /// Include patterns
     pub include: Vec<String>,
-    
+
     /// Exclude patterns
     pub exclude: Vec<String>,
 }
@@ -34,22 +34,22 @@ pub struct SchemaConfig {
 pub struct GenerateConfig {
     /// Output directory
     pub output_directory: PathBuf,
-    
+
     /// Add serde derives
     pub serde: bool,
-    
+
     /// Add Debug derive
     pub debug: bool,
-    
+
     /// Add Clone derive
     pub clone: bool,
-    
+
     /// Additional derives
     pub derives: Vec<String>,
-    
+
     /// Module structure (flat or nested)
     pub module_structure: ModuleStructure,
-    
+
     /// Validate before generating
     pub validate_first: bool,
 }
@@ -69,10 +69,10 @@ pub enum ModuleStructure {
 pub struct ValidateConfig {
     /// Fail on validation errors
     pub fail_on_error: bool,
-    
+
     /// Show warnings
     pub show_warnings: bool,
-    
+
     /// Strict mode
     pub strict: bool,
 }
@@ -111,7 +111,7 @@ impl LinkMLConfig {
     /// Load configuration from file
     pub fn load() -> anyhow::Result<Self> {
         let config_path = PathBuf::from("linkml.toml");
-        
+
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)?;
             let config: Self = toml::from_str(&content)?;
@@ -120,7 +120,7 @@ impl LinkMLConfig {
             Ok(Self::default())
         }
     }
-    
+
     /// Save configuration to file
     pub fn save(&self) -> anyhow::Result<()> {
         let config_path = PathBuf::from("linkml.toml");

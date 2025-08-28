@@ -107,15 +107,15 @@ impl ProjectGenerator {
     pub fn new(config: ProjectGeneratorConfig) -> Self {
         Self { config }
     }
-    
+
     /// Generate project structure
     fn generate_project(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let project_name = self.get_project_name(schema);
         let mut files = Vec::new();
-        
+
         // Generate base structure
         files.extend(self.generate_base_structure(&project_name, schema)?);
-        
+
         // Generate language-specific files
         match self.config.target {
             ProjectTarget::Python => files.extend(self.generate_python_project(&project_name, schema)?),
@@ -125,136 +125,136 @@ impl ProjectGenerator {
             ProjectTarget::Go => files.extend(self.generate_go_project(&project_name, schema)?),
             ProjectTarget::MultiLanguage => files.extend(self.generate_multi_language_project(&project_name, schema)?),
         }
-        
+
         // Generate optional components
         if self.config.include_docker {
             files.extend(self.generate_docker_config(&project_name, schema)?);
         }
-        
+
         if self.config.include_ci {
             files.extend(self.generate_ci_config(&project_name, schema)?);
         }
-        
+
         if self.config.include_docs {
             files.extend(self.generate_documentation(&project_name, schema)?);
         }
-        
+
         if self.config.include_examples {
             files.extend(self.generate_examples(&project_name, schema)?);
         }
-        
+
         // Generate project manifest
         self.generate_manifest(&files)
     }
-    
+
     /// Get project name
     fn get_project_name(&self, schema: &Schema) -> String {
         self.config.project_name.clone()
             .or_else(|| schema.name.clone())
             .unwrap_or_else(|| "linkml-project".to_string())
     }
-    
+
     /// Generate base project structure
     fn generate_base_structure(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // README.md
         files.push(ProjectFile {
             path: "README.md".to_string(),
             content: self.generate_readme(project_name, schema),
         });
-        
+
         // LICENSE
         files.push(ProjectFile {
             path: "LICENSE".to_string(),
             content: self.generate_license(),
         });
-        
+
         // .gitignore
         files.push(ProjectFile {
             path: ".gitignore".to_string(),
             content: self.generate_gitignore(),
         });
-        
+
         // Schema file
         files.push(ProjectFile {
             path: format!("schema/{}.yaml", project_name),
             content: "# Original LinkML schema will be copied here\n".to_string(),
         });
-        
+
         Ok(files)
     }
-    
+
     /// Generate Python project files
     fn generate_python_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // pyproject.toml
         files.push(ProjectFile {
             path: "pyproject.toml".to_string(),
             content: self.generate_python_pyproject(project_name, schema),
         });
-        
+
         // src/__init__.py
         files.push(ProjectFile {
             path: format!("src/{}/__init__.py", project_name.replace('-', "_")),
-            content: format!("\"\"\"{}.\"\"\"\n\n__version__ = \"{}\"\n", 
+            content: format!("\"\"\"{}.\"\"\"\n\n__version__ = \"{}\"\n",
                 schema.description.as_deref().unwrap_or("LinkML generated project"),
                 self.config.version
             ),
         });
-        
+
         // src/schema.py
         files.push(ProjectFile {
             path: format!("src/{}/schema.py", project_name.replace('-', "_")),
             content: self.generate_python_schema_module(project_name, schema),
         });
-        
+
         // tests/__init__.py
         if self.config.include_tests {
             files.push(ProjectFile {
                 path: "tests/__init__.py".to_string(),
                 content: "\"\"\"Test package.\"\"\"\n".to_string(),
             });
-            
+
             // tests/test_schema.py
             files.push(ProjectFile {
                 path: "tests/test_schema.py".to_string(),
                 content: self.generate_python_tests(project_name, schema),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate TypeScript project files
     fn generate_typescript_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // package.json
         files.push(ProjectFile {
             path: "package.json".to_string(),
             content: self.generate_typescript_package_json(project_name, schema),
         });
-        
+
         // tsconfig.json
         files.push(ProjectFile {
             path: "tsconfig.json".to_string(),
             content: self.generate_typescript_tsconfig(),
         });
-        
+
         // src/index.ts
         files.push(ProjectFile {
             path: "src/index.ts".to_string(),
             content: self.generate_typescript_index(project_name, schema),
         });
-        
+
         // src/types.ts
         files.push(ProjectFile {
             path: "src/types.ts".to_string(),
             content: "// Generated types from LinkML schema\n\nexport interface Schema {\n  // Schema types will be generated here\n}\n".to_string(),
         });
-        
+
         // tests/schema.test.ts
         if self.config.include_tests {
             files.push(ProjectFile {
@@ -262,32 +262,32 @@ impl ProjectGenerator {
                 content: self.generate_typescript_tests(project_name, schema),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate Rust project files
     fn generate_rust_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // Cargo.toml
         files.push(ProjectFile {
             path: "Cargo.toml".to_string(),
             content: self.generate_rust_cargo_toml(project_name, schema),
         });
-        
+
         // src/lib.rs
         files.push(ProjectFile {
             path: "src/lib.rs".to_string(),
             content: self.generate_rust_lib(project_name, schema),
         });
-        
+
         // src/schema.rs
         files.push(ProjectFile {
             path: "src/schema.rs".to_string(),
             content: "//! Generated schema types from LinkML\n\nuse serde::{Deserialize, Serialize};\n\n// Schema types will be generated here\n".to_string(),
         });
-        
+
         // tests/integration_test.rs
         if self.config.include_tests {
             files.push(ProjectFile {
@@ -295,27 +295,27 @@ impl ProjectGenerator {
                 content: self.generate_rust_tests(project_name, schema),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate Java project files
     fn generate_java_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // pom.xml
         files.push(ProjectFile {
             path: "pom.xml".to_string(),
             content: self.generate_java_pom_xml(project_name, schema),
         });
-        
+
         // Main class
         let package_name = project_name.replace('-', "_").to_lowercase();
         files.push(ProjectFile {
             path: format!("src/main/java/com/{}/Schema.java", package_name),
             content: self.generate_java_schema_class(&package_name, schema),
         });
-        
+
         // Test class
         if self.config.include_tests {
             files.push(ProjectFile {
@@ -323,26 +323,26 @@ impl ProjectGenerator {
                 content: self.generate_java_tests(&package_name, schema),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate Go project files
     fn generate_go_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // go.mod
         files.push(ProjectFile {
             path: "go.mod".to_string(),
             content: self.generate_go_mod(project_name, schema),
         });
-        
+
         // schema.go
         files.push(ProjectFile {
             path: "schema.go".to_string(),
             content: self.generate_go_schema(project_name, schema),
         });
-        
+
         // schema_test.go
         if self.config.include_tests {
             files.push(ProjectFile {
@@ -350,43 +350,43 @@ impl ProjectGenerator {
                 content: self.generate_go_tests(project_name, schema),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate multi-language project files
     fn generate_multi_language_project(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // Root build configuration
         files.push(ProjectFile {
             path: "Makefile".to_string(),
             content: self.generate_makefile(project_name),
         });
-        
+
         // Language subdirectories
         files.push(ProjectFile {
             path: "python/README.md".to_string(),
             content: "# Python Implementation\n\nPython implementation of the LinkML schema.\n".to_string(),
         });
-        
+
         files.push(ProjectFile {
             path: "typescript/README.md".to_string(),
             content: "# TypeScript Implementation\n\nTypeScript implementation of the LinkML schema.\n".to_string(),
         });
-        
+
         files.push(ProjectFile {
             path: "rust/README.md".to_string(),
             content: "# Rust Implementation\n\nRust implementation of the LinkML schema.\n".to_string(),
         });
-        
+
         Ok(files)
     }
-    
+
     /// Generate Docker configuration
     fn generate_docker_config(&self, project_name: &str, _schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // Dockerfile
         let dockerfile_content = match self.config.target {
             ProjectTarget::Python => self.generate_python_dockerfile(),
@@ -396,50 +396,50 @@ impl ProjectGenerator {
             ProjectTarget::Go => self.generate_go_dockerfile(),
             ProjectTarget::MultiLanguage => self.generate_multi_dockerfile(),
         };
-        
+
         files.push(ProjectFile {
             path: "Dockerfile".to_string(),
             content: dockerfile_content,
         });
-        
+
         // docker-compose.yml
         files.push(ProjectFile {
             path: "docker-compose.yml".to_string(),
             content: self.generate_docker_compose(project_name),
         });
-        
+
         // .dockerignore
         files.push(ProjectFile {
             path: ".dockerignore".to_string(),
             content: self.generate_dockerignore(),
         });
-        
+
         Ok(files)
     }
-    
+
     /// Generate CI/CD configuration
     fn generate_ci_config(&self, project_name: &str, _schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // GitHub Actions
         files.push(ProjectFile {
             path: ".github/workflows/ci.yml".to_string(),
             content: self.generate_github_actions_ci(project_name),
         });
-        
+
         // GitLab CI
         files.push(ProjectFile {
             path: ".gitlab-ci.yml".to_string(),
             content: self.generate_gitlab_ci(project_name),
         });
-        
+
         Ok(files)
     }
-    
+
     /// Generate documentation
     fn generate_documentation(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         // docs/index.md
         files.push(ProjectFile {
             path: "docs/index.md".to_string(),
@@ -448,19 +448,19 @@ impl ProjectGenerator {
                 schema.description.as_deref().unwrap_or("LinkML schema documentation")
             ),
         });
-        
+
         // docs/getting-started.md
         files.push(ProjectFile {
             path: "docs/getting-started.md".to_string(),
             content: self.generate_getting_started_doc(project_name),
         });
-        
+
         // docs/api.md
         files.push(ProjectFile {
             path: "docs/api.md".to_string(),
             content: "# API Reference\n\nAPI documentation will be generated here.\n".to_string(),
         });
-        
+
         // mkdocs.yml (for Python projects)
         if matches!(self.config.target, ProjectTarget::Python | ProjectTarget::MultiLanguage) {
             files.push(ProjectFile {
@@ -468,14 +468,14 @@ impl ProjectGenerator {
                 content: self.generate_mkdocs_config(project_name),
             });
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate examples
     fn generate_examples(&self, project_name: &str, schema: &Schema) -> Result<Vec<ProjectFile>, LinkMLError> {
         let mut files = Vec::new();
-        
+
         match self.config.target {
             ProjectTarget::Python => {
                 files.push(ProjectFile {
@@ -502,59 +502,59 @@ impl ProjectGenerator {
                 });
             }
         }
-        
+
         Ok(files)
     }
-    
+
     /// Generate project manifest
     fn generate_manifest(&self, files: &[ProjectFile]) -> Result<String, LinkMLError> {
         let mut manifest = String::new();
-        
+
         manifest.push_str("# LinkML Project Generator Manifest\n");
         manifest.push_str("# This file lists all files that will be generated\n\n");
-        
+
         manifest.push_str("## Project Structure\n\n");
         manifest.push_str("```\n");
-        
+
         // Build directory tree
         let mut paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
         paths.sort();
-        
+
         for path in paths {
             let depth = path.matches('/').count();
             let indent = "  ".repeat(depth);
             let filename = path.split('/').last().unwrap_or(path);
             manifest.push_str(&format!("{}├── {}\n", indent, filename));
         }
-        
+
         manifest.push_str("```\n\n");
-        
+
         // File contents
         manifest.push_str("## Generated Files\n\n");
-        
+
         for file in files {
             manifest.push_str(&format!("### {}\n\n", file.path));
             manifest.push_str("```\n");
-            
+
             // Limit content preview to first 20 lines
             let lines: Vec<&str> = file.content.lines().take(20).collect();
             for line in lines {
                 manifest.push_str(line);
                 manifest.push('\n');
             }
-            
+
             if file.content.lines().count() > 20 {
                 manifest.push_str("... (truncated)\n");
             }
-            
+
             manifest.push_str("```\n\n");
         }
-        
+
         Ok(manifest)
     }
-    
+
     // Helper methods for generating specific file contents
-    
+
     fn generate_readme(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             "# {}\n\n{}\n\n## Overview\n\nThis project was generated from a LinkML schema using the LinkML Project Generator.\n\n## Installation\n\n{}\n\n## Usage\n\nSee the [documentation](docs/index.md) for detailed usage instructions.\n\n## License\n\n{}\n",
@@ -564,7 +564,7 @@ impl ProjectGenerator {
             self.get_license_name()
         )
     }
-    
+
     fn generate_license(&self) -> String {
         match self.config.license {
             LicenseType::Mit => include_str!("../../templates/licenses/MIT").to_string(),
@@ -575,12 +575,12 @@ impl ProjectGenerator {
             LicenseType::Proprietary => "Proprietary License\n\nAll rights reserved.\n".to_string(),
         }
     }
-    
+
     fn generate_gitignore(&self) -> String {
         let mut gitignore = String::from(
             "# General\n.DS_Store\n*.log\n.env\n.vscode/\n.idea/\n\n"
         );
-        
+
         match self.config.target {
             ProjectTarget::Python => {
                 gitignore.push_str("# Python\n__pycache__/\n*.py[cod]\n*$py.class\n*.so\n.Python\nbuild/\ndist/\n*.egg-info/\n.pytest_cache/\n.coverage\n.mypy_cache/\n.ruff_cache/\nvenv/\n");
@@ -601,10 +601,10 @@ impl ProjectGenerator {
                 gitignore.push_str("# Multi-language\n**/target/\n**/node_modules/\n**/dist/\n**/__pycache__/\n");
             }
         }
-        
+
         gitignore
     }
-    
+
     fn generate_python_pyproject(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             r#"[tool.poetry]
@@ -651,7 +651,7 @@ warn_unused_configs = true
             self.get_license_spdx()
         )
     }
-    
+
     fn generate_python_schema_module(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             r#""""Schema module for {}."""
@@ -676,7 +676,7 @@ def validate_data(data):
             project_name
         )
     }
-    
+
     fn generate_python_tests(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#""""Tests for {} schema."""
@@ -698,7 +698,7 @@ def test_validate_data():
             project_name.replace('-', "_")
         )
     }
-    
+
     fn generate_typescript_package_json(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             r#"{{
@@ -740,7 +740,7 @@ def test_validate_data():
             self.get_license_spdx()
         )
     }
-    
+
     fn generate_typescript_tsconfig(&self) -> String {
         r#"{
   "compilerOptions": {
@@ -761,7 +761,7 @@ def test_validate_data():
 }
 "#.to_string()
     }
-    
+
     fn generate_typescript_index(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"/**
@@ -789,7 +789,7 @@ export function validateData(data: any): boolean {{
             project_name
         )
     }
-    
+
     fn generate_typescript_tests(&self, _project_name: &str, _schema: &Schema) -> String {
         r#"import { loadSchema, validateData } from '../src';
 
@@ -807,7 +807,7 @@ describe('Schema Tests', () => {
 });
 "#.to_string()
     }
-    
+
     fn generate_rust_cargo_toml(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             r#"[package]
@@ -835,7 +835,7 @@ tokio = {{ version = "1.0", features = ["full"] }}
             self.get_license_spdx()
         )
     }
-    
+
     fn generate_rust_lib(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"//! {} - LinkML schema implementation
@@ -859,7 +859,7 @@ pub fn validate_data(data: &str) -> Result<bool, Box<dyn Error>> {{
             project_name
         )
     }
-    
+
     fn generate_rust_tests(&self, _project_name: &str, _schema: &Schema) -> String {
         r#"use linkml_project::{load_schema, validate_data};
 
@@ -877,7 +877,7 @@ fn test_validate_data() {
 }
 "#.to_string()
     }
-    
+
     fn generate_java_pom_xml(&self, project_name: &str, schema: &Schema) -> String {
         format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -923,7 +923,7 @@ fn test_validate_data() {
             schema.description.as_deref().unwrap_or("LinkML schema project")
         )
     }
-    
+
     fn generate_java_schema_class(&self, package_name: &str, _schema: &Schema) -> String {
         format!(
             r#"package com.{};
@@ -936,16 +936,16 @@ import java.io.IOException;
  * LinkML Schema implementation
  */
 public class Schema {{
-    
+
     private static final ObjectMapper mapper = new ObjectMapper();
-    
+
     /**
      * Load schema from file
      */
     public static Object loadSchema(String filename) throws IOException {{
         return mapper.readValue(new File(filename), Object.class);
     }}
-    
+
     /**
      * Validate data against schema
      */
@@ -958,7 +958,7 @@ public class Schema {{
             package_name
         )
     }
-    
+
     fn generate_java_tests(&self, package_name: &str, _schema: &Schema) -> String {
         format!(
             r#"package com.{};
@@ -967,13 +967,13 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class SchemaTest {{
-    
+
     @Test
     public void testLoadSchema() throws Exception {{
         // Test implementation
         assertTrue(true);
     }}
-    
+
     @Test
     public void testValidateData() {{
         Object data = new Object();
@@ -985,7 +985,7 @@ public class SchemaTest {{
             package_name
         )
     }
-    
+
     fn generate_go_mod(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"module github.com/{}/{}
@@ -1000,7 +1000,7 @@ require (
             project_name
         )
     }
-    
+
     fn generate_go_schema(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"// Package {} provides LinkML schema implementation
@@ -1018,13 +1018,13 @@ func LoadSchema(filename string) (interface{{}}, error) {{
     if err != nil {{
         return nil, fmt.Errorf("failed to read schema: %w", err)
     }}
-    
+
     var schema interface{{}}
     err = json.Unmarshal(data, &schema)
     if err != nil {{
         return nil, fmt.Errorf("failed to parse schema: %w", err)
     }}
-    
+
     return schema, nil
 }}
 
@@ -1038,7 +1038,7 @@ func ValidateData(data interface{{}}) bool {{
             project_name.replace('-', "_")
         )
     }
-    
+
     fn generate_go_tests(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"package {}_test
@@ -1066,7 +1066,7 @@ func TestValidateData(t *testing.T) {{
             project_name
         )
     }
-    
+
     fn generate_makefile(&self, project_name: &str) -> String {
         format!(
             r#"# Makefile for {} multi-language project
@@ -1096,7 +1096,7 @@ clean:
             project_name
         )
     }
-    
+
     fn generate_python_dockerfile(&self) -> String {
         r#"FROM python:3.11-slim
 
@@ -1112,7 +1112,7 @@ COPY . .
 CMD ["python", "-m", "linkml_project"]
 "#.to_string()
     }
-    
+
     fn generate_node_dockerfile(&self) -> String {
         r#"FROM node:20-alpine
 
@@ -1127,7 +1127,7 @@ RUN npm run build
 CMD ["node", "dist/index.js"]
 "#.to_string()
     }
-    
+
     fn generate_rust_dockerfile(&self) -> String {
         r#"FROM rust:1.75 as builder
 
@@ -1143,7 +1143,7 @@ COPY --from=builder /app/target/release/linkml-project /usr/local/bin/
 CMD ["linkml-project"]
 "#.to_string()
     }
-    
+
     fn generate_java_dockerfile(&self) -> String {
         r#"FROM maven:3.8-openjdk-11 as builder
 
@@ -1160,7 +1160,7 @@ COPY --from=builder /app/target/*.jar app.jar
 CMD ["java", "-jar", "app.jar"]
 "#.to_string()
     }
-    
+
     fn generate_go_dockerfile(&self) -> String {
         r#"FROM golang:1.21-alpine as builder
 
@@ -1178,7 +1178,7 @@ COPY --from=builder /app/linkml-project /usr/local/bin/
 CMD ["linkml-project"]
 "#.to_string()
     }
-    
+
     fn generate_multi_dockerfile(&self) -> String {
         r#"FROM ubuntu:22.04
 
@@ -1198,7 +1198,7 @@ RUN make build
 CMD ["make", "test"]
 "#.to_string()
     }
-    
+
     fn generate_docker_compose(&self, project_name: &str) -> String {
         format!(
             r#"version: '3.8'
@@ -1217,7 +1217,7 @@ services:
             project_name
         )
     }
-    
+
     fn generate_dockerignore(&self) -> String {
         r#"# Git
 .git/
@@ -1248,7 +1248,7 @@ target/
 *.pyc
 "#.to_string()
     }
-    
+
     fn generate_github_actions_ci(&self, project_name: &str) -> String {
         let test_step = match self.config.target {
             ProjectTarget::Python => r#"      - name: Test
@@ -1268,7 +1268,7 @@ target/
             ProjectTarget::MultiLanguage => r#"      - name: Test
         run: make test"#,
         };
-        
+
         format!(
             r#"name: CI
 
@@ -1282,15 +1282,15 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
 {}
 
       - name: Lint
@@ -1299,7 +1299,7 @@ jobs:
             test_step
         )
     }
-    
+
     fn generate_gitlab_ci(&self, _project_name: &str) -> String {
         let test_script = match self.config.target {
             ProjectTarget::Python => "poetry install && poetry run pytest",
@@ -1309,7 +1309,7 @@ jobs:
             ProjectTarget::Go => "go test ./...",
             ProjectTarget::MultiLanguage => "make test",
         };
-        
+
         format!(
             r#"stages:
   - test
@@ -1336,7 +1336,7 @@ deploy:
             test_script
         )
     }
-    
+
     fn generate_getting_started_doc(&self, project_name: &str) -> String {
         format!(
             r#"# Getting Started with {}
@@ -1378,7 +1378,7 @@ deploy:
             self.get_test_command()
         )
     }
-    
+
     fn generate_mkdocs_config(&self, project_name: &str) -> String {
         format!(
             r#"site_name: {} Documentation
@@ -1415,7 +1415,7 @@ markdown_extensions:
             self.config.author.as_deref().unwrap_or("Author")
         )
     }
-    
+
     fn generate_python_example(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"#!/usr/bin/env python3
@@ -1427,13 +1427,13 @@ def main():
     # Load the schema
     schema = load_schema()
     print(f"Loaded schema: {{schema}}")
-    
+
     # Example data
     data = {{
         "id": "example-001",
         "name": "Example Entity"
     }}
-    
+
     # Validate data
     is_valid = validate_data(data)
     print(f"Data is valid: {{is_valid}}")
@@ -1445,7 +1445,7 @@ if __name__ == "__main__":
             project_name.replace('-', "_")
         )
     }
-    
+
     fn generate_typescript_example(&self, project_name: &str, _schema: &Schema) -> String {
         format!(
             r#"/**
@@ -1458,13 +1458,13 @@ async function main() {{
     // Load the schema
     const schema = loadSchema();
     console.log('Loaded schema:', schema);
-    
+
     // Example data
     const data = {{
         id: 'example-001',
         name: 'Example Entity'
     }};
-    
+
     // Validate data
     const isValid = validateData(data);
     console.log('Data is valid:', isValid);
@@ -1475,7 +1475,7 @@ main().catch(console.error);
             project_name
         )
     }
-    
+
     fn generate_rust_example(&self, _project_name: &str, _schema: &Schema) -> String {
         r#"//! Basic usage example
 
@@ -1486,7 +1486,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Load the schema
     let schema = load_schema()?;
     println!("Loaded schema successfully");
-    
+
     // Example data
     let data = r#"
         {
@@ -1494,18 +1494,18 @@ fn main() -> Result<(), Box<dyn Error>> {
             "name": "Example Entity"
         }
     "#;
-    
+
     // Validate data
     let is_valid = validate_data(data)?;
     println!("Data is valid: {}", is_valid);
-    
+
     Ok(())
 }
 "#.to_string()
     }
-    
+
     // Helper methods
-    
+
     fn get_installation_instructions(&self) -> &str {
         match self.config.target {
             ProjectTarget::Python => "pip install poetry\\npoetry install",
@@ -1516,7 +1516,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ProjectTarget::MultiLanguage => "make build",
         }
     }
-    
+
     fn get_prerequisites(&self) -> &str {
         match self.config.target {
             ProjectTarget::Python => "- Python 3.8 or higher\\n- Poetry package manager",
@@ -1527,7 +1527,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ProjectTarget::MultiLanguage => "- Make\\n- Python 3.8+\\n- Node.js 16+\\n- Rust 1.70+\\n- Java 11+\\n- Go 1.19+",
         }
     }
-    
+
     fn get_install_command(&self) -> &str {
         match self.config.target {
             ProjectTarget::Python => "poetry install",
@@ -1538,7 +1538,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ProjectTarget::MultiLanguage => "make build",
         }
     }
-    
+
     fn get_test_command(&self) -> &str {
         match self.config.target {
             ProjectTarget::Python => "poetry run pytest",
@@ -1549,7 +1549,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             ProjectTarget::MultiLanguage => "make test",
         }
     }
-    
+
     fn get_license_name(&self) -> &str {
         match self.config.license {
             LicenseType::Mit => "MIT License",
@@ -1560,7 +1560,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             LicenseType::Proprietary => "Proprietary License",
         }
     }
-    
+
     fn get_license_spdx(&self) -> &str {
         match self.config.license {
             LicenseType::Mit => "MIT",
@@ -1577,11 +1577,11 @@ impl Generator for ProjectGenerator {
     fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
         self.generate_project(schema)
     }
-    
+
     fn get_file_extension(&self) -> &str {
         "txt" // Manifest is a text file
     }
-    
+
     fn get_default_filename(&self) -> &str {
         "project_manifest"
     }
@@ -1705,13 +1705,13 @@ as future claims and causes of action), in the Work.
 mod tests {
     use super::*;
     use linkml_core::schema::SchemaDefinition;
-    
+
     #[test]
     fn test_project_generation() {
         let mut schema = SchemaDefinition::default();
         schema.name = Some("TestProject".to_string());
         schema.description = Some("A test project".to_string());
-        
+
         let config = ProjectGeneratorConfig {
             project_name: Some("test-project".to_string()),
             target: ProjectTarget::Python,
@@ -1719,10 +1719,10 @@ mod tests {
             include_ci: false,
             ..Default::default()
         };
-        
+
         let generator = ProjectGenerator::new(config);
         let result = generator.generate(&Schema(schema)).expect("should generate project");
-        
+
         assert!(result.contains("# LinkML Project Generator Manifest"));
         assert!(result.contains("README.md"));
         assert!(result.contains("pyproject.toml"));

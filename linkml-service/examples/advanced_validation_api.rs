@@ -114,7 +114,7 @@ classes:
             salary:
               value_presence: PRESENT
               minimum_value: 0
-              
+
       - description: Minors cannot be supervisors
         preconditions:
           slot_conditions:
@@ -124,41 +124,41 @@ classes:
           slot_conditions:
             supervisor:
               value_presence: ABSENT
-              
+
 slots:
   id:
     identifier: true
     range: string
     pattern: "^[A-Z]{2}[0-9]{6}$"
-    
+
   name:
     range: string
     required: true
     pattern: "^[A-Za-z ,.'-]+$"
     minimum_length: 2
     maximum_length: 100
-    
+
   email:
     range: string
     pattern: "^[\\w._%+-]+@[\\w.-]+\\.[A-Z|a-z]{2,}$"
-    
+
   age:
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   employment_status:
     range: EmploymentStatus
     required: true
-    
+
   salary:
     range: decimal
     minimum_value: 0
     maximum_value: 10000000
-    
+
   supervisor:
     range: Person
-    
+
 enums:
   EmploymentStatus:
     permissible_values:
@@ -327,7 +327,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
     let config_service = configuration_service::factory::create_standard_configuration_service().await?;
     let cache = cache_service::factory::create_valkey_cache_service().await?;
     let monitor = monitoring_service::factory::create_standard_monitoring_service().await?;
-    
+
     // 2. Create LinkML service with all dependencies
     let linkml = create_linkml_service_with_config(
         config,
@@ -339,7 +339,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
         cache,
         monitor,
     ).await?;
-    
+
     // 3. Use throughout application
     run_application(linkml).await
 }}

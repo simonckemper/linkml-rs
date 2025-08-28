@@ -2,7 +2,7 @@ mod common;
 use common::initialize_example_service;
 
 //! Validation Patterns Example
-//! 
+//!
 //! This example demonstrates various validation patterns including:
 //! - Pattern matching with regex
 //! - Range constraints
@@ -60,50 +60,50 @@ slots:
     range: string
     pattern: "^[A-Z]{3}-\\d{6}$"
     description: Format XXX-000000
-    
+
   email:
     range: string
     required: true
     pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     description: Valid email address
-    
+
   phone:
     range: string
     pattern: "^\\+?1?[-.]?(\\([0-9]{3}\\)|[0-9]{3})[-.]?[0-9]{3}[-.]?[0-9]{4}$"
     description: US phone number format
-    
+
   age:
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   username:
     range: string
     required: true
     pattern: "^[a-zA-Z0-9_]{3,20}$"
     description: Alphanumeric, 3-20 characters
-    
+
   password:
     range: string
     required: true
     pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
     description: Min 8 chars, uppercase, lowercase, number, special char
-    
+
   confirm_password:
     range: string
     required: true
-    
+
   country_code:
     range: CountryCode
-    
+
   postal_code:
     range: string
     description: Validated based on country
-    
+
   website:
     range: uri
     pattern: "^https?://[\\w.-]+(\\.[\\w.-]+)+[\\w.,@?^=%&:/~+#-]*$"
-    
+
   social_security:
     range: string
     pattern: "^\\d{3}-\\d{2}-\\d{4}$"
@@ -162,38 +162,38 @@ slots:
     range: string
     pattern: "^[A-Z]{2}-\\d{4}-[A-Z0-9]{4}$"
     description: Format XX-0000-XXXX
-    
+
   name:
     range: string
     required: true
-    
+
   price:
     range: decimal
     minimum_value: 0
-    
+
   cost:
     range: decimal
     minimum_value: 0
-    
+
   margin:
     range: decimal
     equals_expression: "(price - cost) / price"
-    
+
   category:
     range: ProductCategory
     required: true
-    
+
   stock_level:
     range: integer
     minimum_value: 0
-    
+
   reorder_point:
     range: integer
     minimum_value: 0
-    
+
   discontinued:
     range: boolean
-    
+
   needs_reorder:
     range: boolean
 
@@ -213,14 +213,14 @@ enums:
     // Parse schema
     let parser = YamlParser::new();
     let schema = parser.parse_str(schema_yaml)?;
-    
+
     // Create LinkML service
     let service = create_example_linkml_service().await?;
-    
+
     // Example 1: Valid person data
     println!("Example 1: Valid Person Data");
     println!("----------------------------");
-    
+
     let valid_person = json!({
         "id": "ABC-123456",
         "email": "john.doe@example.com",
@@ -234,16 +234,16 @@ enums:
         "website": "https://johndoe.com",
         "social_security": "123-45-6789"
     });
-    
+
     let report = service.validate(&valid_person, &schema, "Person").await?;
     if report.valid {
         println!("✓ All validations passed!");
     }
-    
+
     // Example 2: Invalid patterns
     println!("\n\nExample 2: Pattern Validation Failures");
     println!("--------------------------------------");
-    
+
     let invalid_patterns = json!({
         "id": "123-ABCDEF",  // Wrong format
         "email": "invalid.email",  // Missing @domain
@@ -254,7 +254,7 @@ enums:
         "confirm_password": "weak",
         "country_code": "US"
     });
-    
+
     let report = service.validate(&invalid_patterns, &schema, "Person").await?;
     if !report.valid {
         println!("✗ Pattern validation failures:");
@@ -264,11 +264,11 @@ enums:
             }
         }
     }
-    
+
     // Example 3: Cross-field validation
     println!("\n\nExample 3: Cross-field Validation");
     println!("---------------------------------");
-    
+
     let password_mismatch = json!({
         "id": "ABC-123456",
         "email": "jane@example.com",
@@ -278,7 +278,7 @@ enums:
         "confirm_password": "DifferentP@ss456",  // Doesn't match
         "country_code": "US"
     });
-    
+
     let report = service.validate(&password_mismatch, &schema, "Person").await?;
     if !report.valid {
         println!("✗ Cross-field validation failed:");
@@ -286,11 +286,11 @@ enums:
             println!("  - {}", error.message);
         }
     }
-    
+
     // Example 4: Business rule validation
     println!("\n\nExample 4: Business Rule Validation");
     println!("-----------------------------------");
-    
+
     let product_with_loss = json!({
         "sku": "EL-2024-A1B2",
         "name": "Smartphone",
@@ -301,7 +301,7 @@ enums:
         "reorder_point": 10,
         "discontinued": false
     });
-    
+
     let report = service.validate(&product_with_loss, &schema, "Product").await?;
     if !report.valid {
         println!("✗ Business rule violations:");
@@ -309,11 +309,11 @@ enums:
             println!("  - {}", error.message);
         }
     }
-    
+
     // Example 5: Enum validation
     println!("\n\nExample 5: Enum Validation");
     println!("--------------------------");
-    
+
     let invalid_enum = json!({
         "id": "ABC-123456",
         "email": "test@example.com",
@@ -323,7 +323,7 @@ enums:
         "confirm_password": "SecureP@ss123",
         "country_code": "XX"  // Invalid country code
     });
-    
+
     let report = service.validate(&invalid_enum, &schema, "Person").await?;
     if !report.valid {
         println!("✗ Enum validation failed:");
@@ -331,7 +331,7 @@ enums:
             println!("  - {}", error.message);
         }
     }
-    
+
     // Summary of validation patterns
     println!("\n\nValidation Pattern Summary");
     println!("=========================");
@@ -343,7 +343,7 @@ enums:
     println!("6. Computed Fields: Calculate values from other fields");
     println!("7. Business Rules: Implement domain-specific logic");
     println!("\nAll patterns support clear error messages for user feedback!");
-    
+
     Ok(())
 }
 

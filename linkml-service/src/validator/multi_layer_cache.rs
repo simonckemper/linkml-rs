@@ -67,7 +67,7 @@ pub struct MultiLayerCache {
     l3_cache: Option<Arc<DiskCache>>,
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,
-    /// Background tasks handle  
+    /// Background tasks handle
     background_handle: Option<Arc<tokio::task::JoinHandle<()>>>,
 }
 
@@ -182,7 +182,8 @@ impl MultiLayerCache {
         })
     }
 
-    /// Get a validator from the cache    pub async fn get(&self, key: &ValidatorCacheKey) -> Option<Arc<CompiledValidator>> {
+    /// Get a validator from the cache
+    pub async fn get(&self, key: &ValidatorCacheKey) -> Option<Arc<CompiledValidator>> {
         let start = Instant::now();
         let mut stats = self.stats.write();
         stats.total_gets += 1;
@@ -275,7 +276,8 @@ impl MultiLayerCache {
     ///
     /// # Errors
     ///
-    /// Returns an error if cache operations fail.    pub async fn put(
+    /// Returns an error if cache operations fail.
+    pub async fn put(
         &self,
         key: ValidatorCacheKey,
         validator: Arc<CompiledValidator>,
@@ -649,7 +651,7 @@ mod tests {
     #[tokio::test]
     async fn test_multi_layer_cache_basic() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache": {}, e))?;
+        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -663,7 +665,7 @@ mod tests {
         cache
             .put(key.clone(), validator.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should put into cache": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should put into cache: {}", e))?;
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
 
@@ -677,7 +679,7 @@ mod tests {
     #[tokio::test]
     async fn test_cache_invalidation() {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache": {}, e))?;
+        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -691,11 +693,11 @@ mod tests {
         cache
             .put(key.clone(), validator)
             .await
-            .map_err(|e| anyhow::anyhow!("should put into cache": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should put into cache: {}", e))?;
         cache
             .invalidate(&key)
             .await
-            .map_err(|e| anyhow::anyhow!("should invalidate cache": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should invalidate cache: {}", e))?;
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
     }

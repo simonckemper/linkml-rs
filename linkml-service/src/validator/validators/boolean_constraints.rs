@@ -565,7 +565,7 @@ impl NoneOfValidator {
             || expr.minimum_value.is_some()
             || expr.maximum_value.is_some()
             || expr.required.is_some();
-            
+
         if !has_constraints {
             // No constraints means the expression is always satisfied
             // (any value passes when there are no constraints)
@@ -575,7 +575,7 @@ impl NoneOfValidator {
         // Apply validators - for none_of, we check if ALL constraints pass
         // If they all pass (no issues), the expression IS satisfied
         // If any fail (have issues), the expression is NOT satisfied
-        
+
         // Type check is the primary validator
         if expr.range.is_some() {
             let type_validator = TypeValidator::new();
@@ -586,7 +586,7 @@ impl NoneOfValidator {
             }
         }
 
-        // Required check  
+        // Required check
         if expr.required.is_some() {
             let required_validator = RequiredValidator::new();
             let required_issues = required_validator.validate(value, &temp_slot, context);

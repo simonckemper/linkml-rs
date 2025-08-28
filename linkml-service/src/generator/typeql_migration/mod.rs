@@ -24,19 +24,19 @@ pub enum MigrationError {
     /// Schema version parsing error
     #[error("Invalid version format: {0}")]
     InvalidVersion(String),
-    
+
     /// Schema comparison error
     #[error("Cannot compare schemas: {0}")]
     ComparisonError(String),
-    
+
     /// Migration generation error
     #[error("Migration generation failed: {0}")]
     GenerationError(String),
-    
+
     /// Breaking change detected
     #[error("Breaking change detected: {0}")]
     BreakingChange(String),
-    
+
     /// Validation error
     #[error("Migration validation failed: {0}")]
     ValidationError(String),

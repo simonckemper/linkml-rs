@@ -25,10 +25,10 @@ slots:
     description: ISO format date
     range: string
     pattern: "^\\d{4}-\\d{2}-\\d{2}$"
-    
+
   us_date:
     name: us_date
-    description: US format date  
+    description: US format date
     range: string
     pattern: "^\\d{2}/\\d{2}/\\d{4}$"
 "#;
@@ -36,38 +36,38 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Check parsed patterns
     eprintln!("\n=== Parsed Schema Slots ===");
     for (slot_name, slot_def) in &schema.slots {
         eprintln!("Slot '{}': pattern = {:?}", slot_name, slot_def.pattern);
     }
-    
+
     // Create test data
     let valid_data = json!({
         "iso_date": "2025-01-31",
         "us_date": "01/31/2025"
     });
-    
+
     // Create validation engine
     let engine = ValidationEngine::new(&schema).unwrap();
-    
+
     // Validate
     eprintln!("\n=== Starting Validation ===");
     let report = engine
         .validate_as_class(&valid_data, "DateRecord", None)
         .await
         .unwrap();
-    
+
     // Check results
     eprintln!("\n=== Validation Results ===");
     eprintln!("Valid: {}", report.valid);
     eprintln!("Error count: {}", report.stats.error_count);
-    
+
     for issue in &report.issues {
         eprintln!("Issue: {} at {}", issue.message, issue.path);
     }
-    
+
     // Assert validation passed
     assert!(report.valid, "Both date formats should be valid");
 }

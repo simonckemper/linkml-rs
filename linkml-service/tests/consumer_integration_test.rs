@@ -724,7 +724,7 @@ classes:
       - email
       - age
       - friends
-      
+
   Company:
     name: Company
     description: A company entity
@@ -733,7 +733,7 @@ classes:
       - name
       - founded_year
       - employees
-      
+
   Employment:
     name: Employment
     description: Employment relationship
@@ -742,69 +742,69 @@ classes:
       - employer
       - start_date
       - position
-      
+
 slots:
   person_id:
     name: person_id
     identifier: true
     range: string
-    
+
   full_name:
     name: full_name
     range: string
     required: true
-    
+
   email:
     name: email
     range: string
     pattern: "^[\\w._%+-]+@[\\w.-]+\\.[A-Z|a-z]{2,}$"
-    
+
   age:
     name: age
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   friends:
     name: friends
     range: Person
     multivalued: true
-    
+
   company_id:
     name: company_id
     identifier: true
     range: string
-    
+
   name:
     name: name
     range: string
     required: true
-    
+
   founded_year:
     name: founded_year
     range: integer
     minimum_value: 1800
-    
+
   employees:
     name: employees
     range: Person
     multivalued: true
-    
+
   employee:
     name: employee
     range: Person
     required: true
-    
+
   employer:
     name: employer
     range: Company
     required: true
-    
+
   start_date:
     name: start_date
     range: date
     required: true
-    
+
   position:
     name: position
     range: string
@@ -881,7 +881,7 @@ classes:
       - username
       - email
       - posts
-      
+
   Post:
     name: Post
     description: Blog post
@@ -891,47 +891,47 @@ classes:
       - content
       - author
       - published_date
-      
+
 slots:
   id:
     name: id
     identifier: true
     range: string
     required: true
-    
+
   username:
     name: username
     range: string
     required: true
     pattern: "^[a-zA-Z0-9_]{3,20}$"
-    
+
   email:
     name: email
     range: string
     required: true
     pattern: "^[\\w._%+-]+@[\\w.-]+\\.[A-Z|a-z]{2,}$"
-    
+
   posts:
     name: posts
     range: Post
     multivalued: true
-    
+
   title:
     name: title
     range: string
     required: true
     maximum_length: 200
-    
+
   content:
     name: content
     range: string
     required: true
-    
+
   author:
     name: author
     range: User
     required: true
-    
+
   published_date:
     name: published_date
     range: datetime
@@ -1006,19 +1006,19 @@ classes:
       - temperature
       - humidity
       - location
-      
+
 slots:
   device_id:
     name: device_id
     identifier: true
     range: string
     pattern: "^SENSOR-[0-9]{4}$"
-    
+
   timestamp:
     name: timestamp
     range: datetime
     required: true
-    
+
   temperature:
     name: temperature
     range: float
@@ -1026,7 +1026,7 @@ slots:
     maximum_value: 100
     unit:
       symbol: "°C"
-      
+
   humidity:
     name: humidity
     range: float
@@ -1034,7 +1034,7 @@ slots:
     maximum_value: 100
     unit:
       symbol: "%"
-      
+
   location:
     name: location
     range: string
@@ -1119,46 +1119,46 @@ classes:
       - timestamp
       - transaction_type
       - status
-      
+
 slots:
   transaction_id:
     name: transaction_id
     identifier: true
     range: string
     pattern: "^TXN-[0-9]{10}$"
-    
+
   account_id:
     name: account_id
     range: string
     pattern: "^ACC-[0-9]{8}$"
     required: true
-    
+
   amount:
     name: amount
     range: decimal
     minimum_value: 0.01
     required: true
-    
+
   currency:
     name: currency
     range: CurrencyCode
     required: true
-    
+
   timestamp:
     name: timestamp
     range: datetime
     required: true
-    
+
   transaction_type:
     name: transaction_type
     range: TransactionType
     required: true
-    
+
   status:
     name: status
     range: TransactionStatus
     required: true
-    
+
 enums:
   CurrencyCode:
     name: CurrencyCode
@@ -1167,7 +1167,7 @@ enums:
       - EUR
       - GBP
       - JPY
-      
+
   TransactionType:
     name: TransactionType
     permissible_values:
@@ -1175,7 +1175,7 @@ enums:
       - withdrawal
       - transfer
       - payment
-      
+
   TransactionStatus:
     name: TransactionStatus
     permissible_values:
@@ -1300,47 +1300,47 @@ classes:
           slot_conditions:
             final_price:
               equals_expression: "price * (1 - discount_percentage / 100)"
-              
+
 slots:
   sku:
     name: sku
     identifier: true
     range: string
     pattern: "^[A-Z]{2}-[0-9]{6}$"
-    
+
   name:
     name: name
     range: string
     required: true
     minimum_length: 3
     maximum_length: 100
-    
+
   price:
     name: price
     range: decimal
     required: true
     minimum_value: 0.01
     maximum_value: 99999.99
-    
+
   discount_percentage:
     name: discount_percentage
     range: float
     minimum_value: 0
     maximum_value: 90
-    
+
   final_price:
     name: final_price
     range: decimal
     required: true
     minimum_value: 0.01
-    
+
   categories:
     name: categories
     range: string
     multivalued: true
     minimum_cardinality: 1
     maximum_cardinality: 5
-    
+
   tags:
     name: tags
     range: string
@@ -1456,39 +1456,39 @@ classes:
       - source_system
       - payload
       - severity
-      
+
 slots:
   event_id:
     name: event_id
     identifier: true
     range: string
     pattern: "^EVT-[0-9]{12}$"
-    
+
   event_type:
     name: event_type
     range: EventType
     required: true
-    
+
   timestamp:
     name: timestamp
     range: datetime
     required: true
-    
+
   source_system:
     name: source_system
     range: string
     required: true
-    
+
   payload:
     name: payload
     range: string
     required: true
-    
+
   severity:
     name: severity
     range: SeverityLevel
     required: true
-    
+
 enums:
   EventType:
     name: EventType
@@ -1500,7 +1500,7 @@ enums:
       - info
       - system_start
       - system_stop
-      
+
   SeverityLevel:
     name: SeverityLevel
     permissible_values:

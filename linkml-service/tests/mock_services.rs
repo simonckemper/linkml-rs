@@ -28,13 +28,13 @@ use timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
 use dbms_core::{
-    DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus, 
+    DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus,
     HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation, SchemaVersion,
     DatabaseConfig as TypesConfig},
     ConnectionPool, DatabaseConnection, DBMSError, DBMSService, DBMSResult,
 };
 use timeout_core::{
-    TimeoutConfig, TimeoutContext, TimeoutError, TimeoutHistory, TimeoutService, 
+    TimeoutConfig, TimeoutContext, TimeoutError, TimeoutHistory, TimeoutService,
     TimeoutStatistics, TimeoutValue,
 };
 
@@ -746,7 +746,7 @@ impl DBMSService for MockDBMSService {
             max_backup_files: 7, // Default backup file retention
             database_settings: config.custom_settings,
         };
-        
+
         Ok(DatabaseInfo {
             id: Uuid::new_v4(),
             name: name.to_string(),

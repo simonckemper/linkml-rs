@@ -42,7 +42,7 @@ pub struct RelationChange {
     pub name: String,
     /// Roles before change
     pub old_roles: Vec<String>,
-    /// Roles after change  
+    /// Roles after change
     pub new_roles: Vec<String>,
     /// Role player changes
     pub role_changes: Vec<RolePlayerChange>,
@@ -145,7 +145,7 @@ impl SchemaDiff {
             rule_changes: Vec::new(),
         }
     }
-    
+
     /// Check if there are any changes
     #[must_use] pub fn is_empty(&self) -> bool {
         self.added_types.is_empty() &&
@@ -157,7 +157,7 @@ impl SchemaDiff {
         self.relation_changes.is_empty() &&
         self.rule_changes.is_empty()
     }
-    
+
     /// Count total changes
     #[must_use] pub fn change_count(&self) -> usize {
         self.added_types.len() +
@@ -178,24 +178,24 @@ impl SchemaDiffer {
     /// Compare two schemas and generate a diff
     pub fn compare(old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> MigrationResult<SchemaDiff> {
         let mut diff = SchemaDiff::new();
-        
+
         // Compare classes (types)
         Self::compare_classes(old_schema, new_schema, &mut diff)?;
-        
+
         // Compare global attributes
         Self::compare_attributes(old_schema, new_schema, &mut diff)?;
-        
+
         // Compare rules (if we had them in the schema)
         // For now, rules are generated from constraints, so we don't compare them directly
-        
+
         Ok(diff)
     }
-    
+
     /// Compare classes between schemas
     fn compare_classes(old_schema: &SchemaDefinition, new_schema: &SchemaDefinition, diff: &mut SchemaDiff) -> MigrationResult<()> {
         let old_classes: HashSet<_> = old_schema.classes.keys().collect();
         let new_classes: HashSet<_> = new_schema.classes.keys().collect();
-        
+
         // Find added classes
         for name in new_classes.difference(&old_classes) {
             if let Some(class) = new_schema.classes.get(*name) {
@@ -207,7 +207,7 @@ impl SchemaDiffer {
                 });
             }
         }
-        
+
         // Find removed classes
         for name in old_classes.difference(&new_classes) {
             if let Some(class) = old_schema.classes.get(*name) {
@@ -219,7 +219,7 @@ impl SchemaDiffer {
                 });
             }
         }
-        
+
         // Find modified classes
         for name in old_classes.intersection(&new_classes) {
             if let (Some(old_class), Some(new_class)) = (old_schema.classes.get(*name), new_schema.classes.get(*name)) {
@@ -232,19 +232,19 @@ impl SchemaDiffer {
                         changes,
                     });
                 }
-                
+
                 // Compare class-specific slots
                 Self::compare_class_slots(name, old_class, new_class, diff)?;
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Compare details of two class definitions
     fn compare_class_details(old_class: &ClassDefinition, new_class: &ClassDefinition) -> Vec<DetailedChange> {
         let mut changes = Vec::new();
-        
+
         // Check inheritance changes
         if old_class.is_a != new_class.is_a {
             if let Some(old_parent) = &old_class.is_a {
@@ -258,7 +258,7 @@ impl SchemaDiffer {
                 }
             }
         }
-        
+
         // Check abstract status
         if old_class.abstract_ != new_class.abstract_ {
             changes.push(DetailedChange::AbstractChanged(
@@ -266,34 +266,34 @@ impl SchemaDiffer {
                 new_class.abstract_.unwrap_or(false)
             ));
         }
-        
+
         // Check mixin changes
         let old_mixins: HashSet<_> = old_class.mixins.iter().collect();
         let new_mixins: HashSet<_> = new_class.mixins.iter().collect();
-        
+
         for mixin in new_mixins.difference(&old_mixins) {
             changes.push(DetailedChange::AddedMixin((*mixin).clone()));
         }
-        
+
         for mixin in old_mixins.difference(&new_mixins) {
             changes.push(DetailedChange::RemovedMixin((*mixin).clone()));
         }
-        
+
         // Check slot changes (just added/removed, details handled separately)
         let old_slots: HashSet<_> = old_class.slots.iter().collect();
         let new_slots: HashSet<_> = new_class.slots.iter().collect();
-        
+
         for slot in new_slots.difference(&old_slots) {
             changes.push(DetailedChange::AddedSlot((*slot).clone()));
         }
-        
+
         for slot in old_slots.difference(&new_slots) {
             changes.push(DetailedChange::RemovedSlot((*slot).clone()));
         }
-        
+
         changes
     }
-    
+
     /// Compare class-specific slots
     fn compare_class_slots(
         class_name: &str,
@@ -316,10 +316,10 @@ impl SchemaDiffer {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Compare slot details
     fn compare_slot_details(old_slot: &SlotDefinition, new_slot: &SlotDefinition) -> Option<SlotChange> {
         let mut change = SlotChange {
@@ -328,9 +328,9 @@ impl SchemaDiffer {
             range_changed: None,
             pattern_changed: None,
         };
-        
+
         let mut has_changes = false;
-        
+
         // Check required status
         if old_slot.required != new_slot.required {
             change.required_changed = Some((
@@ -339,7 +339,7 @@ impl SchemaDiffer {
             ));
             has_changes = true;
         }
-        
+
         // Check cardinality
         if old_slot.multivalued != new_slot.multivalued {
             change.cardinality_changed = Some((
@@ -348,7 +348,7 @@ impl SchemaDiffer {
             ));
             has_changes = true;
         }
-        
+
         // Check range/type
         if old_slot.range != new_slot.range {
             if let (Some(old_range), Some(new_range)) = (&old_slot.range, &new_slot.range) {
@@ -356,25 +356,25 @@ impl SchemaDiffer {
                 has_changes = true;
             }
         }
-        
+
         // Check pattern
         if old_slot.pattern != new_slot.pattern {
             change.pattern_changed = Some((old_slot.pattern.clone(), new_slot.pattern.clone()));
             has_changes = true;
         }
-        
+
         if has_changes {
             Some(change)
         } else {
             None
         }
     }
-    
+
     /// Compare global attributes
     fn compare_attributes(old_schema: &SchemaDefinition, new_schema: &SchemaDefinition, diff: &mut SchemaDiff) -> MigrationResult<()> {
         let old_slots: HashSet<_> = old_schema.slots.keys().collect();
         let new_slots: HashSet<_> = new_schema.slots.keys().collect();
-        
+
         // Find added slots
         for name in new_slots.difference(&old_slots) {
             if let Some(slot) = new_schema.slots.get(*name) {
@@ -387,7 +387,7 @@ impl SchemaDiffer {
                 });
             }
         }
-        
+
         // Find removed slots
         for name in old_slots.difference(&new_slots) {
             if let Some(slot) = old_schema.slots.get(*name) {
@@ -400,7 +400,7 @@ impl SchemaDiffer {
                 });
             }
         }
-        
+
         // Find modified slots
         for name in old_slots.intersection(&new_slots) {
             if let (Some(old_slot), Some(new_slot)) = (old_schema.slots.get(*name), new_schema.slots.get(*name)) {
@@ -415,7 +415,7 @@ impl SchemaDiffer {
                 }
             }
         }
-        
+
         Ok(())
     }
 }
@@ -423,7 +423,7 @@ impl SchemaDiffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_empty_diff() {
         let schema = SchemaDefinition::default();
@@ -431,48 +431,48 @@ mod tests {
         assert!(diff.is_empty());
         assert_eq!(diff.change_count(), 0);
     }
-    
+
     #[test]
     fn test_added_class() {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
-        
+
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
         new_schema.classes.insert("Person".to_string(), person_class);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
         assert_eq!(diff.added_types.len(), 1);
         assert_eq!(diff.added_types[0].name, "Person");
     }
-    
+
     #[test]
     fn test_removed_class() {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
-        
+
         let mut person_class = ClassDefinition::default();
         person_class.description = Some("A person".to_string());
         old_schema.classes.insert("Person".to_string(), person_class);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
         assert_eq!(diff.removed_types.len(), 1);
         assert_eq!(diff.removed_types[0].name, "Person");
     }
-    
+
     #[test]
     fn test_modified_class() {
         let mut old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
-        
+
         let mut old_class = ClassDefinition::default();
         old_class.abstract_ = Some(false);
         old_schema.classes.insert("Person".to_string(), old_class);
-        
+
         let mut new_class = ClassDefinition::default();
         new_class.abstract_ = Some(true);
         new_schema.classes.insert("Person".to_string(), new_class);
-        
+
         let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
         assert_eq!(diff.modified_types.len(), 1);
         assert_eq!(diff.modified_types[0].name, "Person");

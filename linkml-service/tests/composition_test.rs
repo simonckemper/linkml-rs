@@ -20,7 +20,7 @@ classes:
       - id
       - name
       - description
-      
+
   LivingThing:
     name: LivingThing
     is_a: NamedThing
@@ -29,7 +29,7 @@ classes:
     slots:
       - birth_date
       - death_date
-      
+
   Person:
     name: Person
     is_a: LivingThing
@@ -46,36 +46,36 @@ classes:
       email:
         name: email
         pattern: "^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
-        
+
 slots:
   id:
     name: id
     range: string
     identifier: true
     required: true
-    
+
   name:
     name: name
     range: string
-    
+
   description:
     name: description
     range: string
-    
+
   birth_date:
     name: birth_date
     range: date
-    
+
   death_date:
     name: death_date
     range: date
-    
+
   age:
     name: age
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   email:
     name: email
     range: string
@@ -151,7 +151,7 @@ classes:
     slots:
       - created_at
       - updated_at
-      
+
   Versioned:
     name: Versioned
     mixin: true
@@ -159,7 +159,7 @@ classes:
     slots:
       - version
       - version_date
-      
+
   Document:
     name: Document
     mixins:
@@ -168,31 +168,31 @@ classes:
     slots:
       - title
       - content
-      
+
 slots:
   created_at:
     name: created_at
     range: datetime
     required: true
-    
+
   updated_at:
     name: updated_at
     range: datetime
-    
+
   version:
     name: version
     range: string
     pattern: "^v\\d+\\.\\d+\\.\\d+$"
-    
+
   version_date:
     name: version_date
     range: date
-    
+
   title:
     name: title
     range: string
     required: true
-    
+
   content:
     name: content
     range: string
@@ -243,23 +243,23 @@ classes:
     abstract: true
     slots:
       - id
-      
+
   ConcreteChild:
     name: ConcreteChild
     is_a: AbstractBase
     slots:
       - name
-      
+
   AnotherAbstract:
     name: AnotherAbstract
     abstract: true
     is_a: AbstractBase
-    
+
 slots:
   id:
     name: id
     range: string
-    
+
   name:
     name: name
     range: string
@@ -315,17 +315,17 @@ classes:
     tree_root: true
     slots:
       - id
-      
+
   RootClass2:
     name: RootClass2
     tree_root: true
     slots:
       - id
-      
+
   NonRoot:
     name: NonRoot
     is_a: RootClass1
-    
+
 slots:
   id:
     name: id

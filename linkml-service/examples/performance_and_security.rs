@@ -80,25 +80,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let schema_yaml = r#"
     id: https://example.org/performance-demo
     name: PerformanceDemo
-    
+
     classes:
       Person:
         slots:
           - name
           - age
           - email
-    
+
     slots:
       name:
         range: string
         required: true
         pattern: "^[A-Za-z ]+$"
-      
+
       age:
         range: integer
         minimum_value: 0
         maximum_value: 150
-      
+
       email:
         range: string
         pattern: "^[\\w.-]+@[\\w.-]+\\.\\w+$"

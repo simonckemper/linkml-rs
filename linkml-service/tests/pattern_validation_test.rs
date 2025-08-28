@@ -26,13 +26,13 @@ slots:
     description: ISO format date
     range: string
     pattern: "^(?P<year>\\d{4})-(?P<month>\\d{2})-(?P<day>\\d{2})$"
-    
+
   us_date:
     name: us_date
     description: US format date
     range: string
     pattern: "^(?P<month>\\d{2})/(?P<day>\\d{2})/(?P<year>\\d{4})$"
-    
+
   custom_date:
     name: custom_date
     description: Custom date with named parts
@@ -43,7 +43,7 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
-    
+
     // Debug: Check patterns in parsed schema
     eprintln!("DEBUG: Checking parsed schema slots:");
     for (slot_name, slot_def) in &schema.slots {
@@ -107,7 +107,7 @@ slots:
     name: email
     range: string
     pattern: "^(?P<user>[\\w\\.-]+)@(?P<domain>[\\w\\.-]+)\\.(?P<tld>\\w+)$"
-    
+
   version_string:
     name: version_string
     range: string

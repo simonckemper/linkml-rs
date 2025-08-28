@@ -5,7 +5,7 @@ description: Minimal subset of Biolink Model for testing
 prefixes:
   biolink: https://w3id.org/biolink/
   linkml: https://w3id.org/linkml/
-  
+
 imports:
   - linkml:types
 
@@ -24,12 +24,12 @@ classes:
         range: category_type
         multivalued: true
         required: true
-  
+
   BiologicalEntity:
     is_a: NamedThing
     abstract: true
     description: An entity that is biological in nature
-  
+
   Gene:
     is_a: BiologicalEntity
     description: A region of DNA that encodes a functional RNA or protein
@@ -42,7 +42,7 @@ classes:
       taxon:
         range: OrganismTaxon
         required: true
-  
+
   Disease:
     is_a: BiologicalEntity
     description: A disorder of structure or function
@@ -51,7 +51,7 @@ classes:
         pattern: "^MONDO:[0-9]{7}$"
       severity:
         range: severity_enum
-  
+
   GeneDiseaseAssociation:
     description: An association between a gene and a disease
     attributes:
@@ -84,7 +84,7 @@ classes:
             publications:
               minimum_cardinality: 1
         description: Experimental evidence requires publications
-  
+
   OrganismTaxon:
     description: A classification of organisms
     attributes:
@@ -101,7 +101,7 @@ enums:
       gene:
       disease:
       association:
-  
+
   chromosome_enum:
     permissible_values:
       chr1:
@@ -129,21 +129,21 @@ enums:
       chrX:
       chrY:
       chrM:
-  
+
   severity_enum:
     permissible_values:
       mild:
       moderate:
       severe:
       life_threatening:
-  
+
   predicate_enum:
     permissible_values:
       associated_with:
       causes:
       contributes_to:
       treats:
-  
+
   evidence_enum:
     permissible_values:
       experimental:

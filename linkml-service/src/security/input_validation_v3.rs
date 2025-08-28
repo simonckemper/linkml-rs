@@ -11,37 +11,37 @@ use linkml_core::configuration_v2::SecurityLimitsConfig;
 pub enum ValidationError {
     #[error("String too large: {size} bytes (max: {max})")]
     StringTooLarge { size: usize, max: usize },
-    
+
     #[error("Identifier too long: {size} characters (max: {max})")]
     IdentifierTooLong { size: usize, max: usize },
-    
+
     #[error("Expression too deep: {depth} levels (max: {max})")]
     ExpressionTooDeep { depth: usize, max: usize },
-    
+
     #[error("Too many constraints: {count} (max: {max})")]
     TooManyConstraints { count: usize, max: usize },
-    
+
     #[error("Too many function arguments: {count} (max: {max})")]
     TooManyFunctionArgs { count: usize, max: usize },
-    
+
     #[error("JSON too large: {size} bytes (max: {max})")]
     JsonTooLarge { size: usize, max: usize },
-    
+
     #[error("Too many slots in class: {count} (max: {max})")]
     TooManySlotsPerClass { count: usize, max: usize },
-    
+
     #[error("Too many classes in schema: {count} (max: {max})")]
     TooManyClassesPerSchema { count: usize, max: usize },
-    
+
     #[error("Too many cache entries: {count} (max: {max})")]
     TooManyCacheEntries { count: usize, max: usize },
-    
+
     #[error("Invalid character in identifier at position {position}: {char}")]
     InvalidCharacterInIdentifier { position: usize, char: char },
-    
+
     #[error("Empty input not allowed")]
     EmptyInput,
-    
+
     #[error("Invalid UTF-8 sequence")]
     InvalidUtf8,
 }
@@ -56,36 +56,36 @@ impl InputValidator {
     pub fn new(limits: SecurityLimitsConfig) -> Self {
         Self { limits }
     }
-    
+
     /// Validate a string input
     pub fn validate_string(&self, input: &str) -> Result<(), ValidationError> {
         if input.is_empty() {
             return Err(ValidationError::EmptyInput);
         }
-        
+
         if input.len() > self.limits.max_string_length {
             return Err(ValidationError::StringTooLarge {
                 size: input.len(),
                 max: self.limits.max_string_length,
             });
         }
-        
+
         Ok(())
     }
-    
+
     /// Validate an identifier (variable names, keys, etc.)
     pub fn validate_identifier(&self, identifier: &str) -> Result<(), ValidationError> {
         if identifier.is_empty() {
             return Err(ValidationError::EmptyInput);
         }
-        
+
         if identifier.len() > self.limits.max_identifier_length {
             return Err(ValidationError::IdentifierTooLong {
                 size: identifier.len(),
                 max: self.limits.max_identifier_length,
             });
         }
-        
+
         // Check for valid identifier characters
         for (i, ch) in identifier.chars().enumerate() {
             match ch {
@@ -98,10 +98,10 @@ impl InputValidator {
                 }
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Validate expression depth
     pub fn validate_expression_depth(&self, depth: usize) -> Result<(), ValidationError> {
         if depth > self.limits.max_expression_depth {
@@ -112,7 +112,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate constraint count
     pub fn validate_constraint_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_constraint_count {
@@ -123,7 +123,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate function argument count
     pub fn validate_function_args(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_function_args {
@@ -134,7 +134,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate JSON size
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size_bytes {
@@ -145,7 +145,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate slots per class
     pub fn validate_slots_per_class(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_slots_per_class {
@@ -156,7 +156,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate classes per schema
     pub fn validate_classes_per_schema(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_classes_per_schema {
@@ -167,7 +167,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Validate cache entries
     pub fn validate_cache_entries(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_cache_entries {
@@ -178,7 +178,7 @@ impl InputValidator {
         }
         Ok(())
     }
-    
+
     /// Sanitize a string for safe usage
     pub fn sanitize_string(&self, input: &str) -> String {
         // Remove null bytes and control characters
@@ -199,21 +199,21 @@ pub fn default_validator() -> InputValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_string_validation() {
         let validator = default_validator();
-        
+
         // Valid strings
         assert!(validator.validate_string("hello").is_ok());
         assert!(validator.validate_string("a").is_ok());
-        
+
         // Empty string
         assert!(matches!(
             validator.validate_string(""),
             Err(ValidationError::EmptyInput)
         ));
-        
+
         // String too large
         let large_string = "x".repeat(validator.limits.max_string_length + 1);
         assert!(matches!(
@@ -221,27 +221,27 @@ mod tests {
             Err(ValidationError::StringTooLarge { .. })
         ));
     }
-    
+
     #[test]
     fn test_identifier_validation() {
         let validator = default_validator();
-        
+
         // Valid identifiers
         assert!(validator.validate_identifier("valid_name").is_ok());
         assert!(validator.validate_identifier("valid-name").is_ok());
         assert!(validator.validate_identifier("valid.name").is_ok());
         assert!(validator.validate_identifier("name123").is_ok());
-        
+
         // Invalid identifiers
         assert!(validator.validate_identifier("invalid name").is_err());
         assert!(validator.validate_identifier("invalid@name").is_err());
         assert!(validator.validate_identifier("").is_err());
     }
-    
+
     #[test]
     fn test_depth_validation() {
         let validator = default_validator();
-        
+
         assert!(validator.validate_expression_depth(10).is_ok());
         assert!(validator.validate_expression_depth(validator.limits.max_expression_depth).is_ok());
         assert!(validator.validate_expression_depth(validator.limits.max_expression_depth + 1).is_err());

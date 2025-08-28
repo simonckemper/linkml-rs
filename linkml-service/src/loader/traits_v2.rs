@@ -14,7 +14,7 @@ use crate::file_system_adapter::FileSystemOperations;
 /// Result type for loader operations
 pub type LoaderResult<T> = std::result::Result<T, LoaderError>;
 
-/// Result type for dumper operations  
+/// Result type for dumper operations
 pub type DumperResult<T> = std::result::Result<T, DumperError>;
 
 /// Trait for data loaders that use file system adapter

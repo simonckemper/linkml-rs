@@ -73,45 +73,45 @@ impl ExpressionCacheV2 {
             stats: Arc::new(RwLock::new(CacheStats::default())),
         }
     }
-    
+
     /// Set maximum age for cache entries
     pub fn with_max_age(mut self, max_age: Duration) -> Self {
         self.max_age = max_age;
         self
     }
-    
+
     /// Get a parsed expression from cache
     pub fn get(&self, expression: &str) -> Option<Arc<ParsedExpression>> {
         let key = intern(expression);
         let mut cache = self.cache.write().ok()?;
         let mut stats = self.stats.write().ok()?;
-        
+
         if let Some(entry) = cache.get_mut(&key) {
             // Update access time and count
             entry.last_accessed = Instant::now();
             entry.hit_count += 1;
             stats.hits += 1;
-            
+
             // Move to end (most recently used)
             let cloned = entry.clone();
             cache.remove(&key);
             cache.insert(Arc::clone(&key), cloned);
-            
+
             Some(Arc::clone(&entry.expression))
         } else {
             stats.misses += 1;
             None
         }
     }
-    
+
     /// Store a parsed expression in cache
     pub fn put(&self, expression: &str, parsed: ParsedExpression) {
         let key = intern(expression);
         let now = Instant::now();
-        
+
         let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
         let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
-        
+
         // Check if we need to evict
         if cache.len() >= self.capacity {
             // Remove least recently used
@@ -120,7 +120,7 @@ impl ExpressionCacheV2 {
                 drop(old_key); // Release the Arc<str>
             }
         }
-        
+
         // Insert new entry
         let entry = CacheEntryV2 {
             expression: Arc::new(parsed),
@@ -128,12 +128,12 @@ impl ExpressionCacheV2 {
             last_accessed: now,
             hit_count: 0,
         };
-        
+
         cache.insert(key, entry);
         stats.entries = cache.len();
         stats.size_bytes = stats.entries * std::mem::size_of::<CacheEntryV2>();
     }
-    
+
     /// Get or compute and cache an expression
     pub fn get_or_compute<F>(&self, expression: &str, compute: F) -> Result<Arc<ParsedExpression>>
     where
@@ -143,49 +143,49 @@ impl ExpressionCacheV2 {
         if let Some(parsed) = self.get(expression) {
             return Ok(parsed);
         }
-        
+
         // Compute and cache
         let parsed = compute()?;
         self.put(expression, parsed.clone());
-        
+
         // Return the Arc we just stored
         self.get(expression)
             .ok_or_else(|| linkml_core::error::LinkMLError::internal("Cache put/get mismatch"))
     }
-    
+
     /// Clear the cache
     pub fn clear(&self) {
         let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
         let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
-        
+
         cache.clear();
         *stats = CacheStats::default();
     }
-    
+
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
         self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?.clone()
     }
-    
+
     /// Clean up old entries (optimized version)
     pub fn cleanup(&self) {
         let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
         let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
-        
+
         let now = Instant::now();
-        
+
         // Collect keys to remove without cloning during iteration
         let to_remove = collect_keys_for_removal(
             &cache.iter().map(|(k, v)| (k.clone(), v)).collect::<HashMap<_, _>>(),
             |_key, entry| now.duration_since(entry.last_accessed) > self.max_age
         );
-        
+
         // Remove old entries
         for key in to_remove {
             cache.remove(&key);
             stats.evictions += 1;
         }
-        
+
         stats.entries = cache.len();
         stats.size_bytes = stats.entries * std::mem::size_of::<CacheEntryV2>();
     }
@@ -213,7 +213,7 @@ impl GlobalExpressionCacheV2 {
             hot_threshold: 10,
         }
     }
-    
+
     /// Get or compute an expression
     pub fn get_or_compute<F>(
         &mut self,
@@ -224,7 +224,7 @@ impl GlobalExpressionCacheV2 {
         F: FnOnce() -> Result<ParsedExpression>,
     {
         let key = intern(expression);
-        
+
         // Check hot cache first
         if let Ok(counts) = self.access_counts.read() {
             if let Some(&count) = counts.get(&key) {
@@ -236,17 +236,17 @@ impl GlobalExpressionCacheV2 {
                 }
             }
         }
-        
+
         // Update access count
         if let Ok(mut counts) = self.access_counts.write() {
             let count = counts.entry(Arc::clone(&key)).or_insert(0);
             *count += 1;
         }
-        
+
         // Use primary cache
         self.primary.get_or_compute(&key, compute)
     }
-    
+
     /// Clear all caches
     pub fn clear(&mut self) {
         self.primary.clear();
@@ -270,7 +270,7 @@ impl ThreadSafeGlobalCache {
             ))),
         }
     }
-    
+
     /// Get or compute with thread safety
     pub fn get_or_compute<F>(
         &self,
@@ -294,15 +294,15 @@ mod tests {
     #[test]
     fn test_expression_cache_v2() {
         let cache = ExpressionCacheV2::new(2);
-        
+
         // Test basic operations
         assert!(cache.get("test").is_none());
-        
+
         let parsed = ParsedExpression::default(); // Assuming default impl
         cache.put("test", parsed.clone());
-        
+
         assert!(cache.get("test").is_some());
-        
+
         let stats = cache.stats();
         assert_eq!(stats.hits, 1);
         assert_eq!(stats.misses, 1);
@@ -311,15 +311,15 @@ mod tests {
     #[test]
     fn test_lru_eviction() {
         let cache = ExpressionCacheV2::new(2);
-        
+
         cache.put("expr1", ParsedExpression::default());
         cache.put("expr2", ParsedExpression::default());
         cache.put("expr3", ParsedExpression::default()); // Should evict expr1
-        
+
         assert!(cache.get("expr1").is_none());
         assert!(cache.get("expr2").is_some());
         assert!(cache.get("expr3").is_some());
-        
+
         let stats = cache.stats();
         assert_eq!(stats.evictions, 1);
     }
@@ -328,14 +328,14 @@ mod tests {
     fn test_cleanup() {
         let cache = ExpressionCacheV2::new(10)
             .with_max_age(Duration::from_millis(100));
-        
+
         cache.put("old", ParsedExpression::default());
-        
+
         // Wait for expiry
         std::thread::sleep(Duration::from_millis(150));
-        
+
         cache.cleanup();
-        
+
         assert!(cache.get("old").is_none());
         let stats = cache.stats();
         assert_eq!(stats.evictions, 1);

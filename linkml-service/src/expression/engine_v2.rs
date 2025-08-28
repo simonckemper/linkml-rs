@@ -90,7 +90,7 @@ impl ExpressionEngineV2 {
     /// Create a new enhanced expression engine
     pub fn new(config: EngineConfig) -> Self {
         let function_registry = Arc::new(FunctionRegistry::new());
-        
+
         Self {
             parser: Parser::new(),
             compiler: Arc::new(
@@ -107,7 +107,7 @@ impl ExpressionEngineV2 {
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
         }
     }
-    
+
     /// Create with custom function registry
     pub fn with_function_registry(
         config: EngineConfig,
@@ -129,7 +129,7 @@ impl ExpressionEngineV2 {
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
         }
     }
-    
+
     /// Evaluate an expression with the given context
     pub fn evaluate(
         &self,
@@ -138,7 +138,7 @@ impl ExpressionEngineV2 {
     ) -> Result<Value, ExpressionError> {
         self.evaluate_with_schema(expression, context, None)
     }
-    
+
     /// Evaluate an expression with schema context for better caching
     pub fn evaluate_with_schema(
         &self,
@@ -151,13 +151,13 @@ impl ExpressionEngineV2 {
         } else {
             None
         };
-        
+
         // Create cache key
         let key = ExpressionKey {
             source: expression.to_string(),
             schema_id: schema_id.map(|s| s.to_string()),
         };
-        
+
         // Try to get from cache
         let (ast, compiled) = if self.config.use_caching {
             if let Some(cached) = self.cache.get(&key) {
@@ -169,33 +169,33 @@ impl ExpressionEngineV2 {
             } else {
                 // Parse and optionally compile
                 let (ast, compiled) = self.parse_and_compile(expression, start_time)?;
-                
+
                 // Cache the result
                 self.cache.insert(key, ast.clone(), compiled.clone());
-                
+
                 (ast, compiled)
             }
         } else {
             // No caching - parse and compile every time
             self.parse_and_compile(expression, start_time)?
         };
-        
+
         // Decide whether to use compiled or interpreted evaluation
         let result = if self.should_use_compiled(&compiled) {
             self.evaluate_compiled(compiled.as_ref().map_err(|e| anyhow::anyhow!("should have compiled expression when use_compiled is true": {}, e))?, context, start_time)?
         } else {
             self.evaluate_interpreted(&ast, context, start_time)?
         };
-        
+
         // Update metrics
         if self.config.collect_metrics {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.total_evaluations += 1;
         }
-        
+
         Ok(result)
     }
-    
+
     /// Parse and optionally compile an expression
     fn parse_and_compile(
         &self,
@@ -206,30 +206,30 @@ impl ExpressionEngineV2 {
         let parse_start = Instant::now();
         let ast = self.parser.parse(expression)
             .map_err(|e| ExpressionError::Parse(e.to_string()))?;
-        
+
         if let Some(start) = start_time {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.parse_time_us += parse_start.elapsed().as_micros() as u64;
         }
-        
+
         // Compile if enabled
         let compiled = if self.config.use_compilation {
             let compile_start = Instant::now();
             let compiled = self.compiler.compile(&ast, expression)?;
-            
+
             if let Some(start) = start_time {
                 let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
                 metrics.compile_time_us += compile_start.elapsed().as_micros() as u64;
             }
-            
+
             Some(Arc::new(compiled))
         } else {
             None
         };
-        
+
         Ok((ast, compiled))
     }
-    
+
     /// Decide whether to use compiled evaluation
     fn should_use_compiled(&self, compiled: &Option<Arc<CompiledExpression>>) -> bool {
         if let Some(compiled) = compiled {
@@ -239,7 +239,7 @@ impl ExpressionEngineV2 {
             false
         }
     }
-    
+
     /// Evaluate using the VM
     fn evaluate_compiled(
         &self,
@@ -249,16 +249,16 @@ impl ExpressionEngineV2 {
     ) -> Result<Value, ExpressionError> {
         let eval_start = Instant::now();
         let result = self.vm.execute(compiled, context)?;
-        
+
         if let Some(start) = start_time {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.compiled_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
-        
+
         Ok(result)
     }
-    
+
     /// Evaluate using the interpreter
     fn evaluate_interpreted(
         &self,
@@ -269,31 +269,31 @@ impl ExpressionEngineV2 {
         let eval_start = Instant::now();
         let result = self.evaluator.evaluate(ast, context)
             .map_err(|e| ExpressionError::Evaluation(e))?;
-        
+
         if let Some(start) = start_time {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?;
             metrics.interpreted_evaluations += 1;
             metrics.eval_time_us += eval_start.elapsed().as_micros() as u64;
         }
-        
+
         Ok(result)
     }
-    
+
     /// Get performance metrics
     pub fn metrics(&self) -> PerformanceMetrics {
         self.metrics.read().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned": {}, e))?.clone()
     }
-    
+
     /// Clear the expression cache
     pub fn clear_cache(&self) {
         self.cache.clear();
     }
-    
+
     /// Prune old cache entries
     pub fn prune_cache(&self) {
         self.cache.prune_old_entries();
     }
-    
+
     /// Pre-compile an expression for later use
     pub fn precompile(
         &self,
@@ -304,21 +304,21 @@ impl ExpressionEngineV2 {
             source: expression.to_string(),
             schema_id: schema_id.map(|s| s.to_string()),
         };
-        
+
         // Check if already cached
         if self.cache.get(&key).is_some() {
             return Ok(());
         }
-        
+
         // Parse and compile
         let (ast, compiled) = self.parse_and_compile(expression, None)?;
-        
+
         // Cache the result
         self.cache.insert(key, ast, compiled);
-        
+
         Ok(())
     }
-    
+
     /// Batch evaluate multiple expressions
     pub fn batch_evaluate(
         &self,
@@ -344,43 +344,43 @@ impl EngineBuilder {
             function_registry: None,
         }
     }
-    
+
     /// Set whether to use compilation
     pub fn use_compilation(mut self, enabled: bool) -> Self {
         self.config.use_compilation = enabled;
         self
     }
-    
+
     /// Set whether to use caching
     pub fn use_caching(mut self, enabled: bool) -> Self {
         self.config.use_caching = enabled;
         self
     }
-    
+
     /// Set cache capacity
     pub fn cache_capacity(mut self, capacity: usize) -> Self {
         self.config.cache_capacity = capacity;
         self
     }
-    
+
     /// Set optimization level (0-3)
     pub fn optimization_level(mut self, level: u8) -> Self {
         self.config.optimization_level = level.min(3);
         self
     }
-    
+
     /// Set custom function registry
     pub fn with_function_registry(mut self, registry: Arc<FunctionRegistry>) -> Self {
         self.function_registry = Some(registry);
         self
     }
-    
+
     /// Enable metrics collection
     pub fn collect_metrics(mut self, enabled: bool) -> Self {
         self.config.collect_metrics = enabled;
         self
     }
-    
+
     /// Build the engine
     pub fn build(self) -> ExpressionEngineV2 {
         if let Some(registry) = self.function_registry {
@@ -400,54 +400,54 @@ impl Default for EngineBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_basic_evaluation() {
         let engine = EngineBuilder::new().build();
         let context = HashMap::new();
-        
+
         let result = engine.evaluate("1 + 2 * 3", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression": {}, e))?;
         assert_eq!(result, Value::Number(serde_json::Number::from(7)));
     }
-    
+
     #[test]
     fn test_caching_performance() {
         let engine = EngineBuilder::new()
             .collect_metrics(true)
             .build();
-        
+
         let context = HashMap::new();
         let expr = "1 + 2 + 3 + 4 + 5";
-        
+
         // First evaluation - cache miss
         engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate expression on first try": {}, e))?;
-        
+
         // Subsequent evaluations - cache hits
         for _ in 0..10 {
             engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate cached expression": {}, e))?;
         }
-        
+
         let metrics = engine.metrics();
         assert_eq!(metrics.total_evaluations, 11);
         assert!(metrics.cache_hit_rate > 0.9);
     }
-    
+
     #[test]
     fn test_compilation_threshold() {
         let engine = EngineBuilder::new()
             .collect_metrics(true)
             .compilation_threshold(10)
             .build();
-        
+
         let context = HashMap::new();
-        
+
         // Simple expression - should use interpreter
         engine.evaluate("1 + 2", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression with interpreter": {}, e))?;
-        
+
         // Complex expression - should use VM
         let complex = "1 + 2 * 3 - 4 / 5 + 6 * 7 - 8 / 9 + 10";
         engine.evaluate(complex, &context).map_err(|e| anyhow::anyhow!("should evaluate complex expression with VM": {}, e))?;
-        
+
         let metrics = engine.metrics();
         assert_eq!(metrics.interpreted_evaluations, 1);
         assert_eq!(metrics.compiled_evaluations, 1);

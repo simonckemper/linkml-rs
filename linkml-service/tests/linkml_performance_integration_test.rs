@@ -51,7 +51,7 @@ classes:
         range: string
         multivalued: true
         pattern: "^[a-z][a-z0-9-]*$"
-  
+
   Customer:
     is_a: BaseEntity
     description: Enterprise customer entity
@@ -92,7 +92,7 @@ classes:
             credit_limit:
               greater_than: 100000
         description: Enterprise customers must have high credit limits
-  
+
   Address:
     attributes:
       address_type:
@@ -113,7 +113,7 @@ classes:
       validated:
         range: boolean
         ifabsent: 'false'
-  
+
   Contact:
     attributes:
       contact_id:
@@ -132,7 +132,7 @@ classes:
       active:
         range: boolean
         ifabsent: 'true'
-  
+
   Product:
     is_a: BaseEntity
     attributes:
@@ -160,7 +160,7 @@ classes:
         range: ProductAttribute
         multivalued: true
         inlined_as_list: true
-  
+
   ProductCategory:
     attributes:
       category_id:
@@ -173,7 +173,7 @@ classes:
         range: integer
         minimum_value: 1
         maximum_value: 5
-  
+
   InventoryItem:
     attributes:
       quantity_on_hand:
@@ -193,7 +193,7 @@ classes:
     expressions:
       - 'available_quantity = quantity_on_hand - quantity_reserved'
       - 'needs_reorder = available_quantity <= reorder_point'
-  
+
   ProductAttribute:
     attributes:
       name:
@@ -202,7 +202,7 @@ classes:
         required: true
       unit:
         range: string
-  
+
   Order:
     is_a: BaseEntity
     attributes:
@@ -246,7 +246,7 @@ classes:
     rules:
       - description: Total calculation validation
         # total = subtotal + tax + shipping
-  
+
   OrderLineItem:
     attributes:
       line_number:
@@ -283,7 +283,7 @@ enums:
       small_business:
       enterprise:
       government:
-  
+
   payment_terms_enum:
     permissible_values:
       net_30:
@@ -291,21 +291,21 @@ enums:
       net_90:
       prepaid:
       cod:
-  
+
   address_type_enum:
     permissible_values:
       billing:
       shipping:
       headquarters:
       branch:
-  
+
   contact_role_enum:
     permissible_values:
       primary:
       billing:
       technical:
       sales:
-  
+
   order_status_enum:
     permissible_values:
       draft:

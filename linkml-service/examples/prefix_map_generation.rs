@@ -21,7 +21,7 @@ prefixes:
   dcat: http://www.w3.org/ns/dcat#
   prov: http://www.w3.org/ns/prov#
   qudt: http://qudt.org/schema/qudt/
-  
+
 default_prefix: ex
 
 imports:
@@ -49,7 +49,7 @@ classes:
         description: Available distributions
         range: Distribution
         multivalued: true
-        
+
   Person:
     description: A person or agent
     id_prefixes:
@@ -67,7 +67,7 @@ classes:
         description: ORCID identifier
         range: uriorcurie
         pattern: '^https://orcid.org/\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$'
-        
+
   Distribution:
     description: A specific representation of a dataset
     id_prefixes:
@@ -85,7 +85,7 @@ classes:
         description: Size in bytes
         range: integer
         slot_uri: dcat:byteSize
-        
+
   Measurement:
     description: A scientific measurement
     id_prefixes:
@@ -102,7 +102,7 @@ classes:
       uncertainty:
         description: Measurement uncertainty
         range: float
-        
+
   Unit:
     description: A unit of measurement
     id_prefixes:

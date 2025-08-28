@@ -445,7 +445,7 @@ impl SQLGenerator {
                 for value in &enum_def.permissible_values {
                     match value {
                         PermissibleValue::Simple(text) => {
-                            writeln!(&mut output, 
+                            writeln!(&mut output,
                                 "INSERT INTO {table_name} (code, label) VALUES ('{text}', '{text}');"
                             ).map_err(Self::fmt_error_to_generator_error)?;
                         }

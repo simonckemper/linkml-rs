@@ -21,27 +21,27 @@ jobs:
         rust: [stable, beta]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
-      
+
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
-      
+
       - name: Check formatting
         if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
         run: cargo fmt --all -- --check
-      
+
       - name: Run Clippy
         if: matrix.rust == 'stable'
         run: cargo clippy --all-targets --all-features -- -D warnings
-      
+
       - name: Run tests
         run: cargo test --all-features
-      
+
       - name: Build documentation
         if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
         run: cargo doc --no-deps --all-features
@@ -51,16 +51,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
-      
+
       - name: Generate coverage
         run: cargo tarpaulin --out Xml --all-features
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -74,20 +74,20 @@ jobs:
     needs: [test]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Check for version changes
         id: version
         run: |
           VERSION=$(grep "^version" linkml-service/Cargo.toml | cut -d'"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
           # Check if tag exists
           if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION"; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Create Release
         if: steps.version.outputs.exists == 'false'
         uses: actions/create-release@v1

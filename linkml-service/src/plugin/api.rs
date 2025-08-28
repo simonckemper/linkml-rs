@@ -62,7 +62,7 @@ pub enum LifecycleEvent {
     PostInit,
     /// Before shutdown
     PreShutdown,
-    /// After shutdown  
+    /// After shutdown
     PostShutdown,
     /// Configuration changed
     ConfigChanged,

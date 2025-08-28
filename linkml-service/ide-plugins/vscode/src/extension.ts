@@ -1,6 +1,6 @@
 /**
  * LinkML VS Code Extension
- * 
+ *
  * Provides comprehensive LinkML schema support in Visual Studio Code including:
  * - Syntax highlighting
  * - Real-time validation
@@ -74,7 +74,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     // Get server path from configuration or use default
     const config = vscode.workspace.getConfiguration('linkml');
     let serverPath = config.get<string>('serverPath');
-    
+
     if (!serverPath) {
         // Use bundled server
         serverPath = context.asAbsolutePath(
@@ -189,13 +189,13 @@ function registerCommands(context: vscode.ExtensionContext) {
             }, async (progress) => {
                 try {
                     const code = await generateCode(editor.document, target);
-                    
+
                     // Create new document with generated code
                     const doc = await vscode.workspace.openTextDocument({
                         content: code,
                         language: getLanguageForTarget(target)
                     });
-                    
+
                     await vscode.window.showTextDocument(doc);
                     vscode.window.showInformationMessage(`Generated ${target} code successfully`);
                 } catch (error) {
@@ -261,7 +261,7 @@ function registerCommands(context: vscode.ExtensionContext) {
                 content: converted,
                 language: targetFormat.toLowerCase()
             });
-            
+
             await vscode.window.showTextDocument(doc);
         })
     );
@@ -281,7 +281,7 @@ function registerCommands(context: vscode.ExtensionContext) {
                 content: template,
                 language: 'linkml'
             });
-            
+
             await vscode.window.showTextDocument(doc);
         })
     );
@@ -340,11 +340,11 @@ function registerProviders(context: vscode.ExtensionContext) {
 function setupFileWatchers(context: vscode.ExtensionContext) {
     // Watch for schema changes
     const watcher = vscode.workspace.createFileSystemWatcher('**/*.linkml.{yaml,yml}');
-    
+
     watcher.onDidCreate(uri => {
         console.log(`LinkML schema created: ${uri.fsPath}`);
     });
-    
+
     watcher.onDidChange(uri => {
         console.log(`LinkML schema changed: ${uri.fsPath}`);
         // Trigger revalidation if enabled
@@ -353,11 +353,11 @@ function setupFileWatchers(context: vscode.ExtensionContext) {
             vscode.commands.executeCommand('linkml.validate');
         }
     });
-    
+
     watcher.onDidDelete(uri => {
         console.log(`LinkML schema deleted: ${uri.fsPath}`);
     });
-    
+
     context.subscriptions.push(watcher);
 }
 
@@ -475,7 +475,7 @@ async function provideCompletions(
     position: vscode.Position
 ): Promise<vscode.CompletionItem[]> {
     const completions: vscode.CompletionItem[] = [];
-    
+
     // LinkML keywords
     const keywords = [
         'id', 'name', 'description', 'prefixes', 'default_prefix',
@@ -484,25 +484,25 @@ async function provideCompletions(
         'pattern', 'minimum_value', 'maximum_value', 'permissible_values',
         'is_a', 'mixins', 'abstract', 'aliases', 'examples'
     ];
-    
+
     keywords.forEach(keyword => {
         const item = new vscode.CompletionItem(keyword, vscode.CompletionItemKind.Keyword);
         item.documentation = `LinkML keyword: ${keyword}`;
         completions.push(item);
     });
-    
+
     // Built-in types
     const types = [
         'string', 'integer', 'float', 'double', 'boolean',
         'date', 'datetime', 'time', 'uri', 'uriorcurie'
     ];
-    
+
     types.forEach(type => {
         const item = new vscode.CompletionItem(type, vscode.CompletionItemKind.Class);
         item.documentation = `Built-in type: ${type}`;
         completions.push(item);
     });
-    
+
     return completions;
 }
 
@@ -511,7 +511,7 @@ async function provideHover(
     position: vscode.Position
 ): Promise<vscode.Hover | undefined> {
     const word = document.getText(document.getWordRangeAtPosition(position));
-    
+
     // Provide documentation for LinkML keywords
     const keywordDocs: { [key: string]: string } = {
         'classes': 'Defines the classes (entities) in the schema',
@@ -524,13 +524,13 @@ async function provideHover(
         'is_a': 'Parent class for inheritance',
         'mixins': 'Classes to mix in (multiple inheritance)'
     };
-    
+
     if (keywordDocs[word]) {
         return new vscode.Hover(
             new vscode.MarkdownString(`**${word}**\n\n${keywordDocs[word]}`)
         );
     }
-    
+
     return undefined;
 }
 
@@ -546,7 +546,7 @@ async function provideCodeLenses(
     document: vscode.TextDocument
 ): Promise<vscode.CodeLens[]> {
     const codeLenses: vscode.CodeLens[] = [];
-    
+
     // Add "Validate" lens at the top of the file
     const topOfDocument = new vscode.Range(0, 0, 0, 0);
     codeLenses.push(
@@ -555,7 +555,7 @@ async function provideCodeLenses(
             command: "linkml.validate"
         })
     );
-    
+
     // Add "Generate Code" lens
     codeLenses.push(
         new vscode.CodeLens(topOfDocument, {
@@ -563,7 +563,7 @@ async function provideCodeLenses(
             command: "linkml.generate"
         })
     );
-    
+
     return codeLenses;
 }
 

@@ -136,19 +136,19 @@ public class LinkMLGenerateMojo extends AbstractMojo {
         // Process each schema
         int successCount = 0;
         int errorCount = 0;
-        
+
         for (File schemaFile : schemaFiles) {
             try {
                 // Validate first if requested
                 if (validateFirst) {
                     validateSchema(schemaFile);
                 }
-                
+
                 // Generate code
                 File outputFile = generateCode(schemaFile);
                 successCount++;
                 getLog().info("✓ Generated: " + getRelativePath(outputFile));
-                
+
             } catch (Exception e) {
                 errorCount++;
                 getLog().error("✗ Failed: " + getRelativePath(schemaFile));
@@ -167,7 +167,7 @@ public class LinkMLGenerateMojo extends AbstractMojo {
 
         // Report results
         getLog().info("Code generation complete: " + successCount + " succeeded, " + errorCount + " failed");
-        
+
         if (errorCount > 0) {
             throw new MojoFailureException("Code generation failed for " + errorCount + " schema(s)");
         }
@@ -179,7 +179,7 @@ public class LinkMLGenerateMojo extends AbstractMojo {
     private List<File> findSchemaFiles() {
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setBasedir(schemaDirectory);
-        
+
         // Set includes
         if (includes != null && includes.length > 0) {
             scanner.setIncludes(includes);
@@ -190,19 +190,19 @@ public class LinkMLGenerateMojo extends AbstractMojo {
                 "**/*.linkml"
             });
         }
-        
+
         // Set excludes
         if (excludes != null && excludes.length > 0) {
             scanner.setExcludes(excludes);
         }
-        
+
         scanner.scan();
-        
+
         List<File> files = new ArrayList<>();
         for (String filename : scanner.getIncludedFiles()) {
             files.add(new File(schemaDirectory, filename));
         }
-        
+
         return files;
     }
 
@@ -284,14 +284,14 @@ public class LinkMLGenerateMojo extends AbstractMojo {
 
             try {
                 executor.execute(cmdLine);
-                
+
                 // Handle Java package structure
                 if ("java".equals(generator) && packageName != null) {
                     organizeJavaPackage(outputFile);
                 }
-                
+
                 return outputFile;
-                
+
             } catch (ExecuteException e) {
                 String error = errorStream.toString();
                 throw new MojoExecutionException("Code generation failed: " + error);
@@ -319,7 +319,7 @@ public class LinkMLGenerateMojo extends AbstractMojo {
         extensions.put("jsonschema", "json");
         extensions.put("shacl", "ttl");
         extensions.put("owl", "owl");
-        
+
         return extensions.getOrDefault(generator, "txt");
     }
 

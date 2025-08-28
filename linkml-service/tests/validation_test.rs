@@ -25,14 +25,14 @@ slots:
     description: Person's name
     range: string
     required: true
-    
+
   age:
-    name: age  
+    name: age
     description: Person's age
     range: integer
     minimum_value: 0
     maximum_value: 150
-    
+
   email:
     name: email
     description: Email address
@@ -97,19 +97,19 @@ slots:
   str_field:
     name: str_field
     range: string
-    
+
   int_field:
     name: int_field
     range: integer
-    
+
   float_field:
     name: float_field
     range: float
-    
+
   bool_field:
     name: bool_field
     range: boolean
-    
+
   date_field:
     name: date_field
     range: date
@@ -152,10 +152,10 @@ slots:
     name: email
     range: string
     pattern: "^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
-    
+
   phone:
     name: phone
-    range: string  
+    range: string
     pattern: "^\\+?[0-9]{10,15}$"
 "#;
 
@@ -205,7 +205,7 @@ slots:
     range: float
     minimum_value: "-273.15"
     maximum_value: "1000"
-    
+
   percentage:
     name: percentage
     range: integer
@@ -318,7 +318,7 @@ slots:
     multivalued: true
     minimum_cardinality: 1
     maximum_cardinality: 10
-    
+
   tags:
     name: tags
     range: string
@@ -363,25 +363,25 @@ classes:
     slots:
       - id
       - name
-      
+
   Person:
     name: Person
     is_a: NamedThing
     slots:
       - age
-      
+
 slots:
   id:
     name: id
     range: string
     required: true
     identifier: true
-    
+
   name:
     name: name
     range: string
     required: true
-    
+
   age:
     name: age
     range: integer

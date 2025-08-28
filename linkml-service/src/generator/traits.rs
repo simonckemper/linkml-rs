@@ -307,7 +307,7 @@ impl IndentStyle {
 pub struct GeneratorConfig {
     /// Include documentation in generated code
     pub include_docs: bool,
-    /// Include examples in generated code  
+    /// Include examples in generated code
     pub include_examples: bool,
     /// Target language version
     pub target_version: Option<String>,

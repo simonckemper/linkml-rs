@@ -27,13 +27,13 @@ use monitoring_service::StandardMonitoringService;
 async fn main() -> Result<()> {
     println!("LinkML Schema Generation Example");
     println!("===============================\n");
-    
+
     // Initialize RootReal services
-    let logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>> = 
+    let logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>> =
         Arc::new(logger_service::StandardLoggerService::new()?);
-    let timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>> = 
+    let timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>> =
         Arc::new(timestamp_service::StandardTimestampService::new()?);
-    
+
     // Non-dyn-compatible services use concrete types
     let task_manager = Arc::new(StandardTaskManagementService::new()?);
     let error_handler = Arc::new(StandardErrorHandlingService::new(
@@ -41,9 +41,9 @@ async fn main() -> Result<()> {
         timestamp.clone(),
     )?);
     let config_service = Arc::new(StandardConfigurationService::new()?);
-    
+
     // Dyn-compatible services
-    let cache: Arc<dyn cache_core::CacheService<Error = cache_core::CacheError>> = 
+    let cache: Arc<dyn cache_core::CacheService<Error = cache_core::CacheError>> =
         Arc::new(ValkeyCache::new(
             cache_core::CacheConfig::default(),
             logger.clone(),
@@ -51,14 +51,14 @@ async fn main() -> Result<()> {
             task_manager.clone(),
             Arc::new(memory_service::StandardMemoryService::new()?),
         ).await?);
-    
-    let monitor: Arc<dyn monitoring_core::MonitoringService<Error = monitoring_core::MonitoringError>> = 
+
+    let monitor: Arc<dyn monitoring_core::MonitoringService<Error = monitoring_core::MonitoringError>> =
         Arc::new(StandardMonitoringService::new(
             logger.clone(),
             timestamp.clone(),
             task_manager.clone(),
         )?);
-    
+
     let service = create_linkml_service(
         logger,
         timestamp,
@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
         cache,
         monitor,
     ).await?;
-    
+
     // Define a comprehensive schema
     let schema_yaml = r#"
 id: https://example.org/library-schema
@@ -80,7 +80,7 @@ license: MIT
 prefixes:
   library: https://example.org/library/
   schema: http://schema.org/
-  
+
 default_prefix: library
 
 classes:
@@ -93,7 +93,7 @@ classes:
       - publication_date
       - isbn
       - status
-      
+
   Book:
     is_a: LibraryItem
     description: A physical or digital book
@@ -104,7 +104,7 @@ classes:
       - edition
       - pages
       - genres
-      
+
   Journal:
     is_a: LibraryItem
     description: Academic or professional journal
@@ -114,7 +114,7 @@ classes:
       - issue
       - publisher
       - impact_factor
-      
+
   Member:
     description: Library member who can borrow items
     tree_root: true
@@ -127,7 +127,7 @@ classes:
       - membership_type
       - join_date
       - borrowed_items
-      
+
   Loan:
     description: A loan transaction
     slots:
@@ -138,7 +138,7 @@ classes:
       - due_date
       - return_date
       - fine_amount
-      
+
   Author:
     description: Author of books or articles
     slots:
@@ -147,7 +147,7 @@ classes:
       - biography
       - birth_date
       - nationality
-      
+
   Publisher:
     description: Publishing company
     slots:
@@ -156,167 +156,167 @@ classes:
       - founded_year
       - headquarters
       - website
-      
+
 slots:
   id:
     identifier: true
     range: string
     required: true
-    
+
   title:
     slot_uri: schema:name
     range: string
     required: true
-    
+
   publication_date:
     range: date
-    
+
   isbn:
     description: International Standard Book Number
     range: string
     pattern: "^(97[89])?\\d{10}$"
-    
+
   status:
     range: ItemStatus
     required: true
-    
+
   authors:
     range: Author
     multivalued: true
     minimum_cardinality: 1
-    
+
   publisher:
     range: Publisher
-    
+
   edition:
     range: integer
     minimum_value: 1
-    
+
   pages:
     range: integer
     minimum_value: 1
-    
+
   genres:
     range: Genre
     multivalued: true
-    
+
   issn:
     description: International Standard Serial Number
     range: string
     pattern: "^\\d{4}-\\d{4}$"
-    
+
   volume:
     range: integer
     minimum_value: 1
-    
+
   issue:
     range: integer
     minimum_value: 1
-    
+
   impact_factor:
     range: float
     minimum_value: 0
-    
+
   member_id:
     identifier: true
     range: string
     pattern: "^MEM\\d{6}$"
     required: true
-    
+
   name:
     range: string
     required: true
-    
+
   email:
     slot_uri: schema:email
     range: string
     pattern: "^[\\w._%+-]+@[\\w.-]+\\.[A-Z|a-z]{2,}$"
     required: true
-    
+
   phone:
     range: string
     pattern: "^\\+?[\\d\\s()-]+$"
-    
+
   address:
     range: string
-    
+
   membership_type:
     range: MembershipType
     required: true
-    
+
   join_date:
     range: date
     required: true
-    
+
   borrowed_items:
     range: Loan
     multivalued: true
     inlined: false
-    
+
   loan_id:
     identifier: true
     range: string
     required: true
-    
+
   member:
     range: Member
     required: true
-    
+
   item:
     range: LibraryItem
     required: true
-    
+
   loan_date:
     range: datetime
     required: true
-    
+
   due_date:
     range: datetime
     required: true
-    
+
   return_date:
     range: datetime
-    
+
   fine_amount:
     range: decimal
     minimum_value: 0
     unit:
       symbol: USD
-      
+
   author_id:
     identifier: true
     range: string
     required: true
-    
+
   full_name:
     range: string
     required: true
-    
+
   biography:
     range: string
-    
+
   birth_date:
     range: date
-    
+
   nationality:
     range: string
-    
+
   publisher_id:
     identifier: true
     range: string
     required: true
-    
+
   founded_year:
     range: integer
     minimum_value: 1000
     maximum_value: 2100
-    
+
   headquarters:
     range: string
-    
+
   website:
     range: uri
-    
+
 enums:
   ItemStatus:
     permissible_values:
@@ -330,7 +330,7 @@ enums:
         description: Item is under maintenance
       lost:
         description: Item is lost
-        
+
   MembershipType:
     permissible_values:
       student:
@@ -341,7 +341,7 @@ enums:
         description: Public membership
       premium:
         description: Premium membership with extra benefits
-        
+
   Genre:
     permissible_values:
       fiction:
@@ -357,14 +357,14 @@ enums:
       reference:
         description: Reference materials
 "#;
-    
+
     let schema = service.load_schema_str(schema_yaml, SchemaFormat::Yaml).await?;
     println!("✓ Schema loaded: {}\n", schema.name);
-    
+
     // Create output directory
     let output_dir = PathBuf::from("generated");
     fs::create_dir_all(&output_dir)?;
-    
+
     // Example 1: Generate TypeQL schema
     println!("1. Generating TypeQL schema:");
     use linkml_service::generator::{TypeQLGenerator, Generator, GeneratorOptions};
@@ -376,7 +376,7 @@ enums:
     println!("   Preview:");
     println!("{}", &typeql[..500.min(typeql.len())]);
     println!("   ...\n");
-    
+
     // Example 2: Generate SQL DDL
     println!("2. Generating SQL DDL:");
     use linkml_service::generator::{SQLGenerator, sql::SqlDialect};
@@ -388,7 +388,7 @@ enums:
     println!("   Preview:");
     println!("{}", &sql[..500.min(sql.len())]);
     println!("   ...\n");
-    
+
     // Example 3: Generate GraphQL schema
     println!("3. Generating GraphQL schema:");
     use linkml_service::generator::GraphQLGenerator;
@@ -400,7 +400,7 @@ enums:
     println!("   Preview:");
     println!("{}", &graphql[..500.min(graphql.len())]);
     println!("   ...\n");
-    
+
     // Example 4: Generate Rust structs
     println!("4. Generating Rust code:");
     use linkml_service::generator::RustGenerator;
@@ -414,7 +414,7 @@ enums:
     println!("   Preview:");
     println!("{}", &rust_code[..500.min(rust_code.len())]);
     println!("   ...\n");
-    
+
     // Example 5: Generate Python dataclasses
     println!("5. Generating Python dataclasses:");
     // Note: Python generation would require a Python generator implementation
@@ -430,10 +430,10 @@ enums:
     fs::write(&python_path, &python_code)?;
     println!("   ✓ Generated: {}", python_path.display());
     */
-    
+
     // Example 6: Generate documentation
     println!("\n6. Generating documentation:");
-    
+
     // Markdown documentation
     use linkml_service::generator::doc::DocGenerator;
     use linkml_core::traits::DocFormat;
@@ -442,7 +442,7 @@ enums:
     let md_path = output_dir.join("library_schema.md");
     fs::write(&md_path, &markdown)?;
     println!("   ✓ Generated Markdown: {}", md_path.display());
-    
+
     // HTML documentation
     use linkml_service::generator::HtmlGenerator;
     let html_gen = HtmlGenerator::new();
@@ -450,7 +450,7 @@ enums:
     let html_path = output_dir.join("library_schema.html");
     fs::write(&html_path, &html)?;
     println!("   ✓ Generated HTML: {}", html_path.display());
-    
+
     // JSON-LD context
     // Note: JSON-LD generation would require a specific generator implementation
     println!("\n   (JSON-LD generation not implemented in this example)");
@@ -460,7 +460,7 @@ enums:
     fs::write(&jsonld_path, &jsonld)?;
     println!("   ✓ Generated JSON-LD: {}", jsonld_path.display());
     */
-    
+
     // Example 7: Generate validation functions
     println!("\n7. Generating validation functions:");
     // Note: Validator generation would require specific language generators
@@ -471,7 +471,7 @@ enums:
     fs::write(&validators_path, &validators)?;
     println!("   ✓ Generated TypeScript validators: {}", validators_path.display());
     */
-    
+
     // Example 8: Generate OpenAPI specification
     println!("\n8. Generating OpenAPI specification:");
     use linkml_service::generator::OpenApiGenerator;
@@ -491,7 +491,7 @@ enums:
     let openapi_path = output_dir.join("library_openapi.yaml");
     fs::write(&openapi_path, &openapi)?;
     println!("   ✓ Generated OpenAPI spec: {}", openapi_path.display());
-    
+
     // Example 9: Generate example data
     println!("\n9. Generating example data:");
     // Note: Example generation would require specific implementation
@@ -507,12 +507,12 @@ enums:
     fs::write(&examples_path, serde_json::to_string_pretty(&examples)?)?;
     println!("   ✓ Generated examples: {}", examples_path.display());
     */
-    
+
     // Example 10: Generate migration scripts
     println!("\n10. Generating migration scripts:");
     // Note: Migration generation would require specific implementation
     println!("   (Migration generation not implemented in this example)");
-    
+
     /*
     // Suppose we have a previous version
     let old_schema_yaml = r#"
@@ -526,36 +526,36 @@ classes:
       - id
       - title
       - isbn
-      
+
   Member:
     slots:
       - member_id
       - name
       - email
-      
+
 slots:
   id:
     identifier: true
     range: string
-    
+
   title:
     range: string
     required: true
-    
+
   isbn:
     range: string
-    
+
   member_id:
     identifier: true
     range: string
-    
+
   name:
     range: string
-    
+
   email:
     range: string
 "#;
-    
+
     let old_schema = service.load_schema_str(old_schema_yaml, SchemaFormat::Yaml).await?;
     let migration = service.generate_migration(&old_schema, &schema, MigrationOptions {
         target_language: MigrationLanguage::SQL,
@@ -563,12 +563,12 @@ slots:
         safe_mode: true,
         ..Default::default()
     }).await?;
-    
+
     let migration_path = output_dir.join("migrate_v1_to_v2.sql");
     fs::write(&migration_path, &migration)?;
     println!("   ✓ Generated migration script: {}", migration_path.display());
     */
-    
+
     println!("\n✓ All files generated successfully in '{}'", output_dir.display());
     println!("\nGenerated files summary:");
     println!("  - TypeQL schema: library_schema.tql");
@@ -578,6 +578,6 @@ slots:
     println!("  - Markdown docs: library_schema.md");
     println!("  - HTML docs: library_schema.html");
     println!("  - OpenAPI spec: library_openapi.yaml");
-    
+
     Ok(())
 }

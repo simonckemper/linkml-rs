@@ -35,7 +35,7 @@ use timestamp_core::TimestampService;
 ///
 /// Generic parameters for non-dyn-compatible services:
 /// - `T`: `TaskManagementService` implementation
-/// - `E`: `ErrorHandlingService` implementation  
+/// - `E`: `ErrorHandlingService` implementation
 /// - `C`: `ConfigurationService` implementation
 /// - `D`: `DBMSService` implementation
 /// - `O`: `TimeoutService` implementation

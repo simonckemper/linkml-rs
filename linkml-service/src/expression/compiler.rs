@@ -711,7 +711,7 @@ mod tests {
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
         assert!(
-            matches!(&compiled.instructions[0], 
+            matches!(&compiled.instructions[0],
                 Instruction::Const(Value::Number(n)) if n.as_f64() == Some(5.0))
         );
     }
@@ -720,7 +720,7 @@ mod tests {
     fn test_short_circuit() {
         // Skip this test as the parser doesn't support && operator yet
         // This is a known limitation of the current expression parser
-        
+
         // TODO: Re-enable when logical operators are implemented in the parser
         // let registry = Arc::new(FunctionRegistry::new());
         // let compiler = Compiler::new(registry).with_optimization_level(2);

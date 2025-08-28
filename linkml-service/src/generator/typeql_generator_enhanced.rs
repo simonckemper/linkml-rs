@@ -1456,7 +1456,7 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("Error: {}", e))? should always produce at least one character"),
+                        .unwrap_or(ch), // should always produce at least one character
                 );
             } else if ch == '_' {
                 result.push('-');

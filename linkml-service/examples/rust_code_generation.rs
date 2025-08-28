@@ -215,7 +215,7 @@ fn example() -> Result<(), Vec<ValidationError>> {{
     // Create an author
     let author = Author::new("AU123456", "Jane Doe");
     author.validate()?;
-    
+
     // Create a book using the builder pattern
     let book = BookBuilder::default()
         .isbn("978-1-23456-789-0")
@@ -224,13 +224,13 @@ fn example() -> Result<(), Vec<ValidationError>> {{
         .pages(350)
         .status(Status::Available)
         .build();
-    
+
     book.validate()?;
-    
+
     // Serialize to JSON
     let json = serde_json::to_string_pretty(&book)?;
     println!("{{}}", json);
-    
+
     Ok(())
 }}
 "#

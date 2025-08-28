@@ -29,13 +29,13 @@ impl<P: ParseService> XmlLoaderV2<P> {
             root_element: "data".to_string(),
         }
     }
-    
+
     /// Set the content to parse
     pub fn with_content(mut self, content: String) -> Self {
         self.content = Some(content);
         self
     }
-    
+
     /// Set the root element name
     pub fn with_root_element(mut self, root: &str) -> Self {
         self.root_element = root.to_string();
@@ -48,16 +48,16 @@ impl<P: ParseService + Send + Sync> DataLoader for XmlLoaderV2<P> {
     async fn load(&mut self, schema: &SchemaDefinition) -> LoaderResult<Vec<DataInstance>> {
         let content = self.content.as_ref()
             .ok_or_else(|| LoaderError::Configuration("No content provided".to_string()))?;
-        
+
         // Use Parse Service to parse XML
         let parsed_doc = self.parse_service
             .parse_document(content, ParseFormat::Xml(XmlFormat::Generic))
             .await
             .map_err(|e| LoaderError::Parser(format!("Parse service error: {}", e)))?;
-        
+
         // Convert parsed document to LinkML data instances
         let instances = convert_parsed_to_instances(&parsed_doc, schema)?;
-        
+
         Ok(instances)
     }
 }
@@ -68,7 +68,7 @@ fn convert_parsed_to_instances(
     schema: &SchemaDefinition,
 ) -> LoaderResult<Vec<DataInstance>> {
     let mut instances = Vec::new();
-    
+
     // Extract structured content from parsed document
     if let parse_core::DocumentContent::Structured(structured) = &parsed_doc.content {
         // Convert structured content to data instances
@@ -80,7 +80,7 @@ fn convert_parsed_to_instances(
     } else {
         return Err(LoaderError::Parser("Expected structured XML content".to_string()));
     }
-    
+
     Ok(instances)
 }
 
@@ -94,14 +94,14 @@ fn convert_element_to_instance(
         // Skip elements that don't correspond to schema classes
         return Ok(None);
     }
-    
+
     let mut data = Map::new();
-    
+
     // Add attributes as properties
     for (key, value) in &element.attributes {
         data.insert(key.clone(), Value::String(value.clone()));
     }
-    
+
     // Process element content based on type
     match &element.content {
         parse_core::ElementContent::Text(text) => {
@@ -119,7 +119,7 @@ fn convert_element_to_instance(
             }
         }
     }
-    
+
     Ok(Some(DataInstance {
         class_name: element.name.clone(),
         data: Value::Object(data),
@@ -134,7 +134,7 @@ fn process_mixed_content(
 ) -> LoaderResult<()> {
     let mut text_parts = Vec::new();
     let mut elements_by_name: std::collections::HashMap<String, Vec<Value>> = std::collections::HashMap::new();
-    
+
     for item in &mixed.items {
         match item {
             parse_core::MixedContentItem::Text(text) => {
@@ -151,7 +151,7 @@ fn process_mixed_content(
             }
         }
     }
-    
+
     // Add concatenated text if any
     if !text_parts.is_empty() {
         let combined_text = text_parts.join(" ").trim().to_string();
@@ -159,7 +159,7 @@ fn process_mixed_content(
             data.insert("text".to_string(), Value::String(combined_text));
         }
     }
-    
+
     // Add child elements
     for (name, mut values) in elements_by_name {
         if values.len() == 1 {
@@ -169,7 +169,7 @@ fn process_mixed_content(
             data.insert(name, Value::Array(values));
         }
     }
-    
+
     Ok(())
 }
 
@@ -196,7 +196,7 @@ fn process_child_element(
             data.insert(element.name.clone(), value);
         }
     }
-    
+
     Ok(())
 }
 
@@ -211,7 +211,7 @@ fn element_to_value(
             return Ok(Some(instance.data));
         }
     }
-    
+
     // Otherwise, extract simple value
     match &element.content {
         parse_core::ElementContent::Text(text) => {
@@ -244,6 +244,6 @@ fn element_to_value(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     // Tests would use mock Parse Service following RootReal patterns
 }

@@ -745,7 +745,7 @@ mod tests {
     fn test_vm_functions() {
         // Skip this test as the parser doesn't support function calls yet
         // This is a known limitation of the current expression parser
-        
+
         // TODO: Re-enable when function calls are implemented in the parser
         // let registry = Arc::new(FunctionRegistry::new());
         // let compiler = Compiler::new(Arc::clone(&registry));

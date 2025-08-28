@@ -132,7 +132,7 @@ classes:
     // Create schema B that imports C
     let schema_b = r#"
 id: https://example.org/b
-name: schema_b  
+name: schema_b
 imports:
   - schema_c
 classes:
@@ -283,7 +283,7 @@ slots:
 "#;
 
     let schema2 = r#"
-id: https://example.org/schema2  
+id: https://example.org/schema2
 name: schema2
 classes:
   Person:

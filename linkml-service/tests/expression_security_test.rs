@@ -536,8 +536,8 @@ fn test_legitimate_complex_expressions() {
 
     // Complex calculation with conditionals
     let expr = r#"
-        (({price} * {quantity} * (1 - {discount_percent} / 100)) + 
-         ({shipping} if not {member} else 0)) * 
+        (({price} * {quantity} * (1 - {discount_percent} / 100)) +
+         ({shipping} if not {member} else 0)) *
         (1 + {tax_rate})
     "#;
 

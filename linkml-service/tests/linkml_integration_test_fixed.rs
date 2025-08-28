@@ -45,7 +45,7 @@ classes:
       measurements:
         range: Measurement
         multivalued: true
-      
+
   Participant:
     description: Study participant
     attributes:
@@ -58,7 +58,7 @@ classes:
         maximum_value: 120
       condition:
         range: condition_enum
-        
+
   Measurement:
     description: Clinical measurement
     attributes:
@@ -73,7 +73,7 @@ classes:
         range: unit_enum
       timestamp:
         range: datetime
-        
+
 enums:
   condition_enum:
     permissible_values:
@@ -83,7 +83,7 @@ enums:
         description: Type 1 diabetes
       diabetes_type2:
         description: Type 2 diabetes
-        
+
   unit_enum:
     permissible_values:
       mg_dl:
@@ -181,7 +181,7 @@ async fn test_biomedical_research_workflow() {
         .validate_as_class(&study_data, "Study", None)
         .await
         .unwrap();
-    
+
     println!("✓ Validation completed in {:?}", validation_start.elapsed());
     assert!(report.valid, "Study data should be valid");
     println!("  - {} issues found", report.issues.len());
@@ -198,17 +198,17 @@ async fn test_biomedical_research_workflow() {
     let view = SchemaView::new(&schema);
     let study_class = view.get_class("Study").unwrap();
     assert_eq!(study_class.name, "Study");
-    
+
     let slots = view.class_slots("Study").unwrap();
     assert!(slots.iter().any(|s| s.name == "participants"));
-    
+
     println!("✓ Total test time: {:?}", start.elapsed());
 }
 
 #[tokio::test]
 async fn test_schema_validation_basic() {
     let service = create_test_service().await;
-    
+
     // Create a simple schema
     let schema_yaml = r#"
 id: https://example.org/test
@@ -239,7 +239,7 @@ classes:
         .validate_as_class(&valid_data, "Person", None)
         .await
         .unwrap();
-    
+
     assert!(report.valid);
 
     // Invalid data (missing required field)
@@ -251,7 +251,7 @@ classes:
         .validate_as_class(&invalid_data, "Person", None)
         .await
         .unwrap();
-    
+
     assert!(!report.valid);
     assert!(report.issues.iter().any(|i| i.message.contains("name")));
 }

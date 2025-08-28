@@ -20,7 +20,7 @@ parser:
   max_file_size_bytes: 10485760  # 10MB
   supported_formats:
     - "yaml"
-    - "yml" 
+    - "yml"
     - "json"
   max_import_depth: 10
 
@@ -108,7 +108,7 @@ network:
   default_port: 8080
   api_timeout_seconds: 30
 
-# Expression evaluation configuration  
+# Expression evaluation configuration
 expression:
   enable_cache: true
   enable_compilation: true
@@ -119,18 +119,18 @@ expression:
 # Pattern validator configuration
 pattern_validator:
   default_cache_size: 100
-  
+
 # Multi-layer cache configuration
 multi_layer_cache:
   l3_max_size_bytes: 1073741824  # 1GB
-  
+
 # Background service intervals
 background_services:
   cache_ttl_check_interval_secs: 300  # 5 minutes
   memory_cleanup_interval_secs: 600   # 10 minutes
   panic_recovery_timeout_secs: 5
   error_recovery_timeout_secs: 60
-  
+
 # CLI specific configuration
 cli:
   default_iterations: 1000

@@ -305,7 +305,7 @@ module.exports = grammar({
     description: $ => seq('description:', $.string),
 
     slot_list: $ => repeat1(seq('-', $.identifier)),
-    
+
     identifier: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
     type: $ => /[a-zA-Z_][a-zA-Z0-9_]*/,
     string: $ => /"[^"]*"/,

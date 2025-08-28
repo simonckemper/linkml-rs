@@ -39,7 +39,7 @@ classes:
         in_subset:
           - public
         ifabsent: 'datetime(now)'
-  
+
   Identifiable:
     abstract: true
     description: Mixin for identifiable resources
@@ -54,7 +54,7 @@ classes:
           - required
         pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-4[a-zA-Z0-9]{3}-[89ab][a-zA-Z0-9]{3}-[a-zA-Z0-9]{12}$"
         description: UUID v4 format
-  
+
   User:
     mixins:
       - Identifiable
@@ -118,7 +118,7 @@ classes:
             roles:
               maximum_cardinality: 0
         description: Inactive users cannot have roles
-  
+
   UserMetadata:
     description: User metadata and preferences
     attributes:
@@ -138,7 +138,7 @@ classes:
       notifications:
         range: NotificationSettings
         inlined: true
-  
+
   NotificationSettings:
     description: User notification preferences
     attributes:
@@ -151,7 +151,7 @@ classes:
       frequency:
         range: frequency_enum
         ifabsent: 'daily'
-  
+
   Organization:
     mixins:
       - Identifiable
@@ -192,7 +192,7 @@ classes:
         inlined: true
         in_subset:
           - internal
-  
+
   OrganizationMember:
     description: Organization membership
     attributes:
@@ -205,7 +205,7 @@ classes:
       joined_at:
         range: datetime
         required: true
-  
+
   OrganizationSettings:
     description: Organization settings
     attributes:
@@ -219,7 +219,7 @@ classes:
       features:
         range: feature_enum
         multivalued: true
-  
+
   Project:
     mixins:
       - Identifiable
@@ -266,7 +266,7 @@ classes:
             description:
               required: true
         description: Public projects must have descriptions
-  
+
   ProjectSettings:
     description: Project configuration
     attributes:
@@ -289,7 +289,7 @@ enums:
         description: Regular user access
       guest:
         description: Limited guest access
-  
+
   language_enum:
     permissible_values:
       en:
@@ -304,7 +304,7 @@ enums:
         description: Japanese
       zh:
         description: Chinese
-  
+
   frequency_enum:
     permissible_values:
       immediate:
@@ -312,7 +312,7 @@ enums:
       daily:
       weekly:
       never:
-  
+
   org_role_enum:
     permissible_values:
       owner:
@@ -321,7 +321,7 @@ enums:
         description: Organization admin
       member:
         description: Regular member
-  
+
   feature_enum:
     permissible_values:
       advanced_analytics:
@@ -329,7 +329,7 @@ enums:
       sso:
       api_access:
       unlimited_projects:
-  
+
   visibility_enum:
     permissible_values:
       public:

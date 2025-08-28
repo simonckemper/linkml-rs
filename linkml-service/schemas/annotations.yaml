@@ -5,7 +5,7 @@ description: Built-in annotations for LinkML schemas
 
 prefixes:
   linkml: https://w3id.org/linkml/
-  
+
 default_prefix: linkml
 
 imports:
@@ -32,7 +32,7 @@ slots:
     annotations:
       - tag: special
         value: true
-        
+
   see_also:
     description: Related resources
     range: uriorcurie
@@ -40,7 +40,7 @@ slots:
     annotations:
       - tag: special
         value: true
-        
+
   todos:
     description: Outstanding tasks
     range: string
@@ -48,7 +48,7 @@ slots:
     annotations:
       - tag: special
         value: true
-        
+
   notes:
     description: Editorial notes
     range: string
@@ -56,7 +56,7 @@ slots:
     annotations:
       - tag: special
         value: true
-        
+
   comments:
     description: General comments
     range: string
@@ -64,7 +64,7 @@ slots:
     annotations:
       - tag: special
         value: true
-        
+
   examples:
     description: Example values
     range: string

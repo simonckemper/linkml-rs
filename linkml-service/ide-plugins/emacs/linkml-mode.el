@@ -323,19 +323,19 @@ COMMAND is the company command, ARG is the prefix or candidate."
   (setq-local comment-start "# ")
   (setq-local comment-end "")
   (setq-local imenu-create-index-function 'linkml-imenu-create-index)
-  
+
   ;; Setup company
   (add-to-list 'company-backends 'linkml-company-backend)
-  
+
   ;; Setup flycheck
   (when (bound-and-true-p flycheck-mode)
     (flycheck-select-checker 'linkml))
-  
+
   ;; Setup LSP if available
   (when (featurep 'lsp-mode)
     (linkml-setup-lsp)
     (lsp))
-  
+
   ;; Add save hook
   (when linkml-validate-on-save
     (add-hook 'after-save-hook 'linkml-validate nil t)))
