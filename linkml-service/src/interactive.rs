@@ -204,7 +204,6 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
 
     /// Parse command from input
     fn parse_command(&self, input: &str) -> Result<Command> {
-        let _ = self;
         let parts: Vec<&str> = input.split_whitespace().collect();
 
         if parts.is_empty() {
@@ -894,7 +893,7 @@ impl Completer for InteractiveHelper {
         &self,
         line: &str,
         pos: usize,
-        _ctx: &rustyline::Context<'_>,
+        ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         // Command completion
         if pos == line.len() && !line.contains(' ') {
@@ -913,7 +912,7 @@ impl Completer for InteractiveHelper {
 
         // File completion for load/validate-file commands
         if line.starts_with("load ") || line.starts_with("validate-file ") {
-            return self.completer.complete(line, pos, _ctx);
+            return self.completer.complete(line, pos, ctx);
         }
 
         Ok((pos, vec![]))

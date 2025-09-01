@@ -620,7 +620,7 @@ mod tests {
 
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate TypeScript output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate TypeScript output: {}", e))?;
         assert_eq!(outputs.len(), 1);
 
         let output = &outputs[0];

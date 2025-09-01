@@ -955,7 +955,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .map_err(|e| anyhow::anyhow!("Error: {}", e))? should produce at least one char"),
+                .expect("to_lowercase() should produce at least one char"),
         );
         prev_upper = ch.is_uppercase();
     }

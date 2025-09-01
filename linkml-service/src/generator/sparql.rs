@@ -523,11 +523,11 @@ impl SparqlGenerator {
     fn generate_filters(
         &self,
         output: &mut String,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        let all_slots = self.collect_all_slots(_class_name, class_def, schema);
+        let all_slots = self.collect_all_slots(class_name, class_def, schema);
 
         for slot_name in &all_slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
@@ -590,7 +590,7 @@ impl SparqlGenerator {
     }
 
     /// Add schema-specific prefix
-    fn add_schema_prefix(&self, _prefix: &str, schema: &SchemaDefinition) {
+    fn add_schema_prefix(&self, prefix: &str, schema: &SchemaDefinition) {
         let _uri = format!(
             "{}#",
             if schema.id.is_empty() {
@@ -609,8 +609,8 @@ impl SparqlGenerator {
     }
 
     /// Get URI for a property
-    fn get_property_uri(&self, slot_name: &str, _schema: &SchemaDefinition) -> String {
-        let prefix = self.to_snake_case(&_schema.name);
+    fn get_property_uri(&self, slot_name: &str, schema: &SchemaDefinition) -> String {
+        let prefix = self.to_snake_case(&schema.name);
         format!("{}:{}", prefix, self.to_snake_case(slot_name))
     }
 
@@ -634,7 +634,7 @@ impl SparqlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -709,7 +709,7 @@ impl SparqlGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -807,7 +807,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate queries: {}", e))?;
 
         // Check content
         assert!(output.contains("SELECT"));
@@ -824,7 +824,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate queries: {}", e))?;
 
         assert!(output.contains("CONSTRUCT"));
     }
@@ -837,7 +837,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate queries": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate queries: {}", e))?;
 
         // Should contain filters for constraints
         assert!(output.contains("FILTER"));

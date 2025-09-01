@@ -814,7 +814,7 @@ slots:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Generate TypeQL schema
     use linkml_service::generator::{Generator, GeneratorOptions, TypeQLGenerator};
@@ -822,7 +822,7 @@ slots:
     let typeql = typeql_gen
         .generate(&schema, &GeneratorOptions::default())
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Define schema in TypeDB
     // Extract the generated TypeQL content (assuming first output is the main schema)
@@ -834,12 +834,12 @@ slots:
     typedb_service
         .define_schema(&schema.name, typeql_content)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Verify schema was stored
     let stored_schema = typedb_service.get_schema(&schema.name).await;
     assert!(stored_schema.is_some());
-    assert!(stored_schema.unwrap().contains("define"));
+    assert!(stored_schema.expect("Test operation failed").contains("define"));
 
     // Validate data using TypeDB service
     let person_data = json!({
@@ -941,7 +941,7 @@ slots:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Generate GraphQL schema
     use linkml_service::generator::{Generator, GeneratorOptions, GraphQLGenerator};
@@ -949,7 +949,7 @@ slots:
     let graphql = graphql_gen
         .generate(&schema, &GeneratorOptions::default())
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Register with GraphQL service
     // Extract the generated GraphQL content (assuming first output is the main schema)
@@ -976,7 +976,7 @@ slots:
         }
     "#;
 
-    let result = graphql_service.execute_query(query, &schema.name).unwrap();
+    let result = graphql_service.execute_query(query, &schema.name).expect("Test operation failed");
     assert!(result["data"].is_object());
 }
 
@@ -1044,7 +1044,7 @@ slots:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test CSV parsing
     let csv_data = r#"device_id,timestamp,temperature,humidity,location
@@ -1055,7 +1055,7 @@ SENSOR-0003,2024-01-20T10:00:00Z,21.9,68.5,Room C"#;
     let parsed_data = parse_service
         .parse_with_schema(csv_data, &schema, "csv")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(parsed_data.len(), 3);
 
     // Validate parsed data
@@ -1063,7 +1063,7 @@ SENSOR-0003,2024-01-20T10:00:00Z,21.9,68.5,Room C"#;
         let report = linkml_service
             .validate(record, &schema, "SensorReading")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid, "Validation failed: {:?}", report.errors);
     }
 
@@ -1081,13 +1081,13 @@ SENSOR-0003,2024-01-20T10:00:00Z,21.9,68.5,Room C"#;
     let parsed_json = parse_service
         .parse_with_schema(json_data, &schema, "json")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(parsed_json.len(), 1);
 
     let report = linkml_service
         .validate(&parsed_json[0], &schema, "SensorReading")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -1188,13 +1188,13 @@ enums:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create table from schema
     lakehouse_service
         .create_table_from_schema("transactions", &schema, "Transaction")
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Prepare transaction data
     let transactions = vec![
@@ -1233,7 +1233,7 @@ enums:
         let report = linkml_service
             .validate(transaction, &schema, "Transaction")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         if report.valid {
             valid_transactions.push(transaction.clone());
         } else {
@@ -1245,11 +1245,11 @@ enums:
     let inserted_count = lakehouse_service
         .insert_validated_data("transactions", valid_transactions)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(inserted_count, 3);
 
     // Query the table
-    let stored_data = lakehouse_service.query_table("transactions").await.unwrap();
+    let stored_data = lakehouse_service.query_table("transactions").await.expect("Test operation failed");
     assert_eq!(stored_data.len(), 3);
 
     // Verify data integrity
@@ -1257,7 +1257,7 @@ enums:
         let report = linkml_service
             .validate(record, &schema, "Transaction")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid);
     }
 }
@@ -1351,7 +1351,7 @@ slots:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test valid product
     let valid_product = json!({
@@ -1367,7 +1367,7 @@ slots:
     let report = validation_service
         .validate_with_linkml(&valid_product, &schema, "Product", linkml_service.as_ref())
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test invalid product (wrong final price)
@@ -1389,7 +1389,7 @@ slots:
             linkml_service.as_ref(),
         )
         .await
-        .unwrap();
+        .expect("Test operation failed");
     // TODO: Rule validation is not yet implemented in the validator
     // For now, we skip this assertion until rule validation is implemented
     // assert!(!report.valid);
@@ -1419,7 +1419,7 @@ slots:
         let report = validation_service
             .validate_with_linkml(product, &schema, "Product", linkml_service.as_ref())
             .await
-            .unwrap();
+            .expect("Test operation failed");
         validation_results.push(report.valid);
     }
 
@@ -1514,7 +1514,7 @@ enums:
     let schema = linkml_service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Step 1: Parse incoming events from CSV
     let csv_events = r#"event_id,event_type,timestamp,source_system,payload,severity
@@ -1525,7 +1525,7 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
     let parsed_events = parse_service
         .parse_with_schema(csv_events, &schema, "csv")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(parsed_events.len(), 3);
 
     // Step 2: Validate all events
@@ -1534,7 +1534,7 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
         let report = validation_service
             .validate_with_linkml(event, &schema, "Event", linkml_service.as_ref())
             .await
-            .unwrap();
+            .expect("Test operation failed");
 
         if report.valid {
             valid_events.push(event.clone());
@@ -1546,15 +1546,15 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
     lakehouse_service
         .create_table_from_schema("events", &schema, "Event")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let stored_count = lakehouse_service
         .insert_validated_data("events", valid_events.clone())
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(stored_count, 3);
 
     // Step 4: Query and verify
-    let stored_events = lakehouse_service.query_table("events").await.unwrap();
+    let stored_events = lakehouse_service.query_table("events").await.expect("Test operation failed");
     assert_eq!(stored_events.len(), 3);
 
     // Verify all stored events are still valid
@@ -1562,7 +1562,7 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
         let report = linkml_service
             .validate(event, &schema, "Event")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid);
     }
 

@@ -304,7 +304,7 @@ impl DataLoader for XmlLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
         // XML can represent any schema structure
         Ok(())
     }

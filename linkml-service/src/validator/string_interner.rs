@@ -156,7 +156,7 @@ impl StringInterner {
 
         // Add new string
         let mut strings = self.index_to_string.write();
-        let index = u32::try_from(strings.len()).map_err(|e| anyhow::anyhow!("Too many interned strings": {}, e))?;
+        let index = u32::try_from(strings.len()).expect("Too many interned strings");
         strings.push(s.to_string());
         drop(strings);
 
@@ -220,7 +220,7 @@ impl StringInterner {
         drop(strings);
 
         // Remove non-common entries from map
-        let common_count_u32 = u32::try_from(common_count).map_err(|e| anyhow::anyhow!("Too many common strings": {}, e))?;
+        let common_count_u32 = u32::try_from(common_count).expect("Too many common strings");
         self.string_to_index
             .retain(|_, &mut v| v < common_count_u32);
     }

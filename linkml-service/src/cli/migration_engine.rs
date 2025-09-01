@@ -395,7 +395,7 @@ impl MigrationEngine {
     fn analyze_type_changes(
         &self,
         breaking_changes: &mut Vec<BreakingChange>,
-        _non_breaking_changes: &mut Vec<NonBreakingChange>,
+        non_breaking_changes: &mut Vec<NonBreakingChange>,
     ) -> Result<()> {
         // Check type changes in slots
         for (slot_name, from_slot) in &self.from_schema.slots {

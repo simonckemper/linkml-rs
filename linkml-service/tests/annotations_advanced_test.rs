@@ -39,10 +39,10 @@ fn test_annotation_inheritance_in_slots() {
 
     // Resolve inheritance for the Person class
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved_class = resolver.resolve_class("Person").unwrap();
+    let resolved_class = resolver.resolve_class("Person").expect("Test operation failed");
 
     // Check that annotations were properly merged
-    let name_usage = resolved_class.slot_usage.get("name").unwrap();
+    let name_usage = resolved_class.slot_usage.get("name").expect("Test operation failed");
 
     // Should have overridden annotation
     assert_eq!(
@@ -158,28 +158,28 @@ fn test_annotation_on_all_element_types() {
         schema
             .classes
             .get("TestClass")
-            .unwrap()
+            .expect("Test operation failed")
             .has_annotation("class:type")
     );
     assert!(
         schema
             .slots
             .get("test_slot")
-            .unwrap()
+            .expect("Test operation failed")
             .has_annotation("slot:indexed")
     );
     assert!(
         schema
             .types
             .get("TestType")
-            .unwrap()
+            .expect("Test operation failed")
             .has_annotation("type:base")
     );
     assert!(
         schema
             .enums
             .get("TestEnum")
-            .unwrap()
+            .expect("Test operation failed")
             .has_annotation("enum:source")
     );
 }
@@ -220,7 +220,7 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml).unwrap();
+    let schema = parser.parse_str(yaml).expect("Test operation failed");
 
     // Check schema annotations
     assert_eq!(
@@ -235,14 +235,14 @@ slots:
     }
 
     // Check class annotations
-    let person = schema.classes.get("Person").unwrap();
+    let person = schema.classes.get("Person").expect("Test operation failed");
     assert_eq!(
         person.get_annotation("db:table"),
         Some(&AnnotationValue::String("persons".to_string()))
     );
 
     // Check slot annotations
-    let name_slot = schema.slots.get("name").unwrap();
+    let name_slot = schema.slots.get("name").expect("Test operation failed");
     if let Some(AnnotationValue::Object(validation)) = name_slot.get_annotation("validation") {
         assert_eq!(
             validation.get("minLength"),
@@ -304,7 +304,7 @@ fn test_annotation_serialization_edge_cases() {
 
     annotations.insert(
         "float".to_string(),
-        AnnotationValue::Number(serde_json::Number::from_f64(3.14159).unwrap()),
+        AnnotationValue::Number(serde_json::Number::from_f64(3.14159).expect("Test operation failed")),
     );
 
     annotations.insert(
@@ -313,8 +313,8 @@ fn test_annotation_serialization_edge_cases() {
     );
 
     // Serialize and deserialize
-    let json = serde_json::to_string(&annotations).unwrap();
-    let deserialized: Annotations = serde_json::from_str(&json).unwrap();
+    let json = serde_json::to_string(&annotations).expect("Test operation failed");
+    let deserialized: Annotations = serde_json::from_str(&json).expect("Test operation failed");
 
     // Verify all values survived
     assert_eq!(annotations.len(), deserialized.len());
@@ -343,13 +343,13 @@ fn test_annotation_merging_conflicts() {
     }
 
     // Check merged result
-    let priority = merged.get("priority").unwrap();
+    let priority = merged.get("priority").expect("Test operation failed");
     assert_eq!(*priority, AnnotationValue::Number(2.into()));
 
-    let status = merged.get("status").unwrap();
+    let status = merged.get("status").expect("Test operation failed");
     assert_eq!(*status, AnnotationValue::String("draft".to_string()));
 
-    let reviewed = merged.get("reviewed").unwrap();
+    let reviewed = merged.get("reviewed").expect("Test operation failed");
     assert_eq!(*reviewed, AnnotationValue::Bool(true));
 }
 

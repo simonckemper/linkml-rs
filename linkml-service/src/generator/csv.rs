@@ -134,7 +134,7 @@ impl CsvGenerator {
     /// Collect all slots for a class including inherited ones
     fn collect_class_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<Vec<(String, SlotDefinition)>> {
@@ -390,7 +390,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate CSV": {}, e))?;
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate CSV: {}", e))?;
 
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
@@ -406,7 +406,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate TSV": {}, e))?;
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate TSV: {}", e))?;
 
         assert!(result.contains("=== Person ==="));
         // Slots are in alphabetical order due to BTreeMap

@@ -56,7 +56,7 @@ async fn test_multiple_conditional_requirements() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test US address - valid
     let us_address = json!({
@@ -68,7 +68,7 @@ async fn test_multiple_conditional_requirements() {
     let report = engine
         .validate_as_class(&us_address, "Address", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test US address missing state - invalid
@@ -80,7 +80,7 @@ async fn test_multiple_conditional_requirements() {
     let report = engine
         .validate_as_class(&us_invalid, "Address", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.errors().any(|e| e.message.contains("state")));
 
@@ -94,7 +94,7 @@ async fn test_multiple_conditional_requirements() {
     let report = engine
         .validate_as_class(&ca_address, "Address", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test other country - no requirements
@@ -106,7 +106,7 @@ async fn test_multiple_conditional_requirements() {
     let report = engine
         .validate_as_class(&other_address, "Address", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -158,7 +158,7 @@ async fn test_pattern_based_conditional_requirements() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test .txt file with text content type
     let text_file = json!({
@@ -170,7 +170,7 @@ async fn test_pattern_based_conditional_requirements() {
     let report = engine
         .validate_as_class(&text_file, "File", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test .txt file missing content_type
@@ -181,7 +181,7 @@ async fn test_pattern_based_conditional_requirements() {
     let report = engine
         .validate_as_class(&invalid_txt, "File", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     // Test .gz file
@@ -193,7 +193,7 @@ async fn test_pattern_based_conditional_requirements() {
     let report = engine
         .validate_as_class(&gz_file, "File", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test text content type requiring encoding
@@ -206,7 +206,7 @@ async fn test_pattern_based_conditional_requirements() {
     let report = engine
         .validate_as_class(&text_content, "File", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -275,7 +275,7 @@ async fn test_numeric_range_conditional_requirements() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test expensive product requiring tax
     let expensive = json!({
@@ -287,7 +287,7 @@ async fn test_numeric_range_conditional_requirements() {
     let report = engine
         .validate_as_class(&expensive, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test expensive product missing tax
@@ -299,7 +299,7 @@ async fn test_numeric_range_conditional_requirements() {
     let report = engine
         .validate_as_class(&invalid_expensive, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     // Test heavy product
@@ -312,7 +312,7 @@ async fn test_numeric_range_conditional_requirements() {
     let report = engine
         .validate_as_class(&heavy, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test high discount
@@ -327,7 +327,7 @@ async fn test_numeric_range_conditional_requirements() {
     let report = engine
         .validate_as_class(&high_discount, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -385,7 +385,7 @@ async fn test_field_presence_conditional_requirements() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test user with email
     let user_with_email = json!({
@@ -397,7 +397,7 @@ async fn test_field_presence_conditional_requirements() {
     let report = engine
         .validate_as_class(&user_with_email, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test user with email but missing verification
@@ -410,7 +410,7 @@ async fn test_field_presence_conditional_requirements() {
     let report = engine
         .validate_as_class(&invalid_email_user, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     // Test user without email (no verification required)
@@ -422,7 +422,7 @@ async fn test_field_presence_conditional_requirements() {
     let report = engine
         .validate_as_class(&user_no_email, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test 2FA user
@@ -437,7 +437,7 @@ async fn test_field_presence_conditional_requirements() {
     let report = engine
         .validate_as_class(&two_fa_user, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -506,7 +506,7 @@ async fn test_nested_object_conditional_requirements() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test high-value order
     let expensive_order = json!({
@@ -522,7 +522,7 @@ async fn test_nested_object_conditional_requirements() {
     let report = engine
         .validate_as_class(&expensive_order, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test credit card order
@@ -539,7 +539,7 @@ async fn test_nested_object_conditional_requirements() {
     let report = engine
         .validate_as_class(&cc_order, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -582,7 +582,7 @@ async fn test_conditional_requirements_with_null_handling() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with null values
     let null_record = json!({
@@ -595,7 +595,7 @@ async fn test_conditional_requirements_with_null_handling() {
     let report = engine
         .validate_as_class(&null_record, "Record", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid); // No conditions triggered
 
     // Test with empty string vs null
@@ -607,7 +607,7 @@ async fn test_conditional_requirements_with_null_handling() {
     let report = engine
         .validate_as_class(&empty_notes, "Record", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     // Behavior depends on implementation - empty string might require reviewer
 
     // Test completed without date
@@ -619,7 +619,7 @@ async fn test_conditional_requirements_with_null_handling() {
     let report = engine
         .validate_as_class(&invalid_completed, "Record", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 }
 
@@ -661,7 +661,7 @@ async fn test_conditional_requirements_performance() {
         .classes
         .insert("ComplexRecord".to_string(), complex_class);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create test data
     let mut data = serde_json::Map::new();
@@ -676,7 +676,7 @@ async fn test_conditional_requirements_performance() {
         let report = engine
             .validate_as_class(&data, "ComplexRecord", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid);
     }
     let elapsed = start.elapsed();

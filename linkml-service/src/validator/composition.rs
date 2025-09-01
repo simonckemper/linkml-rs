@@ -343,7 +343,7 @@ mod tests {
 
         let person = composer
             .resolve_class("Person")
-            .map_err(|e| anyhow::anyhow!("should resolve Person class": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should resolve Person class: {}", e))?;
 
         // Check inherited slots
         assert_eq!(person.effective_slots.len(), 5);

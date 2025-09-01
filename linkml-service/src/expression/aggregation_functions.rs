@@ -510,7 +510,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_sum_avg() {
+    fn test_sum_avg() -> Result<(), Box<dyn std::error::Error>> {
         let sum_fn = SumFunction;
         let avg_fn = AvgFunction;
 
@@ -519,13 +519,13 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![numbers.clone()])
-                .map_err(|e| anyhow::anyhow!("should calculate sum": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate sum: {}", e))?,
             json!(15.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![numbers])
-                .map_err(|e| anyhow::anyhow!("should calculate average": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate average: {}", e))?,
             json!(3.0)
         );
 
@@ -533,26 +533,27 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![json!([])])
-                .map_err(|e| anyhow::anyhow!("should handle empty array sum": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should handle empty array sum: {}", e))?,
             json!(0.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![json!([])])
-                .map_err(|e| anyhow::anyhow!("should handle empty array average": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should handle empty array average: {}", e))?,
             json!(null)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_count() {
+    fn test_count() -> Result<(), Box<dyn std::error::Error>> {
         let count_fn = CountFunction;
 
         // Simple count
         assert_eq!(
             count_fn
                 .call(vec![json!([1, 2, 3, 4, 5])])
-                .map_err(|e| anyhow::anyhow!("should count array elements": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should count array elements: {}", e))?,
             json!(5)
         );
 
@@ -560,7 +561,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!([1, null, 3, null, 5]), json!("non-null")])
-                .map_err(|e| anyhow::anyhow!("should count non-null elements": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should count non-null elements: {}", e))?,
             json!(3)
         );
 
@@ -568,20 +569,21 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!(["a", "", "c", ""]), json!("non-empty")])
-                .map_err(|e| anyhow::anyhow!("should count non-empty elements": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should count non-empty elements: {}", e))?,
             json!(2)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_median() {
+    fn test_median() -> Result<(), Box<dyn std::error::Error>> {
         let median_fn = MedianFunction;
 
         // Odd number of elements
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 3, 5, 7, 9])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of odd elements": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate median of odd elements: {}", e))?,
             json!(5.0)
         );
 
@@ -589,7 +591,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 2, 3, 4])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of even elements": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate median of even elements: {}", e))?,
             json!(2.5)
         );
 
@@ -597,27 +599,28 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([5, 1, 3, 9, 7])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of unsorted array": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate median of unsorted array: {}", e))?,
             json!(5.0)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_mode() {
+    fn test_mode() -> Result<(), Box<dyn std::error::Error>> {
         let mode_fn = ModeFunction;
 
         // Single mode
         assert_eq!(
             mode_fn
                 .call(vec![json!([1, 2, 2, 3, 2, 4])])
-                .map_err(|e| anyhow::anyhow!("should find single mode": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should find single mode: {}", e))?,
             json!(2)
         );
 
         // Multiple modes
         let result = mode_fn
             .call(vec![json!([1, 1, 2, 2, 3])])
-            .map_err(|e| anyhow::anyhow!("should find multiple modes": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should find multiple modes: {}", e))?;
         match result {
             Value::Array(arr) => {
                 assert_eq!(arr.len(), 2);
@@ -626,10 +629,11 @@ mod tests {
             }
             _ => panic!("Expected array of modes"),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_stddev_variance() {
+    fn test_stddev_variance() -> Result<(), Box<dyn std::error::Error>> {
         let stddev_fn = StdDevFunction;
         let variance_fn = VarianceFunction;
 
@@ -638,7 +642,7 @@ mod tests {
         // Sample variance (using n-1) should be 32/7 ≈ 4.571428571428571
         let variance_result = variance_fn
             .call(vec![data.clone()])
-            .map_err(|e| anyhow::anyhow!("should calculate variance": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should calculate variance: {}", e))?;
         assert!(
             matches!(variance_result, Value::Number(n) if (n.as_f64()? - 4.571428571428571).abs() < 0.0001)
         );
@@ -646,30 +650,32 @@ mod tests {
         // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
         let stddev_result = stddev_fn
             .call(vec![data])
-            .map_err(|e| anyhow::anyhow!("should calculate standard deviation": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should calculate standard deviation: {}", e))?;
         assert!(
             matches!(stddev_result, Value::Number(n) if (n.as_f64()? - 2.1380899352993947).abs() < 0.0001)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_unique() {
+    fn test_unique() -> Result<(), Box<dyn std::error::Error>> {
         let unique_fn = UniqueFunction;
 
         let result = unique_fn
             .call(vec![json!([1, 2, 2, 3, 1, 4, 3])])
-            .map_err(|e| anyhow::anyhow!("should find unique numbers": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should find unique numbers: {}", e))?;
         assert_eq!(result, json!([1, 2, 3, 4]));
 
         // With strings
         let result = unique_fn
             .call(vec![json!(["a", "b", "a", "c", "b"])])
-            .map_err(|e| anyhow::anyhow!("should find unique strings": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should find unique strings: {}", e))?;
         assert_eq!(result, json!(["a", "b", "c"]));
+        Ok(())
     }
 
     #[test]
-    fn test_group_by() {
+    fn test_group_by() -> Result<(), Box<dyn std::error::Error>> {
         let group_by_fn = GroupByFunction;
 
         let data = json!([
@@ -681,7 +687,7 @@ mod tests {
 
         let result = group_by_fn
             .call(vec![data, json!("type")])
-            .map_err(|e| anyhow::anyhow!("should group by type field": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should group by type field: {}", e))?;
 
         match result {
             Value::Object(groups) => {
@@ -698,5 +704,6 @@ mod tests {
             }
             _ => panic!("Expected object result"),
         }
+        Ok(())
     }
 }

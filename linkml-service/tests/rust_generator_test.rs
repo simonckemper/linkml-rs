@@ -8,7 +8,7 @@ async fn generate_rust(schema: SchemaDefinition) -> String {
     let generator = RustGenerator::new();
     let options = GeneratorOptions::new().with_docs(true);
 
-    generator.generate(&schema).unwrap()
+    generator.generate(&schema).expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -355,7 +355,7 @@ async fn test_inheritance() {
     let output = generate_rust(schema).await;
 
     // Check Person has all fields (inherited + own)
-    let person_section = output.split("pub struct Person").nth(1).unwrap();
+    let person_section = output.split("pub struct Person").nth(1).expect("Test operation failed");
     assert!(person_section.contains("pub id: String,"));
     assert!(person_section.contains("pub name: String,"));
     assert!(person_section.contains("pub age: Option<i64>,"));
@@ -473,7 +473,7 @@ async fn test_builder_pattern() {
     let generator = RustGenerator::new();
     let options = GeneratorOptions::new().set_custom("generate_builder", "true");
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Check builder struct
     assert!(output.contains("pub struct PersonBuilder"));

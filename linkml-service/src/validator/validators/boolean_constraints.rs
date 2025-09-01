@@ -544,8 +544,6 @@ impl NoneOfValidator {
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
-        let mut issues: Vec<ValidationIssue> = Vec::new();
-
         // Create a temporary slot definition from the anonymous expression
         let temp_slot = SlotDefinition {
             name: format!("{}_none_of_expr", context.path()),

@@ -25,6 +25,8 @@ use linkml_core::error::Result;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use timestamp_core::SyncTimestampService;
+
 
 pub use ast::Expression;
 pub use error::{EvaluationError, ExpressionError, ParseError};
@@ -38,6 +40,7 @@ pub use parser::Parser;
 pub struct ExpressionEngine {
     parser: Parser,
     evaluator: Arc<Evaluator>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 impl ExpressionEngine {
@@ -46,6 +49,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator: Arc::new(Evaluator::new()),
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
         }
     }
 
@@ -54,6 +58,22 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator,
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
+        }
+    }
+
+    /// Create an expression engine with injected dependencies (factory pattern compliant)
+    pub fn with_dependencies<T>(
+        evaluator: Arc<Evaluator>,
+        timestamp_service: Arc<T>,
+    ) -> Self
+    where
+        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+    {
+        Self {
+            parser: Parser::new(),
+            evaluator,
+            timestamp_service,
         }
     }
 
@@ -82,6 +102,11 @@ impl ExpressionEngine {
             linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {}", e))
         })
     }
+
+    /// Get the timestamp service (internal use)
+    pub(crate) fn timestamp_service(&self) -> &Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>> {
+        &self.timestamp_service
+    }
 }
 
 impl Default for ExpressionEngine {
@@ -100,10 +125,10 @@ mod tests {
         // Test that engine can parse and evaluate
         let expr = engine
             .parse("1 + 2")
-            .map_err(|e| anyhow::anyhow!("should parse simple expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse simple expression: {}", e))?;
         let result = engine
             .evaluate_ast(&expr, &HashMap::new())
-            .map_err(|e| anyhow::anyhow!("should evaluate simple expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should evaluate simple expression: {}", e))?;
         assert_eq!(result, serde_json::json!(3.0));
     }
 }

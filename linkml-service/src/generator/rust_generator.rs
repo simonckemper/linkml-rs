@@ -61,7 +61,7 @@ impl RustGenerator {
         class: &ClassDefinition,
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
-        _indent: &IndentStyle,
+        indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
         let trait_name = format!("{}Trait", BaseCodeFormatter::to_pascal_case(class_name));
@@ -150,8 +150,8 @@ impl RustGenerator {
         class_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
-        _indent: &IndentStyle,
+        options: &GeneratorOptions,
+        indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         // Find the trait to implement (could be from parent class)
         let trait_class =
@@ -510,7 +510,7 @@ impl RustGenerator {
         struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         writeln!(output, "impl {} {{", struct_name).map_err(Self::fmt_error_to_generator_error)?;
@@ -621,7 +621,7 @@ impl RustGenerator {
         struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let builder_name = format!("{struct_name}Builder");
@@ -732,7 +732,7 @@ impl RustGenerator {
     fn generate_validation_method(
         &self,
         output: &mut String,
-        _struct_name: &str,
+        struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
         indent: &IndentStyle,
@@ -1046,7 +1046,7 @@ impl RustGenerator {
     }
 
     /// Get derive macros for a class
-    fn get_derives(&self, _class: &ClassDefinition, options: &GeneratorOptions) -> Vec<String> {
+    fn get_derives(&self, class: &ClassDefinition, options: &GeneratorOptions) -> Vec<String> {
         let mut derives = vec![
             "Debug".to_string(),
             "Clone".to_string(),
@@ -1492,7 +1492,7 @@ impl AsyncGenerator for RustGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         &mut main_output,
-                        "    Regex::new(r\"{}\").map_err(|e| anyhow::anyhow!("Error: {}", e))?",
+                        "    Regex::new(r\"{}\").map_err(|e| anyhow::anyhow!(\"Error: {{}}\", e))?",
                         pattern
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -1729,7 +1729,7 @@ impl RustGenerator {
     fn generate_tests(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
     ) -> GeneratorResult<GeneratedOutput> {
         let mut output = String::new();
 
@@ -1843,7 +1843,7 @@ mod tests {
         let options = GeneratorOptions::new().with_docs(true);
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate Rust output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate Rust output: {}", e))?;
 
         assert_eq!(outputs.len(), 1);
         let output = &outputs[0].content;

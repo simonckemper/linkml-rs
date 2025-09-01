@@ -36,7 +36,7 @@ async fn test_concurrent_unique_validation() {
     email_slot.range = Some("string".to_string());
     schema.slots.insert("email".to_string(), email_slot);
 
-    let engine = Arc::new(ValidationEngine::new(&schema).unwrap());
+    let engine = Arc::new(ValidationEngine::new(&schema).expect("Test operation failed"));
 
     // Create multiple concurrent validation tasks
     let mut handles = vec![];
@@ -56,7 +56,7 @@ async fn test_concurrent_unique_validation() {
                 let report = engine_clone
                     .validate_as_class(&user, "User", None)
                     .await
-                    .unwrap();
+                    .expect("Test operation failed");
                 results.push(report.valid);
             }
 
@@ -69,7 +69,7 @@ async fn test_concurrent_unique_validation() {
     // Wait for all tasks
     let mut all_results = vec![];
     for handle in handles {
-        let results = handle.await.unwrap();
+        let results = handle.await.expect("Test operation failed");
         all_results.extend(results);
     }
 
@@ -77,7 +77,7 @@ async fn test_concurrent_unique_validation() {
     assert!(all_results.iter().all(|&valid| valid));
 
     // Now test duplicate detection across concurrent validations
-    let engine2 = Arc::new(ValidationEngine::new(&schema).unwrap());
+    let engine2 = Arc::new(ValidationEngine::new(&schema).expect("Test operation failed"));
 
     // First, validate some users to populate the tracker
     let user1 = json!({
@@ -88,7 +88,7 @@ async fn test_concurrent_unique_validation() {
     engine2
         .validate_as_class(&user1, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Now spawn concurrent tasks that try to use the same email
     let mut duplicate_handles = vec![];
@@ -104,7 +104,7 @@ async fn test_concurrent_unique_validation() {
             let report = engine_clone
                 .validate_as_class(&user, "User", None)
                 .await
-                .unwrap();
+                .expect("Test operation failed");
             report.valid
         });
 
@@ -115,7 +115,7 @@ async fn test_concurrent_unique_validation() {
     let duplicate_results: Vec<bool> = futures::future::join_all(duplicate_handles)
         .await
         .into_iter()
-        .map(|r| r.unwrap())
+        .map(|r| r.expect("Test operation failed"))
         .collect();
 
     // All should fail due to duplicate email
@@ -152,7 +152,7 @@ async fn test_composite_unique_keys_edge_cases() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test various edge cases
 
@@ -166,7 +166,7 @@ async fn test_composite_unique_keys_edge_cases() {
     let report1 = engine
         .validate_as_class(&order1, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report1.valid);
 
     let order1_dup = json!({
@@ -178,7 +178,7 @@ async fn test_composite_unique_keys_edge_cases() {
     let report1_dup = engine
         .validate_as_class(&order1_dup, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report1_dup.valid);
 
     // Case 2: One field different - should pass
@@ -191,7 +191,7 @@ async fn test_composite_unique_keys_edge_cases() {
     let report2 = engine
         .validate_as_class(&order2, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report2.valid);
 
     // Case 3: Null handling with consider_nulls_inequal = true
@@ -204,7 +204,7 @@ async fn test_composite_unique_keys_edge_cases() {
     let report3 = engine
         .validate_as_class(&order3, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report3.valid);
 
     // Another order with same values but null date - should pass (nulls are inequal)
@@ -217,7 +217,7 @@ async fn test_composite_unique_keys_edge_cases() {
     let report4 = engine
         .validate_as_class(&order4, "Order", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report4.valid); // Passes because nulls are considered inequal
 }
 
@@ -243,7 +243,7 @@ async fn test_unique_validation_with_updates() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Simulate updating a record (would need to handle in real implementation)
     let product1 = json!({
@@ -255,7 +255,7 @@ async fn test_unique_validation_with_updates() {
     let report1 = engine
         .validate_as_class(&product1, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report1.valid);
 
     // "Update" the same product (same ID, same SKU) - should ideally pass
@@ -270,7 +270,7 @@ async fn test_unique_validation_with_updates() {
     let report_update = engine
         .validate_as_class(&product1_updated, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report_update.valid); // Current behavior - treats as duplicate
 
     // Different product with different SKU - should pass
@@ -283,7 +283,7 @@ async fn test_unique_validation_with_updates() {
     let report2 = engine
         .validate_as_class(&product2, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report2.valid);
 }
 
@@ -318,7 +318,7 @@ async fn test_unique_keys_with_inheritance() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Both ID and email should be unique for User
     let user1 = json!({
@@ -329,7 +329,7 @@ async fn test_unique_keys_with_inheritance() {
     let report1 = engine
         .validate_as_class(&user1, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report1.valid);
 
     // Duplicate ID - should fail
@@ -341,7 +341,7 @@ async fn test_unique_keys_with_inheritance() {
     let report2 = engine
         .validate_as_class(&user2, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report2.valid);
 
     // Duplicate email - should fail
@@ -353,7 +353,7 @@ async fn test_unique_keys_with_inheritance() {
     let report3 = engine
         .validate_as_class(&user3, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report3.valid);
 }
 
@@ -378,7 +378,7 @@ async fn test_unique_validation_memory_efficiency() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with many unique values
     let start = Instant::now();
@@ -394,7 +394,7 @@ async fn test_unique_validation_memory_efficiency() {
         let report = engine
             .validate_as_class(&record, "Record", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         validation_times.push(validation_start.elapsed());
 
         assert!(report.valid);
@@ -432,7 +432,7 @@ async fn test_unique_keys_with_special_characters() {
     path_slot.range = Some("string".to_string());
     schema.slots.insert("path".to_string(), path_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with various special characters
     let test_paths = vec![
@@ -462,7 +462,7 @@ async fn test_unique_keys_with_special_characters() {
         let report = engine
             .validate_as_class(&doc, "Document", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid, "Failed for path: {}", path);
 
         // Duplicate should fail
@@ -473,7 +473,7 @@ async fn test_unique_keys_with_special_characters() {
         let report_dup = engine
             .validate_as_class(&doc_dup, "Document", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(
             !report_dup.valid,
             "Duplicate not detected for path: {}",
@@ -501,7 +501,7 @@ async fn test_unique_validation_with_empty_values() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test empty string as unique value
     let config1 = json!({
@@ -512,7 +512,7 @@ async fn test_unique_validation_with_empty_values() {
     let report1 = engine
         .validate_as_class(&config1, "Config", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report1.valid);
 
     // Another empty string - should fail
@@ -524,7 +524,7 @@ async fn test_unique_validation_with_empty_values() {
     let report2 = engine
         .validate_as_class(&config2, "Config", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report2.valid);
 
     // Whitespace variations
@@ -536,7 +536,7 @@ async fn test_unique_validation_with_empty_values() {
     let report3 = engine
         .validate_as_class(&config3, "Config", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report3.valid);
 
     // Different whitespace - should be treated as different
@@ -548,6 +548,6 @@ async fn test_unique_validation_with_empty_values() {
     let report4 = engine
         .validate_as_class(&config4, "Config", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report4.valid); // Different from single space
 }

@@ -68,7 +68,7 @@ async fn test_nested_interpolation_sources() {
     });
     schema.slots.insert("id".to_string(), id_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test data with nested structure
     let data = json!({
@@ -85,7 +85,7 @@ async fn test_nested_interpolation_sources() {
     let report = engine
         .validate_as_class(&data, "Company", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test with mismatched pattern
@@ -103,7 +103,7 @@ async fn test_nested_interpolation_sources() {
     let report = engine
         .validate_as_class(&bad_data, "Company", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 }
 
@@ -142,7 +142,7 @@ async fn test_multiple_interpolation_variables() {
     });
     schema.slots.insert("filename".to_string(), filename_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Valid filename
     let data = json!({
@@ -152,7 +152,7 @@ async fn test_multiple_interpolation_variables() {
         "filename": "myapp_v2.1_20240115.tar.gz"
     });
 
-    let report = engine.validate_as_class(&data, "File", None).await.unwrap();
+    let report = engine.validate_as_class(&data, "File", None).await.expect("Test operation failed");
     assert!(report.valid);
 
     // Invalid - wrong project name
@@ -166,7 +166,7 @@ async fn test_multiple_interpolation_variables() {
     let report = engine
         .validate_as_class(&bad_data, "File", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 }
 
@@ -195,7 +195,7 @@ async fn test_glob_pattern_interpolation() {
     });
     schema.slots.insert("path".to_string(), path_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Valid paths
     let test_cases = vec![
@@ -219,7 +219,7 @@ async fn test_glob_pattern_interpolation() {
         let report = engine
             .validate_as_class(&data, "Resource", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert_eq!(
             report.valid,
             should_pass,
@@ -250,7 +250,7 @@ async fn test_context_interpolation() {
     });
     schema.slots.insert("id".to_string(), id_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create context with additional variables
     let mut context = // ValidationContext removed();
@@ -266,7 +266,7 @@ async fn test_context_interpolation() {
     let report = engine
         .validate_as_class(&data, "Record", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Without context interpolation, this might fail
     // The test verifies the pattern structure is preserved
@@ -274,7 +274,7 @@ async fn test_context_interpolation() {
         id_slot
             .structured_pattern
             .as_ref()
-            .unwrap()
+            .expect("Test operation failed")
             .interpolated
             .unwrap_or(false)
     );
@@ -305,7 +305,7 @@ async fn test_escaped_interpolation_brackets() {
     });
     schema.slots.insert("content".to_string(), content_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let data = json!({
         "name": "example",
@@ -315,7 +315,7 @@ async fn test_escaped_interpolation_brackets() {
     let report = engine
         .validate_as_class(&data, "Template", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -351,7 +351,7 @@ async fn test_circular_interpolation_references() {
     });
     schema.slots.insert("field_b".to_string(), field_b);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let data = json!({
         "field_a": "A_test",
@@ -362,7 +362,7 @@ async fn test_circular_interpolation_references() {
     let report = engine
         .validate_as_class(&data, "Circular", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // The validator should either:
     // 1. Detect the cycle and skip interpolation
@@ -393,7 +393,7 @@ async fn test_missing_interpolation_variable() {
     });
     schema.slots.insert("reference".to_string(), reference_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let data = json!({
         "title": "My Document",
@@ -404,7 +404,7 @@ async fn test_missing_interpolation_variable() {
     let report = engine
         .validate_as_class(&data, "Document", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Behavior depends on implementation:
     // - Could use literal "{author}"
@@ -437,7 +437,7 @@ async fn test_interpolation_with_special_regex_chars() {
     });
     schema.slots.insert("pattern".to_string(), pattern_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with key containing regex special characters
     let test_cases = vec![
@@ -456,7 +456,7 @@ async fn test_interpolation_with_special_regex_chars() {
         let report = engine
             .validate_as_class(&data, "Config", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         // Implementation should properly escape special characters
     }
 }
@@ -504,7 +504,7 @@ async fn test_interpolation_performance_with_many_variables() {
     big_class.slots = slots;
     schema.classes.insert("BigClass".to_string(), big_class);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create data
     let mut data = serde_json::Map::new();
@@ -530,7 +530,7 @@ async fn test_interpolation_performance_with_many_variables() {
         let report = engine
             .validate_as_class(&data, "BigClass", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid);
     }
     let elapsed = start.elapsed();

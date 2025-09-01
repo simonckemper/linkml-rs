@@ -617,7 +617,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate Pydantic output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate Pydantic output: {}", e))?;
         assert!(output.contains("from pydantic import BaseModel"));
         assert!(output.contains("class Person(BaseModel):"));
         assert!(output.contains("name: str = Field(...)"));

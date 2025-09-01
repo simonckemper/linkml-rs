@@ -240,7 +240,7 @@ mod tests {
             },
             "TestClass".to_string(),
         )
-        .map_err(|e| anyhow::anyhow!("should compile rule": {}, e))?
+        .map_err(|e| anyhow::anyhow!("should compile rule: {}", e))?
     }
 
     #[test]
@@ -256,7 +256,7 @@ mod tests {
         cache.put("TestClass".to_string(), rules.clone());
         assert_eq!(cache.stats().entries, 1);
 
-        let retrieved = cache.get("TestClass").map_err(|e| anyhow::anyhow!("should retrieve cached rule": {}, e))?;
+        let retrieved = cache.get("TestClass").map_err(|e| anyhow::anyhow!("should retrieve cached rule: {}", e))?;
         assert_eq!(retrieved.len(), 1);
         assert_eq!(cache.stats().hits, 1);
     }

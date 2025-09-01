@@ -393,7 +393,7 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
         config,
     )
     .await
-    .unwrap()
+    .expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -407,7 +407,7 @@ async fn test_large_schema_loading_performance() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let load_time = start.elapsed();
 
     println!("Schema loading time: {:?}", load_time);
@@ -443,7 +443,7 @@ async fn test_bulk_validation_performance() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Generate test data
     let num_customers = 1000;
@@ -458,7 +458,7 @@ async fn test_bulk_validation_performance() {
         let _ = service
             .validate(&customers[i], &schema, "Customer")
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
 
     // Measure bulk validation
@@ -471,7 +471,7 @@ async fn test_bulk_validation_performance() {
         let report = service
             .validate(customer, &schema, "Customer")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         } else {
@@ -504,7 +504,7 @@ async fn test_concurrent_schema_operations() {
         service
             .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
             .await
-            .unwrap(),
+            .expect("Test operation failed"),
     );
 
     let num_concurrent_tasks = 100;
@@ -529,13 +529,13 @@ async fn test_concurrent_schema_operations() {
                         let _ = service_clone
                             .validate(&customer, &schema_clone, "Customer")
                             .await
-                            .unwrap();
+                            .expect("Test operation failed");
                     }
                     1 => {
                         // SchemaView operations
                         let view = SchemaView::new((*schema_clone).clone());
-                        let _ = view.class_slots("Customer", true).unwrap();
-                        let _ = view.class_ancestors("Order").unwrap();
+                        let _ = view.class_slots("Customer", true).expect("Test operation failed");
+                        let _ = view.class_ancestors("Order").expect("Test operation failed");
                     }
                     2 => {
                         // Expression evaluation
@@ -552,7 +552,7 @@ async fn test_concurrent_schema_operations() {
                                 Some("InventoryItem"),
                             )
                             .await
-                            .unwrap();
+                            .expect("Test operation failed");
                     }
                     3 => {
                         // Rule checking
@@ -575,7 +575,7 @@ async fn test_concurrent_schema_operations() {
 
     // Wait for all tasks
     for handle in handles {
-        handle.await.unwrap();
+        handle.await.expect("Test operation failed");
     }
 
     let elapsed = start.elapsed();
@@ -602,7 +602,7 @@ async fn test_memory_efficiency() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create a large order with many line items
     let mut line_items = Vec::new();
@@ -678,7 +678,7 @@ async fn test_memory_efficiency() {
         let report = service
             .validate(&large_order, &schema, "Order")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid, "Large order should be valid");
 
         if i % 20 == 0 {
@@ -699,9 +699,9 @@ async fn test_code_generation_performance() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Test different generators
     let generators = vec![
@@ -723,10 +723,10 @@ async fn test_code_generation_performance() {
         };
 
         let start = Instant::now();
-        service.generate_code(&schema, config).await.unwrap();
+        service.generate_code(&schema, config).await.expect("Test operation failed");
         let elapsed = start.elapsed();
 
-        let file_size = fs::metadata(temp_dir.path().join(filename)).unwrap().len();
+        let file_size = fs::metadata(temp_dir.path().join(filename)).expect("Test operation failed").len();
 
         println!(
             "  - {}: {:?} ({:.1} KB)",
@@ -750,7 +750,7 @@ async fn test_expression_evaluation_performance() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Complex expressions to evaluate
     let expressions = vec![
@@ -781,7 +781,7 @@ async fn test_expression_evaluation_performance() {
             let _ = service
                 .evaluate_expression(expr, &inventory_data, &schema, Some("InventoryItem"))
                 .await
-                .unwrap();
+                .expect("Test operation failed");
         }
 
         let elapsed = start.elapsed();
@@ -807,7 +807,7 @@ async fn test_cache_effectiveness() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create test data
     let customer = generate_large_customer(1);
@@ -817,7 +817,7 @@ async fn test_cache_effectiveness() {
     let cold_report = service
         .validate(&customer, &schema, "Customer")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let cold_time = cold_start.elapsed();
     assert!(cold_report.valid);
 
@@ -826,7 +826,7 @@ async fn test_cache_effectiveness() {
     let warm_report = service
         .validate(&customer, &schema, "Customer")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let warm_time = warm_start.elapsed();
     assert!(warm_report.valid);
 
@@ -836,7 +836,7 @@ async fn test_cache_effectiveness() {
         let _ = service
             .validate(&customer, &schema, "Customer")
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
     let multi_time = multi_start.elapsed();
     let avg_cached = multi_time / 100;
@@ -869,7 +869,7 @@ async fn test_parallel_validation_scaling() {
         service
             .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
             .await
-            .unwrap(),
+            .expect("Test operation failed"),
     );
 
     // Test with different parallelism levels
@@ -893,14 +893,14 @@ async fn test_parallel_validation_scaling() {
                     let _ = service_clone
                         .validate(&customer, &schema_clone, "Customer")
                         .await
-                        .unwrap();
+                        .expect("Test operation failed");
                 }
             });
             handles.push(handle);
         }
 
         for handle in handles {
-            handle.await.unwrap();
+            handle.await.expect("Test operation failed");
         }
 
         let elapsed = start.elapsed();
@@ -934,7 +934,7 @@ async fn test_stress_test_with_errors() {
     let schema = service
         .load_schema_str(ENTERPRISE_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create mix of valid and invalid data
     let mut test_data = Vec::new();
@@ -951,7 +951,7 @@ async fn test_stress_test_with_errors() {
         match i % 5 {
             0 => {
                 // Missing required field
-                customer.as_object_mut().unwrap().remove("company_name");
+                customer.as_object_mut().expect("Test operation failed").remove("company_name");
             }
             1 => {
                 // Invalid pattern
@@ -987,7 +987,7 @@ async fn test_stress_test_with_errors() {
     let mut total_validation_errors = 0;
 
     for (data, expected_valid) in &test_data {
-        let report = service.validate(data, &schema, "Customer").await.unwrap();
+        let report = service.validate(data, &schema, "Customer").await.expect("Test operation failed");
 
         if report.valid {
             valid_count += 1;

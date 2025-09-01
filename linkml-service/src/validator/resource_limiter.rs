@@ -163,7 +163,7 @@ pub struct ResourceLimiter {
 struct ActiveOperation {
     id: String,
     start_time: Instant,
-    _requirements: ResourceRequirements,
+    requirements: ResourceRequirements,
     timeout_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
@@ -260,7 +260,7 @@ impl ResourceLimiter {
             ActiveOperation {
                 id: operation_id.clone(),
                 start_time: Instant::now(),
-                _requirements: requirements.clone(),
+                requirements: requirements.clone(),
                 timeout_handle: Some(timeout_handle),
             },
         );
@@ -271,7 +271,7 @@ impl ResourceLimiter {
         Ok(ResourceGuard {
             operation_id,
             limiter: self.clone(),
-            _permit: Some(permit),
+            permit: Some(permit),
             start_time: Instant::now(),
         })
     }
@@ -386,7 +386,9 @@ impl ResourceLimiter {
             return ResourceStats::default();
         }
 
-        let latest = history.last().map_err(|e| anyhow::anyhow!("just checked history is not empty": {}, e))?;
+        let latest = history
+            .last()
+            .expect("just checked history is not empty");
         let window_start = Instant::now()
             .checked_sub(Duration::from_secs(300))
             .unwrap_or(Instant::now()); // 5 min window
@@ -472,7 +474,7 @@ impl Clone for ResourceLimiter {
 pub struct ResourceGuard {
     operation_id: String,
     limiter: ResourceLimiter,
-    _permit: Option<tokio::sync::OwnedSemaphorePermit>,
+    permit: Option<tokio::sync::OwnedSemaphorePermit>,
     start_time: Instant,
 }
 
@@ -521,7 +523,7 @@ pub struct ResourceStats {
 /// System resource monitor implementation
 pub struct SystemResourceMonitor {
     /// Process handle for monitoring
-    _process: sysinfo::System,
+    process: sysinfo::System,
 }
 
 impl Default for SystemResourceMonitor {
@@ -535,7 +537,7 @@ impl SystemResourceMonitor {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            _process: sysinfo::System::new(),
+            process: sysinfo::System::new(),
         }
     }
 }
@@ -554,7 +556,7 @@ impl ResourceMonitor for SystemResourceMonitor {
         0.0
     }
 
-    fn check_resources(&self, _required: &ResourceRequirements) -> Result<()> {
+    fn check_resources(&self, required: &ResourceRequirements) -> Result<()> {
         // Check if resources are available
         Ok(())
     }

@@ -434,7 +434,7 @@ impl MigrationGenerator {
     }
 
     /// Generate type conversion query
-    fn generate_type_conversion_query(&self, attr_name: &str, _old_type: &str, _new_type: &str) -> String {
+    fn generate_type_conversion_query(&self, attr_name: &str, old_type: &str, new_type: &str) -> String {
         let attr = self.generator.convert_identifier(attr_name);
 
         // Example: Convert string to integer
@@ -521,13 +521,13 @@ mod tests {
         name_slot.range = Some("string".to_string());
         new_schema.slots.insert("name".to_string(), name_slot);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact": {}, e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact: {}", e))?;
 
         let generator = MigrationGenerator::new();
-        let migration = generator.generate(&diff, &impact, "1.0.0", "1.1.0").map_err(|e| anyhow::anyhow!("should generate migration": {}, e))?;
+        let migration = generator.generate(&diff, &impact, "1.0.0", "1.1.0").map_err(|e| anyhow::anyhow!("should generate migration: {}", e))?;
 
-        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script": {}, e))?;
+        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script: {}", e))?;
         assert!(forward.contains("define"));
         assert!(forward.contains("name sub attribute"));
         assert!(forward.contains("person sub entity"));
@@ -543,19 +543,19 @@ mod tests {
         let removed_class = ClassDefinition::default();
         old_schema.classes.insert("OldClass".to_string(), removed_class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas": {}, e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact": {}, e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact: {}", e))?;
 
         let generator = MigrationGenerator::new();
-        let migration = generator.generate(&diff, &impact, "1.0.0", "2.0.0").map_err(|e| anyhow::anyhow!("should generate migration": {}, e))?;
+        let migration = generator.generate(&diff, &impact, "1.0.0", "2.0.0").map_err(|e| anyhow::anyhow!("should generate migration: {}", e))?;
 
         assert!(migration.metadata.is_breaking);
 
-        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script": {}, e))?;
+        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script: {}", e))?;
         assert!(forward.contains("undefine"));
         assert!(forward.contains("old-class sub thing"));
 
-        let rollback = migration.rollback_script().map_err(|e| anyhow::anyhow!("should generate rollback script": {}, e))?;
+        let rollback = migration.rollback_script().map_err(|e| anyhow::anyhow!("should generate rollback script: {}", e))?;
         assert!(rollback.contains("define"));
         assert!(rollback.contains("old-class sub entity"));
     }

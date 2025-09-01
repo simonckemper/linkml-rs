@@ -469,7 +469,7 @@ impl ShExGenerator {
     fn generate_json_shape(
         &self,
         class_name: &str,
-        _class_def: &ClassDefinition,
+        class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<serde_json::Value> {
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -496,7 +496,7 @@ impl ShExGenerator {
     }
 
     /// Generate ShExR (RDF format)
-    fn generate_shexr(&self, _schema: &SchemaDefinition) -> GeneratorResult<String> {
+    fn generate_shexr(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified RDF representation in Turtle
         let output = r"@prefix shex: <http://www.w3.org/ns/shex#> .
 @prefix ex: <http://example.org/> .
@@ -548,7 +548,7 @@ ex:MyShape a shex:Shape ;
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -596,7 +596,7 @@ ex:MyShape a shex:Shape ;
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -712,7 +712,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
 
         // Check content
         assert!(output.contains("PREFIX"));
@@ -726,7 +726,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
 
         // Check cardinality markers
         assert!(output.contains("?")); // optional age
@@ -740,7 +740,7 @@ mod tests {
         options.closed_shapes = true;
 
         let generator = ShExGenerator::with_options(options);
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx": {}, e))?;
+        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
 
         assert!(output.contains("CLOSED"));
     }

@@ -682,15 +682,15 @@ impl Generator for OpenApiGenerator {
 }
 
 impl CodeFormatter for OpenApiGenerator {
-    fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
+    fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         doc.to_string()
     }
 
     fn format_list<T: AsRef<str>>(
         &self,
         items: &[T],
-        _indent: &IndentStyle,
-        _level: usize,
+        indent: &IndentStyle,
+        level: usize,
         separator: &str,
     ) -> String {
         items
@@ -731,10 +731,10 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate OpenAPI": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate OpenAPI: {}", e))?;
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(&content).map_err(|e| anyhow::anyhow!("should parse as valid JSON": {}, e))?;
+        let parsed: JsonValue = serde_json::from_str(&content).map_err(|e| anyhow::anyhow!("should parse as valid JSON: {}", e))?;
 
         // Check basic structure
         assert_eq!(parsed["openapi"], "3.0.3");

@@ -37,7 +37,7 @@ impl PythonArrayGenerator {
 }
 
 impl ArrayCodeGenerator for PythonArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
         let dtype = match spec.element_type.as_str() {
             "integer" => "np.int64",
             "float" | "double" => "np.float64",
@@ -262,7 +262,7 @@ impl PythonArrayGenerator {
 pub struct TypeScriptArrayGenerator;
 
 impl ArrayCodeGenerator for TypeScriptArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
         let base_type = match spec.element_type.as_str() {
             "integer" | "float" | "double" => "number",
             "string" => "string",
@@ -425,7 +425,7 @@ impl TypeScriptArrayGenerator {
 pub struct RustArrayGenerator;
 
 impl ArrayCodeGenerator for RustArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
         let element_type = match spec.element_type.as_str() {
             "integer" => "i64",
             "float" | "double" => "f64",

@@ -262,7 +262,7 @@ impl SchemaMerge {
         &self,
         schemas: &[SchemaDefinition],
         merged: &mut SchemaDefinition,
-        _conflicts: &mut Vec<MergeConflict>,
+        conflicts: &mut Vec<MergeConflict>,
     ) -> Result<()> {
         if schemas.is_empty() {
             return Ok(());
@@ -336,7 +336,7 @@ impl SchemaMerge {
         &self,
         schemas: &[SchemaDefinition],
         merged: &mut SchemaDefinition,
-        _conflicts: &mut Vec<MergeConflict>,
+        conflicts: &mut Vec<MergeConflict>,
     ) -> Result<()> {
         // Process schemas in order, later ones override
         for schema in schemas {
@@ -392,11 +392,11 @@ impl SchemaMerge {
                 ConflictValue {
                     schema_index: 0,
                     value: serde_json::to_value(existing)
-                        .map_err(|e| anyhow::anyhow!("should serialize existing element": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("should serialize existing element: {}", e))?,
                 },
                 ConflictValue {
                     schema_index,
-                    value: serde_json::to_value(new).map_err(|e| anyhow::anyhow!("should serialize new element": {}, e))?,
+                    value: serde_json::to_value(new).map_err(|e| anyhow::anyhow!("should serialize new element: {}", e))?,
                 },
             ],
             resolution: format!("{:?}", self.options.conflict_resolution),
@@ -514,7 +514,7 @@ mod tests {
         let merger = SchemaMerge::new(options);
         let merged = merger
             .merge(&[schema1, schema2])
-            .map_err(|e| anyhow::anyhow!("should merge schemas": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
 
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
@@ -540,7 +540,7 @@ mod tests {
         let merger = SchemaMerge::new(options);
         let merged = merger
             .merge(&[schema1, schema2])
-            .map_err(|e| anyhow::anyhow!("should merge schemas": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
 
         assert_eq!(merged.classes.len(), 1);
         assert!(merged.classes.contains_key("Person"));

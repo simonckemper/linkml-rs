@@ -288,7 +288,7 @@ mod tests {
             "value": 42
         });
 
-        let result = engine.validate_with_class(&data, "TestClass").await.map_err(|e| anyhow::anyhow!("should validate": {}, e))?;
+        let result = engine.validate_with_class(&data, "TestClass").await.map_err(|e| anyhow::anyhow!("should validate: {}", e))?;
         assert!(result.valid || !result.valid); // Just check it runs
     }
 

@@ -7,7 +7,7 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test_basic_file_import() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create base schema
@@ -29,7 +29,7 @@ slots:
 
     fs::write(base_path.join("base.yaml"), base_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create main schema that imports base
     let main_schema = r#"
@@ -52,11 +52,11 @@ slots:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Load and resolve
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
+    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
 
     // Verify imports were resolved
     assert!(schema.classes.contains_key("BaseClass"));
@@ -71,12 +71,12 @@ slots:
 
 #[tokio::test]
 async fn test_import_aliases() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create schemas in subdirectory
     let schemas_dir = base_path.join("schemas");
-    fs::create_dir_all(&schemas_dir).await.unwrap();
+    fs::create_dir_all(&schemas_dir).await.expect("Test operation failed");
 
     let common_schema = r#"
 id: https://example.org/common
@@ -90,7 +90,7 @@ types:
 
     fs::write(schemas_dir.join("common.yaml"), common_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Main schema with import alias
     let main_schema = r#"
@@ -114,16 +114,16 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
     // No need to add alias since it's in the schema settings
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Verify alias resolution
     assert!(resolved.types.contains_key("Identifier"));
@@ -135,7 +135,7 @@ slots:
 
 #[tokio::test]
 async fn test_selective_imports() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a large schema with many elements
@@ -177,7 +177,7 @@ enums:
 
     fs::write(base_path.join("library.yaml"), library_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // For now, we'll test basic import functionality
     // TODO: Implement selective import syntax parsing (e.g., "library[Book,Author]")
@@ -199,15 +199,15 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // All elements should be imported for now
     assert!(resolved.classes.contains_key("Book"));
@@ -218,7 +218,7 @@ slots:
 
 #[tokio::test]
 async fn test_conflict_resolution() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Schema A with Status class
@@ -241,7 +241,7 @@ slots:
     range: string
 "#;
 
-    fs::write(base_path.join("a.yaml"), schema_a).await.unwrap();
+    fs::write(base_path.join("a.yaml"), schema_a).await.expect("Test operation failed");
 
     // Schema B with different Status class
     let schema_b = r#"
@@ -263,7 +263,7 @@ slots:
     range: datetime
 "#;
 
-    fs::write(base_path.join("b.yaml"), schema_b).await.unwrap();
+    fs::write(base_path.join("b.yaml"), schema_b).await.expect("Test operation failed");
 
     // Main schema importing both
     let main_schema = r#"
@@ -279,15 +279,15 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Should have Status from first import and qualified name for second
     assert!(resolved.classes.contains_key("Status"));
@@ -302,7 +302,7 @@ classes:
 
 #[tokio::test]
 async fn test_import_with_prefix() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a schema to be imported with prefix
@@ -337,7 +337,7 @@ slots:
 
     fs::write(base_path.join("geo.yaml"), geo_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // For now, test basic import without prefix
     // TODO: Implement prefix syntax parsing (e.g., "geo as geo_")
@@ -358,15 +358,15 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Verify import worked
     assert!(resolved.classes.contains_key("Location"));
@@ -375,14 +375,14 @@ slots:
 
 #[tokio::test]
 async fn test_import_resolution_strategies() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create directory structure
     let lib_dir = base_path.join("lib");
     let local_dir = base_path.join("local");
-    fs::create_dir_all(&lib_dir).await.unwrap();
-    fs::create_dir_all(&local_dir).await.unwrap();
+    fs::create_dir_all(&lib_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&local_dir).await.expect("Test operation failed");
 
     // Same filename in different locations
     let lib_common = r#"
@@ -398,7 +398,7 @@ types:
 
     fs::write(lib_dir.join("common.yaml"), lib_common)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let local_common = r#"
 id: https://example.org/local/common
@@ -413,7 +413,7 @@ types:
 
     fs::write(local_dir.join("common.yaml"), local_common)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test relative strategy (should find local first)
     let main_schema = r#"
@@ -425,21 +425,21 @@ imports:
 
     fs::write(local_dir.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     // Test relative resolution
     let mut settings = ImportSettings::default();
     settings.search_paths = vec![
-        local_dir.to_str().unwrap().to_string(),
-        lib_dir.to_str().unwrap().to_string(),
+        local_dir.to_str().expect("Test operation failed").to_string(),
+        lib_dir.to_str().expect("Test operation failed").to_string(),
     ];
     settings.resolution_strategy = Some(ImportResolutionStrategy::Relative);
 
     let resolver = ImportResolverV2::with_settings(settings.clone());
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Should get local version with relative strategy
     assert!(resolved.types.contains_key("Version"));
@@ -450,10 +450,10 @@ imports:
 
     // Test absolute resolution (search paths only)
     settings.resolution_strategy = Some(ImportResolutionStrategy::Absolute);
-    settings.search_paths = vec![lib_dir.to_str().unwrap().to_string()];
+    settings.search_paths = vec![lib_dir.to_str().expect("Test operation failed").to_string()];
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Should get lib version with absolute strategy
     assert!(resolved.types.contains_key("Version"));
@@ -465,7 +465,7 @@ imports:
 
 #[tokio::test]
 async fn test_deep_import_chain() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a chain of imports: main -> middle -> base
@@ -480,7 +480,7 @@ types:
 
     fs::write(base_path.join("base.yaml"), base_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let middle_schema = r#"
 id: https://example.org/middle
@@ -500,7 +500,7 @@ slots:
 
     fs::write(base_path.join("middle.yaml"), middle_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let main_schema = r#"
 id: https://example.org/main
@@ -515,10 +515,10 @@ classes:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
+    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
 
     // Verify entire chain was resolved
     assert!(schema.types.contains_key("BaseType"));
@@ -529,7 +529,7 @@ classes:
 
 #[tokio::test]
 async fn test_import_depth_limit() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a deep chain that exceeds max depth
@@ -566,7 +566,7 @@ classes:
 
         fs::write(base_path.join(format!("schema{}.yaml", i)), schema)
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
 
     let parser = YamlParser::new();
@@ -582,12 +582,12 @@ classes:
     name: Class14
 "#
         ))
-        .unwrap();
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
     settings.max_import_depth = Some(5); // Set low limit
 
     let resolver = ImportResolverV2::with_settings(settings);
@@ -609,7 +609,7 @@ classes:
 
 #[tokio::test]
 async fn test_cache_behavior() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a schema that's imported multiple times
@@ -624,7 +624,7 @@ types:
 
     fs::write(base_path.join("shared.yaml"), shared_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Two schemas that both import shared
     let schema_a = r#"
@@ -637,7 +637,7 @@ classes:
     name: ClassA
 "#;
 
-    fs::write(base_path.join("a.yaml"), schema_a).await.unwrap();
+    fs::write(base_path.join("a.yaml"), schema_a).await.expect("Test operation failed");
 
     let schema_b = r#"
 id: https://example.org/b
@@ -649,7 +649,7 @@ classes:
     name: ClassB
 "#;
 
-    fs::write(base_path.join("b.yaml"), schema_b).await.unwrap();
+    fs::write(base_path.join("b.yaml"), schema_b).await.expect("Test operation failed");
 
     // Main imports both a and b (which both import shared)
     let main_schema = r#"
@@ -661,16 +661,16 @@ imports:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).unwrap();
+    let schema = parser.parse_str(main_schema).expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
     settings
         .search_paths
-        .push(base_path.to_str().unwrap().to_string());
+        .push(base_path.to_str().expect("Test operation failed").to_string());
     settings.cache_imports = Some(true);
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Should have all elements without duplication
     assert!(resolved.types.contains_key("SharedType"));
@@ -679,7 +679,7 @@ imports:
 
     // Clear cache and resolve again
     resolver.clear_cache();
-    let resolved2 = resolver.resolve_imports(&schema).await.unwrap();
+    let resolved2 = resolver.resolve_imports(&schema).await.expect("Test operation failed");
 
     // Should get same result
     assert_eq!(resolved.types.len(), resolved2.types.len());
@@ -688,12 +688,12 @@ imports:
 
 #[tokio::test]
 async fn test_schema_settings_override() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create lib directory
     let lib_dir = base_path.join("lib");
-    fs::create_dir_all(&lib_dir).await.unwrap();
+    fs::create_dir_all(&lib_dir).await.expect("Test operation failed");
 
     let lib_schema = r#"
 id: https://example.org/lib
@@ -705,7 +705,7 @@ classes:
 
     fs::write(lib_dir.join("lib.yaml"), lib_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Schema with its own import settings
     let main_schema = r#"
@@ -724,10 +724,10 @@ imports:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.unwrap();
+    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
 
     // Verify settings were used
     assert!(schema.classes.contains_key("LibClass"));

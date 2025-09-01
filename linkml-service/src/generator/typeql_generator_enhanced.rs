@@ -55,7 +55,7 @@ pub struct EnhancedTypeQLGenerator {
     /// Role inheritance resolver
     role_inheritance_resolver: RwLock<RoleInheritanceResolver>,
     /// Identifier mapping table for bidirectional lookups
-    _identifier_map: HashMap<String, String>,
+    identifier_map: HashMap<String, String>,
 }
 
 /// Analyzes schema structure for optimal TypeQL generation
@@ -98,7 +98,7 @@ impl EnhancedTypeQLGenerator {
             constraint_translator: RwLock::new(TypeQLConstraintTranslator::new()),
             relation_analyzer: RwLock::new(RelationAnalyzer::new()),
             role_inheritance_resolver: RwLock::new(RoleInheritanceResolver::new()),
-            _identifier_map: HashMap::new(),
+            identifier_map: HashMap::new(),
         }
     }
 
@@ -110,12 +110,12 @@ impl EnhancedTypeQLGenerator {
             if let Some(_relation_info) = self
                 .relation_analyzer
                 .write()
-                .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned": {}, e))?
+                .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
                 .analyze_relation(class_name, class_def, schema)
             {
                 self.analyzer
                     .write()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                     .type_cache
                     .insert(class_name.clone(), TypeQLType::Relation);
 
@@ -123,18 +123,18 @@ impl EnhancedTypeQLGenerator {
                 if let Some(_parent) = &class_def.is_a {
                     self.role_inheritance_resolver
                         .write()
-                        .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned": {}, e))?
+                        .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned: {}", e))?
                         .analyze_relation_inheritance(class_name, class_def, schema);
                 }
             } else {
                 let typeql_type = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                     .determine_type(class_def, schema)?;
                 self.analyzer
                     .write()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                     .type_cache
                     .insert(class_name.clone(), typeql_type);
             }
@@ -143,7 +143,7 @@ impl EnhancedTypeQLGenerator {
         // Second pass: validate and optimize structure
         self.analyzer
             .read()
-            .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
             .validate_structure(schema)?;
 
         Ok(())
@@ -185,7 +185,7 @@ impl EnhancedTypeQLGenerator {
                 if let Some(TypeQLType::Entity) = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                     .type_cache
                     .get(type_name)
                 {
@@ -202,7 +202,7 @@ impl EnhancedTypeQLGenerator {
                 if let Some(TypeQLType::Relation) = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                     .type_cache
                     .get(type_name)
                 {
@@ -448,7 +448,7 @@ impl EnhancedTypeQLGenerator {
         let relation_info = self
             .relation_analyzer
             .write()
-            .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
             .analyze_relation(name, class, schema)
             .ok_or_else(|| {
                 GeneratorError::SchemaValidation(format!("{} is not a valid relation", name))
@@ -496,7 +496,7 @@ impl EnhancedTypeQLGenerator {
             if let Some(hierarchy) = self
                 .role_inheritance_resolver
                 .read()
-                .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned": {}, e))?
+                .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned: {}", e))?
                 .hierarchies
                 .get(name)
             {
@@ -580,7 +580,7 @@ impl EnhancedTypeQLGenerator {
         &self,
         output: &mut String,
         schema: &SchemaDefinition,
-        _indent: &IndentStyle,
+        indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         writeln!(output, "# Attributes\n").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -892,7 +892,7 @@ impl EnhancedTypeQLGenerator {
     fn build_inheritance_chain(
         &self,
         class: &ClassDefinition,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<Vec<String>> {
         let mut chain = Vec::new();
 
@@ -963,7 +963,7 @@ impl EnhancedTypeQLGenerator {
         let mut constraints = self
             .constraint_translator
             .write()
-            .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned: {}", e))?
             .translate_slot_constraints(slot);
 
         // Add range constraints for numeric types
@@ -972,7 +972,7 @@ impl EnhancedTypeQLGenerator {
                 let range_constraints = self
                     .constraint_translator
                     .write()
-                    .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned: {}", e))?
                     .translate_range_constraints(slot);
                 constraints.extend(range_constraints);
             }
@@ -986,7 +986,7 @@ impl EnhancedTypeQLGenerator {
         // Use the public method that handles all constraints
         self.constraint_translator
             .write()
-            .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("constraint translator lock should not be poisoned: {}", e))?
             .translate_slot_constraints(slot)
             .into_iter()
             .filter(|c| !c.starts_with('@')) // Filter out @ annotations for inline use
@@ -994,11 +994,11 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Collect roles this entity can play
-    fn collect_playable_roles(&self, entity_name: &str, _schema: &SchemaDefinition) -> Vec<String> {
+    fn collect_playable_roles(&self, entity_name: &str, schema: &SchemaDefinition) -> Vec<String> {
         // Use the relation analyzer's role player map
         self.relation_analyzer
             .write()
-            .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
             .get_playable_roles(entity_name)
             .into_iter()
             .map(|role| {
@@ -1147,9 +1147,9 @@ impl EnhancedTypeQLGenerator {
     fn generate_rule_conditions(
         &self,
         output: &mut String,
-        _var: &str,
-        _condition: &RuleConditions,
-        _schema: &SchemaDefinition,
+        var: &str,
+        condition: &RuleConditions,
+        schema: &SchemaDefinition,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         // This would translate LinkML rule conditions to TypeQL
@@ -1163,9 +1163,9 @@ impl EnhancedTypeQLGenerator {
     fn generate_rule_assertions(
         &self,
         output: &mut String,
-        _var: &str,
-        _condition: &RuleConditions,
-        _schema: &SchemaDefinition,
+        var: &str,
+        condition: &RuleConditions,
+        schema: &SchemaDefinition,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         // This would translate LinkML rule assertions to TypeQL
@@ -1485,7 +1485,7 @@ impl EnhancedTypeQLGenerator {
     fn generate_migration_script(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -1566,7 +1566,7 @@ mod tests {
         let options = GeneratorOptions::default();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate TypeQL output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate TypeQL output: {}", e))?;
 
         assert_eq!(outputs.len(), 1);
         let content = &outputs[0].content;
@@ -1630,14 +1630,14 @@ mod tests {
         // Analyze schema
         generator
             .analyze_schema(&schema)
-            .map_err(|e| anyhow::anyhow!("should analyze schema": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should analyze schema: {}", e))?;
 
         // Check that Employment was detected as a relation
         assert_eq!(
             generator
                 .analyzer
                 .read()
-                .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned": {}, e))?
+                .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
                 .type_cache
                 .get("Employment"),
             Some(&TypeQLType::Relation)

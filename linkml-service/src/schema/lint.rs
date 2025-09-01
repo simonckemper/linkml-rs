@@ -113,7 +113,7 @@ impl LintOptions {
         // Store rule configurations
         for (key, value) in config {
             if key.starts_with("rule.") {
-                let rule_name = key.strip_prefix("rule.").map_err(|e| anyhow::anyhow!("just checked starts_with": {}, e))?;
+                let rule_name = key.strip_prefix("rule.").map_err(|e| anyhow::anyhow!("just checked starts_with: {}", e))?;
                 if let Some(rule_config) = value.as_object() {
                     let mut config_map = HashMap::new();
                     for (k, v) in rule_config {
@@ -285,7 +285,7 @@ impl LintRule for NamingConventionRule {
         let mut issues = Vec::new();
 
         // Check class names (should be PascalCase)
-        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").map_err(|e| anyhow::anyhow!("valid regex pattern": {}, e))?;
+        let pascal_case = Regex::new(r"^[A-Z][a-zA-Z0-9]*$").map_err(|e| anyhow::anyhow!("valid regex pattern: {}", e))?;
         for class_name in schema.classes.keys() {
             if !pascal_case.is_match(class_name) {
                 issues.push(LintIssue {
@@ -303,7 +303,7 @@ impl LintRule for NamingConventionRule {
         }
 
         // Check slot names (should be snake_case)
-        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").map_err(|e| anyhow::anyhow!("valid regex pattern": {}, e))?;
+        let snake_case = Regex::new(r"^[a-z][a-z0-9_]*$").map_err(|e| anyhow::anyhow!("valid regex pattern: {}", e))?;
         for slot_name in schema.slots.keys() {
             if !snake_case.is_match(slot_name) {
                 issues.push(LintIssue {
@@ -323,7 +323,7 @@ impl LintRule for NamingConventionRule {
         issues
     }
 
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         // Naming changes require manual intervention
         Ok(0)
     }
@@ -401,7 +401,7 @@ impl LintRule for MissingDocumentationRule {
         issues
     }
 
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         // Documentation must be added manually
         Ok(0)
     }
@@ -556,7 +556,7 @@ impl LintRule for SlotConsistencyRule {
         issues
     }
 
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         // Cannot auto-fix undefined slots
         Ok(0)
     }
@@ -625,7 +625,7 @@ impl LintRule for TypeSafetyRule {
         issues
     }
 
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         // Cannot auto-fix type issues
         Ok(0)
     }
@@ -699,7 +699,7 @@ impl LintRule for SchemaMetadataRule {
         issues
     }
 
-    fn fix(&self, _schema: &mut SchemaDefinition, _issues: &[LintIssue]) -> Result<usize> {
+    fn fix(&self, schema: &mut SchemaDefinition, issues: &[LintIssue]) -> Result<usize> {
         // Metadata must be added manually
         Ok(0)
     }
@@ -730,7 +730,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .map_err(|e| anyhow::anyhow!("Error: {}", e))? always produces at least one char"),
+                .expect("to_lowercase() always produces at least one char"),
         );
         prev_upper = ch.is_uppercase();
     }

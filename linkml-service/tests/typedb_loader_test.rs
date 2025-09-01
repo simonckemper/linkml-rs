@@ -220,7 +220,7 @@ async fn test_typedb_loader_with_mock() {
     let mut loader = TypeDBIntegrationLoader::new(options, executor);
     let schema = create_test_schema();
 
-    let instances = loader.load(&schema).await.unwrap();
+    let instances = loader.load(&schema).await.expect("Test operation failed");
 
     // Should have loaded 2 person instances
     assert_eq!(instances.len(), 2);
@@ -258,11 +258,11 @@ async fn test_typedb_dumper_with_mock() {
             "age": 35,
             "email": "test@example.com"
         }))
-        .unwrap(),
+        .expect("Test operation failed"),
     }];
 
-    let result = dumper.dump(&instances, &schema).await.unwrap();
-    let summary = String::from_utf8(result).unwrap();
+    let result = dumper.dump(&instances, &schema).await.expect("Test operation failed");
+    let summary = String::from_utf8(result).expect("Test operation failed");
     assert!(summary.contains("Successfully dumped 1 instances"));
 }
 
@@ -292,7 +292,7 @@ fn test_options_with_mappings() {
         options
             .attribute_mapping
             .get("person")
-            .unwrap()
+            .expect("Test operation failed")
             .get("full-name"),
         Some(&"full_name".to_string())
     );

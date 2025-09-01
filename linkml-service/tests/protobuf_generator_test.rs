@@ -40,7 +40,7 @@ async fn test_basic_protobuf_generation() {
     // Generate protobuf
     let generator = ProtobufGenerator::new();
     let options = GeneratorOptions::default();
-    let proto = generator.generate(&schema).unwrap();
+    let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check content
     assert!(proto.contains("syntax = \"proto3\""));
@@ -116,7 +116,7 @@ async fn test_enums_and_repeated_fields() {
     // Generate protobuf
     let generator = ProtobufGenerator::new();
     let options = GeneratorOptions::default();
-    let proto = generator.generate(&schema).unwrap();
+    let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check enum generation
     assert!(proto.contains("enum Department {"));
@@ -181,7 +181,7 @@ async fn test_inheritance_and_composition() {
     // Generate protobuf
     let generator = ProtobufGenerator::new();
     let options = GeneratorOptions::default();
-    let proto = generator.generate(&schema).unwrap();
+    let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check that timestamp import is added for datetime
     assert!(
@@ -261,7 +261,7 @@ async fn test_complex_types() {
     // Generate protobuf
     let generator = ProtobufGenerator::new();
     let options = GeneratorOptions::default();
-    let proto = generator.generate(&schema).unwrap();
+    let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check type mappings
     assert!(proto.contains("string website = 1")); // Custom types map to base type
@@ -307,7 +307,7 @@ async fn test_case_handling() {
     // Generate protobuf
     let generator = ProtobufGenerator::new();
     let options = GeneratorOptions::default();
-    let proto = generator.generate(&schema).unwrap();
+    let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check package name conversion
     assert!(proto.contains("package case_test_schema"));

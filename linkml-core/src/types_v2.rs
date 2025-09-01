@@ -547,18 +547,73 @@ impl From<crate::types::PrefixDefinition> for PrefixDefinitionV2 {
 }
 
 impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
-    fn from(_v1: crate::settings::SchemaSettings) -> Self {
-        // v1 SchemaSettings has completely different structure
-        // Return default v2 settings
+    fn from(v1: crate::settings::SchemaSettings) -> Self {
+        // Extract relevant fields from v1 settings and convert to v2 format
+        let search_paths = if let Some(imports) = &v1.imports {
+            intern_vec(imports.search_paths.clone())
+        } else {
+            vec![]
+        };
+
+        let base_url = v1.imports
+            .as_ref()
+            .and_then(|i| i.base_url.as_deref())
+            .map(intern);
+
+        let aliases = if let Some(imports) = &v1.imports {
+            imports.aliases.iter()
+                .map(|(k, v)| (intern(k), intern(v)))
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
+        let slot_range = v1.defaults
+            .as_ref()
+            .and_then(|d| d.slot_range.as_deref())
+            .map(intern);
+
+        let package_name = v1.generation
+            .as_ref()
+            .and_then(|g| g.package_name.as_deref())
+            .map(intern);
+
+        let imports = if let Some(generation) = &v1.generation {
+            generation.language_options.values()
+                .flat_map(|opts| opts.imports.iter())
+                .map(|s| intern(s))
+                .collect()
+        } else {
+            vec![]
+        };
+
+        let type_mappings = if let Some(generation) = &v1.generation {
+            generation.language_options.values()
+                .flat_map(|opts| opts.type_mappings.iter())
+                .map(|(k, v)| (intern(k), intern(v)))
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
+        let features = if let Some(generation) = &v1.generation {
+            generation.language_options.values()
+                .flat_map(|opts| opts.features.iter())
+                .map(|s| intern(s))
+                .collect()
+        } else {
+            vec![]
+        };
+
         Self {
-            search_paths: vec![],
-            base_url: None,
-            aliases: HashMap::new(),
-            slot_range: None,
-            package_name: None,
-            imports: vec![],
-            type_mappings: HashMap::new(),
-            features: vec![],
+            search_paths,
+            base_url,
+            aliases,
+            slot_range,
+            package_name,
+            imports,
+            type_mappings,
+            features,
         }
     }
 }

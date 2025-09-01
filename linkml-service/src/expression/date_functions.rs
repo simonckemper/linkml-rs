@@ -489,65 +489,68 @@ mod tests {
     #[test]
     fn test_now_today() {
         let now_fn = NowFunction;
-        let result = now_fn.call(vec![]).map_err(|e| anyhow::anyhow!("Error: {}", e))? should succeed");
+        let result = now_fn.call(vec![]).expect("now_fn.call should succeed");
         assert!(matches!(result, Value::String(_)));
 
         let today_fn = TodayFunction;
-        let result = today_fn.call(vec![]).map_err(|e| anyhow::anyhow!("Error: {}", e))? should succeed");
+        let result = today_fn.call(vec![]).expect("today_fn.call should succeed");
         assert!(matches!(result, Value::String(_)));
     }
 
     #[test]
-    fn test_date_parse() {
+    fn test_date_parse() -> Result<(), Box<dyn std::error::Error>> {
         let parse = DateParseFunction;
 
         // Standard format
         let result = parse
             .call(vec![json!("2024-01-15")])
-            .map_err(|e| anyhow::anyhow!("should parse standard date format": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse standard date format: {}", e))?;
         assert_eq!(result, json!("2024-01-15"));
 
         // Custom format
         let result = parse
             .call(vec![json!("15/01/2024"), json!("%d/%m/%Y")])
-            .map_err(|e| anyhow::anyhow!("should parse custom date format": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse custom date format: {}", e))?;
         assert_eq!(result, json!("2024-01-15"));
+        Ok(())
     }
 
     #[test]
-    fn test_date_format() {
+    fn test_date_format() -> Result<(), Box<dyn std::error::Error>> {
         let format = DateFormatFunction;
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%Y/%m/%d")])
-            .map_err(|e| anyhow::anyhow!("should format date as Y/m/d": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should format date as Y/m/d: {}", e))?;
         assert_eq!(result, json!("2024/01/15"));
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%B %d, %Y")])
-            .map_err(|e| anyhow::anyhow!("should format date with month name": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should format date with month name: {}", e))?;
         assert_eq!(result, json!("January 15, 2024"));
+        Ok(())
     }
 
     #[test]
-    fn test_date_add() {
+    fn test_date_add() -> Result<(), Box<dyn std::error::Error>> {
         let add = DateAddFunction;
 
         // Add days
         let result = add
             .call(vec![json!("2024-01-15"), json!(10), json!("days")])
-            .map_err(|e| anyhow::anyhow!("should add days to date": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should add days to date: {}", e))?;
         assert_eq!(result, json!("2024-01-25"));
 
         // Add months
         let result = add
             .call(vec![json!("2024-01-15"), json!(2), json!("months")])
-            .map_err(|e| anyhow::anyhow!("should add months to date": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should add months to date: {}", e))?;
         assert_eq!(result, json!("2024-03-15"));
+        Ok(())
     }
 
     #[test]
-    fn test_date_diff() {
+    fn test_date_diff() -> Result<(), Box<dyn std::error::Error>> {
         let diff = DateDiffFunction;
 
         let result = diff
@@ -556,7 +559,7 @@ mod tests {
                 json!("2024-01-25"),
                 json!("days"),
             ])
-            .map_err(|e| anyhow::anyhow!("should calculate date difference": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should calculate date difference: {}", e))?;
         assert_eq!(result, json!(10));
     }
 
@@ -569,18 +572,19 @@ mod tests {
         let date = json!("2024-03-15");
 
         assert_eq!(
-            year.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract year": {}, e))?,
+            year.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract year: {}", e))?,
             json!(2024)
         );
         assert_eq!(
             month
                 .call(vec![date.clone()])
-                .map_err(|e| anyhow::anyhow!("should extract month": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should extract month: {}", e))?,
             json!(3)
         );
         assert_eq!(
-            day.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract day": {}, e))?,
+            day.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract day: {}", e))?,
             json!(15)
         );
+        Ok(())
     }
 }

@@ -40,7 +40,7 @@ async fn test_basic_java_generation() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let java = generator.generate(&schema).unwrap();
+    let java = generator.generate(&schema).expect("Test operation failed");
 
     // Check filename
 
@@ -92,7 +92,7 @@ async fn test_enum_generation() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let java = generator.generate(&schema).unwrap();
+    let java = generator.generate(&schema).expect("Test operation failed");
 
     assert!(java.contains("public enum OrderStatus {"));
     assert!(java.contains("PENDING,"));
@@ -139,7 +139,7 @@ async fn test_inheritance() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let java = generator.generate(&schema).unwrap();
+    let java = generator.generate(&schema).expect("Test operation failed");
 
     // Check that both classes are generated
     // Check Entity class
@@ -183,7 +183,7 @@ async fn test_collections() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
 
     let java = &result;
 
@@ -241,7 +241,7 @@ async fn test_custom_types() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
 
     let java = &result;
 
@@ -273,7 +273,7 @@ async fn test_builder_pattern() {
     let generator = JavaGenerator::new();
     let mut options = GeneratorOptions::default();
     options = options.set_custom("generate_builder", "true");
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
 
     let java = &result;
 
@@ -312,7 +312,7 @@ async fn test_case_handling() {
     // Generate Java
     let generator = JavaGenerator::new();
     let options = GeneratorOptions::default();
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
 
     let java = &result;
 

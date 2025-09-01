@@ -821,15 +821,15 @@ impl Generator for HtmlGenerator {
 }
 
 impl CodeFormatter for HtmlGenerator {
-    fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
+    fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         self.escape_html(doc)
     }
 
     fn format_list<T: AsRef<str>>(
         &self,
         items: &[T],
-        _indent: &IndentStyle,
-        _level: usize,
+        indent: &IndentStyle,
+        level: usize,
         separator: &str,
     ) -> String {
         items
@@ -871,7 +871,7 @@ mod tests {
 
         let html = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate HTML output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate HTML output: {}", e))?;
 
         // Check basic structure
         assert!(html.contains("<!DOCTYPE html>"));

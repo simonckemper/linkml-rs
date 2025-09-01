@@ -65,8 +65,8 @@ pub struct ExpressionCache {
 impl ExpressionCache {
     /// Create a new expression cache with given capacity
     pub fn new(capacity: usize) -> Self {
-        let capacity =
-            NonZeroUsize::new(capacity.max(1)).map_err(|e| anyhow::anyhow!("Error: {}", e))? is always non-zero");
+        // Ensure capacity is at least 1
+        let capacity = NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always >= 1");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -79,8 +79,8 @@ impl ExpressionCache {
     pub fn from_service_config(
         config: &linkml_core::configuration_v2::ExpressionCacheConfig,
     ) -> Self {
-        let capacity = NonZeroUsize::new(config.max_entries.max(1))
-            .map_err(|e| anyhow::anyhow!("Error: {}", e))? is always non-zero");
+        // Ensure capacity is at least 1
+        let capacity = NonZeroUsize::new(config.max_entries.max(1)).expect("config.max_entries.max(1) is always >= 1");
         Self {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -103,8 +103,8 @@ impl ExpressionCache {
 
     /// Get an expression from the cache
     pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         if let Some(entry) = cache.get_mut(key) {
             // Check if entry is too old
@@ -137,8 +137,8 @@ impl ExpressionCache {
         ast: Expression,
         compiled: Option<Arc<CompiledExpression>>,
     ) {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         let entry = CachedExpression {
             ast,
@@ -158,8 +158,8 @@ impl ExpressionCache {
 
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         cache.clear();
         stats.entries = 0;
@@ -168,12 +168,17 @@ impl ExpressionCache {
 
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?.clone()
+        // If lock is poisoned, return default stats rather than panic
+        self.stats.read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
     }
 
     /// Get cache hit rate (0.0 to 1.0)
     pub fn hit_rate(&self) -> f64 {
-        let stats = self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        // If lock is poisoned, return 0.0 rather than panic
+        let stats = self.stats.read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let total = stats.hits + stats.misses;
         if total == 0 {
             0.0
@@ -184,8 +189,8 @@ impl ExpressionCache {
 
     /// Prune old entries from the cache
     pub fn prune_old_entries(&self) {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         let now = Instant::now();
         let mut to_remove = Vec::new();
@@ -349,7 +354,7 @@ mod tests {
         cache.insert(key.clone(), ast.clone(), None);
 
         // Cache hit
-        let cached = cache.get(&key).map_err(|e| anyhow::anyhow!("cached entry should exist": {}, e))?;
+        let cached = cache.get(&key).expect("cached entry should exist");
         assert_eq!(cache.stats().hits, 1);
         assert_eq!(cached.hit_count, 1);
     }

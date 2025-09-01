@@ -11,7 +11,7 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test_import_aliases_and_mappings() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create common schema
@@ -24,14 +24,14 @@ classes:
 "#;
 
     let common_dir = base_path.join("common");
-    fs::create_dir_all(&common_dir).await.unwrap();
+    fs::create_dir_all(&common_dir).await.expect("Test operation failed");
     fs::write(common_dir.join("v2.yaml"), common_v2)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create base schemas directory
     let base_schemas_dir = base_path.join("base_schemas");
-    fs::create_dir_all(&base_schemas_dir).await.unwrap();
+    fs::create_dir_all(&base_schemas_dir).await.expect("Test operation failed");
 
     let entity_schema = r#"
 id: https://base.example.org/schemas/entity
@@ -42,7 +42,7 @@ classes:
 "#;
     fs::write(base_schemas_dir.join("entity.yaml"), entity_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create main schema with aliases and mappings
     let main_schema = r#"
@@ -65,7 +65,7 @@ classes:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create resolver and load schema
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
@@ -75,18 +75,18 @@ classes:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
     // Apply settings to resolver
     if let Some(ref settings) = schema.settings {
         resolver
             .resolve_imports(&mut schema, Some(&settings.imports))
             .await
-            .unwrap();
+            .expect("Test operation failed");
     } else {
-        resolver.resolve_imports(&mut schema, None).await.unwrap();
+        resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
     }
 
     // Verify imports were resolved
@@ -115,7 +115,7 @@ async fn test_url_import_resolution() {
 
 #[tokio::test]
 async fn test_circular_import_detection() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create schema A that imports B
@@ -153,13 +153,13 @@ classes:
 
     fs::write(base_path.join("schema_a.yaml"), schema_a)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     fs::write(base_path.join("schema_b.yaml"), schema_b)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     fs::write(base_path.join("schema_c.yaml"), schema_c)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -168,9 +168,9 @@ classes:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("schema_a.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
     // Should handle circular imports gracefully
     let result = resolver.resolve_imports(&mut schema, None).await;
@@ -194,7 +194,7 @@ classes:
 
 #[tokio::test]
 async fn test_selective_imports() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create a large schema to import from
@@ -223,7 +223,7 @@ slots:
 
     fs::write(base_path.join("large.yaml"), large_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Import with 'only' directive (mock - actual implementation would filter)
     let selective_schema = r#"
@@ -238,7 +238,7 @@ classes:
 
     fs::write(base_path.join("selective.yaml"), selective_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -247,11 +247,11 @@ classes:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("selective.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.unwrap();
+    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
 
     // In a full implementation with selective imports, we would verify
     // only the requested elements were imported
@@ -261,7 +261,7 @@ classes:
 
 #[tokio::test]
 async fn test_import_conflict_resolution() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create two schemas with conflicting definitions
@@ -300,10 +300,10 @@ slots:
 
     fs::write(base_path.join("schema1.yaml"), schema1)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     fs::write(base_path.join("schema2.yaml"), schema2)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Schema that imports both (conflict!)
     let main_schema = r#"
@@ -320,7 +320,7 @@ classes:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -329,21 +329,21 @@ classes:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.unwrap();
+    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
 
     // Last import wins strategy - schema2's Person should override
-    let person = schema.classes.get("Person").unwrap();
+    let person = schema.classes.get("Person").expect("Test operation failed");
     assert_eq!(person.description.as_deref(), Some("Person from schema2"));
     assert!(person.slots.contains(&"full_name".to_string()));
 }
 
 #[tokio::test]
 async fn test_nested_import_resolution() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create deeply nested directory structure
@@ -352,7 +352,7 @@ async fn test_nested_import_resolution() {
         .join("example")
         .join("schemas")
         .join("v1");
-    fs::create_dir_all(&deep_path).await.unwrap();
+    fs::create_dir_all(&deep_path).await.expect("Test operation failed");
 
     let nested_schema = r#"
 id: https://example.org/nested
@@ -364,7 +364,7 @@ classes:
 
     fs::write(deep_path.join("nested.yaml"), nested_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create schema with complex import path
     let main_schema = r#"
@@ -382,7 +382,7 @@ classes:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -391,11 +391,11 @@ classes:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.unwrap();
+    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
 
     assert!(schema.classes.contains_key("NestedClass"));
     assert!(schema.classes.contains_key("MainClass"));
@@ -403,7 +403,7 @@ classes:
 
 #[tokio::test]
 async fn test_import_with_different_strategies() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Test different resolution strategies
@@ -434,16 +434,16 @@ settings:
         let filename = format!("test_{}.yaml", format!("{:?}", strategy).to_lowercase());
         fs::write(base_path.join(&filename), test_schema)
             .await
-            .unwrap();
+            .expect("Test operation failed");
 
         let parser = YamlParser::new();
         let schema = parser
             .parse_str(
                 &tokio::fs::read_to_string(base_path.join(&filename))
                     .await
-                    .unwrap(),
+                    .expect("Test operation failed"),
             )
-            .unwrap();
+            .expect("Test operation failed");
 
         // Verify strategy was parsed correctly
         if let Some(schema_settings) = schema.settings {
@@ -454,7 +454,7 @@ settings:
 
 #[tokio::test]
 async fn test_import_error_handling() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Schema with non-existent import
@@ -468,7 +468,7 @@ imports:
 
     fs::write(base_path.join("bad.yaml"), bad_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -477,9 +477,9 @@ imports:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("bad.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
     let result = resolver.resolve_imports(&mut schema, None).await;
 
@@ -495,14 +495,14 @@ imports:
 
 #[tokio::test]
 async fn test_import_with_version_specifiers() {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let base_path = temp_dir.path();
 
     // Create versioned schemas
     let v1_dir = base_path.join("common").join("v1");
     let v2_dir = base_path.join("common").join("v2");
-    fs::create_dir_all(&v1_dir).await.unwrap();
-    fs::create_dir_all(&v2_dir).await.unwrap();
+    fs::create_dir_all(&v1_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&v2_dir).await.expect("Test operation failed");
 
     let common_v1 = r#"
 id: https://example.org/common/v1
@@ -529,10 +529,10 @@ classes:
 
     fs::write(v1_dir.join("common.yaml"), common_v1)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     fs::write(v2_dir.join("common.yaml"), common_v2)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Schema that uses version-specific import
     let main_schema = r#"
@@ -548,7 +548,7 @@ imports:
 
     fs::write(base_path.join("main.yaml"), main_schema)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let resolver = ImportResolverV2::new().with_base_path(base_path.to_path_buf());
 
@@ -557,19 +557,19 @@ imports:
         .parse_str(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
-                .unwrap(),
+                .expect("Test operation failed"),
         )
-        .unwrap();
+        .expect("Test operation failed");
 
     if let Some(ref settings) = schema.settings {
         resolver
             .resolve_imports(&mut schema, Some(&settings.imports))
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
 
     // Should have v2 Base class
-    let base_class = schema.classes.get("Base").unwrap();
+    let base_class = schema.classes.get("Base").expect("Test operation failed");
     assert_eq!(base_class.description.as_deref(), Some("Base class v2"));
     assert!(base_class.slots.contains(&"identifier".to_string()));
 }

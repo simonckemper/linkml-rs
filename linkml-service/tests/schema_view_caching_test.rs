@@ -9,18 +9,18 @@ use tokio::task;
 #[tokio::test]
 async fn test_schema_view_basic_caching() {
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // First call - cache miss
     let start = Instant::now();
-    let ancestors1 = view.class_ancestors("GrandChild").unwrap();
+    let ancestors1 = view.class_ancestors("GrandChild").expect("Test operation failed");
     let first_call_time = start.elapsed();
 
     assert_eq!(ancestors1.len(), 2); // Child, Parent (not including self)
 
     // Second call - cache hit
     let start = Instant::now();
-    let ancestors2 = view.class_ancestors("GrandChild").unwrap();
+    let ancestors2 = view.class_ancestors("GrandChild").expect("Test operation failed");
     let second_call_time = start.elapsed();
 
     assert_eq!(ancestors1, ancestors2);
@@ -32,15 +32,15 @@ async fn test_schema_view_basic_caching() {
 #[tokio::test]
 async fn test_induced_slots_caching() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Warm up cache
-    let _ = view.class_slots("Employee").unwrap();
+    let _ = view.class_slots("Employee").expect("Test operation failed");
 
     // Measure cached performance
     let start = Instant::now();
     for _ in 0..1000 {
-        let slots = view.class_slots("Employee").unwrap();
+        let slots = view.class_slots("Employee").expect("Test operation failed");
         assert!(slots.len() >= 4); // id, name, employee_id, department
     }
     let elapsed = start.elapsed();
@@ -53,11 +53,11 @@ async fn test_induced_slots_caching() {
 async fn test_cache_invalidation_not_needed() {
     // SchemaView is immutable, so cache invalidation isn't needed
     let schema = create_test_schema();
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Get initial results
-    let classes1 = view.all_classes().unwrap();
-    let slots1 = view.all_slots().unwrap();
+    let classes1 = view.all_classes().expect("Test operation failed");
+    let slots1 = view.all_slots().expect("Test operation failed");
 
     // Even if we could modify the schema (we can't), the view would still be valid
     assert_eq!(classes1.len(), 3);
@@ -67,7 +67,7 @@ async fn test_cache_invalidation_not_needed() {
 #[tokio::test]
 async fn test_concurrent_cache_access() {
     let schema = Arc::new(create_complex_schema());
-    let view = Arc::new(SchemaView::new(schema.as_ref().clone()).await.unwrap());
+    let view = Arc::new(SchemaView::new(schema.as_ref().clone()).await.expect("Test operation failed"));
 
     let mut handles = vec![];
 
@@ -85,7 +85,7 @@ async fn test_concurrent_cache_access() {
                     _ => "Department",
                 };
 
-                let slots = view_clone.class_slots(class_name).unwrap();
+                let slots = view_clone.class_slots(class_name).expect("Test operation failed");
                 results.push((class_name, slots.len()));
             }
 
@@ -100,7 +100,7 @@ async fn test_concurrent_cache_access() {
 
     // Verify all tasks got consistent results
     for results in all_results {
-        let results = results.unwrap();
+        let results = results.expect("Test operation failed");
         for (class_name, slot_count) in results {
             match class_name {
                 "Person" => assert!(slot_count >= 2),
@@ -116,26 +116,26 @@ async fn test_concurrent_cache_access() {
 #[tokio::test]
 async fn test_navigation_cache_statistics() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Perform various operations to populate cache
-    let _ = view.class_ancestors("Employee").unwrap();
-    let _ = view.class_descendants("Person").unwrap();
-    let _ = view.class_slots("Employee").unwrap();
-    let _ = view.induced_class("Employee").unwrap();
-    let _ = view.usage_index().unwrap();
+    let _ = view.class_ancestors("Employee").expect("Test operation failed");
+    let _ = view.class_descendants("Person").expect("Test operation failed");
+    let _ = view.class_slots("Employee").expect("Test operation failed");
+    let _ = view.induced_class("Employee").expect("Test operation failed");
+    let _ = view.usage_index().expect("Test operation failed");
 
     // Access cached data multiple times
     for _ in 0..10 {
-        let _ = view.class_ancestors("Employee").unwrap();
-        let _ = view.class_slots("Employee").unwrap();
+        let _ = view.class_ancestors("Employee").expect("Test operation failed");
+        let _ = view.class_slots("Employee").expect("Test operation failed");
     }
 
     // In a real implementation, we might track cache statistics
     // For now, just verify operations complete quickly
     let start = Instant::now();
     for _ in 0..1000 {
-        let _ = view.class_ancestors("Employee").unwrap();
+        let _ = view.class_ancestors("Employee").expect("Test operation failed");
     }
     let elapsed = start.elapsed();
 
@@ -160,11 +160,11 @@ async fn test_complex_inheritance_caching() {
         schema.slots.insert(format!("slot{}", i), slot);
     }
 
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // First access - builds cache
     let start = Instant::now();
-    let ancestors = view.class_ancestors("Class19").unwrap();
+    let ancestors = view.class_ancestors("Class19").expect("Test operation failed");
     let first_time = start.elapsed();
 
     assert_eq!(ancestors.len(), 19); // All parent classes (not including self)
@@ -172,7 +172,7 @@ async fn test_complex_inheritance_caching() {
     // Subsequent accesses should be instant
     let start = Instant::now();
     for i in 0..20 {
-        let ancestors = view.class_ancestors(&format!("Class{}", i)).unwrap();
+        let ancestors = view.class_ancestors(&format!("Class{}", i)).expect("Test operation failed");
         assert_eq!(ancestors.len(), i); // Ancestors don't include self
     }
     let cached_time = start.elapsed();
@@ -185,11 +185,11 @@ async fn test_complex_inheritance_caching() {
 #[tokio::test]
 async fn test_usage_index_caching() {
     let schema = create_complex_schema();
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // First build of usage index
     let start = Instant::now();
-    let usage1 = view.usage_index().unwrap();
+    let usage1 = view.usage_index().expect("Test operation failed");
     let first_time = start.elapsed();
 
     // Verify usage data exists (UsageIndex doesn't expose direct field access)
@@ -200,7 +200,7 @@ async fn test_usage_index_caching() {
 
     // Second access should be cached
     let start = Instant::now();
-    let usage2 = view.usage_index().unwrap();
+    let usage2 = view.usage_index().expect("Test operation failed");
     let cached_time = start.elapsed();
 
     assert!(cached_time < first_time / 10);
@@ -240,12 +240,12 @@ async fn test_mixin_resolution_caching() {
         schema.slots.insert(format!("own_slot_{}", i), slot);
     }
 
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Measure mixin resolution performance
     let start = Instant::now();
     for i in 0..10 {
-        let mixed_class = view.induced_class(&format!("Mixed{}", i)).unwrap();
+        let mixed_class = view.induced_class(&format!("Mixed{}", i)).expect("Test operation failed");
         assert!(mixed_class.slots.len() >= 4); // Own slot + 3 mixin slots
     }
     let first_time = start.elapsed();
@@ -254,7 +254,7 @@ async fn test_mixin_resolution_caching() {
     let start = Instant::now();
     for _ in 0..100 {
         for i in 0..10 {
-            let mixed_class = view.induced_class(&format!("Mixed{}", i)).unwrap();
+            let mixed_class = view.induced_class(&format!("Mixed{}", i)).expect("Test operation failed");
             assert!(mixed_class.slots.len() >= 4);
         }
     }
@@ -268,20 +268,20 @@ async fn test_mixin_resolution_caching() {
 // #[tokio::test]
 // async fn test_dependency_graph_caching() {
 //     let schema = create_complex_schema();
-//     let view = SchemaView::new(schema).unwrap();
+//     let view = SchemaView::new(schema).expect("Test operation failed");
 //
 //     // First generation of dependency graph
 //     let start = Instant::now();
-//     let graph1 = view.get_class_dependency_graph().unwrap();
+//     let graph1 = view.get_class_dependency_graph().expect("Test operation failed");
 //     let first_time = start.elapsed();
 //
 //     // Verify graph structure
 //     assert!(graph1.contains_key("Employee"));
-//     assert!(graph1.get("Employee").unwrap().contains("Person"));
+//     assert!(graph1.get("Employee").expect("Test operation failed").contains("Person"));
 //
 //     // Second access should be cached
 //     let start = Instant::now();
-//     let graph2 = view.get_class_dependency_graph().unwrap();
+//     let graph2 = view.get_class_dependency_graph().expect("Test operation failed");
 //     let cached_time = start.elapsed();
 //
 //     assert!(cached_time < first_time / 10);
@@ -305,12 +305,12 @@ async fn test_memory_efficiency() {
         }
     }
 
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Access various cached data
-    let _ = view.all_classes().unwrap();
-    let _ = view.all_slots().unwrap();
-    let _ = view.usage_index().unwrap();
+    let _ = view.all_classes().expect("Test operation failed");
+    let _ = view.all_slots().expect("Test operation failed");
+    let _ = view.usage_index().expect("Test operation failed");
 
     // Even with caching, memory usage should be reasonable
     // The cache stores computed results, not duplicating the schema
@@ -319,7 +319,7 @@ async fn test_memory_efficiency() {
     let start = Instant::now();
     for i in 0..100 {
         let class_name = format!("Class{}", i * 10);
-        let _ = view.class_slots(&class_name).unwrap();
+        let _ = view.class_slots(&class_name).expect("Test operation failed");
     }
     let elapsed = start.elapsed();
 

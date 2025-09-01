@@ -293,7 +293,7 @@ impl PlantUmlGenerator {
         slot_name: &str,
         slot_def: &SlotDefinition,
         visibility: &str,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         write!(output, "  {}{}", visibility, slot_name)
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -588,7 +588,7 @@ impl PlantUmlGenerator {
                     writeln!(
                         &mut output,
                         "{} --> [*]",
-                        states.last().map_err(|e| anyhow::anyhow!("checked states is not empty": {}, e))?
+                        states.last().map_err(|e| anyhow::anyhow!("checked states is not empty: {}", e))?
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -802,7 +802,7 @@ impl PlantUmlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -934,7 +934,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML: {}", e))?;
 
         // Check content
         assert!(output.contains("@startuml"));
@@ -953,7 +953,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML: {}", e))?;
 
         assert!(output.contains("!define ENTITY"));
         assert!(output.contains("TABLE(Person)"));
@@ -967,7 +967,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate PlantUML": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate PlantUML: {}", e))?;
 
         assert!(output.contains("@startmindmap"));
         assert!(output.contains("@endmindmap"));

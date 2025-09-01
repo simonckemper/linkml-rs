@@ -121,7 +121,7 @@ impl UniqueKeyValidator {
         let mut tracker = self
             .tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?;
 
         // Check identifier slot (if present)
         if let Some(identifier_slot) = class_def.slots.iter().find(|slot_name| {
@@ -205,7 +205,7 @@ impl UniqueKeyValidator {
     pub fn reset(&mut self) {
         self.tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?
             .clear();
     }
 
@@ -213,7 +213,7 @@ impl UniqueKeyValidator {
     pub fn reset_class(&mut self, class_name: &str) {
         self.tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?
             .clear_class(class_name);
     }
 
@@ -233,8 +233,8 @@ impl UniqueKeyValidator {
 impl Validator for UniqueKeyValidator {
     fn validate(
         &self,
-        _value: &Value,
-        _slot: &SlotDefinition,
+        value: &Value,
+        slot: &SlotDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         // This validator works at the collection level, not individual slot level

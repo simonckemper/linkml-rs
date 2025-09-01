@@ -386,14 +386,14 @@ mod tests {
             author: Some("Test Author".to_string()),
             license: Some("MIT".to_string()),
             homepage: None,
-            linkml_version: VersionReq::parse(">=1.0.0").map_err(|e| anyhow::anyhow!("valid version requirement": {}, e))?,
+            linkml_version: VersionReq::parse(">=1.0.0").map_err(|e| anyhow::anyhow!("valid version requirement: {}", e))?,
             dependencies: vec![],
             capabilities: vec![],
         };
 
-        let json = serde_json::to_string(&info).map_err(|e| anyhow::anyhow!("should serialize PluginInfo": {}, e))?;
+        let json = serde_json::to_string(&info).map_err(|e| anyhow::anyhow!("should serialize PluginInfo: {}", e))?;
         let deserialized: PluginInfo =
-            serde_json::from_str(&json).map_err(|e| anyhow::anyhow!("should deserialize PluginInfo": {}, e))?;
+            serde_json::from_str(&json).map_err(|e| anyhow::anyhow!("should deserialize PluginInfo: {}", e))?;
 
         assert_eq!(info.id, deserialized.id);
         assert_eq!(info.version, deserialized.version);

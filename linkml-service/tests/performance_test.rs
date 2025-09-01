@@ -47,7 +47,7 @@ async fn test_schema_compilation_performance() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test schemas of varying complexity
     let simple_schema = r#"
@@ -302,7 +302,7 @@ enums:
     let _simple = service
         .load_schema_str(simple_schema, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let simple_time = start.elapsed();
 
     // Test medium schema compilation
@@ -310,7 +310,7 @@ enums:
     let _medium = service
         .load_schema_str(medium_schema, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let medium_time = start.elapsed();
 
     // Test complex schema compilation
@@ -318,7 +318,7 @@ enums:
     let _complex = service
         .load_schema_str(complex_schema, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let complex_time = start.elapsed();
 
     // Performance requirements: <100ms for schema compilation
@@ -363,7 +363,7 @@ async fn test_validation_throughput() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     let schema_yaml = r#"
 id: https://example.org/throughput-test
@@ -400,7 +400,7 @@ slots:
         service
             .load_schema_str(schema_yaml, SchemaFormat::Yaml)
             .await
-            .unwrap(),
+            .expect("Test operation failed"),
     );
 
     // Generate test data
@@ -419,7 +419,7 @@ slots:
     let mut valid_count = 0;
 
     for data in &test_data {
-        let report = service.validate(data, &schema, "Record").await.unwrap();
+        let report = service.validate(data, &schema, "Record").await.expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         }
@@ -465,7 +465,7 @@ async fn test_parallel_validation_scaling() {
             monitor,
         )
         .await
-        .unwrap(),
+        .expect("Test operation failed"),
     );
 
     let schema_yaml = r#"
@@ -493,7 +493,7 @@ slots:
         service
             .load_schema_str(schema_yaml, SchemaFormat::Yaml)
             .await
-            .unwrap(),
+            .expect("Test operation failed"),
     );
 
     // Test scaling from 1 to 8 cores
@@ -522,7 +522,7 @@ slots:
                     let report = service_clone
                         .validate(&data, &schema_clone, "Data")
                         .await
-                        .unwrap();
+                        .expect("Test operation failed");
                     if report.valid {
                         counter_clone.fetch_add(1, Ordering::Relaxed);
                     }
@@ -531,7 +531,7 @@ slots:
         }
 
         for handle in handles {
-            handle.await.unwrap();
+            handle.await.expect("Test operation failed");
         }
 
         let duration = start.elapsed();
@@ -570,7 +570,7 @@ async fn test_memory_efficiency() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Large schema with many classes and slots
     let mut schema_classes = String::new();
@@ -605,7 +605,7 @@ slots:
     let schema = service
         .load_schema_str(&large_schema, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Perform many validations
     let validation_count = 10000;
@@ -618,7 +618,7 @@ slots:
         let _ = service
             .validate(&data, &schema, &format!("Class{}", i % 100))
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
 
     // Check memory usage
@@ -660,7 +660,7 @@ async fn test_cache_effectiveness() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     let schema_yaml = r#"
 id: https://example.org/cache-test
@@ -691,7 +691,7 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create repeating validation data
     let unique_items = 100;
@@ -708,7 +708,7 @@ slots:
         });
 
         let start = Instant::now();
-        let _ = service.validate(&data, &schema, "Item").await.unwrap();
+        let _ = service.validate(&data, &schema, "Item").await.expect("Test operation failed");
         validation_times.push(start.elapsed());
     }
 
@@ -756,7 +756,7 @@ async fn test_timeout_handling() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Schema with complex regex that could be slow
     let schema_yaml = r#"
@@ -784,7 +784,7 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test with potentially problematic input
     let data = json!({
@@ -833,7 +833,7 @@ async fn test_concurrent_schema_loading() {
             monitor,
         )
         .await
-        .unwrap(),
+        .expect("Test operation failed"),
     );
 
     // Test concurrent loading of different schemas
@@ -908,14 +908,14 @@ slots:
             let schema = service_clone
                 .load_schema_str(&content, SchemaFormat::Yaml)
                 .await
-                .unwrap();
+                .expect("Test operation failed");
             (name, schema)
         }));
     }
 
     let mut loaded_schemas = Vec::new();
     for handle in handles {
-        let (name, schema) = handle.await.unwrap();
+        let (name, schema) = handle.await.expect("Test operation failed");
         loaded_schemas.push((name, schema));
     }
 

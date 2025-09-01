@@ -561,7 +561,7 @@ impl MermaidGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -721,7 +721,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram: {}", e))?;
         // The output might start with a comment or directive, not necessarily 'e'
         // Let's just check that it contains the expected content
         // assert_eq!(output.chars().next()?, 'e');
@@ -742,7 +742,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram: {}", e))?;
 
         assert!(output.contains("classDiagram"));
         assert!(output.contains("class Person"));

@@ -459,7 +459,7 @@ impl JavaGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -479,14 +479,14 @@ impl JavaGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("char to_uppercase always produces at least one char": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("char to_uppercase always produces at least one char: {}", e))?,
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
                 );
             } else {
                 result.push(ch);

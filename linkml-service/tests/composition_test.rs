@@ -83,11 +83,11 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test schema composition
     let mut composer = SchemaComposer::new(schema.clone());
-    let person_resolved = composer.resolve_class("Person").unwrap();
+    let person_resolved = composer.resolve_class("Person").expect("Test operation failed");
 
     // Check all inherited slots
     assert_eq!(person_resolved.effective_slots.len(), 7);
@@ -120,7 +120,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_person, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Missing required inherited field
@@ -132,7 +132,7 @@ slots:
 
     let report = validate_as_class(&schema, &invalid_person, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.errors().any(|e| e.path.contains("id")));
 }
@@ -199,11 +199,11 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test mixin composition
     let mut composer = SchemaComposer::new(schema.clone());
-    let doc_resolved = composer.resolve_class("Document").unwrap();
+    let doc_resolved = composer.resolve_class("Document").expect("Test operation failed");
 
     // Check all mixin slots are included
     assert_eq!(doc_resolved.effective_slots.len(), 6);
@@ -227,7 +227,7 @@ slots:
 
     let report = validate_as_class(&schema, &doc_data, "Document", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -266,12 +266,12 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     let mut composer = SchemaComposer::new(schema);
 
     // Get concrete classes
-    let concrete = composer.get_concrete_classes().unwrap();
+    let concrete = composer.get_concrete_classes().expect("Test operation failed");
     println!("Concrete classes: {:?}", concrete);
 
     // Only ConcreteChild should be concrete (not abstract)
@@ -283,21 +283,21 @@ slots:
     assert!(
         composer
             .is_subclass_of("ConcreteChild", "AbstractBase")
-            .unwrap()
+            .expect("Test operation failed")
     );
     assert!(
         composer
             .is_subclass_of("AnotherAbstract", "AbstractBase")
-            .unwrap()
+            .expect("Test operation failed")
     );
     assert!(
         !composer
             .is_subclass_of("AbstractBase", "ConcreteChild")
-            .unwrap()
+            .expect("Test operation failed")
     );
 
     // Get all subclasses
-    let subclasses = composer.get_subclasses("AbstractBase").unwrap();
+    let subclasses = composer.get_subclasses("AbstractBase").expect("Test operation failed");
     assert_eq!(subclasses.len(), 2);
     assert!(subclasses.contains(&"ConcreteChild".to_string()));
     assert!(subclasses.contains(&"AnotherAbstract".to_string()));
@@ -333,18 +333,18 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     let mut composer = SchemaComposer::new(schema);
 
     // Get tree roots
-    let roots = composer.get_tree_roots().unwrap();
+    let roots = composer.get_tree_roots().expect("Test operation failed");
     assert_eq!(roots.len(), 2);
     assert!(roots.contains(&"RootClass1".to_string()));
     assert!(roots.contains(&"RootClass2".to_string()));
 
     // Check that NonRoot inherits from a tree root but is not itself a tree root
-    let non_root = composer.resolve_class("NonRoot").unwrap();
+    let non_root = composer.resolve_class("NonRoot").expect("Test operation failed");
     assert!(!non_root.is_tree_root);
-    assert!(composer.is_subclass_of("NonRoot", "RootClass1").unwrap());
+    assert!(composer.is_subclass_of("NonRoot", "RootClass1").expect("Test operation failed"));
 }

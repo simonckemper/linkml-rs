@@ -92,7 +92,7 @@ fn create_test_schema() -> SchemaDefinition {
 #[tokio::test]
 async fn test_identifier_slot_uniqueness() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instances = vec![
         json!({
@@ -112,7 +112,7 @@ async fn test_identifier_slot_uniqueness() {
     let report = engine
         .validate_collection(&instances, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -126,7 +126,7 @@ async fn test_identifier_slot_uniqueness() {
 #[tokio::test]
 async fn test_single_field_uniqueness() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instances = vec![
         json!({
@@ -152,7 +152,7 @@ async fn test_single_field_uniqueness() {
     let report = engine
         .validate_collection(&instances, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -191,7 +191,7 @@ async fn test_single_field_uniqueness() {
 #[tokio::test]
 async fn test_composite_key_uniqueness() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instances = vec![
         json!({
@@ -217,7 +217,7 @@ async fn test_composite_key_uniqueness() {
     let report = engine
         .validate_collection(&instances, "Employee", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -231,7 +231,7 @@ async fn test_composite_key_uniqueness() {
 #[tokio::test]
 async fn test_null_handling_in_unique_keys() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with consider_nulls_inequal = false (nulls are not checked for uniqueness)
     // So two records with same email but null department should NOT trigger unique key error
@@ -253,7 +253,7 @@ async fn test_null_handling_in_unique_keys() {
     let report = engine
         .validate_collection(&instances, "Employee", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -266,7 +266,7 @@ async fn test_null_handling_in_unique_keys() {
 #[tokio::test]
 async fn test_no_duplicates_passes_validation() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instances = vec![
         json!({
@@ -292,7 +292,7 @@ async fn test_no_duplicates_passes_validation() {
     let report = engine
         .validate_collection(&instances, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -302,7 +302,7 @@ async fn test_no_duplicates_passes_validation() {
 #[tokio::test]
 async fn test_fail_fast_option() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instances = vec![
         json!({
@@ -331,7 +331,7 @@ async fn test_fail_fast_option() {
     let report = engine
         .validate_collection(&instances, "User", Some(options))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
@@ -341,7 +341,7 @@ async fn test_fail_fast_option() {
 #[tokio::test]
 async fn test_reset_between_validations() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // First validation
     let instances1 = vec![json!({
@@ -354,7 +354,7 @@ async fn test_reset_between_validations() {
     let report1 = engine
         .validate_collection(&instances1, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report1.valid);
 
     // Second validation with same ID should pass (tracker was reset)
@@ -368,14 +368,14 @@ async fn test_reset_between_validations() {
     let report2 = engine
         .validate_collection(&instances2, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report2.valid);
 }
 
 #[tokio::test]
 async fn test_large_collection_performance() {
     let schema = create_test_schema();
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create 1000 unique instances
     let mut instances = Vec::new();
@@ -400,7 +400,7 @@ async fn test_large_collection_performance() {
     let report = engine
         .validate_collection(&instances, "User", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let duration = start.elapsed();
 
     assert!(!report.valid);

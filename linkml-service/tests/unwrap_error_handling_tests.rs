@@ -146,8 +146,8 @@ fn test_generator_handles_special_characters() {
     slot.name = Some("email@address".to_string()); // Invalid identifier
     slot.range = Some("string".to_string());
 
-    class.attributes.insert(slot.name.clone().unwrap(), slot);
-    schema.classes.insert(class.name.clone().unwrap(), class);
+    class.attributes.insert(slot.name.clone().expect("Test operation failed"), slot);
+    schema.classes.insert(class.name.clone().expect("Test operation failed"), class);
 
     // Test different generators
     let generators: Vec<Box<dyn Generator>> = vec![

@@ -210,7 +210,7 @@ fn create_test_schema() -> SchemaDefinition {
 #[tokio::test]
 async fn test_minor_without_guardian_fails() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "age": 15
@@ -219,7 +219,7 @@ async fn test_minor_without_guardian_fails() {
     let report = engine
         .validate_as_class(&instance, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Debug output
     if !report.issues.is_empty() {
@@ -249,7 +249,7 @@ async fn test_minor_without_guardian_fails() {
 #[tokio::test]
 async fn test_minor_with_guardian_passes() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "age": 15,
@@ -260,7 +260,7 @@ async fn test_minor_with_guardian_passes() {
     let report = engine
         .validate_as_class(&instance, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(report.valid);
     assert_eq!(report.stats.error_count, 0);
@@ -269,7 +269,7 @@ async fn test_minor_with_guardian_passes() {
 #[tokio::test]
 async fn test_adult_with_guardian_fails() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "age": 25,
@@ -280,7 +280,7 @@ async fn test_adult_with_guardian_fails() {
     let report = engine
         .validate_as_class(&instance, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 1);
@@ -297,7 +297,7 @@ async fn test_adult_with_guardian_fails() {
 #[tokio::test]
 async fn test_adult_without_guardian_passes() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "age": 30
@@ -306,7 +306,7 @@ async fn test_adult_without_guardian_passes() {
     let report = engine
         .validate_as_class(&instance, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Debug output
     if !report.issues.is_empty() {
@@ -323,7 +323,7 @@ async fn test_adult_without_guardian_passes() {
 #[tokio::test]
 async fn test_inactive_account_without_reason_fails() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "status": "inactive"
@@ -332,7 +332,7 @@ async fn test_inactive_account_without_reason_fails() {
     let report = engine
         .validate_as_class(&instance, "Account", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 1);
@@ -348,7 +348,7 @@ async fn test_inactive_account_without_reason_fails() {
 #[tokio::test]
 async fn test_inactive_account_with_valid_reason_passes() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "status": "inactive",
@@ -358,7 +358,7 @@ async fn test_inactive_account_with_valid_reason_passes() {
     let report = engine
         .validate_as_class(&instance, "Account", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(report.valid);
     assert_eq!(report.stats.error_count, 0);
@@ -367,7 +367,7 @@ async fn test_inactive_account_with_valid_reason_passes() {
 #[tokio::test]
 async fn test_active_account_without_reason_passes() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "status": "active"
@@ -376,7 +376,7 @@ async fn test_active_account_without_reason_passes() {
     let report = engine
         .validate_as_class(&instance, "Account", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(report.valid);
     assert_eq!(report.stats.error_count, 0);
@@ -385,7 +385,7 @@ async fn test_active_account_without_reason_passes() {
 #[tokio::test]
 async fn test_fail_fast_option() {
     let schema = create_test_schema();
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let instance = json!({
         "age": 15  // Minor without guardian info - should generate 2 errors
@@ -399,7 +399,7 @@ async fn test_fail_fast_option() {
     let report = engine
         .validate_as_class(&instance, "Person", Some(options))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(!report.valid);
     // With fail_fast, we might only get the first error

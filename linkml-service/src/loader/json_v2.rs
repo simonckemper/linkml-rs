@@ -65,7 +65,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
     async fn load_str(
         &mut self,
         content: &str,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let json_value: Value =
             serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
@@ -171,7 +171,7 @@ impl DataDumperV2 for JsonDumperV2 {
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> DumperResult<String> {
         if self.jsonl {
             // JSON Lines format - one object per line
@@ -197,7 +197,7 @@ impl DataDumperV2 for JsonDumperV2 {
                 let instance = instances
                     .into_iter()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("should have at least one instance after length check": {}, e))?;
+                    .map_err(|e| anyhow::anyhow!("should have at least one instance after length check: {}", e))?;
                 let mut obj = instance.data;
                 obj.insert(
                     "@type".to_string(),
@@ -251,7 +251,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_loader_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -264,14 +264,14 @@ mod tests {
         let file_path = Path::new("data.json");
         fs.write(file_path, json_content)
             .await
-            .map_err(|e| anyhow::anyhow!("should write JSON file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should write JSON file: {}", e))?;
 
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
             .load_file(&file_path, &schema, fs)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load JSON file: {}", e))?;
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -280,7 +280,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_dumper_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -314,12 +314,12 @@ mod tests {
         dumper
             .dump_file(instances.clone(), file_path, &schema, fs.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSON": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSON: {}", e))?;
 
         let content = fs
             .read_to_string(file_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read JSON file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should read JSON file: {}", e))?;
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
 
@@ -330,12 +330,12 @@ mod tests {
         jsonl_dumper
             .dump_file(instances, jsonl_path, &schema, fs.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSONL": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSONL: {}", e))?;
 
         let jsonl_content = fs
             .read_to_string(jsonl_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read JSONL file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should read JSONL file: {}", e))?;
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
         assert_eq!(lines.len(), 2);
     }

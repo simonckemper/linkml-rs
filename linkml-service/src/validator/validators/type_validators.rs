@@ -1,6 +1,8 @@
 //! Type validators for `LinkML` primitive types
 
 use super::{ValidationContext, ValidationIssue, Validator};
+use crate::validator::interned_report::{InternedValidationIssue, IssueBuilder};
+use crate::validator::string_interner::global_interner;
 use chrono::{DateTime, NaiveDate};
 use linkml_core::types::SlotDefinition;
 use serde_json::Value;
@@ -9,6 +11,7 @@ use url::Url;
 /// Main type validator that delegates to specific type validators
 pub struct TypeValidator {
     name: String,
+    issue_builder: IssueBuilder,
 }
 
 impl Default for TypeValidator {
@@ -23,21 +26,28 @@ impl TypeValidator {
     pub fn new() -> Self {
         Self {
             name: "type_validator".to_string(),
+            issue_builder: IssueBuilder::new(),
         }
     }
 
     /// Validate a value against a `LinkML` type
     fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
+        
+        // Use interned strings for common cases
+        let interner = global_interner();
+        let common = interner.common();
 
         match type_name {
             "string" | "str" => {
                 if !value.is_string() {
-                    issues.push(ValidationIssue::error(
-                        format!("Expected string, got {}", value_type_name(value)),
+                    // Use IssueBuilder for type mismatch
+                    let interned_issue = self.issue_builder.type_mismatch(
+                        "string",
+                        value_type_name(value),
                         path,
-                        &self.name,
-                    ));
+                    );
+                    issues.push(interned_issue.to_regular());
                 }
             }
             "integer" | "int" => {
@@ -45,18 +55,22 @@ impl TypeValidator {
                     // Valid integer
                 } else if let Some(n) = value.as_f64() {
                     if n.fract() != 0.0 {
-                        issues.push(ValidationIssue::error(
+                        // Use interned strings for error message
+                        let interned_issue = InternedValidationIssue::error(
                             format!("Expected integer, got float: {n}"),
                             path,
                             &self.name,
-                        ));
+                        ).with_code("type_mismatch");
+                        issues.push(interned_issue.to_regular());
                     }
                 } else {
-                    issues.push(ValidationIssue::error(
-                        format!("Expected integer, got {}", value_type_name(value)),
+                    // Use IssueBuilder for type mismatch
+                    let interned_issue = self.issue_builder.type_mismatch(
+                        "integer",
+                        value_type_name(value),
                         path,
-                        &self.name,
-                    ));
+                    );
+                    issues.push(interned_issue.to_regular());
                 }
             }
             "float" | "double" | "decimal" => {
@@ -177,7 +191,7 @@ impl TypeValidator {
                         || (!s
                             .chars()
                             .next()
-                            .map_err(|e| anyhow::anyhow!("non-empty string has first char": {}, e))?
+                            .map_err(|e| anyhow::anyhow!("non-empty string has first char: {}", e))?
                             .is_alphabetic()
                             && !s.starts_with('_'))
                     {

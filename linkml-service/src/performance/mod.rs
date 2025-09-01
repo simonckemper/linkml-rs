@@ -9,7 +9,7 @@ pub mod small_vec;
 pub mod string_cache;
 
 pub use memory::{MemoryProfiler, MemoryScope, MemorySize, MemoryStats, global_memory_profiler};
-pub use profiling::{PerfCounter, Profiler, global_profiler};
+pub use profiling::{PerfCounter, Profiler};
 pub use small_vec::{
     IssueVec, PathVec, SlotVec, ValidatorVec, issue_vec, path_vec, slot_vec, validator_vec,
 };

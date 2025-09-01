@@ -907,7 +907,7 @@ impl ExcelGenerator {
     /// Collect all slots for a class
     fn collect_class_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<Vec<(String, SlotDefinition)>> {
@@ -1061,7 +1061,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = ExcelGenerator::new();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate Excel": {}, e))?;
+        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate Excel: {}", e))?;
         // The old Generator trait returns a String, not Vec<GeneratedOutput>
         assert!(!result.is_empty());
     }

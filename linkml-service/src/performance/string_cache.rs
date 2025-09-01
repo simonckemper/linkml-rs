@@ -109,7 +109,10 @@ impl StringInterner {
 
         for type_name in common_types {
             // These are all small, known strings so they should never fail
-            let _ = self.intern(type_name);
+            // We can safely ignore errors here as this is just cache warming
+            if let Err(e) = self.intern(type_name) {
+                eprintln!("Warning: Failed to intern common type '{}': {}", type_name, e);
+            }
         }
 
         // Common slot names
@@ -130,7 +133,9 @@ impl StringInterner {
         ];
 
         for slot in common_slots {
-            let _ = self.intern(slot);
+            if let Err(e) = self.intern(slot) {
+                eprintln!("Warning: Failed to intern common slot '{}': {}", slot, e);
+            }
         }
 
         // Common validation keywords
@@ -150,7 +155,9 @@ impl StringInterner {
         ];
 
         for keyword in keywords {
-            let _ = self.intern(keyword);
+            if let Err(e) = self.intern(keyword) {
+                eprintln!("Warning: Failed to intern common keyword '{}': {}", keyword, e);
+            }
         }
     }
 }
@@ -195,9 +202,9 @@ mod tests {
     fn test_string_interning() {
         let interner = StringInterner::new();
 
-        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
-        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
-        let s3 = interner.intern("world").map_err(|e| anyhow::anyhow!("should intern string": {}, e))?;
+        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
+        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
+        let s3 = interner.intern("world").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
 
         // Same strings should have same Arc
         assert!(Arc::ptr_eq(&s1, &s2));

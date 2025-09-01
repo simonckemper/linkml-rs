@@ -25,7 +25,7 @@ async fn test_custom_validator_registration() {
     schema.slots.insert("email".to_string(), email_slot);
 
     // Create validation engine
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create a custom email validator
     let email_validator = CustomValidatorBuilder::new("strict_email_validator")
@@ -37,7 +37,7 @@ async fn test_custom_validator_registration() {
             if let Value::String(s) = value {
                 // Simple email validation
                 let email_regex =
-                    regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();
+                    regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").expect("Test operation failed");
 
                 if !email_regex.is_match(s) {
                     let mut issue = linkml_service::validator::report::ValidationIssue::error(
@@ -53,7 +53,7 @@ async fn test_custom_validator_registration() {
             issues
         })
         .build()
-        .unwrap();
+        .expect("Test operation failed");
 
     // Register the custom validator
     engine.add_custom_validator(Box::new(email_validator));
@@ -67,7 +67,7 @@ async fn test_custom_validator_registration() {
     let report = engine
         .validate_as_class(&valid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
     assert!(report.errors().collect::<Vec<_>>().is_empty());
 
@@ -80,7 +80,7 @@ async fn test_custom_validator_registration() {
     let report = engine
         .validate_as_class(&invalid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     assert_eq!(errors.len(), 1);
@@ -101,7 +101,7 @@ async fn test_custom_format_validator() {
     schema.slots.insert("phone".to_string(), phone_slot);
 
     // Create validation engine
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create a US phone number validator using the helper
     let phone_validator = helpers::format_validator("us_phone_validator", "US phone number", |s| {
@@ -111,7 +111,7 @@ async fn test_custom_format_validator() {
         // US phone numbers have 10 digits
         digits.len() == 10
     })
-    .unwrap();
+    .expect("Test operation failed");
 
     engine.add_custom_validator(Box::new(phone_validator));
 
@@ -128,7 +128,7 @@ async fn test_custom_format_validator() {
         let report = engine
             .validate_as_class(&data, "Contact", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid, "Phone '{}' should be valid", phone);
     }
 
@@ -144,7 +144,7 @@ async fn test_custom_format_validator() {
         let report = engine
             .validate_as_class(&data, "Contact", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(!report.valid, "Phone '{}' should be invalid", phone);
     }
 }
@@ -167,7 +167,7 @@ async fn test_cross_field_validator() {
     schema.slots.insert("end_date".to_string(), end_slot);
 
     // Create validation engine
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create a cross-field validator that ensures end_date >= start_date
     let date_range_validator = CustomValidatorBuilder::new("date_range_validator")
@@ -203,7 +203,7 @@ async fn test_cross_field_validator() {
             issues
         })
         .build()
-        .unwrap();
+        .expect("Test operation failed");
 
     engine.add_custom_validator(Box::new(date_range_validator));
 
@@ -216,7 +216,7 @@ async fn test_cross_field_validator() {
     let report = engine
         .validate_as_class(&valid_data, "Event", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test invalid date range
@@ -228,7 +228,7 @@ async fn test_cross_field_validator() {
     let report = engine
         .validate_as_class(&invalid_data, "Event", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     assert!(errors[0].message.contains("must be after start date"));
@@ -253,7 +253,7 @@ async fn test_custom_validator_with_predicate() {
     schema.slots.insert("barcode".to_string(), barcode_slot);
 
     // Create validation engine
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create a validator that only applies to slots with a pattern
     let pattern_length_validator = CustomValidatorBuilder::new("pattern_length_validator")
@@ -283,7 +283,7 @@ async fn test_custom_validator_with_predicate() {
             issues
         })
         .build()
-        .unwrap();
+        .expect("Test operation failed");
 
     engine.add_custom_validator(Box::new(pattern_length_validator));
 
@@ -296,7 +296,7 @@ async fn test_custom_validator_with_predicate() {
     let report = engine
         .validate_as_class(&valid_data, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test invalid SKU (has pattern but too short)
@@ -308,7 +308,7 @@ async fn test_custom_validator_with_predicate() {
     let report = engine
         .validate_as_class(&invalid_data, "Product", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     assert!(errors[0].message.contains("at least 10 characters"));

@@ -387,10 +387,10 @@ impl ExpressionTranslator {
     /// Translate a conditional expression
     fn translate_conditional(
         &self,
-        _condition: &Expression,
-        _then_expr: &Expression,
-        _else_expr: &Expression,
-        _ctx: &mut TranslationContext,
+        condition: &Expression,
+        then_expr: &Expression,
+        else_expr: &Expression,
+        ctx: &mut TranslationContext,
     ) -> Result<TranslatedExpression, TranslationError> {
         // Conditionals typically need to be split into multiple rules
         Err(TranslationError::ComplexExpression(
@@ -443,7 +443,7 @@ mod tests {
         let expr = Expression::Variable("age".to_string());
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate simple variable": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should translate simple variable: {}", e))?;
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$p has age $v1"));
@@ -462,7 +462,7 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate comparison": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should translate comparison: {}", e))?;
 
         assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1")));
         assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18")));
@@ -483,7 +483,7 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate contains function": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should translate contains function: {}", e))?;
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$doc has tags \"important\""));

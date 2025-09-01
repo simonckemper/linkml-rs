@@ -42,7 +42,7 @@ async fn test_custom_validator_with_complex_applies_to() {
         schema.slots.insert(name.to_string(), slot);
     }
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Custom validator that applies only to Employee class and checks department
     let dept_validator = CustomValidatorBuilder::new()
@@ -76,7 +76,7 @@ async fn test_custom_validator_with_complex_applies_to() {
     let report = engine
         .validate_as_class(&employee, "Employee", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(
         report
@@ -95,7 +95,7 @@ async fn test_custom_validator_with_complex_applies_to() {
     let report = engine
         .validate_as_class(&person, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     // Should be valid because validator doesn't apply to Person class
     assert!(report.valid);
 }
@@ -122,7 +122,7 @@ async fn test_multiple_custom_validators_interaction() {
         schema.slots.insert(name.to_string(), slot);
     }
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Validator 1: Username constraints
     let username_validator = CustomValidatorBuilder::new()
@@ -205,7 +205,7 @@ async fn test_multiple_custom_validators_interaction() {
         "password": "abcdef"  // Contains username, too short, no uppercase, no number
     });
 
-    let report = engine.validate_as_class(&user, "User", None).await.unwrap();
+    let report = engine.validate_as_class(&user, "User", None).await.expect("Test operation failed");
     assert!(!report.valid);
 
     let errors: Vec<_> = report.errors().collect();
@@ -232,7 +232,7 @@ async fn test_custom_validator_with_state() {
         schema.slots.insert(name.to_string(), slot);
     }
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Stateful validator that tracks daily limits per user
     let daily_limits: Arc<Mutex<HashMap<String, f64>>> = Arc::new(Mutex::new(HashMap::new()));
@@ -248,7 +248,7 @@ async fn test_custom_validator_with_state() {
                 data.get("user_id").and_then(|v| v.as_str()),
                 data.get("amount").and_then(|v| v.as_f64()),
             ) {
-                let mut limits = daily_limits_clone.lock().unwrap();
+                let mut limits = daily_limits_clone.lock().expect("Test operation failed");
                 let daily_total = limits.entry(user_id.to_string()).or_insert(0.0);
                 *daily_total += amount;
 
@@ -276,7 +276,7 @@ async fn test_custom_validator_with_state() {
     let report = engine
         .validate_as_class(&tx1, "Transaction", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Second transaction - should pass (total 9000)
@@ -289,7 +289,7 @@ async fn test_custom_validator_with_state() {
     let report = engine
         .validate_as_class(&tx2, "Transaction", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Third transaction - should fail (would exceed 10000)
@@ -302,7 +302,7 @@ async fn test_custom_validator_with_state() {
     let report = engine
         .validate_as_class(&tx3, "Transaction", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(
         report
@@ -330,7 +330,7 @@ async fn test_custom_validator_with_async_validation() {
         .slots
         .insert("permissions".to_string(), permissions_slot);
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Simulate async API key validation
     let api_validator = CustomValidatorBuilder::new()
@@ -369,7 +369,7 @@ async fn test_custom_validator_with_async_validation() {
     let report = engine
         .validate_as_class(&valid_key, "ApiKey", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test revoked key
@@ -381,7 +381,7 @@ async fn test_custom_validator_with_async_validation() {
     let report = engine
         .validate_as_class(&revoked_key, "ApiKey", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.errors().any(|e| e.message.contains("revoked")));
 }
@@ -400,7 +400,7 @@ async fn test_custom_validator_priority_and_ordering() {
         schema.slots.insert(name.to_string(), slot);
     }
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     let execution_order = Arc::new(Mutex::new(Vec::new()));
 
@@ -411,7 +411,7 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(1)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone1.lock().unwrap().push("validator1");
+            order_clone1.lock().expect("Test operation failed").push("validator1");
             vec![]
         })
         .build();
@@ -423,7 +423,7 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(2)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone2.lock().unwrap().push("validator2");
+            order_clone2.lock().expect("Test operation failed").push("validator2");
             vec![]
         })
         .build();
@@ -435,7 +435,7 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(3)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone3.lock().unwrap().push("validator3");
+            order_clone3.lock().expect("Test operation failed").push("validator3");
             vec![]
         })
         .build();
@@ -450,10 +450,10 @@ async fn test_custom_validator_priority_and_ordering() {
         "field2": "value2"
     });
 
-    let _ = engine.validate_as_class(&data, "Form", None).await.unwrap();
+    let _ = engine.validate_as_class(&data, "Form", None).await.expect("Test operation failed");
 
     // Check execution order
-    let order = execution_order.lock().unwrap();
+    let order = execution_order.lock().expect("Test operation failed");
     assert_eq!(order.len(), 3);
     assert_eq!(order[0], "validator1");
     assert_eq!(order[1], "validator2");
@@ -472,7 +472,7 @@ async fn test_custom_validator_error_recovery() {
     value_slot.range = Some("string".to_string());
     schema.slots.insert("value".to_string(), value_slot);
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Validator that might panic (but shouldn't crash the system)
     let risky_validator = CustomValidatorBuilder::new()
@@ -506,7 +506,7 @@ async fn test_custom_validator_error_recovery() {
     ];
 
     for (data, should_be_valid) in test_cases {
-        let report = engine.validate_as_class(&data, "Data", None).await.unwrap();
+        let report = engine.validate_as_class(&data, "Data", None).await.expect("Test operation failed");
         assert_eq!(report.valid, should_be_valid);
     }
 }
@@ -533,7 +533,7 @@ async fn test_custom_validator_performance() {
     record_class.slots = slots;
     schema.classes.insert("Record".to_string(), record_class);
 
-    let mut engine = ValidationEngine::new(&schema).unwrap();
+    let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Add multiple custom validators
     for i in 0..10 {
@@ -568,7 +568,7 @@ async fn test_custom_validator_performance() {
         let report = engine
             .validate_as_class(&data, "Record", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
         assert!(report.valid);
     }
     let elapsed = start.elapsed();

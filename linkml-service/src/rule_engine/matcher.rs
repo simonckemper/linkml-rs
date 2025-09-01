@@ -331,12 +331,12 @@ mod tests {
         assert!(
             matcher
                 .match_slot_condition(&json!(20), &condition, &context)
-                .map_err(|e| anyhow::anyhow!("should match age >= 18": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should match age >= 18: {}", e))?
         );
         assert!(
             !matcher
                 .match_slot_condition(&json!(16), &condition, &context)
-                .map_err(|e| anyhow::anyhow!("should not match age < 18": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should not match age < 18: {}", e))?
         );
     }
 
@@ -348,7 +348,7 @@ mod tests {
         let parser = crate::expression::parser::Parser::new();
         let expr = parser
             .parse("{age} >= 18 and {status} == \"active\"")
-            .map_err(|e| anyhow::anyhow!("should parse expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse expression: {}", e))?;
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
@@ -360,7 +360,7 @@ mod tests {
         assert!(
             matcher
                 .match_expression_conditions(&[expr.clone()], &context)
-                .map_err(|e| anyhow::anyhow!("should match expression": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should match expression: {}", e))?
         );
 
         let mut validation_ctx2 = ValidationContext::new(Default::default());
@@ -373,7 +373,7 @@ mod tests {
         assert!(
             !matcher
                 .match_expression_conditions(&[expr], &context2)
-                .map_err(|e| anyhow::anyhow!("should not match expression": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should not match expression: {}", e))?
         );
     }
 }

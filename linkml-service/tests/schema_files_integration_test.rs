@@ -43,7 +43,7 @@ async fn create_test_service() -> Arc<dyn LinkMLService> {
         monitor,
     )
     .await
-    .unwrap()
+    .expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -54,7 +54,7 @@ async fn test_biolink_schema_from_file() {
     let schema_path = test_data_dir().join("biolink_minimal.yaml");
 
     // Load schema from file
-    let schema = service.load_schema(&schema_path).await.unwrap();
+    let schema = service.load_schema(&schema_path).await.expect("Test operation failed");
 
     // Verify schema structure
     assert_eq!(schema.name, "biolink_minimal");
@@ -76,7 +76,7 @@ async fn test_biolink_schema_from_file() {
         }
     });
 
-    let report = service.validate(&gene, &schema, "Gene").await.unwrap();
+    let report = service.validate(&gene, &schema, "Gene").await.expect("Test operation failed");
     assert!(report.valid, "Gene validation failed: {:?}", report.errors);
 
     // Test gene-disease association with rule validation
@@ -108,7 +108,7 @@ async fn test_biolink_schema_from_file() {
     let assoc_report = service
         .validate(&association, &schema, "GeneDiseaseAssociation")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         assoc_report.valid,
         "Association validation failed: {:?}",
@@ -132,7 +132,7 @@ async fn test_biolink_schema_from_file() {
     let invalid_report = service
         .validate(&invalid_association, &schema, "GeneDiseaseAssociation")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !invalid_report.valid,
         "Should fail validation - experimental evidence needs publications"
@@ -149,7 +149,7 @@ async fn test_fhir_schema_integration() {
     let schema_path = test_data_dir().join("fhir_subset.yaml");
 
     // Load FHIR schema
-    let schema = service.load_schema(&schema_path).await.unwrap();
+    let schema = service.load_schema(&schema_path).await.expect("Test operation failed");
 
     // Create patient data
     let patient = json!({
@@ -183,7 +183,7 @@ async fn test_fhir_schema_integration() {
     let patient_report = service
         .validate(&patient, &schema, "Patient")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         patient_report.valid,
         "Patient validation failed: {:?}",
@@ -235,7 +235,7 @@ async fn test_fhir_schema_integration() {
     let obs_report = service
         .validate(&observation, &schema, "Observation")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         obs_report.valid,
         "Observation validation failed: {:?}",
@@ -262,7 +262,7 @@ async fn test_fhir_schema_integration() {
     let incomplete_report = service
         .validate(&incomplete_obs, &schema, "Observation")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !incomplete_report.valid,
         "Should fail - final observations need values"
@@ -277,10 +277,10 @@ async fn test_api_models_code_generation() {
 
     let service = create_test_service().await;
     let schema_path = test_data_dir().join("api_models.yaml");
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Load API models schema
-    let schema = service.load_schema(&schema_path).await.unwrap();
+    let schema = service.load_schema(&schema_path).await.expect("Test operation failed");
 
     // Generate code for different targets
     let generators = vec![
@@ -300,12 +300,12 @@ async fn test_api_models_code_generation() {
             ..Default::default()
         };
 
-        service.generate_code(&schema, config).await.unwrap();
+        service.generate_code(&schema, config).await.expect("Test operation failed");
 
         let generated_path = temp_dir.path().join(filename);
         assert!(generated_path.exists(), "{} should be generated", filename);
 
-        let content = fs::read_to_string(&generated_path).unwrap();
+        let content = fs::read_to_string(&generated_path).expect("Test operation failed");
         assert!(content.len() > 100, "{} should have content", filename);
 
         // Verify subset annotations are included
@@ -348,7 +348,7 @@ async fn test_api_models_code_generation() {
         }
     });
 
-    let user_report = service.validate(&user, &schema, "User").await.unwrap();
+    let user_report = service.validate(&user, &schema, "User").await.expect("Test operation failed");
     assert!(
         user_report.valid,
         "User validation failed: {:?}",
@@ -379,7 +379,7 @@ async fn test_api_models_code_generation() {
     let org_report = service
         .validate(&org, &schema, "Organization")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         org_report.valid,
         "Organization validation failed: {:?}",
@@ -394,7 +394,7 @@ async fn test_schema_import_resolution() {
     println!("=== Testing Schema Import Resolution ===");
 
     let service = create_test_service().await;
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Create base schema file
     let base_schema = r#"
@@ -418,7 +418,7 @@ types:
 "#;
 
     let base_path = temp_dir.path().join("base.yaml");
-    fs::write(&base_path, base_schema).unwrap();
+    fs::write(&base_path, base_schema).expect("Test operation failed");
 
     // Create importing schema
     let main_schema = r#"
@@ -441,10 +441,10 @@ classes:
 "#;
 
     let main_path = temp_dir.path().join("main.yaml");
-    fs::write(&main_path, main_schema).unwrap();
+    fs::write(&main_path, main_schema).expect("Test operation failed");
 
     // Load schema with imports
-    let schema = service.load_schema(&main_path).await.unwrap();
+    let schema = service.load_schema(&main_path).await.expect("Test operation failed");
 
     // Verify import was resolved
     assert!(schema.classes.contains_key("Identifiable"));
@@ -458,7 +458,7 @@ classes:
         "email": "alice@example.com"
     });
 
-    let report = service.validate(&person, &schema, "Person").await.unwrap();
+    let report = service.validate(&person, &schema, "Person").await.expect("Test operation failed");
     assert!(
         report.valid,
         "Person validation failed: {:?}",
@@ -475,7 +475,7 @@ classes:
     let invalid_report = service
         .validate(&invalid_person, &schema, "Person")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!invalid_report.valid, "Should fail email validation");
 
     println!("✓ Schema import resolution working correctly");
@@ -491,15 +491,15 @@ async fn test_schema_view_with_file_schemas() {
     let biolink = service
         .load_schema(&test_data_dir().join("biolink_minimal.yaml"))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let fhir = service
         .load_schema(&test_data_dir().join("fhir_subset.yaml"))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let api = service
         .load_schema(&test_data_dir().join("api_models.yaml"))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create SchemaViews
     let biolink_view = SchemaView::new(biolink);
@@ -528,7 +528,7 @@ async fn test_schema_view_with_file_schemas() {
     println!("  - Unique slots: {}", api_stats.num_unique_keys);
 
     // Test inheritance in API models
-    let user_slots = api_view.class_slots("User", true).unwrap();
+    let user_slots = api_view.class_slots("User", true).expect("Test operation failed");
     let slot_names: Vec<_> = user_slots.iter().map(|s| &s.name).collect();
     assert!(
         slot_names.contains(&&"id".to_string()),
@@ -551,7 +551,7 @@ async fn test_multi_file_workflow() {
     println!("=== Testing Multi-File Workflow ===");
 
     let service = create_test_service().await;
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Load multiple schemas
     let schemas = vec![
@@ -564,7 +564,7 @@ async fn test_multi_file_workflow() {
     for (name, schema_path) in schemas {
         println!("\nProcessing {} schema...", name);
 
-        let schema = service.load_schema(&schema_path).await.unwrap();
+        let schema = service.load_schema(&schema_path).await.expect("Test operation failed");
 
         // Generate multiple output formats
         let outputs = vec![
@@ -580,7 +580,7 @@ async fn test_multi_file_workflow() {
                 ..Default::default()
             };
 
-            service.generate_code(&schema, config).await.unwrap();
+            service.generate_code(&schema, config).await.expect("Test operation failed");
             assert!(
                 temp_dir.path().join(&filename).exists(),
                 "{} should exist",
@@ -593,7 +593,7 @@ async fn test_multi_file_workflow() {
 
     // Verify all files were created
     let entries: Vec<_> = fs::read_dir(temp_dir.path())
-        .unwrap()
+        .expect("Test operation failed")
         .filter_map(Result::ok)
         .collect();
 
@@ -614,7 +614,7 @@ async fn test_error_reporting_with_file_context() {
     println!("=== Testing Error Reporting with File Context ===");
 
     let service = create_test_service().await;
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Create schema with intentional issues
     let problematic_schema = r#"
@@ -635,10 +635,10 @@ classes:
 "#;
 
     let schema_path = temp_dir.path().join("problematic.yaml");
-    fs::write(&schema_path, problematic_schema).unwrap();
+    fs::write(&schema_path, problematic_schema).expect("Test operation failed");
 
     // Try to load schema - should succeed but validation might catch issues
-    let schema = service.load_schema(&schema_path).await.unwrap();
+    let schema = service.load_schema(&schema_path).await.expect("Test operation failed");
 
     // Create test data that should trigger various errors
     let test_data = json!({
@@ -650,7 +650,7 @@ classes:
     let report = service
         .validate(&test_data, &schema, "TestClass")
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     if !report.valid {
         println!("\nValidation errors detected:");

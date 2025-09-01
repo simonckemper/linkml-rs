@@ -229,7 +229,7 @@ impl PatternMatcher {
                     end: m.end(),
                     captures: captures.clone(),
                 })
-                .map_err(|e| anyhow::anyhow!("regex match should always have group 0": {}, e))?;
+                .ok_or_else(|| PatternError::CompilationError("regex match should always have group 0".to_string()))?;
 
             Ok(Some(CaptureMatch {
                 full_match,
@@ -382,17 +382,17 @@ mod tests {
 
         matcher
             .compile("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+", None)
-            .map_err(|e| anyhow::anyhow!("should compile email pattern": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile email pattern: {}", e))?;
 
         assert!(
             matcher
                 .matches("email", "test@example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
         assert!(
             !matcher
                 .matches("email", "not-an-email")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
     }
 
@@ -406,12 +406,12 @@ mod tests {
                 r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)",
                 None,
             )
-            .map_err(|e| anyhow::anyhow!("should compile version pattern": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile version pattern: {}", e))?;
 
         let capture = matcher
             .capture("version", "v1.2.3")
-            .map_err(|e| anyhow::anyhow!("capture should succeed": {}, e))?
-            .map_err(|e| anyhow::anyhow!("should find match": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("capture should succeed: {}", e))?
+            .map_err(|e| anyhow::anyhow!("should find match: {}", e))?;
 
         assert_eq!(capture.captures.get("major"), Some(&"1"));
         assert_eq!(capture.captures.get("minor"), Some(&"2"));
@@ -428,17 +428,17 @@ mod tests {
 
         matcher
             .compile_structured("custom", r"{prefix}_\w+_{suffix}", &vars, None)
-            .map_err(|e| anyhow::anyhow!("should compile structured pattern": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile structured pattern: {}", e))?;
 
         assert!(
             matcher
                 .matches("custom", "test_hello_example")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
         assert!(
             !matcher
                 .matches("custom", "prod_hello_example")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
     }
 
@@ -453,17 +453,17 @@ mod tests {
 
         matcher
             .compile("word", r"hello", Some(metadata))
-            .map_err(|e| anyhow::anyhow!("should compile pattern": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile pattern: {}", e))?;
 
         assert!(
             matcher
                 .matches("word", "HELLO")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
         assert!(
             matcher
                 .matches("word", "Hello")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
     }
 
@@ -473,17 +473,17 @@ mod tests {
             .add_pattern("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+")
             .add_pattern("url", r"https?://[\w.-]+(?:\.[\w.-]+)+[\w/]")
             .build()
-            .map_err(|e| anyhow::anyhow!("builder should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("builder should succeed: {}", e))?;
 
         assert!(
             matcher
                 .matches("email", "test@example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
         assert!(
             matcher
                 .matches("url", "https://example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed": {}, e))?
+                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
     }
 }

@@ -55,7 +55,7 @@ async fn test_typeql_performance() {
         duration
     );
 
-    let outputs = result.unwrap();
+    let outputs = result.expect("Test operation failed");
     let total_size: usize = outputs.iter().map(|o| o.len()).sum();
     println!("Output size: {} bytes", total_size);
 }

@@ -49,7 +49,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
     async fn load_file<F: FileSystemOperations>(
         &mut self,
         path: &Path,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
         fs: Arc<F>,
     ) -> LoaderResult<Vec<DataInstance>> {
         let content = fs.read_to_string(path).await.map_err(|e| {
@@ -59,13 +59,13 @@ impl DataLoaderV2 for YamlLoaderV2 {
             ))
         })?;
 
-        self.load_str(&content, _schema).await
+        self.load_str(&content, schema).await
     }
 
     async fn load_str(
         &mut self,
         content: &str,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let yaml_value: serde_yaml::Value =
             serde_yaml::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
@@ -166,7 +166,7 @@ impl DataDumperV2 for YamlDumperV2 {
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> DumperResult<String> {
         // Convert instances to appropriate format
         let json_output = if instances.len() == 1 {
@@ -174,7 +174,7 @@ impl DataDumperV2 for YamlDumperV2 {
             let instance = instances
                 .into_iter()
                 .next()
-                .map_err(|e| anyhow::anyhow!("should have at least one instance after length check": {}, e))?;
+                .map_err(|e| anyhow::anyhow!("should have at least one instance after length check: {}", e))?;
             let mut obj = instance.data;
             obj.insert(
                 "@type".to_string(),
@@ -217,7 +217,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_yaml_loader_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -232,14 +232,14 @@ mod tests {
         let file_path = Path::new("data.yaml");
         fs.write(file_path, yaml_content)
             .await
-            .map_err(|e| anyhow::anyhow!("should write YAML file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should write YAML file: {}", e))?;
 
         let mut loader = YamlLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
             .load_file(&file_path, &schema, fs)
             .await
-            .map_err(|e| anyhow::anyhow!("should load YAML file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load YAML file: {}", e))?;
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -248,7 +248,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_yaml_dumper_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -285,12 +285,12 @@ mod tests {
         dumper
             .dump_file(instances, file_path, &schema, fs.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to YAML": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to YAML: {}", e))?;
 
         let content = fs
             .read_to_string(file_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read YAML file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should read YAML file: {}", e))?;
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
     }

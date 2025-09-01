@@ -607,7 +607,7 @@ impl Validator for CompiledValidator {
     fn validate(
         &self,
         value: &JsonValue,
-        _slot: &SlotDefinition,
+        slot: &SlotDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         self.execute(value, context)
@@ -876,7 +876,7 @@ mod tests {
         let options = CompilationOptions::default();
         let validator =
             CompiledValidator::compile_class(&schema, "Person", &person_class, &options)
-                .map_err(|e| anyhow::anyhow!("Failed to compile validator": {}, e))?;
+                .map_err(|e| anyhow::anyhow!("Failed to compile validator: {}", e))?;
 
         // Test valid data
         let valid_data = serde_json::json!({

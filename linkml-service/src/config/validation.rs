@@ -115,18 +115,19 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_validate_default_config() {
-        let config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config": {}, e))?;
+    async fn test_validate_default_config() -> Result<(), Box<dyn std::error::Error>> {
+        let config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
-        validate_values(&config).map_err(|e| anyhow::anyhow!("default config should be valid": {}, e))?;
+        validate_values(&config).map_err(|e| anyhow::anyhow!("default config should be valid: {}", e))?;
 
         // Schema validation would require the validator to be fully initialized
-        // validate_config(&config).await.map_err(|e| anyhow::anyhow!("default config should validate against schema": {}, e))?;
+        // validate_config(&config).await.map_err(|e| anyhow::anyhow!("default config should validate against schema: {}", e))?;
+        Ok(())
     }
 
     #[test]
-    fn test_validate_ttl_ordering() {
-        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config": {}, e))?;
+    fn test_validate_ttl_ordering() -> Result<(), Box<dyn std::error::Error>> {
+        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
         // Break TTL ordering
         config.performance.cache_ttl_levels.l1_seconds = 7200;
@@ -135,11 +136,12 @@ mod tests {
         let result = validate_values(&config);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("L1 cache TTL"));
+        Ok(())
     }
 
     #[test]
-    fn test_validate_memory_limits() {
-        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config": {}, e))?;
+    fn test_validate_memory_limits() -> Result<(), Box<dyn std::error::Error>> {
+        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
         // Set memory pool larger than total limit
         config.performance.memory_limit_bytes = 1_000_000_000; // 1GB
@@ -148,5 +150,6 @@ mod tests {
         let result = validate_values(&config);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Memory pool size"));
+        Ok(())
     }
 }

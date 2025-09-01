@@ -20,6 +20,7 @@ use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use timestamp_core::{TimestampService, TimestampError};
 
 /// Cache warming configuration
 #[derive(Debug, Clone)]
@@ -80,7 +81,7 @@ pub struct AccessEntry {
     /// Cache key
     pub key: ValidatorCacheKey,
     /// Access timestamp
-    pub timestamp: Instant,
+    pub timestamp: std::time::Instant,
     /// Access count
     pub count: u32,
 }
@@ -153,8 +154,8 @@ impl WarmingStrategy for FrequencyBasedStrategy {
         current_cache: &DashMap<ValidatorCacheKey, bool>,
         config: &CacheWarmingConfig,
     ) -> Vec<ValidatorCacheKey> {
-        let now = Instant::now();
-        let window_start = now.checked_sub(self.window).unwrap_or(Instant::now());
+        let now = std::time::Instant::now();
+        let window_start = now.checked_sub(self.window).unwrap_or(std::time::Instant::now());
 
         // Count accesses per key within window
         let access_counts: DashMap<ValidatorCacheKey, u32> = DashMap::new();
@@ -184,8 +185,8 @@ impl WarmingStrategy for FrequencyBasedStrategy {
     }
 
     fn calculate_priority(&self, key: &ValidatorCacheKey, history: &[AccessEntry]) -> f64 {
-        let now = Instant::now();
-        let window_start = now.checked_sub(self.window).unwrap_or(Instant::now());
+        let now = std::time::Instant::now();
+        let window_start = now.checked_sub(self.window).unwrap_or(std::time::Instant::now());
 
         let access_count: u32 = history
             .iter()
@@ -220,7 +221,7 @@ impl PredictiveStrategy {
     fn detect_patterns(&self, history: &[AccessEntry]) -> Vec<(ValidatorCacheKey, Duration)> {
         let mut patterns = Vec::new();
         let key_accesses: DashMap<ValidatorCacheKey, SmallVec<[Instant; 16]>> = DashMap::new();
-        let now = Instant::now();
+        let now = std::time::Instant::now();
         let window_start = now.checked_sub(self.pattern_window).unwrap_or(now);
 
         // Group accesses by key within the pattern window
@@ -273,7 +274,7 @@ impl WarmingStrategy for PredictiveStrategy {
         config: &CacheWarmingConfig,
     ) -> Vec<ValidatorCacheKey> {
         let patterns = self.detect_patterns(history);
-        let now = Instant::now();
+        let now = std::time::Instant::now();
 
         // Select keys likely to be accessed soon
         let mut candidates: Vec<_> = patterns
@@ -360,13 +361,19 @@ pub struct CacheWarmer {
     /// Warming queue
     warming_queue: Arc<RwLock<BinaryHeap<WarmingEntry>>>,
     /// Currently warming keys
-    warming_in_progress: Arc<DashMap<ValidatorCacheKey, Instant>>,
+    warming_in_progress: Arc<DashMap<ValidatorCacheKey, std::time::Instant>>,
+    /// Timestamp service
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 }
 
 impl CacheWarmer {
     /// Create a new cache warmer
     #[must_use]
-    pub fn new(config: CacheWarmingConfig, cache: Arc<MultiLayerCache>) -> Self {
+    pub fn new(
+        config: CacheWarmingConfig,
+        cache: Arc<MultiLayerCache>,
+        timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
         let mut strategies: Vec<Box<dyn WarmingStrategy + Send + Sync>> = vec![Box::new(
             FrequencyBasedStrategy::new(Duration::from_secs(3600)),
         )];
@@ -385,6 +392,7 @@ impl CacheWarmer {
             strategies,
             warming_queue: Arc::new(RwLock::new(BinaryHeap::new())),
             warming_in_progress: Arc::new(DashMap::new()),
+            timestamp,
         }
     }
 
@@ -396,7 +404,7 @@ impl CacheWarmer {
         // Add to history
         history.push(AccessEntry {
             key: key.clone(),
-            timestamp: Instant::now(),
+            timestamp: std::time::Instant::now(),
             count: 1,
         });
 
@@ -451,10 +459,10 @@ impl CacheWarmer {
         engine: &ValidationEngine,
     ) -> Result<()> {
         // Mark as in progress
-        self.warming_in_progress.insert(key.clone(), Instant::now());
+        self.warming_in_progress.insert(key.clone(), std::time::Instant::now());
 
         // Compile validator
-        let start = Instant::now();
+        let start = std::time::Instant::now();
 
         if let Some(class_def) = engine.schema.classes.get(&key.class_name) {
             let options = CompilationOptions::default(); // TODO: Parse from key
@@ -595,7 +603,7 @@ mod tests {
     fn test_frequency_strategy() {
         let strategy = FrequencyBasedStrategy::new(Duration::from_secs(3600));
         let mut history = Vec::new();
-        let now = Instant::now();
+        let now = std::time::Instant::now();
 
         // Add some access entries
         for i in 0..5 {

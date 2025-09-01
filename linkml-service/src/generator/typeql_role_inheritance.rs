@@ -45,13 +45,13 @@ pub struct RoleInheritanceResolver {
 
 struct RoleDefinition {
     /// Role name
-    _name: String,
+    name: String,
     /// Relation it belongs to
-    _relation: String,
+    relation: String,
     /// Whether it's abstract
-    _is_abstract: bool,
+    is_abstract: bool,
     /// Base role if specialized
-    _base_role: Option<String>,
+    base_role: Option<String>,
     /// Allowed player types
     allowed_players: Vec<String>,
 }
@@ -125,7 +125,7 @@ impl RoleInheritanceResolver {
         &mut self,
         child_relation: &str,
         child_class: &ClassDefinition,
-        _parent_relation: &str,
+        parent_relation: &str,
         parent_class: &ClassDefinition,
         schema: &SchemaDefinition,
         hierarchy: &mut RoleHierarchy,
@@ -291,7 +291,7 @@ impl RoleInheritanceResolver {
     /// Generate TypeQL for role inheritance
     pub fn generate_role_inheritance_typeql(
         &self,
-        _relation_name: &str,
+        relation_name: &str,
         role_name: &str,
         base_role: &str,
     ) -> String {

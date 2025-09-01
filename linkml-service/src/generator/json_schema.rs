@@ -348,15 +348,15 @@ impl Generator for JsonSchemaGenerator {
 }
 
 impl CodeFormatter for JsonSchemaGenerator {
-    fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
+    fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         doc.to_string()
     }
 
     fn format_list<T: AsRef<str>>(
         &self,
         items: &[T],
-        _indent: &IndentStyle,
-        _level: usize,
+        indent: &IndentStyle,
+        level: usize,
         separator: &str,
     ) -> String {
         items
@@ -416,11 +416,11 @@ mod tests {
 
         let json_content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JSON schema": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate JSON schema: {}", e))?;
 
         // Parse to verify it's valid JSON
         let parsed: JsonValue =
-            serde_json::from_str(&json_content).map_err(|e| anyhow::anyhow!("should parse as valid JSON": {}, e))?;
+            serde_json::from_str(&json_content).map_err(|e| anyhow::anyhow!("should parse as valid JSON: {}", e))?;
 
         // Check basic structure
         assert_eq!(parsed["$schema"], "http://json-schema.org/draft-07/schema#");
@@ -436,13 +436,13 @@ mod tests {
         assert!(
             status_enum
                 .as_array()
-                .map_err(|e| anyhow::anyhow!("enum should be array": {}, e))?
+                .map_err(|e| anyhow::anyhow!("enum should be array: {}", e))?
                 .contains(&json!("ACTIVE"))
         );
         assert!(
             status_enum
                 .as_array()
-                .map_err(|e| anyhow::anyhow!("enum should be array": {}, e))?
+                .map_err(|e| anyhow::anyhow!("enum should be array: {}", e))?
                 .contains(&json!("INACTIVE"))
         );
     }

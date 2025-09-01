@@ -440,7 +440,7 @@ mod tests {
             &self.info
         }
 
-        async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
+        async fn initialize(&mut self, context: PluginContext) -> Result<()> {
             Ok(())
         }
 
@@ -448,7 +448,7 @@ mod tests {
             Ok(())
         }
 
-        fn validate_config(&self, _config: &HashMap<String, serde_json::Value>) -> Result<()> {
+        fn validate_config(&self, config: &HashMap<String, serde_json::Value>) -> Result<()> {
             Ok(())
         }
 
@@ -543,33 +543,33 @@ struct MockLogger;
 impl LoggerService for MockLogger {
     type Error = LoggerError;
 
-    async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+    async fn debug(&self, message: &str) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 
-    async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+    async fn info(&self, message: &str) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 
-    async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+    async fn warn(&self, message: &str) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 
-    async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+    async fn error(&self, message: &str) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 
     async fn log(
         &self,
-        _level: logger_core::LogLevel,
-        _message: &str,
+        level: logger_core::LogLevel,
+        message: &str,
     ) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 
     async fn log_entry(
         &self,
-        _entry: &logger_core::LogEntry,
+        entry: &logger_core::LogEntry,
     ) -> std::result::Result<(), Self::Error> {
         Ok(())
     }

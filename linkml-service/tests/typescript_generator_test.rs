@@ -7,7 +7,7 @@ use serde_json::json;
 fn generate_typescript(schema: SchemaDefinition) -> String {
     let generator = TypeScriptGenerator::new();
 
-    generator.generate(&schema).unwrap()
+    generator.generate(&schema).expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -285,8 +285,8 @@ async fn test_inheritance() {
     assert!(output.contains("export interface Person extends NamedEntity {"));
 
     // Check Person only has its own fields (not inherited ones)
-    let person_section = output.split("export interface Person").nth(1).unwrap();
-    let person_end = person_section.find("}").unwrap();
+    let person_section = output.split("export interface Person").nth(1).expect("Test operation failed");
+    let person_end = person_section.find("}").expect("Test operation failed");
     let person_body = &person_section[..person_end];
 
     // Should have age and email but not id and name
@@ -372,7 +372,7 @@ async fn test_type_guard_without_validators() {
         .set_custom("generate_validators", "false")
         .set_custom("generate_type_guards", "true");
 
-    let outputs = generator.generate(&schema).unwrap();
+    let outputs = generator.generate(&schema).expect("Test operation failed");
     let output = &outputs[0].content;
 
     // Should have type guard but no validator

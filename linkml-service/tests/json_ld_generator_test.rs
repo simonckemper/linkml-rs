@@ -39,9 +39,9 @@ async fn test_basic_json_ld_context() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default().set_custom("pretty_print", "true");
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let context: Value = serde_json::from_str(&output).unwrap();
+    let context: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check basic context structure
     assert_eq!(context["@vocab"], "https://example.org/person#");
@@ -81,15 +81,15 @@ async fn test_json_ld_schema_document() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let schema_doc: Value = serde_json::from_str(&output).unwrap();
+    let schema_doc: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check graph structure
     assert!(schema_doc["@context"].is_object());
     assert!(schema_doc["@graph"].is_array());
 
-    let graph = schema_doc["@graph"].as_array().unwrap();
+    let graph = schema_doc["@graph"].as_array().expect("Test operation failed");
 
     // Find schema metadata
     let schema_meta = graph
@@ -126,9 +126,9 @@ async fn test_enum_json_ld() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let context: Value = serde_json::from_str(&output).unwrap();
+    let context: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check enum mapping
     assert_eq!(context["OrderStatus"], "status_schema:OrderStatus");
@@ -164,16 +164,16 @@ async fn test_inheritance_json_ld() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let schema_doc: Value = serde_json::from_str(&output).unwrap();
-    let graph = schema_doc["@graph"].as_array().unwrap();
+    let schema_doc: Value = serde_json::from_str(&output).expect("Test operation failed");
+    let graph = schema_doc["@graph"].as_array().expect("Test operation failed");
 
     // Find Person class
     let person = graph
         .iter()
         .find(|item| item["@id"] == "entity_schema:Person")
-        .unwrap();
+        .expect("Test operation failed");
 
     assert_eq!(person["rdfs:subClassOf"], "entity_schema:Entity");
 }
@@ -199,9 +199,9 @@ async fn test_object_references_json_ld() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let context: Value = serde_json::from_str(&output).unwrap();
+    let context: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check object reference uses @id type
     assert!(context["ceo"].is_object());
@@ -229,9 +229,9 @@ async fn test_json_ld_frames() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let frame: Value = serde_json::from_str(&output).unwrap();
+    let frame: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check frame structure
     assert_eq!(frame["@type"], "person_schema:Person");
@@ -264,14 +264,14 @@ async fn test_json_ld_examples() {
     // Generate JSON-LD with examples
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default().set_custom("generate_examples", "true");
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let example: Value = serde_json::from_str(&output).unwrap();
+    let example: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check example structure
     assert_eq!(example["@context"], "person_schema.context.jsonld");
     assert_eq!(example["@type"], "Person");
-    assert!(example["@id"].as_str().unwrap().contains("example-person"));
+    assert!(example["@id"].as_str().expect("Test operation failed").contains("example-person"));
     assert_eq!(example["name"], "example string");
 }
 
@@ -302,9 +302,9 @@ async fn test_custom_types_json_ld() {
     // Generate JSON-LD
     let generator = JsonLdGenerator::new();
     let options = GeneratorOptions::default();
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
-    let context: Value = serde_json::from_str(&output).unwrap();
+    let context: Value = serde_json::from_str(&output).expect("Test operation failed");
 
     // Check custom type resolves to base type
     assert!(context["website"].is_object());

@@ -19,19 +19,19 @@ fn test_expression_cache_hit() {
     // Create a complex expression that takes some time to evaluate
     let expr = parser
         .parse_str("len(name) + max(10, 20) + min(5, 15)")
-        .unwrap();
+        .expect("Test operation failed");
 
     let mut context = HashMap::new();
     context.insert("name".to_string(), json!("test string"));
 
     // First evaluation - should compute
     let start = Instant::now();
-    let result1 = evaluator.evaluate(&expr, &context).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     let first_duration = start.elapsed();
 
     // Second evaluation - should use cache
     let start = Instant::now();
-    let result2 = evaluator.evaluate(&expr, &context).unwrap();
+    let result2 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     let second_duration = start.elapsed();
 
     // Results should be identical
@@ -59,24 +59,24 @@ fn test_expression_cache_miss_on_different_context() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("len(name)").unwrap();
+    let expr = parser.parse_str("len(name)").expect("Test operation failed");
 
     // First context
     let mut context1 = HashMap::new();
     context1.insert("name".to_string(), json!("short"));
 
-    let result1 = evaluator.evaluate(&expr, &context1).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context1).expect("Test operation failed");
     assert_eq!(result1, json!(5));
 
     // Different context - should not use cache
     let mut context2 = HashMap::new();
     context2.insert("name".to_string(), json!("much longer string"));
 
-    let result2 = evaluator.evaluate(&expr, &context2).unwrap();
+    let result2 = evaluator.evaluate(&expr, &context2).expect("Test operation failed");
     assert_eq!(result2, json!(18));
 
     // Verify cache is working by re-evaluating with first context
-    let result3 = evaluator.evaluate(&expr, &context1).unwrap();
+    let result3 = evaluator.evaluate(&expr, &context1).expect("Test operation failed");
     assert_eq!(result3, json!(5));
 }
 
@@ -90,12 +90,12 @@ fn test_expression_cache_disabled() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("1 + 1").unwrap();
+    let expr = parser.parse_str("1 + 1").expect("Test operation failed");
     let context = HashMap::new();
 
     // Multiple evaluations should all compute (no caching)
-    let result1 = evaluator.evaluate(&expr, &context).unwrap();
-    let result2 = evaluator.evaluate(&expr, &context).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
+    let result2 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
 
     assert_eq!(result1, json!(2.0));
     assert_eq!(result2, json!(2.0));
@@ -115,11 +115,11 @@ fn test_expression_cache_clear() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("2 + 3").unwrap();
+    let expr = parser.parse_str("2 + 3").expect("Test operation failed");
     let context = HashMap::new();
 
     // Evaluate to populate cache
-    let result1 = evaluator.evaluate(&expr, &context).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     assert_eq!(result1, json!(5.0));
 
     // Check cache has entries
@@ -149,8 +149,8 @@ fn test_expression_cache_lru_eviction() {
 
     // Evaluate 4 different expressions (more than cache size)
     for i in 0..4 {
-        let expr = parser.parse_str(&format!("{} + 1", i)).unwrap();
-        let result = evaluator.evaluate(&expr, &HashMap::new()).unwrap();
+        let expr = parser.parse_str(&format!("{} + 1", i)).expect("Test operation failed");
+        let result = evaluator.evaluate(&expr, &HashMap::new()).expect("Test operation failed");
         assert_eq!(result, json!((i + 1) as f64));
     }
 
@@ -173,7 +173,7 @@ fn test_expression_cache_with_functions() {
     let parser = Parser::new();
 
     // Expression with function calls
-    let expr = parser.parse_str("max(len(str1), len(str2))").unwrap();
+    let expr = parser.parse_str("max(len(str1), len(str2))").expect("Test operation failed");
 
     let mut context = HashMap::new();
     context.insert("str1".to_string(), json!("hello"));
@@ -181,12 +181,12 @@ fn test_expression_cache_with_functions() {
 
     // First evaluation
     let start = Instant::now();
-    let result1 = evaluator.evaluate(&expr, &context).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     let first_duration = start.elapsed();
 
     // Second evaluation - should use cache
     let start = Instant::now();
-    let result2 = evaluator.evaluate(&expr, &context).unwrap();
+    let result2 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     let second_duration = start.elapsed();
 
     assert_eq!(result1, json!(8.0)); // max(5, 8) = 8
@@ -207,7 +207,7 @@ fn test_expression_cache_complex_context() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("data.count * data.price").unwrap();
+    let expr = parser.parse_str("data.count * data.price").expect("Test operation failed");
 
     // Complex nested context
     let mut context = HashMap::new();
@@ -220,8 +220,8 @@ fn test_expression_cache_complex_context() {
     );
 
     // Evaluate twice
-    let result1 = evaluator.evaluate(&expr, &context).unwrap();
-    let result2 = evaluator.evaluate(&expr, &context).unwrap();
+    let result1 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
+    let result2 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
 
     assert_eq!(result1, json!(62.5));
     assert_eq!(result2, json!(62.5));
@@ -235,6 +235,6 @@ fn test_expression_cache_complex_context() {
         }),
     );
 
-    let result3 = evaluator.evaluate(&expr, &context).unwrap();
+    let result3 = evaluator.evaluate(&expr, &context).expect("Test operation failed");
     assert_eq!(result3, json!(62.55));
 }

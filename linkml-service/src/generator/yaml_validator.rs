@@ -456,7 +456,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Cerberus type
-    fn range_to_cerberus_type(&self, range: &str, _schema: &SchemaDefinition) -> &'static str {
+    fn range_to_cerberus_type(&self, range: &str, schema: &SchemaDefinition) -> &'static str {
         match range {
             "string" => "string",
             "integer" | "int" => "integer",
@@ -560,7 +560,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Joi type
-    fn range_to_joi_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
+    fn range_to_joi_type(&self, range: &str, schema: &SchemaDefinition) -> String {
         match range {
             "string" => "Joi.string()".to_string(),
             "integer" | "int" => "Joi.number().integer()".to_string(),
@@ -655,7 +655,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Yup type
-    fn range_to_yup_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
+    fn range_to_yup_type(&self, range: &str, schema: &SchemaDefinition) -> String {
         match range {
             "string" => "yup.string()".to_string(),
             "integer" | "int" => "yup.number().integer()".to_string(),
@@ -731,14 +731,14 @@ impl YamlValidatorGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("uppercase char should exist": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("uppercase char should exist: {}", e))?,
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("lowercase char should exist: {}", e))?,
                 );
             } else {
                 result.push(ch);
@@ -804,7 +804,7 @@ mod tests {
         let generator = YamlValidatorGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate YAML validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate YAML validator: {}", e))?;
 
         assert!(result.contains("$schema"));
         assert!(result.contains("definitions"));

@@ -338,7 +338,7 @@ mod tests {
             vec![".test"]
         }
 
-        fn generate(&self, _schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
             Ok(String::new())
         }
 
@@ -363,13 +363,13 @@ mod tests {
         registry
             .register(generator.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should register generator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should register generator: {}", e))?;
 
         // Should be able to retrieve it
         let retrieved = registry
             .get("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should retrieve generator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should retrieve generator: {}", e))?;
         assert_eq!(retrieved.name(), "test");
 
         // List should include it
@@ -380,7 +380,7 @@ mod tests {
         let info = registry
             .get_info("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should get generator info": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should get generator info: {}", e))?;
         assert_eq!(info.name, "test");
         assert_eq!(info.description, "Test generator");
 
@@ -388,7 +388,7 @@ mod tests {
         registry
             .unregister("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should unregister generator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should unregister generator: {}", e))?;
         assert!(registry.get("test").await.is_none());
     }
 
@@ -406,7 +406,7 @@ mod tests {
         registry
             .register(gen1)
             .await
-            .map_err(|e| anyhow::anyhow!("should register first generator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should register first generator: {}", e))?;
 
         // Second registration should fail
         let result = registry.register(gen2).await;

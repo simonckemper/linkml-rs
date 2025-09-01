@@ -11,6 +11,7 @@ use parking_lot::RwLock;
 use smallvec::SmallVec;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use timestamp_core::{TimestampService, TimestampError};
 
 /// TTL configuration for different cache levels
 #[derive(Debug, Clone)]
@@ -70,18 +71,18 @@ struct AccessPattern {
     /// Number of accesses
     access_count: u32,
     /// Last access time
-    last_access: Instant,
+    last_access: std::time::Instant,
     /// Average time between accesses
     avg_access_interval: Duration,
     /// Access history (limited size)
-    access_history: SmallVec<[Instant; 8]>,
+    access_history: SmallVec<[std::time::Instant; 8]>,
 }
 
 impl Default for AccessPattern {
     fn default() -> Self {
         Self {
             access_count: 0,
-            last_access: Instant::now(),
+            last_access: std::time::Instant::now(),
             avg_access_interval: Duration::from_secs(0),
             access_history: SmallVec::new(),
         }
@@ -91,7 +92,7 @@ impl Default for AccessPattern {
 impl AccessPattern {
     /// Record a new access
     fn record_access(&mut self) {
-        let now = Instant::now();
+        let now = std::time::Instant::now();
         self.access_count += 1;
 
         // Update average interval
@@ -140,7 +141,7 @@ impl AccessPattern {
 #[derive(Debug, Clone)]
 pub struct TtlEntry {
     /// Expiration time
-    pub expires_at: Instant,
+    pub expires_at: std::time::Instant,
     /// Current TTL duration
     pub ttl_duration: Duration,
     /// Cache level (1, 2, or 3)
@@ -154,7 +155,7 @@ impl TtlEntry {
     #[must_use]
     pub fn new(ttl: Duration, cache_level: u8) -> Self {
         Self {
-            expires_at: Instant::now() + ttl,
+            expires_at: std::time::Instant::now() + ttl,
             ttl_duration: ttl,
             cache_level,
             access_pattern: AccessPattern::default(),
@@ -164,13 +165,13 @@ impl TtlEntry {
     /// Check if expired
     #[must_use]
     pub fn is_expired(&self) -> bool {
-        Instant::now() > self.expires_at
+        std::time::Instant::now() > self.expires_at
     }
 
     /// Time until expiration
     #[must_use]
     pub fn time_until_expiry(&self) -> Option<Duration> {
-        self.expires_at.checked_duration_since(Instant::now())
+        self.expires_at.checked_duration_since(std::time::Instant::now())
     }
 
     /// Record access and potentially extend TTL
@@ -189,7 +190,7 @@ impl TtlEntry {
             let new_ttl = new_ttl.max(config.min_ttl).min(config.max_ttl);
 
             self.ttl_duration = new_ttl;
-            self.expires_at = Instant::now() + new_ttl;
+            self.expires_at = std::time::Instant::now() + new_ttl;
         }
     }
 }
@@ -217,17 +218,23 @@ pub struct TtlManager {
     rules: Arc<RwLock<Vec<TtlRule>>>,
     /// Global access patterns
     global_patterns: Arc<RwLock<AccessPattern>>,
+    /// Timestamp service
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 }
 
 impl TtlManager {
     /// Create a new TTL manager
     #[must_use]
-    pub fn new(config: TtlConfig) -> Self {
+    pub fn new(
+        config: TtlConfig,
+        timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
             entries: DashMap::new(),
             rules: Arc::new(RwLock::new(Vec::new())),
             global_patterns: Arc::new(RwLock::new(AccessPattern::default())),
+            timestamp,
         }
     }
 
@@ -296,7 +303,7 @@ impl TtlManager {
     /// Get entries expiring soon (within duration)
     #[must_use]
     pub fn get_expiring_soon(&self, within: Duration) -> Vec<(String, Duration)> {
-        let threshold = Instant::now() + within;
+        let threshold = std::time::Instant::now() + within;
 
         self.entries
             .iter()
@@ -378,7 +385,7 @@ impl TtlManager {
             if pattern.access_count >= 3 {
                 // Predict next access
                 if let Some(next_access) = pattern.predict_next_access() {
-                    let now = Instant::now();
+                    let now = std::time::Instant::now();
                     if next_access > now {
                         // Set TTL to predicted time + buffer
                         let predicted_ttl = next_access.duration_since(now);

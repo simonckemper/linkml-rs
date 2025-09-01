@@ -529,9 +529,53 @@ impl Compiler {
     }
 
     /// Combine multiple instructions into more efficient forms
-    fn combine_instructions(&self, _ctx: &mut CompilationContext) {
-        // This is a placeholder for more advanced optimizations
-        // such as combining multiple field accesses or array operations
+    fn combine_instructions(&self, ctx: &mut CompilationContext) {
+        // Look for patterns that can be combined into more efficient forms
+        let mut i = 0;
+        while i + 1 < ctx.instructions.len() {
+            match (&ctx.instructions[i], &ctx.instructions[i + 1]) {
+                // Combine consecutive field accesses: Load(x), Field(a), Field(b) -> LoadField(x, a.b)
+                (Instruction::Load(var), Instruction::Field(field)) => {
+                    // Check if this is part of a chain of field accesses
+                    let mut field_chain = vec![field.clone()];
+                    let mut j = i + 2;
+
+                    while j < ctx.instructions.len() {
+                        if let Instruction::Field(next_field) = &ctx.instructions[j] {
+                            field_chain.push(next_field.clone());
+                            j += 1;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // If we have multiple field accesses, combine them
+                    if field_chain.len() > 1 {
+                        let combined_field = field_chain.join(".");
+                        ctx.instructions[i] = Instruction::LoadField(var.clone(), combined_field);
+                        // Remove the individual field access instructions
+                        ctx.instructions.drain(i + 1..j);
+                    }
+                }
+
+                // Combine duplicate loads: Load(x), Load(x) -> Load(x), Dup
+                (Instruction::Load(var1), Instruction::Load(var2)) if var1 == var2 => {
+                    ctx.instructions[i + 1] = Instruction::Dup;
+                }
+
+                // Combine constant operations: Const(a), Const(b), Add -> Const(a+b)
+                (Instruction::Const(a), Instruction::Const(b)) if i + 2 < ctx.instructions.len() => {
+                    if let Some(result) = self.evaluate_constant_binary_op(a, b, &ctx.instructions[i + 2]) {
+                        ctx.instructions[i] = Instruction::Const(result);
+                        ctx.instructions.drain(i + 1..i + 3);
+                        continue; // Don't increment i, check this position again
+                    }
+                }
+
+                _ => {}
+            }
+            i += 1;
+        }
     }
 
     /// Check if an instruction produces a value
@@ -666,16 +710,16 @@ mod tests {
     use crate::expression::{FunctionRegistry, Parser};
 
     #[test]
-    fn test_simple_compilation() {
+    fn test_simple_compilation() -> Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(registry);
         let parser = Parser::new();
 
         // Test arithmetic
-        let expr = parser.parse("1 + 2 * 3").map_err(|e| anyhow::anyhow!("should parse expression": {}, e))?;
+        let expr = parser.parse("1 + 2 * 3").map_err(|e| anyhow::anyhow!("should parse expression: {}", e))?;
         let compiled = compiler
             .compile(&expr, "1 + 2 * 3")
-            .map_err(|e| anyhow::anyhow!("should compile expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile expression: {}", e))?;
 
         // The compiler optimizes 2 * 3 to 6 at compile time
         // So we get: 1, 6, Add
@@ -692,10 +736,11 @@ mod tests {
                 .any(|inst| matches!(inst, Instruction::Const(Value::Number(n)) if n.as_f64() == Some(6.0)))
         );
         assert!(compiled.instructions.contains(&Instruction::Add));
+        Ok(())
     }
 
     #[test]
-    fn test_constant_folding() {
+    fn test_constant_folding() -> Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(registry).with_optimization_level(1);
         let parser = Parser::new();
@@ -703,10 +748,10 @@ mod tests {
         // Constants should be folded
         let expr = parser
             .parse("2 + 3")
-            .map_err(|e| anyhow::anyhow!("should parse constant expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse constant expression: {}", e))?;
         let compiled = compiler
             .compile(&expr, "2 + 3")
-            .map_err(|e| anyhow::anyhow!("should compile constant expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile constant expression: {}", e))?;
 
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
@@ -714,6 +759,7 @@ mod tests {
             matches!(&compiled.instructions[0],
                 Instruction::Const(Value::Number(n)) if n.as_f64() == Some(5.0))
         );
+        Ok(())
     }
 
     #[test]
@@ -729,10 +775,10 @@ mod tests {
         // // Test short-circuit AND
         // let expr = parser
         //     .parse("false && expensive_func()")
-        //     .map_err(|e| anyhow::anyhow!("should parse short-circuit expression": {}, e))?;
+        //     .map_err(|e| anyhow::anyhow!("should parse short-circuit expression: {}", e))?;
         // let compiled = compiler
         //     .compile(&expr, "false && expensive_func()")
-        //     .map_err(|e| anyhow::anyhow!("should compile short-circuit expression": {}, e))?;
+        //     .map_err(|e| anyhow::anyhow!("should compile short-circuit expression: {}", e))?;
         //
         // // Should have jump instruction for short-circuit
         // assert!(

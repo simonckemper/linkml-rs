@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_version_parsing() {
-        let v = SchemaVersion::parse("1.2.3").map_err(|e| anyhow::anyhow!("should parse valid version": {}, e))?;
+        let v = SchemaVersion::parse("1.2.3").map_err(|e| anyhow::anyhow!("should parse valid version: {}", e))?;
         assert_eq!(v.major, 1);
         assert_eq!(v.minor, 2);
         assert_eq!(v.patch, 3);

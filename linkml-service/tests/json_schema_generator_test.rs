@@ -41,7 +41,7 @@ async fn test_basic_json_schema_generation() {
     // Generate JSON Schema
     let generator = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
     assert_eq!(results.len(), 1);
     let json_schema = &results[0];
@@ -50,7 +50,7 @@ async fn test_basic_json_schema_generation() {
     assert_eq!(json_schema.filename, "person_schema.schema.json");
 
     // Parse and verify content
-    let parsed: Value = serde_json::from_str(&json_schema.content).unwrap();
+    let parsed: Value = serde_json::from_str(&json_schema.content).expect("Test operation failed");
 
     // Check basic properties
     assert_eq!(parsed["$schema"], "http://json-schema.org/draft-07/schema#");
@@ -84,7 +84,7 @@ async fn test_basic_json_schema_generation() {
     assert!(
         person_def["required"]
             .as_array()
-            .unwrap()
+            .expect("Test operation failed")
             .contains(&json!("name"))
     );
 }
@@ -124,16 +124,16 @@ async fn test_enum_json_schema() {
     // Generate JSON Schema
     let generator = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
-    let parsed: Value = serde_json::from_str(&results[0].content).unwrap();
+    let parsed: Value = serde_json::from_str(&results[0].content).expect("Test operation failed");
 
     // Check enum definition
     let order_status = &parsed["definitions"]["OrderStatus"];
     assert_eq!(order_status["type"], "string");
     assert_eq!(order_status["description"], "Status of an order");
 
-    let enum_values = order_status["enum"].as_array().unwrap();
+    let enum_values = order_status["enum"].as_array().expect("Test operation failed");
     assert!(enum_values.contains(&json!("pending")));
     assert!(enum_values.contains(&json!("processing")));
     assert!(enum_values.contains(&json!("shipped")));
@@ -181,14 +181,14 @@ async fn test_inheritance_json_schema() {
     // Generate JSON Schema
     let generator = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
-    let parsed: Value = serde_json::from_str(&results[0].content).unwrap();
+    let parsed: Value = serde_json::from_str(&results[0].content).expect("Test operation failed");
 
     // Check Person uses allOf for inheritance
     let person_def = &parsed["definitions"]["Person"];
     assert!(person_def["allOf"].is_array());
-    let all_of = person_def["allOf"].as_array().unwrap();
+    let all_of = person_def["allOf"].as_array().expect("Test operation failed");
     assert_eq!(all_of.len(), 2);
 
     // First element should be reference to Entity
@@ -225,9 +225,9 @@ async fn test_multivalued_json_schema() {
     // Generate JSON Schema
     let generator = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
-    let parsed: Value = serde_json::from_str(&results[0].content).unwrap();
+    let parsed: Value = serde_json::from_str(&results[0].content).expect("Test operation failed");
 
     // Check array handling
     let team_def = &parsed["definitions"]["Team"];
@@ -275,9 +275,9 @@ async fn test_custom_types_json_schema() {
     // Generate JSON Schema
     let generator = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
-    let parsed: Value = serde_json::from_str(&results[0].content).unwrap();
+    let parsed: Value = serde_json::from_str(&results[0].content).expect("Test operation failed");
 
     // Check custom type definitions
     let url_def = &parsed["definitions"]["URL"];
@@ -319,9 +319,9 @@ async fn test_additional_properties_handling() {
     let generator = JsonSchemaGenerator::new();
     let mut options = GeneratorOptions::default();
     options = options.set_custom("additionalProperties", "false");
-    let results = generator.generate(&schema).unwrap();
+    let results = generator.generate(&schema).expect("Test operation failed");
 
-    let parsed: Value = serde_json::from_str(&results[0].content).unwrap();
+    let parsed: Value = serde_json::from_str(&results[0].content).expect("Test operation failed");
 
     // Check that additionalProperties is false
     let class_def = &parsed["definitions"]["StrictClass"];

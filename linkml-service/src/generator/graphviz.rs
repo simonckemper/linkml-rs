@@ -509,7 +509,7 @@ impl GraphvizGenerator {
     /// Collect all slots for a class including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -647,7 +647,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate Graphviz output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate Graphviz output: {}", e))?;
 
         // Check content includes basic structure
         assert!(result.contains("digraph LinkMLSchema"));

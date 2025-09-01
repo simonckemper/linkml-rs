@@ -332,16 +332,16 @@ fn test_json_path_extraction() {
     });
 
     // Extract users array
-    let users = loader.extract_by_path(&json, "data.users").unwrap();
+    let users = loader.extract_by_path(&json, "data.users").expect("Test operation failed");
     assert!(users.is_array());
-    assert_eq!(users.as_array().unwrap().len(), 2);
+    assert_eq!(users.as_array().expect("Test operation failed").len(), 2);
 
     // Extract total count
-    let total = loader.extract_by_path(&json, "data.total").unwrap();
+    let total = loader.extract_by_path(&json, "data.total").expect("Test operation failed");
     assert_eq!(total.as_u64(), Some(2));
 
     // Extract first user's name
-    let first_user_name = loader.extract_by_path(&json, "data.users.0.name").unwrap();
+    let first_user_name = loader.extract_by_path(&json, "data.users.0.name").expect("Test operation failed");
     assert_eq!(first_user_name.as_str(), Some("Alice"));
 }
 
@@ -356,7 +356,7 @@ fn test_data_instance_conversion() {
         "active": true
     });
 
-    let obj = json.as_object().unwrap().clone();
+    let obj = json.as_object().expect("Test operation failed").clone();
     let endpoint_config = EndpointConfig {
         method: Method::GET,
         path: "/users".to_string(),
@@ -369,7 +369,7 @@ fn test_data_instance_conversion() {
 
     let instance = loader
         .object_to_instance(obj, "User", &endpoint_config)
-        .unwrap();
+        .expect("Test operation failed");
 
     assert_eq!(instance.class_name, "User");
     assert_eq!(instance.data.get("id"), Some(&json!("123")));
@@ -397,7 +397,7 @@ fn test_instance_with_field_mapping() {
         "extra_field": "extra_value"  // Another unmapped field
     });
 
-    let obj = json.as_object().unwrap().clone();
+    let obj = json.as_object().expect("Test operation failed").clone();
     let endpoint_config = EndpointConfig {
         method: Method::GET,
         path: "/users".to_string(),
@@ -410,7 +410,7 @@ fn test_instance_with_field_mapping() {
 
     let instance = loader
         .object_to_instance(obj, "User", &endpoint_config)
-        .unwrap();
+        .expect("Test operation failed");
 
     // Check mapped fields
     assert_eq!(instance.data.get("id"), Some(&json!("456")));

@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::Semaphore;
+use timestamp_core::{TimestampService, TimestampError};
 
 /// Stress test results
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,6 +58,7 @@ pub struct StressTestConfig {
 pub struct StressTestExecutor<S> {
     service: Arc<S>,
     config: StressTestConfig,
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     success_count: Arc<AtomicU64>,
     failure_count: Arc<AtomicU64>,
     latencies: Arc<parking_lot::Mutex<Vec<Duration>>>,
@@ -69,11 +71,16 @@ where
     S: linkml_core::traits::LinkMLService + Send + Sync + 'static,
 {
     /// Create a new stress test executor
-    pub fn new(service: Arc<S>, config: StressTestConfig) -> Self {
+    pub fn new(
+        service: Arc<S>,
+        config: StressTestConfig,
+        timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
         let operations = config.operations;
         Self {
             service,
             config,
+            timestamp,
             success_count: Arc::new(AtomicU64::new(0)),
             failure_count: Arc::new(AtomicU64::new(0)),
             latencies: Arc::new(parking_lot::Mutex::new(Vec::with_capacity(operations))),
@@ -84,7 +91,7 @@ where
 
     /// Run the stress test
     pub async fn run(&self, schema: &SchemaDefinition) -> Result<StressTestResults> {
-        let start_time = Instant::now();
+        let start_time = std::time::Instant::now();
         let semaphore = Arc::new(Semaphore::new(self.config.concurrency));
 
         // Generate test data
@@ -113,6 +120,7 @@ where
             let latencies = self.latencies.clone();
             let errors = self.errors.clone();
             let stop_signal = self.stop_signal.clone();
+            let timestamp = self.timestamp.clone();
             let chaos = self.config.chaos;
             let chaos_failure_rate = self.config.chaos_failure_rate;
             let chaos_max_delay_ms = self.config.chaos_max_delay_ms;
@@ -131,7 +139,7 @@ where
                     }
 
                     // Perform validation operation
-                    let op_start = Instant::now();
+                    let op_start = std::time::Instant::now();
                     match service.validate(&test_data, &schema, &target_class).await {
                         Ok(_) => {
                             success_count.fetch_add(1, Ordering::Relaxed);

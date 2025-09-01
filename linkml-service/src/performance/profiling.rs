@@ -7,7 +7,8 @@ use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use timestamp_core::{SyncTimestampService, TimestampError};
 
 /// Performance counter for tracking function call metrics
 #[derive(Debug, Default)]
@@ -94,14 +95,16 @@ impl PerfCounter {
 pub struct Profiler {
     counters: Arc<Mutex<HashMap<String, Arc<PerfCounter>>>>,
     enabled: AtomicU64,
+    timestamp: Arc<dyn SyncTimestampService<Error = TimestampError>>,
 }
 
 impl Profiler {
     /// Create a new profiler
-    pub fn new() -> Self {
+    pub fn new(timestamp: Arc<dyn SyncTimestampService<Error = TimestampError>>) -> Self {
         Self {
             counters: Arc::new(Mutex::new(HashMap::new())),
             enabled: AtomicU64::new(1),
+            timestamp,
         }
     }
 
@@ -138,7 +141,7 @@ impl Profiler {
         F: FnOnce() -> R,
     {
         if self.is_enabled() {
-            let start = Instant::now();
+            let start = std::time::Instant::now();
             let result = f();
             let duration = start.elapsed();
             self.record(key, duration);
@@ -186,7 +189,7 @@ impl Default for Profiler {
 pub struct TimingGuard<'a> {
     profiler: &'a Profiler,
     key: String,
-    start: Instant,
+    start: std::time::Instant,
 }
 
 impl<'a> TimingGuard<'a> {
@@ -195,7 +198,7 @@ impl<'a> TimingGuard<'a> {
         Self {
             profiler,
             key: key.into(),
-            start: Instant::now(),
+            start: std::time::Instant::now(),
         }
     }
 }
@@ -209,30 +212,27 @@ impl<'a> Drop for TimingGuard<'a> {
     }
 }
 
-/// Global profiler instance
-static GLOBAL_PROFILER: once_cell::sync::Lazy<Profiler> = once_cell::sync::Lazy::new(Profiler::new);
-
-/// Get the global profiler
-pub fn global_profiler() -> &'static Profiler {
-    &GLOBAL_PROFILER
-}
+// Global profiler removed - must be passed explicitly with timestamp service
+// This ensures proper dependency injection and avoids initialization issues
 
 /// Macro for timing a block of code
+/// Requires a profiler instance to be passed
 #[macro_export]
 macro_rules! profile_scope {
-    ($key:expr) => {
+    ($profiler:expr, $key:expr) => {
         let _guard = $crate::performance::profiling::TimingGuard::new(
-            $crate::performance::profiling::global_profiler(),
+            $profiler,
             $key,
         );
     };
 }
 
 /// Macro for timing a function call
+/// Requires a profiler instance to be passed
 #[macro_export]
 macro_rules! profile_fn {
-    ($key:expr, $expr:expr) => {
-        $crate::performance::profiling::global_profiler().time($key, || $expr)
+    ($profiler:expr, $key:expr, $expr:expr) => {
+        $profiler.time($key, || $expr)
     };
 }
 

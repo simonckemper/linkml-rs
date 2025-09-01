@@ -39,7 +39,7 @@ async fn test_basic_owl_generation() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check filename
     assert_eq!(owl.filename, "person_schema.owl");
@@ -112,7 +112,7 @@ async fn test_enum_owl() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check enum class
     assert!(owl.contains("status_schema:OrderStatus"));
@@ -164,7 +164,7 @@ async fn test_inheritance_owl() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check inheritance
     assert!(owl.contains("entity_schema:Person"));
@@ -204,7 +204,7 @@ async fn test_multivalued_owl() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check that single-valued properties are functional
     assert!(owl.contains("team_schema:team_name"));
@@ -214,7 +214,7 @@ async fn test_multivalued_owl() {
     assert!(owl.contains("team_schema:members"));
     assert!(owl.contains("a owl:DatatypeProperty"));
     // Should NOT have FunctionalProperty for members
-    let members_section = owl.split("team_schema:members").nth(1).unwrap();
+    let members_section = owl.split("team_schema:members").nth(1).expect("Test operation failed");
     let next_property = members_section
         .find("# Property:")
         .unwrap_or(members_section.len());
@@ -258,7 +258,7 @@ async fn test_object_references_owl() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check object properties
     assert!(owl.contains("org_schema:ceo"));
@@ -266,7 +266,7 @@ async fn test_object_references_owl() {
     assert!(owl.contains("rdfs:range org_schema:Person"));
 
     assert!(owl.contains("org_schema:employees"));
-    let employees_section = owl.split("org_schema:employees").nth(1).unwrap();
+    let employees_section = owl.split("org_schema:employees").nth(1).expect("Test operation failed");
     assert!(employees_section.contains("a owl:ObjectProperty"));
     assert!(employees_section.contains("rdfs:range org_schema:Person"));
 }
@@ -297,7 +297,7 @@ async fn test_property_domains_owl() {
     // Generate OWL
     let generator = OwlRdfGenerator::new();
     let options = GeneratorOptions::default();
-    let owl = generator.generate(&schema).unwrap();
+    let owl = generator.generate(&schema).expect("Test operation failed");
 
     // Check that name property has a union domain
     assert!(owl.contains("domain_schema:name"));

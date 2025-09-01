@@ -8,7 +8,7 @@ async fn generate_javascript(schema: SchemaDefinition) -> String {
     let generator = JavaScriptGenerator::new();
     let options = GeneratorOptions::new().with_docs(true);
 
-    generator.generate(&schema).unwrap()
+    generator.generate(&schema).expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -352,7 +352,7 @@ async fn test_commonjs_export() {
     let generator = JavaScriptGenerator::new();
     let options = GeneratorOptions::new().set_custom("module_type", "commonjs");
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Check CommonJS exports
     assert!(output.contains("// CommonJS exports"));
@@ -394,7 +394,7 @@ async fn test_esm_module() {
     let generator = JavaScriptGenerator::new();
     let options = GeneratorOptions::new(); // Default is ESM
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Should not have CommonJS exports
     assert!(!output.contains("module.exports"));

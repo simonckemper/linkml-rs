@@ -53,7 +53,7 @@ fn test_expression_injection_variable_escape() {
 
     // The variable content should be treated as a string, not parsed as expression
     let result = engine.evaluate("{evil}", &context);
-    assert_eq!(result.unwrap(), json!("} + 1000 + {x"));
+    assert_eq!(result.expect("Test operation failed"), json!("} + 1000 + {x"));
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn test_expression_injection_nested_braces() {
 
     // Should not evaluate nested variable reference
     let result = engine.evaluate("{outer}", &context);
-    assert_eq!(result.unwrap(), json!("{inner}"));
+    assert_eq!(result.expect("Test operation failed"), json!("{inner}"));
 }
 
 #[test]
@@ -78,7 +78,7 @@ fn test_expression_injection_function_in_variable() {
 
     // Should treat as string, not execute function
     let result = engine.evaluate("{evil}", &context);
-    assert_eq!(result.unwrap(), json!("max(999999999)"));
+    assert_eq!(result.expect("Test operation failed"), json!("max(999999999)"));
 }
 
 // ==================== Code Injection Tests ====================
@@ -167,7 +167,7 @@ fn test_stack_overflow_recursive_variable_reference() {
 
     // Should return the literal string, not recurse
     let result = engine.evaluate("{a}", &context);
-    assert_eq!(result.unwrap(), json!("{b}"));
+    assert_eq!(result.expect("Test operation failed"), json!("{b}"));
 }
 
 // ==================== Resource Exhaustion Tests ====================
@@ -323,8 +323,8 @@ fn test_unicode_homograph_attack() {
     context.insert("а".to_string(), json!(999)); // Cyrillic а
 
     // Should distinguish between the two
-    assert_eq!(engine.evaluate("{a}", &context).unwrap(), json!(100));
-    assert_eq!(engine.evaluate("{а}", &context).unwrap(), json!(999));
+    assert_eq!(engine.evaluate("{a}", &context).expect("Test operation failed"), json!(100));
+    assert_eq!(engine.evaluate("{а}", &context).expect("Test operation failed"), json!(999));
 }
 
 #[test]
@@ -388,7 +388,7 @@ fn test_sql_injection_in_strings() {
 
     // Should treat as literal string
     let result = engine.evaluate("{input}", &context);
-    assert_eq!(result.unwrap(), json!("'; DROP TABLE users; --"));
+    assert_eq!(result.expect("Test operation failed"), json!("'; DROP TABLE users; --"));
 }
 
 // ==================== Format String Attacks ====================
@@ -402,7 +402,7 @@ fn test_format_string_patterns() {
 
     // Should treat as literal string
     let result = engine.evaluate("{fmt}", &context);
-    assert_eq!(result.unwrap(), json!("%s%s%s%s%s"));
+    assert_eq!(result.expect("Test operation failed"), json!("%s%s%s%s%s"));
 }
 
 #[test]
@@ -415,7 +415,7 @@ fn test_printf_style_formats() {
     for fmt in formats {
         context.insert("f".to_string(), json!(fmt));
         let result = engine.evaluate("{f}", &context);
-        assert_eq!(result.unwrap(), json!(fmt));
+        assert_eq!(result.expect("Test operation failed"), json!(fmt));
     }
 }
 
@@ -555,7 +555,7 @@ fn test_legitimate_complex_expressions() {
     "#;
 
     let result2 = engine.evaluate(expr2, &context);
-    assert_eq!(result2.unwrap(), json!("small")); // quantity is 5, so it's "small"
+    assert_eq!(result2.expect("Test operation failed"), json!("small")); // quantity is 5, so it's "small"
 }
 
 #[test]
@@ -570,19 +570,19 @@ fn test_legitimate_string_operations() {
 
     // Should handle Unicode properly
     assert_eq!(
-        engine.evaluate("{greeting}", &context).unwrap(),
+        engine.evaluate("{greeting}", &context).expect("Test operation failed"),
         json!("Hello, 世界! 🌍")
     );
 
     // String operations with Unicode
     // Note: The actual character count depends on how the engine counts
-    let len_result = engine.evaluate("len({greeting})", &context).unwrap();
+    let len_result = engine.evaluate("len({greeting})", &context).expect("Test operation failed");
     assert!(len_result.is_number());
 
     assert_eq!(
         engine
             .evaluate("contains({name}, \"García\")", &context)
-            .unwrap(),
+            .expect("Test operation failed"),
         json!(true)
     );
 }
@@ -603,7 +603,7 @@ fn test_legitimate_nested_operations() {
     "#;
 
     let result = engine.evaluate(expr, &context);
-    assert_eq!(result.unwrap(), json!("partial"));
+    assert_eq!(result.expect("Test operation failed"), json!("partial"));
 }
 
 // ==================== Future Security Considerations ====================

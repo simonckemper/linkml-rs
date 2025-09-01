@@ -256,7 +256,7 @@ module.exports = grammar({
   rules: {
     source_file: $ => repeat($._definition),
 
-    _definition: $ => choice(
+    definition: $ => choice(
       $.class_definition,
       $.slot_definition,
       $.type_definition,
@@ -270,7 +270,7 @@ module.exports = grammar({
       $._class_body
     ),
 
-    _class_body: $ => repeat1(
+    class_body: $ => repeat1(
       choice(
         $.is_a,
         $.slots,
@@ -286,7 +286,7 @@ module.exports = grammar({
       $._slot_body
     ),
 
-    _slot_body: $ => repeat1(
+    slot_body: $ => repeat1(
       choice(
         $.range,
         $.required,

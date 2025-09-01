@@ -807,7 +807,7 @@ mod tests {
         let options = GeneratorOptions::new();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate SQL output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate SQL output: {}", e))?;
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("CREATE TABLE person"));

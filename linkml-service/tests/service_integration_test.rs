@@ -45,11 +45,11 @@ async fn test_logger_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test schema loading with logging
     use logger_core::LoggerService;
-    logger.info("Loading test schema").await.unwrap();
+    logger.info("Loading test schema").await.expect("Test operation failed");
 
     let schema_yaml = r#"
 id: https://example.org/test-schema
@@ -87,19 +87,19 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     logger
         .info(&format!("Schema loaded: {}", schema.name))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test validation with logging
     let data = json!({"id": "test1", "name": "Test"});
     println!(
         "JSON data being validated: {}",
-        serde_json::to_string_pretty(&data).unwrap()
+        serde_json::to_string_pretty(&data).expect("Test operation failed")
     );
-    let report = service.validate(&data, &schema, "TestClass").await.unwrap();
+    let report = service.validate(&data, &schema, "TestClass").await.expect("Test operation failed");
 
     println!(
         "Validation report: valid={}, errors={:?}",
@@ -107,7 +107,7 @@ slots:
     );
 
     if report.valid {
-        logger.info("Validation passed").await.unwrap();
+        logger.info("Validation passed").await.expect("Test operation failed");
     } else {
         logger
             .error(&format!(
@@ -115,7 +115,7 @@ slots:
                 report.errors.len()
             ))
             .await
-            .unwrap();
+            .expect("Test operation failed");
         for error in &report.errors {
             println!("Validation error: {:?}", error);
         }
@@ -169,11 +169,11 @@ async fn test_timestamp_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Record start time
     use timestamp_core::TimestampService;
-    let start = timestamp.now_utc().await.unwrap();
+    let start = timestamp.now_utc().await.expect("Test operation failed");
 
     // Perform some operations
     let schema_yaml = r#"
@@ -217,20 +217,20 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Validate data with timestamp
     let current_time = timestamp
-        .format_iso8601(&timestamp.now_utc().await.unwrap())
+        .format_iso8601(&timestamp.now_utc().await.expect("Test operation failed"))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let data = json!({
         "event_id": "evt001",
         "timestamp": current_time,
         "description": "Test event"
     });
 
-    let report = service.validate(&data, &schema, "Event").await.unwrap();
+    let report = service.validate(&data, &schema, "Event").await.expect("Test operation failed");
     if !report.valid {
         println!("Validation errors:");
         for error in &report.errors {
@@ -245,7 +245,7 @@ slots:
     assert!(report.valid);
 
     // Record end time and calculate duration
-    let end = timestamp.now_utc().await.unwrap();
+    let end = timestamp.now_utc().await.expect("Test operation failed");
     let duration = end - start;
     // The test might run too fast for millisecond precision, check microseconds instead
     assert!(duration.num_microseconds().unwrap_or(0) >= 0);
@@ -275,7 +275,7 @@ async fn test_configuration_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test with configuration
     let schema_yaml = r#"
@@ -312,14 +312,14 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test validation with the loaded schema
     let data = json!({
         "id": "item1",
         "value": 42
     });
-    let report = service.validate(&data, &schema, "Item").await.unwrap();
+    let report = service.validate(&data, &schema, "Item").await.expect("Test operation failed");
     assert!(report.valid);
 
     // Test configuration-driven behavior (e.g., strict validation)
@@ -330,7 +330,7 @@ slots:
     let report = service
         .validate(&invalid_data, &schema, "Item")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     // Should be valid because value is not marked as required
     assert!(report.valid);
 }
@@ -364,7 +364,7 @@ async fn test_cache_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test schema caching
     let schema_yaml = r#"
@@ -403,11 +403,11 @@ slots:
     let schema1 = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let schema2 = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Both should be the same
     assert_eq!(schema1.id, schema2.id);
@@ -418,11 +418,11 @@ slots:
     let report1 = service
         .validate(&data, &schema1, "CachedItem")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let report2 = service
         .validate(&data, &schema1, "CachedItem")
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Both should be valid
     assert!(report1.valid);
@@ -462,7 +462,7 @@ async fn test_monitoring_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test performance monitoring
     let schema_yaml = r#"
@@ -507,7 +507,7 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let load_duration = start.elapsed();
     monitor_ref
         .record_metric(
@@ -531,7 +531,7 @@ slots:
         let report = service
             .validate(&data, &schema, "MetricData")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         let duration = start.elapsed();
 
         total_validation_time += duration.as_millis() as f64;
@@ -592,7 +592,7 @@ async fn test_health_check_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Register LinkML service health check
     health_service.register_check("linkml_service").await;
@@ -698,7 +698,7 @@ async fn test_error_handling_service_integration() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Test various error scenarios
 
@@ -710,7 +710,7 @@ async fn test_error_handling_service_integration() {
     logger_ref
         .error("Failed to parse invalid YAML schema")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     monitor_ref
         .record_metric("linkml.error.schema_parse", 1.0)
         .await;
@@ -734,7 +734,7 @@ classes:
         logger_ref
             .error("Schema missing required 'id' field")
             .await
-            .unwrap();
+            .expect("Test operation failed");
         monitor_ref
             .record_metric("linkml.error.schema_validation", 1.0)
             .await;
@@ -776,20 +776,20 @@ slots:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let invalid_data = json!({"id": "test1"}); // Missing required field
 
     let report = service
         .validate(&invalid_data, &schema, "Strict")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     for error in &report.errors {
         logger_ref
             .error(&format!("Validation error: {}", error.message))
             .await
-            .unwrap();
+            .expect("Test operation failed");
         monitor_ref
             .record_metric("linkml.validation.error", 1.0)
             .await;
@@ -834,7 +834,7 @@ async fn test_task_management_service_integration() {
             monitor,
         )
         .await
-        .unwrap(),
+        .expect("Test operation failed"),
     );
 
     // Test concurrent validation tasks
@@ -873,7 +873,7 @@ slots:
         service
             .load_schema_str(schema_yaml, SchemaFormat::Yaml)
             .await
-            .unwrap(),
+            .expect("Test operation failed"),
     );
 
     // Create multiple validation tasks
@@ -894,7 +894,7 @@ slots:
     // Wait for all tasks to complete
     let mut results = Vec::new();
     for task in tasks {
-        let result = task.await.unwrap().unwrap();
+        let result = task.await.expect("Test operation failed").expect("Test operation failed");
         results.push(result);
     }
 
@@ -931,7 +931,7 @@ async fn test_end_to_end_workflow() {
         monitor,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Register health check
     health_service.register_check("linkml_workflow").await;
@@ -939,7 +939,7 @@ async fn test_end_to_end_workflow() {
     logger_ref
         .info("Starting end-to-end workflow test")
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Load schema
     let schema_yaml = r#"
@@ -1042,13 +1042,13 @@ enums:
     let schema = service
         .load_schema_str(schema_yaml, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let load_time = start.elapsed();
 
     logger_ref
         .info(&format!("Schema loaded in {:?}", load_time))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     monitor_ref
         .record_metric("workflow.schema.load_time_ms", load_time.as_millis() as f64)
         .await;
@@ -1080,7 +1080,7 @@ enums:
     let report = service
         .validate(&order_data, &schema, "Order")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let validation_time = validation_start.elapsed();
 
     monitor_ref
@@ -1091,7 +1091,7 @@ enums:
         .await;
 
     if report.valid {
-        logger_ref.info("Order validation passed").await.unwrap();
+        logger_ref.info("Order validation passed").await.expect("Test operation failed");
         health_service.set_health("linkml_workflow", true).await;
     } else {
         logger_ref
@@ -1100,7 +1100,7 @@ enums:
                 report.errors.len()
             ))
             .await
-            .unwrap();
+            .expect("Test operation failed");
         health_service.set_health("linkml_workflow", false).await;
     }
 
@@ -1121,7 +1121,7 @@ enums:
             "status": "pending"
         });
 
-        let result = service.validate(&order, &schema, "Order").await.unwrap();
+        let result = service.validate(&order, &schema, "Order").await.expect("Test operation failed");
         batch_results.push(result.valid);
     }
 
@@ -1132,7 +1132,7 @@ enums:
             valid_count, batch_size
         ))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     monitor_ref
         .record_metric(
             "workflow.batch.success_rate",
@@ -1151,13 +1151,13 @@ enums:
             cache_size, cache_hits, cache_misses
         ))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     let all_metrics = monitor_ref.get_all_metrics().await;
     logger_ref
         .info(&format!("Total metrics recorded: {}", all_metrics.len()))
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Verify workflow success
     let logs = logger_ref.get_logs().await;

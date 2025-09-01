@@ -179,7 +179,7 @@ fn test_data_instance_creation() {
             "age": 30,
             "active": true
         }))
-        .unwrap(),
+        .expect("Test operation failed"),
     };
 
     assert_eq!(instance.class_name, "Person");
@@ -206,7 +206,7 @@ fn test_batch_processing() {
                 "age": 20 + (i % 50),
                 "active": i % 2 == 0
             }))
-            .unwrap(),
+            .expect("Test operation failed"),
         })
         .collect();
 
@@ -312,7 +312,7 @@ fn test_complex_mapping_scenario() {
 
     assert_eq!(options.table_mapping.len(), 3);
     assert_eq!(options.column_mapping.len(), 2);
-    assert_eq!(options.foreign_keys.get("tbl_ord").unwrap().len(), 3);
+    assert_eq!(options.foreign_keys.get("tbl_ord").expect("Test operation failed").len(), 3);
 }
 
 #[test]
@@ -321,19 +321,19 @@ fn test_type_mapping() {
 
     // Test that the schema has correct type mappings
     assert_eq!(
-        schema.slots.get("id").unwrap().range,
+        schema.slots.get("id").expect("Test operation failed").range,
         Some("string".to_string())
     );
     assert_eq!(
-        schema.slots.get("age").unwrap().range,
+        schema.slots.get("age").expect("Test operation failed").range,
         Some("integer".to_string())
     );
     assert_eq!(
-        schema.slots.get("active").unwrap().range,
+        schema.slots.get("active").expect("Test operation failed").range,
         Some("boolean".to_string())
     );
     assert_eq!(
-        schema.slots.get("person").unwrap().range,
+        schema.slots.get("person").expect("Test operation failed").range,
         Some("Person".to_string())
     );
 }
@@ -347,7 +347,7 @@ fn test_instance_with_references() {
             "name": "John Doe",
             "age": 25
         }))
-        .unwrap(),
+        .expect("Test operation failed"),
     };
 
     let address = DataInstance {
@@ -362,11 +362,11 @@ fn test_instance_with_references() {
             "city": "Springfield",
             "postal_code": "12345"
         }))
-        .unwrap(),
+        .expect("Test operation failed"),
     };
 
     // Verify reference structure
-    let person_ref = address.data.get("person").unwrap();
+    let person_ref = address.data.get("person").expect("Test operation failed");
     assert!(person_ref.is_object());
     assert_eq!(person_ref.get("@type"), Some(&json!("Person")));
     assert_eq!(person_ref.get("id"), Some(&json!("p1")));

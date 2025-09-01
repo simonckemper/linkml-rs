@@ -709,7 +709,7 @@ impl RdfGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -912,7 +912,7 @@ impl RdfGenerator {
     /// Convert Turtle to RDF/XML
     fn convert_to_rdfxml(
         &self,
-        _turtle_content: &str,
+        turtle_content: &str,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         // For now, we'll generate RDF/XML directly from schema
@@ -938,7 +938,7 @@ impl RdfGenerator {
     /// Convert Turtle to N-Triples
     fn convert_to_ntriples(
         &self,
-        _turtle_content: &str,
+        turtle_content: &str,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
@@ -964,7 +964,7 @@ impl RdfGenerator {
     /// Convert Turtle to JSON-LD
     fn convert_to_jsonld(
         &self,
-        _turtle_content: &str,
+        turtle_content: &str,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut doc = serde_json::json!({
@@ -985,7 +985,7 @@ impl RdfGenerator {
             });
             doc["@graph"]
                 .as_array_mut()
-                .map_err(|e| anyhow::anyhow!("@graph should be an array": {}, e))?
+                .map_err(|e| anyhow::anyhow!("@graph should be an array: {}", e))?
                 .push(class_obj);
         }
 

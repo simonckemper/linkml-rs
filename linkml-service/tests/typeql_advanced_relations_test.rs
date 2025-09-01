@@ -89,7 +89,7 @@ async fn test_multiway_relation_generation() {
     let generator = EnhancedTypeQLGenerator::new();
     let schema = create_advanced_schema();
 
-    let outputs = generator.generate(&schema).unwrap();
+    let outputs = generator.generate(&schema).expect("Test operation failed");
     let content = &outputs[0].content;
 
     // Check multi-way relation is generated
@@ -138,7 +138,7 @@ async fn test_nested_relation_detection() {
 
     let generator = EnhancedTypeQLGenerator::new();
 
-    let outputs = generator.generate(&schema).unwrap();
+    let outputs = generator.generate(&schema).expect("Test operation failed");
     let content = &outputs[0].content;
 
     // Check that enrollment can play a role
@@ -204,7 +204,7 @@ async fn test_role_inheritance() {
 
     let generator = EnhancedTypeQLGenerator::new();
 
-    let outputs = generator.generate(&schema).unwrap();
+    let outputs = generator.generate(&schema).expect("Test operation failed");
     let content = &outputs[0].content;
 
     // Check abstract relation
@@ -227,11 +227,11 @@ fn test_relation_analyzer_directly() {
     let schema = create_advanced_schema();
 
     // Test enrollment detection
-    let enrollment_class = schema.classes.get("Enrollment").unwrap();
+    let enrollment_class = schema.classes.get("Enrollment").expect("Test operation failed");
     let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
 
     assert!(relation_info.is_some());
-    let info = relation_info.unwrap();
+    let info = relation_info.expect("Test operation failed");
 
     // Check multi-way detection
     assert!(info.is_multiway);
@@ -283,7 +283,7 @@ fn test_polymorphic_role_detection() {
     schema.slots.insert("attendee".to_string(), attendee_slot);
 
     let mut analyzer = RelationAnalyzer::new();
-    let meeting_class = schema.classes.get("Meeting").unwrap();
+    let meeting_class = schema.classes.get("Meeting").expect("Test operation failed");
     analyzer.analyze_relation("Meeting", meeting_class, &schema);
 
     // Check polymorphic roles
@@ -293,7 +293,7 @@ fn test_polymorphic_role_detection() {
     // Meeting:attendee should be polymorphic (Person, Student, Teacher can play it)
     let attendee_players = polymorphic.get("Meeting:attendee");
     assert!(attendee_players.is_some());
-    let players = attendee_players.unwrap();
+    let players = attendee_players.expect("Test operation failed");
     assert!(players.contains(&"Person".to_string()));
     assert!(players.contains(&"Student".to_string()));
     assert!(players.contains(&"Teacher".to_string()));
@@ -333,16 +333,16 @@ fn test_role_cardinality() {
     schema.slots.insert("book".to_string(), book_slot);
 
     let mut analyzer = RelationAnalyzer::new();
-    let authorship_class = schema.classes.get("Authorship").unwrap();
+    let authorship_class = schema.classes.get("Authorship").expect("Test operation failed");
     let relation_info = analyzer.analyze_relation("Authorship", authorship_class, &schema);
 
     assert!(relation_info.is_some());
-    let info = relation_info.unwrap();
+    let info = relation_info.expect("Test operation failed");
 
     // Check role cardinalities
-    let author_role = info.roles.iter().find(|r| r.name == "author").unwrap();
+    let author_role = info.roles.iter().find(|r| r.name == "author").expect("Test operation failed");
     assert_eq!(author_role.cardinality, Some((1, None))); // 1..* authors
 
-    let book_role = info.roles.iter().find(|r| r.name == "book").unwrap();
+    let book_role = info.roles.iter().find(|r| r.name == "book").expect("Test operation failed");
     assert_eq!(book_role.cardinality, None); // Default 1..1
 }

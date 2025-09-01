@@ -5,8 +5,9 @@
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use thiserror::Error;
+use timestamp_core::{TimestampService, TimestampError};
 
 /// Errors related to resource limits
 #[derive(Debug, Error)]
@@ -100,10 +101,10 @@ impl ResourceLimits {
 }
 
 /// Resource monitor for tracking usage
-#[derive(Debug)]
 pub struct ResourceMonitor {
     limits: ResourceLimits,
-    start_time: Instant,
+    start_time: std::time::Instant,  // Store as Instant for elapsed calculation
+    timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
     memory_used: AtomicUsize,
     parallel_ops: AtomicUsize,
     cache_memory: AtomicUsize,
@@ -112,10 +113,18 @@ pub struct ResourceMonitor {
 
 impl ResourceMonitor {
     /// Create a new resource monitor
-    pub fn new(limits: ResourceLimits) -> Self {
+    pub fn new(
+        limits: ResourceLimits,
+        timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
+        let start_time = timestamp_service
+            .now_instant()
+            .unwrap_or_else(|_| std::time::Instant::now());
+        
         Self {
             limits,
-            start_time: Instant::now(),
+            start_time,
+            timestamp_service,
             memory_used: AtomicUsize::new(0),
             parallel_ops: AtomicUsize::new(0),
             cache_memory: AtomicUsize::new(0),
@@ -136,7 +145,7 @@ impl ResourceMonitor {
     }
 
     /// Check if expression evaluation has timed out
-    pub fn check_expression_timeout(&self, start: Instant) -> Result<(), ResourceError> {
+    pub fn check_expression_timeout(&self, start: std::time::Instant) -> Result<(), ResourceError> {
         let elapsed = start.elapsed();
         if elapsed > self.limits.max_expression_time {
             return Err(ResourceError::Timeout {
@@ -258,8 +267,11 @@ impl ResourceUsage {
 pub type SharedResourceMonitor = Arc<ResourceMonitor>;
 
 /// Create a new shared resource monitor
-pub fn create_monitor(limits: ResourceLimits) -> SharedResourceMonitor {
-    Arc::new(ResourceMonitor::new(limits))
+pub fn create_monitor(
+    limits: ResourceLimits,
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+) -> SharedResourceMonitor {
+    Arc::new(ResourceMonitor::new(limits, timestamp))
 }
 
 #[cfg(test)]

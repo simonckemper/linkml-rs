@@ -528,7 +528,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_comprehensive_demo() {
-        main().map_err(|e| anyhow::anyhow!("Comprehensive demo should run successfully": {}, e))?;
+    fn test_comprehensive_demo() -> Result<()> {
+        main().map_err(|e| anyhow::anyhow!("Comprehensive demo should run successfully: {}", e))?;
+        Ok(())
     }
 }

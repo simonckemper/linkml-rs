@@ -202,8 +202,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_example_runs() {
+    fn test_example_runs() -> Result<()> {
         // Run the example to ensure it doesn't panic
-        main().map_err(|e| anyhow::anyhow!("Example should run without errors": {}, e))?;
+        main().map_err(|e| anyhow::anyhow!("Example should run without errors: {}", e))?;
+        Ok(())
     }
 }

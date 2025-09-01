@@ -11,7 +11,7 @@ async fn generate_python(schema: SchemaDefinition) -> String {
         .with_examples(true)
         .set_custom("generate_validation", "true");
 
-    generator.generate(&schema).unwrap()
+    generator.generate(&schema).expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -252,7 +252,7 @@ async fn test_inheritance() {
     assert!(output.contains("class Person:"));
 
     // Check Person has all fields (inherited + own)
-    let person_section = output.split("class Person:").nth(1).unwrap();
+    let person_section = output.split("class Person:").nth(1).expect("Test operation failed");
     assert!(person_section.contains("id: str"));
     assert!(person_section.contains("name: str"));
     assert!(person_section.contains("age: Optional[int] = None"));
@@ -297,7 +297,7 @@ async fn test_pattern_validation() {
     let generator = PythonDataclassGenerator::new();
     let options = GeneratorOptions::new().set_custom("generate_validation", "true");
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Check pattern validation in __post_init__
     assert!(output.contains("import re"));

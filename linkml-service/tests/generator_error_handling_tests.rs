@@ -46,8 +46,8 @@ fn create_test_schema() -> Schema {
     slot1.name = Some("a".repeat(300)); // Extremely long name
     slot1.range = Some("string".to_string());
 
-    class1.attributes.insert(slot1.name.clone().unwrap(), slot1);
-    schema.classes.insert(class1.name.clone().unwrap(), class1);
+    class1.attributes.insert(slot1.name.clone().expect("Test operation failed"), slot1);
+    schema.classes.insert(class1.name.clone().expect("Test operation failed"), class1);
 
     // Add class with circular inheritance
     let mut class2 = ClassDefinition::default();
@@ -87,7 +87,7 @@ fn test_typeql_generator_error_handling() {
     // Test with empty schema
     let empty_schema = SchemaDefinition::default();
     let result = generator.generate(&empty_schema, &options);
-    assert!(result.is_err() || result.unwrap().is_empty());
+    assert!(result.is_err() || result.expect("Test operation failed").is_empty());
 }
 
 /// Test Python generator error handling
@@ -116,7 +116,7 @@ fn test_python_generator_error_handling() {
     broken_schema.classes.insert("".to_string(), nameless_class);
 
     let result = generator.generate(&broken_schema, &options);
-    assert!(result.is_err() || !result.unwrap().contains("class None"));
+    assert!(result.is_err() || !result.expect("Test operation failed").contains("class None"));
 }
 
 /// Test SQL generator error handling
@@ -165,8 +165,8 @@ fn test_graphql_generator_error_handling() {
     gql_slot.name = Some("123_starts_with_number".to_string());
     gql_slot.range = Some("string".to_string());
 
-    gql_class.attributes.insert(gql_slot.name.clone().unwrap(), gql_slot);
-    schema.classes.insert(gql_class.name.clone().unwrap(), gql_class);
+    gql_class.attributes.insert(gql_slot.name.clone().expect("Test operation failed"), gql_slot);
+    schema.classes.insert(gql_class.name.clone().expect("Test operation failed"), gql_class);
 
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);
@@ -198,7 +198,7 @@ fn test_excel_generator_error_handling() {
         let mut slot = SlotDefinition::default();
         slot.name = Some(format!("slot_{}", i));
         slot.range = Some("string".to_string());
-        huge_class.attributes.insert(slot.name.clone().unwrap(), slot);
+        huge_class.attributes.insert(slot.name.clone().expect("Test operation failed"), slot);
     }
 
     schema.classes.insert("HugeClass".to_string(), huge_class);
@@ -238,8 +238,8 @@ fn test_markdown_generator_error_handling() {
     md_slot.name = Some("slot*with*asterisks".to_string());
     md_slot.description = Some("Contains `code` and ```blocks```".to_string());
 
-    md_class.attributes.insert(md_slot.name.clone().unwrap(), md_slot);
-    schema.classes.insert(md_class.name.clone().unwrap(), md_class);
+    md_class.attributes.insert(md_slot.name.clone().expect("Test operation failed"), md_slot);
+    schema.classes.insert(md_class.name.clone().expect("Test operation failed"), md_class);
 
     let options = GeneratorOptions::default();
     let result = generator.generate(&schema, &options);

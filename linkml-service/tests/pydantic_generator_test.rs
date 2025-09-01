@@ -11,7 +11,7 @@ async fn generate_pydantic(schema: SchemaDefinition) -> String {
         .with_examples(true)
         .set_custom("generate_validators", "true");
 
-    generator.generate(&schema).unwrap()
+    generator.generate(&schema).expect("Test operation failed")
 }
 
 #[tokio::test]
@@ -300,7 +300,7 @@ async fn test_pattern_validation() {
     let generator = PydanticGenerator::new();
     let options = GeneratorOptions::new();
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Check pattern validation in Field
     assert!(output.contains(r#"pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$""#));

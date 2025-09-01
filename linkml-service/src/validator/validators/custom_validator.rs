@@ -335,7 +335,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -372,7 +372,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -395,7 +395,7 @@ mod tests {
             // Simple phone validation
             s.chars().filter(|c| c.is_numeric()).count() >= 10
         })
-        .map_err(|e| anyhow::anyhow!("should build format validator": {}, e))?;
+        .map_err(|e| anyhow::anyhow!("should build format validator: {}", e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -418,7 +418,7 @@ mod tests {
             "priority_validator",
             vec!["low".to_string(), "medium".to_string(), "high".to_string()],
         )
-        .map_err(|e| anyhow::anyhow!("should build custom enum validator": {}, e))?;
+        .map_err(|e| anyhow::anyhow!("should build custom enum validator: {}", e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -455,7 +455,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -465,7 +465,7 @@ mod tests {
         int_slot.range = Some("integer".to_string());
 
         let value = Value::Number(
-            serde_json::Number::from_f64(3.14).map_err(|e| anyhow::anyhow!("should create number from f64": {}, e))?,
+            serde_json::Number::from_f64(3.14).map_err(|e| anyhow::anyhow!("should create number from f64: {}", e))?,
         );
         let issues = validator.validate(&value, &int_slot, &mut context);
         assert_eq!(issues.len(), 1);

@@ -116,7 +116,7 @@ impl NamespaceManagerGenerator {
         }
 
         // Initialize prefix mappings
-        output.push_str("        self._prefixes: Dict[str, str] = {\n");
+        output.push_str("        self.prefixes: Dict[str, str] = {\n");
         if !schema.prefixes.is_empty() {
             for (prefix, expansion) in &schema.prefixes {
                 output.push_str(&format!(
@@ -135,7 +135,7 @@ impl NamespaceManagerGenerator {
         output.push_str("        }\n");
 
         // Reverse mapping for contraction
-        output.push_str("        self._namespaces: Dict[str, str] = {\n");
+        output.push_str("        self.namespaces: Dict[str, str] = {\n");
         output.push_str("            v: k for k, v in self._prefixes.items()\n");
         output.push_str("        }\n");
 
@@ -1091,7 +1091,7 @@ mod tests {
         let generator = NamespaceManagerGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate namespace manager": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate namespace manager: {}", e))?;
 
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));

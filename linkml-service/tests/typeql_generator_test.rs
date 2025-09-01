@@ -85,7 +85,7 @@ async fn test_typeql_generation_with_complex_schema() {
     // Generate TypeQL
     let generator = TypeQLGenerator::new();
 
-    let typeql = generator.generate(&schema).unwrap();
+    let typeql = generator.generate(&schema).expect("Test operation failed");
 
     // Verify the generated TypeQL contains expected elements
     assert!(typeql.contains("define"));
@@ -171,7 +171,7 @@ async fn test_typeql_generation_with_relations() {
 
     // Generate TypeQL
     let generator = TypeQLGenerator::new();
-    let typeql = generator.generate(&schema).unwrap();
+    let typeql = generator.generate(&schema).expect("Test operation failed");
 
     // Verify relation generation
     assert!(typeql.contains("employment sub relation"));

@@ -650,7 +650,7 @@ impl GoGenerator {
     /// Collect all slots for a class including inherited
     fn collect_class_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<(String, SlotDefinition)> {
@@ -805,7 +805,7 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate Go code": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate Go code: {}", e))?;
 
         // Check content
         assert!(content.contains("package linkml"));

@@ -179,7 +179,7 @@ impl TypeQLConstraintTranslator {
     /// Generate validation rules for complex constraints
     pub fn generate_validation_rule(
         &self,
-        _class_name: &str,
+        class_name: &str,
         slot_name: &str,
         slot: &SlotDefinition,
     ) -> Option<String> {
@@ -319,7 +319,7 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .map_err(|e| anyhow::anyhow!("should have regex constraint": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should have regex constraint: {}", e))?
                 .contains("regex")
         );
 
@@ -329,7 +329,7 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .map_err(|e| anyhow::anyhow!("should have regex constraint with quotes": {}, e))?
+                .map_err(|e| anyhow::anyhow!("should have regex constraint with quotes: {}", e))?
                 .contains(r#"\""#)
         );
     }

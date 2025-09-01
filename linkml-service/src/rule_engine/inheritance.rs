@@ -317,7 +317,7 @@ mod tests {
 
         let chain = resolver
             .get_inheritance_chain("Derived")
-            .map_err(|e| anyhow::anyhow!("should get inheritance chain": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should get inheritance chain: {}", e))?;
         assert_eq!(chain.len(), 2);
         assert_eq!(chain[0], "Derived");
         assert_eq!(chain[1], "Base");
@@ -330,7 +330,7 @@ mod tests {
 
         let rules = resolver
             .get_all_rules("Derived")
-            .map_err(|e| anyhow::anyhow!("should get all rules": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should get all rules: {}", e))?;
         assert_eq!(rules.len(), 2);
 
         // Check that derived rule comes first

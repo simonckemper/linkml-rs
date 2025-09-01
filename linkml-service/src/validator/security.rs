@@ -329,8 +329,12 @@ impl InjectionPrevention {
         ];
 
         for pattern in &dangerous_patterns {
-            let re =
-                regex::Regex::new(pattern).map_err(|e| anyhow::anyhow!("SQL injection pattern should be valid regex": {}, e))?;
+            let re = regex::Regex::new(pattern).map_err(|e| LinkMLError::DataValidationError {
+                message: format!("SQL injection pattern should be valid regex: {}", e),
+                path: None,
+                expected: None,
+                actual: None
+            })?;
             if re.is_match(query) {
                 return Err(LinkMLError::service(
                     "Query contains potential SQL injection pattern",
@@ -393,11 +397,11 @@ impl InjectionPrevention {
     }
 
     /// Calculate GraphQL query depth
-    fn calculate_query_depth(&self, _query: &str) -> usize {
+    fn calculate_query_depth(&self, query: &str) -> usize {
         let mut depth = 0;
         let mut current_depth: usize = 0;
 
-        for char in _query.chars() {
+        for char in query.chars() {
             match char {
                 '{' => {
                     current_depth += 1;
@@ -430,15 +434,17 @@ impl SensitiveDataHandler {
     pub fn new(config: SecurityConfig) -> Self {
         let patterns = vec![
             regex::Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+")
-                .map_err(|e| anyhow::anyhow!("password pattern regex": {}, e))?,
+                .expect("password pattern regex should be valid"),
             regex::Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+")
-                .map_err(|e| anyhow::anyhow!("API key pattern regex": {}, e))?,
+                .expect("API key pattern regex should be valid"),
             regex::Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+")
-                .map_err(|e| anyhow::anyhow!("secret/token pattern regex": {}, e))?,
+                .expect("secret/token pattern regex should be valid"),
             regex::Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
-                .map_err(|e| anyhow::anyhow!("email pattern regex": {}, e))?,
-            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b").map_err(|e| anyhow::anyhow!("credit card pattern regex": {}, e))?, // Credit card
-            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").map_err(|e| anyhow::anyhow!("SSN pattern regex": {}, e))?, // SSN
+                .expect("email pattern regex should be valid"),
+            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
+                .expect("credit card pattern regex should be valid"), // Credit card
+            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b")
+                .expect("SSN pattern regex should be valid"), // SSN
         ];
 
         Self {

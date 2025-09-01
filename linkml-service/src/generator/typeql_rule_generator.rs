@@ -553,7 +553,7 @@ mod tests {
         let mut generator = RuleGenerator::new();
         let rule = generator
             .generate_required_rule("Person", "name")
-            .map_err(|e| anyhow::anyhow!("should generate required rule": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate required rule: {}", e))?;
 
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.contains(&"$x isa person".to_string()));
@@ -573,7 +573,7 @@ mod tests {
 
         let rule = generator
             .generate_range_rule("Person", "age", &slot)
-            .map_err(|e| anyhow::anyhow!("should generate range rule": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate range rule: {}", e))?;
 
         assert_eq!(rule.rule_type, RuleType::Validation);
         assert!(rule.when_patterns.iter().any(|p| p.contains("$v < 0")));
@@ -594,7 +594,7 @@ mod tests {
             dependencies: vec![],
         };
 
-        let typeql = rule.to_typeql().map_err(|e| anyhow::anyhow!("should generate TypeQL string": {}, e))?;
+        let typeql = rule.to_typeql().map_err(|e| anyhow::anyhow!("should generate TypeQL string: {}", e))?;
 
         assert!(typeql.contains("# Test rule"));
         assert!(typeql.contains("rule test-rule:"));

@@ -38,7 +38,7 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
     // Check basic metadata
     assert_eq!(schema.title, Some("Test Schema".to_string()));
@@ -87,9 +87,9 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
-    let dataset_class = schema.classes.get("Dataset").unwrap();
+    let dataset_class = schema.classes.get("Dataset").expect("Test operation failed");
 
     // Check metadata
     assert_eq!(dataset_class.aliases.len(), 2);
@@ -149,9 +149,9 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
-    let email_slot = schema.slots.get("email").unwrap();
+    let email_slot = schema.slots.get("email").expect("Test operation failed");
 
     // Check all metadata fields
     assert_eq!(email_slot.aliases.len(), 2);
@@ -214,12 +214,12 @@ fn test_example_serialization() {
         description: None,
     });
 
-    let json = serde_json::to_string_pretty(&slot).unwrap();
+    let json = serde_json::to_string_pretty(&slot).expect("Test operation failed");
     assert!(json.contains(r#""value": "example1""#));
     assert!(json.contains(r#""description": "First example""#));
 
     // Deserialize back
-    let parsed: SlotDefinition = serde_json::from_str(&json).unwrap();
+    let parsed: SlotDefinition = serde_json::from_str(&json).expect("Test operation failed");
     assert_eq!(parsed.examples.len(), 2);
     assert_eq!(parsed.examples[0].value, "example1");
 }
@@ -235,12 +235,12 @@ fn test_contributor_serialization() {
         role: Some("maintainer".to_string()),
     });
 
-    let yaml = serde_yaml::to_string(&schema).unwrap();
+    let yaml = serde_yaml::to_string(&schema).expect("Test operation failed");
     assert!(yaml.contains("Alice Johnson"));
     assert!(yaml.contains("maintainer"));
 
     // Parse back
-    let parsed: SchemaDefinition = serde_yaml::from_str(&yaml).unwrap();
+    let parsed: SchemaDefinition = serde_yaml::from_str(&yaml).expect("Test operation failed");
     assert_eq!(parsed.contributors.len(), 1);
     assert_eq!(parsed.contributors[0].name, "Alice Johnson");
 }

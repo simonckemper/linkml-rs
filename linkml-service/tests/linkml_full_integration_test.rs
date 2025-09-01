@@ -379,7 +379,7 @@ async fn test_biomedical_research_workflow() {
 
     // Load the complex biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
     println!("Schema loaded in {:?}", start.elapsed());
 
     // Create test data representing a research study
@@ -450,7 +450,7 @@ async fn test_biomedical_research_workflow() {
     });
 
     // Add more participants to meet minimum requirement
-    let mut participants = study_data["participants"].as_array().unwrap().clone();
+    let mut participants = study_data["participants"].as_array().expect("Test operation failed").clone();
     for i in 3..=10 {
         participants.push(json!({
             "id": format!("PAT{:06}", i),
@@ -462,7 +462,7 @@ async fn test_biomedical_research_workflow() {
         }));
     }
 
-    let mut complete_study = study_data.as_object().unwrap().clone();
+    let mut complete_study = study_data.as_object().expect("Test operation failed").clone();
     complete_study["participants"] = json!(participants);
 
     // Validate the complete research study
@@ -472,7 +472,7 @@ async fn test_biomedical_research_workflow() {
     let options = ValidationOptions::default();
     let report = engine
         .validate(&json!(complete_study), "ResearchStudy", &options)
-        .unwrap();
+        .expect("Test operation failed");
     println!("Validation completed in {:?}", validation_start.elapsed());
 
     assert!(report.valid, "Study validation failed: {:?}", report.errors);
@@ -484,13 +484,13 @@ async fn test_biomedical_research_workflow() {
     let expr_parser = ExpressionParser::new();
     let expr_ast = expr_parser
         .parse_str("value < 50 ? \"Low\" : value > 100 ? \"High\" : \"Normal\"")
-        .unwrap();
+        .expect("Test operation failed");
     let evaluator = Evaluator::new();
     let mut context = EvaluationContext::new();
     context.set_variable("value", lab_result["value"].clone());
-    let expr_result = evaluator.evaluate(&expr_ast, &context).unwrap();
+    let expr_result = evaluator.evaluate(&expr_ast, &context).expect("Test operation failed");
     println!("Lab result category: {}", expr_result);
-    assert_eq!(expr_result.as_str().unwrap(), "High");
+    assert_eq!(expr_result.as_str().expect("Test operation failed"), "High");
 
     // Test rule validation for minors requiring medical history
     println!("\nTesting rule validation for minors...");
@@ -505,7 +505,7 @@ async fn test_biomedical_research_workflow() {
 
     let minor_report = engine
         .validate(&minor_without_history, "Patient", &options)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !minor_report.valid,
         "Minor without medical history should fail validation"
@@ -514,15 +514,15 @@ async fn test_biomedical_research_workflow() {
 
     // Generate code for multiple languages
     println!("\nGenerating code for biomedical schema...");
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Python dataclass generation
     let py_generator = PythonDataclassGenerator::new();
     let py_options = GeneratorOptions::default();
-    let py_outputs = py_generator.generate(&schema, &py_options).await.unwrap();
+    let py_outputs = py_generator.generate(&schema, &py_options).await.expect("Test operation failed");
     for output in py_outputs {
         let path = temp_dir.path().join(&output.filename);
-        fs::write(&path, &output.content).unwrap();
+        fs::write(&path, &output.content).expect("Test operation failed");
         assert!(path.exists());
     }
     println!("✓ Python dataclass generated");
@@ -532,10 +532,10 @@ async fn test_biomedical_research_workflow() {
     let ts_outputs = ts_generator
         .generate(&schema, &GeneratorOptions::default())
         .await
-        .unwrap();
+        .expect("Test operation failed");
     for output in ts_outputs {
         let path = temp_dir.path().join(&output.filename);
-        fs::write(&path, &output.content).unwrap();
+        fs::write(&path, &output.content).expect("Test operation failed");
         assert!(path.exists());
     }
     println!("✓ TypeScript interfaces generated");
@@ -549,7 +549,7 @@ async fn test_multi_tenant_config_validation() {
 
     // Load configuration schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(CONFIG_SCHEMA).unwrap();
+    let schema = parser.parse_str(CONFIG_SCHEMA).expect("Test operation failed");
 
     // Test valid tenant configuration
     let valid_tenant = json!({
@@ -588,7 +588,7 @@ async fn test_multi_tenant_config_validation() {
     let options = ValidationOptions::default();
     let report = engine
         .validate(&valid_tenant, "TenantConfig", &options)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "Valid tenant config failed: {:?}",
@@ -613,7 +613,7 @@ async fn test_multi_tenant_config_validation() {
 
     let invalid_report = engine
         .validate(&invalid_tenant, "TenantConfig", &options)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !invalid_report.valid,
         "Should fail - advanced analytics needs higher rate limits"
@@ -627,7 +627,7 @@ async fn test_schema_view_introspection() {
 
     // Load biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
 
     // Create SchemaView for introspection
     let view = SchemaView::new(schema.clone());
@@ -643,7 +643,7 @@ async fn test_schema_view_introspection() {
     // Test slot inheritance
     let patient_slots = view.induced_slots("Patient");
     assert!(patient_slots.is_some());
-    let slots = patient_slots.unwrap();
+    let slots = patient_slots.expect("Test operation failed");
     assert!(slots.iter().any(|s| s.name == "id")); // Inherited from NamedEntity
     assert!(slots.iter().any(|s| s.name == "age")); // Direct slot
     println!(
@@ -704,8 +704,8 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let base_schema = parser.parse_str(base_schema_str).unwrap();
-    let ext_schema = parser.parse_str(extension_schema_str).unwrap();
+    let base_schema = parser.parse_str(base_schema_str).expect("Test operation failed");
+    let ext_schema = parser.parse_str(extension_schema_str).expect("Test operation failed");
 
     // Merge schemas
     let merger = SchemaMerger::new();
@@ -716,7 +716,7 @@ classes:
     };
     let merged = merger
         .merge_with_options(base_schema, ext_schema, &merge_options)
-        .unwrap();
+        .expect("Test operation failed");
 
     // Validate data against merged schema
     let data = json!({
@@ -727,7 +727,7 @@ classes:
 
     let engine = ValidationEngine::new(merged);
     let options = ValidationOptions::default();
-    let report = engine.validate(&data, "ExtendedEntity", &options).unwrap();
+    let report = engine.validate(&data, "ExtendedEntity", &options).expect("Test operation failed");
     assert!(
         report.valid,
         "Merged schema validation failed: {:?}",
@@ -764,7 +764,7 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_str).unwrap();
+    let schema = parser.parse_str(schema_str).expect("Test operation failed");
     let engine = ValidationEngine::new(schema);
     let options = ValidationOptions::default();
 
@@ -786,7 +786,7 @@ classes:
     let mut valid_count = 0;
 
     for user in &users {
-        let report = engine.validate(user, "User", &options).unwrap();
+        let report = engine.validate(user, "User", &options).expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         }
@@ -817,8 +817,8 @@ async fn test_code_generation_all_targets() {
     println!("=== Testing Code Generation for All Targets ===");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(CONFIG_SCHEMA).unwrap();
-    let temp_dir = TempDir::new().unwrap();
+    let schema = parser.parse_str(CONFIG_SCHEMA).expect("Test operation failed");
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Test all generators
     let generators: Vec<(Box<dyn Generator>, &str)> = vec![
@@ -842,11 +842,11 @@ async fn test_code_generation_all_targets() {
 
     for (generator, name) in generators {
         let start = Instant::now();
-        let outputs = generator.generate(&schema, &options).await.unwrap();
+        let outputs = generator.generate(&schema, &options).await.expect("Test operation failed");
 
         for output in outputs {
             let path = temp_dir.path().join(&output.filename);
-            fs::write(&path, &output.content).unwrap();
+            fs::write(&path, &output.content).expect("Test operation failed");
             assert!(path.exists());
             assert!(!output.content.is_empty());
         }
@@ -927,16 +927,16 @@ enums:
 "#;
 
     let parser = YamlParser::new();
-    let mut schema = parser.parse_str(schema_str).unwrap();
+    let mut schema = parser.parse_str(schema_str).expect("Test operation failed");
 
     // Resolve inheritance
     let resolver = InheritanceResolver::new();
-    resolver.resolve(&mut schema).unwrap();
+    resolver.resolve(&mut schema).expect("Test operation failed");
 
     let view = SchemaView::new(schema.clone());
 
     // Test inheritance chain
-    let doc_slots = view.induced_slots("Document").unwrap();
+    let doc_slots = view.induced_slots("Document").expect("Test operation failed");
     let slot_names: Vec<_> = doc_slots.iter().map(|s| s.name.as_str()).collect();
 
     assert!(slot_names.contains(&"id"), "Should inherit id from Entity");
@@ -975,7 +975,7 @@ enums:
     let options = ValidationOptions::default();
     let report = engine
         .validate(&secure_doc, "SecureDocument", &options)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "SecureDocument validation failed: {:?}",
@@ -989,7 +989,7 @@ async fn test_rule_engine_with_expressions() {
     println!("=== Testing Rule Engine with Complex Expressions ===");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).unwrap();
+    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
 
     // Create rule engine
     let rule_engine = RuleEngine::new(schema.clone());
@@ -1013,7 +1013,7 @@ async fn test_rule_engine_with_expressions() {
 
     let result = rule_engine
         .execute_class_rules("LabResult", &context, &ExecutionStrategy::Sequential)
-        .unwrap();
+        .expect("Test operation failed");
 
     // The rule should have detected the violation
     assert!(
@@ -1096,20 +1096,20 @@ enums:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(api_schema_str).unwrap();
-    let temp_dir = TempDir::new().unwrap();
+    let schema = parser.parse_str(api_schema_str).expect("Test operation failed");
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Generate OpenAPI spec
     let openapi_gen = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let outputs = openapi_gen.generate(&schema, &options).await.unwrap();
+    let outputs = openapi_gen.generate(&schema, &options).await.expect("Test operation failed");
 
     for output in outputs {
         let path = temp_dir.path().join(&output.filename);
-        fs::write(&path, &output.content).unwrap();
+        fs::write(&path, &output.content).expect("Test operation failed");
 
         // Verify JSON Schema is valid JSON
-        let parsed: Value = serde_json::from_str(&output.content).unwrap();
+        let parsed: Value = serde_json::from_str(&output.content).expect("Test operation failed");
         assert!(parsed.is_object());
     }
 
@@ -1129,7 +1129,7 @@ enums:
     let validation_options = ValidationOptions::default();
     let report = engine
         .validate(&user_data, "User", &validation_options)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
     println!("✓ API data validation passed");
 }

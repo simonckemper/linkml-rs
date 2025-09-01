@@ -169,7 +169,7 @@ impl TypeQLGenerator {
         &self,
         output: &mut String,
         schema: &SchemaDefinition,
-        _indent: &IndentStyle,
+        indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let mut generated_attrs = HashSet::new();
 
@@ -535,7 +535,7 @@ mod tests {
         let options = GeneratorOptions::new();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to generate TypeQL": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to generate TypeQL: {}", e))?;
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("person sub entity"));

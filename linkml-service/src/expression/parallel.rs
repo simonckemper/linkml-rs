@@ -8,6 +8,7 @@ use futures::future::join_all;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::SystemTime;
 use tokio::task::JoinHandle;
 
 /// Result of parallel expression evaluation
@@ -80,7 +81,9 @@ impl ParallelEvaluator for ExpressionEngine {
         context: &HashMap<String, Value>,
         options: ParallelOptions,
     ) -> ParallelResult {
-        let start_time = std::time::Instant::now();
+        let timestamp_service = self.timestamp_service();
+        let start_time = timestamp_service.system_time()
+            .unwrap_or_else(|_| SystemTime::now());
         let engine = Arc::new(self.clone());
         let context = Arc::new(context.clone());
 
@@ -97,10 +100,15 @@ impl ParallelEvaluator for ExpressionEngine {
 
             let task = tokio::spawn(async move {
                 // Acquire permit for concurrency control
-                let _permit = semaphore
-                    .acquire()
-                    .await
-                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
+                let _permit = match semaphore.acquire().await {
+                    Ok(permit) => permit,
+                    Err(e) => {
+                        return (
+                            key_clone,
+                            Err(format!("semaphore should not be closed: {}", e)),
+                        )
+                    }
+                };
 
                 // Parse and evaluate
                 let result = match engine.parse(&expr) {
@@ -143,7 +151,13 @@ impl ParallelEvaluator for ExpressionEngine {
             ParallelResult {
                 successful,
                 failed,
-                total_time_ms: start_time.elapsed().as_millis() as u64,
+                total_time_ms: {
+                    let end_time = timestamp_service.system_time()
+                        .unwrap_or_else(|_| SystemTime::now());
+                    let duration = end_time.duration_since(start_time)
+                        .unwrap_or_else(|_| std::time::Duration::from_millis(0));
+                    duration.as_millis() as u64
+                },
             }
         } else {
             // Collect all results
@@ -168,7 +182,13 @@ impl ParallelEvaluator for ExpressionEngine {
             ParallelResult {
                 successful,
                 failed,
-                total_time_ms: start_time.elapsed().as_millis() as u64,
+                total_time_ms: {
+                    let end_time = timestamp_service.system_time()
+                        .unwrap_or_else(|_| SystemTime::now());
+                    let duration = end_time.duration_since(start_time)
+                        .unwrap_or_else(|_| std::time::Duration::from_millis(0));
+                    duration.as_millis() as u64
+                },
             }
         };
 
@@ -181,7 +201,9 @@ impl ParallelEvaluator for ExpressionEngine {
         context: &HashMap<String, Value>,
         options: ParallelOptions,
     ) -> ParallelResult {
-        let start_time = std::time::Instant::now();
+        let timestamp_service = self.timestamp_service();
+        let start_time = timestamp_service.system_time()
+            .unwrap_or_else(|_| SystemTime::now());
         let engine = Arc::new(self.clone());
         let context = Arc::new(context.clone());
 
@@ -195,10 +217,15 @@ impl ParallelEvaluator for ExpressionEngine {
             let key_clone = key.clone();
 
             let task = tokio::spawn(async move {
-                let _permit = semaphore
-                    .acquire()
-                    .await
-                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
+                let _permit = match semaphore.acquire().await {
+                    Ok(permit) => permit,
+                    Err(e) => {
+                        return (
+                            key_clone,
+                            Err(format!("semaphore should not be closed: {}", e)),
+                        )
+                    }
+                };
 
                 let result = match engine.evaluate_ast(&ast, &context) {
                     Ok(value) => Ok(value),
@@ -229,10 +256,15 @@ impl ParallelEvaluator for ExpressionEngine {
             }
         }
 
+        let end_time = timestamp_service.system_time()
+            .unwrap_or_else(|_| SystemTime::now());
+        let duration = end_time.duration_since(start_time)
+            .unwrap_or_else(|_| std::time::Duration::from_millis(0));
+        
         ParallelResult {
             successful,
             failed,
-            total_time_ms: start_time.elapsed().as_millis() as u64,
+            total_time_ms: duration.as_millis() as u64,
         }
     }
 
@@ -265,10 +297,17 @@ impl ParallelEvaluator for ExpressionEngine {
             let semaphore = Arc::clone(&semaphore);
 
             let task = tokio::spawn(async move {
-                let _permit = semaphore
-                    .acquire()
-                    .await
-                    .map_err(|e| anyhow::anyhow!("semaphore should not be closed": {}, e))?;
+                let _permit = match semaphore.acquire().await {
+                    Ok(permit) => permit,
+                    Err(e) => {
+                        return (
+                            idx,
+                            Err(EvaluationError::TypeError {
+                                message: format!("semaphore should not be closed: {}", e),
+                            }),
+                        )
+                    }
+                };
                 let result =
                     engine
                         .evaluate_ast(&ast, &context)

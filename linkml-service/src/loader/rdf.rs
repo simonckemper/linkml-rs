@@ -554,7 +554,7 @@ impl RdfLoader {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -639,7 +639,7 @@ impl DataLoader for RdfLoader {
         self.extract_instances(&store, schema, options)
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
         // RDF can handle any schema
         Ok(())
     }
@@ -792,7 +792,7 @@ impl RdfDumper {
     fn property_to_predicate(
         &self,
         property: &str,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> DumperResult<NamedNode> {
         // Handle prefixed names
         if let Some(colon_pos) = property.find(':') {
@@ -829,7 +829,7 @@ impl RdfDumper {
                 let literal = Literal::new_typed_literal(
                     &b.to_string(),
                     NamedNode::new("http://www.w3.org/2001/XMLSchema#boolean")
-                        .map_err(|e| anyhow::anyhow!("hardcoded XSD boolean datatype URI is valid": {}, e))?,
+                        .map_err(|e| anyhow::anyhow!("hardcoded XSD boolean datatype URI is valid: {}", e))?,
                 );
                 Ok(Term::Literal(literal))
             }
@@ -839,14 +839,14 @@ impl RdfDumper {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#integer")
-                            .map_err(|e| anyhow::anyhow!("hardcoded XSD integer datatype URI is valid": {}, e))?,
+                            .map_err(|e| anyhow::anyhow!("hardcoded XSD integer datatype URI is valid: {}", e))?,
                     );
                     Ok(Term::Literal(literal))
                 } else {
                     let literal = Literal::new_typed_literal(
                         &n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#decimal")
-                            .map_err(|e| anyhow::anyhow!("hardcoded XSD decimal datatype URI is valid": {}, e))?,
+                            .map_err(|e| anyhow::anyhow!("hardcoded XSD decimal datatype URI is valid: {}", e))?,
                     );
                     Ok(Term::Literal(literal))
                 }
@@ -997,7 +997,7 @@ impl DataDumper for RdfDumper {
         self.serialize_store(&store)
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
         // RDF can handle any schema
         Ok(())
     }
@@ -1062,14 +1062,14 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(turtle_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load valid Turtle content": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load valid Turtle content: {}", e))?;
         assert_eq!(instances.len(), 2);
 
         // Find Alice
         let alice = instances
             .iter()
             .find(|i| i.id.as_deref() == Some("http://example.org/alice"))
-            .map_err(|e| anyhow::anyhow!("should find alice instance": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should find alice instance: {}", e))?;
         assert_eq!(alice.class_name, "Person");
         assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
         assert_eq!(
@@ -1082,7 +1082,7 @@ ex:bob rdf:type ex:Person ;
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to Turtle": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to Turtle: {}", e))?;
 
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -1104,7 +1104,7 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(ntriples_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load valid N-Triples content": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load valid N-Triples content: {}", e))?;
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie")));
 
@@ -1113,7 +1113,7 @@ ex:bob rdf:type ex:Person ;
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to N-Triples": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to N-Triples: {}", e))?;
 
         // N-Triples should have one triple per line
         let lines: Vec<&str> = dumped.trim().lines().collect();

@@ -322,7 +322,7 @@ pub struct MultiLayerCacheConfig {
 }
 
 /// Background services configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BackgroundServicesConfig {
     /// Cache TTL check interval in seconds
     pub cache_ttl_check_interval_secs: u64,
@@ -335,7 +335,7 @@ pub struct BackgroundServicesConfig {
 }
 
 /// CLI configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CliConfig {
     /// Default number of iterations for benchmarks
     pub default_iterations: usize,
@@ -393,44 +393,75 @@ pub fn get_config() -> &'static LinkMLConfig {
 fn create_fallback_config() -> LinkMLConfig {
     LinkMLConfig {
         typedb: TypeDBConfig {
-            server_url: "localhost:1729".to_string(),
-            database: "linkml".to_string(),
-            connection_pool_size: 10,
+            server_address: "localhost:1729".to_string(),
+            default_database: "linkml".to_string(),
+            batch_size: 10,
+            connection_timeout_ms: 10000,
             query_timeout_ms: 30000,
-            retry_attempts: 3,
+            max_retries: 3,
             retry_delay_ms: 1000,
+            include_inferred: false,
+            pool_size: 10,
         },
         parser: ParserConfig {
-            strict_mode: false,
             max_recursion_depth: 100,
-            allow_unknown_fields: false,
+            enable_cache: true,
+            cache_ttl_seconds: 3600,
+            max_file_size_bytes: 10 * 1024 * 1024, // 10MB
+            supported_formats: vec!["yaml".to_string(), "json".to_string()],
+            max_import_depth: 10,
         },
         validator: ValidatorConfig {
-            enable_strict_validation: true,
-            max_validation_errors: 100,
-            validation_timeout_ms: 5000,
-            pattern_cache_size: 100,
-            enable_parallel_validation: true,
+            enable_parallel: true,
+            thread_count: 4,
+            batch_size: 100,
+            timeout_ms: 5000,
+            max_errors: 100,
+            fail_fast: false,
+            compiled_cache_size: 100,
         },
         generator: GeneratorConfig {
             output_directory: "./generated".to_string(),
-            enable_documentation: true,
-            target_languages: vec!["rust".to_string()],
+            enable_formatting: true,
+            include_docs: true,
+            generator_options: HashMap::new(),
         },
         cache: CacheConfig {
-            enable_caching: true,
-            max_cache_size_mb: 100,
-            cache_ttl_seconds: 3600,
-            cache_directory: "./cache".to_string(),
+            max_entries: 1000,
+            ttl_seconds: 3600,
+            enable_compression: false,
+            eviction_policy: "lru".to_string(),
+            expression_cache: CacheSettings {
+                max_entries: 500,
+                ttl_seconds: 1800,
+            },
+            rule_cache: CacheSettings {
+                max_entries: 250,
+                ttl_seconds: 3600,
+            },
         },
         performance: PerformanceConfig {
-            parallel_processing_threshold: 1000,
-            batch_size: 100,
-            enable_async_processing: true,
-            memory_limit_mb: 512,
-            thread_pool_size: 4,
-            optimization_level: OptimizationLevel::Standard,
-            profiling_enabled: false,
+            enable_monitoring: true,
+            memory_limit_bytes: 512 * 1024 * 1024, // 512MB
+            cpu_limit_percent: 80,
+            enable_string_interning: true,
+            string_pool_size: 10000,
+            enable_background_tasks: true,
+            enable_cache_warming: false,
+            background_task_interval_secs: 300,
+            string_cache: StringCacheConfig {
+                max_entries: 5000,
+                max_string_length: 1000,
+            },
+            memory_pool: MemoryPoolConfig {
+                max_size_bytes: 100 * 1024 * 1024, // 100MB
+                chunk_size_bytes: 4096,
+            },
+            cache_ttl_levels: CacheTtlLevels {
+                l1_ttl_seconds: 300,
+                l2_ttl_seconds: 1800,
+                l3_ttl_seconds: 7200,
+            },
         },
         security_limits: SecurityLimits {
             max_string_length: 1_000_000,
@@ -462,31 +493,13 @@ fn create_fallback_config() -> LinkMLConfig {
             max_recursion_depth: 50,
         },
         pattern_validator: PatternValidatorConfig {
-            enable_pattern_caching: true,
-            pattern_cache_size: 500,
-            max_pattern_length: 1000,
+            default_cache_size: 500,
         },
         multi_layer_cache: MultiLayerCacheConfig {
-            enable_multi_layer: true,
-            layer_configs: vec![],
+            l3_max_size_bytes: 100 * 1024 * 1024, // 100MB
         },
-        optimization: OptimizationConfig {
-            string_cache: StringCacheConfig {
-                max_entries: 10_000,
-                max_string_length: 1000,
-            },
-            memory_pool: MemoryPoolConfig {
-                max_size_bytes: 104_857_600,
-                chunk_size_bytes: 4096,
-            },
-            cache_ttl_levels: CacheTtlLevels {
-                l1_seconds: 60,
-                l2_seconds: 300,
-                l3_seconds: 3600,
-                min_ttl_seconds: 10,
-                max_ttl_seconds: 86400,
-            },
-        },
+        background_services: BackgroundServicesConfig::default(),
+        cli: CliConfig::default(),
     }
 }
 

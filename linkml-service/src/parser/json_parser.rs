@@ -54,7 +54,7 @@ mod tests {
         let parser = JsonParser::new();
         let schema = parser
             .parse_str(json)
-            .map_err(|e| anyhow::anyhow!("Failed to parse minimal JSON schema": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to parse minimal JSON schema: {}", e))?;
 
         assert_eq!(schema.id, "https://example.org/test");
         assert_eq!(schema.name, "test_schema");

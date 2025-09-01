@@ -52,9 +52,9 @@ fn test_slot_metadata_inheritance() {
 
     // Resolve inheritance
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved = resolver.resolve().unwrap();
+    let resolved = resolver.resolve().expect("Test operation failed");
 
-    let resolved_slot = resolved.slots.get("derived_slot").unwrap();
+    let resolved_slot = resolved.slots.get("derived_slot").expect("Test operation failed");
     let metadata = &resolved_slot.metadata;
 
     // Check overrides
@@ -207,7 +207,7 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml).unwrap();
+    let schema = parser.parse_str(yaml).expect("Test operation failed");
 
     // Check schema metadata
     assert_eq!(schema.schema_metadata.contributors.len(), 2);
@@ -226,7 +226,7 @@ slots:
     );
 
     // Check class metadata
-    let patient_class = schema.classes.get("Patient").unwrap();
+    let patient_class = schema.classes.get("Patient").expect("Test operation failed");
     assert_eq!(patient_class.metadata.aliases.len(), 2);
     assert!(
         patient_class
@@ -242,7 +242,7 @@ slots:
     assert_eq!(patient_class.metadata.rank, Some(1));
 
     // Check slot metadata
-    let patient_id_slot = schema.slots.get("patient_id").unwrap();
+    let patient_id_slot = schema.slots.get("patient_id").expect("Test operation failed");
     assert_eq!(patient_id_slot.metadata.aliases.len(), 2);
     assert_eq!(patient_id_slot.metadata.examples.len(), 2);
     assert_eq!(patient_id_slot.metadata.examples[0].value, "P123456");
@@ -292,9 +292,9 @@ fn test_metadata_class_inheritance() {
 
     // Resolve inheritance
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved = resolver.resolve().unwrap();
+    let resolved = resolver.resolve().expect("Test operation failed");
 
-    let resolved_person = resolved.classes.get("Person").unwrap();
+    let resolved_person = resolved.classes.get("Person").expect("Test operation failed");
     let metadata = &resolved_person.metadata;
 
     // Verify inheritance behavior
@@ -329,10 +329,10 @@ fn test_metadata_serialization_roundtrip() {
     };
 
     // Serialize to YAML
-    let yaml = serde_yaml::to_string(&metadata).unwrap();
+    let yaml = serde_yaml::to_string(&metadata).expect("Test operation failed");
 
     // Deserialize back
-    let deserialized: ElementMetadata = serde_yaml::from_str(&yaml).unwrap();
+    let deserialized: ElementMetadata = serde_yaml::from_str(&yaml).expect("Test operation failed");
 
     // Verify all fields
     assert_eq!(metadata.aliases, deserialized.aliases);
@@ -357,12 +357,12 @@ fn test_contributor_validation() {
     };
 
     // Test ORCID format (basic check)
-    assert!(contributor.orcid.as_ref().unwrap().len() == 19);
+    assert!(contributor.orcid.as_ref().expect("Test operation failed").len() == 19);
     assert!(
         contributor
             .orcid
             .as_ref()
-            .unwrap()
+            .expect("Test operation failed")
             .chars()
             .filter(|c| *c == '-')
             .count()
@@ -370,7 +370,7 @@ fn test_contributor_validation() {
     );
 
     // Test email contains @
-    assert!(contributor.email.as_ref().unwrap().contains('@'));
+    assert!(contributor.email.as_ref().expect("Test operation failed").contains('@'));
 }
 
 #[test]
@@ -437,7 +437,7 @@ fn test_metadata_with_special_characters() {
         schema.schema_metadata.contributors[0].name,
         "José García-López"
     );
-    let slot = schema.slots.get("test_slot").unwrap();
-    assert!(slot.metadata.description.as_ref().unwrap().contains("🚀"));
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
+    assert!(slot.metadata.description.as_ref().expect("Test operation failed").contains("🚀"));
     assert!(slot.metadata.aliases.contains(&"別名".to_string()));
 }

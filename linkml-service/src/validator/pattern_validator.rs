@@ -1,1 +1,513 @@
-# ! [doc = " Pattern-based slot validation for LinkML"] # ! [doc = ""] # ! [doc = " This module provides comprehensive pattern validation including:"] # ! [doc = " - Regular expression patterns"] # ! [doc = " - Structured patterns (email, URL, UUID, etc.)"] # ! [doc = " - Named capture groups with extraction"] # ! [doc = " - Pattern inheritance and overrides"] use super :: report :: ValidationIssue ; use linkml_core :: error :: { LinkMLError , Result } ; use linkml_core :: prelude :: * ; use once_cell :: sync :: Lazy ; use regex :: Regex ; use serde_json :: Value ; use std :: collections :: HashMap ; # [doc = " Common structured patterns"] static EMAIL_PATTERN : Lazy < Regex > = Lazy :: new (| | Regex :: new (r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$") . expect ("Operation failed")) ; static URL_PATTERN : Lazy < Regex > = Lazy :: new (| | { Regex :: new (r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$") . expect ("Operation failed") }) ; static UUID_PATTERN : Lazy < Regex > = Lazy :: new (| | { Regex :: new (r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$") . expect ("Operation failed") }) ; static ISO_DATE_PATTERN : Lazy < Regex > = Lazy :: new (| | Regex :: new (r"^\d{4}-\d{2}-\d{2}$") . expect ("Operation failed")) ; static ISO_DATETIME_PATTERN : Lazy < Regex > = Lazy :: new (| | { Regex :: new (r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$") . expect ("Operation failed") }) ; # [doc = " Pattern validator for slot values"] pub struct PatternValidator { # [doc = " Compiled regex patterns by slot name"] patterns : HashMap < String , Regex > , # [doc = " Structured patterns by type"] structured_patterns : HashMap < String , & 'static Regex > , # [doc = " Named capture patterns for extraction"] named_patterns : HashMap < String , Regex > , } impl PatternValidator { # [doc = " Create a new pattern validator"] pub fn new () -> Self { let mut structured_patterns = HashMap :: new () ; structured_patterns . insert ("email" . to_string () , & * EMAIL_PATTERN) ; structured_patterns . insert ("url" . to_string () , & * URL_PATTERN) ; structured_patterns . insert ("uri" . to_string () , & * URL_PATTERN) ; structured_patterns . insert ("uuid" . to_string () , & * UUID_PATTERN) ; structured_patterns . insert ("date" . to_string () , & * ISO_DATE_PATTERN) ; structured_patterns . insert ("datetime" . to_string () , & * ISO_DATETIME_PATTERN) ; structured_patterns . insert ("timestamp" . to_string () , & * ISO_DATETIME_PATTERN) ; Self { patterns : HashMap :: new () , structured_patterns , named_patterns : HashMap :: new () , } } # [doc = " Create validator from schema"] pub fn from_schema (schema : & SchemaDefinition) -> Result < Self > { let mut validator = Self :: new () ; for (slot_name , slot_def) in & schema . slots { if let Some (pattern) = & slot_def . pattern { eprintln ! ("DEBUG from_schema: Adding pattern for slot '{}': '{}'" , slot_name , pattern) ; validator . add_pattern (slot_name , pattern) ? ; } if let Some (structured) = validator . detect_structured_pattern (slot_def) { validator . add_structured_pattern (slot_name , & structured) ; } } Ok (validator) } # [doc = " Add a pattern for a slot"] pub fn add_pattern (& mut self , slot_name : & str , pattern : & str) -> Result < () > { eprintln ! ("DEBUG: Adding pattern for slot '{}': '{}'" , slot_name , pattern) ; eprintln ! ("DEBUG: Pattern bytes: {:?}" , pattern . as_bytes ()) ; let regex = Regex :: new (pattern) . map_err (| e | { LinkMLError :: service (format ! ("Invalid pattern for slot '{}': {}" , slot_name , e)) }) ? ; eprintln ! ("DEBUG: Pattern compiled successfully for slot '{}'" , slot_name) ; if regex . capture_names () . flatten () . count () > 0 { self . named_patterns . insert (slot_name . to_string () , regex . clone ()) ; } self . patterns . insert (slot_name . to_string () , regex) ; Ok (()) } # [doc = " Add a structured pattern"] pub fn add_structured_pattern (& mut self , slot_name : & str , pattern_type : & str) { if let Some (pattern) = self . structured_patterns . get (pattern_type) { self . patterns . insert (slot_name . to_string () , (* pattern) . clone ()) ; } } # [doc = " Detect structured pattern from slot definition"] fn detect_structured_pattern (& self , slot : & SlotDefinition) -> Option < String > { let name_lower = slot . name . to_lowercase () ; if name_lower . contains ("email") || name_lower . contains ("mail") { return Some ("email" . to_string ()) ; } if name_lower . contains ("url") || name_lower . contains ("uri") || name_lower . contains ("link") { return Some ("url" . to_string ()) ; } if name_lower . contains ("uuid") || name_lower . contains ("guid") { return Some ("uuid" . to_string ()) ; } if name_lower . contains ("datetime") || name_lower . contains ("timestamp") { return Some ("datetime" . to_string ()) ; } if name_lower . contains ("date") && ! name_lower . contains ("update") { return Some ("date" . to_string ()) ; } if let Some (range) = & slot . range { match range . as_str () { "email" | "Email" => return Some ("email" . to_string ()) , "url" | "URL" | "uri" | "URI" => return Some ("url" . to_string ()) , "uuid" | "UUID" => return Some ("uuid" . to_string ()) , "date" | "Date" => return Some ("date" . to_string ()) , "datetime" | "DateTime" | "timestamp" => return Some ("datetime" . to_string ()) , _ => { } } } None } # [doc = " Validate a slot value against its pattern"] pub fn validate_slot (& self , slot_name : & str , value : & Value) -> Result < () > { match value { Value :: String (s) => { if let Some (pattern) = self . patterns . get (slot_name) { eprintln ! ("DEBUG: Testing '{}' against pattern for slot '{}'" , s , slot_name) ; eprintln ! ("DEBUG: Pattern: {:?}" , pattern . as_str ()) ; if ! pattern . is_match (s) { eprintln ! ("DEBUG: Pattern match failed!") ; return Err (LinkMLError :: service (format ! ("Value '{}' does not match pattern for slot '{}'" , s , slot_name))) ; } eprintln ! ("DEBUG: Pattern match succeeded!") ; } } Value :: Number (n) => { let string_value = n . to_string () ; if let Some (pattern) = self . patterns . get (slot_name) { if ! pattern . is_match (& string_value) { return Err (LinkMLError :: service (format ! ("Value '{}' does not match pattern for slot '{}'" , string_value , slot_name))) ; } } } Value :: Array (items) => { for (i , item) in items . iter () . enumerate () { match item { Value :: String (s) => { if let Some (pattern) = self . patterns . get (slot_name) { if ! pattern . is_match (s) { return Err (LinkMLError :: service (format ! ("Array item [{}] '{}' does not match pattern for slot '{}'" , i , s , slot_name))) ; } } } Value :: Number (n) => { let string_value = n . to_string () ; if let Some (pattern) = self . patterns . get (slot_name) { if ! pattern . is_match (& string_value) { return Err (LinkMLError :: service (format ! ("Array item [{}] '{}' does not match pattern for slot '{}'" , i , string_value , slot_name))) ; } } } Value :: Null => { } _ => { return Err (LinkMLError :: service (format ! ("Pattern validation only applies to string/number values, got {:?} for slot '{}' at index {}" , item , slot_name , i))) ; } } } } Value :: Null => { } _ => { return Err (LinkMLError :: service (format ! ("Pattern validation only applies to string/number values or arrays thereof, got {:?} for slot '{}'" , value , slot_name))) ; } } Ok (()) } # [doc = " Extract named captures from a value"] pub fn extract_captures (& self , slot_name : & str , value : & str ,) -> Option < HashMap < String , String > > { if let Some (pattern) = self . named_patterns . get (slot_name) { if let Some (captures) = pattern . captures (value) { let mut extracted = HashMap :: new () ; for name in pattern . capture_names () . flatten () { if let Some (matched) = captures . name (name) { extracted . insert (name . to_string () , matched . as_str () . to_string ()) ; } } return Some (extracted) ; } } None } # [doc = " Validate all slots in an instance"] pub fn validate_instance (& self , instance : & Value , class_name : & str , schema : & SchemaDefinition ,) -> Result < Vec < ValidationIssue > > { let mut issues = Vec :: new () ; let class = schema . classes . get (class_name) . ok_or_else (| | LinkMLError :: service (format ! ("Class '{}' not found" , class_name))) ? ; if let Value :: Object (obj) = instance { for slot_name in & class . slots { if let Some (value) = obj . get (slot_name) { match self . validate_slot (slot_name , value) { Err (e) => { let error_msg = e . to_string () ; if error_msg . contains ("Array item [") { if let Some (start) = error_msg . find ("Array item [") { if let Some (end) = error_msg [start ..] . find (']') { let index_str = & error_msg [start + 12 .. start + end] ; if let Ok (index) = index_str . parse :: < usize > () { issues . push (ValidationIssue :: error (error_msg , format ! ("/{}/[{}]" , slot_name , index) , format ! ("pattern:{}[{}]" , slot_name , index) ,)) ; continue ; } } } } issues . push (ValidationIssue :: error (error_msg , format ! ("/{}" , slot_name) , format ! ("pattern:{}" , slot_name) ,)) ; } Ok (()) => { } } } } } Ok (issues) } } # [doc = " Apply pattern validation to an entire dataset"] pub fn validate_patterns (data : & Value , class_name : & str , schema : & SchemaDefinition ,) -> Result < Vec < ValidationIssue > > { let validator = PatternValidator :: from_schema (schema) ? ; match data { Value :: Array (items) => { let mut all_issues = Vec :: new () ; for (i , item) in items . iter () . enumerate () { let mut issues = validator . validate_instance (item , class_name , schema) ? ; for issue in & mut issues { issue . path = format ! ("[{}]{}" , i , issue . path) ; } all_issues . extend (issues) ; } Ok (all_issues) } _ => validator . validate_instance (data , class_name , schema) , } } # [doc = " Pattern-based data transformation"] pub struct PatternTransformer { # [doc = " Transformation patterns"] transformations : HashMap < String , TransformPattern > , } # [doc = " A transformation pattern"] # [derive (Clone)] pub struct TransformPattern { # [doc = " Pattern to match"] pub pattern : Regex , # [doc = " Replacement template"] pub replacement : String , } impl PatternTransformer { # [doc = " Create a new pattern transformer"] pub fn new () -> Self { Self { transformations : HashMap :: new () , } } # [doc = " Add a transformation pattern"] pub fn add_transformation (& mut self , slot_name : & str , pattern : & str , replacement : & str ,) -> Result < () > { let regex = Regex :: new (pattern) . map_err (| e | LinkMLError :: service (format ! ("Invalid transform pattern: {}" , e))) ? ; self . transformations . insert (slot_name . to_string () , TransformPattern { pattern : regex , replacement : replacement . to_string () , } ,) ; Ok (()) } # [doc = " Transform a value using patterns"] pub fn transform (& self , slot_name : & str , value : & str) -> String { if let Some (transform) = self . transformations . get (slot_name) { transform . pattern . replace_all (value , & transform . replacement) . to_string () } else { value . to_string () } } } # [cfg (test)] mod tests { use super :: * ; use serde_json :: json ; # [test] fn test_email_pattern_validation () { let mut validator = PatternValidator :: new () ; validator . add_structured_pattern ("email" , "email") ; assert ! (validator . validate_slot ("email" , & json ! ("user@example.com")) . is_ok ()) ; assert ! (validator . validate_slot ("email" , & json ! ("test.user+tag@domain.co.uk")) . is_ok ()) ; assert ! (validator . validate_slot ("email" , & json ! ("not-an-email")) . is_err ()) ; assert ! (validator . validate_slot ("email" , & json ! ("@example.com")) . is_err ()) ; assert ! (validator . validate_slot ("email" , & json ! ("user@")) . is_err ()) ; } # [test] fn test_custom_pattern () { let mut validator = PatternValidator :: new () ; validator . add_pattern ("phone" , r"^\+?[1-9]\d{1,14}$" ,) . unwrap () ; assert ! (validator . validate_slot ("phone" , & json ! ("+14155552671")) . is_ok ()) ; assert ! (validator . validate_slot ("phone" , & json ! ("14155552671")) . is_ok ()) ; assert ! (validator . validate_slot ("phone" , & json ! ("555-1234")) . is_err ()) ; assert ! (validator . validate_slot ("phone" , & json ! ("+0123456789")) . is_err ()) ; } # [test] fn test_named_captures () { let mut validator = PatternValidator :: new () ; validator . add_pattern ("version" , r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$" ,) . unwrap () ; let captures = validator . extract_captures ("version" , "1.2.3") . unwrap () ; assert_eq ! (captures . get ("major") . unwrap () , "1") ; assert_eq ! (captures . get ("minor") . unwrap () , "2") ; assert_eq ! (captures . get ("patch") . unwrap () , "3") ; } # [test] fn test_pattern_transformation () { let mut transformer = PatternTransformer :: new () ; transformer . add_transformation ("phone" , r"[\s\-\(\)]" , "" ,) . unwrap () ; assert_eq ! (transformer . transform ("phone" , "(415) 555-2671") , "4155552671") ; assert_eq ! (transformer . transform ("phone" , "415-555-2671") , "4155552671") ; } }
+//! Pattern-based slot validation for LinkML
+//!
+//! This module provides comprehensive pattern validation including:
+//! - Regular expression patterns
+//! - Structured patterns (email, URL, UUID, etc.)
+//! - Named capture groups with extraction
+//! - Pattern inheritance and overrides
+
+use super::report::ValidationIssue;
+use linkml_core::error::{LinkMLError, Result};
+use linkml_core::prelude::*;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use serde_json::Value;
+use std::collections::HashMap;
+
+/// Common structured patterns
+static EMAIL_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        .expect("Valid email regex pattern"));
+
+static URL_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
+        .expect("Valid URL regex pattern")
+});
+
+static UUID_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+        .expect("Valid UUID regex pattern")
+});
+
+static ISO_DATE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{4}-\d{2}-\d{2}$")
+    .expect("Valid ISO date regex pattern"));
+
+static ISO_DATETIME_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$")
+        .expect("Valid ISO datetime regex pattern")
+});
+
+/// Pattern validator for slot values
+pub struct PatternValidator {
+    /// Compiled regex patterns by slot name
+    patterns: HashMap<String, Regex>,
+
+    /// Structured patterns by type
+    structured_patterns: HashMap<String, &'static Regex>,
+
+    /// Named capture patterns for extraction
+    named_patterns: HashMap<String, Regex>,
+}
+
+impl PatternValidator {
+    /// Create a new pattern validator
+    pub fn new() -> Self {
+        let mut structured_patterns = HashMap::new();
+        structured_patterns.insert("email".to_string(), &*EMAIL_PATTERN);
+        structured_patterns.insert("url".to_string(), &*URL_PATTERN);
+        structured_patterns.insert("uri".to_string(), &*URL_PATTERN);
+        structured_patterns.insert("uuid".to_string(), &*UUID_PATTERN);
+        structured_patterns.insert("date".to_string(), &*ISO_DATE_PATTERN);
+        structured_patterns.insert("datetime".to_string(), &*ISO_DATETIME_PATTERN);
+        structured_patterns.insert("timestamp".to_string(), &*ISO_DATETIME_PATTERN);
+
+        Self {
+            patterns: HashMap::new(),
+            structured_patterns,
+            named_patterns: HashMap::new(),
+        }
+    }
+
+    /// Create validator from schema
+    pub fn from_schema(schema: &SchemaDefinition) -> Result<Self> {
+        let mut validator = Self::new();
+
+        // Compile patterns from slots
+        for (slot_name, slot_def) in &schema.slots {
+            if let Some(pattern) = &slot_def.pattern {
+                eprintln!(
+                    "DEBUG from_schema: Adding pattern for slot '{}': '{}'",
+                    slot_name, pattern
+                );
+                validator.add_pattern(slot_name, pattern)?;
+            }
+
+            // Check for structured pattern hints
+            if let Some(structured) = validator.detect_structured_pattern(slot_def) {
+                validator.add_structured_pattern(slot_name, &structured);
+            }
+        }
+
+        Ok(validator)
+    }
+
+    /// Add a pattern for a slot
+    pub fn add_pattern(&mut self, slot_name: &str, pattern: &str) -> Result<()> {
+        // The pattern comes from YAML where \d is already a single backslash
+        // No conversion needed - use the pattern as-is
+        eprintln!(
+            "DEBUG: Adding pattern for slot '{}': '{}'",
+            slot_name, pattern
+        );
+        eprintln!("DEBUG: Pattern bytes: {:?}", pattern.as_bytes());
+
+        let regex = Regex::new(pattern).map_err(|e| {
+            LinkMLError::service(format!("Invalid pattern for slot '{}': {}", slot_name, e))
+        })?;
+
+        eprintln!(
+            "DEBUG: Pattern compiled successfully for slot '{}'",
+            slot_name
+        );
+
+        // Check if it has named captures
+        if regex.capture_names().flatten().count() > 0 {
+            self.named_patterns
+                .insert(slot_name.to_string(), regex.clone());
+        }
+
+        self.patterns.insert(slot_name.to_string(), regex);
+        Ok(())
+    }
+
+    /// Add a structured pattern
+    pub fn add_structured_pattern(&mut self, slot_name: &str, pattern_type: &str) {
+        if let Some(pattern) = self.structured_patterns.get(pattern_type) {
+            self.patterns
+                .insert(slot_name.to_string(), (*pattern).clone());
+        }
+    }
+
+    /// Detect structured pattern from slot definition
+    fn detect_structured_pattern(&self, slot: &SlotDefinition) -> Option<String> {
+        // Check slot name hints
+        let name_lower = slot.name.to_lowercase();
+        if name_lower.contains("email") || name_lower.contains("mail") {
+            return Some("email".to_string());
+        }
+        if name_lower.contains("url") || name_lower.contains("uri") || name_lower.contains("link") {
+            return Some("url".to_string());
+        }
+        if name_lower.contains("uuid") || name_lower.contains("guid") {
+            return Some("uuid".to_string());
+        }
+        if name_lower.contains("datetime") || name_lower.contains("timestamp") {
+            return Some("datetime".to_string());
+        }
+        if name_lower.contains("date") && !name_lower.contains("update") {
+            return Some("date".to_string());
+        }
+
+        // Check range hints
+        if let Some(range) = &slot.range {
+            match range.as_str() {
+                "email" | "Email" => return Some("email".to_string()),
+                "url" | "URL" | "uri" | "URI" => return Some("url".to_string()),
+                "uuid" | "UUID" => return Some("uuid".to_string()),
+                "date" | "Date" => return Some("date".to_string()),
+                "datetime" | "DateTime" | "timestamp" => return Some("datetime".to_string()),
+                _ => {}
+            }
+        }
+
+        None
+    }
+
+    /// Validate a slot value against its pattern
+    pub fn validate_slot(&self, slot_name: &str, value: &Value) -> Result<()> {
+        match value {
+            Value::String(s) => {
+                if let Some(pattern) = self.patterns.get(slot_name) {
+                    eprintln!(
+                        "DEBUG: Testing '{}' against pattern for slot '{}'",
+                        s, slot_name
+                    );
+                    eprintln!("DEBUG: Pattern: {:?}", pattern.as_str());
+                    if !pattern.is_match(s) {
+                        eprintln!("DEBUG: Pattern match failed!");
+                        return Err(LinkMLError::service(format!(
+                            "Value '{}' does not match pattern for slot '{}'",
+                            s, slot_name
+                        )));
+                    }
+                    eprintln!("DEBUG: Pattern match succeeded!");
+                }
+            }
+            Value::Number(n) => {
+                let string_value = n.to_string();
+                if let Some(pattern) = self.patterns.get(slot_name) {
+                    if !pattern.is_match(&string_value) {
+                        return Err(LinkMLError::service(format!(
+                            "Value '{}' does not match pattern for slot '{}'",
+                            string_value, slot_name
+                        )));
+                    }
+                }
+            }
+            Value::Array(items) => {
+                // Handle multivalued slots
+                for (i, item) in items.iter().enumerate() {
+                    match item {
+                        Value::String(s) => {
+                            if let Some(pattern) = self.patterns.get(slot_name) {
+                                if !pattern.is_match(s) {
+                                    return Err(LinkMLError::service(format!(
+                                        "Array item [{}] '{}' does not match pattern for slot '{}'",
+                                        i, s, slot_name
+                                    )));
+                                }
+                            }
+                        }
+                        Value::Number(n) => {
+                            let string_value = n.to_string();
+                            if let Some(pattern) = self.patterns.get(slot_name) {
+                                if !pattern.is_match(&string_value) {
+                                    return Err(LinkMLError::service(format!(
+                                        "Array item [{}] '{}' does not match pattern for slot '{}'",
+                                        i, string_value, slot_name
+                                    )));
+                                }
+                            }
+                        }
+                        Value::Null => {} // Skip null values in arrays
+                        _ => {
+                            return Err(LinkMLError::service(format!(
+                                "Pattern validation only applies to string/number values, got {:?} for slot '{}' at index {}",
+                                item, slot_name, i
+                            )));
+                        }
+                    }
+                }
+            }
+            Value::Null => {} // Null values skip pattern validation
+            _ => {
+                return Err(LinkMLError::service(format!(
+                    "Pattern validation only applies to string/number values or arrays thereof, got {:?} for slot '{}'",
+                    value, slot_name
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Extract named captures from a value
+    pub fn extract_captures(
+        &self,
+        slot_name: &str,
+        value: &str,
+    ) -> Option<HashMap<String, String>> {
+        if let Some(pattern) = self.named_patterns.get(slot_name) {
+            if let Some(captures) = pattern.captures(value) {
+                let mut extracted = HashMap::new();
+
+                for name in pattern.capture_names().flatten() {
+                    if let Some(matched) = captures.name(name) {
+                        extracted.insert(name.to_string(), matched.as_str().to_string());
+                    }
+                }
+
+                return Some(extracted);
+            }
+        }
+
+        None
+    }
+
+    /// Validate all slots in an instance
+    pub fn validate_instance(
+        &self,
+        instance: &Value,
+        class_name: &str,
+        schema: &SchemaDefinition,
+    ) -> Result<Vec<ValidationIssue>> {
+        let mut issues = Vec::new();
+
+        let class = schema
+            .classes
+            .get(class_name)
+            .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found", class_name)))?;
+
+        if let Value::Object(obj) = instance {
+            for slot_name in &class.slots {
+                if let Some(value) = obj.get(slot_name) {
+                    match self.validate_slot(slot_name, value) {
+                        Err(e) => {
+                            // Extract array index from error message if present
+                            let error_msg = e.to_string();
+                            if error_msg.contains("Array item [") {
+                                // Parse out the array index from the error message
+                                if let Some(start) = error_msg.find("Array item [") {
+                                    if let Some(end) = error_msg[start..].find(']') {
+                                        let index_str = &error_msg[start + 12..start + end];
+                                        if let Ok(index) = index_str.parse::<usize>() {
+                                            issues.push(ValidationIssue::error(
+                                                error_msg,
+                                                format!("/{}/[{}]", slot_name, index),
+                                                format!("pattern:{}[{}]", slot_name, index),
+                                            ));
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            // Default error formatting
+                            issues.push(ValidationIssue::error(
+                                error_msg,
+                                format!("/{}", slot_name),
+                                format!("pattern:{}", slot_name),
+                            ));
+                        }
+                        Ok(()) => {}
+                    }
+                }
+            }
+        }
+
+        Ok(issues)
+    }
+}
+
+/// Apply pattern validation to an entire dataset
+pub fn validate_patterns(
+    data: &Value,
+    class_name: &str,
+    schema: &SchemaDefinition,
+) -> Result<Vec<ValidationIssue>> {
+    let validator = PatternValidator::from_schema(schema)?;
+
+    match data {
+        Value::Array(items) => {
+            let mut all_issues = Vec::new();
+            for (i, item) in items.iter().enumerate() {
+                let mut issues = validator.validate_instance(item, class_name, schema)?;
+                // Add index to path
+                for issue in &mut issues {
+                    issue.path = format!("[{}]{}", i, issue.path);
+                }
+                all_issues.extend(issues);
+            }
+            Ok(all_issues)
+        }
+        _ => validator.validate_instance(data, class_name, schema),
+    }
+}
+
+/// Pattern-based data transformation
+pub struct PatternTransformer {
+    /// Transformation patterns
+    transformations: HashMap<String, TransformPattern>,
+}
+
+/// A transformation pattern
+#[derive(Clone)]
+pub struct TransformPattern {
+    /// Pattern to match
+    pub pattern: Regex,
+    /// Replacement template
+    pub replacement: String,
+}
+
+impl PatternTransformer {
+    /// Create a new pattern transformer
+    pub fn new() -> Self {
+        Self {
+            transformations: HashMap::new(),
+        }
+    }
+
+    /// Add a transformation pattern
+    pub fn add_transformation(
+        &mut self,
+        slot_name: &str,
+        pattern: &str,
+        replacement: &str,
+    ) -> Result<()> {
+        let regex = Regex::new(pattern)
+            .map_err(|e| LinkMLError::service(format!("Invalid transform pattern: {}", e)))?;
+
+        self.transformations.insert(
+            slot_name.to_string(),
+            TransformPattern {
+                pattern: regex,
+                replacement: replacement.to_string(),
+            },
+        );
+
+        Ok(())
+    }
+
+    /// Transform a value using patterns
+    pub fn transform(&self, slot_name: &str, value: &str) -> String {
+        if let Some(transform) = self.transformations.get(slot_name) {
+            transform
+                .pattern
+                .replace_all(value, &transform.replacement)
+                .to_string()
+        } else {
+            value.to_string()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_email_pattern_validation() {
+        let mut validator = PatternValidator::new();
+        validator.add_structured_pattern("email", "email");
+
+        // Valid emails
+        assert!(
+            validator
+                .validate_slot("email", &json!("user@example.com"))
+                .is_ok()
+        );
+        assert!(
+            validator
+                .validate_slot("email", &json!("test.user+tag@domain.co.uk"))
+                .is_ok()
+        );
+
+        // Invalid emails
+        assert!(
+            validator
+                .validate_slot("email", &json!("not-an-email"))
+                .is_err()
+        );
+        assert!(
+            validator
+                .validate_slot("email", &json!("@example.com"))
+                .is_err()
+        );
+        assert!(validator.validate_slot("email", &json!("user@")).is_err());
+    }
+
+    #[test]
+    fn test_custom_pattern() {
+        let mut validator = PatternValidator::new();
+
+        // Add a custom pattern for phone numbers
+        validator
+            .add_pattern(
+                "phone",
+                r"^\+?[1-9]\d{1,14}$", // E.164 format
+            )
+            .expect("Should add pattern");
+
+        // Valid phone numbers
+        assert!(
+            validator
+                .validate_slot("phone", &json!("+14155552671"))
+                .is_ok()
+        );
+        assert!(
+            validator
+                .validate_slot("phone", &json!("14155552671"))
+                .is_ok()
+        );
+
+        // Invalid phone numbers
+        assert!(
+            validator
+                .validate_slot("phone", &json!("555-1234"))
+                .is_err()
+        );
+        assert!(
+            validator
+                .validate_slot("phone", &json!("+0123456789"))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn test_named_captures() {
+        let mut validator = PatternValidator::new();
+
+        // Pattern with named captures
+        validator
+            .add_pattern(
+                "version",
+                r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$",
+            )
+            .expect("Should add pattern");
+
+        let captures = validator.extract_captures("version", "1.2.3").expect("Should extract captures");
+        assert_eq!(captures.get("major").expect("Should have major"), "1");
+        assert_eq!(captures.get("minor").expect("Should have minor"), "2");
+        assert_eq!(captures.get("patch").expect("Should have patch"), "3");
+    }
+
+    #[test]
+    fn test_pattern_transformation() {
+        let mut transformer = PatternTransformer::new();
+
+        // Add transformation to normalize phone numbers
+        transformer
+            .add_transformation(
+                "phone",
+                r"[\s\-\(\)]", // Remove spaces, dashes, parentheses
+                "",
+            )
+            .expect("Should add pattern");
+
+        assert_eq!(
+            transformer.transform("phone", "(415) 555-2671"),
+            "4155552671"
+        );
+        assert_eq!(transformer.transform("phone", "415-555-2671"), "4155552671");
+    }
+}

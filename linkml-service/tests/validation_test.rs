@@ -42,7 +42,7 @@ slots:
 
     // Parse schema
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Valid data
     let valid_data = json!({
@@ -53,7 +53,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
     assert_eq!(report.stats.error_count, 0);
 
@@ -65,7 +65,7 @@ slots:
 
     let report = validate_as_class(&schema, &invalid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.stats.error_count > 0);
 
@@ -116,7 +116,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test wrong types
     let wrong_types = json!({
@@ -129,7 +129,7 @@ slots:
 
     let report = validate_as_class(&schema, &wrong_types, "DataTypes", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.stats.error_count >= 5); // At least one error per field
 }
@@ -160,7 +160,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Valid patterns
     let valid_data = json!({
@@ -170,7 +170,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_data, "Contact", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Invalid patterns
@@ -181,7 +181,7 @@ slots:
 
     let report = validate_as_class(&schema, &invalid_data, "Contact", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.stats.error_count >= 2);
 }
@@ -214,7 +214,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Out of range values
     let invalid_data = json!({
@@ -224,7 +224,7 @@ slots:
 
     let report = validate_as_class(&schema, &invalid_data, "Measurement", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     let temp_error = report
@@ -267,7 +267,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Valid enum value
     let valid_data = json!({
@@ -276,7 +276,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_data, "Item", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Invalid enum value
@@ -286,7 +286,7 @@ slots:
 
     let report = validate_as_class(&schema, &invalid_data, "Item", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     let enum_error = report
@@ -327,7 +327,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test cardinality
     let too_many = json!({
@@ -335,7 +335,7 @@ slots:
         "tags": ["tag1"]
     });
 
-    let report = validate(&schema, &too_many, None).await.unwrap();
+    let report = validate(&schema, &too_many, None).await.expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.errors().any(|e| e.message.contains("maximum cardinality")));
 
@@ -345,7 +345,7 @@ slots:
         "tags": ["tag1", "tag2", "tag1"] // Duplicate tag1
     });
 
-    let report = validate(&schema, &duplicates, None).await.unwrap();
+    let report = validate(&schema, &duplicates, None).await.expect("Test operation failed");
     assert!(!report.valid);
     assert!(report.errors().any(|e| e.message.contains("Duplicate")));
 }
@@ -388,18 +388,18 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Person should inherit id and name slots
     let person_missing_inherited = json!({
         "age": 30
     });
 
-    let engine = linkml_service::validator::ValidationEngine::new(&schema).unwrap();
+    let engine = linkml_service::validator::ValidationEngine::new(&schema).expect("Test operation failed");
     let report = engine
         .validate_as_class(&person_missing_inherited, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     // Should have errors for missing id and name

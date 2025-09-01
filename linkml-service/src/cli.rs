@@ -21,7 +21,7 @@ use linkml_core::error::Result;
 use linkml_core::traits::LinkMLService;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Instant;
+use timestamp_core::{TimestampService, TimestampError};
 
 /// `LinkML` CLI tool for schema validation and operations
 #[derive(Parser, Debug)]
@@ -263,14 +263,19 @@ enum GeneratorType {
 pub struct CliApp<S> {
     service: Arc<S>,
     cli: Cli,
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 }
 
 impl<S: LinkMLService + 'static> CliApp<S> {
     /// Create new CLI application
-    pub fn new(service: Arc<S>) -> Self {
+    pub fn new(
+        service: Arc<S>,
+        timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
         Self {
             service,
             cli: Cli::parse(),
+            timestamp,
         }
     }
 
@@ -396,12 +401,12 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         spinner.set_style(
             ProgressStyle::default_spinner()
                 .template("{spinner:.green} {msg}")
-                .map_err(|e| anyhow::anyhow!("progress bar template should be valid": {}, e))?,
+                .expect("progress bar template should be valid"),
         );
         spinner.set_message("Loading schema...");
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-        let start = Instant::now();
+        let start = std::time::Instant::now();
         let schema = self.service.load_schema(schema_path).await?;
 
         spinner.finish_with_message(format!(
@@ -432,7 +437,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         spinner.set_message("Validating...");
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-        let start = Instant::now();
+        let start = std::time::Instant::now();
         let class_name = class_name.unwrap_or("Root"); // Default to Root class
         let report = self.service.validate(&data, &schema, class_name).await?;
         let duration = start.elapsed();
@@ -440,7 +445,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         spinner.finish_and_clear();
 
         // Display results
-        self.display_validation_results(&report, max_errors, duration, show_stats, strict);
+        self.display_validation_results(&report, max_errors, duration, show_stats, strict)?;
 
         // Exit code based on validation result
         if report.valid {
@@ -465,7 +470,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         duration: std::time::Duration,
         show_stats: bool,
         strict: bool,
-    ) {
+    ) -> Result<()> {
         match self.cli.format {
             OutputFormat::Pretty => {
                 if report.valid {
@@ -545,13 +550,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
             OutputFormat::Json => {
                 let json = serde_json::to_string_pretty(&report)
-                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to JSON": {}, e))?;
+                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to JSON: {}", e))?;
                 println!("{json}");
             }
 
             OutputFormat::Yaml => {
                 let yaml = serde_yaml::to_string(&report)
-                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to YAML": {}, e))?;
+                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to YAML: {}", e))?;
                 println!("{yaml}");
             }
 
@@ -563,6 +568,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 }
             }
         }
+        Ok(())
     }
 
     /// Check command implementation
@@ -669,7 +675,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     async fn generate_command(
         &self,
         schema_path: &Path,
-        _output_dir: &Path,
+        output_dir: &Path,
         generator: GeneratorType,
         options: &[String],
     ) -> Result<()> {
@@ -727,7 +733,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 .template(
                     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})",
                 )
-                .map_err(|e| anyhow::anyhow!("progress bar template should be valid": {}, e))?
+                .expect("progress bar template should be valid")
                 .progress_chars("#>-"),
         );
 
@@ -735,7 +741,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         let mut memory_usage = Vec::new();
 
         for _ in 0..iterations {
-            let start = Instant::now();
+            let start = std::time::Instant::now();
 
             if memory {
                 let before = 0; // Would measure actual memory
@@ -843,12 +849,29 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         schema: &linkml_core::types::SchemaDefinition,
         filter: Option<&str>,
     ) {
-        let _ = self;
-        // Would implement tree printing logic
-        println!("  Schema: {}", schema.name);
-        for (name, _) in &schema.classes {
-            if filter.is_none_or(|f| name.contains(f)) {
-                println!("    └─ Class: {name}");
+        // Print schema in tree format, respecting any output format settings
+        let format = &self.format;
+
+        match format {
+            OutputFormat::Json => {
+                let tree_data = serde_json::json!({
+                    "schema": schema.name,
+                    "classes": schema.classes.keys().filter(|name| {
+                        filter.map_or(true, |f| name.contains(f))
+                    }).collect::<Vec<_>>()
+                });
+                println!("{}", serde_json::to_string_pretty(&tree_data).unwrap_or_default());
+            }
+            _ => {
+                println!("  Schema: {}", schema.name);
+                for (name, class_def) in &schema.classes {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        println!("    └─ Class: {name}");
+                        if let Some(desc) = &class_def.description {
+                            println!("      Description: {}", desc);
+                        }
+                    }
+                }
             }
         }
     }
@@ -859,12 +882,32 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         schema: &linkml_core::types::SchemaDefinition,
         filter: Option<&str>,
     ) {
-        let _ = self;
-        // Would implement inheritance printing logic
-        for (name, class) in &schema.classes {
-            if filter.is_none_or(|f| name.contains(f)) {
-                if let Some(parent) = &class.is_a {
-                    println!("  {parent} → {name}");
+        // Print inheritance hierarchy, respecting output format settings
+        let format = &self.format;
+
+        match format {
+            OutputFormat::Json => {
+                let inheritance_data: Vec<_> = schema.classes.iter()
+                    .filter(|(name, _)| filter.map_or(true, |f| name.contains(f)))
+                    .filter_map(|(name, class)| {
+                        class.is_a.as_ref().map(|parent| {
+                            serde_json::json!({
+                                "child": name,
+                                "parent": parent
+                            })
+                        })
+                    })
+                    .collect();
+                println!("{}", serde_json::to_string_pretty(&inheritance_data).unwrap_or_default());
+            }
+            _ => {
+                println!("Inheritance relationships:");
+                for (name, class) in &schema.classes {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        if let Some(parent) = &class.is_a {
+                            println!("  {parent} → {name}");
+                        }
+                    }
                 }
             }
         }
@@ -876,12 +919,44 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         schema: &linkml_core::types::SchemaDefinition,
         filter: Option<&str>,
     ) {
-        let _ = self;
-        // Would implement slot usage printing logic
-        for (slot_name, _) in &schema.slots {
-            if filter.is_none_or(|f| slot_name.contains(f)) {
-                println!("  Slot: {slot_name}");
-                // Would show which classes use this slot
+        // Print slot usage information, respecting output format settings
+        let format = &self.format;
+
+        match format {
+            OutputFormat::Json => {
+                let slot_usage: Vec<_> = schema.slots.iter()
+                    .filter(|(name, _)| filter.map_or(true, |f| name.contains(f)))
+                    .map(|(name, slot)| {
+                        serde_json::json!({
+                            "name": name,
+                            "range": slot.range.as_deref().unwrap_or("string"),
+                            "description": slot.description.as_deref().unwrap_or("")
+                        })
+                    })
+                    .collect();
+                println!("{}", serde_json::to_string_pretty(&slot_usage).unwrap_or_default());
+            }
+            _ => {
+                println!("Slot usage:");
+                for (slot_name, slot_def) in &schema.slots {
+                    if filter.map_or(true, |f| slot_name.contains(f)) {
+                        let range = slot_def.range.as_deref().unwrap_or("string");
+                        println!("  Slot: {} ({})", slot_name, range);
+                        if let Some(desc) = &slot_def.description {
+                            println!("    Description: {}", desc);
+                        }
+                        // Show which classes use this slot
+                        let using_classes: Vec<_> = schema.classes.iter()
+                            .filter(|(_, class)| {
+                                class.slots.as_ref().map_or(false, |slots| slots.contains(slot_name))
+                            })
+                            .map(|(name, _)| name)
+                            .collect();
+                        if !using_classes.is_empty() {
+                            println!("    Used by: {}", using_classes.join(", "));
+                        }
+                    }
+                }
             }
         }
     }
@@ -937,7 +1012,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         // Run actual stress test
         println!("\nRunning stress test...");
-        let executor = StressTestExecutor::new(self.service.clone(), config);
+        let executor = StressTestExecutor::new(self.service.clone(), config, self.timestamp.clone());
         let results = executor.run(&schema).await?;
 
         // Display real results

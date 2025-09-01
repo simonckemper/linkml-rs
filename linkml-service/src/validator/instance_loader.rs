@@ -276,9 +276,9 @@ impl InstanceLoader {
     /// Returns an error if the operation fails.
     pub fn load_graphql(
         &self,
-        _endpoint: &str,
-        _query: &str,
-        _config: &InstanceConfig,
+        endpoint: &str,
+        query: &str,
+        config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("GraphQL instance loading"))
     }
@@ -290,9 +290,9 @@ impl InstanceLoader {
     /// Returns an error as this is not yet implemented.
     pub fn load_sql(
         &self,
-        _connection: &str,
-        _query: &str,
-        _config: &InstanceConfig,
+        connection: &str,
+        query: &str,
+        config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SQL instance loading"))
     }
@@ -304,9 +304,9 @@ impl InstanceLoader {
     /// Returns an error as this is not yet implemented.
     pub fn load_sparql(
         &self,
-        _endpoint: &str,
-        _query: &str,
-        _config: &InstanceConfig,
+        endpoint: &str,
+        query: &str,
+        config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SPARQL instance loading"))
     }
@@ -353,7 +353,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_load_json_file() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[
@@ -364,7 +364,7 @@ mod tests {
 
         fs::write(&file_path, json_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test JSON file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should write test JSON file: {}", e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -376,41 +376,41 @@ mod tests {
         let instance_data = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON instance data": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load JSON instance data: {}", e))?;
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
             instance_data
                 .values
                 .get("US")
-                .map_err(|e| anyhow::anyhow!("should have US entry": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should have US entry: {}", e))?,
             &vec!["United States"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("UK")
-                .map_err(|e| anyhow::anyhow!("should have UK entry": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should have UK entry: {}", e))?,
             &vec!["United Kingdom"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("CA")
-                .map_err(|e| anyhow::anyhow!("should have CA entry": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should have CA entry: {}", e))?,
             &vec!["Canada"]
         );
     }
 
     #[tokio::test]
     async fn test_load_csv_file() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.csv");
 
         let csv_data = "code,name\nUS,United States\nUK,United Kingdom\nCA,Canada\n";
         fs::write(&file_path, csv_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test CSV file": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should write test CSV file: {}", e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -422,27 +422,27 @@ mod tests {
         let instance_data = loader
             .load_csv_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load CSV instance data": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load CSV instance data: {}", e))?;
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
             instance_data
                 .values
                 .get("US")
-                .map_err(|e| anyhow::anyhow!("should have US entry in CSV data": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should have US entry in CSV data: {}", e))?,
             &vec!["United States"]
         );
     }
 
     #[tokio::test]
     async fn test_caching() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory": {}, e))?;
+        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[{"id": "1", "value": "test"}]"#;
         fs::write(&file_path, json_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test JSON file for caching": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should write test JSON file for caching: {}", e))?;
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig::default();
@@ -451,13 +451,13 @@ mod tests {
         let data1 = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON data first time": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load JSON data first time: {}", e))?;
 
         // Second load should be from cache
         let data2 = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON data from cache": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load JSON data from cache: {}", e))?;
 
         // Should be the same Arc
         assert!(Arc::ptr_eq(&data1, &data2));

@@ -35,7 +35,7 @@ impl Default for CompatibilityRules {
             allow_wildcards: true,
             strict_mode: false,
             deprecated_versions: vec![
-                VersionReq::parse("<0.9.0").map_err(|e| anyhow::anyhow!("valid version requirement": {}, e))?,
+                VersionReq::parse("<0.9.0").map_err(|e| anyhow::anyhow!("valid version requirement: {}", e))?,
             ],
         }
     }
@@ -46,7 +46,7 @@ impl CompatibilityChecker {
     pub fn new() -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
-                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver: {}", e))?,
             rules: CompatibilityRules::default(),
         }
     }
@@ -55,7 +55,7 @@ impl CompatibilityChecker {
     pub fn with_rules(rules: CompatibilityRules) -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
-                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("CARGO_PKG_VERSION should be a valid semver: {}", e))?,
             rules,
         }
     }

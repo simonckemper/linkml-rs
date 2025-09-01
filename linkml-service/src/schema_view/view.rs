@@ -62,13 +62,13 @@ impl From<SchemaViewError> for LinkMLError {
 #[derive(Clone, Debug)]
 pub struct SchemaView {
     /// The root schema
-    _schema: Arc<SchemaDefinition>,
+    schema: Arc<SchemaDefinition>,
 
     /// Merged view of all imported schemas
     merged_schema: Arc<RwLock<SchemaDefinition>>,
 
     /// Import resolver for handling schema imports
-    _import_resolver: Arc<ImportResolver>,
+    import_resolver: Arc<ImportResolver>,
 
     /// Navigation cache for efficient lookups
     nav_cache: Arc<RwLock<NavigationCache>>,
@@ -87,9 +87,9 @@ impl SchemaView {
         let merged_arc = Arc::new(RwLock::new(merged));
 
         Ok(Self {
-            _schema: schema_arc,
+            schema: schema_arc,
             merged_schema: merged_arc,
-            _import_resolver: Arc::new(import_resolver),
+            import_resolver: Arc::new(import_resolver),
             nav_cache: Arc::new(RwLock::new(NavigationCache::new())),
             usage_index: Arc::new(RwLock::new(None)),
         })
@@ -870,7 +870,7 @@ impl SchemaView {
     }
 
     /// Check if an element is in a subset
-    pub fn in_subset(&self, _element_name: &str, subset_name: &str) -> Result<bool> {
+    pub fn in_subset(&self, element_name: &str, subset_name: &str) -> Result<bool> {
         let merged = self
             .merged_schema
             .read()
@@ -1084,7 +1084,7 @@ impl SchemaView {
         Ok(())
     }
 
-    fn apply_slot_usage(&self, _class: &mut ClassDefinition) -> Result<()> {
+    fn apply_slot_usage(&self, class: &mut ClassDefinition) -> Result<()> {
         // Apply slot_usage overrides to the class's view of slots
         // This is where class-specific slot modifications are applied
 

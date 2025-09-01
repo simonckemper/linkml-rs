@@ -102,7 +102,7 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
     // Check schema annotations
     assert!(schema.annotations.is_some());
@@ -125,7 +125,7 @@ slots:
     }
 
     // Check class annotations
-    let person_class = schema.classes.get("Person").unwrap();
+    let person_class = schema.classes.get("Person").expect("Test operation failed");
     assert_eq!(
         person_class.get_annotation("db:table"),
         Some(&AnnotationValue::String("persons".to_string()))
@@ -136,7 +136,7 @@ slots:
     );
 
     // Check slot annotations
-    let email_slot = schema.slots.get("email").unwrap();
+    let email_slot = schema.slots.get("email").expect("Test operation failed");
     assert_eq!(
         email_slot.get_annotation("pattern:type"),
         Some(&AnnotationValue::String("email".to_string()))
@@ -168,9 +168,9 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
-    let dataset_class = schema.classes.get("Dataset").unwrap();
+    let dataset_class = schema.classes.get("Dataset").expect("Test operation failed");
 
     // Check nested object annotation
     if let Some(AnnotationValue::Object(metadata)) = dataset_class.get_annotation("metadata") {
@@ -211,12 +211,12 @@ fn test_annotation_serialization() {
     schema.set_annotation("version", "1.0.0".into());
     schema.set_annotation("experimental", true.into());
 
-    let json = serde_json::to_string_pretty(&schema).unwrap();
+    let json = serde_json::to_string_pretty(&schema).expect("Test operation failed");
     assert!(json.contains(r#""version": "1.0.0""#));
     assert!(json.contains(r#""experimental": true"#));
 
     // Deserialize back
-    let parsed: SchemaDefinition = serde_json::from_str(&json).unwrap();
+    let parsed: SchemaDefinition = serde_json::from_str(&json).expect("Test operation failed");
     assert_eq!(
         parsed.get_annotation("version"),
         Some(&AnnotationValue::String("1.0.0".to_string()))

@@ -54,41 +54,79 @@ impl DataLoader for JsonLoader {
         &self,
         path: &std::path::Path,
         schema: &SchemaDefinition,
-        _options: &LoadOptions,
+        options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         let content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
-        self.load_string(&content, schema, _options).await
+        self.load_string(&content, schema, options).await
     }
 
     async fn load_string(
         &self,
         content: &str,
         schema: &SchemaDefinition,
-        _options: &LoadOptions,
+        options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         let json: Value =
             serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
+
+        // Apply options for validation and filtering
+        if options.validate_on_load.unwrap_or(true) {
+            self.validate_schema(schema)?;
+        }
 
         let instances = match json {
             Value::Array(arr) => {
                 // Array of instances
                 let mut instances = Vec::new();
-                for item in arr {
+                for (index, item) in arr.iter().enumerate() {
                     if let Value::Object(obj) = item {
-                        let instance = self.object_to_instance(obj, schema)?;
+                        let instance = self.object_to_instance(obj.clone(), schema)?;
+
+                        // Apply class filtering if specified in options
+                        if let Some(ref class_filter) = options.include_classes {
+                            if !class_filter.contains(&instance.class_name) {
+                                continue;
+                            }
+                        }
+
+                        // Apply limit if specified
+                        if let Some(limit) = options.max_instances {
+                            if instances.len() >= limit {
+                                break;
+                            }
+                        }
+
                         instances.push(instance);
+                    } else if options.strict_mode.unwrap_or(false) {
+                        return Err(LoaderError::InvalidFormat(
+                            format!("Array item {} is not an object", index)
+                        ));
                     }
                 }
                 instances
             }
             Value::Object(obj) => {
                 // Single instance
-                vec![self.object_to_instance(obj, schema)?]
+                let instance = self.object_to_instance(obj, schema)?;
+
+                // Apply class filtering if specified in options
+                if let Some(ref class_filter) = options.include_classes {
+                    if !class_filter.contains(&instance.class_name) {
+                        return Ok(vec![]);
+                    }
+                }
+
+                vec![instance]
             }
             _ => {
-                return Err(LoaderError::InvalidFormat(
-                    "JSON must be an object or array of objects".to_string(),
-                ));
+                if options.strict_mode.unwrap_or(false) {
+                    return Err(LoaderError::InvalidFormat(
+                        "JSON must be an object or array of objects".to_string(),
+                    ));
+                } else {
+                    // In non-strict mode, return empty result
+                    vec![]
+                }
             }
         };
 
@@ -106,7 +144,7 @@ impl DataLoader for JsonLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
 }
@@ -211,7 +249,7 @@ impl DataDumper for JsonDumper {
     async fn dump_string(
         &self,
         instances: &[DataInstance],
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
         options: &DumpOptions,
     ) -> DumperResult<String> {
         let json_instances: Vec<Value> = instances
@@ -250,7 +288,7 @@ impl DataDumper for JsonDumper {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
 }
@@ -270,8 +308,8 @@ mod tests {
         "#;
 
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file": {}, e))?;
-        std::fs::write(temp_file.path(), json_content).map_err(|e| anyhow::anyhow!("should write JSON content": {}, e))?;
+        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file: {}", e))?;
+        std::fs::write(temp_file.path(), json_content).map_err(|e| anyhow::anyhow!("should write JSON content: {}", e))?;
 
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
@@ -283,7 +321,7 @@ mod tests {
         let instances = loader
             .load_file(temp_file.path(), &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON instances": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should load JSON instances: {}", e))?;
 
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -330,9 +368,9 @@ mod tests {
         let json_str = dumper
             .dump_string(&instances, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSON": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should dump instances to JSON: {}", e))?;
 
-        let parsed: Vec<Value> = serde_json::from_str(&json_str).map_err(|e| anyhow::anyhow!("should parse dumped JSON": {}, e))?;
+        let parsed: Vec<Value> = serde_json::from_str(&json_str).map_err(|e| anyhow::anyhow!("should parse dumped JSON: {}", e))?;
 
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0]["@type"], "Person");

@@ -179,7 +179,7 @@ impl GraphQLGenerator {
     fn generate_input_types(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
@@ -345,7 +345,7 @@ impl GraphQLGenerator {
     fn generate_connection_types(
         &self,
         schema: &SchemaDefinition,
-        _indent: &IndentStyle,
+        indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -598,7 +598,7 @@ impl GraphQLGenerator {
     fn get_graphql_type(
         &self,
         slot: &SlotDefinition,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let base_type = self.get_base_graphql_type(&slot.range);
 
@@ -877,7 +877,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate GraphQL output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate GraphQL output: {}", e))?;
 
         assert!(output.contains("type Person"));
         assert!(output.contains("name: String!"));

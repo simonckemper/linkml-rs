@@ -280,7 +280,7 @@ impl ProtobufGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -458,7 +458,7 @@ mod tests {
         let generator = ProtobufGenerator::new();
         let proto_content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate protobuf": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate protobuf: {}", e))?;
 
         assert!(proto_content.contains("syntax = \"proto3\""));
         assert!(proto_content.contains("package test_schema"));
@@ -500,31 +500,31 @@ mod tests {
         assert_eq!(
             generator
                 .get_proto_type(&Some("string".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "string"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("integer".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "int64"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("boolean".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "bool"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("CustomType".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "CustomType"
         );
         assert_eq!(
             generator
                 .get_proto_type(&None, &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "string"
         );
     }

@@ -430,7 +430,7 @@ mod tests {
     #[test]
     fn test_basic_extraction() {
         let pattern =
-            Regex::new(r"(?P<name>\w+) v(?P<version>\d+\.\d+)").map_err(|e| anyhow::anyhow!("pattern should compile": {}, e))?;
+            Regex::new(r"(?P<name>\w+) v(?P<version>\d+\.\d+)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
 
         let mut extractor = CaptureExtractor::new();
 
@@ -446,11 +446,11 @@ mod tests {
                 .build(),
         );
 
-        let captures = pattern.captures("project v1.0").map_err(|e| anyhow::anyhow!("should match": {}, e))?;
+        let captures = pattern.captures("project v1.0").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
 
         assert_eq!(
             extracted.get("name"),
@@ -465,7 +465,7 @@ mod tests {
     #[test]
     fn test_type_conversion() {
         let pattern =
-            Regex::new(r"(?P<count>\d+) (?P<enabled>true|false)").map_err(|e| anyhow::anyhow!("pattern should compile": {}, e))?;
+            Regex::new(r"(?P<count>\d+) (?P<enabled>true|false)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
 
         let mut extractor = CaptureExtractor::new();
 
@@ -478,11 +478,11 @@ mod tests {
         extractor
             .add_definition(CaptureDefinitionBuilder::new("enabled", CaptureType::Boolean).build());
 
-        let captures = pattern.captures("42 true").map_err(|e| anyhow::anyhow!("should match": {}, e))?;
+        let captures = pattern.captures("42 true").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
 
         assert_eq!(extracted.get("count"), Some(&CaptureValue::Integer(42)));
         assert_eq!(extracted.get("enabled"), Some(&CaptureValue::Boolean(true)));
@@ -490,7 +490,7 @@ mod tests {
 
     #[test]
     fn test_enum_validation() {
-        let pattern = Regex::new(r"(?P<level>\w+)").map_err(|e| anyhow::anyhow!("pattern should compile": {}, e))?;
+        let pattern = Regex::new(r"(?P<level>\w+)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
 
         let mut extractor = CaptureExtractor::new();
 
@@ -507,11 +507,11 @@ mod tests {
             .build(),
         );
 
-        let captures = pattern.captures("info").map_err(|e| anyhow::anyhow!("should match": {}, e))?;
+        let captures = pattern.captures("info").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
 
         assert_eq!(
             extracted.get("level"),
@@ -519,7 +519,7 @@ mod tests {
         );
 
         // Test invalid enum value
-        let invalid_captures = pattern.captures("critical").map_err(|e| anyhow::anyhow!("should match": {}, e))?;
+        let invalid_captures = pattern.captures("critical").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
 
         assert!(extractor.extract(&invalid_captures).is_err());
     }
@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn test_optional_with_default() {
         let pattern = Regex::new(r"name=(?P<name>\w+)(?:\s+port=(?P<port>\d+))?")
-            .map_err(|e| anyhow::anyhow!("pattern should compile": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
 
         let mut extractor = CaptureExtractor::new();
 
@@ -541,11 +541,11 @@ mod tests {
                 .build(),
         );
 
-        let captures = pattern.captures("name=server").map_err(|e| anyhow::anyhow!("should match": {}, e))?;
+        let captures = pattern.captures("name=server").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
 
         assert_eq!(
             extracted.get("name"),

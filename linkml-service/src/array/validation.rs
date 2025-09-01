@@ -469,12 +469,12 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_validation() {
+    fn test_basic_validation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("float").with_dimension(ArrayDimension::fixed("x", 3));
 
         let data = vec![json!(1.0), json!(2.0), json!(3.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - basic validation": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - basic validation: {}", e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -483,20 +483,21 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - basic": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - basic: {}", e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(result.valid);
         assert!(result.errors.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn test_range_validation() {
+    fn test_range_validation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("float").with_dimension(ArrayDimension::fixed("x", 3));
 
         let data = vec![json!(50.0), json!(150.0), json!(-10.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - range validation": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - range validation: {}", e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -505,20 +506,21 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - range": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - range: {}", e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
         assert_eq!(result.errors.len(), 2); // One too high, one too low
+        Ok(())
     }
 
     #[test]
-    fn test_uniqueness_validation() {
+    fn test_uniqueness_validation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer").with_dimension(ArrayDimension::fixed("x", 4));
 
         let data = vec![json!(1), json!(2), json!(2), json!(3)];
         let array = ArrayData::new(spec, vec![4], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - uniqueness": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - uniqueness: {}", e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -528,7 +530,7 @@ mod tests {
             .types(&types)
             .check_unique(true)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - unique": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - unique: {}", e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
@@ -538,15 +540,16 @@ mod tests {
                 .iter()
                 .any(|e| e.error_type == ArrayValidationErrorType::UniquenessError)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_custom_validator() {
+    fn test_custom_validator() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer").with_dimension(ArrayDimension::fixed("x", 3));
 
         let data = vec![json!(2), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - custom validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - custom validator: {}", e))?;
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -567,11 +570,12 @@ mod tests {
                 }
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - custom": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - custom: {}", e))?;
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
         assert_eq!(result.errors.len(), 1); // Only 5 is odd
         assert_eq!(result.errors[0].location, Some(vec![2]));
+        Ok(())
     }
 }

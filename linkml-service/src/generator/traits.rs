@@ -342,7 +342,7 @@ pub trait Generator: Send + Sync {
     fn get_default_filename(&self) -> &str;
 
     /// Validate schema before generation (optional)
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         Ok(())
     }
 }

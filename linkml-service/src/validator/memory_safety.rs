@@ -53,7 +53,7 @@ impl Default for MemorySafetyConfig {
 #[derive(Debug, Clone)]
 struct AllocationInfo {
     /// Allocation ID
-    _id: u64,
+    id: u64,
     /// Type name
     type_name: &'static str,
     /// Size in bytes
@@ -106,7 +106,7 @@ impl MemoryTracker {
         };
 
         let info = AllocationInfo {
-            _id: id,
+            id: id,
             type_name,
             size,
             allocated_at: Instant::now(),
@@ -277,7 +277,7 @@ pub struct CircularRefBreaker {
 /// Weak reference registry entry
 struct WeakRegistry {
     /// Object type
-    _type_name: &'static str,
+    type_name: &'static str,
     /// Weak references
     refs: Vec<Weak<dyn std::any::Any + Send + Sync>>,
 }
@@ -310,7 +310,7 @@ impl CircularRefBreaker {
                 entry.refs.push(weak.clone());
             })
             .or_insert_with(|| WeakRegistry {
-                _type_name: std::any::type_name::<T>(),
+                type_name: std::any::type_name::<T>(),
                 refs: vec![weak],
             });
     }
@@ -413,7 +413,7 @@ impl Drop for ScopedMemoryPool {
 
 /// Memory pressure monitor
 pub struct MemoryPressureMonitor {
-    _config: Arc<RwLock<MemorySafetyConfig>>,
+    config: Arc<RwLock<MemorySafetyConfig>>,
     pressure_callbacks: Arc<Mutex<Vec<PressureCallback>>>,
 }
 
@@ -422,7 +422,7 @@ impl MemoryPressureMonitor {
     #[must_use]
     pub fn new(config: MemorySafetyConfig) -> Self {
         Self {
-            _config: Arc::new(RwLock::new(config)),
+            config: Arc::new(RwLock::new(config)),
             pressure_callbacks: Arc::new(Mutex::new(Vec::new())),
         }
     }

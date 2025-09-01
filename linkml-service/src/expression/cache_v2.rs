@@ -109,8 +109,8 @@ impl ExpressionCacheV2 {
         let key = intern(expression);
         let now = Instant::now();
 
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // Check if we need to evict
         if cache.len() >= self.capacity {
@@ -155,8 +155,8 @@ impl ExpressionCacheV2 {
 
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         cache.clear();
         *stats = CacheStats::default();
@@ -164,13 +164,13 @@ impl ExpressionCacheV2 {
 
     /// Get cache statistics
     pub fn stats(&self) -> CacheStats {
-        self.stats.read().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?.clone()
+        self.stats.read().unwrap_or_else(|poisoned| poisoned.into_inner()).clone()
     }
 
     /// Clean up old entries (optimized version)
     pub fn cleanup(&self) {
-        let mut cache = self.cache.write().map_err(|e| anyhow::anyhow!("cache lock poisoned": {}, e))?;
-        let mut stats = self.stats.write().map_err(|e| anyhow::anyhow!("stats lock poisoned": {}, e))?;
+        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         let now = Instant::now();
 
@@ -251,7 +251,7 @@ impl GlobalExpressionCacheV2 {
     pub fn clear(&mut self) {
         self.primary.clear();
         self.hot.clear();
-        self.access_counts.write().map_err(|e| anyhow::anyhow!("access_counts lock poisoned": {}, e))?.clear();
+        self.access_counts.write().map_err(|e| anyhow::anyhow!("access_counts lock poisoned: {}", e))?.clear();
     }
 }
 
@@ -282,7 +282,7 @@ impl ThreadSafeGlobalCache {
     {
         self.inner
             .write()
-            .map_err(|e| anyhow::anyhow!("inner cache lock poisoned": {}, e))?
+            .map_err(|e| anyhow::anyhow!("inner cache lock poisoned: {}", e))?
             .get_or_compute(expression, compute)
     }
 }

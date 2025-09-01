@@ -22,6 +22,7 @@ pub mod default_applier;
 pub mod engine;
 pub mod error_recovery;
 pub mod instance_loader;
+pub mod interned_report;
 pub mod json_path;
 pub mod memory_layout;
 pub mod memory_safety;

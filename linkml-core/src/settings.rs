@@ -339,6 +339,10 @@ impl SchemaSettings {
     }
 
     /// Set a custom setting value
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the value cannot be serialized to JSON.
     pub fn set_custom<T: serde::Serialize>(
         &mut self,
         key: &str,
@@ -404,7 +408,7 @@ mod tests {
         let settings = SchemaSettings::strict();
         let validation = settings
             .validation
-            .map_err(|e| anyhow::anyhow!("validation settings should be present in strict settings - test invariant": {}, e))?;
+            .expect("validation settings should be present in strict settings - test invariant");
         assert_eq!(validation.strict, Some(true));
         assert_eq!(validation.check_permissibles, Some(true));
         assert_eq!(validation.allow_additional_properties, Some(false));
@@ -413,24 +417,25 @@ mod tests {
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = settings.generation.map_err(|e| anyhow::anyhow!("Error: {}", e))?;
+        let generation = settings.generation.expect("generation settings should be present");
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
         assert_eq!(generation.generate_docs, Some(true));
     }
 
     #[test]
-    fn test_custom_settings() {
+    fn test_custom_settings() -> Result<(), Box<dyn std::error::Error>> {
         let mut settings = SchemaSettings::new();
 
         // Set a custom value
         settings
             .set_custom("max_items", 100)
-            .map_err(|e| anyhow::anyhow!("setting custom value with valid data should not fail in test": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("setting custom value with valid data should not fail in test: {}", e))?;
 
         // Get the custom value
         let max_items: Option<i32> = settings.get_custom("max_items");
         assert_eq!(max_items, Some(100));
+        Ok(())
     }
 
     #[test]
@@ -458,20 +463,21 @@ mod tests {
         assert_eq!(
             merged
                 .generation
-                .map_err(|e| anyhow::anyhow!("generation settings should be present after merge - test invariant": {}, e))?
+                .expect("generation settings should be present after merge - test invariant")
                 .generate_builders,
             Some(false)
         );
     }
 
     #[test]
-    fn test_serialization() {
+    fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let settings = SchemaSettings::strict();
         let json = serde_json::to_string_pretty(&settings)
-            .map_err(|e| anyhow::anyhow!("serialization of valid settings should not fail in test": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("serialization of valid settings should not fail in test: {}", e))?;
 
         let deserialized: SchemaSettings = serde_json::from_str(&json)
-            .map_err(|e| anyhow::anyhow!("deserialization of valid JSON should not fail in test": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("deserialization of valid JSON should not fail in test: {}", e))?;
         assert_eq!(settings, deserialized);
+        Ok(())
     }
 }

@@ -585,7 +585,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate markdown documentation": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate markdown documentation: {}", e))?;
 
         // Check content includes expected sections
         assert!(result.contains("# TestSchema"));

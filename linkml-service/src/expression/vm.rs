@@ -24,7 +24,7 @@ pub struct VirtualMachine {
     /// Maximum stack depth to prevent overflow
     max_stack_depth: usize,
     /// Maximum iterations for loops (future feature)
-    _max_iterations: usize,
+    max_iterations: usize,
 }
 
 impl VirtualMachine {
@@ -33,7 +33,7 @@ impl VirtualMachine {
         Self {
             function_registry,
             max_stack_depth: 1024,
-            _max_iterations: 10_000,
+            max_iterations: 10_000,
         }
     }
 

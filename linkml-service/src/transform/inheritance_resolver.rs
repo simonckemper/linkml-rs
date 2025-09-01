@@ -296,7 +296,7 @@ impl InheritanceResolver {
             let pos = path
                 .iter()
                 .position(|x| x == class_name)
-                .map_err(|e| anyhow::anyhow!("Error: {}", e))? check");
+                .ok_or_else(|| anyhow::anyhow!("Class not found in path"))?;
             let cycle = path[pos..].to_vec().join(" -> ");
             return Err(InheritanceError::CircularInheritance(format!(
                 "{} -> {}",
@@ -469,7 +469,7 @@ impl InheritanceResolver {
     }
 
     /// Resolve enum inheritance
-    fn resolve_enums(&self, _schema: &mut SchemaDefinition) -> InheritanceResult<()> {
+    fn resolve_enums(&self, schema: &mut SchemaDefinition) -> InheritanceResult<()> {
         // EnumDefinition doesn't support inheritance (no is_a or mixins fields)
         // So nothing to resolve here
         Ok(())
@@ -595,12 +595,12 @@ mod tests {
 
         resolver
             .resolve_schema(&mut schema)
-            .map_err(|e| anyhow::anyhow!("resolution should succeed": {}, e))?;
+            .expect("resolution should succeed");
 
         let person = schema
             .classes
             .get("Person")
-            .map_err(|e| anyhow::anyhow!("Person class should exist": {}, e))?;
+            .expect("Person class should exist");
 
         // Should have inherited attributes
         assert!(person.attributes.contains_key("id"));

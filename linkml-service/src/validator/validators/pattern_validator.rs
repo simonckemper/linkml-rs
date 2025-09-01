@@ -35,7 +35,7 @@ impl PatternValidator {
         let mut cache = self
             .pattern_cache
             .lock()
-            .map_err(|e| anyhow::anyhow!("pattern cache lock poisoned": {}, e))?;
+            .map_err(|e| regex::Error::Syntax(format!("pattern cache lock poisoned: {}", e)))?;
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(regex.clone());

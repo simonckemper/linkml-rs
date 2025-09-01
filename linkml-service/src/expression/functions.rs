@@ -288,9 +288,9 @@ impl FunctionRegistry {
     ///             _ => Err(FunctionError::new("Expected string argument")),
     ///         }
     ///     }
-    /// )).map_err(|e| anyhow::anyhow!("should register custom function": {}, e))?;
+    /// )).expect("should register custom function");
     ///
-    /// let result = registry.call("uppercase", vec![json!("hello")]).map_err(|e| anyhow::anyhow!("should call custom function": {}, e))?;
+    /// let result = registry.call("uppercase", vec![json!("hello")]).expect("should call custom function");
     /// assert_eq!(result, json!("HELLO"));
     /// ```
     pub fn register_custom(&mut self, function: CustomFunction) -> Result<(), FunctionError> {
@@ -595,7 +595,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!("hello")])
-                .map_err(|e| anyhow::anyhow!("should calculate string length": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate string length: {}", e))?,
             json!(5)
         );
 
@@ -603,7 +603,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!([1, 2, 3])])
-                .map_err(|e| anyhow::anyhow!("should calculate array length": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate array length: {}", e))?,
             json!(3)
         );
 
@@ -611,7 +611,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!({"a": 1, "b": 2})])
-                .map_err(|e| anyhow::anyhow!("should calculate object length": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should calculate object length: {}", e))?,
             json!(2)
         );
 
@@ -619,7 +619,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!(null)])
-                .map_err(|e| anyhow::anyhow!("should handle null length": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should handle null length: {}", e))?,
             json!(0)
         );
     }
@@ -632,7 +632,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("max", vec![json!(1), json!(5), json!(3)])
-                .map_err(|e| anyhow::anyhow!("should find maximum value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should find maximum value: {}", e))?,
             json!(5.0)
         );
 
@@ -640,7 +640,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("min", vec![json!(1), json!(5), json!(3)])
-                .map_err(|e| anyhow::anyhow!("should find minimum value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should find minimum value: {}", e))?,
             json!(1.0)
         );
 
@@ -648,7 +648,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("max", vec![json!(42)])
-                .map_err(|e| anyhow::anyhow!("should handle single value max": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should handle single value max: {}", e))?,
             json!(42.0)
         );
     }
@@ -670,7 +670,7 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with first condition true": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should evaluate case with first condition true: {}", e))?,
             json!("first")
         );
 
@@ -687,7 +687,7 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with second condition true": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should evaluate case with second condition true: {}", e))?,
             json!("second")
         );
 
@@ -704,7 +704,7 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with default": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should evaluate case with default: {}", e))?,
             json!("default")
         );
     }
@@ -717,7 +717,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!("hello world"), json!("world")])
-                .map_err(|e| anyhow::anyhow!("should check string contains": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should check string contains: {}", e))?,
             json!(true)
         );
 
@@ -725,7 +725,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!([1, 2, 3]), json!(2)])
-                .map_err(|e| anyhow::anyhow!("should check array contains": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should check array contains: {}", e))?,
             json!(true)
         );
 
@@ -733,7 +733,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!({"a": 1, "b": 2}), json!("a")])
-                .map_err(|e| anyhow::anyhow!("should check object contains key": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should check object contains key: {}", e))?,
             json!(true)
         );
     }

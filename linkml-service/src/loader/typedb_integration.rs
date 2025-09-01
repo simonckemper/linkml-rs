@@ -202,7 +202,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
                             attributes.push(AttributeInfo {
                                 name: label.clone(),
-                                _value_type: value_type,
+                                value_type: value_type,
                             });
                         }
                     }
@@ -247,7 +247,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     if let Some(Value::Object(role)) = obj.get("role") {
                         if let Some(Value::String(label)) = role.get("label") {
                             roles.push(RoleInfo {
-                                _name: label.clone(),
+                                name: label.clone(),
                             });
                         }
                     }
@@ -383,9 +383,9 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 
     async fn load_file(
         &self,
-        _path: &std::path::Path,
-        _schema: &SchemaDefinition,
-        _options: &LoadOptions,
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         Err(LoaderError::InvalidFormat(
             "TypeDB loader does not support file loading".to_string(),
@@ -394,9 +394,9 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 
     async fn load_string(
         &self,
-        _content: &str,
-        _schema: &SchemaDefinition,
-        _options: &LoadOptions,
+        content: &str,
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         // Get all types
         let entity_types = self.get_entity_types().await?;
@@ -452,16 +452,16 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 
     async fn load_bytes(
         &self,
-        _data: &[u8],
-        _schema: &SchemaDefinition,
-        _options: &LoadOptions,
+        data: &[u8],
+        schema: &SchemaDefinition,
+        options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         Err(LoaderError::InvalidFormat(
             "TypeDB loader does not support raw bytes loading".to_string(),
         ))
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
 }
@@ -730,10 +730,10 @@ impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
 
     async fn dump_file(
         &self,
-        _instances: &[DataInstance],
-        _path: &std::path::Path,
-        _schema: &SchemaDefinition,
-        _options: &DumpOptions,
+        instances: &[DataInstance],
+        path: &std::path::Path,
+        schema: &SchemaDefinition,
+        options: &DumpOptions,
     ) -> DumperResult<()> {
         Err(DumperError::Configuration(
             "TypeDB dumper does not support file dumping".to_string(),
@@ -744,7 +744,7 @@ impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
         &self,
         instances: &[DataInstance],
         schema: &SchemaDefinition,
-        _options: &DumpOptions,
+        options: &DumpOptions,
     ) -> DumperResult<String> {
         // Group instances by class
         let mut instances_by_class: HashMap<String, Vec<&DataInstance>> = HashMap::new();
@@ -795,7 +795,7 @@ impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
 }
@@ -810,12 +810,12 @@ struct TypeInfo {
 #[derive(Debug, Clone)]
 struct AttributeInfo {
     name: String,
-    _value_type: String,
+    value_type: String,
 }
 
 #[derive(Debug, Clone)]
 struct RoleInfo {
-    _name: String,
+    name: String,
 }
 
 // Helper functions
@@ -842,7 +842,7 @@ fn to_snake_case(s: &str) -> String {
         result.push(
             ch.to_lowercase()
                 .next()
-                .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("lowercase char should exist: {}", e))?,
         );
         prev_upper = ch.is_uppercase();
     }
@@ -914,15 +914,15 @@ mod tests {
     fn test_json_to_typeql() {
         assert_eq!(
             json_value_to_typeql(&Value::String("test".to_string()))
-                .map_err(|e| anyhow::anyhow!("should convert string": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should convert string: {}", e))?,
             "\"test\""
         );
         assert_eq!(
-            json_value_to_typeql(&Value::Number(42.into())).map_err(|e| anyhow::anyhow!("should convert number": {}, e))?,
+            json_value_to_typeql(&Value::Number(42.into())).map_err(|e| anyhow::anyhow!("should convert number: {}", e))?,
             "42"
         );
         assert_eq!(
-            json_value_to_typeql(&Value::Bool(true)).map_err(|e| anyhow::anyhow!("should convert bool": {}, e))?,
+            json_value_to_typeql(&Value::Bool(true)).map_err(|e| anyhow::anyhow!("should convert bool: {}", e))?,
             "true"
         );
         assert!(json_value_to_typeql(&Value::Null).is_err());

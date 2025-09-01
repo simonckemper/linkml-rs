@@ -101,7 +101,7 @@ async fn test_graphviz_basic_generation() {
     let generator = GraphvizGenerator::new();
     let options = GeneratorOptions::default();
 
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Verify basic structure
     assert!(output.contains("digraph LinkMLSchema"));
@@ -134,7 +134,7 @@ async fn test_graphviz_styles() {
 
     for style in styles {
         let generator = GraphvizGenerator::new().with_style(style);
-        let output = generator.generate(&schema).unwrap();
+        let output = generator.generate(&schema).expect("Test operation failed");
 
         // Style-specific checks
         match style {
@@ -169,7 +169,7 @@ async fn test_graphviz_layouts() {
 
     for layout in layouts {
         let generator = GraphvizGenerator::new().with_layout(layout);
-        let output = generator.generate(&schema).unwrap();
+        let output = generator.generate(&schema).expect("Test operation failed");
         // Note: metadata checks would need to be adjusted based on new String return type
     }
 }
@@ -194,7 +194,7 @@ async fn test_graphviz_with_options() {
     };
 
     let generator = GraphvizGenerator::with_options(custom_options);
-    let output = generator.generate(&schema).unwrap();
+    let output = generator.generate(&schema).expect("Test operation failed");
 
     // Check custom rankdir
     assert!(output.contains("rankdir=LR"));

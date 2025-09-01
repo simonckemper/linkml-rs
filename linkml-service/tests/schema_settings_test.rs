@@ -27,7 +27,7 @@ async fn test_strict_validation_settings() {
     schema.slots.insert("age".to_string(), age_slot);
 
     // Create validation engine
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with additional properties (should fail in strict mode)
     let data_with_extra = json!({
@@ -39,7 +39,7 @@ async fn test_strict_validation_settings() {
     let report = engine
         .validate_as_class(&data_with_extra, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     assert_eq!(errors.len(), 1);
@@ -60,7 +60,7 @@ async fn test_default_settings_allow_additional() {
     schema.slots.insert("name".to_string(), name_slot);
 
     // Create validation engine
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test with additional properties (should only warn by default)
     let data_with_extra = json!({
@@ -71,7 +71,7 @@ async fn test_default_settings_allow_additional() {
     let report = engine
         .validate_as_class(&data_with_extra, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid); // Should be valid
     let warnings: Vec<_> = report.warnings().collect();
     assert_eq!(warnings.len(), 1);
@@ -106,7 +106,7 @@ async fn test_options_override_settings() {
     schema.slots.insert("message".to_string(), message_slot);
 
     // Create validation engine
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create data with multiple errors
     let invalid_data = json!({
@@ -117,7 +117,7 @@ async fn test_options_override_settings() {
     let report = engine
         .validate_as_class(&invalid_data, "Status", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     // With fail_fast, we should only see one error
@@ -132,7 +132,7 @@ async fn test_options_override_settings() {
     let report = engine
         .validate_as_class(&invalid_data, "Status", Some(options))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     let errors: Vec<_> = report.errors().collect();
     println!(
@@ -168,12 +168,12 @@ slots:
 
     use linkml_service::parser::{SchemaParser, YamlParser};
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).unwrap();
+    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
 
     assert!(schema.settings.is_some());
-    let settings = schema.settings.as_ref().unwrap();
+    let settings = schema.settings.as_ref().expect("Test operation failed");
     assert!(settings.validation.is_some());
-    let validation = settings.validation.as_ref().unwrap();
+    let validation = settings.validation.as_ref().expect("Test operation failed");
     assert_eq!(validation.strict, Some(true));
     assert_eq!(validation.check_permissibles, Some(true));
     assert_eq!(validation.fail_fast, Some(false));
@@ -201,7 +201,7 @@ fn test_settings_merge() {
     };
 
     let merged = base_settings.merge(override_settings);
-    let validation = merged.validation.unwrap();
+    let validation = merged.validation.expect("Test operation failed");
     assert_eq!(validation.fail_fast, Some(false)); // Overridden
     assert_eq!(validation.check_permissibles, Some(true)); // From override
 }

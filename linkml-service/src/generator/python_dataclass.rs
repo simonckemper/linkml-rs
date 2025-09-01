@@ -227,7 +227,7 @@ impl PythonDataclassGenerator {
         output: &mut String,
         slots: &[String],
         schema: &SchemaDefinition,
-        _indent: &IndentStyle,
+        indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         writeln!(output, "    def __post_init__(self):")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -531,7 +531,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate dataclass output": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate dataclass output: {}", e))?;
         assert!(output.contains("@dataclass"));
         assert!(output.contains("class Person:"));
         assert!(output.contains("name: str"));

@@ -225,7 +225,7 @@ fn test_enhanced_generator_comprehensive() {
     let result = generator.generate(&schema);
     assert!(result.is_ok(), "Generation failed: {:?}", result);
 
-    let output = result.unwrap();
+    let output = result.expect("Test operation failed");
     let content = &output;
 
     // Verify header
@@ -282,7 +282,7 @@ fn test_edge_cases() {
 
     let result = generator.generate(&attr_only);
     assert!(result.is_ok());
-    assert!(result.unwrap().contains("test-attr sub attribute"));
+    assert!(result.expect("Test operation failed").contains("test-attr sub attribute"));
 
     // Test deeply nested inheritance
     let mut nested = SchemaDefinition::default();
@@ -298,7 +298,7 @@ fn test_edge_cases() {
 
     let result = generator.generate(&nested);
     assert!(result.is_ok());
-    let content = result.unwrap();
+    let content = result.expect("Test operation failed");
     assert!(content.contains("level-0 sub entity"));
     assert!(content.contains("level-4 sub level-3"));
 }
@@ -334,7 +334,7 @@ fn test_complex_constraints() {
     let result = generator.generate(&schema);
     assert!(result.is_ok());
 
-    let content = result.unwrap();
+    let content = result.expect("Test operation failed");
     assert!(content.contains("complex-field sub attribute"));
     assert!(content.contains("owns complex-field @key"));
     assert!(content.contains("regex"));

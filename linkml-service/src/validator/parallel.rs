@@ -184,7 +184,7 @@ impl ParallelValidationEngine {
 
                     let mut results = results
                         .lock()
-                        .map_err(|e| anyhow::anyhow!("results mutex should not be poisoned": {}, e))?;
+                        .expect("results mutex should not be poisoned");
                     results.add_report(report);
                 }
             });
@@ -195,12 +195,12 @@ impl ParallelValidationEngine {
         let mut final_result = match Arc::try_unwrap(results) {
             Ok(mutex) => mutex
                 .into_inner()
-                .map_err(|e| anyhow::anyhow!("results mutex should not be poisoned": {}, e))?,
+                .expect("results mutex should not be poisoned"),
             Err(_) => {
                 // If we can't unwrap the Arc, clone the inner value
                 results_clone
                     .lock()
-                    .map_err(|e| anyhow::anyhow!("results mutex should not be poisoned": {}, e))?
+                    .expect("results mutex should not be poisoned")
                     .clone()
             }
         };
@@ -381,9 +381,9 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine": {}, e))?;
+        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine: {}", e))?;
         let parallel_engine =
-            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine": {}, e))?;
+            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine: {}", e))?;
 
         let values = vec![
             json!({"name": "test1"}),
@@ -406,9 +406,9 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine": {}, e))?;
+        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine: {}", e))?;
         let parallel_engine =
-            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine": {}, e))?;
+            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine: {}", e))?;
 
         let values = vec![
             ("id1".to_string(), json!({"name": "test1"})),

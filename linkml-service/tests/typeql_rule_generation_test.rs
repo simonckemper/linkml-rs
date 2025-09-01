@@ -107,7 +107,7 @@ async fn test_rule_generation() {
     let schema = create_test_schema();
     let generator = EnhancedTypeQLGenerator::new();
 
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
     let typeql = result;
 
     println!("Generated TypeQL:\n{}", typeql);
@@ -162,9 +162,9 @@ async fn test_multiple_classes_with_rules() {
 
     // Add salary range constraint
     let mut salary_slot = SlotDefinition::default();
-    salary_slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).unwrap()));
+    salary_slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).expect("Test operation failed")));
     salary_slot.maximum_value = Some(Value::Number(
-        serde_json::Number::from_f64(1000000.0).unwrap(),
+        serde_json::Number::from_f64(1000000.0).expect("Test operation failed"),
     ));
     employee
         .slot_usage
@@ -220,7 +220,7 @@ async fn test_multiple_classes_with_rules() {
 
     let generator = EnhancedTypeQLGenerator::new();
 
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
     let typeql = result;
 
     // Check Employee rules
@@ -284,7 +284,7 @@ async fn test_expression_based_rules() {
 
     let generator = EnhancedTypeQLGenerator::new();
 
-    let result = generator.generate(&schema).unwrap();
+    let result = generator.generate(&schema).expect("Test operation failed");
     let typeql = result;
 
     // Check simple expression rule

@@ -19,11 +19,11 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
     assert!(slot.any_of.is_some());
-    let constraints = slot.any_of.as_ref().unwrap();
+    let constraints = slot.any_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
     assert_eq!(constraints[0].range, Some("string".to_string()));
     assert_eq!(constraints[1].range, Some("integer".to_string()));
@@ -44,11 +44,11 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
     assert!(slot.all_of.is_some());
-    let constraints = slot.all_of.as_ref().unwrap();
+    let constraints = slot.all_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
     assert_eq!(constraints[0].minimum_value, Some(json!(0)));
     assert_eq!(constraints[0].maximum_value, Some(json!(100)));
@@ -71,11 +71,11 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
     assert!(slot.exactly_one_of.is_some());
-    let constraints = slot.exactly_one_of.as_ref().unwrap();
+    let constraints = slot.exactly_one_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
     assert_eq!(constraints[0].range, Some("boolean".to_string()));
     assert_eq!(constraints[1].range, Some("integer".to_string()));
@@ -97,11 +97,11 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
     assert!(slot.none_of.is_some());
-    let constraints = slot.none_of.as_ref().unwrap();
+    let constraints = slot.none_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
     assert_eq!(constraints[0].pattern, Some("^test".to_string()));
     assert_eq!(constraints[1].pattern, Some("^demo".to_string()));
@@ -125,23 +125,23 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
     assert!(slot.any_of.is_some());
-    let any_constraints = slot.any_of.as_ref().unwrap();
+    let any_constraints = slot.any_of.as_ref().expect("Test operation failed");
     assert_eq!(any_constraints.len(), 2);
 
     // First any_of constraint has all_of
     assert!(any_constraints[0].all_of.is_some());
-    let all_constraints_1 = any_constraints[0].all_of.as_ref().unwrap();
+    let all_constraints_1 = any_constraints[0].all_of.as_ref().expect("Test operation failed");
     assert_eq!(all_constraints_1.len(), 2);
     assert_eq!(all_constraints_1[0].range, Some("integer".to_string()));
     assert_eq!(all_constraints_1[1].minimum_value, Some(json!(0)));
 
     // Second any_of constraint has all_of
     assert!(any_constraints[1].all_of.is_some());
-    let all_constraints_2 = any_constraints[1].all_of.as_ref().unwrap();
+    let all_constraints_2 = any_constraints[1].all_of.as_ref().expect("Test operation failed");
     assert_eq!(all_constraints_2.len(), 2);
     assert_eq!(all_constraints_2[0].range, Some("string".to_string()));
     assert_eq!(all_constraints_2[1].pattern, Some("^[A-Z]".to_string()));
@@ -199,7 +199,7 @@ async fn test_validation_with_boolean_constraints() {
         Some(options),
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Should have warnings from placeholder implementation
     assert!(!report.issues.is_empty());
@@ -234,16 +234,16 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
 
     // Verify all constraints are present
     assert_eq!(slot.required, Some(true));
     assert_eq!(slot.range, Some("string".to_string()));
     assert_eq!(slot.pattern, Some("^[A-Z]".to_string()));
     assert!(slot.any_of.is_some());
-    assert_eq!(slot.any_of.as_ref().unwrap().len(), 2);
+    assert_eq!(slot.any_of.as_ref().expect("Test operation failed").len(), 2);
 }
 
 #[tokio::test]
@@ -273,10 +273,10 @@ slots:
 "#;
 
     let parser = linkml_service::parser::YamlParser::new();
-    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).unwrap();
+    let schema = linkml_service::parser::SchemaParser::parse_str(&parser, yaml).expect("Test operation failed");
 
-    let slot = schema.slots.get("test_slot").unwrap();
-    let constraints = slot.any_of.as_ref().unwrap();
+    let slot = schema.slots.get("test_slot").expect("Test operation failed");
+    let constraints = slot.any_of.as_ref().expect("Test operation failed");
     let expr = &constraints[0];
 
     assert_eq!(expr.range, Some("string".to_string()));

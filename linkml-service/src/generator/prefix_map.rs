@@ -453,7 +453,7 @@ mod tests {
         let generator = PrefixMapGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate prefix map": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate prefix map: {}", e))?;
 
         assert!(result.contains("\"ex\": \"https://example.com/\""));
         assert!(result.contains("\"test\": \"https://test.org/vocab#\""));
@@ -466,7 +466,7 @@ mod tests {
         let generator_ttl = PrefixMapGenerator::new(config_ttl);
         let result_ttl = generator_ttl
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate turtle prefix map": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate turtle prefix map: {}", e))?;
 
         assert!(result_ttl.contains("@prefix ex: <https://example.com/> ."));
         assert!(result_ttl.contains("@prefix test: <https://test.org/vocab#> ."));

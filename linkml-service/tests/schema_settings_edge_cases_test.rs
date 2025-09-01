@@ -29,7 +29,7 @@ async fn test_settings_override_precedence() {
     name_slot.range = Some("string".to_string());
     schema.slots.insert("name".to_string(), name_slot);
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Data with extra field
     let data = json!({
@@ -41,7 +41,7 @@ async fn test_settings_override_precedence() {
     let report1 = engine
         .validate_as_class(&data, "Person", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report1.valid);
 
     // Now validate with overriding options (should pass)
@@ -52,7 +52,7 @@ async fn test_settings_override_precedence() {
     let report2 = engine
         .validate_as_class(&data, "Person", Some(options))
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report2.valid);
 }
 
@@ -74,7 +74,7 @@ async fn test_nested_settings_inheritance() {
         derived_schema
             .settings
             .as_ref()
-            .unwrap()
+            .expect("Test operation failed")
             .validation
             .allow_additional_properties
     );
@@ -96,7 +96,7 @@ async fn test_generation_settings_with_naming() {
     schema.settings = Some(settings);
 
     // Verify settings are accessible
-    let settings = schema.settings.as_ref().unwrap();
+    let settings = schema.settings.as_ref().expect("Test operation failed");
     assert!(settings.generation.include_metadata);
     assert_eq!(settings.generation.target_languages.len(), 2);
     assert_eq!(
@@ -123,7 +123,7 @@ async fn test_import_settings_with_aliases() {
     schema.settings = Some(settings);
 
     // Test alias resolution
-    let settings = schema.settings.as_ref().unwrap();
+    let settings = schema.settings.as_ref().expect("Test operation failed");
     assert_eq!(
         settings.imports.import_aliases.get("common"),
         Some(&"https://example.org/common/v2".to_string())
@@ -147,7 +147,7 @@ async fn test_default_settings_application() {
 
     // In a real implementation, the engine would apply defaults
     // Here we verify the settings are stored correctly
-    let defaults = &schema.settings.as_ref().unwrap().defaults;
+    let defaults = &schema.settings.as_ref().expect("Test operation failed").defaults;
     assert_eq!(defaults.range.as_deref(), Some("string"));
     assert_eq!(defaults.required, Some(false));
 }
@@ -164,7 +164,7 @@ async fn test_conflicting_settings_resolution() {
     schema.settings = Some(settings);
 
     // The specific setting should override the preset
-    let validation = &schema.settings.as_ref().unwrap().validation;
+    let validation = &schema.settings.as_ref().expect("Test operation failed").validation;
     assert!(validation.allow_additional_properties);
     assert!(validation.fail_on_warning); // From strict preset
     assert!(!validation.allow_undefined_slots); // From strict preset
@@ -185,10 +185,10 @@ async fn test_settings_serialization_roundtrip() {
     settings.defaults.required = Some(true);
 
     // Serialize to YAML
-    let yaml = serde_yaml::to_string(&settings).unwrap();
+    let yaml = serde_yaml::to_string(&settings).expect("Test operation failed");
 
     // Deserialize back
-    let deserialized: SchemaSettings = serde_yaml::from_str(&yaml).unwrap();
+    let deserialized: SchemaSettings = serde_yaml::from_str(&yaml).expect("Test operation failed");
 
     // Verify all settings survived the round trip
     assert_eq!(
@@ -220,14 +220,14 @@ async fn test_empty_settings_behavior() {
     schema2.settings = Some(SchemaSettings::default());
 
     // Both should behave the same way with defaults
-    let engine1 = ValidationEngine::new(&schema1).unwrap();
-    let engine2 = ValidationEngine::new(&schema2).unwrap();
+    let engine1 = ValidationEngine::new(&schema1).expect("Test operation failed");
+    let engine2 = ValidationEngine::new(&schema2).expect("Test operation failed");
 
     let data = json!({"test": "value"});
 
     // Both should allow additional properties by default
-    let report1 = engine1.validate(&data, None).await.unwrap();
-    let report2 = engine2.validate(&data, None).await.unwrap();
+    let report1 = engine1.validate(&data, None).await.expect("Test operation failed");
+    let report2 = engine2.validate(&data, None).await.expect("Test operation failed");
 
     assert_eq!(report1.valid, report2.valid);
 }
@@ -265,7 +265,7 @@ async fn test_settings_with_inheritance_chain() {
         schema.slots.insert(slot_name.to_string(), slot);
     }
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Test that settings apply throughout inheritance chain
     let data = json!({
@@ -278,7 +278,7 @@ async fn test_settings_with_inheritance_chain() {
     let report = engine
         .validate_as_class(&data, "Derived", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid); // Should fail due to extra field
 }
 
@@ -306,8 +306,8 @@ async fn test_settings_performance_impact() {
         }
     }
 
-    let strict_engine = ValidationEngine::new(&strict_schema).unwrap();
-    let lenient_engine = ValidationEngine::new(&lenient_schema).unwrap();
+    let strict_engine = ValidationEngine::new(&strict_schema).expect("Test operation failed");
+    let lenient_engine = ValidationEngine::new(&lenient_schema).expect("Test operation failed");
 
     // Create test data
     let mut data = serde_json::Map::new();
@@ -322,7 +322,7 @@ async fn test_settings_performance_impact() {
         let _ = strict_engine
             .validate_as_class(&data, "TestClass", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
     let strict_time = start.elapsed();
 
@@ -331,7 +331,7 @@ async fn test_settings_performance_impact() {
         let _ = lenient_engine
             .validate_as_class(&data, "TestClass", None)
             .await
-            .unwrap();
+            .expect("Test operation failed");
     }
     let lenient_time = start.elapsed();
 

@@ -217,7 +217,7 @@ impl<'a> OptimizedCacheKey<'a> {
 /// Cache key optimizer for efficient key generation
 pub struct CacheKeyOptimizer {
     /// Reusable key builder
-    _builder: CacheKeyBuilder,
+    builder: CacheKeyBuilder,
     /// Cache for schema hashes
     schema_hash_cache: DashMap<String, u64>,
 }
@@ -233,7 +233,7 @@ impl CacheKeyOptimizer {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            _builder: CacheKeyBuilder::with_capacity(256),
+            builder: CacheKeyBuilder::with_capacity(256),
             schema_hash_cache: DashMap::new(),
         }
     }

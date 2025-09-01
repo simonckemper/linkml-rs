@@ -370,7 +370,7 @@ impl YumlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        _class_name: &str,
+        class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -434,7 +434,7 @@ impl AsyncGenerator for YumlGenerator {
     async fn generate(
         &self,
         schema: &SchemaDefinition,
-        _options: &GeneratorOptions,
+        options: &GeneratorOptions,
     ) -> GeneratorResult<Vec<GeneratedOutput>> {
         let content = self.generate_yuml(schema)?;
 
@@ -535,7 +535,7 @@ mod tests {
 
         let result = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate yuml": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate yuml: {}", e))?;
         assert_eq!(result.len(), 1);
 
         let output = &result[0];
@@ -559,7 +559,7 @@ mod tests {
             let generator = YumlGenerator::with_options(yuml_options);
             let result = AsyncGenerator::generate(&generator, &schema, &options)
                 .await
-                .map_err(|e| anyhow::anyhow!("should generate yuml": {}, e))?;
+                .map_err(|e| anyhow::anyhow!("should generate yuml: {}", e))?;
 
             let output = &result[0];
             assert!(output.content.contains(&format!("diagram/{}/", style)));

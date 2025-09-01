@@ -511,7 +511,7 @@ impl SQLAlchemyGenerator {
     }
 
     /// Get type annotation for SQLAlchemy 2.0
-    fn get_type_annotation(&self, slot: &SlotDefinition, _schema: &SchemaDefinition) -> String {
+    fn get_type_annotation(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> String {
         let base_type = if let Some(range) = &slot.range {
             match range.as_str() {
                 "string" | "str" => "str",
@@ -572,7 +572,7 @@ impl SQLAlchemyGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("lowercase char should exist": {}, e))?,
+                    .map_err(|e| anyhow::anyhow!("lowercase char should exist: {}", e))?,
             );
             prev_upper = ch.is_uppercase();
         }
@@ -766,7 +766,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate SQLAlchemy models": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate SQLAlchemy models: {}", e))?;
 
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));

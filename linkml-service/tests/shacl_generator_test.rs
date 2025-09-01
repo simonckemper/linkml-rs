@@ -40,7 +40,7 @@ async fn test_basic_shacl_generation() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Check content
     assert!(
@@ -114,7 +114,7 @@ async fn test_enum_shacl() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Check enum constraint using sh:in
     assert!(shacl.contains("sh:path status_schema:status"));
@@ -159,7 +159,7 @@ async fn test_inheritance_shacl() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Check PersonShape has all properties (inherited + own)
     assert!(shacl.contains("entity_schema:PersonShape"));
@@ -196,7 +196,7 @@ async fn test_multivalued_shacl() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Debug print to see the actual content
     println!("Generated SHACL:\n{}", shacl.content);
@@ -256,7 +256,7 @@ async fn test_object_references_shacl() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Check object references use sh:class
     assert!(shacl.contains("sh:path org_schema:ceo"));
@@ -267,7 +267,7 @@ async fn test_object_references_shacl() {
         shacl
                         .split("org_schema:OrganizationShape-employees")
             .nth(1)
-            .unwrap()
+            .expect("Test operation failed")
             .contains("sh:class org_schema:Person")
     );
 }
@@ -312,7 +312,7 @@ async fn test_custom_types_shacl() {
     // Generate SHACL
     let generator = ShaclGenerator::new();
     let options = GeneratorOptions::default();
-    let shacl = generator.generate(&schema).unwrap();
+    let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Debug print
     println!("Generated SHACL for custom types:\n{}", shacl.content);

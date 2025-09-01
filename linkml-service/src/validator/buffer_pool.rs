@@ -10,7 +10,7 @@ use std::sync::Arc;
 /// Pool for reusable String buffers
 pub struct StringPool {
     pool: Arc<Mutex<VecDeque<String>>>,
-    _max_size: usize,
+    max_size: usize,
     max_buffer_capacity: usize,
 }
 
@@ -20,7 +20,7 @@ impl StringPool {
     pub fn new(max_size: usize, max_buffer_capacity: usize) -> Self {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
-            _max_size: max_size,
+            max_size: max_size,
             max_buffer_capacity,
         }
     }
@@ -102,7 +102,7 @@ impl std::ops::DerefMut for StringBuffer {
 /// Pool for reusable Vec<T> buffers
 pub struct VecPool<T> {
     pool: Arc<Mutex<VecDeque<Vec<T>>>>,
-    _max_size: usize,
+    max_size: usize,
     max_buffer_capacity: usize,
 }
 
@@ -112,7 +112,7 @@ impl<T> VecPool<T> {
     pub fn new(max_size: usize, max_buffer_capacity: usize) -> Self {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
-            _max_size: max_size,
+            max_size: max_size,
             max_buffer_capacity,
         }
     }

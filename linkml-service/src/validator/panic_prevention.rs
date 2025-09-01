@@ -214,11 +214,26 @@ impl PanicSafeWrapper {
 
     /// Extract panic message from Any
     fn extract_panic_message(&self, panic: &Box<dyn Any + Send>) -> Option<String> {
-        let _ = self;
+        // Check configuration to determine how detailed the panic message should be
+        let config = self.config.read();
+        let include_debug_info = config.catch_panics;
+
         if let Some(s) = panic.downcast_ref::<String>() {
-            Some(s.clone())
+            if include_debug_info {
+                Some(format!("Panic: {}", s))
+            } else {
+                Some("Validation error occurred".to_string())
+            }
+        } else if let Some(s) = panic.downcast_ref::<&str>() {
+            if include_debug_info {
+                Some(format!("Panic: {}", s))
+            } else {
+                Some("Validation error occurred".to_string())
+            }
+        } else if include_debug_info {
+            Some("Unknown panic type".to_string())
         } else {
-            panic.downcast_ref::<&str>().map(|s| (*s).to_string())
+            Some("Validation error occurred".to_string())
         }
     }
 
@@ -488,7 +503,7 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_mutex<T>(
         mutex: &std::sync::Mutex<T>,
-        _timeout: Duration,
+        timeout: Duration,
     ) -> Result<std::sync::MutexGuard<T>> {
         match mutex.lock() {
             Ok(guard) => Ok(guard),
@@ -506,7 +521,7 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_read<T>(
         rwlock: &std::sync::RwLock<T>,
-        _timeout: Duration,
+        timeout: Duration,
     ) -> Result<std::sync::RwLockReadGuard<T>> {
         match rwlock.read() {
             Ok(guard) => Ok(guard),
@@ -524,7 +539,7 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_write<T>(
         rwlock: &std::sync::RwLock<T>,
-        _timeout: Duration,
+        timeout: Duration,
     ) -> Result<std::sync::RwLockWriteGuard<T>> {
         match rwlock.write() {
             Ok(guard) => Ok(guard),

@@ -8,6 +8,8 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use timeout_core::{OperationComplexity, TimeoutContext, TimeoutService};
+use timestamp_core::SyncTimestampService;
+
 use toml;
 
 /// Plugin loader interface
@@ -141,7 +143,7 @@ impl PythonLoader {
         Self
     }
 
-    async fn load_plugin(&self, _module: &str, _class: &str) -> Result<Box<dyn Plugin>> {
+    async fn load_plugin(&self, module: &str, class: &str) -> Result<Box<dyn Plugin>> {
         // Python integration would require PyO3
         // For now, return an error indicating Python plugins need PyO3 integration
         Err(LinkMLError::ServiceError(
@@ -162,9 +164,9 @@ impl JavaScriptLoader {
 
     async fn load_plugin(
         &self,
-        _base_dir: &Path,
-        _module: &str,
-        _export: Option<&str>,
+        base_dir: &Path,
+        module: &str,
+        export: Option<&str>,
     ) -> Result<Box<dyn Plugin>> {
         // JavaScript integration would require a JS runtime like deno_core
         Err(LinkMLError::ServiceError(
@@ -185,9 +187,9 @@ impl WasmLoader {
 
     async fn load_plugin(
         &self,
-        _base_dir: &Path,
-        _module: &str,
-        _config: Option<&serde_json::Value>,
+        base_dir: &Path,
+        module: &str,
+        config: Option<&serde_json::Value>,
     ) -> Result<Box<dyn Plugin>> {
         // WASM integration would require wasmtime or wasmer
         Err(LinkMLError::ServiceError(
@@ -292,6 +294,8 @@ pub struct SandboxedPlugin<O: TimeoutService> {
     sandbox: PluginSandbox,
     /// Timeout service for managing execution timeouts
     timeout_service: Arc<O>,
+    /// Timestamp service for timing operations
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 impl<O: TimeoutService> SandboxedPlugin<O> {
@@ -301,6 +305,25 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             plugin,
             sandbox,
             timeout_service,
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
+        }
+    }
+
+    /// Create a new sandboxed plugin with injected dependencies (factory pattern compliant)
+    pub fn with_dependencies<T>(
+        plugin: Box<dyn Plugin>,
+        sandbox: PluginSandbox,
+        timeout_service: Arc<O>,
+        timestamp_service: Arc<T>,
+    ) -> Self
+    where
+        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+    {
+        Self {
+            plugin,
+            sandbox,
+            timeout_service,
+            timestamp_service,
         }
     }
 
@@ -339,13 +362,17 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             .map_err(|e| LinkMLError::other(format!("Failed to calculate timeout: {}", e)))?;
 
         // Record the start time for duration tracking
-        let start_time = std::time::Instant::now();
+        let start_time = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {}", e)))?;
 
         // Execute with the calculated timeout
         let result = timeout(timeout_value.duration, async { f(&*self.plugin) }).await;
 
         // Record the actual duration
-        let actual_duration = start_time.elapsed();
+        let end_time = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {}", e)))?;
+        let actual_duration = end_time.duration_since(start_time)
+            .map_err(|e| LinkMLError::other(format!("Time calculation error: {}", e)))?;
         let success = result.is_ok();
 
         // Report the duration back to the timeout service for adaptive learning

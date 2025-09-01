@@ -19,7 +19,7 @@ pub struct YamlGenerator {
     /// Whether to inline simple definitions
     inline_simple: bool,
     /// Whether to include null values
-    _include_nulls: bool,
+    include_nulls: bool,
 }
 
 impl Default for YamlGenerator {
@@ -36,7 +36,7 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            _include_nulls: false,
+            include_nulls: false,
         }
     }
 
@@ -372,7 +372,7 @@ impl YamlGenerator {
                 subset
                     .description
                     .as_ref()
-                    .map_err(|e| anyhow::anyhow!("description exists after is_some check": {}, e))?
+                    .map_err(|e| anyhow::anyhow!("description exists after is_some check: {}", e))?
                     .clone(),
             )
         } else {
@@ -497,7 +497,7 @@ impl YamlGenerator {
                     serde_yaml::Value::String(
                         description
                             .as_ref()
-                            .map_err(|e| anyhow::anyhow!("description exists after is_some check": {}, e))?
+                            .map_err(|e| anyhow::anyhow!("description exists after is_some check: {}", e))?
                             .clone(),
                     )
                 } else if map.is_empty() {

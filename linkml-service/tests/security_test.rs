@@ -77,7 +77,7 @@ fn test_expression_cache_security() {
     // Fill the cache with different expressions
     for i in 0..20 {
         context.insert("x".to_string(), json!(i));
-        let expr = parse_expression(&format!("x + {}", i)).unwrap();
+        let expr = parse_expression(&format!("x + {}", i)).expect("Test operation failed");
         let _ = evaluator.evaluate(&expr, &context);
     }
 
@@ -204,16 +204,16 @@ fn test_resource_monitor_parallel_ops() {
     let monitor = create_monitor(limits);
 
     // Start operations
-    let guard1 = monitor.start_parallel_op().unwrap();
-    let guard2 = monitor.start_parallel_op().unwrap();
-    let guard3 = monitor.start_parallel_op().unwrap();
+    let guard1 = monitor.start_parallel_op().expect("Test operation failed");
+    let guard2 = monitor.start_parallel_op().expect("Test operation failed");
+    let guard3 = monitor.start_parallel_op().expect("Test operation failed");
 
     // Fourth should fail
     assert!(monitor.start_parallel_op().is_err());
 
     // Drop one and try again
     drop(guard1);
-    let _guard4 = monitor.start_parallel_op().unwrap();
+    let _guard4 = monitor.start_parallel_op().expect("Test operation failed");
 }
 
 #[test]
@@ -234,7 +234,7 @@ fn test_expression_evaluation_timeout() {
     }
 
     // This should complete quickly despite being deeply nested
-    let expr = parse_expression(expr_str).unwrap();
+    let expr = parse_expression(expr_str).expect("Test operation failed");
     let context = HashMap::new();
 
     // The actual evaluation should be fast, so we expect success
@@ -256,7 +256,7 @@ fn test_expression_depth_limit() {
         expr_str = &format!("({} + 1)", expr_str);
     }
 
-    let expr = parse_expression(expr_str).unwrap();
+    let expr = parse_expression(expr_str).expect("Test operation failed");
     let context = HashMap::new();
 
     // This should fail due to call depth
@@ -281,7 +281,7 @@ fn test_secure_cache_key_generation() {
         let key = format!("key_{}", i);
         context.insert(key.clone(), json!(format!("{}{}", large_value, i)));
 
-        let expr = parse_expression(&format!("len({})", key)).unwrap();
+        let expr = parse_expression(&format!("len({})", key)).expect("Test operation failed");
 
         // This should complete without issues despite large strings
         let result = evaluator.evaluate(&expr, &context);

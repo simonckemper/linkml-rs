@@ -64,13 +64,13 @@ async fn test_patch_application() {
 
     // Apply the patch
     let patcher = SchemaPatcher::new(PatchOptions::default());
-    let result = patcher.apply_patch(schema_v1.clone(), &patch).unwrap();
+    let result = patcher.apply_patch(schema_v1.clone(), &patch).expect("Test operation failed");
 
     // Verify patch was applied
     assert_eq!(result.applied_operations.len(), 2);
     assert!(result.schema.slots.contains_key("email"));
 
-    let person = result.schema.classes.get("Person").unwrap();
+    let person = result.schema.classes.get("Person").expect("Test operation failed");
     assert!(person.slots.contains(&"email".to_string()));
 }
 
@@ -106,20 +106,20 @@ async fn test_ifabsent_defaults() {
     });
 
     // Apply defaults
-    apply_defaults_to_instance(&schema, &mut instance, "Entity").unwrap();
+    apply_defaults_to_instance(&schema, &mut instance, "Entity").expect("Test operation failed");
 
     // Verify defaults were applied
-    let obj = instance.as_object().unwrap();
+    let obj = instance.as_object().expect("Test operation failed");
 
     // Check that ID was generated as blank node
-    let id = obj.get("id").unwrap().as_str().unwrap();
+    let id = obj.get("id").expect("Test operation failed").as_str().expect("Test operation failed");
     assert!(id.starts_with("_:b"), "ID should be a blank node");
 
     // Check that created date was set
     assert!(obj.contains_key("created"), "Created field should be set");
 
     // Check that type was set to class name
-    let type_val = obj.get("type").unwrap().as_str().unwrap();
+    let type_val = obj.get("type").expect("Test operation failed").as_str().expect("Test operation failed");
     assert_eq!(type_val, "Entity", "Type should be set to class name");
 }
 
@@ -153,10 +153,10 @@ async fn test_class_view_slot_view() {
     schema.slots.insert("breed".to_string(), breed_slot);
 
     // Create SchemaView
-    let schema_view = SchemaView::new(schema).unwrap();
+    let schema_view = SchemaView::new(schema).expect("Test operation failed");
 
     // Get ClassView for Dog
-    let dog_view = schema_view.class_view("Dog").unwrap();
+    let dog_view = schema_view.class_view("Dog").expect("Test operation failed");
 
     // Verify inheritance is resolved
     assert_eq!(dog_view.name(), "Dog");
@@ -175,7 +175,7 @@ async fn test_class_view_slot_view() {
     );
 
     // Get SlotView for name
-    let name_view = schema_view.slot_view("name").unwrap();
+    let name_view = schema_view.slot_view("name").expect("Test operation failed");
 
     // Check which classes use this slot
     assert!(name_view.is_used_by("Animal"));
@@ -337,7 +337,7 @@ async fn test_ignore_in_diff() {
 
     // Run diff
     let differ = SchemaDiff::new(DiffOptions::default());
-    let diff_result = differ.diff(&schema_v1, &schema_v2).unwrap();
+    let diff_result = differ.diff(&schema_v1, &schema_v2).expect("Test operation failed");
 
     // The internal class should not appear in modified classes
     // because it has ignore_in_diff annotation
@@ -446,7 +446,7 @@ async fn test_pattern_validation() {
     schema.classes.insert("Contact".to_string(), contact);
 
     // Create validator
-    let validator = PatternValidator::from_schema(&schema).unwrap();
+    let validator = PatternValidator::from_schema(&schema).expect("Test operation failed");
 
     // Test valid values
     let valid_contact = json!({
@@ -455,7 +455,7 @@ async fn test_pattern_validation() {
     });
     let issues = validator
         .validate_instance(&valid_contact, "Contact", &schema)
-        .unwrap();
+        .expect("Test operation failed");
     assert!(issues.is_empty(), "Valid contact should have no issues");
 
     // Test invalid email
@@ -465,7 +465,7 @@ async fn test_pattern_validation() {
     });
     let issues = validator
         .validate_instance(&invalid_email, "Contact", &schema)
-        .unwrap();
+        .expect("Test operation failed");
     assert_eq!(issues.len(), 1, "Should have one validation issue");
     assert!(issues[0].message.contains("does not match pattern"));
 }
@@ -497,7 +497,7 @@ async fn test_unique_key_validation() {
         json!({"id": "3", "email": "alice@example.com", "name": "Alice Smith"}), // Duplicate email
     ];
 
-    let violations = validator.validate_collection(&people, "Person").unwrap();
+    let violations = validator.validate_collection(&people, "Person").expect("Test operation failed");
     assert_eq!(
         violations.len(),
         1,
@@ -541,14 +541,14 @@ async fn test_conditional_validation() {
         "cvv": "123",
         "amount": 100
     });
-    assert!(validator.validate(&valid_cc, "Order").unwrap().is_empty());
+    assert!(validator.validate(&valid_cc, "Order").expect("Test operation failed").is_empty());
 
     // Invalid credit card order (missing card details)
     let invalid_cc = json!({
         "payment_method": "credit_card",
         "amount": 100
     });
-    let violations = validator.validate(&invalid_cc, "Order").unwrap();
+    let violations = validator.validate(&invalid_cc, "Order").expect("Test operation failed");
     assert_eq!(violations.len(), 1);
     assert_eq!(violations[0].failed_requirements.len(), 2);
 
@@ -560,7 +560,7 @@ async fn test_conditional_validation() {
     assert!(
         validator
             .validate(&valid_paypal, "Order")
-            .unwrap()
+            .expect("Test operation failed")
             .is_empty()
     );
 }
@@ -593,13 +593,13 @@ async fn test_complete_inheritance() {
     schema.classes.insert("Document".to_string(), document);
 
     // Test inheritance resolution
-    let chain = get_inheritance_chain("Document", &schema).unwrap();
+    let chain = get_inheritance_chain("Document", &schema).expect("Test operation failed");
     assert!(chain.contains(&"Entity".to_string()));
     assert!(chain.contains(&"Timestamped".to_string()));
 
     // Test that all slots are inherited
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved = resolver.resolve_class("Document").unwrap();
+    let resolved = resolver.resolve_class("Document").expect("Test operation failed");
 
     assert!(resolved.slots.contains(&"id".to_string())); // From Entity
     assert!(resolved.slots.contains(&"created_at".to_string())); // From Timestamped

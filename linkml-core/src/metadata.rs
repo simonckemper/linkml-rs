@@ -273,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn test_contributor() {
+    fn test_contributor() -> Result<(), Box<dyn std::error::Error>> {
         let contributor = Contributor {
             name: "Jane Doe".to_string(),
             email: Some("jane@example.com".to_string()),
@@ -285,5 +285,6 @@ mod tests {
         let json = serde_json::to_string(&contributor).map_err(|e| anyhow::anyhow!("Error: {}", e))?;
         assert!(json.contains("Jane Doe"));
         assert!(json.contains("maintainer"));
+        Ok(())
     }
 }

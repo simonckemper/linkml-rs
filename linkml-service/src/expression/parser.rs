@@ -695,27 +695,27 @@ mod tests {
         let parser = Parser::new();
 
         assert_eq!(
-            parser.parse("null").map_err(|e| anyhow::anyhow!("should parse null": {}, e))?,
+            parser.parse("null").map_err(|e| anyhow::anyhow!("should parse null: {}", e))?,
             Expression::Null
         );
         assert_eq!(
-            parser.parse("true").map_err(|e| anyhow::anyhow!("should parse true": {}, e))?,
+            parser.parse("true").map_err(|e| anyhow::anyhow!("should parse true: {}", e))?,
             Expression::Boolean(true)
         );
         assert_eq!(
-            parser.parse("false").map_err(|e| anyhow::anyhow!("should parse false": {}, e))?,
+            parser.parse("false").map_err(|e| anyhow::anyhow!("should parse false: {}", e))?,
             Expression::Boolean(false)
         );
         assert_eq!(
-            parser.parse("42").map_err(|e| anyhow::anyhow!("should parse integer": {}, e))?,
+            parser.parse("42").map_err(|e| anyhow::anyhow!("should parse integer: {}", e))?,
             Expression::Number(42.0)
         );
         assert_eq!(
-            parser.parse("3.14").map_err(|e| anyhow::anyhow!("should parse float": {}, e))?,
+            parser.parse("3.14").map_err(|e| anyhow::anyhow!("should parse float: {}", e))?,
             Expression::Number(3.14)
         );
         assert_eq!(
-            parser.parse("\"hello\"").map_err(|e| anyhow::anyhow!("should parse string": {}, e))?,
+            parser.parse("\"hello\"").map_err(|e| anyhow::anyhow!("should parse string: {}", e))?,
             Expression::String("hello".to_string())
         );
     }
@@ -725,13 +725,13 @@ mod tests {
         let parser = Parser::new();
 
         assert_eq!(
-            parser.parse("{x}").map_err(|e| anyhow::anyhow!("should parse variable": {}, e))?,
+            parser.parse("{x}").map_err(|e| anyhow::anyhow!("should parse variable: {}", e))?,
             Expression::Variable("x".to_string())
         );
         assert_eq!(
             parser
                 .parse("{user_name}")
-                .map_err(|e| anyhow::anyhow!("should parse variable with underscore": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("should parse variable with underscore: {}", e))?,
             Expression::Variable("user_name".to_string())
         );
     }
@@ -742,7 +742,7 @@ mod tests {
 
         let expr = parser
             .parse("1 + 2")
-            .map_err(|e| anyhow::anyhow!("should parse binary expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse binary expression: {}", e))?;
         assert_eq!(
             expr,
             Expression::Add(
@@ -753,7 +753,7 @@ mod tests {
 
         let expr = parser
             .parse("3 * 4 + 5")
-            .map_err(|e| anyhow::anyhow!("should parse expression with precedence": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse expression with precedence: {}", e))?;
         assert_eq!(
             expr,
             Expression::Add(
@@ -770,7 +770,7 @@ mod tests {
     fn test_parse_comparison() {
         let parser = Parser::new();
 
-        let expr = parser.parse("{x} > 5").map_err(|e| anyhow::anyhow!("should parse comparison": {}, e))?;
+        let expr = parser.parse("{x} > 5").map_err(|e| anyhow::anyhow!("should parse comparison: {}", e))?;
         assert_eq!(
             expr,
             Expression::Greater(
@@ -781,7 +781,7 @@ mod tests {
 
         let expr = parser
             .parse("{age} >= 18 and {age} < 65")
-            .map_err(|e| anyhow::anyhow!("should parse logical expression": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse logical expression: {}", e))?;
         assert_eq!(
             expr,
             Expression::And(
@@ -803,7 +803,7 @@ mod tests {
 
         let expr = parser
             .parse("len({items})")
-            .map_err(|e| anyhow::anyhow!("should parse function call": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse function call: {}", e))?;
         assert_eq!(
             expr,
             Expression::FunctionCall {
@@ -814,7 +814,7 @@ mod tests {
 
         let expr = parser
             .parse("max(1, 2, 3)")
-            .map_err(|e| anyhow::anyhow!("should parse function with multiple args": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should parse function with multiple args: {}", e))?;
         assert_eq!(
             expr,
             Expression::FunctionCall {

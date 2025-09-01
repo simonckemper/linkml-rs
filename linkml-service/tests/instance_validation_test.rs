@@ -35,7 +35,7 @@ slots:
 "#;
 
     // Create instance data files
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Country codes
     let countries_file = temp_dir.path().join("countries.json");
@@ -49,10 +49,10 @@ slots:
     ]);
     fs::write(
         &countries_file,
-        serde_json::to_string_pretty(&countries_data).unwrap(),
+        serde_json::to_string_pretty(&countries_data).expect("Test operation failed"),
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // US states
     let states_file = temp_dir.path().join("us_states.json");
@@ -64,17 +64,17 @@ slots:
     ]);
     fs::write(
         &states_file,
-        serde_json::to_string_pretty(&states_data).unwrap(),
+        serde_json::to_string_pretty(&states_data).expect("Test operation failed"),
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Create engine with instance validation
-    let _engine = ValidationEngine::new(&schema).unwrap();
+    let _engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Load instance data
     let loader = InstanceLoader::new();
@@ -87,11 +87,11 @@ slots:
     let country_data = loader
         .load_json_file(&countries_file, &country_config)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let state_data = loader
         .load_json_file(&states_file, &country_config)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create combined instance data
     let mut instance_values: std::collections::HashMap<String, Vec<String>> =
@@ -118,7 +118,7 @@ slots:
     // modifying ValidationEngine to support instance data
     let report = validate_as_class(&schema, &valid_data, "Address", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Without instance validation integration, this would pass
     // With it, it would validate against loaded data
@@ -149,14 +149,14 @@ slots:
 "#;
 
     // Create CSV instance data
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let categories_file = temp_dir.path().join("categories.csv");
 
     let csv_data = "id,name,parent\nELEC,Electronics,\nCOMP,Computers,ELEC\nPHON,Phones,ELEC\nCLOT,Clothing,\nMENS,Mens,CLOT\nWOMN,Womens,CLOT\n";
-    fs::write(&categories_file, csv_data).await.unwrap();
+    fs::write(&categories_file, csv_data).await.expect("Test operation failed");
 
     let parser = Parser::new();
-    let _schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let _schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Load CSV data
     let loader = InstanceLoader::new();
@@ -169,7 +169,7 @@ slots:
     let category_data = loader
         .load_csv_file(&categories_file, &config)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Check that data was loaded correctly
     assert!(category_data.values.contains_key("ELEC"));
@@ -180,7 +180,7 @@ slots:
     let category_data2 = loader
         .load_csv_file(&categories_file, &config)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(std::sync::Arc::ptr_eq(&category_data, &category_data2));
 }
 
@@ -205,7 +205,7 @@ slots:
 "#;
 
     // Create tag vocabulary
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
     let tags_file = temp_dir.path().join("tags.json");
 
     let tags_data = json!({
@@ -219,13 +219,13 @@ slots:
     });
     fs::write(
         &tags_file,
-        serde_json::to_string_pretty(&tags_data).unwrap(),
+        serde_json::to_string_pretty(&tags_data).expect("Test operation failed"),
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Load instance data
     let loader = InstanceLoader::new();
@@ -235,12 +235,12 @@ slots:
         filter: None,
     };
 
-    let tag_data = loader.load_json_file(&tags_file, &config).await.unwrap();
+    let tag_data = loader.load_json_file(&tags_file, &config).await.expect("Test operation failed");
 
     // Verify loading worked
     assert_eq!(tag_data.values.len(), 5);
     assert_eq!(
-        tag_data.values.get("important").unwrap(),
+        tag_data.values.get("important").expect("Test operation failed"),
         &vec!["Important"]
     );
 
@@ -252,6 +252,6 @@ slots:
     // This would validate each tag against the loaded vocabulary
     let report = validate_as_class(&schema, &data, "TaggedItem", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }

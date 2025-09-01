@@ -226,13 +226,12 @@ impl ArraySpec {
     /// Get fixed shape if all dimensions are fixed
     pub fn fixed_shape(&self) -> Option<Vec<usize>> {
         if self.is_fixed_shape() {
+            // We've already verified all dimensions have size in is_fixed_shape()
+            // Use unwrap_or(0) as defensive programming, though this should never happen
             Some(
                 self.dimensions
                     .iter()
-                    .map(|d| {
-                        d.size
-                            .map_err(|e| anyhow::anyhow!("Error: {}", e))? guarantees all dimensions have size")
-                    })
+                    .map(|d| d.size.unwrap_or(0))
                     .collect(),
             )
         } else {
@@ -476,7 +475,7 @@ impl ArrayData {
     }
 
     /// Transpose the array (reverse dimensions)
-    pub fn transpose(&self) -> ArrayData {
+    pub fn transpose(&self) -> Result<ArrayData, Box<dyn std::error::Error>> {
         let mut new_spec = self.spec.clone();
         new_spec.dimensions.reverse();
 
@@ -493,15 +492,15 @@ impl ArrayData {
 
             let new_flat = new_spec
                 .indices_to_flat(&transposed_indices, &new_shape)
-                .map_err(|e| anyhow::anyhow!("transposed indices should always be valid": {}, e))?;
+                .map_err(|e| anyhow::anyhow!("transposed indices should always be valid: {}", e))?;
             new_data[new_flat] = self.data[i].clone();
         }
 
-        ArrayData {
+        Ok(ArrayData {
             spec: new_spec,
             shape: new_shape,
             data: new_data,
-        }
+        })
     }
 }
 
@@ -616,7 +615,7 @@ mod tests {
     }
 
     #[test]
-    fn test_array_indexing() {
+    fn test_array_indexing() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("float")
             .with_dimension(ArrayDimension::fixed("x", 3))
             .with_dimension(ArrayDimension::fixed("y", 4));
@@ -624,22 +623,22 @@ mod tests {
         // Row-major indexing
         assert_eq!(
             spec.indices_to_flat(&[0, 0], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             0
         );
         assert_eq!(
             spec.indices_to_flat(&[0, 1], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             1
         );
         assert_eq!(
             spec.indices_to_flat(&[1, 0], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             4
         );
         assert_eq!(
             spec.indices_to_flat(&[2, 3], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             11
         );
 
@@ -653,31 +652,32 @@ mod tests {
         assert_eq!(
             col_spec
                 .indices_to_flat(&[0, 0], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             0
         );
         assert_eq!(
             col_spec
                 .indices_to_flat(&[1, 0], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             1
         );
         assert_eq!(
             col_spec
                 .indices_to_flat(&[0, 1], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             3
         );
         assert_eq!(
             col_spec
                 .indices_to_flat(&[2, 3], &[3, 4])
-                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should convert to flat index: {}", e))?,
             11
         );
+        Ok(())
     }
 
     #[test]
-    fn test_array_data() {
+    fn test_array_data() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer")
             .with_dimension(ArrayDimension::fixed("x", 2))
             .with_dimension(ArrayDimension::fixed("y", 3));
@@ -685,61 +685,62 @@ mod tests {
         let data = vec![json!(1), json!(2), json!(3), json!(4), json!(5), json!(6)];
 
         let array =
-            ArrayData::new(spec, vec![2, 3], data).map_err(|e| anyhow::anyhow!("test data should create valid array": {}, e))?;
+            ArrayData::new(spec, vec![2, 3], data).map_err(|e| anyhow::anyhow!("test data should create valid array: {}", e))?;
 
         assert_eq!(
             array
                 .get(&[0, 0])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(1)
         );
         assert_eq!(
             array
                 .get(&[0, 2])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(3)
         );
         assert_eq!(
             array
                 .get(&[1, 1])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(5)
         );
 
         // Test slicing
         let slice = array
             .slice(0, 1)
-            .map_err(|e| anyhow::anyhow!("valid slice operation should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("valid slice operation should succeed: {}", e))?;
         assert_eq!(slice.shape, vec![3]);
         assert_eq!(slice.data, vec![json!(4), json!(5), json!(6)]);
 
         // Test reshape
         let reshaped = array
             .reshape(vec![3, 2])
-            .map_err(|e| anyhow::anyhow!("reshape with same total size should succeed": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("reshape with same total size should succeed: {}", e))?;
         assert_eq!(reshaped.shape, vec![3, 2]);
         assert_eq!(
             reshaped
                 .get(&[0, 0])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(1)
         );
         assert_eq!(
             reshaped
                 .get(&[0, 1])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(2)
         );
         assert_eq!(
             reshaped
                 .get(&[1, 0])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(3)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_array_transpose() {
+    fn test_array_transpose() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer")
             .with_dimension(ArrayDimension::fixed("x", 2))
             .with_dimension(ArrayDimension::fixed("y", 3));
@@ -747,33 +748,34 @@ mod tests {
         let data = vec![json!(1), json!(2), json!(3), json!(4), json!(5), json!(6)];
 
         let array = ArrayData::new(spec, vec![2, 3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - transpose test": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("test data should create valid array - transpose test: {}", e))?;
         let transposed = array.transpose();
 
         assert_eq!(transposed.shape, vec![3, 2]);
         assert_eq!(
             transposed
                 .get(&[0, 0])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(1)
         );
         assert_eq!(
             transposed
                 .get(&[1, 0])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(2)
         );
         assert_eq!(
             transposed
                 .get(&[0, 1])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(4)
         );
         assert_eq!(
             transposed
                 .get(&[2, 1])
-                .map_err(|e| anyhow::anyhow!("valid indices should return value": {}, e))?,
+                .map_err(|e| anyhow::anyhow!("valid indices should return value: {}", e))?,
             &json!(6)
         );
+        Ok(())
     }
 }

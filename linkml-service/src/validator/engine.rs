@@ -1,6 +1,6 @@
 //! Main validation engine
 
-use crate::performance::profiling::global_profiler;
+use crate::performance::profiling::Profiler;
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::SchemaSettings,
@@ -8,7 +8,8 @@ use linkml_core::{
 };
 use serde_json::Value;
 use std::sync::Arc;
-use std::time::Instant;
+use timestamp_core::SyncTimestampService;
+
 
 use super::{
     buffer_pool::ValidationBufferPools,
@@ -17,7 +18,6 @@ use super::{
     conditional_validator::ConditionalValidator,
     context::ValidationContext,
     default_applier::DefaultApplier,
-    pattern_validator::PatternValidator,
     recursion_checker::{RecursionTracker, check_recursion},
     report::{ValidationIssue, ValidationReport},
     validators::{Validator, ValidatorRegistry},
@@ -129,6 +129,8 @@ pub struct ValidationEngine {
     registry: ValidatorRegistry,
     compiled_cache: Option<Arc<CompiledValidatorCache>>,
     buffer_pools: Arc<ValidationBufferPools>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
+    profiler: Arc<Profiler>,
 }
 
 impl ValidationEngine {
@@ -140,12 +142,43 @@ impl ValidationEngine {
     pub fn new(schema: &SchemaDefinition) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
+        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
+        let profiler = Arc::new(Profiler::new(timestamp_service.clone()));
 
         Ok(Self {
             schema,
             registry,
             compiled_cache: None,
             buffer_pools: Arc::new(ValidationBufferPools::new()),
+            timestamp_service,
+            profiler,
+        })
+    }
+
+    /// Create a new validation engine with injected timestamp service (factory pattern compliant)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if validator registry creation fails
+    pub fn with_timestamp_service<T>(
+        schema: &SchemaDefinition,
+        timestamp_service: Arc<T>,
+    ) -> Result<Self>
+    where
+        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+    {
+        let schema = Arc::new(schema.clone());
+        let registry = ValidatorRegistry::new(&schema)?;
+
+        let profiler = Arc::new(Profiler::new(timestamp_service.clone()));
+
+        Ok(Self {
+            schema,
+            registry,
+            compiled_cache: None,
+            buffer_pools: Arc::new(ValidationBufferPools::new()),
+            timestamp_service,
+            profiler,
         })
     }
 
@@ -160,12 +193,39 @@ impl ValidationEngine {
     ) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
+        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
 
         Ok(Self {
             schema,
             registry,
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
+            timestamp_service,
+        })
+    }
+
+    /// Create a new validation engine with cache and injected timestamp service (factory pattern compliant)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if validator registry creation fails
+    pub fn with_cache_and_timestamp<T>(
+        schema: &SchemaDefinition,
+        cache: Arc<CompiledValidatorCache>,
+        timestamp_service: Arc<T>,
+    ) -> Result<Self>
+    where
+        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+    {
+        let schema = Arc::new(schema.clone());
+        let registry = ValidatorRegistry::new(&schema)?;
+
+        Ok(Self {
+            schema,
+            registry,
+            compiled_cache: Some(cache),
+            buffer_pools: Arc::new(ValidationBufferPools::new()),
+            timestamp_service,
         })
     }
 
@@ -184,7 +244,7 @@ impl ValidationEngine {
         data: &Value,
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
-        let profiler = global_profiler();
+        let profiler = &self.profiler;
 
         // Merge options with schema settings
         let options = profiler.time("validate.merge_options", || {
@@ -215,8 +275,9 @@ impl ValidationEngine {
         class_name: &str,
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
-        let profiler = global_profiler();
-        let start = Instant::now();
+        let profiler = &self.profiler;
+        let start = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
 
         // Merge options with schema settings
         let options = profiler.time("validate_as_class.merge_options", || {
@@ -253,7 +314,11 @@ impl ValidationEngine {
         .await?;
 
         // Update statistics
-        report.stats.duration_ms = start.elapsed().as_millis().try_into().unwrap_or(u64::MAX);
+        let end = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+        let duration = end.duration_since(start)
+            .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?;
+        report.stats.duration_ms = duration.as_millis().try_into().unwrap_or(u64::MAX);
         report.stats.total_validated = 1; // For now, we validate one root object
 
         // Sort issues by severity and path
@@ -357,7 +422,8 @@ impl ValidationEngine {
                     validator
                 } else {
                     // Compile and cache
-                    let start = Instant::now();
+                    let compile_start = self.timestamp_service.system_time()
+                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
                     let validator = CompiledValidator::compile_class(
                         &self.schema,
                         class_name,
@@ -365,8 +431,11 @@ impl ValidationEngine {
                         &compilation_options,
                     )?;
 
-                    let _compilation_time: u64 =
-                        start.elapsed().as_millis().try_into().unwrap_or(u64::MAX);
+                    let compile_end = self.timestamp_service.system_time()
+                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+                    let _compilation_time: u64 = compile_end.duration_since(compile_start)
+                        .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?
+                        .as_millis().try_into().unwrap_or(u64::MAX);
 
                     // Store in cache
                     cache.put(cache_key, validator).await?;
@@ -545,7 +614,7 @@ impl ValidationEngine {
         // Debug: Log slot being validated
         eprintln!("DEBUG ValidationEngine: Validating slot '{}' with pattern: {:?}",
                  slot_def.name, slot_def.pattern);
-        let profiler = global_profiler();
+        let profiler = &self.profiler;
 
         // Get validators for this slot
         let validators = profiler.time("slot_validation.get_validators", || {
@@ -624,7 +693,8 @@ impl ValidationEngine {
         class_name: &str,
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
-        let start = Instant::now();
+        let start = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
         let options = options.unwrap_or_default();
 
         // Check that the class exists
@@ -690,7 +760,11 @@ impl ValidationEngine {
             }
         }
 
-        report.stats.duration_ms = start.elapsed().as_millis() as u64;
+        let end = self.timestamp_service.system_time()
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+        let duration = end.duration_since(start)
+            .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?;
+        report.stats.duration_ms = duration.as_millis() as u64;
         Ok(report)
     }
 

@@ -573,7 +573,7 @@ impl SchemaDiff {
     }
 
     /// Detect breaking changes
-    fn detect_breaking_changes(&self, _result: &DiffResult) {
+    fn detect_breaking_changes(&self, result: &DiffResult) {
         // Already handled during comparison
         // Additional breaking change detection could go here
     }
@@ -852,14 +852,14 @@ mod tests {
         schema2
             .classes
             .get_mut("Person")
-            .map_err(|e| anyhow::anyhow!("Person class should exist": {}, e))?
+            .map_err(|e| anyhow::anyhow!("Person class should exist: {}", e))?
             .slots
             .push("email".to_string());
 
         let differ = SchemaDiff::new(DiffOptions::default());
         let result = differ
             .diff(&schema1, &schema2)
-            .map_err(|e| anyhow::anyhow!("should diff schemas": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should diff schemas: {}", e))?;
 
         assert_eq!(result.added_classes, vec!["Car"]);
         assert!(result.removed_classes.is_empty());

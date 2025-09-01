@@ -146,7 +146,7 @@ pub struct CompiledValidatorCache {
     max_validators: usize,
 
     /// Maximum memory usage in bytes
-    _max_memory_bytes: usize,
+    max_memory_bytes: usize,
 
     /// Optional `RootReal` `CacheService` integration
     cache_service: Option<Arc<dyn CacheService>>,
@@ -172,7 +172,7 @@ impl CompiledValidatorCache {
             local_cache: Arc::new(RwLock::new(HashMap::new())),
             stats: Arc::new(RwLock::new(CacheStats::default())),
             max_validators,
-            _max_memory_bytes: max_memory_bytes,
+            max_memory_bytes: max_memory_bytes,
             cache_service: None,
         }
     }
@@ -394,12 +394,12 @@ mod tests {
 
         // Compile and cache
         let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, &options)
-            .map_err(|e| anyhow::anyhow!("should compile validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should compile validator: {}", e))?;
 
         cache
             .put(key.clone(), validator)
             .await
-            .map_err(|e| anyhow::anyhow!("should cache validator": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should cache validator: {}", e))?;
 
         // Cache hit
         assert!(cache.get(&key).await.is_some());
@@ -424,12 +424,12 @@ mod tests {
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator =
                 CompiledValidator::compile_class(&schema, &class.name, &class, &options)
-                    .map_err(|e| anyhow::anyhow!("should compile validator": {}, e))?;
+                    .map_err(|e| anyhow::anyhow!("should compile validator: {}", e))?;
 
             cache
                 .put(key, validator)
                 .await
-                .map_err(|e| anyhow::anyhow!("should cache validator": {}, e))?;
+                .map_err(|e| anyhow::anyhow!("should cache validator: {}", e))?;
         }
 
         assert_eq!(cache.stats().cached_validators, 2);

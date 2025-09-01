@@ -533,7 +533,7 @@ enums:
 //         monitor,
 //     )
 //     .await
-//     .unwrap()
+//     .expect("Test operation failed")
 // }
 
 // TODO: Fix service factory API - requires DBMS and Timeout services
@@ -549,7 +549,7 @@ async fn test_biomedical_research_workflow() {
     let schema = service
         .load_schema_str(BIOMEDICAL_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     println!("Schema loaded in {:?}", start.elapsed());
 
     // Create test data representing a research study
@@ -620,7 +620,7 @@ async fn test_biomedical_research_workflow() {
     });
 
     // Add more participants to meet minimum requirement
-    let mut participants = study_data["participants"].as_array().unwrap().clone();
+    let mut participants = study_data["participants"].as_array().expect("Test operation failed").clone();
     for i in 3..=10 {
         participants.push(json!({
             "id": format!("PAT{:06}", i),
@@ -632,7 +632,7 @@ async fn test_biomedical_research_workflow() {
         }));
     }
 
-    let mut complete_study = study_data.as_object().unwrap().clone();
+    let mut complete_study = study_data.as_object().expect("Test operation failed").clone();
     complete_study["participants"] = json!(participants);
 
     // Validate the complete research study
@@ -641,7 +641,7 @@ async fn test_biomedical_research_workflow() {
     let report = service
         .validate(&json!(complete_study), &schema, "ResearchStudy")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     println!("Validation completed in {:?}", validation_start.elapsed());
 
     assert!(report.valid, "Study validation failed: {:?}", report.errors);
@@ -658,9 +658,9 @@ async fn test_biomedical_research_workflow() {
             Some("LabResult"),
         )
         .await
-        .unwrap();
+        .expect("Test operation failed");
     println!("Lab result category: {}", expr_result);
-    assert_eq!(expr_result.as_str().unwrap(), "High");
+    assert_eq!(expr_result.as_str().expect("Test operation failed"), "High");
 
     // Test rule validation for minors requiring medical history
     println!("\nTesting rule validation for minors...");
@@ -676,7 +676,7 @@ async fn test_biomedical_research_workflow() {
     let minor_report = service
         .validate(&minor_without_history, &schema, "Patient")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !minor_report.valid,
         "Minor without medical history should fail validation"
@@ -685,7 +685,7 @@ async fn test_biomedical_research_workflow() {
 
     // TODO: Fix generator API - Generate code for multiple languages
     println!("\nGenerating code for biomedical schema...");
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // TODO: Fix generator API
     /*
@@ -696,7 +696,7 @@ async fn test_biomedical_research_workflow() {
         package_name: Some("biomedical".to_string()),
         ..Default::default()
     };
-    service.generate_code(&schema, py_config).await.unwrap();
+    service.generate_code(&schema, py_config).await.expect("Test operation failed");
     assert!(temp_dir.path().join("biomedical.py").exists());
     println!("✓ Python dataclass generated");
 
@@ -706,7 +706,7 @@ async fn test_biomedical_research_workflow() {
         output_path: Some(temp_dir.path().join("biomedical.ts")),
         ..Default::default()
     };
-    service.generate_code(&schema, ts_config).await.unwrap();
+    service.generate_code(&schema, ts_config).await.expect("Test operation failed");
     assert!(temp_dir.path().join("biomedical.ts").exists());
     println!("✓ TypeScript interfaces generated");
     */
@@ -727,7 +727,7 @@ async fn test_multi_tenant_config_validation() {
     let schema = service
         .load_schema_str(CONFIG_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test valid tenant configuration
     let valid_tenant = json!({
@@ -765,7 +765,7 @@ async fn test_multi_tenant_config_validation() {
     let report = service
         .validate(&valid_tenant, &schema, "TenantConfig")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "Valid tenant config failed: {:?}",
@@ -791,7 +791,7 @@ async fn test_multi_tenant_config_validation() {
     let invalid_report = service
         .validate(&invalid_tenant, &schema, "TenantConfig")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !invalid_report.valid,
         "Should fail - advanced analytics needs higher rate limits"
@@ -808,8 +808,8 @@ async fn test_multi_tenant_config_validation() {
             Some("ApiKeyConfig"),
         )
         .await
-        .unwrap();
-    assert_eq!(is_admin.as_bool().unwrap(), true);
+        .expect("Test operation failed");
+    assert_eq!(is_admin.as_bool().expect("Test operation failed"), true);
     println!("✓ Expression evaluation for API key scopes");
 }
 
@@ -818,13 +818,13 @@ async fn test_api_code_generation_workflow() {
     println!("=== Testing API Code Generation Workflow ===");
 
     let service = create_test_service().await;
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Load API schema
     let schema = service
         .load_schema_str(API_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // TODO: Fix generator API - Generate code for multiple targets
     /*
@@ -847,13 +847,13 @@ async fn test_api_code_generation_workflow() {
         };
 
         let start = Instant::now();
-        service.generate_code(&schema, config).await.unwrap();
+        service.generate_code(&schema, config).await.expect("Test operation failed");
         println!("✓ Generated {} in {:?}", filename, start.elapsed());
 
         // Verify file exists and has content
         let file_path = temp_dir.path().join(filename);
         assert!(file_path.exists());
-        let content = fs::read_to_string(&file_path).unwrap();
+        let content = fs::read_to_string(&file_path).expect("Test operation failed");
         assert!(
             content.len() > 100,
             "Generated file should have substantial content"
@@ -878,7 +878,7 @@ async fn test_api_code_generation_workflow() {
         }
     });
 
-    let validation_report = service.validate(&user_data, &schema, "User").await.unwrap();
+    let validation_report = service.validate(&user_data, &schema, "User").await.expect("Test operation failed");
     assert!(validation_report.valid);
     println!("✓ API data model validation passed");
 }
@@ -893,13 +893,13 @@ async fn test_schema_view_introspection() {
     let schema = service
         .load_schema_str(BIOMEDICAL_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create SchemaView for introspection
-    let view = SchemaView::new(schema.clone()).unwrap();
+    let view = SchemaView::new(schema.clone()).expect("Test operation failed");
 
     // Test class hierarchy
-    let patient_ancestors = view.class_ancestors("Patient").unwrap();
+    let patient_ancestors = view.class_ancestors("Patient").expect("Test operation failed");
     assert!(patient_ancestors.contains(&"NamedEntity".to_string()));
     println!(
         "✓ Class hierarchy: Patient inherits from {:?}",
@@ -907,7 +907,7 @@ async fn test_schema_view_introspection() {
     );
 
     // Test slot inheritance
-    let patient_slots = view.class_slots("Patient").unwrap();
+    let patient_slots = view.class_slots("Patient").expect("Test operation failed");
     assert!(patient_slots.contains(&"id".to_string())); // Inherited from NamedEntity
     assert!(patient_slots.contains(&"age".to_string())); // Direct slot
     println!(
@@ -916,17 +916,17 @@ async fn test_schema_view_introspection() {
     );
 
     // Test induced slots (with facets applied)
-    let induced_id = view.induced_slot("id", "Patient").unwrap();
+    let induced_id = view.induced_slot("id", "Patient").expect("Test operation failed");
     assert_eq!(induced_id.identifier, Some(true));
     assert_eq!(induced_id.required, Some(true));
     println!("✓ Induced slot properties correctly computed");
 
     // Test schema statistics
     // TODO: get_statistics() not implemented yet
-    let classes = view.all_classes().unwrap();
-    let slots = view.all_slots().unwrap();
-    let enums = view.all_enums().unwrap();
-    let types = view.all_types().unwrap();
+    let classes = view.all_classes().expect("Test operation failed");
+    let slots = view.all_slots().expect("Test operation failed");
+    let enums = view.all_enums().expect("Test operation failed");
+    let types = view.all_types().expect("Test operation failed");
     println!("\nSchema statistics:");
     println!("  - Classes: {}", classes.len());
     println!("  - Slots: {}", slots.len());
@@ -982,17 +982,17 @@ classes:
     let base_schema = service
         .load_schema_str(base_schema_str, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let ext_schema = service
         .load_schema_str(extension_schema_str, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Merge schemas
     let merged = service
         .merge_schemas(vec![base_schema, ext_schema])
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Validate data against merged schema
     let data = json!({
@@ -1004,7 +1004,7 @@ classes:
     let report = service
         .validate(&data, &merged, "ExtendedEntity")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "Merged schema validation failed: {:?}",
@@ -1023,7 +1023,7 @@ async fn test_performance_large_dataset() {
     let schema = service
         .load_schema_str(API_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Generate large dataset
     let num_records = 1000;
@@ -1052,7 +1052,7 @@ async fn test_performance_large_dataset() {
     let mut valid_count = 0;
 
     for user in &users {
-        let report = service.validate(user, &schema, "User").await.unwrap();
+        let report = service.validate(user, &schema, "User").await.expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         }
@@ -1139,7 +1139,7 @@ classes:
     let schema = service
         .load_schema_str(schema_str, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test order with correct totals
     let valid_order = json!({
@@ -1167,7 +1167,7 @@ classes:
     let report = service
         .validate(&valid_order, &schema, "Order")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid, "Valid order failed: {:?}", report.errors);
     println!("✓ Custom validation with business logic passed");
 }
@@ -1223,11 +1223,11 @@ classes:
     let schema1 = service
         .load_schema_str(schema_v1, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let schema2 = service
         .load_schema_str(schema_v2, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Data that's valid for v1
     let v1_data = json!({
@@ -1240,11 +1240,11 @@ classes:
     let v1_report1 = service
         .validate(&v1_data, &schema1, "Product")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let v1_report2 = service
         .validate(&v1_data, &schema2, "Product")
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     assert!(v1_report1.valid, "V1 data should be valid for V1 schema");
     assert!(
@@ -1264,7 +1264,7 @@ classes:
     let v2_report = service
         .validate(&v2_data, &schema2, "Product")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(v2_report.valid, "V2 data should be valid for V2 schema");
 
     println!("✓ Schema evolution maintains backward compatibility");
@@ -1275,13 +1275,13 @@ async fn test_end_to_end_clinical_trial_system() {
     println!("=== Testing End-to-End Clinical Trial System ===");
 
     let service = create_test_service().await;
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Load biomedical schema
     let schema = service
         .load_schema_str(BIOMEDICAL_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Simulate clinical trial workflow
     println!("\n1. Creating new research study...");
@@ -1299,21 +1299,21 @@ async fn test_end_to_end_clinical_trial_system() {
     let study_report = service
         .validate(&study, &schema, "ResearchStudy")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         study_report.valid,
         "New study should be valid in planning phase"
     );
 
     println!("2. Transitioning to active recruitment...");
-    let mut active_study = study.as_object().unwrap().clone();
+    let mut active_study = study.as_object().expect("Test operation failed").clone();
     active_study["status"] = json!("active");
 
     // Should fail - active studies need minimum participants
     let active_report = service
         .validate(&json!(active_study), &schema, "ResearchStudy")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         !active_report.valid,
         "Active study without participants should fail"
@@ -1345,7 +1345,7 @@ async fn test_end_to_end_clinical_trial_system() {
     let populated_report = service
         .validate(&json!(active_study), &schema, "ResearchStudy")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         populated_report.valid,
         "Active study with participants should be valid"
@@ -1372,7 +1372,7 @@ async fn test_end_to_end_clinical_trial_system() {
     let complete_report = service
         .validate(&json!(active_study), &schema, "ResearchStudy")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(complete_report.valid, "Complete study should be valid");
 
     println!("5. Generating compliance reports...");
@@ -1393,15 +1393,15 @@ async fn test_end_to_end_clinical_trial_system() {
             include_validation: true,
             ..Default::default()
         };
-        service.generate_code(&schema, config).await.unwrap();
+        service.generate_code(&schema, config).await.expect("Test operation failed");
         println!("  ✓ Generated {}", filename);
     }
     */
 
     // Create SchemaView for analysis
-    let view = SchemaView::new(schema).unwrap();
+    let view = SchemaView::new(schema).expect("Test operation failed");
     // TODO: get_statistics() not implemented yet
-    let classes = view.all_classes().unwrap();
+    let classes = view.all_classes().expect("Test operation failed");
 
     println!("\n6. Study Schema Analysis:");
     println!("  - Total classes: {}", classes.len());
@@ -1418,7 +1418,7 @@ async fn test_concurrent_validation_performance() {
     let schema = service
         .load_schema_str(API_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Create test data
     let num_batches = 10;
@@ -1454,7 +1454,7 @@ async fn test_concurrent_validation_performance() {
 
     for batch in &batches {
         for user in batch {
-            let report = service.validate(user, &schema, "User").await.unwrap();
+            let report = service.validate(user, &schema, "User").await.expect("Test operation failed");
             if report.valid {
                 seq_valid += 1;
             }
@@ -1477,7 +1477,7 @@ async fn test_concurrent_validation_performance() {
                 let report = service_clone
                     .validate(&user, &schema_clone, "User")
                     .await
-                    .unwrap();
+                    .expect("Test operation failed");
                 if report.valid {
                     valid += 1;
                 }
@@ -1489,7 +1489,7 @@ async fn test_concurrent_validation_performance() {
 
     let mut conc_valid = 0;
     for handle in handles {
-        conc_valid += handle.await.unwrap();
+        conc_valid += handle.await.expect("Test operation failed");
     }
     let conc_duration = conc_start.elapsed();
 
@@ -1581,11 +1581,11 @@ enums:
     let schema = service
         .load_schema_str(schema_str, SchemaFormat::Yaml)
         .await
-        .unwrap();
-    let view = SchemaView::new(schema.clone()).unwrap();
+        .expect("Test operation failed");
+    let view = SchemaView::new(schema.clone()).expect("Test operation failed");
 
     // Test inheritance chain
-    let doc_slots = view.class_slots("Document").unwrap();
+    let doc_slots = view.class_slots("Document").expect("Test operation failed");
     let slot_names: Vec<_> = doc_slots.iter().map(|s| s.as_str()).collect();
 
     assert!(slot_names.contains(&"id"), "Should inherit id from Entity");
@@ -1606,7 +1606,7 @@ enums:
     println!("✓ Document class has all inherited slots: {:?}", slot_names);
 
     // Test deep inheritance
-    let secure_doc_slots = view.class_slots("SecureDocument").unwrap();
+    let secure_doc_slots = view.class_slots("SecureDocument").expect("Test operation failed");
     assert!(
         secure_doc_slots.len() > doc_slots.len(),
         "SecureDocument should have more slots"
@@ -1630,7 +1630,7 @@ enums:
     let report = service
         .validate(&secure_doc, &schema, "SecureDocument")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "SecureDocument validation failed: {:?}",
@@ -1676,13 +1676,13 @@ async fn test_configuration_management_system() {
         config,
     )
     .await
-    .unwrap();
+    .expect("Test operation failed");
 
     // Load configuration schema
     let schema = service
         .load_schema_str(CONFIG_SCHEMA, SchemaFormat::Yaml)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Test caching behavior
     let tenant1 = json!({
@@ -1700,7 +1700,7 @@ async fn test_configuration_management_system() {
     let report1 = service
         .validate(&tenant1, &schema, "TenantConfig")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let duration1 = start1.elapsed();
 
     // Second validation should be faster due to cache
@@ -1708,7 +1708,7 @@ async fn test_configuration_management_system() {
     let report2 = service
         .validate(&tenant1, &schema, "TenantConfig")
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let duration2 = start2.elapsed();
 
     assert!(report1.valid && report2.valid);

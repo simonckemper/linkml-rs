@@ -182,12 +182,12 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[tokio::test]
-    async fn test_hot_reload_creation() {
+    async fn test_hot_reload_creation() -> Result<(), Box<dyn std::error::Error>> {
         // Copy default config to temp file
-        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file": {}, e))?;
+        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file: {}", e))?;
         let config_content =
-            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config": {}, e))?;
-        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config": {}, e))?;
+            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config: {}", e))?;
+        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config: {}", e))?;
 
         // Create hot reloader
         let reloader = ConfigHotReloader::new(temp_file.path());
@@ -196,23 +196,24 @@ mod tests {
         let reloader = reloader?;
         let config = reloader.get_config();
         assert_eq!(config.typedb.default_database, "linkml");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_hot_reload_watching() {
+    async fn test_hot_reload_watching() -> Result<(), Box<dyn std::error::Error>> {
         // Copy default config to temp file
-        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file": {}, e))?;
+        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file: {}", e))?;
         let config_content =
-            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config": {}, e))?;
-        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config": {}, e))?;
+            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config: {}", e))?;
+        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config: {}", e))?;
 
         // Create and start hot reloader
         let mut reloader =
-            ConfigHotReloader::new(temp_file.path()).map_err(|e| anyhow::anyhow!("should create reloader": {}, e))?;
+            ConfigHotReloader::new(temp_file.path()).map_err(|e| anyhow::anyhow!("should create reloader: {}", e))?;
         reloader
             .start_watching()
             .await
-            .map_err(|e| anyhow::anyhow!("should start watching": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should start watching: {}", e))?;
 
         // Get initial config
         let initial_config = reloader.get_config();
@@ -224,7 +225,7 @@ mod tests {
         // Modify config file
         let mut modified_content = config_content.clone();
         modified_content = modified_content.replace("batch_size: 1000", "batch_size: 2000");
-        fs::write(temp_file.path(), modified_content).map_err(|e| anyhow::anyhow!("should write modified config": {}, e))?;
+        fs::write(temp_file.path(), modified_content).map_err(|e| anyhow::anyhow!("should write modified config: {}", e))?;
 
         // Wait a bit for file system events and check for update
         tokio::select! {
@@ -244,5 +245,6 @@ mod tests {
         }
 
         reloader.stop_watching();
+        Ok(())
     }
 }

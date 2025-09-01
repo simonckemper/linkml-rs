@@ -650,7 +650,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JavaScript": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate JavaScript: {}", e))?;
         assert!(output.contains("export class Person"));
         assert!(output.contains("constructor(data = {})"));
         assert!(output.contains("#validate(data)"));

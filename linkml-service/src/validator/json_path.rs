@@ -303,13 +303,11 @@ impl JsonNavigator {
         path: &str,
     ) -> LinkMLResult<Vec<(&'a Value, String)>> {
         let json_path = if let Some(cached) = self.path_cache.get(path) {
-            cached
+            cached.clone()
         } else {
             let parsed = JsonPath::parse(path)?;
-            self.path_cache.insert(path.to_string(), parsed);
-            self.path_cache
-                .get(path)
-                .cloned()
+            self.path_cache.insert(path.to_string(), parsed.clone());
+            parsed
         };
 
         Ok(json_path.navigate(value))
@@ -347,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn test_navigation() {
+    fn test_navigation() -> Result<(), Box<dyn std::error::Error>> {
         let data = json!({
             "name": "John",
             "age": 30,
@@ -357,22 +355,23 @@ mod tests {
             ]
         });
 
-        let path = JsonPath::parse("$.name").map_err(|e| anyhow::anyhow!("should parse valid path": {}, e))?;
+        let path = JsonPath::parse("$.name").map_err(|e| anyhow::anyhow!("should parse valid path: {}", e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("John"));
 
-        let path = JsonPath::parse("$.items[0].name").map_err(|e| anyhow::anyhow!("should parse valid path with index": {}, e))?;
+        let path = JsonPath::parse("$.items[0].name").map_err(|e| anyhow::anyhow!("should parse valid path with index: {}", e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("Item 1"));
 
         let path =
-            JsonPath::parse("$.items[*].name").map_err(|e| anyhow::anyhow!("should parse valid path with wildcard": {}, e))?;
+            JsonPath::parse("$.items[*].name").map_err(|e| anyhow::anyhow!("should parse valid path with wildcard: {}", e))?;
         let results = path.navigate(&data);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].0, &json!("Item 1"));
         assert_eq!(results[1].0, &json!("Item 2"));
+        Ok(())
     }
 
     #[test]
@@ -387,14 +386,14 @@ mod tests {
     }
 
     #[test]
-    fn test_navigator_caching() {
+    fn test_navigator_caching() -> Result<(), Box<dyn std::error::Error>> {
         let data = json!({"name": "test"});
         let mut navigator = JsonNavigator::new();
 
         // First call parses the path
         let result1 = navigator
             .navigate(&data, "$.name")
-            .map_err(|e| anyhow::anyhow!("should navigate to name": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should navigate to name: {}", e))?;
         assert_eq!(result1.len(), 1);
 
         // Second call uses cached path
@@ -405,5 +404,6 @@ mod tests {
 
         // Verify cache contains the path
         assert_eq!(navigator.path_cache.len(), 1);
+        Ok(())
     }
 }

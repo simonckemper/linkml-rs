@@ -203,7 +203,7 @@ field1:
             let _ = handle.join();
         }
 
-        let final_data = data.lock().unwrap();
+        let final_data = data.lock().expect("Test operation failed");
         assert_eq!(final_data.len(), 6);
     }
 

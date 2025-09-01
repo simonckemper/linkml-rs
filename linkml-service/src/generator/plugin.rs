@@ -214,7 +214,7 @@ impl GeneratorPlugin for CustomGeneratorPlugin {
         &self.metadata
     }
 
-    async fn initialize(&mut self, _config: &PluginConfig) -> Result<(), PluginError> {
+    async fn initialize(&mut self, config: &PluginConfig) -> Result<(), PluginError> {
         // Perform any initialization needed
         Ok(())
     }
@@ -258,7 +258,7 @@ mod tests {
             vec![".test"]
         }
 
-        fn generate(&self, _schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
             Ok(String::new())
         }
 
@@ -293,7 +293,7 @@ mod tests {
         manager
             .register_plugin(plugin)
             .await
-            .map_err(|e| anyhow::anyhow!("should register plugin": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should register plugin: {}", e))?;
 
         // Verify plugin is loaded
         assert_eq!(manager.list_plugins().len(), 1);

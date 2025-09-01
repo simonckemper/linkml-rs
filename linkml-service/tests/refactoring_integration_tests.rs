@@ -171,7 +171,7 @@ classes:
 
     let files = fs_adapter.list_files(&sub_dir).await?;
     assert_eq!(files.len(), 1);
-    assert_eq!(files[0].file_name().unwrap(), "schema2.yaml");
+    assert_eq!(files[0].file_name().expect("Test operation failed"), "schema2.yaml");
 
     Ok(())
 }
@@ -308,7 +308,7 @@ async fn test_expression_engine_no_panics() -> Result<(), Box<dyn std::error::Er
     });
 
     let result = engine.evaluate("base_value * 2 + 10", &data)?;
-    assert_eq!(result.as_f64().unwrap(), 20.0);
+    assert_eq!(result.as_f64().expect("Test operation failed"), 20.0);
 
     // Test invalid expression (should not panic)
     let invalid_result = engine.evaluate("undefined_var + 1", &data);
@@ -373,7 +373,7 @@ slots:
 
     // Verify schema still works correctly
     assert_eq!(schema_v2.name.as_ref(), "MemoryTest");
-    assert_eq!(schema_v2.default_prefix.as_ref().unwrap().as_ref(), "ex");
+    assert_eq!(schema_v2.default_prefix.as_ref().expect("Test operation failed").as_ref(), "ex");
 
     // Check that repeated strings share memory
     let class_names: Vec<_> = schema_v2

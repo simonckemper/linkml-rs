@@ -715,7 +715,7 @@ mod tests {
         let mut runner = StressTestRunner::new(config);
         runner.add_operation(Arc::new(TestOperation));
 
-        let results = runner.run().await.unwrap();
+        let results = runner.run().await.expect("Test operation failed");
 
         assert_eq!(results.config.total_operations, 10);
         assert!(results.success_rate > 0.9);

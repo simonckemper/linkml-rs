@@ -406,7 +406,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JSON-LD context": {}, e))?;
+            .map_err(|e| anyhow::anyhow!("should generate JSON-LD context: {}", e))?;
 
         // Verify key elements
         assert!(result.contains("@context"));

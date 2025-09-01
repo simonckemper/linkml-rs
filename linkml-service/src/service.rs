@@ -201,13 +201,24 @@ where
         let duration_ms = (end_time - start_time) / 1_000_000; // Convert ns to ms
 
         // Register service with monitoring system
-        let _ = self
+        if let Err(e) = self
             .monitor
             .register_service_for_monitoring("linkml-service")
-            .await;
+            .await
+        {
+            self.logger
+                .warn(&format!("Failed to register service for monitoring: {}", e))
+                .await
+                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+        }
 
         // Check initial health status
-        let _ = self.monitor.check_service_health("linkml-service").await;
+        if let Err(e) = self.monitor.check_service_health("linkml-service").await {
+            self.logger
+                .warn(&format!("Initial health check failed: {}", e))
+                .await
+                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+        }
 
         self.logger
             .info(&format!(
@@ -262,7 +273,12 @@ where
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
         // Initialize validator cache
-        let _ = self.validator_cache.clear().await;
+        if let Err(e) = self.validator_cache.clear().await {
+            self.logger
+                .warn(&format!("Failed to clear validator cache during initialization: {}", e))
+                .await
+                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+        }
 
         // Pre-warm cache if configured
         // Check if we should pre-warm the cache service
@@ -277,9 +293,17 @@ where
                     .to_string(),
                 );
 
-                // Attempt to warm the cache (ignore errors as this is optional)
+                // Attempt to warm the cache (log errors but don't fail initialization)
                 let ttl = Some(cache_core::CacheTtl::Seconds(3600)); // 1 hour TTL
-                let _ = self.cache.set(&cache_key, &warmup_value, ttl).await;
+                if let Err(e) = self.cache.set(&cache_key, &warmup_value, ttl).await {
+                    if let Err(log_err) = self.logger
+                        .debug(&format!("Cache warming failed for key '{}': {}", cache_key, e))
+                        .await
+                    {
+                        // If even logging fails, we can't do much more
+                        eprintln!("Failed to log cache warming error: {}", log_err);
+                    }
+                }
             }
         }
 
@@ -341,20 +365,26 @@ where
 
                         // Record health check
                         if let Ok(now) = timestamp.now_utc().await {
-                            let _ = logger
+                            if let Err(e) = logger
                                 .debug(&format!("Health check #{} at {}", iteration_count, now))
-                                .await;
+                                .await
+                            {
+                                eprintln!("Failed to log health check: {}", e);
+                            }
                         }
 
                         // Monitor cache sizes and log if too large
                         let schema_count = schema_cache.read().len();
                         if schema_count > 100 {
-                            let _ = logger
+                            if let Err(e) = logger
                                 .warn(&format!(
                                     "Schema cache has {} entries, consider cleanup",
                                     schema_count
                                 ))
-                                .await;
+                                .await
+                            {
+                                eprintln!("Failed to log cache size warning: {}", e);
+                            }
                         }
 
                         // Check memory usage and cleanup if needed (every 5 iterations = 5 minutes)
@@ -366,14 +396,25 @@ where
                             // Clear validator cache if it's grown too large
                             let cache_stats = validator_cache.stats();
                             if cache_stats.cached_validators > 1000 {
-                                let _ = validator_cache.clear().await;
-                                let _ = logger
-                                    .info("Cleared validator cache due to size limit")
-                                    .await;
+                                if let Err(e) = validator_cache.clear().await {
+                                    if let Err(log_err) = logger
+                                        .error(&format!("Failed to clear validator cache: {}", e))
+                                        .await
+                                    {
+                                        eprintln!("Failed to log cache clear error: {}", log_err);
+                                    }
+                                } else {
+                                    if let Err(e) = logger
+                                        .info("Cleared validator cache due to size limit")
+                                        .await
+                                    {
+                                        eprintln!("Failed to log cache cleanup: {}", e);
+                                    }
+                                }
 
                                 // Report cleanup to error handler for tracking
                                 let cleanup_msg = "Cache cleanup triggered due to size limit";
-                                let _ = error_handler
+                                if let Err(e) = error_handler
                                     .categorize_error(
                                         &LinkMLError::service(cleanup_msg),
                                         Some(ErrorContext::new(
@@ -381,7 +422,10 @@ where
                                             "cache_cleanup".to_string(),
                                         )),
                                     )
-                                    .await;
+                                    .await
+                                {
+                                    eprintln!("Failed to report cache cleanup to error handler: {}", e);
+                                }
                             }
                         }
 

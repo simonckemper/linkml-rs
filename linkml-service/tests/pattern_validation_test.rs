@@ -42,7 +42,7 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Debug: Check patterns in parsed schema
     eprintln!("DEBUG: Checking parsed schema slots:");
@@ -57,11 +57,11 @@ slots:
         "custom_date": "Fri, 31 Jan 2025"
     });
 
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("Test operation failed");
     let report = engine
         .validate_as_class(&valid_data, "DateRecord", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
 
     // Debug validation errors
     if !report.valid {
@@ -84,7 +84,7 @@ slots:
     let report = engine
         .validate_as_class(&invalid_data, "DateRecord", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 3); // All three fields invalid
 }
@@ -115,7 +115,7 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Valid semantic version strings
     let valid_data = json!({
@@ -125,7 +125,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_data, "EmailRecord", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test simpler version
@@ -136,7 +136,7 @@ slots:
 
     let report = validate_as_class(&schema, &simple_version, "EmailRecord", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(report.valid);
 }
 
@@ -161,7 +161,7 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Valid phone numbers in different formats
     let valid_data = json!({
@@ -175,7 +175,7 @@ slots:
 
     let report = validate_as_class(&schema, &valid_data, "PhoneDirectory", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     if !report.valid {
         println!("Validation failed!");
         for error in report.errors() {
@@ -195,7 +195,7 @@ slots:
 
     let report = validate_as_class(&schema, &mixed_data, "PhoneDirectory", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     assert!(!report.valid);
     assert_eq!(report.stats.error_count, 2); // Two invalid entries
 }
@@ -221,7 +221,7 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
 
     // Generate large array of items to test caching
     let mut items = Vec::new();
@@ -237,7 +237,7 @@ slots:
     let start = std::time::Instant::now();
     let report = validate_as_class(&schema, &data, "BulkData", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let first_duration = start.elapsed();
     assert!(report.valid);
 
@@ -245,7 +245,7 @@ slots:
     let start = std::time::Instant::now();
     let report = validate_as_class(&schema, &data, "BulkData", None)
         .await
-        .unwrap();
+        .expect("Test operation failed");
     let second_duration = start.elapsed();
     assert!(report.valid);
 

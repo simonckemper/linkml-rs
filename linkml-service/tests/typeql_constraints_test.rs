@@ -83,7 +83,7 @@ fn test_regex_pattern_constraints() {
     slot.pattern = Some(r#"^"[A-Z]+"$"#.to_string());
 
     let constraints = translator.translate_slot_constraints(&slot);
-    let regex_constraint = constraints.iter().find(|c| c.starts_with("regex")).unwrap();
+    let regex_constraint = constraints.iter().find(|c| c.starts_with("regex")).expect("Test operation failed");
     assert!(regex_constraint.contains(r#"\""#));
 }
 
@@ -101,7 +101,7 @@ fn test_range_constraints() {
 
     // Test float range with only minimum
     let mut slot = SlotDefinition::default();
-    slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).unwrap()));
+    slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).expect("Test operation failed")));
 
     let constraints = translator.translate_range_constraints(&slot);
     assert!(constraints.contains(&"range [0..)".to_string()));
@@ -172,7 +172,7 @@ fn test_validation_rule_generation() {
 
     let rule = translator.generate_validation_rule("Entity", "status", &slot);
     assert!(rule.is_some());
-    assert!(rule.unwrap().contains("StatusEnum"));
+    assert!(rule.expect("Test operation failed").contains("StatusEnum"));
 
     // Test complex pattern
     let mut slot = SlotDefinition::default();
@@ -181,7 +181,7 @@ fn test_validation_rule_generation() {
 
     let rule = translator.generate_validation_rule("Entity", "identifier", &slot);
     assert!(rule.is_some());
-    assert!(rule.unwrap().contains("Complex pattern"));
+    assert!(rule.expect("Test operation failed").contains("Complex pattern"));
 }
 
 #[test]

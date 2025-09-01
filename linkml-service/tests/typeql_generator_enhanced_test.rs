@@ -48,7 +48,7 @@ async fn test_basic_entity_generation() {
     person_class.slots = vec!["name".to_string(), "age".to_string()];
     schema.classes.insert("Person".to_string(), person_class);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check header
     assert!(content.contains("# TypeQL Schema generated from LinkML"));
@@ -92,7 +92,7 @@ async fn test_inheritance_generation() {
     person_class.is_a = Some("NamedEntity".to_string());
     schema.classes.insert("Person".to_string(), person_class);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check abstract type
     assert!(content.contains("named-entity sub entity, abstract"));
@@ -144,7 +144,7 @@ async fn test_relation_generation() {
     ];
     schema.classes.insert("Employment".to_string(), employment);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check relation definition
     assert!(content.contains("employment sub relation,"));
@@ -181,7 +181,7 @@ async fn test_constraint_generation() {
     person.slots = vec!["email".to_string(), "phone".to_string()];
     schema.classes.insert("Person".to_string(), person);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check pattern constraint
     assert!(content.contains("email sub attribute, value string, regex"));
@@ -225,7 +225,7 @@ async fn test_enum_generation() {
     entity.slots = vec!["status".to_string()];
     schema.classes.insert("Entity".to_string(), entity);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // For now, enums are represented as string attributes
     // In future, could use TypeDB 3.0 value restrictions
@@ -263,7 +263,7 @@ async fn test_mixin_generation() {
     document.mixins = vec!["Timestamped".to_string()];
     schema.classes.insert("Document".to_string(), document);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check mixin as abstract
     assert!(content.contains("timestamped sub entity, abstract"));
@@ -304,7 +304,7 @@ async fn test_unique_key_generation() {
     product.unique_keys = unique_keys_map;
     schema.classes.insert("Product".to_string(), product);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check for unique constraint rule
     assert!(content.contains("rule product-unique-product_key"));
@@ -340,7 +340,7 @@ async fn test_rule_generation() {
 
     schema.classes.insert("Person".to_string(), person);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check for rule generation
     assert!(content.contains("rule person-rule-minor-guardian"));
@@ -373,7 +373,7 @@ async fn test_custom_type_mapping() {
     result.slots = vec!["score".to_string()];
     schema.classes.insert("TestResult".to_string(), result);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Custom type should resolve to base type
     assert!(content.contains("score sub attribute, value double"));
@@ -430,7 +430,7 @@ async fn test_multi_way_relation() {
     ];
     schema.classes.insert("Enrollment".to_string(), enrollment);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Check multi-way relation
     assert!(content.contains("enrollment sub relation,"));
@@ -450,7 +450,7 @@ async fn test_migration_generation() {
     let generator = EnhancedTypeQLGenerator::new();
     let schema = create_test_schema();
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Generated content is a single string now
 
@@ -507,7 +507,7 @@ async fn test_complex_schema() {
     condition_slot.range = Some("Condition".to_string());
     schema.slots.insert("condition".to_string(), condition_slot);
 
-    let content = generator.generate(&schema).unwrap();
+    let content = generator.generate(&schema).expect("Test operation failed");
 
     // Verify complex inheritance and relations
     assert!(content.contains("entity sub entity, abstract"));

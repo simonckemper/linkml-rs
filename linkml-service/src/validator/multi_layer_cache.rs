@@ -446,8 +446,8 @@ impl MultiLayerCache {
 
     fn prefetch_related_validators(
         &self,
-        _key: &ValidatorCacheKey,
-        _validator: &CompiledValidator,
+        key: &ValidatorCacheKey,
+        validator: &CompiledValidator,
     ) {
         let _ = self; // Placeholder for future implementation
         // TODO: Implement prefetching logic based on validator dependencies

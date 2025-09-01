@@ -21,6 +21,7 @@ linkml-core = { path = "../linkml-core" }
 # RootReal service dependencies
 logger-core = { path = "../../logger/logger-core" }
 timestamp-core = { path = "../../timestamp/timestamp-core" }
+timestamp-service = { path = "../../timestamp/timestamp-service" }
 task-management-core = { path = "../../task-management/task-management-core" }
 error-handling-core = { path = "../../error-handling/error-handling-core" }
 configuration-core = { path = "../../configuration/configuration-core" }

@@ -491,14 +491,14 @@ impl RecoveryStrategy for NetworkTimeoutStrategy {
 struct CacheUnavailableStrategy;
 
 impl RecoveryStrategy for CacheUnavailableStrategy {
-    fn recover(&self, _context: &ErrorContext) -> Result<RecoveryAction> {
+    fn recover(&self, context: &ErrorContext) -> Result<RecoveryAction> {
         // Degrade to direct validation without cache
         Ok(RecoveryAction::Degrade {
             feature: "cache-acceleration".to_string(),
         })
     }
 
-    fn can_recover(&self, _context: &ErrorContext) -> bool {
+    fn can_recover(&self, context: &ErrorContext) -> bool {
         true
     }
 }

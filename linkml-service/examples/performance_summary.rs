@@ -279,7 +279,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_performance_summary() {
-        main().map_err(|e| anyhow::anyhow!("Performance summary should complete successfully": {}, e))?;
+    fn test_performance_summary() -> Result<()> {
+        main().map_err(|e| anyhow::anyhow!("Performance summary should complete successfully: {}", e))?;
+        Ok(())
     }
 }

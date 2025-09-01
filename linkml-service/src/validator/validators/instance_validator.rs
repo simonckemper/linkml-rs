@@ -11,7 +11,7 @@ use std::sync::Arc;
 pub struct InstanceValidator {
     name: String,
     /// Instance loader
-    _loader: Arc<InstanceLoader>,
+    loader: Arc<InstanceLoader>,
     /// Configuration for slots
     slot_configs: HashMap<String, InstanceConfig>,
 }
@@ -22,7 +22,7 @@ impl InstanceValidator {
     pub fn new(loader: Arc<InstanceLoader>) -> Self {
         Self {
             name: "instance_validator".to_string(),
-            _loader: loader,
+            loader: loader,
             slot_configs: HashMap::new(),
         }
     }

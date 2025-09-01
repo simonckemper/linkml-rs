@@ -157,7 +157,7 @@ fn test_aggregation_functions_error_handling() {
     // Test standard deviation with single value
     let args = vec![Value::Array(vec![Value::Number(5.0)])];
     let result = agg_fns.call("stddev", &args);
-    assert!(result.is_err() || result.unwrap() == Value::Number(0.0));
+    assert!(result.is_err() || result.expect("Test operation failed") == Value::Number(0.0));
 }
 
 /// Test expression parser error handling
@@ -204,7 +204,7 @@ fn test_expression_compiler_error_handling() {
     let parser = ExpressionParser::new();
 
     // Test compilation of expression with undefined variable
-    let expr = parser.parse_str("undefined_var + 5").unwrap();
+    let expr = parser.parse_str("undefined_var + 5").expect("Test operation failed");
     let result = compiler.compile(&expr);
     // Compilation might succeed, but execution should fail
     if let Ok(compiled) = result {
@@ -214,7 +214,7 @@ fn test_expression_compiler_error_handling() {
     }
 
     // Test compilation of expression with type errors
-    let expr = parser.parse_str(r#"concat(5, "string")"#).unwrap();
+    let expr = parser.parse_str(r#"concat(5, "string")"#).expect("Test operation failed");
     let result = compiler.compile(&expr);
     if let Ok(compiled) = result {
         let context = HashMap::new();
@@ -259,7 +259,7 @@ fn test_expression_cache_error_handling() {
 
     // Test caching of failed expressions
     let invalid_expr = "1 / 0";
-    let parsed = parser.parse_str(invalid_expr).unwrap();
+    let parsed = parser.parse_str(invalid_expr).expect("Test operation failed");
     let result = evaluator.evaluate(&parsed, &registry, &HashMap::new());
     assert!(result.is_err());
 
