@@ -197,8 +197,8 @@ impl ConditionalRequirementValidator {
 impl Validator for ConditionalRequirementValidator {
     fn validate(
         &self,
-        value: &Value,
-        slot: &SlotDefinition,
+        _value: &Value,
+        _slot: &SlotDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         // This validator works at the class level, not slot level

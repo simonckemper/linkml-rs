@@ -575,7 +575,7 @@ impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
 
         let package_name = v1.generation
             .as_ref()
-            .and_then(|g| g.package_name.as_deref())
+            .and_then(|g| g.language_options.values().find_map(|opts| opts.package_name.as_deref()))
             .map(intern);
 
         let imports = if let Some(generation) = &v1.generation {

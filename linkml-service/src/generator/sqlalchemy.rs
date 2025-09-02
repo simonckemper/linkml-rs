@@ -470,7 +470,7 @@ impl SQLAlchemyGenerator {
         if !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
                 if let Some(_slot_def) = schema.slots.get(slot_name) {
-                    // TODO: unique_keys field not yet implemented in SlotDefinition
+                    // This field is not present in the current LinkML specification
                     // if let Some(unique_keys) = &slot_def.unique_keys {
                     //     for key in unique_keys {
                     //         unique_together.push(key.clone());
@@ -493,7 +493,7 @@ impl SQLAlchemyGenerator {
         if self.config.generate_indexes && !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
                 if let Some(_slot_def) = schema.slots.get(slot_name) {
-                    // TODO: indexed field not yet implemented in SlotDefinition
+                    // This field is not present in the current LinkML specification
                     // if slot_def.indexed == Some(true) {
                     if false {
                         let column_name = self.to_snake_case(slot_name);
@@ -511,7 +511,7 @@ impl SQLAlchemyGenerator {
     }
 
     /// Get type annotation for SQLAlchemy 2.0
-    fn get_type_annotation(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> String {
+    fn get_type_annotation(&self, slot: &SlotDefinition, _schema: &SchemaDefinition) -> String {
         let base_type = if let Some(range) = &slot.range {
             match range.as_str() {
                 "string" | "str" => "str",
@@ -572,7 +572,7 @@ impl SQLAlchemyGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("lowercase char should exist: {}", e))?,
+                    .unwrap_or(ch),
             );
             prev_upper = ch.is_uppercase();
         }

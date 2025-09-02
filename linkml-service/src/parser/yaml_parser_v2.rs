@@ -100,7 +100,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_yaml_parser_v2() {
+    async fn test_yaml_parser_v2() -> Result<(), Box<dyn std::error::Error>> {
         let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
@@ -139,5 +139,6 @@ classes:
         ?;
         assert_eq!(schema.name, "TestSchema");
         assert!(schema.classes.contains_key("Person"));
+        Ok(())
     }
 }

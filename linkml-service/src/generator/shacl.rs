@@ -372,7 +372,7 @@ impl ShaclGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
+                    .unwrap_or(ch),
             );
             prev_upper = ch.is_uppercase();
         }

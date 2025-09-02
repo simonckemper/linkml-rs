@@ -440,7 +440,7 @@ mod tests {
             &self.info
         }
 
-        async fn initialize(&mut self, context: PluginContext) -> Result<()> {
+        async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
             Ok(())
         }
 
@@ -448,7 +448,7 @@ mod tests {
             Ok(())
         }
 
-        fn validate_config(&self, config: &HashMap<String, serde_json::Value>) -> Result<()> {
+        fn validate_config(&self, _config: &HashMap<String, serde_json::Value>) -> Result<()> {
             Ok(())
         }
 
@@ -458,7 +458,7 @@ mod tests {
     }
 
     #[test]
-    fn test_plugin_registration() {
+    fn test_plugin_registration() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = PluginRegistry::new();
 
         let plugin = Box::new(MockPlugin {
@@ -487,10 +487,11 @@ mod tests {
             let plugin = plugin_mutex.lock()?;
             assert_eq!(plugin.info().id, "test-plugin");
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_plugin_lifecycle() {
+    async fn test_plugin_lifecycle() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = PluginRegistry::new();
 
         let plugin = Box::new(MockPlugin {
@@ -532,45 +533,8 @@ mod tests {
         // Verify plugin is shutdown
         let reg_info = registry.get_registration("lifecycle-test")?;
         assert!(!reg_info.initialized);
-    }
-}
-
-// Mock logger for testing
-
-struct MockLogger;
-
-#[async_trait]
-impl LoggerService for MockLogger {
-    type Error = LoggerError;
-
-    async fn debug(&self, message: &str) -> std::result::Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn info(&self, message: &str) -> std::result::Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn warn(&self, message: &str) -> std::result::Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn error(&self, message: &str) -> std::result::Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn log(
-        &self,
-        level: logger_core::LogLevel,
-        message: &str,
-    ) -> std::result::Result<(), Self::Error> {
-        Ok(())
-    }
-
-    async fn log_entry(
-        &self,
-        entry: &logger_core::LogEntry,
-    ) -> std::result::Result<(), Self::Error> {
         Ok(())
     }
 }
+
+

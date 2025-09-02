@@ -519,10 +519,11 @@ mod tests {
             .multiply(&array2)
             .map_err(|e| anyhow::anyhow!("multiply operation should succeed with matching shapes: {}", e))?;
         assert_eq!(product.data, vec![json!(4.0), json!(10.0), json!(18.0)]);
+        Ok(())
     }
 
     #[test]
-    fn test_array_sorting() {
+    fn test_array_sorting() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer").with_dimension(ArrayDimension::fixed("x", 5));
 
         let data = vec![json!(3), json!(1), json!(4), json!(1), json!(5)];

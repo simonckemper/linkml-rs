@@ -14,8 +14,6 @@ use crate::validator::{context::ValidationContext, report::ValidationIssue};
 pub struct RuleValidator {
     /// The rule engine
     rule_engine: Arc<RuleEngine>,
-    /// Execution strategy
-    strategy: RuleExecutionStrategy,
 }
 
 impl RuleValidator {
@@ -23,15 +21,13 @@ impl RuleValidator {
     pub fn new(schema: Arc<SchemaDefinition>) -> Self {
         Self {
             rule_engine: Arc::new(RuleEngine::new(schema)),
-            strategy: RuleExecutionStrategy::Sequential,
         }
     }
 
     /// Create a rule validator with custom execution strategy
-    pub fn with_strategy(schema: Arc<SchemaDefinition>, strategy: RuleExecutionStrategy) -> Self {
+    pub fn with_strategy(schema: Arc<SchemaDefinition>, _strategy: RuleExecutionStrategy) -> Self {
         Self {
             rule_engine: Arc::new(RuleEngine::new(schema)),
-            strategy,
         }
     }
 

@@ -20,7 +20,7 @@ impl StringPool {
     pub fn new(max_size: usize, max_buffer_capacity: usize) -> Self {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
-            max_size: max_size,
+            max_size,
             max_buffer_capacity,
         }
     }
@@ -34,6 +34,7 @@ impl StringPool {
             buffer,
             pool: Arc::clone(&self.pool),
             max_capacity: self.max_buffer_capacity,
+            max_pool_size: self.max_size,
         }
     }
 
@@ -49,6 +50,7 @@ pub struct StringBuffer {
     buffer: String,
     pool: Arc<Mutex<VecDeque<String>>>,
     max_capacity: usize,
+    max_pool_size: usize,
 }
 
 impl StringBuffer {
@@ -78,7 +80,7 @@ impl Drop for StringBuffer {
         if self.buffer.capacity() <= self.max_capacity {
             let mut pool = self.pool.lock();
             // Only add back if pool isn't full
-            if pool.len() < pool.capacity() {
+            if pool.len() < self.max_pool_size {
                 pool.push_back(std::mem::take(&mut self.buffer));
             }
         }
@@ -112,7 +114,7 @@ impl<T> VecPool<T> {
     pub fn new(max_size: usize, max_buffer_capacity: usize) -> Self {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
-            max_size: max_size,
+            max_size,
             max_buffer_capacity,
         }
     }
@@ -126,6 +128,7 @@ impl<T> VecPool<T> {
             buffer,
             pool: Arc::clone(&self.pool),
             max_capacity: self.max_buffer_capacity,
+            max_pool_size: self.max_size,
         }
     }
 
@@ -141,6 +144,7 @@ pub struct VecBuffer<T> {
     buffer: Vec<T>,
     pool: Arc<Mutex<VecDeque<Vec<T>>>>,
     max_capacity: usize,
+    max_pool_size: usize,
 }
 
 impl<T> VecBuffer<T> {
@@ -159,7 +163,7 @@ impl<T> Drop for VecBuffer<T> {
         if self.buffer.capacity() <= self.max_capacity {
             let mut pool = self.pool.lock();
             // Only add back if pool isn't full
-            if pool.len() < pool.capacity() {
+            if pool.len() < self.max_pool_size {
                 pool.push_back(std::mem::take(&mut self.buffer));
             }
         }

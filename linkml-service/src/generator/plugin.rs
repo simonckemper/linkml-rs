@@ -214,7 +214,7 @@ impl GeneratorPlugin for CustomGeneratorPlugin {
         &self.metadata
     }
 
-    async fn initialize(&mut self, config: &PluginConfig) -> Result<(), PluginError> {
+    async fn initialize(&mut self, _config: &PluginConfig) -> Result<(), PluginError> {
         // Perform any initialization needed
         Ok(())
     }

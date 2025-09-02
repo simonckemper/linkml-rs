@@ -115,7 +115,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_validate_default_config() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_validate_default_config() -> std::result::Result<(), anyhow::Error> {
         let config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
         validate_values(&config).map_err(|e| anyhow::anyhow!("default config should be valid: {}", e))?;
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_ttl_ordering() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_validate_ttl_ordering() -> std::result::Result<(), anyhow::Error> {
         let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
         // Break TTL ordering
@@ -140,7 +140,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_memory_limits() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_validate_memory_limits() -> std::result::Result<(), anyhow::Error> {
         let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
 
         // Set memory pool larger than total limit

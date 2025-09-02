@@ -590,7 +590,7 @@ impl SparqlGenerator {
     }
 
     /// Add schema-specific prefix
-    fn add_schema_prefix(&self, prefix: &str, schema: &SchemaDefinition) {
+    fn add_schema_prefix(&self, _prefix: &str, schema: &SchemaDefinition) {
         let _uri = format!(
             "{}#",
             if schema.id.is_empty() {
@@ -634,7 +634,7 @@ impl SparqlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -709,7 +709,7 @@ impl SparqlGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
+                    .unwrap_or(ch),
             );
             prev_upper = ch.is_uppercase();
         }

@@ -179,7 +179,7 @@ impl GraphQLGenerator {
     fn generate_input_types(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
+        _options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
@@ -345,7 +345,7 @@ impl GraphQLGenerator {
     fn generate_connection_types(
         &self,
         schema: &SchemaDefinition,
-        indent: &IndentStyle,
+        _indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -598,7 +598,7 @@ impl GraphQLGenerator {
     fn get_graphql_type(
         &self,
         slot: &SlotDefinition,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let base_type = self.get_base_graphql_type(&slot.range);
 

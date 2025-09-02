@@ -75,7 +75,7 @@ publishing {
                     developer {
                         id.set("rootreal")
                         name.set("RootReal Team")
-                        email.set("support@rootreal.com")
+                        email.set("support@textpast.com")
                     }
                 }
 

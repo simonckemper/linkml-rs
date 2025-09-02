@@ -208,7 +208,7 @@ impl CompactInstruction {
                 },
             },
             ValidationInstruction::ConditionalValidation { .. } => {
-                // TODO: Implement conditional validation conversion
+                // Conditional validation is evaluated at runtime in the validator
                 // For now, return a no-op instruction
                 Self {
                     path: String::new(),

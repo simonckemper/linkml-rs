@@ -24,6 +24,10 @@ pub enum InheritanceError {
     #[error("Mixin not found: {0}")]
     MixinNotFound(String),
 
+    /// Invalid path
+    #[error("Invalid path: {0}")]
+    InvalidPath(String),
+
     /// Invalid inheritance
     #[error("Invalid inheritance: {0}")]
     InvalidInheritance(String),
@@ -296,7 +300,7 @@ impl InheritanceResolver {
             let pos = path
                 .iter()
                 .position(|x| x == class_name)
-                .ok_or_else(|| anyhow::anyhow!("Class not found in path"))?;
+                .ok_or_else(|| InheritanceError::InvalidPath("Class not found in path".to_string()))?;
             let cycle = path[pos..].to_vec().join(" -> ");
             return Err(InheritanceError::CircularInheritance(format!(
                 "{} -> {}",
@@ -469,7 +473,7 @@ impl InheritanceResolver {
     }
 
     /// Resolve enum inheritance
-    fn resolve_enums(&self, schema: &mut SchemaDefinition) -> InheritanceResult<()> {
+    fn resolve_enums(&self, _schema: &mut SchemaDefinition) -> InheritanceResult<()> {
         // EnumDefinition doesn't support inheritance (no is_a or mixins fields)
         // So nothing to resolve here
         Ok(())

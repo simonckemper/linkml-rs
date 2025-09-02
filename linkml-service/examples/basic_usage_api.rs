@@ -12,7 +12,7 @@
 use linkml_core::prelude::*;
 use serde_json::json;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Basic Usage API Demonstration");
     println!("===================================\n");
 
@@ -20,13 +20,14 @@ fn main() {
     demonstrate_schema_basics();
 
     // Show validation basics
-    demonstrate_validation_basics();
+    demonstrate_validation_basics()?;
 
     // Show validation report structure
-    demonstrate_validation_reports();
+    demonstrate_validation_reports()?;
 
     // Show schema features
     demonstrate_schema_features();
+    Ok(())
 }
 
 fn demonstrate_schema_basics() {
@@ -94,7 +95,7 @@ slots:
     println!("- Constraints: Add validation rules");
 }
 
-fn demonstrate_validation_basics() {
+fn demonstrate_validation_basics() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Basic Validation Examples:\n");
 
     // Valid data
@@ -143,9 +144,10 @@ fn demonstrate_validation_basics() {
     println!("\nInvalid - Age out of range:");
     println!("{}", serde_json::to_string_pretty(&invalid_age)?);
     println!("✗ Error: Age 200 exceeds maximum value 150");
+    Ok(())
 }
 
-fn demonstrate_validation_reports() {
+fn demonstrate_validation_reports() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Understanding Validation Reports:\n");
 
     println!("A ValidationReport contains:");
@@ -191,6 +193,7 @@ fn demonstrate_validation_reports() {
             println!("  Expected: {}", expected);
         }
     }
+    Ok(())
 }
 
 fn demonstrate_schema_features() {

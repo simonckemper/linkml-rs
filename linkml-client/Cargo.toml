@@ -8,7 +8,7 @@ description = "Client library for LinkML service"
 repository = "https://github.com/simonckemper/rootreal"
 keywords = ["linkml", "client", "validation"]
 categories = ["api-bindings"]
-
+readme = "README.md"
 [dependencies]
 # Core dependencies
 linkml-core = { path = "../linkml-core" }

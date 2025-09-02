@@ -219,7 +219,7 @@ pub struct TtlManager {
     /// Global access patterns
     global_patterns: Arc<RwLock<AccessPattern>>,
     /// Timestamp service
-    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 }
 
 impl TtlManager {
@@ -227,14 +227,14 @@ impl TtlManager {
     #[must_use]
     pub fn new(
         config: TtlConfig,
-        timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
+        _timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     ) -> Self {
         Self {
             config: Arc::new(RwLock::new(config)),
             entries: DashMap::new(),
             rules: Arc::new(RwLock::new(Vec::new())),
             global_patterns: Arc::new(RwLock::new(AccessPattern::default())),
-            timestamp,
+            _timestamp,
         }
     }
 

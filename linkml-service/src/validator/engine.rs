@@ -143,7 +143,7 @@ impl ValidationEngine {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
         let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
-        let profiler = Arc::new(Profiler::new(timestamp_service.clone()));
+        let profiler = Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new())));
 
         Ok(Self {
             schema,
@@ -170,7 +170,7 @@ impl ValidationEngine {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
 
-        let profiler = Arc::new(Profiler::new(timestamp_service.clone()));
+        let profiler = Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new())));
 
         Ok(Self {
             schema,
@@ -200,7 +200,8 @@ impl ValidationEngine {
             registry,
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service,
+            timestamp_service: timestamp_service.clone(),
+            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new()))),
         })
     }
 
@@ -225,7 +226,8 @@ impl ValidationEngine {
             registry,
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service,
+            timestamp_service: timestamp_service.clone(),
+            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new()))),
         })
     }
 
@@ -707,7 +709,7 @@ impl ValidationEngine {
 
         // Reset unique key validator if present
         if let Some(validator) = self.registry.unique_key_validator_mut() {
-            validator.reset();
+            let _ = validator.reset();
         }
 
         // Validate each instance

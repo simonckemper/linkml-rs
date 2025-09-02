@@ -116,7 +116,7 @@ impl UniqueKeyValidator {
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
         instance_path: &str,
-    ) -> Vec<ValidationIssue> {
+    ) -> Result<Vec<ValidationIssue>, Box<dyn std::error::Error>> {
         let mut issues = Vec::new();
         let mut tracker = self
             .tracker
@@ -198,23 +198,25 @@ impl UniqueKeyValidator {
             }
         }
 
-        issues
+        Ok(issues)
     }
 
     /// Reset the validator's state (clear all tracked values)
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.tracker
             .lock()
             .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?
             .clear();
+        Ok(())
     }
 
     /// Reset tracking for a specific class
-    pub fn reset_class(&mut self, class_name: &str) {
+    pub fn reset_class(&mut self, class_name: &str) -> Result<(), Box<dyn std::error::Error>> {
         self.tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?
+            .expect("tracker mutex should not be poisoned")
             .clear_class(class_name);
+        Ok(())
     }
 
     /// Public method for validating an instance (read-only access)
@@ -226,15 +228,22 @@ impl UniqueKeyValidator {
         schema: &SchemaDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
-        self.validate_class(instance, class_def, schema, &context.path())
+        match self.validate_class(instance, class_def, schema, &context.path()) {
+            Ok(issues) => issues,
+            Err(e) => vec![ValidationIssue::error(
+                &context.path(),
+                &format!("Unique key validation error: {}", e),
+                "UniqueKeyValidator",
+            )],
+        }
     }
 }
 
 impl Validator for UniqueKeyValidator {
     fn validate(
         &self,
-        value: &Value,
-        slot: &SlotDefinition,
+        _value: &Value,
+        _slot: &SlotDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         // This validator works at the collection level, not individual slot level

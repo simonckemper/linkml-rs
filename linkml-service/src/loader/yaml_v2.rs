@@ -42,6 +42,52 @@ impl YamlLoaderV2 {
         self.strict = strict;
         self
     }
+    
+    /// Infer class name from object structure
+    fn infer_class_from_object(&self, obj: &serde_json::Map<String, Value>) -> String {
+        // Check for explicit type field
+        if let Some(type_val) = obj.get("@type")
+            .or_else(|| obj.get("type"))
+            .or_else(|| obj.get("_type"))
+            .or_else(|| obj.get("class"))
+            .or_else(|| obj.get("class_name"))
+        {
+            if let Some(type_str) = type_val.as_str() {
+                return type_str.to_string();
+            }
+        }
+        
+        // Infer from field patterns
+        let fields: Vec<_> = obj.keys().map(|k| k.as_str()).collect();
+        
+        // Common patterns for different types
+        if fields.contains(&"name") && fields.contains(&"slots") {
+            return "ClassDefinition".to_string();
+        }
+        
+        if fields.contains(&"range") && fields.contains(&"required") {
+            return "SlotDefinition".to_string();
+        }
+        
+        if fields.contains(&"permissible_values") {
+            return "EnumDefinition".to_string();
+        }
+        
+        if fields.contains(&"person_id") || fields.contains(&"first_name") || fields.contains(&"last_name") {
+            return "Person".to_string();
+        }
+        
+        if fields.contains(&"organization_id") || fields.contains(&"organization_name") {
+            return "Organization".to_string();
+        }
+        
+        // Default fallback based on presence of common fields
+        if fields.contains(&"id") && fields.contains(&"name") {
+            return "Entity".to_string();
+        }
+        
+        "DataObject".to_string()
+    }
 }
 
 #[async_trait]
@@ -65,7 +111,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
     async fn load_str(
         &mut self,
         content: &str,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let yaml_value: serde_yaml::Value =
             serde_yaml::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
@@ -83,10 +129,19 @@ impl DataLoaderV2 for YamlLoaderV2 {
                     .into_iter()
                     .filter_map(|item| {
                         if let Value::Object(obj) = item {
+                            // Infer class name from structure
+                            let class_name = self.infer_class_from_object(&obj);
+                            
+                            // Extract ID if present
+                            let id = obj.get("id")
+                                .or_else(|| obj.get("@id"))
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string());
+                            
                             Some(DataInstance {
-                                class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                                class_name,
                                 data: obj.into_iter().collect(),
-                                id: None,
+                                id,
                                 metadata: HashMap::new(),
                             })
                         } else {
@@ -96,10 +151,19 @@ impl DataLoaderV2 for YamlLoaderV2 {
                     .collect()
             }
             Value::Object(obj) => {
+                // Infer class name from structure
+                let class_name = self.infer_class_from_object(&obj);
+                
+                // Extract ID if present
+                let id = obj.get("id")
+                    .or_else(|| obj.get("@id"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                
                 vec![DataInstance {
-                    class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                    class_name,
                     data: obj.into_iter().collect(),
-                    id: None,
+                    id,
                     metadata: HashMap::new(),
                 }]
             }
@@ -166,7 +230,7 @@ impl DataDumperV2 for YamlDumperV2 {
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> DumperResult<String> {
         // Convert instances to appropriate format
         let json_output = if instances.len() == 1 {
@@ -174,7 +238,7 @@ impl DataDumperV2 for YamlDumperV2 {
             let instance = instances
                 .into_iter()
                 .next()
-                .map_err(|e| anyhow::anyhow!("should have at least one instance after length check: {}", e))?;
+                .ok_or_else(|| anyhow::anyhow!("should have at least one instance after length check"))?;
             let mut obj = instance.data;
             obj.insert(
                 "@type".to_string(),
@@ -216,8 +280,8 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_yaml_loader_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+    async fn test_yaml_loader_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -231,24 +295,23 @@ mod tests {
 
         let file_path = Path::new("data.yaml");
         fs.write(file_path, yaml_content)
-            .await
-            .map_err(|e| anyhow::anyhow!("should write YAML file: {}", e))?;
+            .await?;
 
         let mut loader = YamlLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
             .load_file(&file_path, &schema, fs)
-            .await
-            .map_err(|e| anyhow::anyhow!("should load YAML file: {}", e))?;
+            .await?;
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
         assert_eq!(instances[1].data["name"], "Bob");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_yaml_dumper_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+    async fn test_yaml_dumper_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -284,14 +347,13 @@ mod tests {
 
         dumper
             .dump_file(instances, file_path, &schema, fs.clone())
-            .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to YAML: {}", e))?;
+            .await?;
 
         let content = fs
             .read_to_string(file_path)
-            .await
-            .map_err(|e| anyhow::anyhow!("should read YAML file: {}", e))?;
+            .await?;
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
+        Ok(())
     }
 }

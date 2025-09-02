@@ -70,7 +70,7 @@ pub trait CodeGeneratorV2: Send + Sync {
     fn file_extensions(&self) -> Vec<&'static str>;
 
     /// Check if generator supports a particular feature
-    fn supports_feature(&self, feature: &str) -> bool {
+    fn supports_feature(&self, _feature: &str) -> bool {
         false
     }
 }
@@ -97,16 +97,16 @@ pub trait IncrementalGenerator: CodeGeneratorV2 {
 
 /// Base implementation helper for generators
 pub struct GeneratorBase {
-    name: &'static str,
-    extensions: Vec<&'static str>,
+    _name: &'static str,
+    _extensions: Vec<&'static str>,
 }
 
 impl GeneratorBase {
     /// Create a new generator base with name and supported extensions
     pub fn new(name: &'static str, extensions: Vec<&'static str>) -> Self {
         Self {
-            name: name,
-            extensions: extensions,
+            _name: name,
+            _extensions: extensions,
         }
     }
 }
@@ -168,14 +168,14 @@ macro_rules! impl_generator_v2 {
 
 /// Example of a generator implementation using Arc
 pub struct ExampleGeneratorV2 {
-    base: GeneratorBase,
+    _base: GeneratorBase,
 }
 
 impl ExampleGeneratorV2 {
     /// Create a new example generator
     pub fn new() -> Self {
         Self {
-            base: GeneratorBase::new("example", vec!["ex", "example"]),
+            _base: GeneratorBase::new("example", vec!["ex", "example"]),
         }
     }
 
@@ -193,37 +193,18 @@ impl ExampleGeneratorV2 {
         };
 
         // Use options to control generation behavior
-        if let Some(output_dir) = &options.output_directory {
-            result.files.push(GeneratedFile {
-                path: format!("{}/schema.generated", output_dir),
-                content: format!("# Generated schema: {}\n", schema.name),
-                language: options.target_language.clone().unwrap_or_else(|| "text".to_string()),
-            });
-        }
-
-        // Apply format options if specified
-        if let Some(format) = &options.format {
-            result.content = Some(format!("Generated from schema: {} (format: {})", schema.name, format));
+        if let Some(output_dir) = &options.output_dir {
+            result.files.push(format!("{}/schema.generated", output_dir));
         }
 
         // Process schema based on options
-        let classes_to_generate = if options.include_all_classes.unwrap_or(true) {
-            schema.classes.len()
-        } else {
-            // Only generate classes that are explicitly requested or required
-            schema.classes.iter()
-                .filter(|(name, _)| {
-                    options.included_classes.as_ref()
-                        .map_or(true, |included| included.contains(name.as_str()))
-                })
-                .count()
-        };
+        let classes_to_generate = schema.classes.len();
 
         result.stats.classes_generated = classes_to_generate;
         result.stats.slots_generated = schema.slots.len();
 
         // Add warnings based on options
-        if options.strict_mode.unwrap_or(false) && schema.classes.is_empty() {
+        if schema.classes.is_empty() {
             result.warnings.push("No classes found in schema for strict mode generation".to_string());
         }
 

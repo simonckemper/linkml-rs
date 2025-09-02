@@ -226,7 +226,7 @@ mod tests {
     use linkml_core::types::{Rule, RuleConditions, SlotCondition};
     use serde_json::json;
 
-    fn create_test_rule() -> CompiledRule {
+    fn create_test_rule() -> std::result::Result<CompiledRule, Box<dyn std::error::Error>> {
         let mut slot_conditions = IndexMap::new();
         slot_conditions.insert(
             "age".to_string(),
@@ -260,13 +260,13 @@ mod tests {
             ..Default::default()
         };
 
-        CompiledRule::compile(rule, "Person".to_string()).map_err(|e| anyhow::anyhow!("should compile test rule: {}", e))?
+        CompiledRule::compile(rule, "Person".to_string()).map_err(|e| anyhow::anyhow!("should compile test rule: {}", e))
     }
 
     #[test]
-    fn test_rule_execution() {
+    fn test_rule_execution() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
-        let rule = create_test_rule();
+        let rule = create_test_rule()?;
 
         // Test with adult without ID
         let mut validation_ctx = ValidationContext::new(Default::default());
@@ -317,12 +317,13 @@ mod tests {
             .execute_single_rule(&rule, &mut context3)
             .map_err(|e| anyhow::anyhow!("should execute rule for minor: {}", e))?;
         assert!(issues3.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn test_execution_strategies() {
+    fn test_execution_strategies() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
-        let rules = vec![create_test_rule()];
+        let rules = vec![create_test_rule()?];
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let mut context = RuleExecutionContext::new(
@@ -353,5 +354,6 @@ mod tests {
             .execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast)
             .map_err(|e| anyhow::anyhow!("should execute rules with fail-fast: {}", e))?;
         assert_eq!(fail_fast_issues.len(), 1);
+        Ok(())
     }
 }

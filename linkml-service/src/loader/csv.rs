@@ -290,7 +290,7 @@ impl CsvLoader {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -458,7 +458,7 @@ impl DataLoader for CsvLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         // CSV can handle any schema
         Ok(())
     }
@@ -549,7 +549,7 @@ impl CsvDumper {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -642,7 +642,7 @@ impl DataDumper for CsvDumper {
         let (class_name, class_instances) = by_class
             .into_iter()
             .next()
-            .map_err(|e| anyhow::anyhow!("by_class should have at least one entry after check: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("by_class should have at least one entry after check"))?;
 
         // Apply limit if specified
         let instances_to_dump: Vec<&DataInstance> = if let Some(limit) = options.limit {
@@ -734,7 +734,7 @@ impl DataDumper for CsvDumper {
         Ok(content.into_bytes())
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         // CSV can handle any schema
         Ok(())
     }

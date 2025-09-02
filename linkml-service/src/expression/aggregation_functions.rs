@@ -510,7 +510,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_sum_avg() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_sum_avg() -> Result<(), anyhow::Error> {
         let sum_fn = SumFunction;
         let avg_fn = AvgFunction;
 
@@ -546,7 +546,7 @@ mod tests {
     }
 
     #[test]
-    fn test_count() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_count() -> Result<(), anyhow::Error> {
         let count_fn = CountFunction;
 
         // Simple count
@@ -576,7 +576,7 @@ mod tests {
     }
 
     #[test]
-    fn test_median() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_median() -> Result<(), anyhow::Error> {
         let median_fn = MedianFunction;
 
         // Odd number of elements
@@ -606,7 +606,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mode() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_mode() -> Result<(), anyhow::Error> {
         let mode_fn = ModeFunction;
 
         // Single mode
@@ -633,7 +633,7 @@ mod tests {
     }
 
     #[test]
-    fn test_stddev_variance() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_stddev_variance() -> Result<(), anyhow::Error> {
         let stddev_fn = StdDevFunction;
         let variance_fn = VarianceFunction;
 
@@ -644,7 +644,7 @@ mod tests {
             .call(vec![data.clone()])
             .map_err(|e| anyhow::anyhow!("should calculate variance: {}", e))?;
         assert!(
-            matches!(variance_result, Value::Number(n) if (n.as_f64()? - 4.571428571428571).abs() < 0.0001)
+            matches!(variance_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 4.571_428_571_428_571).abs() < 0.0001)
         );
 
         // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
@@ -652,7 +652,7 @@ mod tests {
             .call(vec![data])
             .map_err(|e| anyhow::anyhow!("should calculate standard deviation: {}", e))?;
         assert!(
-            matches!(stddev_result, Value::Number(n) if (n.as_f64()? - 2.1380899352993947).abs() < 0.0001)
+            matches!(stddev_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 2.138_089_935_299_394_7).abs() < 0.0001)
         );
         Ok(())
     }

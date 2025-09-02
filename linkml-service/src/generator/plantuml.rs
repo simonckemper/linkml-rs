@@ -293,7 +293,7 @@ impl PlantUmlGenerator {
         slot_name: &str,
         slot_def: &SlotDefinition,
         visibility: &str,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         write!(output, "  {}{}", visibility, slot_name)
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -588,7 +588,7 @@ impl PlantUmlGenerator {
                     writeln!(
                         &mut output,
                         "{} --> [*]",
-                        states.last().map_err(|e| anyhow::anyhow!("checked states is not empty: {}", e))?
+                        states.last().ok_or_else(|| anyhow::anyhow!("checked states is not empty"))?
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -802,7 +802,7 @@ impl PlantUmlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {

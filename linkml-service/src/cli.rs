@@ -549,14 +549,12 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
 
             OutputFormat::Json => {
-                let json = serde_json::to_string_pretty(&report)
-                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to JSON: {}", e))?;
+                let json = serde_json::to_string_pretty(&report)?;
                 println!("{json}");
             }
 
             OutputFormat::Yaml => {
-                let yaml = serde_yaml::to_string(&report)
-                    .map_err(|e| anyhow::anyhow!("validation report should be serializable to YAML: {}", e))?;
+                let yaml = serde_yaml::to_string(&report)?;
                 println!("{yaml}");
             }
 
@@ -640,28 +638,24 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
             ConvertFormat::Yaml => serde_yaml::to_string(&schema)?,
             ConvertFormat::Typeql => {
-                // TODO: Implement GenerationOperations trait
-                return Err(linkml_core::error::LinkMLError::service(
-                    "TypeQL generation not yet implemented",
-                ));
+                use crate::generator::{typeql_generator::TypeQLGenerator, Generator};
+                let generator = TypeQLGenerator::new();
+                generator.generate(&schema)?
             }
             ConvertFormat::Sql => {
-                // TODO: Implement GenerationOperations trait
-                return Err(linkml_core::error::LinkMLError::service(
-                    "SQL generation not yet implemented",
-                ));
+                use crate::generator::{sql::SQLGenerator, Generator};
+                let generator = SQLGenerator::new();
+                generator.generate(&schema)?
             }
             ConvertFormat::Graphql => {
-                // TODO: Implement GenerationOperations trait
-                return Err(linkml_core::error::LinkMLError::service(
-                    "GraphQL generation not yet implemented",
-                ));
+                use crate::generator::{graphql_generator::GraphQLGenerator, Generator};
+                let generator = GraphQLGenerator::new();
+                generator.generate(&schema)?
             }
             ConvertFormat::Rust => {
-                // TODO: Implement GenerationOperations trait
-                return Err(linkml_core::error::LinkMLError::service(
-                    "Rust generation not yet implemented",
-                ));
+                use crate::generator::{rust_generator::RustGenerator, Generator};
+                let generator = RustGenerator::new();
+                generator.generate(&schema)?
             }
         };
 
@@ -702,10 +696,52 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         println!("Generating {generator_name} code...");
 
-        // TODO: Implement GenerationOperations trait
-        Err(linkml_core::error::LinkMLError::service(
-            "Code generation not yet implemented",
-        ))
+        use crate::generator::Generator;
+        
+        // Create appropriate generator based on type
+        let generated_code = match generator {
+            GeneratorType::Rust => {
+                use crate::generator::rust_generator::RustGenerator;
+                let generator = RustGenerator::new();
+                generator.generate(&_schema)?
+            }
+            GeneratorType::Typeql => {
+                use crate::generator::typeql_generator::TypeQLGenerator;
+                let generator = TypeQLGenerator::new();
+                generator.generate(&_schema)?
+            }
+            GeneratorType::Sql => {
+                use crate::generator::sql::SQLGenerator;
+                let generator = SQLGenerator::new();
+                generator.generate(&_schema)?
+            }
+            GeneratorType::Graphql => {
+                use crate::generator::graphql_generator::GraphQLGenerator;
+                let generator = GraphQLGenerator::new();
+                generator.generate(&_schema)?
+            }
+            GeneratorType::Docs => {
+                use crate::generator::doc::DocGenerator;
+                let generator = DocGenerator::new();
+                generator.generate(&_schema)?
+            }
+        };
+        
+        // Write generated code to output directory
+        let extension = match generator {
+            GeneratorType::Rust => "rs",
+            GeneratorType::Typeql => "tql",
+            GeneratorType::Sql => "sql",
+            GeneratorType::Graphql => "graphql",
+            GeneratorType::Docs => "md",
+        };
+        
+        let output_file = output_dir.join(format!("generated.{}", extension));
+        std::fs::create_dir_all(output_dir)?;
+        std::fs::write(&output_file, generated_code)?;
+        
+        println!("✓ Generated {} code: {}", generator_name, output_file.display());
+        Ok(())
     }
 
     /// Profile command implementation
@@ -850,7 +886,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         filter: Option<&str>,
     ) {
         // Print schema in tree format, respecting any output format settings
-        let format = &self.format;
+        let format = &self.cli.format;
 
         match format {
             OutputFormat::Json => {
@@ -883,7 +919,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         filter: Option<&str>,
     ) {
         // Print inheritance hierarchy, respecting output format settings
-        let format = &self.format;
+        let format = &self.cli.format;
 
         match format {
             OutputFormat::Json => {
@@ -920,7 +956,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         filter: Option<&str>,
     ) {
         // Print slot usage information, respecting output format settings
-        let format = &self.format;
+        let format = &self.cli.format;
 
         match format {
             OutputFormat::Json => {
@@ -946,14 +982,14 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                             println!("    Description: {}", desc);
                         }
                         // Show which classes use this slot
-                        let using_classes: Vec<_> = schema.classes.iter()
+                        let using_classes: Vec<&String> = schema.classes.iter()
                             .filter(|(_, class)| {
-                                class.slots.as_ref().map_or(false, |slots| slots.contains(slot_name))
+                                class.slots.contains(&slot_name.to_string())
                             })
                             .map(|(name, _)| name)
                             .collect();
                         if !using_classes.is_empty() {
-                            println!("    Used by: {}", using_classes.join(", "));
+                            println!("    Used by: {}", using_classes.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "));
                         }
                     }
                 }

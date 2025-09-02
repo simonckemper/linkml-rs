@@ -446,7 +446,7 @@ mod tests {
     use serde_json::json;
 
     #[tokio::test]
-    async fn test_parallel_evaluation() {
+    async fn test_parallel_evaluation() -> Result<(), Box<dyn std::error::Error>> {
         let engine = ExpressionEngine::new();
         let context = HashMap::from([("x".to_string(), json!(10)), ("y".to_string(), json!(5))]);
 
@@ -465,10 +465,11 @@ mod tests {
         assert_eq!(result.successful.get("diff"), Some(&json!(5.0)));
         assert_eq!(result.successful.get("product"), Some(&json!(50.0)));
         assert_eq!(result.failed.len(), 0);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_evaluate_with_contexts() {
+    async fn test_evaluate_with_contexts() -> Result<(), Box<dyn std::error::Error>> {
         let engine = ExpressionEngine::new();
 
         let contexts = vec![
@@ -485,10 +486,11 @@ mod tests {
         assert_eq!(results[0].as_ref()?, &json!(2.0));
         assert_eq!(results[1].as_ref()?, &json!(4.0));
         assert_eq!(results[2].as_ref()?, &json!(6.0));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_batch_evaluator() {
+    async fn test_batch_evaluator() -> Result<(), Box<dyn std::error::Error>> {
         let engine = ExpressionEngine::new();
         let batch = BatchEvaluator::new(engine);
 
@@ -519,5 +521,6 @@ mod tests {
             ?;
 
         assert_eq!(total, json!(170.0));
+        Ok(())
     }
 }

@@ -262,7 +262,7 @@ impl SchemaMerge {
         &self,
         schemas: &[SchemaDefinition],
         merged: &mut SchemaDefinition,
-        conflicts: &mut Vec<MergeConflict>,
+        _conflicts: &mut Vec<MergeConflict>,
     ) -> Result<()> {
         if schemas.is_empty() {
             return Ok(());
@@ -336,7 +336,7 @@ impl SchemaMerge {
         &self,
         schemas: &[SchemaDefinition],
         merged: &mut SchemaDefinition,
-        conflicts: &mut Vec<MergeConflict>,
+        _conflicts: &mut Vec<MergeConflict>,
     ) -> Result<()> {
         // Process schemas in order, later ones override
         for schema in schemas {
@@ -392,11 +392,11 @@ impl SchemaMerge {
                 ConflictValue {
                     schema_index: 0,
                     value: serde_json::to_value(existing)
-                        .map_err(|e| anyhow::anyhow!("should serialize existing element: {}", e))?,
+                        .expect("should serialize existing element"),
                 },
                 ConflictValue {
                     schema_index,
-                    value: serde_json::to_value(new).map_err(|e| anyhow::anyhow!("should serialize new element: {}", e))?,
+                    value: serde_json::to_value(new).expect("should serialize new element"),
                 },
             ],
             resolution: format!("{:?}", self.options.conflict_resolution),

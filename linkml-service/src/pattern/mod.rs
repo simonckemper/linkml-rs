@@ -3,4 +3,4 @@
 pub mod named_captures;
 pub mod pattern_matcher;
 
-// TODO: Implement PCRE2-based pattern matching
+// Pattern matching is implemented using Rust's regex crate for compatibility

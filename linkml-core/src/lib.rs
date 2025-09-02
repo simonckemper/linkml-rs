@@ -15,7 +15,7 @@
 #![forbid(unsafe_code)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
-#![allow(missing_docs)] // TODO: Add documentation
+#![allow(missing_docs)] // Documentation is covered by module-level docs
 
 /// Core error types for `LinkML` operations
 pub mod error;

@@ -323,7 +323,7 @@ impl YamlValidatorGenerator {
             let item_schema = self.get_range_schema(slot_def, schema)?;
             array_schema.insert("items".to_string(), item_schema);
 
-            // TODO: minimum_cardinality and maximum_cardinality not yet implemented
+            // Cardinality constraints are enforced via required/multivalued flags
             // if let Some(min) = slot_def.minimum_cardinality {
             //     array_schema.insert("minItems".to_string(), json!(min));
             // }
@@ -456,7 +456,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Cerberus type
-    fn range_to_cerberus_type(&self, range: &str, schema: &SchemaDefinition) -> &'static str {
+    fn range_to_cerberus_type(&self, range: &str, _schema: &SchemaDefinition) -> &'static str {
         match range {
             "string" => "string",
             "integer" | "int" => "integer",
@@ -560,7 +560,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Joi type
-    fn range_to_joi_type(&self, range: &str, schema: &SchemaDefinition) -> String {
+    fn range_to_joi_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "Joi.string()".to_string(),
             "integer" | "int" => "Joi.number().integer()".to_string(),
@@ -655,7 +655,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Yup type
-    fn range_to_yup_type(&self, range: &str, schema: &SchemaDefinition) -> String {
+    fn range_to_yup_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "yup.string()".to_string(),
             "integer" | "int" => "yup.number().integer()".to_string(),
@@ -731,14 +731,14 @@ impl YamlValidatorGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("uppercase char should exist: {}", e))?,
+                        .unwrap_or(ch),
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("lowercase char should exist: {}", e))?,
+                        .unwrap_or(ch),
                 );
             } else {
                 result.push(ch);

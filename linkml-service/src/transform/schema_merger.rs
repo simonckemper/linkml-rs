@@ -25,6 +25,10 @@ pub enum MergeError {
     #[error("Invalid merge operation: {0}")]
     InvalidMerge(String),
 
+    /// Invalid input
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
     /// Schema not found
     #[error("Schema not found: {0}")]
     SchemaNotFound(String),
@@ -120,13 +124,13 @@ impl SchemaMerger {
             return Ok(schemas
                 .into_iter()
                 .next()
-                .map_err(|e| anyhow::anyhow!("checked that schemas has one element: {}", e))?);
+                .ok_or_else(|| MergeError::InvalidInput("checked that schemas has one element".to_string()))?);
         }
 
         let mut schemas_iter = schemas.into_iter();
         let mut result = schemas_iter
             .next()
-            .map_err(|e| anyhow::anyhow!("checked that schemas is not empty: {}", e))?;
+            .ok_or_else(|| MergeError::InvalidInput("checked that schemas is not empty".to_string()))?;
 
         for schema in schemas_iter {
             result = self.merge_two(result, schema)?;
@@ -788,7 +792,7 @@ mod tests {
             .map_err(|e| anyhow::anyhow!("merge should succeed: {}", e))?;
 
         // Should have schema2's version
-        let name_slot = result.slots.get("name").map_err(|e| anyhow::anyhow!("name slot should exist: {}", e))?;
+        let name_slot = result.slots.get("name").ok_or_else(|| anyhow::anyhow!("name slot should exist"))?;
         assert_eq!(name_slot.range, Some("text".to_string()));
     }
 

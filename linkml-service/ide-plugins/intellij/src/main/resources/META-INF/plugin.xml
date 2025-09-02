@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.rootreal.linkml</id>
     <name>LinkML Schema Support</name>
-    <vendor email="support@rootreal.com" url="https://github.com/simonckemper/rootreal">RootReal</vendor>
+    <vendor email="support@textpast.com" url="https://github.com/simonckemper/rootreal">RootReal</vendor>
 
     <description><![CDATA[
         <h3>LinkML Schema Support for IntelliJ IDEA</h3>

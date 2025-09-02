@@ -564,7 +564,7 @@ mod tests {
     }
 
     #[test]
-    fn test_date_parts() {
+    fn test_date_parts() -> Result<(), anyhow::Error> {
         let year = YearFunction;
         let month = MonthFunction;
         let day = DayFunction;

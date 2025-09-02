@@ -10,8 +10,8 @@ use std::sync::Arc;
 /// Validator that checks values against instance data
 pub struct InstanceValidator {
     name: String,
-    /// Instance loader
-    loader: Arc<InstanceLoader>,
+    /// Instance loader (reserved for future use)
+    _loader: Arc<InstanceLoader>,
     /// Configuration for slots
     slot_configs: HashMap<String, InstanceConfig>,
 }
@@ -22,7 +22,7 @@ impl InstanceValidator {
     pub fn new(loader: Arc<InstanceLoader>) -> Self {
         Self {
             name: "instance_validator".to_string(),
-            loader: loader,
+            _loader: loader,
             slot_configs: HashMap::new(),
         }
     }
@@ -112,7 +112,19 @@ impl Validator for InstanceValidator {
             .is_some_and(|data| data.contains_key(&slot.name));
 
         if !has_instance_data {
-            return issues; // No instance validation needed
+            // Try to load instance data using the loader if configured for this slot
+            if let Some(_config) = self.slot_configs.get(&slot.name) {
+                // TODO: Implement actual instance loading when InstanceLoader API is available
+                // For now, we'll skip instance validation if no data is available
+                issues.push(ValidationIssue::warning(
+                    format!("Instance validation not yet implemented for slot '{}'", slot.name),
+                    &context.path(),
+                    &self.name,
+                ));
+                return issues;
+            } else {
+                return issues; // No instance validation needed
+            }
         }
 
         if slot.multivalued.unwrap_or(false) {

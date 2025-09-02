@@ -31,12 +31,12 @@ impl TypeValidator {
     }
 
     /// Validate a value against a `LinkML` type
-    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Vec<ValidationIssue> {
+    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Result<Vec<ValidationIssue>, Box<dyn std::error::Error>> {
         let mut issues = Vec::new();
         
         // Use interned strings for common cases
         let interner = global_interner();
-        let common = interner.common();
+        let _common = interner.common();
 
         match type_name {
             "string" | "str" => {
@@ -191,7 +191,7 @@ impl TypeValidator {
                         || (!s
                             .chars()
                             .next()
-                            .map_err(|e| anyhow::anyhow!("non-empty string has first char: {}", e))?
+                            .expect("non-empty string should have first char")
                             .is_alphabetic()
                             && !s.starts_with('_'))
                     {
@@ -233,7 +233,7 @@ impl TypeValidator {
             }
         }
 
-        issues
+        Ok(issues)
     }
 }
 
@@ -255,7 +255,14 @@ impl Validator for TypeValidator {
                 // Validate each element
                 for (i, element) in array.iter().enumerate() {
                     let element_path = format!("{}[{}]", context.path(), i);
-                    issues.extend(self.validate_type(element, type_name, &element_path));
+                    match self.validate_type(element, type_name, &element_path) {
+                        Ok(type_issues) => issues.extend(type_issues),
+                        Err(e) => issues.push(ValidationIssue::error(
+                            &element_path,
+                            &format!("Type validation error: {}", e),
+                            "TypeValidator",
+                        )),
+                    }
                 }
             } else {
                 issues.push(ValidationIssue::error(
@@ -269,7 +276,14 @@ impl Validator for TypeValidator {
             }
         } else {
             // Single valued slot
-            issues.extend(self.validate_type(value, type_name, &context.path()));
+            match self.validate_type(value, type_name, &context.path()) {
+                Ok(type_issues) => issues.extend(type_issues),
+                Err(e) => issues.push(ValidationIssue::error(
+                    &context.path(),
+                    &format!("Type validation error: {}", e),
+                    "TypeValidator",
+                )),
+            }
         }
 
         issues

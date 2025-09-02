@@ -691,7 +691,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_literals() {
+    fn test_parse_literals() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         assert_eq!(
@@ -718,10 +718,11 @@ mod tests {
             parser.parse("\"hello\"").map_err(|e| anyhow::anyhow!("should parse string: {}", e))?,
             Expression::String("hello".to_string())
         );
+        Ok(())
     }
 
     #[test]
-    fn test_parse_variables() {
+    fn test_parse_variables() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         assert_eq!(
@@ -734,10 +735,11 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should parse variable with underscore: {}", e))?,
             Expression::Variable("user_name".to_string())
         );
+        Ok(())
     }
 
     #[test]
-    fn test_parse_arithmetic() {
+    fn test_parse_arithmetic() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         let expr = parser
@@ -764,10 +766,11 @@ mod tests {
                 Box::new(Expression::Number(5.0))
             )
         );
+        Ok(())
     }
 
     #[test]
-    fn test_parse_comparison() {
+    fn test_parse_comparison() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         let expr = parser.parse("{x} > 5").map_err(|e| anyhow::anyhow!("should parse comparison: {}", e))?;
@@ -795,10 +798,11 @@ mod tests {
                 ))
             )
         );
+        Ok(())
     }
 
     #[test]
-    fn test_parse_function_call() {
+    fn test_parse_function_call() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         let expr = parser
@@ -826,10 +830,11 @@ mod tests {
                 ],
             }
         );
+        Ok(())
     }
 
     #[test]
-    fn test_parse_errors() {
+    fn test_parse_errors() -> Result<(), Box<dyn std::error::Error>> {
         let parser = Parser::new();
 
         assert!(matches!(
@@ -846,5 +851,6 @@ mod tests {
             parser.parse("1 + 2 extra"),
             Err(ParseError::TrailingInput { .. })
         ));
+        Ok(())
     }
 }

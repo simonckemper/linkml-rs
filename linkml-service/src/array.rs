@@ -749,7 +749,7 @@ mod tests {
 
         let array = ArrayData::new(spec, vec![2, 3], data)
             .map_err(|e| anyhow::anyhow!("test data should create valid array - transpose test: {}", e))?;
-        let transposed = array.transpose();
+        let transposed = array.transpose()?;
 
         assert_eq!(transposed.shape, vec![3, 2]);
         assert_eq!(

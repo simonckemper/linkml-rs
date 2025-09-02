@@ -83,7 +83,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_json_parser_v2() {
+    async fn test_json_parser_v2() -> std::result::Result<(), anyhow::Error> {
         let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
@@ -127,5 +127,6 @@ mod tests {
         ?;
         assert_eq!(schema.name, "TestSchema");
         assert!(schema.classes.contains_key("Person"));
+        Ok(())
     }
 }

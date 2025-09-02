@@ -378,7 +378,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_upper_lower_trim() {
+    fn test_upper_lower_trim() -> Result<(), Box<dyn std::error::Error>> {
         let upper = UpperFunction;
         assert_eq!(
             upper
@@ -401,10 +401,11 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should trim whitespace: {}", e))?,
             json!("hello")
         );
+        Ok(())
     }
 
     #[test]
-    fn test_starts_ends_with() {
+    fn test_starts_ends_with() -> Result<(), Box<dyn std::error::Error>> {
         let starts_with = StartsWithFunction;
         assert_eq!(
             starts_with
@@ -432,10 +433,11 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should check ends_with: {}", e))?,
             json!(false)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_replace() {
+    fn test_replace() -> Result<(), Box<dyn std::error::Error>> {
         let replace = ReplaceFunction;
         assert_eq!(
             replace
@@ -443,10 +445,11 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should replace substring: {}", e))?,
             json!("hello rust")
         );
+        Ok(())
     }
 
     #[test]
-    fn test_split_join() {
+    fn test_split_join() -> Result<(), Box<dyn std::error::Error>> {
         let split = SplitFunction;
         assert_eq!(
             split
@@ -461,10 +464,11 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should join array: {}", e))?,
             json!("a-b-c")
         );
+        Ok(())
     }
 
     #[test]
-    fn test_substring() {
+    fn test_substring() -> Result<(), Box<dyn std::error::Error>> {
         let substring = SubstringFunction;
 
         // With length
@@ -482,5 +486,6 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should extract substring to end: {}", e))?,
             json!("world")
         );
+        Ok(())
     }
 }

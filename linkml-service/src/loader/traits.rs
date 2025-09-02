@@ -77,6 +77,12 @@ pub enum DumperError {
 /// Result type for dumper operations
 pub type DumperResult<T> = std::result::Result<T, DumperError>;
 
+impl From<anyhow::Error> for DumperError {
+    fn from(err: anyhow::Error) -> Self {
+        DumperError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{}", err))))
+    }
+}
+
 /// Represents a loaded data instance
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DataInstance {
@@ -132,6 +138,9 @@ pub struct DumpOptions {
 
     /// Maximum records to dump
     pub limit: Option<usize>,
+
+    /// Classes to include in dump (None means all)
+    pub include_classes: Option<Vec<String>>,
 }
 
 /// Trait for data loaders

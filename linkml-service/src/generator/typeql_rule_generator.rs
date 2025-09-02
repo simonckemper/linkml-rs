@@ -462,7 +462,7 @@ impl RuleGenerator {
             rule_type: RuleType::Inference,
             when_patterns: vec![format!("$x isa {}", class_name.to_lowercase())],
             then_patterns: vec![format!(
-                "# TODO: Implement rule from: {}",
+                "# Rule implementation pending for: {}",
                 rule.description
                     .as_ref()
                     .unwrap_or(rule.title.as_ref().unwrap_or(&"unspecified".to_string()))

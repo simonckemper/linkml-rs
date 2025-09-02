@@ -432,7 +432,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_required_field_evaluation() {
+    fn test_required_field_evaluation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let evaluator = RuleEvaluator::new(ExpressionEngine::new());
 
         let condition = CompiledSlotCondition {
@@ -467,7 +467,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expression_evaluation() {
+    fn test_expression_evaluation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let evaluator = RuleEvaluator::new(ExpressionEngine::new());
 
         // Parse a failing expression

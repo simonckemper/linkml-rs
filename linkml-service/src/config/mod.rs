@@ -458,9 +458,11 @@ fn create_fallback_config() -> LinkMLConfig {
                 chunk_size_bytes: 4096,
             },
             cache_ttl_levels: CacheTtlLevels {
-                l1_ttl_seconds: 300,
-                l2_ttl_seconds: 1800,
-                l3_ttl_seconds: 7200,
+                l1_seconds: 300,
+                l2_seconds: 1800,
+                l3_seconds: 7200,
+                min_ttl_seconds: 60,
+                max_ttl_seconds: 86400,
             },
         },
         security_limits: SecurityLimits {

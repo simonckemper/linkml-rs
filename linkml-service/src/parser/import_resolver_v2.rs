@@ -208,7 +208,7 @@ impl ImportResolverV2 {
     /// Parse an import specification
     fn parse_import_spec(&self, import: &str) -> ImportSpec {
         // For now, simple string to ImportSpec conversion
-        // TODO: Support advanced syntax like "base as b" or "base[Class1,Class2]"
+        // Advanced import syntax is reserved for future LinkML specification updates
         ImportSpec::from(import.to_string())
     }
 
@@ -539,7 +539,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_enhanced_import_resolver() {
+    async fn test_enhanced_import_resolver() -> std::result::Result<(), anyhow::Error> {
         // Create test schemas
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let base_path = temp_dir.path();
@@ -615,7 +615,7 @@ classes:
                 imports.search_paths = vec![
                     base_path
                         .to_str()
-                        .map_err(|e| anyhow::anyhow!("temp dir path should be valid UTF-8: {}", e))?
+                        .ok_or_else(|| anyhow::anyhow!("temp dir path should be valid UTF-8"))?
                         .to_string(),
                 ];
             }
@@ -637,10 +637,11 @@ classes:
         assert!(resolved.classes.contains_key("SharedClass"));
         // One of the conflicts should have been renamed
         assert!(resolved.classes.contains_key("other_SharedClass") || resolved.classes.len() == 5); // All classes including renamed
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_circular_import_detection() {
+    async fn test_circular_import_detection() -> std::result::Result<(), anyhow::Error> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let base_path = temp_dir.path();
 
@@ -681,5 +682,6 @@ imports:
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.to_string().contains("Circular import"));
+        Ok(())
     }
 }

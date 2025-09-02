@@ -607,7 +607,7 @@ impl Validator for CompiledValidator {
     fn validate(
         &self,
         value: &JsonValue,
-        slot: &SlotDefinition,
+        _slot: &SlotDefinition,
         context: &mut ValidationContext,
     ) -> Vec<ValidationIssue> {
         self.execute(value, context)

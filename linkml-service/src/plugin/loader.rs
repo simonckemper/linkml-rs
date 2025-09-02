@@ -143,7 +143,7 @@ impl PythonLoader {
         Self
     }
 
-    async fn load_plugin(&self, module: &str, class: &str) -> Result<Box<dyn Plugin>> {
+    async fn load_plugin(&self, _module: &str, _class: &str) -> Result<Box<dyn Plugin>> {
         // Python integration would require PyO3
         // For now, return an error indicating Python plugins need PyO3 integration
         Err(LinkMLError::ServiceError(
@@ -164,9 +164,9 @@ impl JavaScriptLoader {
 
     async fn load_plugin(
         &self,
-        base_dir: &Path,
-        module: &str,
-        export: Option<&str>,
+        _base_dir: &Path,
+        _module: &str,
+        _export: Option<&str>,
     ) -> Result<Box<dyn Plugin>> {
         // JavaScript integration would require a JS runtime like deno_core
         Err(LinkMLError::ServiceError(
@@ -187,9 +187,9 @@ impl WasmLoader {
 
     async fn load_plugin(
         &self,
-        base_dir: &Path,
-        module: &str,
-        config: Option<&serde_json::Value>,
+        _base_dir: &Path,
+        _module: &str,
+        _config: Option<&serde_json::Value>,
     ) -> Result<Box<dyn Plugin>> {
         // WASM integration would require wasmtime or wasmer
         Err(LinkMLError::ServiceError(

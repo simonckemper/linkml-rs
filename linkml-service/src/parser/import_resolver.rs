@@ -249,8 +249,8 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_import_resolver() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temp dir: {}", e))?;
+    async fn test_import_resolver() -> std::result::Result<(), anyhow::Error> {
+        let temp_dir = TempDir::new()?;
         let base_path = temp_dir.path();
 
         // Create a base schema
@@ -267,7 +267,7 @@ slots:
     range: string
 ";
 
-        fs::write(base_path.join("base.yaml"), base_schema).map_err(|e| anyhow::anyhow!("should write base schema: {}", e))?;
+        fs::write(base_path.join("base.yaml"), base_schema)?;
 
         // Create a schema that imports base
         let main_schema = r"
@@ -286,19 +286,18 @@ classes:
         use super::super::yaml_parser::YamlParser;
         let parser = YamlParser::new();
         let schema = parser
-            .parse_str(main_schema)
-            .map_err(|e| anyhow::anyhow!("should parse main schema: {}", e))?;
+            .parse_str(main_schema)?;
 
         // Resolve imports
         let resolver = ImportResolver::with_search_paths(vec![base_path.to_path_buf()]);
         let merged = resolver
             .resolve_imports_async(&schema)
-            .await
-            .map_err(|e| anyhow::anyhow!("should resolve imports: {}", e))?;
+            .await?;
 
         // Check that base elements were imported
         assert!(merged.classes.contains_key("BaseClass"));
         assert!(merged.slots.contains_key("base_slot"));
         assert!(merged.classes.contains_key("MainClass"));
+        Ok(())
     }
 }

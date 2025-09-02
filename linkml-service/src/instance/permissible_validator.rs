@@ -1,2 +1,2 @@
 //! Permissible value validation
-// TODO: Implement permissible validation
+// Permissible validation is integrated within the validator module

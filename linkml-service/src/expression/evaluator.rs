@@ -261,7 +261,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid: {}", e))?;
+                .expect("Cache size of 1000 should always be valid");
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -280,7 +280,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid: {}", e))?;
+                .expect("Cache size of 1000 should always be valid");
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -322,7 +322,7 @@ impl Evaluator {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
                 .or_else(|| NonZeroUsize::new(1000))
-                .map_err(|e| anyhow::anyhow!("Cache size of 1000 should always be valid: {}", e))?;
+                .expect("Cache size of 1000 should always be valid");
             Some(Arc::new(Mutex::new(LruCache::new(cache_size))))
         } else {
             None
@@ -953,7 +953,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_evaluate_literals() {
+    fn test_evaluate_literals() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let context = HashMap::new();
 
@@ -984,7 +984,7 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_variables() {
+    fn test_evaluate_variables() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let mut context = HashMap::new();
         context.insert("x".to_string(), json!(10));
@@ -1011,7 +1011,7 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_arithmetic() {
+    fn test_evaluate_arithmetic() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let context = HashMap::new();
 
@@ -1075,7 +1075,7 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_comparison() {
+    fn test_evaluate_comparison() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let context = HashMap::new();
 
@@ -1117,7 +1117,7 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_logical() {
+    fn test_evaluate_logical() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let context = HashMap::new();
 
@@ -1156,7 +1156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_evaluate_conditional() {
+    fn test_evaluate_conditional() -> Result<(), anyhow::Error> {
         let evaluator = Evaluator::new();
         let mut context = HashMap::new();
         context.insert("x".to_string(), json!(10));

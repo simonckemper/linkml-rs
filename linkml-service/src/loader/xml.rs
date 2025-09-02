@@ -63,8 +63,8 @@ impl DataLoader for XmlLoader {
     async fn load_file(
         &self,
         path: &std::path::Path,
-        schema: &SchemaDefinition,
-        options: &LoadOptions,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         let _content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
 
@@ -77,9 +77,9 @@ impl DataLoader for XmlLoader {
 
     async fn load_string(
         &self,
-        content: &str,
-        schema: &SchemaDefinition,
-        options: &LoadOptions,
+        _content: &str,
+        _schema: &SchemaDefinition,
+        _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         // TODO: Implement actual XML parsing
         Err(LoaderError::InvalidFormat(
@@ -98,7 +98,7 @@ impl DataLoader for XmlLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
 }
@@ -171,7 +171,7 @@ impl DataDumper for XmlDumper {
     async fn dump_string(
         &self,
         instances: &[DataInstance],
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
         options: &DumpOptions,
     ) -> DumperResult<String> {
         let mut xml = String::new();
@@ -264,7 +264,7 @@ impl DataDumper for XmlDumper {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
 }
@@ -294,7 +294,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_xml_dumper() {
+    async fn test_xml_dumper() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let instances = vec![DataInstance {
             class_name: "Person".to_string(),
             data: std::collections::HashMap::from([
@@ -316,8 +316,7 @@ mod tests {
         let options = DumpOptions::default();
         let xml_str = dumper
             .dump_string(&instances, &schema, &options)
-            .await
-            .map_err(|e| anyhow::anyhow!("should dump XML: {}", e))?;
+            .await?;
         assert!(xml_str.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assert!(xml_str.contains("<data>"));
         // Name is an attribute, not a child element
@@ -327,5 +326,6 @@ mod tests {
         assert!(xml_str.contains("<description>"));
         assert!(xml_str.contains("</Person>"));
         assert!(xml_str.contains("</data>"));
+        Ok(())
     }
 }

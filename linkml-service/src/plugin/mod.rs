@@ -376,7 +376,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_plugin_info_serialization() {
+    fn test_plugin_info_serialization() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let info = PluginInfo {
             id: "test-plugin".to_string(),
             name: "Test Plugin".to_string(),
@@ -386,7 +386,7 @@ mod tests {
             author: Some("Test Author".to_string()),
             license: Some("MIT".to_string()),
             homepage: None,
-            linkml_version: VersionReq::parse(">=1.0.0").map_err(|e| anyhow::anyhow!("valid version requirement: {}", e))?,
+            linkml_version: VersionReq::parse(">=1.0.0")?,
             dependencies: vec![],
             capabilities: vec![],
         };
@@ -397,5 +397,6 @@ mod tests {
 
         assert_eq!(info.id, deserialized.id);
         assert_eq!(info.version, deserialized.version);
+        Ok(())
     }
 }

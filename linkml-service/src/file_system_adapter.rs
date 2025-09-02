@@ -264,7 +264,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_sandboxed_operations() {
+    async fn test_sandboxed_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = sandboxed_fs(temp_dir.path());
 
@@ -290,10 +290,11 @@ mod tests {
         // Test sandbox escape prevention
         let escape_path = Path::new("../escape.txt");
         assert!(fs.write(escape_path, "data").await.is_err());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_directory_operations() {
+    async fn test_directory_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let fs = sandboxed_fs(temp_dir.path());
 
@@ -315,5 +316,6 @@ mod tests {
             .await
             .map_err(|e| anyhow::anyhow!("should read directory: {}", e))?;
         assert_eq!(entries.len(), 1);
+        Ok(())
     }
 }

@@ -682,9 +682,8 @@ impl AuditTrail {
 
 ### Contact Information
 
-- Security Team: security@rootreal.org
-- Incident Response: incident@rootreal.org
-- Bug Bounty: bounty@rootreal.org
+- Security Team: textpast@textpast.com
+- Incident Response: textpast@textpast.com
 
 ## Conclusion
 

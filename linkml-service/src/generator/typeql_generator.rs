@@ -169,7 +169,7 @@ impl TypeQLGenerator {
         &self,
         output: &mut String,
         schema: &SchemaDefinition,
-        indent: &IndentStyle,
+        _indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let mut generated_attrs = HashSet::new();
 

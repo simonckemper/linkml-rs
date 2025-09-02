@@ -199,7 +199,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_string_interning() {
+    fn test_string_interning() -> Result<(), Box<dyn std::error::Error>> {
         let interner = StringInterner::new();
 
         let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
@@ -213,6 +213,7 @@ mod tests {
         // String comparison
         assert!(str_eq_fast(&s1, &s2));
         assert!(!str_eq_fast(&s1, &s3));
+        Ok(())
     }
 
     #[test]

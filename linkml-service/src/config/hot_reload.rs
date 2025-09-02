@@ -182,12 +182,12 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[tokio::test]
-    async fn test_hot_reload_creation() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
         // Copy default config to temp file
-        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file: {}", e))?;
+        let temp_file = NamedTempFile::new()?;
         let config_content =
-            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config: {}", e))?;
-        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config: {}", e))?;
+            fs::read_to_string("config/default.yaml")?;
+        fs::write(temp_file.path(), &config_content)?;
 
         // Create hot reloader
         let reloader = ConfigHotReloader::new(temp_file.path());
@@ -200,20 +200,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_hot_reload_watching() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
         // Copy default config to temp file
-        let temp_file = NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temp file: {}", e))?;
+        let temp_file = NamedTempFile::new()?;
         let config_content =
-            fs::read_to_string("config/default.yaml").map_err(|e| anyhow::anyhow!("should read default config: {}", e))?;
-        fs::write(temp_file.path(), &config_content).map_err(|e| anyhow::anyhow!("should write temp config: {}", e))?;
+            fs::read_to_string("config/default.yaml")?;
+        fs::write(temp_file.path(), &config_content)?;
 
         // Create and start hot reloader
         let mut reloader =
-            ConfigHotReloader::new(temp_file.path()).map_err(|e| anyhow::anyhow!("should create reloader: {}", e))?;
+            ConfigHotReloader::new(temp_file.path())?;
         reloader
             .start_watching()
-            .await
-            .map_err(|e| anyhow::anyhow!("should start watching: {}", e))?;
+            .await?;
 
         // Get initial config
         let initial_config = reloader.get_config();

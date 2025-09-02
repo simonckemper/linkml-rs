@@ -650,7 +650,7 @@ impl GoGenerator {
     /// Collect all slots for a class including inherited
     fn collect_class_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<(String, SlotDefinition)> {

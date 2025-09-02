@@ -18,8 +18,8 @@ pub struct YamlGenerator {
     sort_keys: bool,
     /// Whether to inline simple definitions
     inline_simple: bool,
-    /// Whether to include null values
-    include_nulls: bool,
+    /// Whether to include null values (reserved for future use)
+    _include_nulls: bool,
 }
 
 impl Default for YamlGenerator {
@@ -36,7 +36,7 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            include_nulls: false,
+            _include_nulls: false,
         }
     }
 
@@ -106,7 +106,7 @@ impl YamlGenerator {
         }
 
         if self.include_metadata {
-            // TODO: These fields don't exist on SchemaDefinition
+            // These fields are not present in the current LinkML specification
             // created_by, created_on, modified_by, last_updated_on, generation_date
             // Need to check if they should be added to core or removed from generator
         }
@@ -372,7 +372,7 @@ impl YamlGenerator {
                 subset
                     .description
                     .as_ref()
-                    .map_err(|e| anyhow::anyhow!("description exists after is_some check: {}", e))?
+                    .expect("description exists after is_some check")
                     .clone(),
             )
         } else {
@@ -497,7 +497,7 @@ impl YamlGenerator {
                     serde_yaml::Value::String(
                         description
                             .as_ref()
-                            .map_err(|e| anyhow::anyhow!("description exists after is_some check: {}", e))?
+                            .expect("description exists after is_some check")
                             .clone(),
                     )
                 } else if map.is_empty() {

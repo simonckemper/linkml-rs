@@ -821,15 +821,15 @@ impl Generator for HtmlGenerator {
 }
 
 impl CodeFormatter for HtmlGenerator {
-    fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
+    fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
         self.escape_html(doc)
     }
 
     fn format_list<T: AsRef<str>>(
         &self,
         items: &[T],
-        indent: &IndentStyle,
-        level: usize,
+        _indent: &IndentStyle,
+        _level: usize,
         separator: &str,
     ) -> String {
         items

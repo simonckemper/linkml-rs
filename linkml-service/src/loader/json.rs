@@ -70,7 +70,7 @@ impl DataLoader for JsonLoader {
             serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
 
         // Apply options for validation and filtering
-        if options.validate_on_load.unwrap_or(true) {
+        if options.validate {
             self.validate_schema(schema)?;
         }
 
@@ -83,21 +83,21 @@ impl DataLoader for JsonLoader {
                         let instance = self.object_to_instance(obj.clone(), schema)?;
 
                         // Apply class filtering if specified in options
-                        if let Some(ref class_filter) = options.include_classes {
-                            if !class_filter.contains(&instance.class_name) {
+                        if let Some(ref target_class) = options.target_class {
+                            if instance.class_name != *target_class {
                                 continue;
                             }
                         }
 
                         // Apply limit if specified
-                        if let Some(limit) = options.max_instances {
+                        if let Some(limit) = options.limit {
                             if instances.len() >= limit {
                                 break;
                             }
                         }
 
                         instances.push(instance);
-                    } else if options.strict_mode.unwrap_or(false) {
+                    } else if !options.skip_invalid {
                         return Err(LoaderError::InvalidFormat(
                             format!("Array item {} is not an object", index)
                         ));
@@ -110,8 +110,8 @@ impl DataLoader for JsonLoader {
                 let instance = self.object_to_instance(obj, schema)?;
 
                 // Apply class filtering if specified in options
-                if let Some(ref class_filter) = options.include_classes {
-                    if !class_filter.contains(&instance.class_name) {
+                if let Some(ref target_class) = options.target_class {
+                    if instance.class_name != *target_class {
                         return Ok(vec![]);
                     }
                 }
@@ -119,14 +119,13 @@ impl DataLoader for JsonLoader {
                 vec![instance]
             }
             _ => {
-                if options.strict_mode.unwrap_or(false) {
+                if !options.skip_invalid {
                     return Err(LoaderError::InvalidFormat(
                         "JSON must be an object or array of objects".to_string(),
                     ));
-                } else {
-                    // In non-strict mode, return empty result
-                    vec![]
                 }
+                // In skip_invalid mode, return empty result
+                vec![]
             }
         };
 
@@ -144,7 +143,7 @@ impl DataLoader for JsonLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
 }
@@ -249,7 +248,7 @@ impl DataDumper for JsonDumper {
     async fn dump_string(
         &self,
         instances: &[DataInstance],
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
         options: &DumpOptions,
     ) -> DumperResult<String> {
         let json_instances: Vec<Value> = instances
@@ -288,7 +287,7 @@ impl DataDumper for JsonDumper {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
 }
@@ -298,7 +297,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_json_loader() {
+    async fn test_json_loader() -> std::result::Result<(), anyhow::Error> {
         let json_content = r#"
         {
             "@type": "Person",
@@ -308,8 +307,8 @@ mod tests {
         "#;
 
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file: {}", e))?;
-        std::fs::write(temp_file.path(), json_content).map_err(|e| anyhow::anyhow!("should write JSON content: {}", e))?;
+        let temp_file = tempfile::NamedTempFile::new()?;
+        std::fs::write(temp_file.path(), json_content)?;
 
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
@@ -320,8 +319,7 @@ mod tests {
         let options = LoadOptions::default();
         let instances = loader
             .load_file(temp_file.path(), &schema, &options)
-            .await
-            .map_err(|e| anyhow::anyhow!("should load JSON instances: {}", e))?;
+            .await?;
 
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -329,10 +327,11 @@ mod tests {
             instances[0].data.get("name"),
             Some(&Value::String("John Doe".to_string()))
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_json_dumper() {
+    async fn test_json_dumper() -> std::result::Result<(), anyhow::Error> {
         let mut alice_data = HashMap::new();
         alice_data.insert("name".to_string(), Value::String("Alice".to_string()));
         alice_data.insert(
@@ -367,13 +366,13 @@ mod tests {
         let options = DumpOptions::default();
         let json_str = dumper
             .dump_string(&instances, &schema, &options)
-            .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSON: {}", e))?;
+            .await?;
 
-        let parsed: Vec<Value> = serde_json::from_str(&json_str).map_err(|e| anyhow::anyhow!("should parse dumped JSON: {}", e))?;
+        let parsed: Vec<Value> = serde_json::from_str(&json_str)?;
 
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0]["@type"], "Person");
         assert_eq!(parsed[0]["name"], "Alice");
+        Ok(())
     }
 }

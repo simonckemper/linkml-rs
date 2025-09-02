@@ -120,7 +120,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_expression_engine_creation() {
+    fn test_expression_engine_creation() -> std::result::Result<(), anyhow::Error> {
         let engine = ExpressionEngine::new();
         // Test that engine can parse and evaluate
         let expr = engine
@@ -130,5 +130,6 @@ mod tests {
             .evaluate_ast(&expr, &HashMap::new())
             .map_err(|e| anyhow::anyhow!("should evaluate simple expression: {}", e))?;
         assert_eq!(result, serde_json::json!(3.0));
+        Ok(())
     }
 }

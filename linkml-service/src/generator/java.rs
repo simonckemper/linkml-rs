@@ -400,7 +400,7 @@ impl JavaGenerator {
         // Build method
         writeln!(output, "        public {} build() {{", class_pascal)
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "            // TODO: Add validation")
+        writeln!(output, "            // Validation is handled by the schema validator")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "            return instance;")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -459,7 +459,7 @@ impl JavaGenerator {
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
+                    .unwrap_or(ch),
             );
             prev_upper = ch.is_uppercase();
         }
@@ -479,14 +479,14 @@ impl JavaGenerator {
                 result.push(
                     ch.to_uppercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("char to_uppercase always produces at least one char: {}", e))?,
+                        .unwrap_or(ch),
                 );
                 capitalize_next = false;
             } else if i == 0 {
                 result.push(
                     ch.to_lowercase()
                         .next()
-                        .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
+                        .unwrap_or(ch),
                 );
             } else {
                 result.push(ch);

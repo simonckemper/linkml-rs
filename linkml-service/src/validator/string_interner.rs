@@ -173,7 +173,7 @@ impl StringInterner {
 
     /// Get a string reference (requires holding the lock)
     #[must_use]
-    pub fn get_ref(&self, interned: InternedString) -> StringRef {
+    pub fn get_ref(&self, interned: InternedString) -> StringRef<'_> {
         StringRef {
             interner: self,
             handle: interned,

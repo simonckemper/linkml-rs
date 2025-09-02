@@ -15,7 +15,7 @@ use super::traits::{Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use rust_xlsxwriter::{
-    Color, DataValidation, DataValidationRule, Format, FormatAlign, FormatBorder, Note, Workbook,
+    Color, DataValidation, DataValidationRule, ExcelDateTime, Format, FormatAlign, FormatBorder, Note, Workbook,
     Worksheet,
 };
 use std::collections::BTreeMap;
@@ -623,8 +623,10 @@ impl ExcelGenerator {
                             );
                         }
                     } else {
-                        // TODO: Fix data validation rule type
-                        // validation = validation.allow_whole_number_formula("TRUE");
+                        // Allow any whole number when no constraints specified
+                        validation = validation.allow_whole_number(
+                            DataValidationRule::GreaterThanOrEqualTo(i32::MIN),
+                        );
                     }
 
                     validation = validation
@@ -662,8 +664,10 @@ impl ExcelGenerator {
                             );
                         }
                     } else {
-                        // TODO: Fix data validation rule type
-                        // validation = validation.allow_decimal_number_formula("TRUE");
+                        // Allow any decimal number when no constraints specified
+                        validation = validation.allow_decimal_number(
+                            DataValidationRule::Between(f64::MIN, f64::MAX),
+                        );
                     }
 
                     validation = validation
@@ -682,8 +686,11 @@ impl ExcelGenerator {
                 }
                 Some("date") => {
                     let validation = DataValidation::new()
-                        // TODO: Fix data validation rule type
-                        // .allow_date_formula("TRUE")
+                        // Allow dates within a reasonable range
+                        .allow_date(DataValidationRule::Between(
+                            ExcelDateTime::from_ymd(1900, 1, 1).unwrap(),
+                            ExcelDateTime::from_ymd(2100, 12, 31).unwrap(),
+                        ))
                         .set_input_title("Enter a date")
                         .map_err(|e| GeneratorError::Generation {
                             context: "data_validation".to_string(),
@@ -907,7 +914,7 @@ impl ExcelGenerator {
     /// Collect all slots for a class
     fn collect_class_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<Vec<(String, SlotDefinition)>> {

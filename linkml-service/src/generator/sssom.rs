@@ -7,6 +7,7 @@ use crate::generator::traits::{Generator, GeneratorConfig};
 use chrono::Local;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::annotations::AnnotationValue;
 
 /// SSSOM generator configuration
 #[derive(Debug, Clone)]
@@ -116,10 +117,16 @@ impl SssomGenerator {
                     };
                     
                     // Parse value which might be a list or single value
-                    let targets = if value.contains(',') {
-                        value.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
+                    let value_str = match value {
+                        AnnotationValue::String(s) => s.clone(),
+                        AnnotationValue::Number(n) => n.to_string(),
+                        AnnotationValue::Bool(b) => b.to_string(),
+                        _ => format!("{:?}", value), // Fallback for complex types
+                    };
+                    let targets = if value_str.contains(',') {
+                        value_str.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
                     } else {
-                        vec![value.clone()]
+                        vec![value_str]
                     };
                     
                     for target in targets {
@@ -155,10 +162,16 @@ impl SssomGenerator {
                     };
                     
                     // Parse value which might be a list or single value
-                    let targets = if value.contains(',') {
-                        value.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
+                    let value_str = match value {
+                        AnnotationValue::String(s) => s.clone(),
+                        AnnotationValue::Number(n) => n.to_string(),
+                        AnnotationValue::Bool(b) => b.to_string(),
+                        _ => format!("{:?}", value), // Fallback for complex types
+                    };
+                    let targets = if value_str.contains(',') {
+                        value_str.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
                     } else {
-                        vec![value.clone()]
+                        vec![value_str]
                     };
                     
                     for target in targets {
@@ -186,7 +199,13 @@ impl SssomGenerator {
                 if key == "source_file_mappings" || key == "schema_mappings" {
                     // Parse schema-level mappings from annotation value
                     // Expected format: "source:target:predicate:confidence"
-                    for mapping_str in value.split(';') {
+                    let value_str = match value {
+                        AnnotationValue::String(s) => s.clone(),
+                        AnnotationValue::Number(n) => n.to_string(),
+                        AnnotationValue::Bool(b) => b.to_string(),
+                        _ => format!("{:?}", value), // Fallback for complex types
+                    };
+                    for mapping_str in value_str.split(';') {
                         let parts: Vec<&str> = mapping_str.trim().split(':').collect();
                         if parts.len() >= 3 {
                             let subject = parts[0];
@@ -265,7 +284,15 @@ impl SssomGenerator {
             // Check for id_prefixes in annotations (standard extension pattern)
             let id_prefixes = class_def.annotations.as_ref()
                 .and_then(|ann| ann.get("id_prefixes"))
-                .map(|v| v.split(',').map(|s| s.trim().to_string()).collect());
+                .map(|v| {
+                    let value_str = match v {
+                        AnnotationValue::String(s) => s.clone(),
+                        AnnotationValue::Number(n) => n.to_string(),
+                        AnnotationValue::Bool(b) => b.to_string(),
+                        _ => format!("{:?}", v), // Fallback for complex types
+                    };
+                    value_str.split(',').map(|s| s.trim().to_string()).collect()
+                });
             
             self._construct_uri(name, &id_prefixes, schema)
         }
@@ -284,7 +311,15 @@ impl SssomGenerator {
             // Check for id_prefixes in annotations (standard extension pattern)
             let id_prefixes = slot_def.annotations.as_ref()
                 .and_then(|ann| ann.get("id_prefixes"))
-                .map(|v| v.split(',').map(|s| s.trim().to_string()).collect());
+                .map(|v| {
+                    let value_str = match v {
+                        AnnotationValue::String(s) => s.clone(),
+                        AnnotationValue::Number(n) => n.to_string(),
+                        AnnotationValue::Bool(b) => b.to_string(),
+                        _ => format!("{:?}", v), // Fallback for complex types
+                    };
+                    value_str.split(',').map(|s| s.trim().to_string()).collect()
+                });
             
             self._construct_uri(name, &id_prefixes, schema)
         }

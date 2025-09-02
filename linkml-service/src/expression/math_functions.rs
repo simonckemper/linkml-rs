@@ -471,15 +471,16 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_abs_function() {
+    fn test_abs_function() -> Result<(), Box<dyn std::error::Error>> {
         let abs_fn = AbsFunction;
         assert_eq!(abs_fn.call(vec![json!(-5)])?, json!(5.0));
         assert_eq!(abs_fn.call(vec![json!(5)])?, json!(5.0));
         assert_eq!(abs_fn.call(vec![json!(-3.14)])?, json!(3.14));
+        Ok(())
     }
 
     #[test]
-    fn test_sqrt_function() {
+    fn test_sqrt_function() -> Result<(), Box<dyn std::error::Error>> {
         let sqrt_fn = SqrtFunction;
         assert_eq!(sqrt_fn.call(vec![json!(4)])?, json!(2.0));
         assert_eq!(sqrt_fn.call(vec![json!(9)])?, json!(3.0));
@@ -490,18 +491,20 @@ mod tests {
 
         // Negative number should error
         assert!(sqrt_fn.call(vec![json!(-1)]).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_pow_function() {
+    fn test_pow_function() -> Result<(), Box<dyn std::error::Error>> {
         let pow_fn = PowFunction;
         assert_eq!(pow_fn.call(vec![json!(2), json!(3)])?, json!(8.0));
         assert_eq!(pow_fn.call(vec![json!(5), json!(2)])?, json!(25.0));
         assert_eq!(pow_fn.call(vec![json!(10), json!(0)])?, json!(1.0));
+        Ok(())
     }
 
     #[test]
-    fn test_trig_functions() {
+    fn test_trig_functions() -> Result<(), Box<dyn std::error::Error>> {
         let sin_fn = SinFunction;
         let cos_fn = CosFunction;
         let tan_fn = TanFunction;
@@ -521,10 +524,11 @@ mod tests {
         if let Value::Number(n) = sin_result {
             assert!((n.as_f64()? - 1.0).abs() < 1e-10);
         }
+        Ok(())
     }
 
     #[test]
-    fn test_log_function() {
+    fn test_log_function() -> Result<(), Box<dyn std::error::Error>> {
         let log_fn = LogFunction;
 
         // Natural log
@@ -540,20 +544,22 @@ mod tests {
         // Log of non-positive should error
         assert!(log_fn.call(vec![json!(0)]).is_err());
         assert!(log_fn.call(vec![json!(-1)]).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_exp_function() {
+    fn test_exp_function() -> Result<(), Box<dyn std::error::Error>> {
         let exp_fn = ExpFunction;
         assert_eq!(exp_fn.call(vec![json!(0)])?, json!(1.0));
         assert_eq!(
             exp_fn.call(vec![json!(1)])?,
             json!(std::f64::consts::E)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_rounding_functions() {
+    fn test_rounding_functions() -> Result<(), Box<dyn std::error::Error>> {
         let floor_fn = FloorFunction;
         let ceil_fn = CeilFunction;
         let round_fn = RoundFunction;
@@ -573,15 +579,17 @@ mod tests {
             round_fn.call(vec![json!(3.14159), json!(2)])?,
             json!(3.14)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_mod_function() {
+    fn test_mod_function() -> Result<(), Box<dyn std::error::Error>> {
         let mod_fn = ModFunction;
         assert_eq!(mod_fn.call(vec![json!(10), json!(3)])?, json!(1.0));
         assert_eq!(mod_fn.call(vec![json!(7), json!(4)])?, json!(3.0));
 
         // Division by zero should error
         assert!(mod_fn.call(vec![json!(10), json!(0)]).is_err());
+        Ok(())
     }
 }

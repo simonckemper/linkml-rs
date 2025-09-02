@@ -104,7 +104,7 @@ impl Plugin for JsonSchemaGeneratorPlugin {
         &self.info
     }
 
-    async fn initialize(&mut self, context: PluginContext) -> Result<()> {
+    async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
@@ -114,7 +114,7 @@ impl Plugin for JsonSchemaGeneratorPlugin {
         Ok(())
     }
 
-    fn validate_config(&self, config: &HashMap<String, Value>) -> Result<()> {
+    fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
 
@@ -157,7 +157,7 @@ impl Plugin for SqlGeneratorPlugin {
         &self.info
     }
 
-    async fn initialize(&mut self, context: PluginContext) -> Result<()> {
+    async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
@@ -167,7 +167,7 @@ impl Plugin for SqlGeneratorPlugin {
         Ok(())
     }
 
-    fn validate_config(&self, config: &HashMap<String, Value>) -> Result<()> {
+    fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
 
@@ -210,7 +210,7 @@ impl Plugin for TypeQLGeneratorPlugin {
         &self.info
     }
 
-    async fn initialize(&mut self, context: PluginContext) -> Result<()> {
+    async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
@@ -220,7 +220,7 @@ impl Plugin for TypeQLGeneratorPlugin {
         Ok(())
     }
 
-    fn validate_config(&self, config: &HashMap<String, Value>) -> Result<()> {
+    fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
 
@@ -263,7 +263,7 @@ impl Plugin for EnhancedValidatorPlugin {
         &self.info
     }
 
-    async fn initialize(&mut self, context: PluginContext) -> Result<()> {
+    async fn initialize(&mut self, _context: PluginContext) -> Result<()> {
         self.status = PluginStatus::Ready;
         Ok(())
     }
@@ -273,7 +273,7 @@ impl Plugin for EnhancedValidatorPlugin {
         Ok(())
     }
 
-    fn validate_config(&self, config: &HashMap<String, Value>) -> Result<()> {
+    fn validate_config(&self, _config: &HashMap<String, Value>) -> Result<()> {
         Ok(())
     }
 

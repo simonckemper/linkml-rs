@@ -125,7 +125,7 @@ impl ValidatorRegistry {
 
     /// Get all validators that apply to a slot
     #[must_use]
-    pub fn get_validators_for_slot(&self, slot: &SlotDefinition) -> Vec<&dyn Validator> {
+    pub fn get_validators_for_slot(&self, _slot: &SlotDefinition) -> Vec<&dyn Validator> {
         // For now, return all validators and let them decide if they apply
         self.validators
             .iter()
@@ -161,12 +161,11 @@ impl ValidatorRegistry {
 
 /// Base implementation for validators
 pub struct BaseValidator {
-    name: String,
 }
 
 impl BaseValidator {
     /// Create a new base validator
-    pub fn new(name: impl Into<String>) -> Self {
-        Self { _name: name.into() }
+    pub fn new(_name: impl Into<String>) -> Self {
+        Self {}
     }
 }

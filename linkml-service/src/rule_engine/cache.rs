@@ -232,7 +232,7 @@ mod tests {
     use super::*;
     use linkml_core::types::Rule;
 
-    fn create_test_rule() -> CompiledRule {
+    fn create_test_rule() -> Result<CompiledRule, Box<dyn std::error::Error>> {
         CompiledRule::compile(
             Rule {
                 description: Some("Test rule".to_string()),
@@ -240,13 +240,13 @@ mod tests {
             },
             "TestClass".to_string(),
         )
-        .map_err(|e| anyhow::anyhow!("should compile rule: {}", e))?
+        .map_err(|e| anyhow::anyhow!("should compile rule: {}", e))
     }
 
     #[test]
-    fn test_cache_basic_operations() {
+    fn test_cache_basic_operations() -> Result<(), Box<dyn std::error::Error>> {
         let cache = RuleCache::new();
-        let rules = vec![create_test_rule()];
+        let rules = vec![create_test_rule()?];
 
         // Test miss
         assert!(cache.get("TestClass").is_none());
@@ -256,19 +256,20 @@ mod tests {
         cache.put("TestClass".to_string(), rules.clone());
         assert_eq!(cache.stats().entries, 1);
 
-        let retrieved = cache.get("TestClass").map_err(|e| anyhow::anyhow!("should retrieve cached rule: {}", e))?;
+        let retrieved = cache.get("TestClass").ok_or_else(|| anyhow::anyhow!("should retrieve cached rule"))?;
         assert_eq!(retrieved.len(), 1);
         assert_eq!(cache.stats().hits, 1);
+        Ok(())
     }
 
     #[test]
-    fn test_cache_expiration() {
+    fn test_cache_expiration() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig {
             ttl: Duration::from_millis(100),
             ..Default::default()
         };
         let cache = RuleCache::with_config(config);
-        let rules = vec![create_test_rule()];
+        let rules = vec![create_test_rule()?];
 
         cache.put("TestClass".to_string(), rules);
 
@@ -281,10 +282,11 @@ mod tests {
         // Should miss after expiration
         assert!(cache.get("TestClass").is_none());
         assert_eq!(cache.stats().entries, 0);
+        Ok(())
     }
 
     #[test]
-    fn test_cache_eviction() {
+    fn test_cache_eviction() -> Result<(), Box<dyn std::error::Error>> {
         let config = CacheConfig {
             max_entries: 2,
             use_lru: true,
@@ -293,19 +295,20 @@ mod tests {
         let cache = RuleCache::with_config(config);
 
         // Fill cache
-        cache.put("Class1".to_string(), vec![create_test_rule()]);
-        cache.put("Class2".to_string(), vec![create_test_rule()]);
+        cache.put("Class1".to_string(), vec![create_test_rule()?]);
+        cache.put("Class2".to_string(), vec![create_test_rule()?]);
 
         // Access Class2 to make it more recently used
         cache.get("Class2");
 
         // Add third entry, should evict Class1 (LRU)
-        cache.put("Class3".to_string(), vec![create_test_rule()]);
+        cache.put("Class3".to_string(), vec![create_test_rule()?]);
 
         assert_eq!(cache.stats().entries, 2);
         assert_eq!(cache.stats().evictions, 1);
         assert!(cache.get("Class1").is_none());
         assert!(cache.get("Class2").is_some());
         assert!(cache.get("Class3").is_some());
+        Ok(())
     }
 }

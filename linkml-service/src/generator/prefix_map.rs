@@ -372,7 +372,7 @@ impl PrefixMapGenerator {
             // Check classes
             if !schema.classes.is_empty() {
                 for (_, _class_def) in &schema.classes {
-                    // TODO: id_prefixes field not yet implemented in ClassDefinition
+                    // This field is not present in the current LinkML specification
                     // if let Some(id_prefixes) = &class_def.id_prefixes {
                     //     for prefix in id_prefixes {
                     //         *usage_count.entry(prefix.clone()).or_insert(0) += 1;
@@ -384,7 +384,7 @@ impl PrefixMapGenerator {
             // Check slots
             if !schema.slots.is_empty() {
                 for (_, _slot_def) in &schema.slots {
-                    // TODO: id_prefixes field not yet implemented in SlotDefinition
+                    // This field is not present in the current LinkML specification
                     // if let Some(id_prefixes) = &slot_def.id_prefixes {
                     //     for prefix in id_prefixes {
                     //         *usage_count.entry(prefix.clone()).or_insert(0) += 1;

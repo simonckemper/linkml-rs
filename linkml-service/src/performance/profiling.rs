@@ -8,7 +8,30 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
-use timestamp_core::{SyncTimestampService, TimestampError};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+/// Simple timestamp service trait
+pub trait TimestampService: Send + Sync {
+    fn now(&self) -> u64;
+}
+
+/// System-based timestamp service implementation
+pub struct SystemTimestampService;
+
+impl SystemTimestampService {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl TimestampService for SystemTimestampService {
+    fn now(&self) -> u64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64
+    }
+}
 
 /// Performance counter for tracking function call metrics
 #[derive(Debug, Default)]
@@ -95,16 +118,16 @@ impl PerfCounter {
 pub struct Profiler {
     counters: Arc<Mutex<HashMap<String, Arc<PerfCounter>>>>,
     enabled: AtomicU64,
-    timestamp: Arc<dyn SyncTimestampService<Error = TimestampError>>,
+    _timestamp: Arc<dyn TimestampService>,
 }
 
 impl Profiler {
     /// Create a new profiler
-    pub fn new(timestamp: Arc<dyn SyncTimestampService<Error = TimestampError>>) -> Self {
+    pub fn new(timestamp: Arc<dyn TimestampService>) -> Self {
         Self {
             counters: Arc::new(Mutex::new(HashMap::new())),
             enabled: AtomicU64::new(1),
-            timestamp,
+            _timestamp: timestamp,
         }
     }
 
@@ -181,7 +204,7 @@ impl Profiler {
 
 impl Default for Profiler {
     fn default() -> Self {
-        Self::new()
+        Self::new(Arc::new(SystemTimestampService::new()))
     }
 }
 
@@ -257,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_profiler() {
-        let profiler = Profiler::new();
+        let profiler = Profiler::new(Arc::new(SystemTimestampService));
 
         // Time some operations
         profiler.time("test_op", || {
@@ -283,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_timing_guard() {
-        let profiler = Profiler::new();
+        let profiler = Profiler::new(Arc::new(SystemTimestampService));
 
         {
             let _guard = TimingGuard::new(&profiler, "test_scope");

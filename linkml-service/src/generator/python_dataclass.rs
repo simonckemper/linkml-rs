@@ -227,7 +227,7 @@ impl PythonDataclassGenerator {
         output: &mut String,
         slots: &[String],
         schema: &SchemaDefinition,
-        indent: &IndentStyle,
+        _indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         writeln!(output, "    def __post_init__(self):")
             .map_err(Self::fmt_error_to_generator_error)?;

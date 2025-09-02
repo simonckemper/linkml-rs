@@ -179,7 +179,7 @@ impl TypeQLConstraintTranslator {
     /// Generate validation rules for complex constraints
     pub fn generate_validation_rule(
         &self,
-        class_name: &str,
+        _class_name: &str,
         slot_name: &str,
         slot: &SlotDefinition,
     ) -> Option<String> {

@@ -387,10 +387,10 @@ impl ExpressionTranslator {
     /// Translate a conditional expression
     fn translate_conditional(
         &self,
-        condition: &Expression,
-        then_expr: &Expression,
-        else_expr: &Expression,
-        ctx: &mut TranslationContext,
+        _condition: &Expression,
+        _then_expr: &Expression,
+        _else_expr: &Expression,
+        _ctx: &mut TranslationContext,
     ) -> Result<TranslatedExpression, TranslationError> {
         // Conditionals typically need to be split into multiple rules
         Err(TranslationError::ComplexExpression(

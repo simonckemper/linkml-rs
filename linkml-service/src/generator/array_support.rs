@@ -12,13 +12,13 @@ pub trait ArrayCodeGenerator {
     fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String;
 
     /// Generate array initialization code
-    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> String;
+    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>>;
 
     /// Generate array validation code
-    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> String;
+    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>>;
 
     /// Generate array accessor method
-    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> String;
+    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> Result<String, Box<dyn std::error::Error>>;
 }
 
 /// Python/NumPy array code generator
@@ -37,7 +37,7 @@ impl PythonArrayGenerator {
 }
 
 impl ArrayCodeGenerator for PythonArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
         let dtype = match spec.element_type.as_str() {
             "integer" => "np.int64",
             "float" | "double" => "np.float64",
@@ -66,7 +66,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
         }
     }
 
-    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
         let dtype = match spec.element_type.as_str() {
             "integer" => "np.int64",
@@ -83,10 +83,8 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
                 .join(", ");
 
             if spec.allow_missing && spec.missing_value.is_some() {
-                // We checked is_some() so use unwrap_or with a default
-                let missing_val = spec.missing_value
-                    .as_ref()
-                    .unwrap_or(&"None".to_string());
+                // We checked is_some() so use unwrap() since we know it's Some
+                let missing_val = spec.missing_value.as_ref().unwrap();
                 Self::write_or_default(
                     &mut code,
                     format_args!(
@@ -113,10 +111,10 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             );
         }
 
-        code
+        Ok(code)
     }
 
-    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         Self::write_or_default(
@@ -189,10 +187,10 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
         }
 
         Self::write_or_default(&mut code, format_args!("    return True\n"));
-        code
+        Ok(code)
     }
 
-    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> String {
+    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         let indices = spec
@@ -240,7 +238,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             format_args!("    self._array[{}] = value\n", index_args)
         );
 
-        code
+        Ok(code)
     }
 }
 
@@ -262,7 +260,7 @@ impl PythonArrayGenerator {
 pub struct TypeScriptArrayGenerator;
 
 impl ArrayCodeGenerator for TypeScriptArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
         let base_type = match spec.element_type.as_str() {
             "integer" | "float" | "double" => "number",
             "string" => "string",
@@ -279,7 +277,7 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
         array_type
     }
 
-    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         if let Some(shape) = spec.fixed_shape() {
@@ -306,10 +304,10 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
             .map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         }
 
-        code
+        Ok(code)
     }
 
-    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         writeln!(
@@ -325,18 +323,18 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
         if spec.is_fixed_shape() {
             let shape = spec
                 .fixed_shape()
-                .map_err(|e| anyhow::anyhow!("Error: {}", e))?;
+                .ok_or_else(|| anyhow::anyhow!("Fixed shape not available"))?;
             // shape should return Some after is_fixed_shape() check
-            self.generate_shape_validation(&mut code, &shape, 0, "arr");
+            let _ = self.generate_shape_validation(&mut code, &shape, 0, "arr");
         }
 
         writeln!(&mut code, "  return true;").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
-        code
+        Ok(code)
     }
 
-    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> String {
+    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         let params = spec
@@ -358,22 +356,15 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
         writeln!(&mut code, "  return this.array{};", indices).map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
-        code
+        Ok(code)
     }
 }
 
 impl TypeScriptArrayGenerator {
-    /// Helper to handle write errors gracefully
-    fn write_or_default(dest: &mut String, args: std::fmt::Arguments) {
-        if let Err(e) = dest.write_fmt(args) {
-            eprintln!("Warning: Failed to format string in TS array generator: {}", e);
-        }
-    }
-
     fn default_value(&self, element_type: &str) -> &'static str {
         match element_type {
             "integer" | "float" | "double" => "0",
-            "string" => r#"''"#,
+            "string" => r"''",
             "boolean" => "false",
             _ => "null",
         }
@@ -385,7 +376,7 @@ impl TypeScriptArrayGenerator {
         shape: &[usize],
         depth: usize,
         var: &str,
-    ) {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         if depth < shape.len() {
             writeln!(
                 code,
@@ -413,11 +404,12 @@ impl TypeScriptArrayGenerator {
                 .map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
                 let next_var = format!("{}[i]", var);
-                self.generate_shape_validation(code, shape, depth + 1, &next_var);
+                self.generate_shape_validation(code, shape, depth + 1, &next_var)?;
 
                 writeln!(code, "{}}}", "  ".repeat(depth + 1)).map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
             }
         }
+        Ok(())
     }
 }
 
@@ -425,7 +417,7 @@ impl TypeScriptArrayGenerator {
 pub struct RustArrayGenerator;
 
 impl ArrayCodeGenerator for RustArrayGenerator {
-    fn generate_array_type(&self, spec: &ArraySpec, type_name: &str) -> String {
+    fn generate_array_type(&self, spec: &ArraySpec, _type_name: &str) -> String {
         let element_type = match spec.element_type.as_str() {
             "integer" => "i64",
             "float" | "double" => "f64",
@@ -451,7 +443,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
         }
     }
 
-    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_init(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         if let Some(shape) = spec.fixed_shape() {
@@ -479,10 +471,10 @@ impl ArrayCodeGenerator for RustArrayGenerator {
             .map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         }
 
-        code
+        Ok(code)
     }
 
-    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> String {
+    fn generate_array_validation(&self, spec: &ArraySpec, var_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         writeln!(&mut code, "impl {} {{", capitalize_first(var_name))
@@ -544,10 +536,10 @@ impl ArrayCodeGenerator for RustArrayGenerator {
         writeln!(&mut code, "    }}").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
-        code
+        Ok(code)
     }
 
-    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> String {
+    fn generate_array_accessor(&self, spec: &ArraySpec, method_name: &str) -> Result<String, Box<dyn std::error::Error>> {
         let mut code = String::new();
 
         let params = spec
@@ -578,7 +570,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
         writeln!(&mut code, "    self.array[[{}]]", indices).map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
         writeln!(&mut code, "}}").map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
-        code
+        Ok(code)
     }
 }
 
@@ -618,7 +610,7 @@ mod tests {
     use crate::array::ArrayDimension;
 
     #[test]
-    fn test_python_array_generation() {
+    fn test_python_array_generation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("float")
             .with_dimension(ArrayDimension::fixed("x", 10))
             .with_dimension(ArrayDimension::fixed("y", 20));
@@ -629,13 +621,14 @@ mod tests {
         assert!(type_code.contains("NDArray"));
         assert!(type_code.contains("10, 20"));
 
-        let init_code = generator.generate_array_init(&spec, "data");
+        let init_code = generator.generate_array_init(&spec, "data")?;
         assert!(init_code.contains("np.zeros"));
         assert!(init_code.contains("(10, 20)"));
+        Ok(())
     }
 
     #[test]
-    fn test_typescript_array_generation() {
+    fn test_typescript_array_generation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("integer")
             .with_dimension(ArrayDimension::fixed("rows", 3))
             .with_dimension(ArrayDimension::fixed("cols", 4));
@@ -645,13 +638,14 @@ mod tests {
         let type_code = generator.generate_array_type(&spec, "Matrix");
         assert_eq!(type_code, "number[][]");
 
-        let validation = generator.generate_array_validation(&spec, "matrix");
+        let validation = generator.generate_array_validation(&spec, "matrix")?;
         assert!(validation.contains("validateMatrixArray"));
         assert!(validation.contains("length !== 3"));
+        Ok(())
     }
 
     #[test]
-    fn test_rust_array_generation() {
+    fn test_rust_array_generation() -> Result<(), Box<dyn std::error::Error>> {
         let spec = ArraySpec::new("float")
             .with_dimension(ArrayDimension::fixed("x", 100))
             .with_dimension(ArrayDimension::fixed("y", 200));
@@ -661,8 +655,9 @@ mod tests {
         let type_code = generator.generate_array_type(&spec, "Grid");
         assert!(type_code.contains("ndarray::Array2<f64>"));
 
-        let init_code = generator.generate_array_init(&spec, "grid");
+        let init_code = generator.generate_array_init(&spec, "grid")?;
         assert!(init_code.contains("Array::zeros"));
         assert!(init_code.contains("[100, 200]"));
+        Ok(())
     }
 }

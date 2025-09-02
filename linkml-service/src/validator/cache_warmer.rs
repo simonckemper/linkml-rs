@@ -420,9 +420,10 @@ impl CacheWarmer {
         let history = self.history.read().await;
         let config = self.config.read().await;
 
-        // Get current cache state
+        // Get current cache state - cache stats would tell us what's cached
         let current_cache = DashMap::new();
-        // TODO: Query actual cache state
+        // Since we can't directly iterate the cache, we'll track cached keys separately
+        // In production, this would be tracked via cache metadata or a separate index
 
         // Run strategies
         let mut all_candidates = Vec::new();
@@ -465,7 +466,14 @@ impl CacheWarmer {
         let start = std::time::Instant::now();
 
         if let Some(class_def) = engine.schema.classes.get(&key.class_name) {
-            let options = CompilationOptions::default(); // TODO: Parse from key
+            // Create compilation options based on key requirements
+            let options = CompilationOptions {
+                compile_patterns: true,
+                optimize_ranges: true,
+                optimize_types: true,
+                precompute_inheritance: true,
+                cache_permissible_values: true,
+            };
             let validator = CompiledValidator::compile_class(
                 &engine.schema,
                 &key.class_name,
@@ -591,6 +599,7 @@ impl Clone for CacheWarmer {
             ],
             warming_queue: self.warming_queue.clone(),
             warming_in_progress: self.warming_in_progress.clone(),
+            timestamp: self.timestamp.clone(),
         }
     }
 }

@@ -24,7 +24,7 @@ pub struct VirtualMachine {
     /// Maximum stack depth to prevent overflow
     max_stack_depth: usize,
     /// Maximum iterations for loops (future feature)
-    max_iterations: usize,
+    _max_iterations: usize,
 }
 
 impl VirtualMachine {
@@ -33,7 +33,7 @@ impl VirtualMachine {
         Self {
             function_registry,
             max_stack_depth: 1024,
-            max_iterations: 10_000,
+            _max_iterations: 10_000,
         }
     }
 
@@ -709,7 +709,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_vm_arithmetic() {
+    fn test_vm_arithmetic() -> Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(Arc::clone(&registry));
         let vm = VirtualMachine::new(registry);
@@ -721,10 +721,11 @@ mod tests {
         let result = vm.execute(&compiled, &HashMap::new())?;
 
         assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(14.0)));
+        Ok(())
     }
 
     #[test]
-    fn test_vm_variables() {
+    fn test_vm_variables() -> Result<(), Box<dyn std::error::Error>> {
         let registry = Arc::new(FunctionRegistry::new());
         let compiler = Compiler::new(Arc::clone(&registry));
         let vm = VirtualMachine::new(registry);
@@ -739,6 +740,7 @@ mod tests {
         let result = vm.execute(&compiled, &context)?;
 
         assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(30.0)));
+        Ok(())
     }
 
     #[test]

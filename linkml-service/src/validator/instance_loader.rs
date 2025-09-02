@@ -276,9 +276,9 @@ impl InstanceLoader {
     /// Returns an error if the operation fails.
     pub fn load_graphql(
         &self,
-        endpoint: &str,
-        query: &str,
-        config: &InstanceConfig,
+        _endpoint: &str,
+        _query: &str,
+        _config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("GraphQL instance loading"))
     }
@@ -290,9 +290,9 @@ impl InstanceLoader {
     /// Returns an error as this is not yet implemented.
     pub fn load_sql(
         &self,
-        connection: &str,
-        query: &str,
-        config: &InstanceConfig,
+        _connection: &str,
+        _query: &str,
+        _config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SQL instance loading"))
     }
@@ -304,9 +304,9 @@ impl InstanceLoader {
     /// Returns an error as this is not yet implemented.
     pub fn load_sparql(
         &self,
-        endpoint: &str,
-        query: &str,
-        config: &InstanceConfig,
+        _endpoint: &str,
+        _query: &str,
+        _config: &InstanceConfig,
     ) -> Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SPARQL instance loading"))
     }
@@ -383,21 +383,21 @@ mod tests {
             instance_data
                 .values
                 .get("US")
-                .map_err(|e| anyhow::anyhow!("should have US entry: {}", e))?,
+                .ok_or_else(|| anyhow::anyhow!("should have US entry"))?,
             &vec!["United States"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("UK")
-                .map_err(|e| anyhow::anyhow!("should have UK entry: {}", e))?,
+                .ok_or_else(|| anyhow::anyhow!("should have UK entry"))?,
             &vec!["United Kingdom"]
         );
         assert_eq!(
             instance_data
                 .values
                 .get("CA")
-                .map_err(|e| anyhow::anyhow!("should have CA entry: {}", e))?,
+                .ok_or_else(|| anyhow::anyhow!("should have CA entry"))?,
             &vec!["Canada"]
         );
     }
@@ -429,7 +429,7 @@ mod tests {
             instance_data
                 .values
                 .get("US")
-                .map_err(|e| anyhow::anyhow!("should have US entry in CSV data: {}", e))?,
+                .ok_or_else(|| anyhow::anyhow!("should have US entry in CSV data"))?,
             &vec!["United States"]
         );
     }

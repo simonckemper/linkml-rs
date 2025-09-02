@@ -19,7 +19,7 @@
     "url": "git+https://github.com/simonckemper/rootreal.git"
   },
   "license": "MIT",
-  "author": "RootReal Team <support@rootreal.com>",
+  "author": "RootReal Team <support@textpast.com>",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

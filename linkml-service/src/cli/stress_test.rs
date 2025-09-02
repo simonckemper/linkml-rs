@@ -120,7 +120,7 @@ where
             let latencies = self.latencies.clone();
             let errors = self.errors.clone();
             let stop_signal = self.stop_signal.clone();
-            let timestamp = self.timestamp.clone();
+            let _timestamp = self.timestamp.clone();
             let chaos = self.config.chaos;
             let chaos_failure_rate = self.config.chaos_failure_rate;
             let chaos_max_delay_ms = self.config.chaos_max_delay_ms;

@@ -28,11 +28,13 @@ fn get_memory_usage() -> usize {
 #[tokio::test]
 async fn test_schema_compilation_performance() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(create_logger_service());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -43,6 +45,8 @@ async fn test_schema_compilation_performance() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
     )

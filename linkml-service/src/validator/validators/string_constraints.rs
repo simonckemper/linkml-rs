@@ -222,7 +222,7 @@ impl StructuredPatternValidator {
     }
 
     /// Validate using glob syntax
-    fn validate_glob(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
+    fn validate_glob(&self, value: &str, pattern: &str, _partial: bool) -> Result<bool> {
         // Simple glob implementation
         // In production, use a proper glob library
         let regex_pattern = pattern

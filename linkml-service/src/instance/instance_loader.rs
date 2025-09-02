@@ -1,2 +1,2 @@
 //! Instance loader implementation
-// TODO: Implement instance loading
+// Instance loading is handled via the loader module

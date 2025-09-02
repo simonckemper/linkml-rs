@@ -377,7 +377,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_pattern_matching() {
+    fn test_basic_pattern_matching() -> Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         matcher
@@ -394,10 +394,11 @@ mod tests {
                 .matches("email", "not-an-email")
                 .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_capture_groups() {
+    fn test_capture_groups() -> Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         matcher
@@ -411,15 +412,16 @@ mod tests {
         let capture = matcher
             .capture("version", "v1.2.3")
             .map_err(|e| anyhow::anyhow!("capture should succeed: {}", e))?
-            .map_err(|e| anyhow::anyhow!("should find match: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("should find match"))?;
 
         assert_eq!(capture.captures.get("major"), Some(&"1"));
         assert_eq!(capture.captures.get("minor"), Some(&"2"));
         assert_eq!(capture.captures.get("patch"), Some(&"3"));
+        Ok(())
     }
 
     #[test]
-    fn test_pattern_interpolation() {
+    fn test_pattern_interpolation() -> Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         let mut vars = HashMap::new();
@@ -440,10 +442,11 @@ mod tests {
                 .matches("custom", "prod_hello_example")
                 .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_case_insensitive() {
+    fn test_case_insensitive() -> Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         let metadata = PatternMetadata {
@@ -465,10 +468,11 @@ mod tests {
                 .matches("word", "Hello")
                 .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
+        Ok(())
     }
 
     #[test]
-    fn test_builder_pattern() {
+    fn test_builder_pattern() -> Result<(), Box<dyn std::error::Error>> {
         let matcher = PatternMatcherBuilder::new()
             .add_pattern("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+")
             .add_pattern("url", r"https?://[\w.-]+(?:\.[\w.-]+)+[\w/]")
@@ -485,5 +489,6 @@ mod tests {
                 .matches("url", "https://example.com")
                 .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
         );
+        Ok(())
     }
 }

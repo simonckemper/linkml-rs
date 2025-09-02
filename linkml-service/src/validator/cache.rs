@@ -172,7 +172,7 @@ impl CompiledValidatorCache {
             local_cache: Arc::new(RwLock::new(HashMap::new())),
             stats: Arc::new(RwLock::new(CacheStats::default())),
             max_validators,
-            max_memory_bytes: max_memory_bytes,
+            max_memory_bytes,
             cache_service: None,
         }
     }
@@ -226,25 +226,31 @@ impl CompiledValidatorCache {
         key: ValidatorCacheKey,
         validator: CompiledValidator,
     ) -> LinkMLResult<()> {
+        let validator_memory = Self::estimate_validator_memory(&validator);
         let validator_arc = Arc::new(validator);
 
         // Check if we need to evict
         {
             let mut cache = self.local_cache.write();
+            let mut stats = self.stats.write();
 
-            // Simple LRU eviction if at capacity
-            if cache.len() >= self.max_validators {
-                // Remove oldest entry (simple strategy for now)
+            // Evict based on memory limit or validator count
+            while !cache.is_empty() 
+                && (cache.len() >= self.max_validators 
+                    || stats.memory_bytes + validator_memory > self.max_memory_bytes)
+            {
+                // Remove oldest entry (simple LRU strategy)
                 if let Some(first_key) = cache.keys().next().cloned() {
-                    cache.remove(&first_key);
-                    let mut stats = self.stats.write();
-                    stats.evictions += 1;
+                    if let Some(removed) = cache.remove(&first_key) {
+                        let removed_memory = Self::estimate_validator_memory(&removed);
+                        stats.memory_bytes = stats.memory_bytes.saturating_sub(removed_memory);
+                        stats.evictions += 1;
+                    }
                 }
             }
 
             cache.insert(key.clone(), Arc::clone(&validator_arc));
-
-            let mut stats = self.stats.write();
+            stats.memory_bytes += validator_memory;
             stats.cached_validators = cache.len();
         }
 
@@ -272,6 +278,7 @@ impl CompiledValidatorCache {
 
             let mut stats = self.stats.write();
             stats.cached_validators = 0;
+            stats.memory_bytes = 0;
         }
 
         // Clear distributed cache if available
@@ -325,7 +332,7 @@ impl CompiledValidatorCache {
     }
 
     /// Estimate memory usage of a validator
-    fn estimate_validator_memory(validator: &CompiledValidator) -> usize {
+    pub(crate) fn estimate_validator_memory(validator: &CompiledValidator) -> usize {
         // Basic estimation - would need more sophisticated calculation
         std::mem::size_of::<CompiledValidator>()
             + validator.compiled_patterns.len() * 1024 // Rough estimate for regex

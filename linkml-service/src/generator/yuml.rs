@@ -370,7 +370,7 @@ impl YumlGenerator {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -434,7 +434,7 @@ impl AsyncGenerator for YumlGenerator {
     async fn generate(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
+        _options: &GeneratorOptions,
     ) -> GeneratorResult<Vec<GeneratedOutput>> {
         let content = self.generate_yuml(schema)?;
 

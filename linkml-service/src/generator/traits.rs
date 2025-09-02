@@ -47,6 +47,15 @@ pub enum GeneratorError {
 /// Result type for generator operations
 pub type GeneratorResult<T> = std::result::Result<T, GeneratorError>;
 
+impl From<anyhow::Error> for GeneratorError {
+    fn from(err: anyhow::Error) -> Self {
+        GeneratorError::Generation {
+            context: "anyhow".to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 impl From<GeneratorError> for LinkMLError {
     fn from(err: GeneratorError) -> Self {
         match err {
@@ -342,7 +351,7 @@ pub trait Generator: Send + Sync {
     fn get_default_filename(&self) -> &str;
 
     /// Validate schema before generation (optional)
-    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         Ok(())
     }
 }

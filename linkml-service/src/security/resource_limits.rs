@@ -104,7 +104,7 @@ impl ResourceLimits {
 pub struct ResourceMonitor {
     limits: ResourceLimits,
     start_time: std::time::Instant,  // Store as Instant for elapsed calculation
-    timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
+    _timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
     memory_used: AtomicUsize,
     parallel_ops: AtomicUsize,
     cache_memory: AtomicUsize,
@@ -117,14 +117,12 @@ impl ResourceMonitor {
         limits: ResourceLimits,
         timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
     ) -> Self {
-        let start_time = timestamp_service
-            .now_instant()
-            .unwrap_or_else(|_| std::time::Instant::now());
+        let start_time = std::time::Instant::now();
         
         Self {
             limits,
             start_time,
-            timestamp_service,
+            _timestamp_service: timestamp_service,
             memory_used: AtomicUsize::new(0),
             parallel_ops: AtomicUsize::new(0),
             cache_memory: AtomicUsize::new(0),
@@ -175,7 +173,7 @@ impl ResourceMonitor {
     }
 
     /// Start a parallel operation
-    pub fn start_parallel_op(&self) -> Result<ParallelOpGuard, ResourceError> {
+    pub fn start_parallel_op(&self) -> Result<ParallelOpGuard<'_>, ResourceError> {
         let current = self.parallel_ops.fetch_add(1, Ordering::Relaxed) + 1;
         if current > self.limits.max_parallel_validators {
             self.parallel_ops.fetch_sub(1, Ordering::Relaxed);
@@ -285,7 +283,8 @@ mod tests {
             max_validation_time: Duration::from_millis(100),
             ..Default::default()
         };
-        let monitor = ResourceMonitor::new(limits);
+        let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+        let monitor = ResourceMonitor::new(limits, timestamp_service);
 
         // Should not timeout immediately
         assert!(monitor.check_timeout().is_ok());
@@ -300,7 +299,8 @@ mod tests {
 
     #[test]
     fn test_memory_tracking() {
-        let monitor = ResourceMonitor::new(ResourceLimits::default());
+        let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+        let monitor = ResourceMonitor::new(ResourceLimits::default(), timestamp_service);
 
         // Allocate some memory
         assert!(monitor.allocate_memory(1000).is_ok());
@@ -317,7 +317,8 @@ mod tests {
             max_parallel_validators: 2,
             ..Default::default()
         };
-        let monitor = Arc::new(ResourceMonitor::new(limits));
+        let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+        let monitor = Arc::new(ResourceMonitor::new(limits, timestamp_service));
 
         // Start two ops (should succeed)
         let _guard1 = monitor.start_parallel_op()?;

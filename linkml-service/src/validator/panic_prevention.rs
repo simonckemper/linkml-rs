@@ -70,7 +70,7 @@ impl StackDepthTracker {
     /// # Errors
     ///
     /// Returns an error if maximum recursion depth is exceeded.
-    pub fn enter(&self) -> Result<StackDepthGuard> {
+    pub fn enter(&self) -> Result<StackDepthGuard<'_>> {
         let thread_id = thread::current().id();
         let mut depth = self.depths.entry(thread_id).or_insert(0);
 
@@ -503,8 +503,8 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_mutex<T>(
         mutex: &std::sync::Mutex<T>,
-        timeout: Duration,
-    ) -> Result<std::sync::MutexGuard<T>> {
+        _timeout: Duration,
+    ) -> Result<std::sync::MutexGuard<'_, T>> {
         match mutex.lock() {
             Ok(guard) => Ok(guard),
             Err(poisoned) => {
@@ -521,8 +521,8 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_read<T>(
         rwlock: &std::sync::RwLock<T>,
-        timeout: Duration,
-    ) -> Result<std::sync::RwLockReadGuard<T>> {
+        _timeout: Duration,
+    ) -> Result<std::sync::RwLockReadGuard<'_, T>> {
         match rwlock.read() {
             Ok(guard) => Ok(guard),
             Err(poisoned) => {
@@ -539,8 +539,8 @@ impl PoisonRecovery {
     /// Always returns Ok since it recovers from poison errors.
     pub fn recover_write<T>(
         rwlock: &std::sync::RwLock<T>,
-        timeout: Duration,
-    ) -> Result<std::sync::RwLockWriteGuard<T>> {
+        _timeout: Duration,
+    ) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
         match rwlock.write() {
             Ok(guard) => Ok(guard),
             Err(poisoned) => {

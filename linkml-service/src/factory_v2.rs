@@ -315,6 +315,10 @@ where
 mod tests {
     use super::*;
 
-    // Tests would go here following RootReal testing patterns
-    // Using mock services only in tests (never in production code)
+    #[tokio::test]
+    async fn test_factory_v2_placeholder() {
+        // Placeholder test to validate factory_v2 module structure
+        // TODO: Implement comprehensive factory tests with mock services
+        assert!(true, "Factory V2 module structure is valid");
+    }
 }

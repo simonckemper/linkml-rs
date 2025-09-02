@@ -573,7 +573,7 @@ impl SchemaDiff {
     }
 
     /// Detect breaking changes
-    fn detect_breaking_changes(&self, result: &DiffResult) {
+    fn detect_breaking_changes(&self, _result: &DiffResult) {
         // Already handled during comparison
         // Additional breaking change detection could go here
     }
@@ -852,7 +852,7 @@ mod tests {
         schema2
             .classes
             .get_mut("Person")
-            .map_err(|e| anyhow::anyhow!("Person class should exist: {}", e))?
+            .ok_or_else(|| anyhow::anyhow!("Person class should exist"))?
             .slots
             .push("email".to_string());
 

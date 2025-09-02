@@ -71,7 +71,7 @@ impl DataLoader for YamlLoader {
             serde_yaml::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
 
         // Apply options for validation and filtering
-        if options.validate_on_load.unwrap_or(true) {
+        if options.validate {
             self.validate_schema(schema)?;
         }
 
@@ -90,21 +90,21 @@ impl DataLoader for YamlLoader {
                         let instance = self.object_to_instance(obj.clone(), schema)?;
 
                         // Apply class filtering if specified in options
-                        if let Some(ref class_filter) = options.include_classes {
-                            if !class_filter.contains(&instance.class_name) {
+                        if let Some(ref target_class) = options.target_class {
+                            if instance.class_name != *target_class {
                                 continue;
                             }
                         }
 
                         // Apply limit if specified
-                        if let Some(limit) = options.max_instances {
+                        if let Some(limit) = options.limit {
                             if instances.len() >= limit {
                                 break;
                             }
                         }
 
                         instances.push(instance);
-                    } else if options.strict_mode.unwrap_or(false) {
+                    } else if !options.skip_invalid {
                         return Err(LoaderError::InvalidFormat(
                             format!("Array item {} is not a mapping", index)
                         ));
@@ -117,8 +117,8 @@ impl DataLoader for YamlLoader {
                 let instance = self.object_to_instance(obj, schema)?;
 
                 // Apply class filtering if specified in options
-                if let Some(ref class_filter) = options.include_classes {
-                    if !class_filter.contains(&instance.class_name) {
+                if let Some(ref target_class) = options.target_class {
+                    if instance.class_name != *target_class {
                         return Ok(vec![]);
                     }
                 }
@@ -126,14 +126,13 @@ impl DataLoader for YamlLoader {
                 vec![instance]
             }
             _ => {
-                if options.strict_mode.unwrap_or(false) {
+                if !options.skip_invalid {
                     return Err(LoaderError::InvalidFormat(
                         "YAML must be a mapping or sequence of mappings".to_string(),
                     ));
-                } else {
-                    // In non-strict mode, return empty result
-                    vec![]
                 }
+                // In skip_invalid mode, return empty result
+                vec![]
             }
         };
 
@@ -151,7 +150,7 @@ impl DataLoader for YamlLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         Ok(())
     }
 }
@@ -266,10 +265,10 @@ impl DataDumper for YamlDumper {
     async fn dump_string(
         &self,
         instances: &[DataInstance],
-        schema: &SchemaDefinition,
-        options: &DumpOptions,
+        _schema: &SchemaDefinition,
+        _options: &DumpOptions,
     ) -> DumperResult<String> {
-        let yaml_instances: Vec<serde_yaml::Value> = instances
+        let yaml_instances: std::result::Result<Vec<serde_yaml::Value>, DumperError> = instances
             .iter()
             .map(|instance| {
                 let mut obj = instance.data.clone();
@@ -283,10 +282,11 @@ impl DataDumper for YamlDumper {
                 // Convert to YAML value
                 let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
                 let json_str =
-                    serde_json::to_string(&json_obj).map_err(|e| anyhow::anyhow!("valid JSON object should serialize: {}", e))?;
-                serde_yaml::from_str(&json_str).map_err(|e| anyhow::anyhow!("valid JSON should parse as YAML: {}", e))?
+                    serde_json::to_string(&json_obj).map_err(|e| DumperError::Serialization(format!("JSON serialization failed: {}", e)))?;
+                serde_yaml::from_str(&json_str).map_err(|e| DumperError::Serialization(format!("YAML parsing failed: {}", e)))
             })
-            .collect();
+            .collect::<std::result::Result<Vec<_>, DumperError>>();
+        let yaml_instances = yaml_instances?;
 
         let yaml_str = if yaml_instances.len() == 1 {
             serde_yaml::to_string(&yaml_instances[0])
@@ -308,7 +308,7 @@ impl DataDumper for YamlDumper {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         Ok(())
     }
 }
@@ -318,7 +318,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_yaml_loader() {
+    async fn test_yaml_loader() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let yaml_content = r#"
 "@type": Person
 name: John Doe
@@ -329,8 +329,8 @@ emails:
 "#;
 
         // Create temp file
-        let temp_file = tempfile::NamedTempFile::new().map_err(|e| anyhow::anyhow!("should create temporary file: {}", e))?;
-        std::fs::write(temp_file.path(), yaml_content).map_err(|e| anyhow::anyhow!("should write YAML content: {}", e))?;
+        let temp_file = tempfile::NamedTempFile::new()?;
+        std::fs::write(temp_file.path(), yaml_content)?;
 
         let mut schema = SchemaDefinition::default();
         let mut class = ClassDefinition::default();
@@ -341,8 +341,7 @@ emails:
         let options = LoadOptions::default();
         let instances = loader
             .load_file(temp_file.path(), &schema, &options)
-            .await
-            .map_err(|e| anyhow::anyhow!("should load YAML instances: {}", e))?;
+            .await?;
 
         assert_eq!(instances.len(), 1);
         assert_eq!(instances[0].class_name, "Person");
@@ -354,13 +353,14 @@ emails:
             instances[0]
                 .data
                 .get("emails")
-                .map_err(|e| anyhow::anyhow!("should have emails field: {}", e))?
+                .ok_or_else(|| anyhow::anyhow!("should have emails field"))?
                 .is_array()
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_yaml_dumper() {
+    async fn test_yaml_dumper() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let instances = vec![DataInstance {
             class_name: "Person".to_string(),
             data: {
@@ -379,14 +379,14 @@ emails:
         let options = DumpOptions::default();
         let yaml_str = dumper
             .dump_string(&instances, &schema, &options)
-            .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to YAML: {}", e))?;
+            .await?;
         let parsed: serde_yaml::Value =
-            serde_yaml::from_str(&yaml_str).map_err(|e| anyhow::anyhow!("should parse dumped YAML: {}", e))?;
+            serde_yaml::from_str(&yaml_str)?;
 
         assert_eq!(parsed["@type"], "Person");
         assert_eq!(parsed["name"], "Alice");
         assert_eq!(parsed["age"], 25);
         assert_eq!(parsed["active"], true);
+        Ok(())
     }
 }

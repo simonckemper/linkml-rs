@@ -65,7 +65,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
     async fn load_str(
         &mut self,
         content: &str,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let json_value: Value =
             serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
@@ -171,7 +171,7 @@ impl DataDumperV2 for JsonDumperV2 {
     async fn dump_str(
         &mut self,
         instances: Vec<DataInstance>,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> DumperResult<String> {
         if self.jsonl {
             // JSON Lines format - one object per line
@@ -197,7 +197,7 @@ impl DataDumperV2 for JsonDumperV2 {
                 let instance = instances
                     .into_iter()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("should have at least one instance after length check: {}", e))?;
+                    .ok_or_else(|| anyhow::anyhow!("should have at least one instance after length check"))?;
                 let mut obj = instance.data;
                 obj.insert(
                     "@type".to_string(),

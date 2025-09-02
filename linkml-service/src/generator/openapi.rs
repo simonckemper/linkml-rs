@@ -682,15 +682,15 @@ impl Generator for OpenApiGenerator {
 }
 
 impl CodeFormatter for OpenApiGenerator {
-    fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
+    fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
         doc.to_string()
     }
 
     fn format_list<T: AsRef<str>>(
         &self,
         items: &[T],
-        indent: &IndentStyle,
-        level: usize,
+        _indent: &IndentStyle,
+        _level: usize,
         separator: &str,
     ) -> String {
         items

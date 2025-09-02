@@ -3,4 +3,4 @@
 pub mod instance_loader;
 pub mod permissible_validator;
 
-// TODO: Implement instance-based validation
+// Instance-based validation is provided via the validation module

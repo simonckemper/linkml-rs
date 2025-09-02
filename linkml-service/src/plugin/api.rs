@@ -221,7 +221,7 @@ impl PluginBuilder {
                 author: None,
                 license: None,
                 homepage: None,
-                linkml_version: VersionReq::parse("*").map_err(|e| anyhow::anyhow!("'*' is a valid version requirement: {}", e))?,
+                linkml_version: VersionReq::parse("*").expect("'*' is a valid version requirement"),
                 dependencies: Vec::new(),
                 capabilities: Vec::new(),
             },

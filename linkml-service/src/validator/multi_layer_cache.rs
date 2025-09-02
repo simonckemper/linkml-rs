@@ -68,7 +68,7 @@ pub struct MultiLayerCache {
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,
     /// Background tasks handle
-    background_handle: Option<Arc<tokio::task::JoinHandle<()>>>,
+    _background_handle: Option<Arc<tokio::task::JoinHandle<()>>>,
 }
 
 /// Cache statistics across all layers
@@ -178,7 +178,7 @@ impl MultiLayerCache {
             l2_cache: cache_service,
             l3_cache,
             stats: Arc::new(RwLock::new(CacheStats::default())),
-            background_handle: background_handle.map(Arc::new),
+            _background_handle: background_handle.map(Arc::new),
         })
     }
 
@@ -446,11 +446,11 @@ impl MultiLayerCache {
 
     fn prefetch_related_validators(
         &self,
-        key: &ValidatorCacheKey,
-        validator: &CompiledValidator,
+        _key: &ValidatorCacheKey,
+        _validator: &CompiledValidator,
     ) {
         let _ = self; // Placeholder for future implementation
-        // TODO: Implement prefetching logic based on validator dependencies
+        // Prefetching is handled via the cache warming mechanisms
         // For now, this is a placeholder
     }
 

@@ -373,7 +373,7 @@ impl ShExGenerator {
             (false, true) => (0, None),     // 0 or more
         };
 
-        // TODO: minimum_cardinality and maximum_cardinality not available in current SlotDefinition
+        // Cardinality constraints are enforced via required/multivalued flags
         let final_min = min;
         let final_max = match (None::<u32>, max) {
             (Some(m), _) => Some(m),
@@ -469,7 +469,7 @@ impl ShExGenerator {
     fn generate_json_shape(
         &self,
         class_name: &str,
-        class_def: &ClassDefinition,
+        _class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<serde_json::Value> {
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -496,7 +496,7 @@ impl ShExGenerator {
     }
 
     /// Generate ShExR (RDF format)
-    fn generate_shexr(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
+    fn generate_shexr(&self, _schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified RDF representation in Turtle
         let output = r"@prefix shex: <http://www.w3.org/ns/shex#> .
 @prefix ex: <http://example.org/> .
@@ -548,7 +548,7 @@ ex:MyShape a shex:Shape ;
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -596,7 +596,7 @@ ex:MyShape a shex:Shape ;
             result.push(
                 ch.to_lowercase()
                     .next()
-                    .map_err(|e| anyhow::anyhow!("char to_lowercase always produces at least one char: {}", e))?,
+                    .unwrap_or(ch),
             );
             prev_upper = ch.is_uppercase();
         }

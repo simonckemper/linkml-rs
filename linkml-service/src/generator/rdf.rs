@@ -84,7 +84,7 @@ impl RdfGenerator {
 
         // Write slots as properties
         for (name, slot) in &schema.slots {
-            self.write_slot(&mut output, name, slot, base_uri)?;
+            self.write_slot(&mut output, name, slot, schema, base_uri)?;
         }
 
         // Write types
@@ -178,22 +178,32 @@ impl RdfGenerator {
         }
 
         if self.include_metadata {
-            // TODO: These fields don't exist on SchemaDefinition yet
-            // if let Some(created_by) = &schema.created_by {
-            //     writeln_rdf!(output, "    dcterms:creator \"{}\" ;", created_by)?;
-            // }
-
-            // if let Some(created_on) = &schema.created_on {
-            //     writeln_rdf!(output, "    dcterms:created \"{}\" ;", created_on)?;
-            // }
-
-            // if let Some(modified_by) = &schema.modified_by {
-            //     writeln_rdf!(output, "    dcterms:contributor \"{}\" ;", modified_by)?;
-            // }
-
-            // if let Some(last_updated_on) = &schema.last_updated_on {
-            //     writeln_rdf!(output, "    dcterms:modified \"{}\" ;", last_updated_on)?;
-            // }
+            // Add available metadata fields
+            if let Some(generation_date) = &schema.generation_date {
+                writeln_rdf!(output, "    dcterms:created \"{}\" ;", generation_date)?;
+            }
+            
+            if let Some(source_file) = &schema.source_file {
+                writeln_rdf!(output, "    dcterms:source \"{}\" ;", source_file)?;
+            }
+            
+            if let Some(metamodel_version) = &schema.metamodel_version {
+                writeln_rdf!(output, "    linkml:metamodelVersion \"{}\" ;", metamodel_version)?;
+            }
+            
+            if let Some(status) = &schema.status {
+                writeln_rdf!(output, "    dcterms:conformsTo \"{}\" ;", status)?;
+            }
+            
+            // Categories as subject classification
+            for category in &schema.categories {
+                writeln_rdf!(output, "    dcterms:subject \"{}\" ;", category)?;
+            }
+            
+            // Keywords
+            for keyword in &schema.keywords {
+                writeln_rdf!(output, "    dcat:keyword \"{}\" ;", keyword)?;
+            }
         }
 
         // Contributors
@@ -294,6 +304,7 @@ impl RdfGenerator {
         output: &mut String,
         name: &str,
         slot: &SlotDefinition,
+        schema: &SchemaDefinition,
         base_uri: &str,
     ) -> Result<()> {
         let default_uri = format!("{}/{}", base_uri, name);
@@ -311,11 +322,28 @@ impl RdfGenerator {
             )?;
         }
 
-        // Domain and range
-        // TODO: domain field not yet implemented in SlotDefinition
-        // if let Some(domain) = &slot.domain {
-        //     writeln_rdf!(output, "    rdfs:domain :{} ;", domain)?;
-        // }
+        // Domain - compute from classes that use this slot
+        let mut domains = Vec::new();
+        for (class_name, class) in &schema.classes {
+            if class.slots.contains(&name.to_string()) {
+                domains.push(class_name.clone());
+            }
+        }
+        
+        if domains.len() == 1 {
+            // Single domain
+            writeln_rdf!(output, "    rdfs:domain :{} ;", domains[0])?;
+        } else if domains.len() > 1 {
+            // Multiple domains - use owl:unionOf
+            writeln_rdf!(output, "    rdfs:domain [")?;
+            writeln_rdf!(output, "        a owl:Class ;")?;
+            writeln_rdf!(output, "        owl:unionOf (")?;
+            for domain in &domains {
+                writeln_rdf!(output, "            :{}", domain)?;
+            }
+            writeln_rdf!(output, "        )")?;
+            writeln_rdf!(output, "    ] ;")?;
+        }
 
         if let Some(range) = &slot.range {
             let range_uri = map_range_to_xsd(range);
@@ -390,8 +418,19 @@ impl RdfGenerator {
         enum_def: &EnumDefinition,
         base_uri: &str,
     ) -> Result<()> {
-        // TODO: enum_uri field not yet implemented in EnumDefinition
-        let enum_uri = format!("{}/{}", base_uri, name);
+        // Generate enum URI - use code_set if available, otherwise construct from base_uri
+        let enum_uri = if let Some(code_set) = &enum_def.code_set {
+            // If code_set is a full URI, use it directly
+            if code_set.starts_with("http://") || code_set.starts_with("https://") {
+                code_set.clone()
+            } else {
+                // Otherwise construct URI from base and code_set
+                format!("{}/{}", base_uri, code_set)
+            }
+        } else {
+            // Default to base_uri + enum name
+            format!("{}/enums/{}", base_uri, name)
+        };
 
         writeln_rdf!(output, "# Enumeration: {}", name)?;
         writeln_rdf!(output, "<{}> a rdfs:Class ;", enum_uri)?;

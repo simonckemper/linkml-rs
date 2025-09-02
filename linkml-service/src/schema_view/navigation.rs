@@ -17,8 +17,8 @@ pub struct NavigationCache {
     /// Cached induced slots (key: "class_name.slot_name")
     induced_slots: HashMap<String, SlotDefinition>,
 
-    /// Cached inheritance chains
-    inheritance_chains: HashMap<String, Vec<String>>,
+    /// Cached inheritance chains (reserved for future use)
+    _inheritance_chains: HashMap<String, Vec<String>>,
 }
 
 impl NavigationCache {
@@ -27,7 +27,7 @@ impl NavigationCache {
         Self {
             induced_classes: HashMap::new(),
             induced_slots: HashMap::new(),
-            inheritance_chains: HashMap::new(),
+            _inheritance_chains: HashMap::new(),
         }
     }
 

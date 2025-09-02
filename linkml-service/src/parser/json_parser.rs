@@ -45,7 +45,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_minimal_schema() {
+    fn test_parse_minimal_schema() -> std::result::Result<(), anyhow::Error> {
         let json = r#"{
             "id": "https://example.org/test",
             "name": "test_schema"
@@ -53,11 +53,11 @@ mod tests {
 
         let parser = JsonParser::new();
         let schema = parser
-            .parse_str(json)
-            .map_err(|e| anyhow::anyhow!("Failed to parse minimal JSON schema: {}", e))?;
+            .parse_str(json)?;
 
         assert_eq!(schema.id, "https://example.org/test");
         assert_eq!(schema.name, "test_schema");
+        Ok(())
     }
 
     #[test]

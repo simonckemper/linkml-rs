@@ -554,7 +554,7 @@ impl RdfLoader {
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
-        class_name: &str,
+        _class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Vec<String> {
@@ -639,7 +639,7 @@ impl DataLoader for RdfLoader {
         self.extract_instances(&store, schema, options)
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         // RDF can handle any schema
         Ok(())
     }
@@ -792,7 +792,7 @@ impl RdfDumper {
     fn property_to_predicate(
         &self,
         property: &str,
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> DumperResult<NamedNode> {
         // Handle prefixed names
         if let Some(colon_pos) = property.find(':') {
@@ -997,7 +997,7 @@ impl DataDumper for RdfDumper {
         self.serialize_store(&store)
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
         // RDF can handle any schema
         Ok(())
     }
@@ -1069,7 +1069,7 @@ ex:bob rdf:type ex:Person ;
         let alice = instances
             .iter()
             .find(|i| i.id.as_deref() == Some("http://example.org/alice"))
-            .map_err(|e| anyhow::anyhow!("should find alice instance: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("should find alice instance"))?;
         assert_eq!(alice.class_name, "Person");
         assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
         assert_eq!(

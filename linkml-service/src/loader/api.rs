@@ -753,7 +753,7 @@ impl ApiLoader {
         &self,
         mut obj: Map<String, Value>,
         class_name: &str,
-        endpoint_config: &EndpointConfig,
+        _endpoint_config: &EndpointConfig,
     ) -> LoaderResult<DataInstance> {
         // Apply field mapping if configured
         if let Some(mapping) = self.options.field_mapping.get(class_name) {
@@ -800,9 +800,9 @@ impl DataLoader for ApiLoader {
 
     async fn load_file(
         &self,
-        path: &std::path::Path,
-        schema: &SchemaDefinition,
-        options: &super::traits::LoadOptions,
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &super::traits::LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         Err(LoaderError::InvalidFormat(
             "API loader does not support file loading".to_string(),
@@ -811,9 +811,9 @@ impl DataLoader for ApiLoader {
 
     async fn load_string(
         &self,
-        content: &str,
+        _content: &str,
         schema: &SchemaDefinition,
-        options: &super::traits::LoadOptions,
+        _options: &super::traits::LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         // Load from all configured endpoints
         let mut all_instances = Vec::new();
@@ -838,16 +838,16 @@ impl DataLoader for ApiLoader {
 
     async fn load_bytes(
         &self,
-        data: &[u8],
-        schema: &SchemaDefinition,
-        options: &super::traits::LoadOptions,
+        _data: &[u8],
+        _schema: &SchemaDefinition,
+        _options: &super::traits::LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         Err(LoaderError::InvalidFormat(
             "API loader does not support raw bytes loading".to_string(),
         ))
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
         // Could validate that schema classes match endpoint configurations
         Ok(())
     }
@@ -1049,10 +1049,10 @@ impl DataDumper for ApiDumper {
 
     async fn dump_file(
         &self,
-        instances: &[DataInstance],
-        path: &std::path::Path,
-        schema: &SchemaDefinition,
-        options: &super::traits::DumpOptions,
+        _instances: &[DataInstance],
+        _path: &std::path::Path,
+        _schema: &SchemaDefinition,
+        _options: &super::traits::DumpOptions,
     ) -> DumperResult<()> {
         Err(DumperError::Configuration(
             "API dumper does not support file dumping".to_string(),

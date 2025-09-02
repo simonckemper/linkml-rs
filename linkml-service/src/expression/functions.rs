@@ -588,7 +588,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_len_function() {
+    fn test_len_function() -> Result<(), Box<dyn std::error::Error>> {
         let registry = FunctionRegistry::new();
 
         // String length
@@ -625,7 +625,7 @@ mod tests {
     }
 
     #[test]
-    fn test_max_min_functions() {
+    fn test_max_min_functions() -> Result<(), Box<dyn std::error::Error>> {
         let registry = FunctionRegistry::new();
 
         // max
@@ -654,7 +654,7 @@ mod tests {
     }
 
     #[test]
-    fn test_case_function() {
+    fn test_case_function() -> Result<(), Box<dyn std::error::Error>> {
         let registry = FunctionRegistry::new();
 
         // First condition true
@@ -710,7 +710,7 @@ mod tests {
     }
 
     #[test]
-    fn test_contains_function() {
+    fn test_contains_function() -> Result<(), Box<dyn std::error::Error>> {
         let registry = FunctionRegistry::new();
 
         // String contains

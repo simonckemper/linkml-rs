@@ -61,7 +61,7 @@ impl RustGenerator {
         class: &ClassDefinition,
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
-        indent: &IndentStyle,
+        _indent: &IndentStyle,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
         let trait_name = format!("{}Trait", BaseCodeFormatter::to_pascal_case(class_name));
@@ -150,8 +150,8 @@ impl RustGenerator {
         class_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
-        indent: &IndentStyle,
+        _options: &GeneratorOptions,
+        _indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         // Find the trait to implement (could be from parent class)
         let trait_class =
@@ -510,7 +510,7 @@ impl RustGenerator {
         struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
+        _options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         writeln!(output, "impl {} {{", struct_name).map_err(Self::fmt_error_to_generator_error)?;
@@ -621,7 +621,7 @@ impl RustGenerator {
         struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
+        _options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let builder_name = format!("{struct_name}Builder");
@@ -732,7 +732,7 @@ impl RustGenerator {
     fn generate_validation_method(
         &self,
         output: &mut String,
-        struct_name: &str,
+        _struct_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
         indent: &IndentStyle,
@@ -1046,7 +1046,7 @@ impl RustGenerator {
     }
 
     /// Get derive macros for a class
-    fn get_derives(&self, class: &ClassDefinition, options: &GeneratorOptions) -> Vec<String> {
+    fn get_derives(&self, _class: &ClassDefinition, _options: &GeneratorOptions) -> Vec<String> {
         let mut derives = vec![
             "Debug".to_string(),
             "Clone".to_string(),
@@ -1055,16 +1055,16 @@ impl RustGenerator {
         ];
 
         // Always include serde unless explicitly disabled
-        if options.get_custom("derive_serde") != Some("false") {
+        if _options.get_custom("derive_serde") != Some("false") {
             derives.push("Serialize".to_string());
             derives.push("Deserialize".to_string());
         }
 
-        if options.get_custom("derive_eq") == Some("true") {
+        if _options.get_custom("derive_eq") == Some("true") {
             derives.push("Eq".to_string());
         }
 
-        if options.get_custom("derive_hash") == Some("true") {
+        if _options.get_custom("derive_hash") == Some("true") {
             derives.push("Hash".to_string());
         }
 
@@ -1729,7 +1729,7 @@ impl RustGenerator {
     fn generate_tests(
         &self,
         schema: &SchemaDefinition,
-        options: &GeneratorOptions,
+        _options: &GeneratorOptions,
     ) -> GeneratorResult<GeneratedOutput> {
         let mut output = String::new();
 

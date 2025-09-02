@@ -163,7 +163,7 @@ pub struct ResourceLimiter {
 struct ActiveOperation {
     id: String,
     start_time: Instant,
-    requirements: ResourceRequirements,
+    _requirements: ResourceRequirements,
     timeout_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
@@ -260,7 +260,7 @@ impl ResourceLimiter {
             ActiveOperation {
                 id: operation_id.clone(),
                 start_time: Instant::now(),
-                requirements: requirements.clone(),
+                _requirements: requirements.clone(),
                 timeout_handle: Some(timeout_handle),
             },
         );
@@ -271,7 +271,7 @@ impl ResourceLimiter {
         Ok(ResourceGuard {
             operation_id,
             limiter: self.clone(),
-            permit: Some(permit),
+            _permit: Some(permit),
             start_time: Instant::now(),
         })
     }
@@ -474,7 +474,7 @@ impl Clone for ResourceLimiter {
 pub struct ResourceGuard {
     operation_id: String,
     limiter: ResourceLimiter,
-    permit: Option<tokio::sync::OwnedSemaphorePermit>,
+    _permit: Option<tokio::sync::OwnedSemaphorePermit>,
     start_time: Instant,
 }
 
@@ -522,8 +522,8 @@ pub struct ResourceStats {
 
 /// System resource monitor implementation
 pub struct SystemResourceMonitor {
-    /// Process handle for monitoring
-    process: sysinfo::System,
+    /// Process handle for monitoring (kept for future RAII use)
+    _process: sysinfo::System,
 }
 
 impl Default for SystemResourceMonitor {
@@ -537,26 +537,29 @@ impl SystemResourceMonitor {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            process: sysinfo::System::new(),
+            _process: sysinfo::System::new(),
         }
     }
 }
 
 impl ResourceMonitor for SystemResourceMonitor {
     fn get_memory_usage(&self) -> usize {
-        // Get current process memory usage
-        // This is a simplified implementation
-        // In production, use sysinfo crate properly
-        0
+        // Get current process memory usage using sysinfo
+        // Note: sysinfo::System doesn't implement Clone, so we create a new instance
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        system.used_memory() as usize
     }
 
     fn get_cpu_usage(&self) -> f32 {
-        // Get current process CPU usage
-        // This is a simplified implementation
-        0.0
+        // Get current process CPU usage using sysinfo
+        // Note: sysinfo::System doesn't implement Clone, so we create a new instance
+        let mut system = sysinfo::System::new();
+        system.refresh_cpu_all();
+        system.global_cpu_usage()
     }
 
-    fn check_resources(&self, required: &ResourceRequirements) -> Result<()> {
+    fn check_resources(&self, _required: &ResourceRequirements) -> Result<()> {
         // Check if resources are available
         Ok(())
     }

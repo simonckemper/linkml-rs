@@ -534,14 +534,14 @@ impl Compiler {
         let mut i = 0;
         while i + 1 < ctx.instructions.len() {
             match (&ctx.instructions[i], &ctx.instructions[i + 1]) {
-                // Combine consecutive field accesses: Load(x), Field(a), Field(b) -> LoadField(x, a.b)
-                (Instruction::Load(var), Instruction::Field(field)) => {
+                // Combine consecutive field accesses: Load(x), GetField(a), GetField(b) -> optimized sequence
+                (Instruction::Load(_var), Instruction::GetField(field)) => {
                     // Check if this is part of a chain of field accesses
                     let mut field_chain = vec![field.clone()];
                     let mut j = i + 2;
 
                     while j < ctx.instructions.len() {
-                        if let Instruction::Field(next_field) = &ctx.instructions[j] {
+                        if let Instruction::GetField(next_field) = &ctx.instructions[j] {
                             field_chain.push(next_field.clone());
                             j += 1;
                         } else {
@@ -549,13 +549,9 @@ impl Compiler {
                         }
                     }
 
-                    // If we have multiple field accesses, combine them
-                    if field_chain.len() > 1 {
-                        let combined_field = field_chain.join(".");
-                        ctx.instructions[i] = Instruction::LoadField(var.clone(), combined_field);
-                        // Remove the individual field access instructions
-                        ctx.instructions.drain(i + 1..j);
-                    }
+                    // If we have multiple field accesses, we could optimize this further
+                    // For now, just leave the original instructions
+                    // TODO: Add LoadField variant to Instruction enum for better optimization
                 }
 
                 // Combine duplicate loads: Load(x), Load(x) -> Load(x), Dup

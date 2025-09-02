@@ -8,7 +8,7 @@ description = "LinkML schema validation service with 100% Python parity and Type
 repository = "https://github.com/simonckemper/rootreal"
 keywords = ["linkml", "schema", "validation", "typeql", "codegen"]
 categories = ["data-structures", "encoding", "parser-implementations", "development-tools"]
-
+readme = "README.md"
 [features]
 default = []
 database = []  # Feature flag for database support (temporarily without sqlx dependency due to SQLite conflicts)
