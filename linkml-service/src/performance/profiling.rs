@@ -12,6 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Simple timestamp service trait
 pub trait TimestampService: Send + Sync {
+    /// Get the current timestamp in milliseconds since Unix epoch
     fn now(&self) -> u64;
 }
 
@@ -19,6 +20,7 @@ pub trait TimestampService: Send + Sync {
 pub struct SystemTimestampService;
 
 impl SystemTimestampService {
+    /// Create a new system timestamp service
     pub fn new() -> Self {
         Self
     }

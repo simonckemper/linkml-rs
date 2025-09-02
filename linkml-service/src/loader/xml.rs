@@ -68,11 +68,9 @@ impl DataLoader for XmlLoader {
     ) -> LoaderResult<Vec<DataInstance>> {
         let _content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
 
-        // TODO: Implement actual XML parsing
-        // For now, return a placeholder implementation
-        Err(LoaderError::InvalidFormat(
-            "XML loading not yet implemented".to_string(),
-        ))
+        // Basic XML parsing implementation
+        // This is a simplified implementation that can be enhanced with full XML schema support
+        self.load_string(&_content, _schema, _options).await
     }
 
     async fn load_string(
@@ -81,10 +79,64 @@ impl DataLoader for XmlLoader {
         _schema: &SchemaDefinition,
         _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        // TODO: Implement actual XML parsing
-        Err(LoaderError::InvalidFormat(
-            "XML loading not yet implemented".to_string(),
-        ))
+        // Basic XML parsing implementation using quick-xml
+        use quick_xml::Reader;
+        use quick_xml::events::Event;
+        use std::collections::HashMap;
+
+        let mut reader = Reader::from_str(_content);
+        reader.trim_text(true);
+
+        let mut instances = Vec::new();
+        let mut current_instance: Option<DataInstance> = None;
+        let mut current_element = String::new();
+        let mut current_values = HashMap::new();
+
+        loop {
+            match reader.read_event() {
+                Ok(Event::Start(ref e)) => {
+                    let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    if _schema.classes.contains_key(&name) {
+                        // Start of a new instance
+                        current_instance = Some(DataInstance {
+                            id: None,
+                            class_name: name.clone(),
+                            data: HashMap::new(),
+                            metadata: HashMap::new(),
+                        });
+                        current_values.clear();
+                    } else {
+                        current_element = name;
+                    }
+                }
+                Ok(Event::Text(e)) => {
+                    if !current_element.is_empty() {
+                        let text = e.unescape().unwrap_or_default().to_string();
+                        if !text.trim().is_empty() {
+                            current_values.insert(current_element.clone(), serde_json::Value::String(text));
+                        }
+                    }
+                }
+                Ok(Event::End(ref e)) => {
+                    let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                    if let Some(ref mut instance) = current_instance {
+                        if instance.class_name == name {
+                            // End of instance
+                            instance.data = current_values.clone();
+                            instances.push(instance.clone());
+                            current_instance = None;
+                            current_values.clear();
+                        }
+                    }
+                    current_element.clear();
+                }
+                Ok(Event::Eof) => break,
+                Err(e) => return Err(LoaderError::InvalidFormat(format!("XML parsing error: {}", e))),
+                _ => {}
+            }
+        }
+
+        Ok(instances)
     }
 
     async fn load_bytes(

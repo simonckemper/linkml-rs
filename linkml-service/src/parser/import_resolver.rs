@@ -74,6 +74,11 @@ impl ImportResolver {
         Ok(schema.clone())
     }
 
+    /// Resolve imports asynchronously
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if import resolution fails.
     pub async fn resolve_imports_async(
         &self,
         schema: &SchemaDefinition,

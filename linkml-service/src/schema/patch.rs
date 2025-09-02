@@ -16,22 +16,50 @@ use super::diff::DiffResult;
 pub enum PatchOperation {
     /// Add a new element
     #[serde(rename = "add")]
-    Add { path: String, value: Value },
+    Add {
+        /// The path where to add the element
+        path: String,
+        /// The value to add
+        value: Value
+    },
     /// Remove an element
     #[serde(rename = "remove")]
-    Remove { path: String },
+    Remove {
+        /// The path of the element to remove
+        path: String
+    },
     /// Replace an element
     #[serde(rename = "replace")]
-    Replace { path: String, value: Value },
+    Replace {
+        /// The path of the element to replace
+        path: String,
+        /// The new value
+        value: Value
+    },
     /// Move an element
     #[serde(rename = "move")]
-    Move { from: String, path: String },
+    Move {
+        /// The source path
+        from: String,
+        /// The destination path
+        path: String
+    },
     /// Copy an element
     #[serde(rename = "copy")]
-    Copy { from: String, path: String },
+    Copy {
+        /// The source path
+        from: String,
+        /// The destination path
+        path: String
+    },
     /// Test a value (for conditional patches)
     #[serde(rename = "test")]
-    Test { path: String, value: Value },
+    Test {
+        /// The path to test
+        path: String,
+        /// The expected value
+        value: Value
+    },
 }
 
 /// A collection of patch operations

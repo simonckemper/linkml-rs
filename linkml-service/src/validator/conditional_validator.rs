@@ -43,57 +43,77 @@ pub struct ConditionalRule {
 pub enum Condition {
     /// Slot has a specific value
     Equals {
+        /// The slot name to check
         slot: String,
+        /// The expected value
         value: Value,
     },
 
     /// Slot does not have a specific value
     NotEquals {
+        /// The slot name to check
         slot: String,
+        /// The value that should not match
         value: Value,
     },
 
     /// Slot value is in a set
     In {
+        /// The slot name to check
         slot: String,
+        /// The set of acceptable values
         values: Vec<Value>,
     },
 
     /// Slot value is not in a set
     NotIn {
+        /// The slot name to check
         slot: String,
+        /// The set of values that should not match
         values: Vec<Value>,
     },
 
     /// Slot has any value (not null)
     Present {
+        /// The slot name to check
         slot: String,
     },
 
     /// Slot is null or missing
     Absent {
+        /// The slot name to check
         slot: String,
     },
 
     /// Slot matches a pattern
     Matches {
+        /// The slot name to check
         slot: String,
+        /// The regex pattern to match
         pattern: String,
     },
 
     /// Numeric comparison
     GreaterThan {
+        /// The slot name to check
         slot: String,
+        /// The threshold value
         value: f64,
     },
+    /// Less than comparison
     LessThan {
+        /// The slot name to check
         slot: String,
+        /// The threshold value
         value: f64,
     },
 
     /// Logical combinations
+    /// All conditions must be true
     And(Vec<Condition>),
+    /// At least one condition must be true
     Or(Vec<Condition>),
+    /// The condition must be false
     Not(Box<Condition>),
 
     /// Expression-based condition
@@ -104,13 +124,24 @@ pub enum Condition {
 #[derive(Clone, Debug)]
 pub enum Requirement {
     /// Slot must be present
-    Required { slot: String },
+    Required {
+        /// The slot name that must be present
+        slot: String
+    },
 
     /// Slot must be absent
-    Forbidden { slot: String },
+    Forbidden {
+        /// The slot name that must be absent
+        slot: String
+    },
 
     /// Slot must have specific value
-    MustEqual { slot: String, value: Value },
+    MustEqual {
+        /// The slot name to check
+        slot: String,
+        /// The required value
+        value: Value
+    },
 
     /// Slot must match pattern
     MustMatch { slot: String, pattern: String },

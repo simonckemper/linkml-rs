@@ -42,6 +42,35 @@ impl JsonLoaderV2 {
         self.strict = strict;
         self
     }
+
+    /// Infer class name from object structure by matching against schema classes
+    fn infer_class_name(&self, obj: &serde_json::Map<String, serde_json::Value>, schema: &SchemaDefinition) -> String {
+        // Check if object has an explicit type field
+        if let Some(type_value) = obj.get("@type").or_else(|| obj.get("type")) {
+            if let Some(type_str) = type_value.as_str() {
+                if schema.classes.contains_key(type_str) {
+                    return type_str.to_string();
+                }
+            }
+        }
+
+        // Try to infer from object keys by finding the best matching class
+        let obj_keys: std::collections::HashSet<_> = obj.keys().collect();
+        let mut best_match = "UnknownClass".to_string();
+        let mut best_score = 0;
+
+        for (class_name, class_def) in &schema.classes {
+            let class_slots: std::collections::HashSet<_> = class_def.slots.iter().collect();
+            let intersection_count = obj_keys.intersection(&class_slots).count();
+
+            if intersection_count > best_score {
+                best_score = intersection_count;
+                best_match = class_name.clone();
+            }
+        }
+
+        best_match
+    }
 }
 
 #[async_trait]
@@ -65,7 +94,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
     async fn load_str(
         &mut self,
         content: &str,
-        _schema: &SchemaDefinition,
+        schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let json_value: Value =
             serde_json::from_str(content).map_err(|e| LoaderError::Parse(e.to_string()))?;
@@ -78,7 +107,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
                     .filter_map(|item| {
                         if let Value::Object(obj) = item {
                             Some(DataInstance {
-                                class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                                class_name: self.infer_class_name(&obj, schema),
                                 data: obj.into_iter().collect(),
                                 id: None,
                                 metadata: HashMap::new(),
@@ -91,7 +120,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
             }
             Value::Object(obj) => {
                 vec![DataInstance {
-                    class_name: "UnknownClass".to_string(), // TODO: infer from structure
+                    class_name: self.infer_class_name(&obj, schema),
                     data: obj.into_iter().collect(),
                     id: None,
                     metadata: HashMap::new(),

@@ -202,7 +202,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
                             attributes.push(AttributeInfo {
                                 name: label.clone(),
-                                value_type,
+                                _value_type: value_type,
                             });
                         }
                     }
@@ -247,7 +247,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     if let Some(Value::Object(role)) = obj.get("role") {
                         if let Some(Value::String(label)) = role.get("label") {
                             roles.push(RoleInfo {
-                                name: label.clone(),
+                                _name: label.clone(),
                             });
                         }
                     }

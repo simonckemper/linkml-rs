@@ -457,6 +457,38 @@ mod tests {
         }
     }
 
+    // Mock logger for testing
+    struct TestLogger;
+
+    #[async_trait]
+    impl logger_core::LoggerService for TestLogger {
+        type Error = anyhow::Error;
+
+        async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
     #[test]
     fn test_plugin_registration() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let registry = PluginRegistry::new();
@@ -517,7 +549,7 @@ mod tests {
             config: HashMap::new(),
             working_dir: std::env::current_dir()?,
             temp_dir: std::env::temp_dir(),
-            logger: Arc::new(MockLogger),
+            logger: Arc::new(TestLogger),
         };
 
         // Test initialization
