@@ -10,11 +10,28 @@
 
 use dashmap::DashMap;
 use linkml_core::error::{LinkMLError, Result};
+use once_cell::sync::Lazy;
 use parking_lot::RwLock;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+// Pre-compile regex patterns at startup to avoid runtime compilation
+static SENSITIVE_DATA_PATTERNS: Lazy<Vec<Result<Regex>>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+"),
+        Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+"),
+        Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+"),
+        Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+        Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"), // Credit card
+        Regex::new(r"\b\d{3}-\d{2}-\d{4}\b"), // SSN
+    ]
+    .into_iter()
+    .map(|r| r.map_err(|e| LinkMLError::service(format!("Invalid regex pattern: {}", e))))
+    .collect()
+});
 
 /// Security configuration
 #[derive(Debug, Clone)]pub struct SecurityConfig {
@@ -427,30 +444,25 @@ pub struct SensitiveDataHandler {
 impl SensitiveDataHandler {
     /// Create new sensitive data handler
     ///
-    /// # Panics
+    /// Create a new security validator
     ///
-    /// Panics if regex creation fails (should not happen with valid patterns).
-    #[must_use]
-    pub fn new(config: SecurityConfig) -> Self {
-        let patterns = vec![
-            regex::Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+")
-                .expect("password pattern regex should be valid"),
-            regex::Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+")
-                .expect("API key pattern regex should be valid"),
-            regex::Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+")
-                .expect("secret/token pattern regex should be valid"),
-            regex::Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
-                .expect("email pattern regex should be valid"),
-            regex::Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
-                .expect("credit card pattern regex should be valid"), // Credit card
-            regex::Regex::new(r"\b\d{3}-\d{2}-\d{4}\b")
-                .expect("SSN pattern regex should be valid"), // SSN
-        ];
+    /// # Errors
+    ///
+    /// Returns an error if regex patterns fail to compile
+    pub fn new(config: SecurityConfig) -> Result<Self> {
+        // Validate that all patterns compiled successfully
+        let mut patterns = Vec::new();
+        for pattern_result in SENSITIVE_DATA_PATTERNS.iter() {
+            match pattern_result {
+                Ok(regex) => patterns.push(regex.clone()),
+                Err(e) => return Err(LinkMLError::service(format!("Failed to compile sensitive data pattern: {}", e))),
+            }
+        }
 
-        Self {
+        Ok(Self {
             config: Arc::new(RwLock::new(config)),
             sensitive_patterns: patterns,
-        }
+        })
     }
 
     /// Mask sensitive data in string
@@ -735,7 +747,7 @@ impl SecurityManager {
             sanitizer: InputSanitizer::new(config.clone())?,
             path_validator: PathValidator::new(config.clone()),
             injection_prevention: InjectionPrevention,
-            sensitive_handler: SensitiveDataHandler::new(config.clone()),
+            sensitive_handler: SensitiveDataHandler::new(config.clone())?,
             audit_logger: AuditLogger::new(config.clone()),
             rate_limiter: SecurityRateLimiter::new(config),
         })

@@ -6,7 +6,7 @@ use super::base::{
 };
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
-use linkml_core::error::LinkMLError;
+use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::fmt::Write;
 
@@ -39,6 +39,38 @@ impl PythonDataclassGenerator {
         ))
     }
 
+    /// Check if a string is a valid Python identifier
+    fn is_valid_python_identifier(name: &str) -> bool {
+        if name.is_empty() {
+            return false;
+        }
+        
+        // Must start with letter or underscore
+        let mut chars = name.chars();
+        if let Some(first) = chars.next() {
+            if !first.is_ascii_alphabetic() && first != '_' {
+                return false;
+            }
+        }
+        
+        // Rest must be letters, numbers, or underscores
+        for ch in chars {
+            if !ch.is_ascii_alphanumeric() && ch != '_' {
+                return false;
+            }
+        }
+        
+        // Check it's not a Python keyword
+        !matches!(
+            name,
+            "False" | "None" | "True" | "and" | "as" | "assert" | "async" | "await" |
+            "break" | "class" | "continue" | "def" | "del" | "elif" | "else" | "except" |
+            "finally" | "for" | "from" | "global" | "if" | "import" | "in" | "is" |
+            "lambda" | "nonlocal" | "not" | "or" | "pass" | "raise" | "return" | "try" |
+            "while" | "with" | "yield"
+        )
+    }
+
     /// Generate code for a single class
     fn generate_class(
         &self,
@@ -54,7 +86,7 @@ impl PythonDataclassGenerator {
         imports.add_import("dataclasses", "dataclass");
 
         // Generate class documentation
-        if options.include_docs && (class.description.is_some() || options.include_examples) {
+        if options.include_docs && (class.description.is_some() || options.get_custom("include_examples").map_or(false, |v| v == "true")) {
             writeln!(&mut output, "@dataclass").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "class {}:", class_name)
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -66,7 +98,7 @@ impl PythonDataclassGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
-            if options.include_examples {
+            if options.get_custom("include_examples").map_or(false, |v| v == "true") {
                 writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, "    Examples:")
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -108,7 +140,7 @@ impl PythonDataclassGenerator {
             }
 
             // Generate __post_init__ if we need validation
-            if options.get_custom("generate_validation") == Some("true") {
+            if options.get_custom("generate_validation").map(|s| s.as_str()) == Some("true") {
                 writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 self.generate_post_init(&mut output, &slots, schema, &options.indent)?;
             }
@@ -133,7 +165,7 @@ impl PythonDataclassGenerator {
         Ok(final_output)
     }
 
-    /// Generate a single field
+    /// Generate a single field with advanced type annotations and validation
     fn generate_field(
         &self,
         output: &mut String,
@@ -155,10 +187,19 @@ impl PythonDataclassGenerator {
         // Determine the type
         let base_type = self.get_field_type(slot, schema, imports)?;
 
-        // Handle optional and multivalued
+        // Handle optional and multivalued with advanced type annotations
         let field_type = if slot.multivalued.unwrap_or(false) {
-            imports.add_import("typing", "List");
-            format!("List[{}]", base_type)
+            // Use more specific collection types based on constraints
+            if slot.unique_keys.len() > 0 || slot.unique.unwrap_or(false) {
+                imports.add_import("typing", "Set");
+                format!("Set[{}]", base_type)
+            } else if slot.ordered.unwrap_or(false) {
+                imports.add_import("typing", "List");
+                format!("List[{}]", base_type)
+            } else {
+                imports.add_import("typing", "Sequence");
+                format!("Sequence[{}]", base_type)
+            }
         } else {
             base_type
         };
@@ -297,6 +338,49 @@ impl PythonDataclassGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
                 }
+
+                // Add enum validation
+                if !slot.permissible_values.is_empty() {
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                    let values: Vec<String> = slot.permissible_values.iter().map(|pv| {
+                        let text = match pv {
+                            linkml_core::types::PermissibleValue::Simple(s) => s,
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
+                        };
+                        format!("'{}'", text)
+                    }).collect();
+                    writeln!(
+                        output,
+                        "        if self.{} is not None and self.{} not in [{}]:",
+                        slot_name, slot_name, values.join(", ")
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "            raise ValueError(f\"{} must be one of: {}\")",
+                        slot_name, values.join(", ")
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    has_validation = true;
+                }
+
+                // Add required field validation
+                if slot.required.unwrap_or(false) {
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "        if self.{} is None:",
+                        slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "            raise ValueError(\"{} is required\")",
+                        slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    has_validation = true;
+                }
             }
         }
 
@@ -321,7 +405,39 @@ impl Generator for PythonDataclassGenerator {
         vec!["py"]
     }
 
-    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has required fields for Python generation
+        if schema.name.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have a name for Python generation".to_string(),
+                element: Some("schema.name".to_string()),
+            });
+        }
+
+        // Validate classes have valid Python identifiers
+        for (class_name, _class_def) in &schema.classes {
+            if !Self::is_valid_python_identifier(class_name) {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!("Class name '{}' is not a valid Python identifier", class_name),
+                    element: Some(format!("class.{}", class_name)),
+                });
+            }
+        }
+
+        // Validate slots have valid Python identifiers
+        for (slot_name, _slot_def) in &schema.slots {
+            if !Self::is_valid_python_identifier(slot_name) {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!("Slot name '{}' is not a valid Python identifier", slot_name),
+                    element: Some(format!("slot.{}", slot_name)),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
         self.validate_schema(schema)?;
 
         // Generate a single file with all classes
@@ -391,19 +507,6 @@ impl Generator for PythonDataclassGenerator {
         Ok(final_content)
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
-        if schema.name.is_empty() {
-            return Err(LinkMLError::service("Schema must have a name".to_string()));
-        }
-
-        if schema.classes.is_empty() {
-            return Err(LinkMLError::service(
-                "Schema must have at least one class".to_string(),
-            ));
-        }
-
-        Ok(())
-    }
 
     fn get_file_extension(&self) -> &str {
         "py"
@@ -455,6 +558,59 @@ impl PythonDataclassGenerator {
 }
 
 impl CodeFormatter for PythonDataclassGenerator {
+    fn name(&self) -> &str {
+        "python-dataclass-formatter"
+    }
+
+    fn description(&self) -> &str {
+        "Python dataclass code formatter with docstring and type hint support"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["py"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Format Python code with proper indentation
+        let mut formatted = String::new();
+        let mut indent_level = 0;
+        let indent = "    ";
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Decrease indent for dedent keywords
+            if trimmed == "pass" || trimmed.starts_with("return") || trimmed.starts_with("raise") {
+                // Keep current indent
+            } else if trimmed.ends_with(':') && !trimmed.starts_with('#') {
+                // Line that increases indent (class, def, if, for, etc.)
+                formatted.push_str(&indent.repeat(indent_level));
+                formatted.push_str(trimmed);
+                formatted.push('\n');
+                indent_level += 1;
+                continue;
+            } else if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            } else if indent_level > 0 && !trimmed.starts_with(' ') && !trimmed.starts_with('#') {
+                // Dedent if we're not at the start of a block
+                let first_word = trimmed.split_whitespace().next().unwrap_or("");
+                if matches!(first_word, "class" | "def" | "if" | "elif" | "else" | "for" | "while" | "with" | "try" | "except" | "finally") {
+                    indent_level = indent_level.saturating_sub(1);
+                }
+            }
+            
+            // Write the line with proper indentation
+            if !trimmed.is_empty() {
+                formatted.push_str(&indent.repeat(indent_level));
+                formatted.push_str(trimmed);
+                formatted.push('\n');
+            }
+        }
+        
+        Ok(formatted)
+    }
+
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();

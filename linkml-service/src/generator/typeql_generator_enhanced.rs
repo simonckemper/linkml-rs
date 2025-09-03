@@ -81,6 +81,41 @@ impl EnhancedTypeQLGenerator {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
+    /// Check if a string is a valid TypeQL identifier
+    fn is_valid_identifier(&self, name: &str) -> bool {
+        // TypeQL identifiers must:
+        // - Start with a letter or underscore
+        // - Contain only letters, numbers, underscores, or hyphens
+        // - Not be a TypeQL reserved keyword
+        if name.is_empty() {
+            return false;
+        }
+
+        // Check first character
+        let first_char = name.chars().next().unwrap();
+        if !first_char.is_alphabetic() && first_char != '_' {
+            return false;
+        }
+
+        // Check all characters
+        for c in name.chars() {
+            if !c.is_alphanumeric() && c != '_' && c != '-' {
+                return false;
+            }
+        }
+
+        // Check for TypeQL reserved keywords
+        let reserved_keywords = [
+            "define", "undefine", "insert", "delete", "match", 
+            "get", "aggregate", "compute", "rule", "when", "then",
+            "entity", "attribute", "relation", "role", "plays",
+            "owns", "abstract", "sub", "as", "has", "isa",
+            "thing", "value", "regex", "key", "unique"
+        ];
+
+        !reserved_keywords.contains(&name.to_lowercase().as_str())
+    }
+
     /// Create a new enhanced TypeQL generator
     #[must_use]
     pub fn new() -> Self {
@@ -204,7 +239,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // 5. Generate constraints and rules
-        if options.get_custom("generate_constraints") != Some("false") {
+        if options.get_custom("generate_constraints").map(|s| s.as_str()) != Some("false") {
             writeln!(&mut output, "\n# Constraints and Validation Rules\n")
                 .map_err(Self::fmt_error_to_generator_error)?;
             self.generate_constraints(&mut output, schema, indent)?;
@@ -1342,6 +1377,8 @@ impl EnhancedTypeQLGenerator {
         }
     }
     
+    // Removed duplicate is_valid_identifier method - using the one defined earlier at line 85
+
     /// Format a value for TypeQL syntax
     fn format_value_for_typeql(&self, value: &str) -> String {
         // Check if it's a numeric value
@@ -1359,10 +1396,7 @@ impl EnhancedTypeQLGenerator {
     fn translate_expression_to_typeql(&self, expr: &str, var: &str) -> GeneratorResult<String> {
         // Parse basic comparison expressions
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*([><=!]+)\s*(.+)")
-            .map_err(|e| GeneratorError::Generation {
-                context: "expression parsing".to_string(),
-                message: e.to_string(),
-            })?
+            .map_err(|e| GeneratorError::Generation(format!("expression parsing: {}", e)))?
             .captures(expr)
         {
             let field = &caps[1];
@@ -1376,10 +1410,7 @@ impl EnhancedTypeQLGenerator {
                 "<=" => "<=",
                 "==" | "=" => "==",
                 "!=" => "!=",
-                _ => return Err(GeneratorError::Generation {
-                    context: "operator translation".to_string(),
-                    message: format!("Unknown operator: {}", op),
-                }),
+                _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {}", op))),
             };
             
             Ok(format!("${}_{} {} {}", var, field, typeql_op, self.format_value_for_typeql(value)))
@@ -1468,10 +1499,7 @@ impl EnhancedTypeQLGenerator {
     fn parse_assertion_expression(&self, expr: &str) -> GeneratorResult<Option<(String, String)>> {
         // Parse assignment expressions like "field = value"
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*=\s*(.+)")
-            .map_err(|e| GeneratorError::Generation {
-                context: "composite condition parsing".to_string(),
-                message: e.to_string(),
-            })?
+            .map_err(|e| GeneratorError::Generation(format!("composite condition parsing: {}", e)))?
             .captures(expr)
         {
             let field = caps[1].to_string();
@@ -1661,6 +1689,37 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         vec![".tql", ".typeql"]
     }
 
+    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Validate schema has required fields for enhanced TypeQL generation
+        if schema.name.is_empty() {
+            return Err(GeneratorError::Validation(
+                "Schema must have a name for enhanced TypeQL generation".to_string(),
+            ));
+        }
+
+        // Validate class names are valid TypeQL identifiers
+        for (class_name, _) in &schema.classes {
+            if !self.is_valid_identifier(class_name) {
+                return Err(GeneratorError::Validation(format!(
+                    "Class name '{}' is not a valid TypeQL identifier",
+                    class_name
+                )));
+            }
+        }
+
+        // Validate slot names
+        for (slot_name, _) in &schema.slots {
+            if !self.is_valid_identifier(slot_name) {
+                return Err(GeneratorError::Validation(format!(
+                    "Slot name '{}' is not a valid TypeQL identifier",
+                    slot_name
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
     async fn generate(
         &self,
         schema: &SchemaDefinition,
@@ -1695,7 +1754,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         }];
 
         // Generate migration script if requested
-        if options.get_custom("generate_migration") == Some("true") {
+        if options.get_custom("generate_migration").map(|s| s.as_str()) == Some("true") {
             let migration = self.generate_migration_script(schema, options)?;
             outputs.push(GeneratedOutput {
                 filename: format!("{}-migration.tql", filename_base),
@@ -1710,6 +1769,24 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for EnhancedTypeQLGenerator {
+    fn name(&self) -> &str {
+        "enhanced_typeql"
+    }
+
+    fn description(&self) -> &str {
+        "Enhanced TypeQL generator with advanced constraint support, migration capabilities, and optimizations"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Use tokio to run the async validation
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+
+        runtime
+            .block_on(AsyncGenerator::validate_schema(self, schema))
+            .map_err(|e| LinkMLError::service(e.to_string()))
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
@@ -1738,6 +1815,67 @@ impl Generator for EnhancedTypeQLGenerator {
 }
 
 impl CodeFormatter for EnhancedTypeQLGenerator {
+    fn name(&self) -> &str {
+        "enhanced_typeql_formatter"
+    }
+
+    fn description(&self) -> &str {
+        "Advanced code formatter for TypeQL with constraint formatting and proper indentation"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["tql", "typeql"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        let mut formatted = String::new();
+        let mut indent_level = 0;
+        let mut in_rule_block = false;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Handle comments
+            if trimmed.starts_with('#') || trimmed.starts_with("//") {
+                formatted.push_str(&"    ".repeat(indent_level));
+                formatted.push_str(trimmed);
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed == "}" || trimmed == "};" || trimmed.starts_with("} then") {
+                indent_level = indent_level.saturating_sub(1);
+                in_rule_block = false;
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&"    ".repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after define, when, then, or opening braces
+            if trimmed == "define" || trimmed == "undefine" {
+                indent_level += 1;
+            } else if trimmed.starts_with("rule ") && trimmed.ends_with(" {") {
+                indent_level += 1;
+                in_rule_block = true;
+            } else if in_rule_block && (trimmed == "when {" || trimmed == "then {") {
+                indent_level += 1;
+            } else if !in_rule_block && trimmed.ends_with(" {") {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
+
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let prefix = indent.to_string(level);
         doc.lines()
@@ -1907,13 +2045,10 @@ impl EnhancedTypeQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         for (class_name, _class) in &schema.classes {
             // Check if this is a new class (not in previous version)
-            if options.get_custom(&format!("{}_is_new", class_name)) == Some("true") {
+            if options.get_custom(&format!("{}_is_new", class_name)).map(|s| s.as_str()) == Some("true") {
                 // Note: generate_class is async but this context is not async
                 // This needs to be refactored to work properly
-                writeln!(&mut output, "# Class: {}", class_name).map_err(|e| GeneratorError::Generation {
-                    context: "writing class comment".to_string(),
-                    message: e.to_string(),
-                })?;
+                writeln!(&mut output, "# Class: {}", class_name).map_err(|e| GeneratorError::Generation(format!("writing class comment: {}", e)))?;
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;

@@ -384,10 +384,7 @@ impl JsonLdGenerator {
         let class = schema
             .classes
             .get(class_name)
-            .ok_or_else(|| GeneratorError::Generation {
-                context: "example".to_string(),
-                message: format!("Class {} not found", class_name),
-            })?;
+            .ok_or_else(|| GeneratorError::Generation(format!("example: Class {} not found", class_name)))?;
 
         let mut instance = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -581,6 +578,24 @@ impl Generator for JsonLdGenerator {
         "Generates JSON-LD context and schema documents from LinkML schemas"
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has required fields
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for JSON-LD generation"
+            ));
+        }
+        
+        // JSON-LD requires at least one class or type to generate meaningful output
+        if schema.classes.is_empty() && schema.types.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have at least one class or type for JSON-LD generation"
+            ));
+        }
+        
+        Ok(())
+    }
+
     fn file_extensions(&self) -> Vec<&str> {
         vec![".jsonld", ".context.jsonld"]
     }
@@ -671,7 +686,7 @@ impl Generator for JsonLdGenerator {
         }
 
         // Generate example instances if requested
-        if self.options.include_examples {
+        if self.options.get_custom("include_examples").map_or(false, |v| v == "true") {
             // Generate frame documents for each class
             let mut frames_map = serde_json::Map::new();
             for (class_name, class_def) in &schema.classes {

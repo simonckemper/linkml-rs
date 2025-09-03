@@ -386,6 +386,18 @@ pub struct SlotDefinition {
     /// Rank for ordering
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rank: Option<i32>,
+
+    /// Whether values in this slot must be unique
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unique: Option<bool>,
+
+    /// Whether values in this slot are ordered
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ordered: Option<bool>,
+
+    /// Unique key constraints for this slot
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unique_keys: Vec<String>,
 }
 
 /// Structured pattern for advanced pattern matching

@@ -18,8 +18,8 @@ pub struct YamlGenerator {
     sort_keys: bool,
     /// Whether to inline simple definitions
     inline_simple: bool,
-    /// Whether to include null values (reserved for future use)
-    _include_nulls: bool,
+    /// Whether to include null values in output
+    include_nulls: bool,
 }
 
 impl Default for YamlGenerator {
@@ -36,7 +36,7 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            _include_nulls: false,
+            include_nulls: false,
         }
     }
 
@@ -61,6 +61,13 @@ impl YamlGenerator {
         self
     }
 
+    /// Configure null value inclusion
+    #[must_use]
+    pub fn with_include_nulls(mut self, include: bool) -> Self {
+        self.include_nulls = include;
+        self
+    }
+
     /// Generate YAML from schema
     fn generate_yaml(&self, schema: &SchemaDefinition) -> Result<String> {
         // Create ordered map for consistent output
@@ -76,26 +83,42 @@ impl YamlGenerator {
             serde_yaml::Value::String(schema.name.clone()),
         );
 
-        if let Some(version) = &schema.version {
-            root.insert(
+        // Handle optional fields based on include_nulls setting
+        match &schema.version {
+            Some(version) => root.insert(
                 "version".to_string(),
                 serde_yaml::Value::String(version.clone()),
-            );
-        }
+            ),
+            None if self.include_nulls => root.insert(
+                "version".to_string(),
+                serde_yaml::Value::Null,
+            ),
+            None => None,
+        };
 
-        if let Some(title) = &schema.title {
-            root.insert(
+        match &schema.title {
+            Some(title) => root.insert(
                 "title".to_string(),
                 serde_yaml::Value::String(title.clone()),
-            );
-        }
+            ),
+            None if self.include_nulls => root.insert(
+                "title".to_string(),
+                serde_yaml::Value::Null,
+            ),
+            None => None,
+        };
 
-        if let Some(description) = &schema.description {
-            root.insert(
+        match &schema.description {
+            Some(description) => root.insert(
                 "description".to_string(),
                 serde_yaml::Value::String(description.clone()),
-            );
-        }
+            ),
+            None if self.include_nulls => root.insert(
+                "description".to_string(),
+                serde_yaml::Value::Null,
+            ),
+            None => None,
+        };
 
         // License and metadata
         if let Some(license) = &schema.license {
@@ -703,6 +726,16 @@ impl YamlGenerator {
 }
 
 impl Generator for YamlGenerator {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for yaml generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         self.generate_yaml(schema)
     }

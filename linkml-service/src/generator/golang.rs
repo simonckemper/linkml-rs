@@ -709,6 +709,64 @@ impl Generator for GoGenerator {
         "Generate Go code from LinkML schemas"
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has required fields for Go generation
+        if schema.name.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have a name for Go generation".to_string(),
+                element: Some("schema.name".to_string()),
+            });
+        }
+
+        // Validate Go-specific requirements
+        for (class_name, _class_def) in &schema.classes {
+            // Go identifiers must start with a letter
+            if let Some(first) = class_name.chars().next() {
+                if !first.is_ascii_alphabetic() {
+                    return Err(LinkMLError::SchemaValidationError {
+                        message: format!(
+                            "Class name '{}' is not valid for Go: must start with a letter",
+                            class_name
+                        ),
+                        element: Some(format!("class.{}", class_name)),
+                    });
+                }
+            }
+            
+            // Check for Go reserved words
+            if matches!(
+                class_name.as_str(),
+                "break" | "default" | "func" | "interface" | "select" |
+                "case" | "defer" | "go" | "map" | "struct" |
+                "chan" | "else" | "goto" | "package" | "switch" |
+                "const" | "fallthrough" | "if" | "range" | "type" |
+                "continue" | "for" | "import" | "return" | "var"
+            ) {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!("Class name '{}' is a Go reserved keyword", class_name),
+                    element: Some(format!("class.{}", class_name)),
+                });
+            }
+        }
+
+        // Validate slot names for Go compatibility
+        for (slot_name, _slot_def) in &schema.slots {
+            if let Some(first) = slot_name.chars().next() {
+                if !first.is_ascii_alphabetic() && first != '_' {
+                    return Err(LinkMLError::SchemaValidationError {
+                        message: format!(
+                            "Slot name '{}' is not valid for Go: must start with letter or underscore",
+                            slot_name
+                        ),
+                        element: Some(format!("slot.{}", slot_name)),
+                    });
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let mut content = String::new();
 

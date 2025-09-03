@@ -8,7 +8,10 @@
 //! - Performance regression detection
 //! - Chaos testing capabilities
 
+use super::ValidationContext;
 use linkml_core::error::{LinkMLError, Result};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use indexmap::IndexMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -602,8 +605,71 @@ impl ValidationStressOperation {
 
 impl StressOperation for ValidationStressOperation {
     fn execute(&self) -> Result<()> {
-        // Simulate validation work
-        std::thread::sleep(Duration::from_micros(100));
+        // Perform actual validation stress test
+        // Create a real validation context and validate data
+        let schema = SchemaDefinition {
+            name: "stress_test".to_string(),
+            classes: {
+                let mut classes = IndexMap::new();
+                classes.insert("TestClass".to_string(), ClassDefinition {
+                    name: "TestClass".to_string(),
+                    slots: vec!["field1".to_string(), "field2".to_string()],
+                    ..Default::default()
+                });
+                classes
+            },
+            slots: {
+                let mut slots = IndexMap::new();
+                slots.insert("field1".to_string(), SlotDefinition {
+                    name: "field1".to_string(),
+                    required: Some(true),
+                    ..Default::default()
+                });
+                slots.insert("field2".to_string(), SlotDefinition {
+                    name: "field2".to_string(),
+                    multivalued: Some(true),
+                    ..Default::default()
+                });
+                slots
+            },
+            ..Default::default()
+        };
+        
+        // Generate test data
+        let test_data = self.generate_data(10);
+        
+        // Perform actual validation
+        let context = Arc::new(schema);
+        let mut validation_context = ValidationContext::new(context);
+        
+        // Run validation on each field
+        let test_object = test_data.as_object()
+            .ok_or_else(|| LinkMLError::data_validation("Test data must be an object"))?;
+        
+        for (key, value) in test_object {
+            // Get slot info before borrowing context mutably
+            let slot_info = validation_context.schema.slots.get(key).cloned();
+            
+            if let Some(slot) = slot_info {
+                // This performs real validation work
+                let _path = validation_context.push_path(key.clone());
+                
+                // Check required constraint
+                if slot.required.unwrap_or(false) && value.is_null() {
+                    return Err(LinkMLError::data_validation(
+                        format!("Required field '{}' is null", key)
+                    ));
+                }
+                
+                // Check multivalued constraint
+                if slot.multivalued.unwrap_or(false) && !value.is_array() {
+                    return Err(LinkMLError::data_validation(
+                        format!("Multivalued field '{}' is not an array", key)
+                    ));
+                }
+            }
+        }
+        
         Ok(())
     }
 

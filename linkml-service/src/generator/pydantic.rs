@@ -82,7 +82,7 @@ impl PydanticGenerator {
         writeln!(&mut output, "        \"str_strip_whitespace\": True,")
             .map_err(Self::fmt_error_to_generator_error)?;
 
-        if options.include_examples {
+        if options.get_custom("include_examples").map_or(false, |v| v == "true") {
             writeln!(&mut output, "        \"json_schema_extra\": {{")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "            \"examples\": [")
@@ -140,7 +140,7 @@ impl PydanticGenerator {
             }
 
             // Generate validators if needed
-            if options.get_custom("generate_validators") == Some("true") {
+            if options.get_custom("generate_validators").map(|s| s.as_str()) == Some("true") {
                 self.generate_validators(&mut output, &slots, schema, &mut imports)?;
             }
         }
@@ -541,6 +541,51 @@ impl PydanticGenerator {
 }
 
 impl CodeFormatter for PydanticGenerator {
+    fn name(&self) -> &str {
+        "pydantic"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for pydantic output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["py"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();

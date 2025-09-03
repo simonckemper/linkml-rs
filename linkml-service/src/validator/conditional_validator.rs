@@ -144,7 +144,12 @@ pub enum Requirement {
     },
 
     /// Slot must match pattern
-    MustMatch { slot: String, pattern: String },
+    MustMatch {
+        /// The slot name to check
+        slot: String,
+        /// The regex pattern to match
+        pattern: String
+    },
 
     /// Custom validation expression
     Expression(String),

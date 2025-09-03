@@ -591,6 +591,47 @@ impl Generator for GraphvizGenerator {
         "Generates Graphviz DOT format diagrams from LinkML schemas"
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has required fields
+        if schema.name.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have a name for Graphviz generation".to_string(),
+                element: Some("schema.name".to_string()),
+            });
+        }
+
+        // Validate DOT identifier requirements
+        for (class_name, _class_def) in &schema.classes {
+            // DOT identifiers should not contain special characters that break graphs
+            if class_name.contains('"') || class_name.contains('{') || class_name.contains('}') ||
+               class_name.contains('[') || class_name.contains(']') || class_name.contains('<') ||
+               class_name.contains('>') {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!(
+                        "Class name '{}' contains characters that need escaping in DOT format",
+                        class_name
+                    ),
+                    element: Some(format!("class.{}", class_name)),
+                });
+            }
+        }
+
+        // Validate slot names
+        for (slot_name, _slot_def) in &schema.slots {
+            if slot_name.contains('"') || slot_name.contains('{') || slot_name.contains('}') {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!(
+                        "Slot name '{}' contains characters that need escaping in DOT format",
+                        slot_name
+                    ),
+                    element: Some(format!("slot.{}", slot_name)),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self
             .generate_dot(schema)

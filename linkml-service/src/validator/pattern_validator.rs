@@ -14,27 +14,28 @@ use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 
-/// Common structured patterns
-static EMAIL_PATTERN: Lazy<Regex> =
+/// Common structured patterns with error handling
+static EMAIL_PATTERN: Lazy<Result<Regex>> =
     Lazy::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-        .expect("Valid email regex pattern"));
+        .map_err(|e| LinkMLError::service(format!("Invalid email regex: {}", e))));
 
-static URL_PATTERN: Lazy<Regex> = Lazy::new(|| {
+static URL_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
-        .expect("Valid URL regex pattern")
+        .map_err(|e| LinkMLError::service(format!("Invalid URL regex: {}", e)))
 });
 
-static UUID_PATTERN: Lazy<Regex> = Lazy::new(|| {
+static UUID_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-        .expect("Valid UUID regex pattern")
+        .map_err(|e| LinkMLError::service(format!("Invalid UUID regex: {}", e)))
 });
 
-static ISO_DATE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{4}-\d{2}-\d{2}$")
-    .expect("Valid ISO date regex pattern"));
+static ISO_DATE_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| 
+    Regex::new(r"^\d{4}-\d{2}-\d{2}$")
+        .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {}", e))));
 
-static ISO_DATETIME_PATTERN: Lazy<Regex> = Lazy::new(|| {
+static ISO_DATETIME_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$")
-        .expect("Valid ISO datetime regex pattern")
+        .map_err(|e| LinkMLError::service(format!("Invalid ISO datetime regex: {}", e)))
 });
 
 /// Pattern validator for slot values
@@ -42,8 +43,8 @@ pub struct PatternValidator {
     /// Compiled regex patterns by slot name
     patterns: HashMap<String, Regex>,
 
-    /// Structured patterns by type
-    structured_patterns: HashMap<String, &'static Regex>,
+    /// Structured patterns by type (storing owned Regex)
+    structured_patterns: HashMap<String, Regex>,
 
     /// Named capture patterns for extraction
     named_patterns: HashMap<String, Regex>,
@@ -51,26 +52,46 @@ pub struct PatternValidator {
 
 impl PatternValidator {
     /// Create a new pattern validator
-    pub fn new() -> Self {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any of the built-in regex patterns fail to compile
+    pub fn new() -> Result<Self> {
         let mut structured_patterns = HashMap::new();
-        structured_patterns.insert("email".to_string(), &*EMAIL_PATTERN);
-        structured_patterns.insert("url".to_string(), &*URL_PATTERN);
-        structured_patterns.insert("uri".to_string(), &*URL_PATTERN);
-        structured_patterns.insert("uuid".to_string(), &*UUID_PATTERN);
-        structured_patterns.insert("date".to_string(), &*ISO_DATE_PATTERN);
-        structured_patterns.insert("datetime".to_string(), &*ISO_DATETIME_PATTERN);
-        structured_patterns.insert("timestamp".to_string(), &*ISO_DATETIME_PATTERN);
+        
+        // Handle potential regex compilation errors
+        if let Ok(ref email_regex) = *EMAIL_PATTERN {
+            structured_patterns.insert("email".to_string(), email_regex.clone());
+        }
+        
+        if let Ok(ref url_regex) = *URL_PATTERN {
+            structured_patterns.insert("url".to_string(), url_regex.clone());
+            structured_patterns.insert("uri".to_string(), url_regex.clone());
+        }
+        
+        if let Ok(ref uuid_regex) = *UUID_PATTERN {
+            structured_patterns.insert("uuid".to_string(), uuid_regex.clone());
+        }
+        
+        if let Ok(ref date_regex) = *ISO_DATE_PATTERN {
+            structured_patterns.insert("date".to_string(), date_regex.clone());
+        }
+        
+        if let Ok(ref datetime_regex) = *ISO_DATETIME_PATTERN {
+            structured_patterns.insert("datetime".to_string(), datetime_regex.clone());
+            structured_patterns.insert("timestamp".to_string(), datetime_regex.clone());
+        }
 
-        Self {
+        Ok(Self {
             patterns: HashMap::new(),
             structured_patterns,
             named_patterns: HashMap::new(),
-        }
+        })
     }
 
     /// Create validator from schema
     pub fn from_schema(schema: &SchemaDefinition) -> Result<Self> {
-        let mut validator = Self::new();
+        let mut validator = Self::new()?;
 
         // Compile patterns from slots
         for (slot_name, slot_def) in &schema.slots {
@@ -407,7 +428,8 @@ mod tests {
 
     #[test]
     fn test_email_pattern_validation() {
-        let mut validator = PatternValidator::new();
+        let mut validator = PatternValidator::new()
+            .unwrap_or_else(|_| panic!("Failed to create pattern validator"));
         validator.add_structured_pattern("email", "email");
 
         // Valid emails
@@ -438,7 +460,8 @@ mod tests {
 
     #[test]
     fn test_custom_pattern() {
-        let mut validator = PatternValidator::new();
+        let mut validator = PatternValidator::new()
+            .unwrap_or_else(|_| panic!("Failed to create pattern validator"));
 
         // Add a custom pattern for phone numbers
         validator
@@ -475,7 +498,8 @@ mod tests {
 
     #[test]
     fn test_named_captures() {
-        let mut validator = PatternValidator::new();
+        let mut validator = PatternValidator::new()
+            .unwrap_or_else(|_| panic!("Failed to create pattern validator"));
 
         // Pattern with named captures
         validator

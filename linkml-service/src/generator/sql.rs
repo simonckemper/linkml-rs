@@ -42,7 +42,7 @@ impl SQLGenerator {
         let mut output = String::new();
 
         // Skip abstract classes unless requested
-        if class.abstract_ == Some(true) && options.get_custom("generate_abstract") != Some("true")
+        if class.abstract_ == Some(true) && options.get_custom("generate_abstract").map(|s| s.as_str()) != Some("true")
         {
             return Ok(output);
         }
@@ -116,7 +116,7 @@ impl SQLGenerator {
         let mut columns = Vec::new();
 
         // Add audit columns if requested
-        if options.get_custom("add_audit_columns") == Some("true") {
+        if options.get_custom("add_audit_columns").map(|s| s.as_str()) == Some("true") {
             columns.push(format!(
                 "{}created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
                 indent.single()
@@ -151,13 +151,13 @@ impl SQLGenerator {
 
                 // Add CHECK constraint for pattern
                 if let Some(pattern) = &slot.pattern {
-                    if options.get_custom("dialect") == Some("postgresql") {
+                    if options.get_custom("dialect").map(|s| s.as_str()) == Some("postgresql") {
                         column_def.push_str(&format!(" CHECK ({column_name} ~ '{pattern}')"));
                     }
                 }
 
                 // Add column comment if dialect supports it
-                if options.include_docs && options.get_custom("dialect") == Some("postgresql") {
+                if options.include_docs && options.get_custom("dialect").map(|s| s.as_str()) == Some("postgresql") {
                     if let Some(desc) = &slot.description {
                         column_def.push_str(&format!(" -- {desc}"));
                     }
@@ -248,7 +248,7 @@ impl SQLGenerator {
         }
 
         // Add audit column indexes if requested
-        if options.get_custom("add_audit_columns") == Some("true") {
+        if options.get_custom("add_audit_columns").map(|s| s.as_str()) == Some("true") {
             indexes.push(format!(
                 "CREATE INDEX idx_{table_name}_created_at ON {table_name}(created_at);"
             ));
@@ -379,7 +379,7 @@ impl SQLGenerator {
             return Ok(output);
         }
 
-        let dialect = options.get_custom("dialect").unwrap_or("standard");
+        let dialect = options.get_custom("dialect").map(|s| s.as_str()).unwrap_or("standard");
 
         if dialect == "postgresql" {
             // PostgreSQL native ENUM types
@@ -516,7 +516,7 @@ impl SQLGenerator {
 
         // Handle multivalued slots (arrays)
         if slot.multivalued == Some(true) {
-            let dialect = options.get_custom("dialect").unwrap_or("standard");
+            let dialect = options.get_custom("dialect").map(|s| s.as_str()).unwrap_or("standard");
             match dialect {
                 "postgresql" => Ok(format!("{base_type}[]")),
                 _ => Ok("TEXT".to_string()), // JSON array as text
@@ -537,7 +537,7 @@ impl SQLGenerator {
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> GeneratorResult<String> {
-        let dialect = options.get_custom("dialect").unwrap_or("standard");
+        let dialect = options.get_custom("dialect").map(|s| s.as_str()).unwrap_or("standard");
 
         match range.as_deref() {
             Some("string" | "str") => Ok("VARCHAR(255)".to_string()),
@@ -575,17 +575,17 @@ impl SQLGenerator {
 
     /// Get the ID column type based on options
     fn get_id_type(&self, options: &GeneratorOptions) -> String {
-        match options.get_custom("id_type") {
-            Some("uuid") => match options.get_custom("dialect") {
+        match options.get_custom("id_type").map(|s| s.as_str()) {
+            Some("uuid") => match options.get_custom("dialect").map(|s| s.as_str()) {
                 Some("postgresql") => "UUID DEFAULT gen_random_uuid()".to_string(),
                 _ => "CHAR(36)".to_string(),
             },
-            Some("serial") => match options.get_custom("dialect") {
+            Some("serial") => match options.get_custom("dialect").map(|s| s.as_str()) {
                 Some("postgresql") => "SERIAL".to_string(),
                 Some("mysql") => "INTEGER AUTO_INCREMENT".to_string(),
                 _ => "INTEGER".to_string(),
             },
-            Some("bigserial") => match options.get_custom("dialect") {
+            Some("bigserial") => match options.get_custom("dialect").map(|s| s.as_str()) {
                 Some("postgresql") => "BIGSERIAL".to_string(),
                 Some("mysql") => "BIGINT AUTO_INCREMENT".to_string(),
                 _ => "BIGINT".to_string(),
@@ -637,6 +637,56 @@ impl AsyncGenerator for SQLGenerator {
         vec![".sql", ".ddl"]
     }
 
+    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Validate schema has required fields for SQL generation
+        if schema.name.is_empty() {
+            return Err(GeneratorError::SchemaValidation(
+                "Schema must have a name for SQL generation".to_string(),
+            ));
+        }
+
+        // Validate table names are valid SQL identifiers
+        for (class_name, _class_def) in &schema.classes {
+            // SQL identifiers should start with letter or underscore
+            if let Some(first) = class_name.chars().next() {
+                if !first.is_ascii_alphabetic() && first != '_' {
+                    return Err(GeneratorError::SchemaValidation(format!(
+                        "Class name '{}' is not a valid SQL table name: must start with letter or underscore",
+                        class_name
+                    )));
+                }
+            }
+
+            // Check for SQL reserved words (basic set)
+            let lower_name = class_name.to_lowercase();
+            if matches!(
+                lower_name.as_str(),
+                "select" | "from" | "where" | "table" | "index" | "view" |
+                "create" | "alter" | "drop" | "insert" | "update" | "delete" |
+                "grant" | "revoke" | "user" | "role" | "database" | "schema"
+            ) {
+                return Err(GeneratorError::SchemaValidation(format!(
+                    "Class name '{}' is a SQL reserved keyword",
+                    class_name
+                )));
+            }
+        }
+
+        // Validate column names
+        for (slot_name, _slot_def) in &schema.slots {
+            if let Some(first) = slot_name.chars().next() {
+                if !first.is_ascii_alphabetic() && first != '_' {
+                    return Err(GeneratorError::SchemaValidation(format!(
+                        "Slot name '{}' is not a valid SQL column name",
+                        slot_name
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     async fn generate(
         &self,
         schema: &SchemaDefinition,
@@ -660,7 +710,7 @@ impl AsyncGenerator for SQLGenerator {
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        let dialect = options.get_custom("dialect").unwrap_or("standard");
+        let dialect = options.get_custom("dialect").map(|s| s.as_str()).unwrap_or("standard");
         writeln!(&mut output, "-- Dialect: {dialect}")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -717,6 +767,24 @@ impl AsyncGenerator for SQLGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for SQLGenerator {
+    fn name(&self) -> &str {
+        "sql"
+    }
+
+    fn description(&self) -> &str {
+        "Generate SQL DDL from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for sql generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
@@ -745,6 +813,51 @@ impl Generator for SQLGenerator {
 }
 
 impl CodeFormatter for SQLGenerator {
+    fn name(&self) -> &str {
+        "sql"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for sql output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["sql"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let prefix = indent.to_string(level);
         doc.lines()

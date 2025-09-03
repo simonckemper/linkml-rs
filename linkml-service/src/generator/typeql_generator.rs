@@ -5,7 +5,7 @@ use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
 };
 use async_trait::async_trait;
-use linkml_core::error::LinkMLError;
+use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
@@ -31,6 +31,37 @@ impl TypeQLGenerator {
             std::io::ErrorKind::Other,
             format!("Formatting error: {}", err),
         ))
+    }
+
+    /// Check if a string is a valid TypeQL identifier
+    fn is_valid_typeql_identifier(name: &str) -> bool {
+        if name.is_empty() {
+            return false;
+        }
+        
+        // Must start with a letter
+        let mut chars = name.chars();
+        if let Some(first) = chars.next() {
+            if !first.is_ascii_alphabetic() {
+                return false;
+            }
+        }
+        
+        // Rest must be letters, numbers, or underscores
+        for ch in chars {
+            if !ch.is_ascii_alphanumeric() && ch != '_' && ch != '-' {
+                return false;
+            }
+        }
+        
+        // Check it's not a TypeQL reserved keyword
+        !matches!(
+            name,
+            "sub" | "entity" | "relation" | "attribute" | "role" | "plays" | "owns" | "relates" |
+            "as" | "abstract" | "rule" | "when" | "then" | "match" | "insert" | "delete" | 
+            "define" | "undefine" | "compute" | "get" | "aggregate" | "group" | "sort" | "limit" |
+            "offset" | "contains" | "regex" | "key" | "unique" | "ordered" | "unordered"
+        )
     }
 
     /// Generate `TypeQL` for a class
@@ -370,12 +401,70 @@ impl AsyncGenerator for TypeQLGenerator {
         &self.name
     }
 
-    fn description(&self) -> &'static str {
+    fn description(&self) -> &str {
         "Generate TypeQL schema definitions for TypeDB from LinkML schemas"
     }
 
     fn file_extensions(&self) -> Vec<&str> {
         vec![".tql", ".typeql"]
+    }
+
+    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Validate schema has required fields for TypeQL generation
+        if schema.name.is_empty() {
+            return Err(GeneratorError::Validation(
+                "Schema must have a name for TypeQL generation".to_string(),
+            ));
+        }
+
+        // Validate classes if present
+        for (class_name, class_def) in &schema.classes {
+            // Check class name is valid TypeQL identifier
+            if !Self::is_valid_typeql_identifier(class_name) {
+                return Err(GeneratorError::Validation(format!(
+                    "Class name '{}' is not a valid TypeQL identifier. Must start with a letter and contain only letters, numbers, and underscores.",
+                    class_name
+                )));
+            }
+
+            // Validate slots
+            if !class_def.slots.is_empty() {
+                let slots = &class_def.slots;
+                for slot_name in slots {
+                    if !Self::is_valid_typeql_identifier(slot_name) {
+                        return Err(GeneratorError::Validation(format!(
+                            "Slot name '{}' in class '{}' is not a valid TypeQL identifier",
+                            slot_name, class_name
+                        )));
+                    }
+                }
+            }
+
+            // Validate attributes
+            if !class_def.attributes.is_empty() {
+                let attributes = &class_def.attributes;
+                for attr_name in attributes.keys() {
+                    if !Self::is_valid_typeql_identifier(attr_name) {
+                        return Err(GeneratorError::Validation(format!(
+                            "Attribute name '{}' in class '{}' is not a valid TypeQL identifier",
+                            attr_name, class_name
+                        )));
+                    }
+                }
+            }
+        }
+
+        // Validate slots definitions
+        for (slot_name, _slot_def) in &schema.slots {
+            if !Self::is_valid_typeql_identifier(slot_name) {
+                return Err(GeneratorError::Validation(format!(
+                    "Slot definition name '{}' is not a valid TypeQL identifier",
+                    slot_name
+                )));
+            }
+        }
+
+        Ok(())
     }
 
     async fn generate(
@@ -414,7 +503,7 @@ impl AsyncGenerator for TypeQLGenerator {
         }
 
         // Generate rules if requested
-        if options.get_custom("generate_rules") == Some("true") {
+        if options.get_custom("generate_rules").map(|s| s.as_str()) == Some("true") {
             writeln!(&mut output, "# Rules").map_err(Self::fmt_error_to_generator_error)?;
             self.generate_rules(&mut output, schema, indent)?;
         }
@@ -443,7 +532,25 @@ impl AsyncGenerator for TypeQLGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for TypeQLGenerator {
-    fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "typeql"
+    }
+
+    fn description(&self) -> &str {
+        "Generate TypeQL schema definitions for TypeDB graph database from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Use tokio to run the async validation
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+
+        runtime
+            .block_on(AsyncGenerator::validate_schema(self, schema))
+            .map_err(|e| LinkMLError::service(e.to_string()))
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
@@ -471,6 +578,59 @@ impl Generator for TypeQLGenerator {
 }
 
 impl CodeFormatter for TypeQLGenerator {
+    fn name(&self) -> &str {
+        "typeql_formatter"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for TypeQL schema definitions with proper indentation and comment handling"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["tql", "typeql"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        let mut formatted = String::new();
+        let mut indent_level = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Handle comments
+            if trimmed.starts_with('#') {
+                formatted.push_str(&"    ".repeat(indent_level));
+                formatted.push_str(trimmed);
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed == "}" || trimmed.ends_with("};") {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&"    ".repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after define, when, then, or opening braces
+            if trimmed == "define" || trimmed == "when {" || trimmed == "then {" || 
+               trimmed.ends_with(" {") || trimmed == "{" {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
+
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let prefix = indent.to_string(level);
         doc.lines()

@@ -8,6 +8,9 @@ use linkml_core::types::{SlotDefinition, TypeDefinition};
 use serde_json::Value;
 use std::collections::HashSet;
 
+/// Type alias for custom validator functions
+type CustomValidator<'a> = Box<dyn Fn(&Value) -> Result<(), String> + 'a>;
+
 /// Array validation context
 pub struct ArrayValidationContext<'a> {
     /// The slot definition being validated
@@ -23,7 +26,7 @@ pub struct ArrayValidationContext<'a> {
     pub check_unique: bool,
 
     /// Custom validators
-    pub custom_validators: Vec<Box<dyn Fn(&Value) -> Result<(), String> + 'a>>,
+    pub custom_validators: Vec<CustomValidator<'a>>,
 }
 
 /// Array validation result

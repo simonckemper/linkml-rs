@@ -182,10 +182,17 @@ impl ParallelValidationEngine {
                         report
                     });
 
-                    let mut results = results
-                        .lock()
-                        .expect("results mutex should not be poisoned");
-                    results.add_report(report);
+                    // Handle mutex poisoning gracefully
+                    match results.lock() {
+                        Ok(mut results_guard) => {
+                            results_guard.add_report(report);
+                        }
+                        Err(poisoned) => {
+                            // Mutex was poisoned, but we can still recover the data
+                            let mut results_guard = poisoned.into_inner();
+                            results_guard.add_report(report);
+                        }
+                    }
                 }
             });
         });
@@ -193,15 +200,22 @@ impl ParallelValidationEngine {
         // Finalize and extract the result
         let results_clone = results.clone();
         let mut final_result = match Arc::try_unwrap(results) {
-            Ok(mutex) => mutex
-                .into_inner()
-                .expect("results mutex should not be poisoned"),
+            Ok(mutex) => match mutex.into_inner() {
+                Ok(result) => result,
+                Err(poisoned) => {
+                    // Recover from poisoned mutex
+                    poisoned.into_inner()
+                }
+            },
             Err(_) => {
                 // If we can't unwrap the Arc, clone the inner value
-                results_clone
-                    .lock()
-                    .expect("results mutex should not be poisoned")
-                    .clone()
+                match results_clone.lock() {
+                    Ok(guard) => guard.clone(),
+                    Err(poisoned) => {
+                        // Recover from poisoned mutex
+                        poisoned.into_inner().clone()
+                    }
+                }
             }
         };
 

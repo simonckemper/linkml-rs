@@ -241,7 +241,7 @@ impl JavaGenerator {
         }
 
         // Generate builder if requested in options
-        if options.get_custom("generate_builder") == Some("true") {
+        if options.get_custom("generate_builder").map(|s| s.as_str()) == Some("true") {
             self.write_builder(&mut output, name, &slots, schema)?;
         }
 
@@ -528,6 +528,66 @@ impl Generator for JavaGenerator {
 
     fn description(&self) -> &str {
         "Generates Java classes with validation annotations from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has required fields for Java generation
+        if schema.name.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have a name for Java generation".to_string(),
+                element: Some("schema.name".to_string()),
+            });
+        }
+
+        // Validate Java identifier requirements
+        for (class_name, _class_def) in &schema.classes {
+            // Java identifiers must start with letter, $ or _
+            if let Some(first) = class_name.chars().next() {
+                if !first.is_ascii_alphabetic() && first != '_' && first != '$' {
+                    return Err(LinkMLError::SchemaValidationError {
+                        message: format!(
+                            "Class name '{}' is not valid for Java: must start with letter, underscore, or $",
+                            class_name
+                        ),
+                        element: Some(format!("class.{}", class_name)),
+                    });
+                }
+            }
+            
+            // Check for Java reserved keywords
+            if matches!(
+                class_name.as_str(),
+                "abstract" | "assert" | "boolean" | "break" | "byte" | "case" | "catch" |
+                "char" | "class" | "const" | "continue" | "default" | "do" | "double" |
+                "else" | "enum" | "extends" | "final" | "finally" | "float" | "for" |
+                "goto" | "if" | "implements" | "import" | "instanceof" | "int" | "interface" |
+                "long" | "native" | "new" | "package" | "private" | "protected" | "public" |
+                "return" | "short" | "static" | "strictfp" | "super" | "switch" | "synchronized" |
+                "this" | "throw" | "throws" | "transient" | "try" | "void" | "volatile" | "while"
+            ) {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!("Class name '{}' is a Java reserved keyword", class_name),
+                    element: Some(format!("class.{}", class_name)),
+                });
+            }
+        }
+
+        // Validate field names
+        for (slot_name, _slot_def) in &schema.slots {
+            if let Some(first) = slot_name.chars().next() {
+                if !first.is_ascii_alphabetic() && first != '_' && first != '$' {
+                    return Err(LinkMLError::SchemaValidationError {
+                        message: format!(
+                            "Slot name '{}' is not valid for Java fields",
+                            slot_name
+                        ),
+                        element: Some(format!("slot.{}", slot_name)),
+                    });
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn file_extensions(&self) -> Vec<&str> {

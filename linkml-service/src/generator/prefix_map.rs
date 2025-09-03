@@ -406,7 +406,25 @@ impl PrefixMapGenerator {
 }
 
 impl Generator for PrefixMapGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "prefix_map"
+    }
+
+    fn description(&self) -> &str {
+        "Generates prefix maps from LinkML schemas for namespace management"
+    }
+
+    fn validate_schema(&self, schema: &Schema) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for prefixmap generation"
+            ));
+        }
+        Ok(())
+    }
+
+    fn generate(&self, schema: &Schema) -> linkml_core::error::Result<String> {
         self.generate_prefix_map(schema)
     }
 

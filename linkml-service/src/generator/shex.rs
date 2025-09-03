@@ -448,10 +448,7 @@ impl ShExGenerator {
         let shapes =
             shex_json["shapes"]
                 .as_array_mut()
-                .ok_or_else(|| GeneratorError::Generation {
-                    context: "ShExJ".to_string(),
-                    message: "shapes array not found in JSON".to_string(),
-                })?;
+                .ok_or_else(|| GeneratorError::Generation("ShExJ: shapes array not found in JSON".to_string()))?;
 
         // Add shapes for each class
         for (class_name, class_def) in &schema.classes {
@@ -459,10 +456,7 @@ impl ShExGenerator {
             shapes.push(shape);
         }
 
-        serde_json::to_string_pretty(&shex_json).map_err(|e| GeneratorError::Generation {
-            context: "ShExJ".to_string(),
-            message: e.to_string(),
-        })
+        serde_json::to_string_pretty(&shex_json).map_err(|e| GeneratorError::Generation(format!("ShExJ: {}", e)))
     }
 
     /// Generate JSON representation of a shape
@@ -643,6 +637,16 @@ impl Generator for ShExGenerator {
             ShExStyle::Json => vec![".shexj", ".json"],
             ShExStyle::Rdf => vec![".shexr", ".ttl"],
         }
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for ShEx generation"
+            ));
+        }
+        Ok(())
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {

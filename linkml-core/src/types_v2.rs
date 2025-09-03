@@ -170,6 +170,9 @@ pub struct SlotDefinitionV2 {
     pub source: Option<Arc<str>>,
     pub in_language: Option<Arc<str>>,
     pub rank: Option<i32>,
+
+    // Unique key constraints
+    pub unique_keys: Vec<Arc<str>>,
 }
 
 /// Memory-optimized Type Definition
@@ -384,8 +387,8 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             owner: None,                 // Not in v1
             readonly: None,              // Not in v1
             ifabsent: None,              // Not in v1
-            list_elements_unique: None,  // Not in v1
-            list_elements_ordered: None, // Not in v1
+            list_elements_unique: v1.unique,
+            list_elements_ordered: v1.ordered,
             shared: None,                // Not in v1
             locally_defined: None,       // Not in v1
             asymmetric: None,            // Not in v1
@@ -423,6 +426,7 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             source: None,               // Not in v1
             in_language: None,          // Not in v1
             rank: v1.rank,
+            unique_keys: intern_vec(v1.unique_keys),
         }
     }
 }

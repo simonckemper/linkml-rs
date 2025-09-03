@@ -5,8 +5,16 @@
 
 use chrono::{Local, Utc};
 use linkml_core::types::{IfAbsentAction, SchemaDefinition};
+use once_cell::sync::Lazy;
+use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
+
+// Compile regex pattern once at startup
+// Using Result type to handle regex compilation errors properly
+static VARIABLE_PATTERN: Lazy<Result<Regex, regex::Error>> = Lazy::new(|| {
+    Regex::new(r"\{([^}]+)\}")
+});
 
 /// Apply default values to data based on schema definitions
 pub struct DefaultApplier<'a> {
@@ -181,13 +189,14 @@ impl<'a> DefaultApplier<'a> {
             let mut result = expression.to_string();
 
             // Find all {variable} patterns
-            let re = regex::Regex::new(r"\{([^}]+)\}")
-                .expect("Valid regex pattern for variable substitution");
-            for cap in re.captures_iter(expression) {
-                if let Some(var_name) = cap.get(1) {
-                    if let Some(value) = data.get(var_name.as_str()) {
-                        if let Some(str_val) = value.as_str() {
-                            result = result.replace(&format!("{{{}}}", var_name.as_str()), str_val);
+            // Handle regex compilation error gracefully
+            if let Ok(ref pattern) = *VARIABLE_PATTERN {
+                for cap in pattern.captures_iter(expression) {
+                    if let Some(var_name) = cap.get(1) {
+                        if let Some(value) = data.get(var_name.as_str()) {
+                            if let Some(str_val) = value.as_str() {
+                                result = result.replace(&format!("{{{}}}", var_name.as_str()), str_val);
+                            }
                         }
                     }
                 }

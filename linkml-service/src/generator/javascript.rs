@@ -577,6 +577,51 @@ impl Generator for JavaScriptGenerator {
 }
 
 impl CodeFormatter for JavaScriptGenerator {
+    fn name(&self) -> &str {
+        "javascript"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for javascript output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["js", "mjs"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();

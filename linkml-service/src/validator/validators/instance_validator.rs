@@ -10,10 +10,12 @@ use std::sync::Arc;
 /// Validator that checks values against instance data
 pub struct InstanceValidator {
     name: String,
-    /// Instance loader (reserved for future use)
-    _loader: Arc<InstanceLoader>,
+    /// Instance loader for loading permissible values from external sources
+    loader: Arc<InstanceLoader>,
     /// Configuration for slots
     slot_configs: HashMap<String, InstanceConfig>,
+    /// Cache of loaded instance data per slot
+    loaded_data_cache: Arc<dashmap::DashMap<String, Arc<Vec<String>>>>,
 }
 
 impl InstanceValidator {
@@ -22,14 +24,49 @@ impl InstanceValidator {
     pub fn new(loader: Arc<InstanceLoader>) -> Self {
         Self {
             name: "instance_validator".to_string(),
-            _loader: loader,
+            loader,
             slot_configs: HashMap::new(),
+            loaded_data_cache: Arc::new(dashmap::DashMap::new()),
         }
     }
 
     /// Add configuration for a specific slot
     pub fn add_slot_config(&mut self, slot_name: String, config: InstanceConfig) {
         self.slot_configs.insert(slot_name, config);
+    }
+
+    /// Load instance data for a slot from a file (if configured)
+    async fn load_instance_data_for_slot(
+        &self,
+        slot_name: &str,
+        file_path: &str,
+    ) -> Result<Arc<Vec<String>>, String> {
+        // Check cache first
+        if let Some(cached) = self.loaded_data_cache.get(slot_name) {
+            return Ok(Arc::clone(&cached));
+        }
+
+        // Get configuration for this slot
+        let config = self.slot_configs.get(slot_name)
+            .ok_or_else(|| format!("No configuration for slot '{}'", slot_name))?;
+
+        // Load data using the loader
+        let instance_data = self.loader
+            .load_json_file(file_path, config)
+            .await
+            .map_err(|e| format!("Failed to load instance data: {}", e))?;
+
+        // Extract values for this slot
+        let values = instance_data.values.get(slot_name)
+            .cloned()
+            .unwrap_or_default();
+
+        let values_arc = Arc::new(values);
+        
+        // Cache the loaded data
+        self.loaded_data_cache.insert(slot_name.to_string(), Arc::clone(&values_arc));
+        
+        Ok(values_arc)
     }
 
     /// Check if a value is in the permissible values
@@ -40,16 +77,27 @@ impl InstanceValidator {
             if !config.is_valid() {
                 return false;
             }
+            
+            // First check the cache for loaded data
+            if let Some(cached_values) = self.loaded_data_cache.get(slot_name) {
+                return cached_values.contains(&value.to_string());
+            }
         }
 
-        // Check if we have instance data for this slot
+        // Check if we have instance data for this slot in context
         if let Some(instance_data) = context.instance_data.as_ref() {
             if let Some(values) = instance_data.get(slot_name) {
                 return values.contains(&value.to_string());
             }
         }
 
-        // No instance data means all values are allowed
+        // If we have configuration but no data loaded yet, this is a validation failure
+        // (data should have been loaded in the validate method)
+        if self.slot_configs.contains_key(slot_name) {
+            return false; // Value not found in required instance data
+        }
+        
+        // No instance validation configured means all values are allowed
         true
     }
 
@@ -103,9 +151,7 @@ impl Validator for InstanceValidator {
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
 
-        // Only validate if slot has instance-based permissible values
-        // This could be indicated by a special marker in the slot definition
-        // For now, check if we have instance data for this slot
+        // Check if we have instance data in context or need to load it
         let has_instance_data = context
             .instance_data
             .as_ref()
@@ -113,15 +159,89 @@ impl Validator for InstanceValidator {
 
         if !has_instance_data {
             // Try to load instance data using the loader if configured for this slot
-            if let Some(config) = self.slot_configs.get(&slot.name) {
-                // Basic instance validation - check if the value exists in the configured source
-                // This is a simplified implementation that can be enhanced with full InstanceLoader API
-                issues.push(ValidationIssue::info(
-                    format!("Instance validation for slot '{}' using key field '{}' - basic validation passed",
-                           slot.name, config.key_field),
-                    &context.path(),
-                    &self.name,
-                ));
+            if let Some(_config) = self.slot_configs.get(&slot.name) {
+                // Actually use the loader to load and validate data
+                // We'll need to handle this synchronously for now
+                let runtime = tokio::runtime::Handle::try_current();
+                
+                if let Ok(handle) = runtime {
+                    // We're in an async context, can use block_on safely
+                    let file_path = "instance_data.json"; // Default filename for instance data
+                    
+                    // Use the async loader method synchronously
+                    let load_result = handle.block_on(async {
+                        self.load_instance_data_for_slot(&slot.name, file_path).await
+                    });
+                    
+                    match load_result {
+                        Ok(loaded_values) => {
+                            // Validate the value against loaded data
+                            if let Some(val_str) = value.as_str() {
+                                if !loaded_values.contains(&val_str.to_string()) {
+                                    let preview: Vec<_> = loaded_values.iter().take(5).cloned().collect();
+                                    let available = if loaded_values.len() > 5 {
+                                        format!("{:?} (and {} more)", preview, loaded_values.len() - 5)
+                                    } else {
+                                        format!("{preview:?}")
+                                    };
+                                    
+                                    issues.push(ValidationIssue::error(
+                                        format!("Value '{}' not in loaded instance values. Available: {}", val_str, available),
+                                        &context.path(),
+                                        &self.name,
+                                    ));
+                                }
+                            }
+                            // Store in context for future use
+                            if let Some(instance_data) = context.instance_data.as_mut() {
+                                if let Some(data) = Arc::get_mut(instance_data) {
+                                    data.insert(slot.name.clone(), (*loaded_values).clone());
+                                }
+                            } else {
+                                let mut new_data = HashMap::new();
+                                new_data.insert(slot.name.clone(), (*loaded_values).clone());
+                                context.instance_data = Some(Arc::new(new_data));
+                            }
+                        }
+                        Err(e) => {
+                            issues.push(ValidationIssue::warning(
+                                format!("Failed to load instance data from {}: {}", file_path, e),
+                                &context.path(),
+                                &self.name,
+                            ));
+                        }
+                    }
+                } else {
+                    // Not in async context, need to create runtime
+                    let rt = tokio::runtime::Runtime::new();
+                    if let Ok(runtime) = rt {
+                        let file_path = "instance_data.json"; // Default filename for instance data
+                        let load_result = runtime.block_on(async {
+                            self.load_instance_data_for_slot(&slot.name, file_path).await
+                        });
+                        
+                        match load_result {
+                            Ok(loaded_values) => {
+                                if let Some(val_str) = value.as_str() {
+                                    if !loaded_values.contains(&val_str.to_string()) {
+                                        issues.push(ValidationIssue::error(
+                                            format!("Value '{}' not in loaded instance values", val_str),
+                                            &context.path(),
+                                            &self.name,
+                                        ));
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                issues.push(ValidationIssue::warning(
+                                    format!("Failed to load instance data: {}", e),
+                                    &context.path(),
+                                    &self.name,
+                                ));
+                            }
+                        }
+                    }
+                }
                 return issues;
             } else {
                 return issues; // No instance validation needed

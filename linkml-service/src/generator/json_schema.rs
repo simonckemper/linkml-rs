@@ -278,6 +278,16 @@ impl Generator for JsonSchemaGenerator {
         vec![".json", ".schema.json"]
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for JSON Schema generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Validate schema
         self.validate_schema(schema)?;
@@ -348,6 +358,51 @@ impl Generator for JsonSchemaGenerator {
 }
 
 impl CodeFormatter for JsonSchemaGenerator {
+    fn name(&self) -> &str {
+        "jsonschema"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for jsonschema output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["json"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
         doc.to_string()
     }

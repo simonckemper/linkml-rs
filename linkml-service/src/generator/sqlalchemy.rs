@@ -582,6 +582,24 @@ impl SQLAlchemyGenerator {
 }
 
 impl Generator for SQLAlchemyGenerator {
+    fn name(&self) -> &str {
+        "sqlalchemy"
+    }
+
+    fn description(&self) -> &str {
+        "Generate SQLAlchemy ORM models from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for sqlalchemy generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut output = vec![];
 

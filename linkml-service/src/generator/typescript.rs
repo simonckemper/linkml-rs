@@ -25,6 +25,24 @@ impl Default for TypeScriptGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for TypeScriptGenerator {
+    fn name(&self) -> &str {
+        "typescript"
+    }
+
+    fn description(&self) -> &str {
+        "Generate TypeScript interfaces and types from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for typescript generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
@@ -126,13 +144,13 @@ impl TypeScriptGenerator {
         writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate type guard
-        if options.get_custom("generate_type_guards") != Some("false") {
+        if options.get_custom("generate_type_guards").map(|s| s.as_str()) != Some("false") {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_type_guard(&mut output, class_name, class, schema)?;
         }
 
         // Generate validator function
-        if options.get_custom("generate_validators") == Some("true") {
+        if options.get_custom("generate_validators").map(|s| s.as_str()) == Some("true") {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_validator(&mut output, class_name, class, schema)?;
         }
@@ -161,9 +179,15 @@ impl TypeScriptGenerator {
         // Determine the type
         let base_type = self.get_field_type(slot, schema)?;
 
-        // Handle multivalued
+        // Handle multivalued with advanced collection types
         let field_type = if slot.multivalued.unwrap_or(false) {
-            format!("{}[]", base_type)
+            if slot.unique.unwrap_or(false) {
+                format!("Set<{}>", base_type)
+            } else if slot.ordered.unwrap_or(false) {
+                format!("{}[]", base_type)
+            } else {
+                format!("ReadonlyArray<{}>", base_type)
+            }
         } else {
             base_type
         };
@@ -317,32 +341,126 @@ impl TypeScriptGenerator {
         writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
-        // Add validation for constraints
+        // Add comprehensive validation for constraints
         let slots = collect_all_slots(class, schema)?;
         let mut has_validations = false;
 
         for slot_name in &slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                // Pattern validation
-                if let Some(ref pattern) = slot.pattern {
+                // Required field validation
+                if slot.required.unwrap_or(false) {
                     if !has_validations {
-                        writeln!(output, "  // Additional validation")
+                        writeln!(output, "  // Field validation")
                             .map_err(Self::fmt_error_to_generator_error)?;
                         has_validations = true;
                     }
                     writeln!(
                         output,
-                        "  if (obj.{} && !/{}/u.test(obj.{})) {{",
+                        "  if (obj.{} === undefined || obj.{} === null) {{",
+                        slot_name, slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "    errors.push({{ path: '{}', message: '{} is required' }});",
+                        slot_name, slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                }
+
+                // Pattern validation
+                if let Some(ref pattern) = slot.pattern {
+                    if !has_validations {
+                        writeln!(output, "  // Pattern validation")
+                            .map_err(Self::fmt_error_to_generator_error)?;
+                        has_validations = true;
+                    }
+                    writeln!(
+                        output,
+                        "  if (obj.{} && !/{}/test(String(obj.{}))) {{",
                         slot_name, pattern, slot_name
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "    errors.push({{ path: '{}', message: 'Does not match pattern: {}' }});",
-                        slot_name, pattern
+                        "    errors.push({{ path: '{}', message: '{} does not match pattern: {}' }});",
+                        slot_name, slot_name, pattern
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                }
+
+                // Range validation for numbers
+                if let Some(min) = slot.minimum_value.as_ref() {
+                    if !has_validations {
+                        writeln!(output, "  // Range validation")
+                            .map_err(Self::fmt_error_to_generator_error)?;
+                        has_validations = true;
+                    }
+                    writeln!(
+                        output,
+                        "  if (obj.{} !== undefined && typeof obj.{} === 'number' && obj.{} < {}) {{",
+                        slot_name, slot_name, slot_name, min
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "    errors.push({{ path: '{}', message: '{} must be >= {}' }});",
+                        slot_name, slot_name, min
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                }
+
+                if let Some(max) = slot.maximum_value.as_ref() {
+                    writeln!(
+                        output,
+                        "  if (obj.{} !== undefined && typeof obj.{} === 'number' && obj.{} > {}) {{",
+                        slot_name, slot_name, slot_name, max
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "    errors.push({{ path: '{}', message: '{} must be <= {}' }});",
+                        slot_name, slot_name, max
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
+                }
+
+                // Enum validation
+                if !slot.permissible_values.is_empty() {
+                    let values: Vec<String> = slot.permissible_values.iter().map(|pv| {
+                        let text = match pv {
+                            linkml_core::types::PermissibleValue::Simple(s) => s,
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
+                        };
+                        format!("'{}'", text)
+                    }).collect();
+                    writeln!(
+                        output,
+                        "  if (obj.{} !== undefined && ![{}].includes(obj.{})) {{",
+                        slot_name, values.join(", "), slot_name
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(
+                        output,
+                        "    errors.push({{ path: '{}', message: '{} must be one of: {}' }});",
+                        slot_name, slot_name, values.join(", ")
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output, "  }}")
+                        .map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Range validation
@@ -475,7 +593,7 @@ impl AsyncGenerator for TypeScriptGenerator {
         writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate validation types if needed
-        if options.get_custom("generate_validators") == Some("true") {
+        if options.get_custom("generate_validators").map(|s| s.as_str()) == Some("true") {
             writeln!(&mut content, "// Validation types")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut content, "export interface ValidationError {{")
@@ -546,6 +664,51 @@ impl AsyncGenerator for TypeScriptGenerator {
 }
 
 impl CodeFormatter for TypeScriptGenerator {
+    fn name(&self) -> &str {
+        "typescript"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for typescript output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["ts", "tsx"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();

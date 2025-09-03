@@ -47,6 +47,13 @@ pub enum ResourceError {
         /// Maximum allowed cache memory in bytes
         max: usize,
     },
+
+    /// Validation error
+    #[error("Validation error: {message}")]
+    ValidationError {
+        /// Error message
+        message: String,
+    },
 }
 
 /// Resource limits configuration
@@ -103,8 +110,8 @@ impl ResourceLimits {
 /// Resource monitor for tracking usage
 pub struct ResourceMonitor {
     limits: ResourceLimits,
-    start_time: std::time::Instant,  // Store as Instant for elapsed calculation
-    _timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
+    start_timestamp: i64,  // Store as timestamp from service
+    timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
     memory_used: AtomicUsize,
     parallel_ops: AtomicUsize,
     cache_memory: AtomicUsize,
@@ -117,22 +124,39 @@ impl ResourceMonitor {
         limits: ResourceLimits,
         timestamp_service: Arc<dyn TimestampService<Error = TimestampError>>,
     ) -> Self {
-        let start_time = std::time::Instant::now();
-        
+        // Initialize with 0, will be set when starting validation
         Self {
             limits,
-            start_time,
-            _timestamp_service: timestamp_service,
+            start_timestamp: 0,
+            timestamp_service,
             memory_used: AtomicUsize::new(0),
             parallel_ops: AtomicUsize::new(0),
             cache_memory: AtomicUsize::new(0),
             validation_errors: AtomicUsize::new(0),
         }
     }
+    
+    /// Initialize the start timestamp for tracking
+    pub async fn initialize_timestamp(&mut self) -> Result<(), ResourceError> {
+        self.start_timestamp = self.timestamp_service.system_time().await
+            .map(|st| st.duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() as i64)
+                .unwrap_or(0))
+            .map_err(|e| ResourceError::ValidationError {
+                message: format!("Failed to get initial timestamp: {}", e),
+            })?;
+        Ok(())
+    }
 
     /// Check if validation has timed out
-    pub fn check_timeout(&self) -> Result<(), ResourceError> {
-        let elapsed = self.start_time.elapsed();
+    pub async fn check_timeout(&self) -> Result<(), ResourceError> {
+        let current_timestamp = self.timestamp_service.system_time().await
+            .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
+            .unwrap_or_else(|_| self.start_timestamp); // Use start if service fails
+        
+        let elapsed_ms = (current_timestamp - self.start_timestamp) as u64;
+        let elapsed = Duration::from_millis(elapsed_ms);
+        
         if elapsed > self.limits.max_validation_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
@@ -143,8 +167,14 @@ impl ResourceMonitor {
     }
 
     /// Check if expression evaluation has timed out
-    pub fn check_expression_timeout(&self, start: std::time::Instant) -> Result<(), ResourceError> {
-        let elapsed = start.elapsed();
+    pub async fn check_expression_timeout(&self, start_timestamp: i64) -> Result<(), ResourceError> {
+        let current_timestamp = self.timestamp_service.system_time().await
+            .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
+            .unwrap_or_else(|_| start_timestamp); // Use start if service fails
+        
+        let elapsed_ms = (current_timestamp - start_timestamp) as u64;
+        let elapsed = Duration::from_millis(elapsed_ms);
+        
         if elapsed > self.limits.max_expression_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
@@ -211,8 +241,12 @@ impl ResourceMonitor {
 
     /// Get current resource usage
     pub fn current_usage(&self) -> ResourceUsage {
+        let current_timestamp = std::time::SystemTime::now();
         ResourceUsage {
-            elapsed: self.start_time.elapsed(),
+            elapsed: std::time::Duration::from_secs(
+                (current_timestamp.duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default().as_secs() as i64 - self.start_timestamp) as u64
+            ),
             memory_used: self.memory_used.load(Ordering::Relaxed),
             parallel_ops: self.parallel_ops.load(Ordering::Relaxed),
             cache_memory: self.cache_memory.load(Ordering::Relaxed),
@@ -275,24 +309,26 @@ pub fn create_monitor(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::thread;
 
-    #[test]
-    fn test_timeout_check() {
+    #[tokio::test]
+    async fn test_timeout_check() {
         let limits = ResourceLimits {
             max_validation_time: Duration::from_millis(100),
             ..Default::default()
         };
         let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
-        let monitor = ResourceMonitor::new(limits, timestamp_service);
+        let mut monitor = ResourceMonitor::new(limits, timestamp_service);
+        
+        // Initialize the timestamp
+        monitor.initialize_timestamp().await.expect("Failed to initialize timestamp");
 
         // Should not timeout immediately
-        assert!(monitor.check_timeout().is_ok());
+        assert!(monitor.check_timeout().await.is_ok());
 
         // Sleep and check timeout
-        thread::sleep(Duration::from_millis(150));
+        tokio::time::sleep(Duration::from_millis(150)).await;
         assert!(matches!(
-            monitor.check_timeout(),
+            monitor.check_timeout().await,
             Err(ResourceError::Timeout { .. })
         ));
     }

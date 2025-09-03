@@ -571,7 +571,25 @@ impl SssomGenerator {
 }
 
 impl Generator for SssomGenerator {
-    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "sssom"
+    }
+
+    fn description(&self) -> &str {
+        "Generate SSSOM mapping files from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for sssom generation"
+            ));
+        }
+        Ok(())
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         self.generate_sssom(schema)
     }
 

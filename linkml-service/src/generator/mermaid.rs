@@ -646,6 +646,35 @@ impl Generator for MermaidGenerator {
         vec![".mmd", ".mermaid"]
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has required fields
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for Mermaid diagram generation"
+            ));
+        }
+
+        // Mermaid diagrams need at least some content to visualize
+        if schema.classes.is_empty() && schema.enums.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have at least one class or enum to generate a Mermaid diagram"
+            ));
+        }
+
+        // Check for Mermaid-incompatible characters in names
+        for (class_name, _) in &schema.classes {
+            if class_name.contains('"') || class_name.contains('\n') || class_name.contains('\r') {
+                return Err(LinkMLError::data_validation(
+                    format!("Class name '{}' contains characters that break Mermaid syntax", class_name)
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_mermaid(schema)?;
         Ok(content)

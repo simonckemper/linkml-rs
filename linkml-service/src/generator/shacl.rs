@@ -413,6 +413,16 @@ impl Generator for ShaclGenerator {
         vec![".shacl", ".ttl"]
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for SHACL generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let mut output = String::new();
 
@@ -426,10 +436,7 @@ impl Generator for ShaclGenerator {
         for (name, class) in &schema.classes {
             let shape = self
                 .generate_class_shape(name, class, schema)
-                .map_err(|e| GeneratorError::Generation {
-                    context: format!("class {}", name),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(format!("class {}: {}", name, e)))?;
             output.push_str(&shape);
         }
 

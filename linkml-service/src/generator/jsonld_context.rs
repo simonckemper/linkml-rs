@@ -329,7 +329,25 @@ impl JsonLdContextGenerator {
 }
 
 impl Generator for JsonLdContextGenerator {
-    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "jsonld-context"
+    }
+
+    fn description(&self) -> &str {
+        "Generate JSON-LD context from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for jsonldcontext generation"
+            ));
+        }
+        Ok(())
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let context = self.generate_context(schema)?;
 
         let output = json!({

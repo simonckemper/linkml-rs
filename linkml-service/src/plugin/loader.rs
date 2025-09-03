@@ -12,6 +12,9 @@ use timestamp_core::SyncTimestampService;
 
 use toml;
 
+/// Type alias for plugin loading future
+type PluginLoadFuture = std::pin::Pin<Box<dyn std::future::Future<Output = Result<Box<dyn Plugin>>> + Send>>;
+
 /// Plugin loader interface
 pub trait PluginLoader: Send + Sync {
     /// Load plugin metadata from manifest
@@ -22,7 +25,7 @@ pub trait PluginLoader: Send + Sync {
         &self,
         path: &Path,
         manifest: &PluginManifest,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Box<dyn Plugin>>> + Send>>;
+    ) -> PluginLoadFuture;
 }
 
 /// Dynamic plugin loader supporting multiple plugin types

@@ -431,6 +431,24 @@ impl AsyncGenerator for YumlGenerator {
         vec![".yuml", ".txt"]
     }
 
+    async fn validate_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Validate schema has required fields
+        if schema.name.is_empty() {
+            return Err(GeneratorError::SchemaValidation(
+                "Schema must have a name for yUML generation".to_string(),
+            ));
+        }
+
+        // yUML diagrams need at least some content to visualize
+        if schema.classes.is_empty() && schema.enums.is_empty() {
+            return Err(GeneratorError::SchemaValidation(
+                "Schema must have at least one class or enum to generate a yUML diagram".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
     async fn generate(
         &self,
         schema: &SchemaDefinition,
@@ -465,6 +483,28 @@ impl AsyncGenerator for YumlGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for YumlGenerator {
+    fn name(&self) -> &str {
+        match self.options.diagram_type {
+            YumlDiagramType::Class => "yuml",
+            YumlDiagramType::UseCase => "yuml-usecase",
+            YumlDiagramType::Activity => "yuml-activity",
+        }
+    }
+
+    fn description(&self) -> &str {
+        "Generates yUML diagrams from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for yuml generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()

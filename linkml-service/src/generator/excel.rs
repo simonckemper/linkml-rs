@@ -131,10 +131,7 @@ impl ExcelGenerator {
         // Convert workbook to bytes
         let buffer = workbook
             .save_to_buffer()
-            .map_err(|e| GeneratorError::Generation {
-                context: "save_buffer".to_string(),
-                message: format!("Failed to save workbook: {}", e),
-            })?;
+            .map_err(|e| GeneratorError::Generation(format!("Failed to save workbook: {}", e)))?;
 
         Ok(buffer)
     }
@@ -147,10 +144,7 @@ impl ExcelGenerator {
         header_format: &Format,
     ) -> GeneratorResult<()> {
         let worksheet = workbook.add_worksheet().set_name("Summary").map_err(|e| {
-            GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            }
+            GeneratorError::Generation(e.to_string(),)
         })?;
 
         let mut row = 0;
@@ -166,10 +160,7 @@ impl ExcelGenerator {
                     &schema.name
                 },
             )
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .merge_range(
                 row,
@@ -183,25 +174,16 @@ impl ExcelGenerator {
                 },
                 header_format,
             )
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 2;
 
         // Description
         if let Some(description) = &schema.description {
             worksheet
                 .write_string(row, 0, "Description:")
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
             worksheet.write_string(row, 1, description).map_err(|e| {
-                GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                }
+                GeneratorError::Generation(e.to_string(),)
             })?;
             row += 2;
         }
@@ -209,86 +191,50 @@ impl ExcelGenerator {
         // Statistics
         worksheet
             .write_string_with_format(row, 0, "Statistics", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 1, "Count", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         worksheet
             .write_string(row, 0, "Classes")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_number(row, 1, schema.classes.len() as f64)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         worksheet
             .write_string(row, 0, "Slots")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_number(row, 1, schema.slots.len() as f64)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         worksheet
             .write_string(row, 0, "Enumerations")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_number(row, 1, schema.enums.len() as f64)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         worksheet
             .write_string(row, 0, "Types")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_number(row, 1, schema.types.len() as f64)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         // Set column widths
         worksheet
             .set_column_width(0, 20)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(1, 40)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         Ok(())
     }
@@ -310,10 +256,7 @@ impl ExcelGenerator {
         let worksheet = workbook
             .add_worksheet()
             .set_name(&sheet_name)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         // Collect all slots
         let slots = self.collect_class_slots(class_name, class_def, schema)?;
@@ -329,20 +272,14 @@ impl ExcelGenerator {
         for (slot_name, slot_def) in &slots {
             worksheet
                 .write_string_with_format(row, col, slot_name, &header_format)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
             // Add description as a cell note
             if let Some(desc) = &slot_def.description {
                 let note = Note::new(desc).set_author("LinkML Generator");
                 worksheet
                     .insert_note(row, col, &note)
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
             }
 
             col += 1;
@@ -355,10 +292,7 @@ impl ExcelGenerator {
             let type_str = format!("<{}>", slot_def.range.as_deref().unwrap_or("string"));
             worksheet
                 .write_string_with_format(row, col, &type_str, &type_format)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
             col += 1;
         }
         row += 1;
@@ -375,10 +309,7 @@ impl ExcelGenerator {
             let description = slot_def.description.as_deref().unwrap_or("");
             worksheet
                 .write_string_with_format(row, col, description, &desc_format)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
             col += 1;
         }
         row += 1;
@@ -396,10 +327,7 @@ impl ExcelGenerator {
                 let sample = self.generate_sample_value(slot_name, slot_def, i);
                 worksheet
                     .write_string_with_format(row, col, &sample, &format)
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 col += 1;
             }
             row += 1;
@@ -414,30 +342,21 @@ impl ExcelGenerator {
         if self.freeze_headers {
             worksheet
                 .set_freeze_panes(3, 0)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Add filters if enabled
         if self.add_filters {
             worksheet
                 .autofilter(0, 0, row - 1, slots.len() as u16 - 1)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Auto-fit columns
         for (i, _) in slots.iter().enumerate() {
             worksheet
                 .set_column_width(i as u16, 15)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         Ok(())
@@ -453,32 +372,20 @@ impl ExcelGenerator {
         let worksheet = workbook
             .add_worksheet()
             .set_name("Enumerations")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         let mut row = 0;
 
         // Headers
         worksheet
             .write_string_with_format(row, 0, "Enumeration", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 1, "Value", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 2, "Description", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         // Write enum values
@@ -492,22 +399,13 @@ impl ExcelGenerator {
                 };
 
                 worksheet.write_string(row, 0, enum_name).map_err(|e| {
-                    GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    }
+                    GeneratorError::Generation(e.to_string(),)
                 })?;
                 worksheet
                     .write_string(row, 1, value)
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 worksheet.write_string(row, 2, description).map_err(|e| {
-                    GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    }
+                    GeneratorError::Generation(e.to_string(),)
                 })?;
                 row += 1;
             }
@@ -517,41 +415,26 @@ impl ExcelGenerator {
         if self.freeze_headers {
             worksheet
                 .set_freeze_panes(1, 0)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Add filters
         if self.add_filters {
             worksheet
                 .autofilter(0, 0, row - 1, 2)
-                .map_err(|e| GeneratorError::Generation {
-                    context: "worksheet_operation".to_string(),
-                    message: e.to_string(),
-                })?;
+                .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Set column widths
         worksheet
             .set_column_width(0, 20)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(1, 20)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(2, 40)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         Ok(())
     }
@@ -582,18 +465,12 @@ impl ExcelGenerator {
 
                     let data_validation = DataValidation::new()
                         .allow_list_strings(&values.iter().map(|s| s.as_str()).collect::<Vec<_>>())
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                     // Apply to entire column (starting from row 3)
                     worksheet
                         .add_data_validation(start_row, col, 1_048_575, col, &data_validation)
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 }
             }
 
@@ -631,26 +508,17 @@ impl ExcelGenerator {
 
                     validation = validation
                         .set_input_title("Enter an integer")
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                     if let Some(desc) = &slot_def.description {
                         validation = validation.set_input_message(desc).map_err(|e| {
-                            GeneratorError::Generation {
-                                context: "data_validation".to_string(),
-                                message: e.to_string(),
-                            }
+                            GeneratorError::Generation(e.to_string(),)
                         })?;
                     }
 
                     worksheet
                         .add_data_validation(start_row, col, 1_048_575, col, &validation)
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 }
                 Some("float" | "double" | "decimal") => {
                     let mut validation = DataValidation::new();
@@ -672,17 +540,11 @@ impl ExcelGenerator {
 
                     validation = validation
                         .set_input_title("Enter a decimal number")
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                     worksheet
                         .add_data_validation(start_row, col, 1_048_575, col, &validation)
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 }
                 Some("date") => {
                     let validation = DataValidation::new()
@@ -692,22 +554,13 @@ impl ExcelGenerator {
                             ExcelDateTime::from_ymd(2100, 12, 31).unwrap(),
                         ))
                         .set_input_title("Enter a date")
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?
                         .set_input_message("Format: YYYY-MM-DD")
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                     worksheet
                         .add_data_validation(start_row, col, 1_048_575, col, &validation)
-                        .map_err(|e| GeneratorError::Generation {
-                            context: "data_validation".to_string(),
-                            message: e.to_string(),
-                        })?;
+                        .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 }
                 _ => {}
             }
@@ -720,10 +573,7 @@ impl ExcelGenerator {
                 let note_text = format!("Pattern: {}", pattern);
                 let note = Note::new(&note_text).set_author("LinkML Generator");
                 worksheet.insert_note(start_row, col, &note).map_err(|e| {
-                    GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    }
+                    GeneratorError::Generation(e.to_string(),)
                 })?;
             }
         }
@@ -741,59 +591,35 @@ impl ExcelGenerator {
         let worksheet = workbook
             .add_worksheet()
             .set_name("Validation Info")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         let mut row = 0;
 
         // Title
         worksheet
             .write_string(row, 0, "Field Validation Rules")
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .merge_range(row, 0, row, 4, "Field Validation Rules", header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 2;
 
         // Headers
         worksheet
             .write_string_with_format(row, 0, "Class", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 1, "Field", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 2, "Type", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 3, "Required", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .write_string_with_format(row, 4, "Constraints", &header_format)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
         // Write validation rules for each class
@@ -806,23 +632,14 @@ impl ExcelGenerator {
 
             for (slot_name, slot_def) in &slots {
                 worksheet.write_string(row, 0, class_name).map_err(|e| {
-                    GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    }
+                    GeneratorError::Generation(e.to_string(),)
                 })?;
                 worksheet.write_string(row, 1, slot_name).map_err(|e| {
-                    GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    }
+                    GeneratorError::Generation(e.to_string(),)
                 })?;
                 worksheet
                     .write_string(row, 2, slot_def.range.as_deref().unwrap_or("string"))
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 worksheet
                     .write_string(
                         row,
@@ -833,10 +650,7 @@ impl ExcelGenerator {
                             "No"
                         },
                     )
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                 // Build constraints string
                 let mut constraints = Vec::new();
@@ -867,10 +681,7 @@ impl ExcelGenerator {
 
                 worksheet
                     .write_string(row, 4, &constraints_str)
-                    .map_err(|e| GeneratorError::Generation {
-                        context: "worksheet_operation".to_string(),
-                        message: e.to_string(),
-                    })?;
+                    .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                 row += 1;
             }
@@ -879,34 +690,19 @@ impl ExcelGenerator {
         // Set column widths
         worksheet
             .set_column_width(0, 20)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(1, 20)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(2, 15)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(3, 10)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
             .set_column_width(4, 40)
-            .map_err(|e| GeneratorError::Generation {
-                context: "worksheet_operation".to_string(),
-                message: e.to_string(),
-            })?;
+            .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         Ok(())
     }
@@ -993,6 +789,37 @@ impl Generator for ExcelGenerator {
 
     fn file_extensions(&self) -> Vec<&str> {
         vec![".xlsx"]
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for Excel generation"
+            ));
+        }
+
+        // Validate that we have at least one non-abstract class
+        let concrete_classes = schema.classes.iter()
+            .filter(|(_, c)| !c.abstract_.unwrap_or(false))
+            .count();
+        
+        if concrete_classes == 0 {
+            return Err(LinkMLError::data_validation(
+                "Schema must have at least one concrete (non-abstract) class for Excel generation"
+            ));
+        }
+
+        // Validate worksheet names won't exceed Excel's 31 character limit
+        for (class_name, _) in &schema.classes {
+            if class_name.len() > 31 {
+                return Err(LinkMLError::data_validation(
+                    format!("Class name '{}' exceeds Excel's 31 character worksheet name limit", class_name)
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {

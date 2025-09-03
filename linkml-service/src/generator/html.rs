@@ -780,6 +780,40 @@ impl Generator for HtmlGenerator {
         "Generate HTML documentation from LinkML schemas"
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Basic validation for HTML generation
+        if schema.name.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have a name for HTML documentation".to_string(),
+                element: Some("schema.name".to_string()),
+            });
+        }
+
+        // Check for XSS-prone content in names
+        for (class_name, _class_def) in &schema.classes {
+            if class_name.contains('<') || class_name.contains('>') || 
+               class_name.contains("script") || class_name.contains("javascript:") {
+                return Err(LinkMLError::SchemaValidationError {
+                    message: format!(
+                        "Class name '{}' contains potentially unsafe HTML characters",
+                        class_name
+                    ),
+                    element: Some(format!("class.{}", class_name)),
+                });
+            }
+        }
+
+        // Validate that we have at least some content to document
+        if schema.classes.is_empty() && schema.slots.is_empty() && schema.types.is_empty() && schema.enums.is_empty() {
+            return Err(LinkMLError::SchemaValidationError {
+                message: "Schema must have at least one class, slot, type, or enum to generate documentation".to_string(),
+                element: Some("schema".to_string()),
+            });
+        }
+
+        Ok(())
+    }
+
     fn file_extensions(&self) -> Vec<&str> {
         vec![".html", ".htm"]
     }
@@ -821,6 +855,51 @@ impl Generator for HtmlGenerator {
 }
 
 impl CodeFormatter for HtmlGenerator {
+    fn name(&self) -> &str {
+        "html"
+    }
+
+    fn description(&self) -> &str {
+        "Code formatter for html output with proper indentation and syntax"
+    }
+
+    fn file_extensions(&self) -> Vec<&str> {
+        vec!["html", "htm"]
+    }
+
+    fn format_code(&self, code: &str) -> GeneratorResult<String> {
+        // Basic formatting - just ensure consistent indentation
+        let mut formatted = String::new();
+        let indent = "    ";
+        let mut indent_level: usize = 0;
+        
+        for line in code.lines() {
+            let trimmed = line.trim();
+            
+            // Skip empty lines
+            if trimmed.is_empty() {
+                formatted.push('\n');
+                continue;
+            }
+            
+            // Decrease indent for closing braces
+            if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
+                indent_level = indent_level.saturating_sub(1);
+            }
+            
+            // Add proper indentation
+            formatted.push_str(&indent.repeat(indent_level));
+            formatted.push_str(trimmed);
+            formatted.push('\n');
+            
+            // Increase indent after opening braces
+            if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
+                indent_level += 1;
+            }
+        }
+        
+        Ok(formatted)
+    }
     fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
         self.escape_html(doc)
     }

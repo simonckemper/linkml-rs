@@ -99,16 +99,22 @@ pub enum CaptureValidator {
     Custom(String),
 }
 
+/// Type alias for converter functions
+type ConverterFn = Box<dyn Fn(&str) -> CaptureResult<CaptureValue>>;
+
+/// Type alias for validator functions
+type ValidatorFn = Box<dyn Fn(&str) -> CaptureResult<()>>;
+
 /// Named capture extractor
 pub struct CaptureExtractor {
     /// Capture definitions
     definitions: HashMap<String, CaptureDefinition>,
 
     /// Custom converters
-    converters: HashMap<String, Box<dyn Fn(&str) -> CaptureResult<CaptureValue>>>,
+    converters: HashMap<String, ConverterFn>,
 
     /// Custom validators
-    validators: HashMap<String, Box<dyn Fn(&str) -> CaptureResult<()>>>,
+    validators: HashMap<String, ValidatorFn>,
 }
 
 /// Extracted capture value

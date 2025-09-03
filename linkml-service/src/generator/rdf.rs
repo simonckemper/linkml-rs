@@ -44,6 +44,28 @@ impl RdfGenerator {
         }
     }
 
+    /// Create a new RDF generator in RDFS mode
+    #[must_use]
+    pub fn rdfs() -> Self {
+        Self {
+            base_uri: None,
+            include_metadata: true,
+            compact_syntax: false,
+            include_linkml_props: false,
+        }
+    }
+
+    /// Create a new RDF generator in simple mode
+    #[must_use]
+    pub fn simple() -> Self {
+        Self {
+            base_uri: None,
+            include_metadata: false,
+            compact_syntax: true,
+            include_linkml_props: false,
+        }
+    }
+
     /// Set the base URI
     #[must_use]
     pub fn with_base_uri(mut self, uri: String) -> Self {
@@ -514,6 +536,16 @@ fn escape_literal(s: &str) -> String {
 }
 
 impl Generator for RdfGenerator {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for rdf generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         self.generate_rdf(schema)
     }

@@ -305,6 +305,42 @@ impl Generator for CsvGenerator {
         }
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for CSV generation"
+            ));
+        }
+
+        // Validate that we have at least one non-abstract class
+        let concrete_classes = schema.classes.iter()
+            .filter(|(_, c)| !c.abstract_.unwrap_or(false))
+            .count();
+        
+        if concrete_classes == 0 {
+            return Err(LinkMLError::data_validation(
+                "Schema must have at least one concrete (non-abstract) class for CSV generation"
+            ));
+        }
+
+        // Validate slot names don't contain special CSV characters
+        for (_class_name, class_def) in &schema.classes {
+            if !class_def.slots.is_empty() {
+                let slots = &class_def.slots;
+                for slot_name in slots {
+                    if slot_name.contains(',') || slot_name.contains('\n') || slot_name.contains('\r') {
+                        return Err(LinkMLError::data_validation(
+                            format!("Slot name '{}' contains invalid CSV characters", slot_name)
+                        ));
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     // Sync Generator trait method
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let mut result = String::new();

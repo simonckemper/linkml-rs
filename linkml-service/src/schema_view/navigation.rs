@@ -17,8 +17,8 @@ pub struct NavigationCache {
     /// Cached induced slots (key: "class_name.slot_name")
     induced_slots: HashMap<String, SlotDefinition>,
 
-    /// Cached inheritance chains (reserved for future use)
-    _inheritance_chains: HashMap<String, Vec<String>>,
+    /// Cached inheritance chains for performance
+    inheritance_chains: HashMap<String, InheritanceChain>,
 }
 
 impl NavigationCache {
@@ -27,7 +27,7 @@ impl NavigationCache {
         Self {
             induced_classes: HashMap::new(),
             induced_slots: HashMap::new(),
-            _inheritance_chains: HashMap::new(),
+            inheritance_chains: HashMap::new(),
         }
     }
 
@@ -56,6 +56,21 @@ impl NavigationCache {
     ) {
         let key = format!("{}.{}", class_name, slot_name);
         self.induced_slots.insert(key, slot);
+    }
+
+    /// Get a cached inheritance chain
+    pub fn get_inheritance_chain(&self, class_name: &str) -> Option<&InheritanceChain> {
+        self.inheritance_chains.get(class_name)
+    }
+
+    /// Cache an inheritance chain
+    pub fn cache_inheritance_chain(&mut self, class_name: String, chain: InheritanceChain) {
+        self.inheritance_chains.insert(class_name, chain);
+    }
+
+    /// Clear all cached inheritance chains
+    pub fn clear_inheritance_chains(&mut self) {
+        self.inheritance_chains.clear();
     }
 }
 

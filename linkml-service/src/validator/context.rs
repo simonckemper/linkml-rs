@@ -32,6 +32,10 @@ pub struct ValidationContext {
     parent_value: Option<serde_json::Value>,
     /// Root value being validated
     root_value: Option<serde_json::Value>,
+    /// All instances for cross-reference validation
+    pub all_instances: Option<Vec<serde_json::Value>>,
+    /// Current instance ID for circular reference detection
+    pub current_instance_id: Option<String>,
 }
 
 impl ValidationContext {
@@ -50,6 +54,8 @@ impl ValidationContext {
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             parent_value: None,
             root_value: None,
+            all_instances: None,
+            current_instance_id: None,
         }
     }
 
@@ -71,6 +77,8 @@ impl ValidationContext {
             buffer_pools,
             parent_value: None,
             root_value: None,
+            all_instances: None,
+            current_instance_id: None,
         }
     }
 
@@ -307,5 +315,55 @@ impl ValidationContext {
     /// Get the JSON navigator
     pub fn navigator(&mut self) -> &mut JsonNavigator {
         &mut self.navigator
+    }
+
+    /// Set all instances for cross-reference validation
+    pub fn set_all_instances(&mut self, instances: Vec<serde_json::Value>) {
+        self.all_instances = Some(instances);
+    }
+
+    /// Set current instance ID for circular reference detection
+    pub fn set_current_instance_id(&mut self, id: String) {
+        self.current_instance_id = Some(id);
+    }
+
+    /// Clear current instance ID
+    pub fn clear_current_instance_id(&mut self) {
+        self.current_instance_id = None;
+    }
+
+    /// Get the current slot name being validated
+    #[must_use]
+    pub fn current_slot(&self) -> Option<&str> {
+        self.current_path.last().map(std::string::String::as_str)
+    }
+
+    /// Check if a sibling field exists in the current object
+    #[must_use]
+    pub fn has_sibling_field(&self, field_name: &str) -> bool {
+        // Check if we have parent value and can find the sibling field
+        if let Some(parent) = &self.parent_value {
+            if let Some(obj) = parent.as_object() {
+                return obj.contains_key(field_name);
+            }
+        }
+        false
+    }
+
+    /// Get a sibling field value from the current object
+    #[must_use]
+    pub fn get_sibling_field(&self, field_name: &str) -> Option<&serde_json::Value> {
+        // Get sibling field from parent object
+        if let Some(parent) = &self.parent_value {
+            if let Some(obj) = parent.as_object() {
+                return obj.get(field_name);
+            }
+        }
+        None
+    }
+
+    /// Set the current object being validated (for sibling field access)
+    pub fn set_current_object(&mut self, value: serde_json::Value) {
+        self.parent_value = Some(value);
     }
 }

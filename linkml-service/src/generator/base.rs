@@ -190,6 +190,21 @@ impl BaseCodeFormatter {
         }
     }
 
+    /// Convert PascalCase or camelCase to snake_case
+    pub fn to_snake_case(s: &str) -> String {
+        let mut result = String::new();
+        let mut chars = s.chars().peekable();
+
+        while let Some(ch) = chars.next() {
+            if ch.is_uppercase() && !result.is_empty() {
+                result.push('_');
+            }
+            result.push(ch.to_lowercase().next().unwrap_or(ch));
+        }
+
+        result
+    }
+
     /// Wrap text to a specific line width
     pub fn wrap_text(text: &str, width: usize, indent: &str) -> String {
         let words: Vec<&str> = text.split_whitespace().collect();

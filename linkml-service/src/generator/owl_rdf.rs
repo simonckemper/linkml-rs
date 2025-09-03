@@ -227,10 +227,9 @@ impl RdfGenerator {
         context["@context"][schema_prefix] = serde_json::json!(format!("{}#", schema.id));
 
         Ok(
-            serde_json::to_string_pretty(&context).map_err(|e| GeneratorError::Generation {
-                context: "json-ld context".to_string(),
-                message: e.to_string(),
-            })?,
+            serde_json::to_string_pretty(&context).map_err(|e| GeneratorError::Generation(
+                format!("json-ld context: {}", e)
+            ))?,
         )
     }
 
@@ -843,10 +842,9 @@ impl Generator for RdfGenerator {
         // Generate classes
         for (name, class) in &schema.classes {
             let class_def = self.generate_class(name, class, schema).map_err(|e| {
-                GeneratorError::Generation {
-                    context: format!("class {}", name),
-                    message: e.to_string(),
-                }
+                GeneratorError::Generation(
+                    format!("class {}: {}", name, e)
+                )
             })?;
             output.push_str(&class_def);
         }
@@ -854,10 +852,9 @@ impl Generator for RdfGenerator {
         // Generate properties
         for (name, slot) in &schema.slots {
             let property_def = self.generate_property(name, slot, schema).map_err(|e| {
-                GeneratorError::Generation {
-                    context: format!("property {}", name),
-                    message: e.to_string(),
-                }
+                GeneratorError::Generation(
+                    format!("property {}: {}", name, e)
+                )
             })?;
             output.push_str(&property_def);
         }
@@ -865,10 +862,9 @@ impl Generator for RdfGenerator {
         // Generate enums
         for (name, enum_def) in &schema.enums {
             let enum_class = self.generate_enum(name, enum_def, schema).map_err(|e| {
-                GeneratorError::Generation {
-                    context: format!("enum {}", name),
-                    message: e.to_string(),
-                }
+                GeneratorError::Generation(
+                    format!("enum {}: {}", name, e)
+                )
             })?;
             output.push_str(&enum_class);
         }
@@ -968,10 +964,9 @@ impl RdfGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut doc = serde_json::json!({
-            "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)?).map_err(|e| GeneratorError::Generation {
-                context: "json-ld".to_string(),
-                message: e.to_string(),
-            })?["@context"].clone(),
+            "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)?).map_err(|e| GeneratorError::Generation(
+                format!("json-ld: {}", e)
+            ))?["@context"].clone(),
             "@graph": []
         });
 
@@ -989,10 +984,9 @@ impl RdfGenerator {
                 .push(class_obj);
         }
 
-        serde_json::to_string_pretty(&doc).map_err(|e| GeneratorError::Generation {
-            context: "json-ld".to_string(),
-            message: e.to_string(),
-        })
+        serde_json::to_string_pretty(&doc).map_err(|e| GeneratorError::Generation(
+            format!("json-ld: {}", e)
+        ))
     }
 }
 

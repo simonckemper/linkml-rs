@@ -238,6 +238,9 @@ pub fn merge_slot_definitions(
         notes: merge_vec(&base.notes, &override_def.notes),
         comments: merge_vec(&base.comments, &override_def.comments),
         rank: override_def.rank.or(base.rank),
+        unique: override_def.unique.or(base.unique),
+        ordered: override_def.ordered.or(base.ordered),
+        unique_keys: merge_vec(&base.unique_keys, &override_def.unique_keys),
     }
 }
 

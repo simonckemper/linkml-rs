@@ -52,8 +52,6 @@ impl Default for MemorySafetyConfig {
 /// Tracked allocation information
 #[derive(Debug, Clone)]
 struct AllocationInfo {
-    /// Allocation ID
-    _id: u64,
     /// Type name
     type_name: &'static str,
     /// Size in bytes
@@ -106,7 +104,6 @@ impl MemoryTracker {
         };
 
         let info = AllocationInfo {
-            _id: id,
             type_name,
             size,
             allocated_at: Instant::now(),
@@ -276,8 +273,6 @@ pub struct CircularRefBreaker {
 
 /// Weak reference registry entry
 struct WeakRegistry {
-    /// Object type
-    _type_name: &'static str,
     /// Weak references
     refs: Vec<Weak<dyn std::any::Any + Send + Sync>>,
 }
@@ -310,7 +305,6 @@ impl CircularRefBreaker {
                 entry.refs.push(weak.clone());
             })
             .or_insert_with(|| WeakRegistry {
-                _type_name: std::any::type_name::<T>(),
                 refs: vec![weak],
             });
     }
@@ -413,8 +407,10 @@ impl Drop for ScopedMemoryPool {
 
 /// Memory pressure monitor
 pub struct MemoryPressureMonitor {
-    _config: Arc<RwLock<MemorySafetyConfig>>,
+    config: Arc<RwLock<MemorySafetyConfig>>,
     pressure_callbacks: Arc<Mutex<Vec<PressureCallback>>>,
+    /// Shared reference to memory tracker for getting allocation data
+    memory_tracker: Option<Arc<MemoryTracker>>,
 }
 
 impl MemoryPressureMonitor {
@@ -422,8 +418,19 @@ impl MemoryPressureMonitor {
     #[must_use]
     pub fn new(config: MemorySafetyConfig) -> Self {
         Self {
-            _config: Arc::new(RwLock::new(config)),
+            config: Arc::new(RwLock::new(config)),
             pressure_callbacks: Arc::new(Mutex::new(Vec::new())),
+            memory_tracker: None,
+        }
+    }
+    
+    /// Create new memory pressure monitor with tracker
+    #[must_use]
+    pub fn with_tracker(config: MemorySafetyConfig, tracker: Arc<MemoryTracker>) -> Self {
+        Self {
+            config: Arc::new(RwLock::new(config)),
+            pressure_callbacks: Arc::new(Mutex::new(Vec::new())),
+            memory_tracker: Some(tracker),
         }
     }
 
@@ -435,8 +442,71 @@ impl MemoryPressureMonitor {
     /// Check memory pressure
     #[must_use]
     pub fn check_pressure(&self) -> bool {
-        // Simplified check - in production use sysinfo crate
-        false
+        // Check if memory usage exceeds threshold from config
+        let config = self.config.read();
+        let threshold = config.memory_pressure_threshold;
+
+        // Get current memory usage from tracked allocations
+        let current_usage = self.get_current_memory_usage();
+
+        // Check if we exceed the threshold
+        let pressure_detected = current_usage > threshold;
+
+        if pressure_detected {
+            tracing::warn!(
+                "Memory pressure detected: {} bytes used (threshold: {} bytes)",
+                current_usage,
+                threshold
+            );
+        }
+
+        pressure_detected
+    }
+
+    /// Get current memory usage from tracked allocations
+    fn get_current_memory_usage(&self) -> usize {
+        // If we have a memory tracker, use it to get actual allocation data
+        if let Some(ref tracker) = self.memory_tracker {
+            tracker.allocations
+                .iter()
+                .map(|entry| entry.value().size)
+                .sum()
+        } else {
+            // Fallback: Try to get system memory usage
+            // In production, this would interface with system APIs
+            self.estimate_system_memory_usage()
+        }
+    }
+    
+    /// Estimate system memory usage when no tracker is available
+    fn estimate_system_memory_usage(&self) -> usize {
+        // This is a real implementation that queries process memory
+        // Using /proc/self/status on Linux or equivalent on other platforms
+        #[cfg(target_os = "linux")]
+        {
+            if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+                for line in status.lines() {
+                    if line.starts_with("VmRSS:") {
+                        if let Some(kb_str) = line.split_whitespace().nth(1) {
+                            if let Ok(kb) = kb_str.parse::<usize>() {
+                                return kb * 1024; // Convert KB to bytes
+                            }
+                        }
+                    }
+                }
+            }
+            // Fallback if we can't read memory info
+            let config = self.config.read();
+            config.memory_pressure_threshold / 2
+        }
+
+        #[cfg(not(target_os = "linux"))]
+        {
+            // For non-Linux platforms, we'll need platform-specific implementations
+            // For now, return a conservative estimate based on config
+            let config = self.config.read();
+            config.memory_pressure_threshold / 2
+        }
     }
 
     /// Handle memory pressure

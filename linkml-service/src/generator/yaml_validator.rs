@@ -750,7 +750,25 @@ impl YamlValidatorGenerator {
 }
 
 impl Generator for YamlValidatorGenerator {
-    fn generate(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "yaml-validator"
+    }
+
+    fn description(&self) -> &str {
+        "Generate YAML validators from LinkML schemas"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for yamlvalidator generation"
+            ));
+        }
+        Ok(())
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         self.generate_validation(schema)
     }
 

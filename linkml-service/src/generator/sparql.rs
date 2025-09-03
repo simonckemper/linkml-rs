@@ -750,6 +750,16 @@ impl Generator for SparqlGenerator {
         vec![".sparql", ".rq"]
     }
 
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
+        // Validate schema has a name
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for SPARQL generation"
+            ));
+        }
+        Ok(())
+    }
+
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_sparql(schema)?;
 

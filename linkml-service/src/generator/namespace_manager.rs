@@ -4,8 +4,8 @@
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::error::LinkMLError;
-use linkml_core::types::{PrefixDefinition as Prefix, SchemaDefinition as Schema};
+use linkml_core::error::{LinkMLError, Result};
+use linkml_core::types::{PrefixDefinition, SchemaDefinition};
 
 /// Namespace manager generator configuration
 #[derive(Debug, Clone)]
@@ -64,17 +64,17 @@ impl NamespaceManagerGenerator {
     }
 
     /// Get prefix reference from PrefixDefinition
-    fn get_prefix_reference(prefix_def: &Prefix) -> &str {
+    fn get_prefix_reference(prefix_def: &PrefixDefinition) -> &str {
         match prefix_def {
-            Prefix::Simple(url) => url,
-            Prefix::Complex {
+            PrefixDefinition::Simple(url) => url,
+            PrefixDefinition::Complex {
                 prefix_reference, ..
             } => prefix_reference.as_deref().unwrap_or(""),
         }
     }
 
     /// Generate namespace manager for the configured language
-    fn generate_manager(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_manager(&self, schema: &SchemaDefinition) -> Result<String> {
         match self.config.target_language {
             TargetLanguage::Python => self.generate_python(schema),
             TargetLanguage::JavaScript => self.generate_javascript(schema),
@@ -85,7 +85,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Python namespace manager
-    fn generate_python(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_python(&self, schema: &SchemaDefinition) -> Result<String> {
         let mut output = String::new();
 
         // Header
@@ -382,7 +382,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate JavaScript namespace manager
-    fn generate_javascript(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_javascript(&self, schema: &SchemaDefinition) -> Result<String> {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -558,7 +558,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Rust namespace manager
-    fn generate_rust(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_rust(&self, schema: &SchemaDefinition) -> Result<String> {
         let mut output = String::new();
 
         output.push_str("//! Namespace manager generated from LinkML schema\n\n");
@@ -753,7 +753,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Java namespace manager
-    fn generate_java(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_java(&self, schema: &SchemaDefinition) -> Result<String> {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -902,7 +902,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Go namespace manager
-    fn generate_go(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn generate_go(&self, schema: &SchemaDefinition) -> Result<String> {
         let mut output = String::new();
 
         output.push_str("// Package namespace provides namespace management for LinkML schemas\n");
@@ -1043,7 +1043,59 @@ impl NamespaceManagerGenerator {
 }
 
 impl Generator for NamespaceManagerGenerator {
-    fn generate(&self, schema: &Schema) -> Result<String, LinkMLError> {
+    fn name(&self) -> &str {
+        "namespace_manager"
+    }
+
+    fn description(&self) -> &str {
+        "Generate namespace manager utilities for handling URI prefixes and namespace resolution"
+    }
+
+    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+        // Validate that the schema has required fields for namespace management
+        if schema.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Schema must have a name for namespace manager generation"
+            ));
+        }
+        
+        // Validate prefixes if present
+        for (prefix_name, prefix_def) in &schema.prefixes {
+            if prefix_name.is_empty() {
+                return Err(LinkMLError::data_validation(
+                    "Prefix name cannot be empty"
+                ));
+            }
+            match prefix_def {
+                PrefixDefinition::Simple(uri) => {
+                    if uri.is_empty() {
+                        return Err(LinkMLError::data_validation(
+                            format!("Prefix '{}' has empty URI", prefix_name)
+                        ));
+                    }
+                }
+                PrefixDefinition::Complex { prefix_prefix, prefix_reference } => {
+                    if prefix_prefix.is_empty() {
+                        return Err(LinkMLError::data_validation(
+                            format!("Prefix '{}' has empty expansion", prefix_name)
+                        ));
+                    }
+                    // Validate prefix_reference if provided
+                    if let Some(ref_value) = prefix_reference {
+                        if ref_value.is_empty() {
+                            return Err(LinkMLError::data_validation(
+                                format!("Prefix '{}' has empty reference value", prefix_name)
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
         self.generate_manager(schema)
     }
 
