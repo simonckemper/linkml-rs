@@ -634,33 +634,33 @@ impl StressOperation for ValidationStressOperation {
             },
             ..Default::default()
         };
-        
+
         // Generate test data
         let test_data = self.generate_data(10);
-        
+
         // Perform actual validation
         let context = Arc::new(schema);
         let mut validation_context = ValidationContext::new(context);
-        
+
         // Run validation on each field
         let test_object = test_data.as_object()
             .ok_or_else(|| LinkMLError::data_validation("Test data must be an object"))?;
-        
+
         for (key, value) in test_object {
             // Get slot info before borrowing context mutably
             let slot_info = validation_context.schema.slots.get(key).cloned();
-            
+
             if let Some(slot) = slot_info {
                 // This performs real validation work
                 let _path = validation_context.push_path(key.clone());
-                
+
                 // Check required constraint
                 if slot.required.unwrap_or(false) && value.is_null() {
                     return Err(LinkMLError::data_validation(
                         format!("Required field '{}' is null", key)
                     ));
                 }
-                
+
                 // Check multivalued constraint
                 if slot.multivalued.unwrap_or(false) && !value.is_array() {
                     return Err(LinkMLError::data_validation(
@@ -669,7 +669,7 @@ impl StressOperation for ValidationStressOperation {
                 }
             }
         }
-        
+
         Ok(())
     }
 

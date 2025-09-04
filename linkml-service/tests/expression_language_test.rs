@@ -12,13 +12,33 @@ fn test_expression_engine_basic() {
     context.insert("y".to_string(), json!(5));
 
     // Basic arithmetic
-    assert_eq!(engine.evaluate("{x} + {y}", &context).expect("Test operation failed"), json!(15.0));
+    assert_eq!(
+        engine
+            .evaluate("{x} + {y}", &context)
+            .expect("Test operation failed"),
+        json!(15.0)
+    );
 
-    assert_eq!(engine.evaluate("{x} - {y}", &context).expect("Test operation failed"), json!(5.0));
+    assert_eq!(
+        engine
+            .evaluate("{x} - {y}", &context)
+            .expect("Test operation failed"),
+        json!(5.0)
+    );
 
-    assert_eq!(engine.evaluate("{x} * 2", &context).expect("Test operation failed"), json!(20.0));
+    assert_eq!(
+        engine
+            .evaluate("{x} * 2", &context)
+            .expect("Test operation failed"),
+        json!(20.0)
+    );
 
-    assert_eq!(engine.evaluate("{x} / 2", &context).expect("Test operation failed"), json!(5.0));
+    assert_eq!(
+        engine
+            .evaluate("{x} / 2", &context)
+            .expect("Test operation failed"),
+        json!(5.0)
+    );
 }
 
 #[test]
@@ -28,27 +48,37 @@ fn test_expression_engine_comparison() {
     context.insert("age".to_string(), json!(25));
 
     assert_eq!(
-        engine.evaluate("{age} > 18", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{age} > 18", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
     assert_eq!(
-        engine.evaluate("{age} < 18", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{age} < 18", &context)
+            .expect("Test operation failed"),
         json!(false)
     );
 
     assert_eq!(
-        engine.evaluate("{age} >= 25", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{age} >= 25", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
     assert_eq!(
-        engine.evaluate("{age} == 25", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{age} == 25", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
     assert_eq!(
-        engine.evaluate("{age} != 30", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{age} != 30", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 }
@@ -75,7 +105,9 @@ fn test_expression_engine_logical() {
     );
 
     assert_eq!(
-        engine.evaluate("not ({age} < 18)", &context).expect("Test operation failed"),
+        engine
+            .evaluate("not ({age} < 18)", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 }
@@ -89,23 +121,39 @@ fn test_expression_engine_functions() {
     context.insert("scores".to_string(), json!({"math": 90, "science": 85}));
 
     // len() function
-    assert_eq!(engine.evaluate("len({name})", &context).expect("Test operation failed"), json!(5));
-
-    assert_eq!(engine.evaluate("len({items})", &context).expect("Test operation failed"), json!(5));
+    assert_eq!(
+        engine
+            .evaluate("len({name})", &context)
+            .expect("Test operation failed"),
+        json!(5)
+    );
 
     assert_eq!(
-        engine.evaluate("len({scores})", &context).expect("Test operation failed"),
+        engine
+            .evaluate("len({items})", &context)
+            .expect("Test operation failed"),
+        json!(5)
+    );
+
+    assert_eq!(
+        engine
+            .evaluate("len({scores})", &context)
+            .expect("Test operation failed"),
         json!(2)
     );
 
     // max() and min() functions
     assert_eq!(
-        engine.evaluate("max(10, 20, 5)", &context).expect("Test operation failed"),
+        engine
+            .evaluate("max(10, 20, 5)", &context)
+            .expect("Test operation failed"),
         json!(20.0)
     );
 
     assert_eq!(
-        engine.evaluate("min(10, 20, 5)", &context).expect("Test operation failed"),
+        engine
+            .evaluate("min(10, 20, 5)", &context)
+            .expect("Test operation failed"),
         json!(5.0)
     );
 
@@ -118,7 +166,9 @@ fn test_expression_engine_functions() {
     );
 
     assert_eq!(
-        engine.evaluate("contains({items}, 3)", &context).expect("Test operation failed"),
+        engine
+            .evaluate("contains({items}, 3)", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
@@ -218,7 +268,9 @@ fn test_expression_engine_complex_expressions() {
 
     // Complex calculation
     let expr = "({price} * {quantity} * (1 - {discount})) * (1 + {tax_rate})";
-    let result = engine.evaluate(expr, &context).expect("Test operation failed");
+    let result = engine
+        .evaluate(expr, &context)
+        .expect("Test operation failed");
     let expected = (100.0 * 3.0 * 0.9) * 1.08;
     assert_eq!(result, json!(expected));
 
@@ -227,7 +279,12 @@ fn test_expression_engine_complex_expressions() {
     context.insert("items_count".to_string(), json!(5));
 
     let expr = "{member} and {items_count} > 3 and {discount} > 0";
-    assert_eq!(engine.evaluate(expr, &context).expect("Test operation failed"), json!(true));
+    assert_eq!(
+        engine
+            .evaluate(expr, &context)
+            .expect("Test operation failed"),
+        json!(true)
+    );
 }
 
 #[test]
@@ -269,23 +326,31 @@ fn test_expression_engine_null_handling() {
 
     // Null comparisons
     assert_eq!(
-        engine.evaluate("{value} == null", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{value} == null", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
     assert_eq!(
-        engine.evaluate("{value} != null", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{value} != null", &context)
+            .expect("Test operation failed"),
         json!(false)
     );
 
     // Null in logical operations (null is falsy)
     assert_eq!(
-        engine.evaluate("{value} or true", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{value} or true", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 
     assert_eq!(
-        engine.evaluate("{value} and true", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{value} and true", &context)
+            .expect("Test operation failed"),
         json!(false)
     );
 }
@@ -344,19 +409,25 @@ fn test_expression_engine_operator_precedence() {
 
     // Multiplication before addition
     assert_eq!(
-        engine.evaluate("2 + 3 * 4", &context).expect("Test operation failed"),
+        engine
+            .evaluate("2 + 3 * 4", &context)
+            .expect("Test operation failed"),
         json!(14.0) // 2 + 12, not (2 + 3) * 4 = 20
     );
 
     // Parentheses override precedence
     assert_eq!(
-        engine.evaluate("(2 + 3) * 4", &context).expect("Test operation failed"),
+        engine
+            .evaluate("(2 + 3) * 4", &context)
+            .expect("Test operation failed"),
         json!(20.0)
     );
 
     // Comparison before logical
     assert_eq!(
-        engine.evaluate("true or 5 > 10", &context).expect("Test operation failed"),
+        engine
+            .evaluate("true or 5 > 10", &context)
+            .expect("Test operation failed"),
         json!(true)
     );
 

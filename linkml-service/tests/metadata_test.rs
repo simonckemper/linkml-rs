@@ -38,7 +38,9 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Test operation failed");
 
     // Check basic metadata
     assert_eq!(schema.title, Some("Test Schema".to_string()));
@@ -87,9 +89,14 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Test operation failed");
 
-    let dataset_class = schema.classes.get("Dataset").expect("Test operation failed");
+    let dataset_class = schema
+        .classes
+        .get("Dataset")
+        .expect("Test operation failed");
 
     // Check metadata
     assert_eq!(dataset_class.aliases.len(), 2);
@@ -149,7 +156,9 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Test operation failed");
 
     let email_slot = schema.slots.get("email").expect("Test operation failed");
 

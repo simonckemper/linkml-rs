@@ -235,8 +235,8 @@ impl CompiledValidatorCache {
             let mut stats = self.stats.write();
 
             // Evict based on memory limit or validator count
-            while !cache.is_empty() 
-                && (cache.len() >= self.max_validators 
+            while !cache.is_empty()
+                && (cache.len() >= self.max_validators
                     || stats.memory_bytes + validator_memory > self.max_memory_bytes)
             {
                 // Remove oldest entry (simple LRU strategy)

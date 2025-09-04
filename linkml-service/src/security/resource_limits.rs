@@ -135,7 +135,7 @@ impl ResourceMonitor {
             validation_errors: AtomicUsize::new(0),
         }
     }
-    
+
     /// Initialize the start timestamp for tracking
     pub async fn initialize_timestamp(&mut self) -> Result<(), ResourceError> {
         self.start_timestamp = self.timestamp_service.system_time().await
@@ -153,10 +153,10 @@ impl ResourceMonitor {
         let current_timestamp = self.timestamp_service.system_time().await
             .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
             .unwrap_or_else(|_| self.start_timestamp); // Use start if service fails
-        
+
         let elapsed_ms = (current_timestamp - self.start_timestamp) as u64;
         let elapsed = Duration::from_millis(elapsed_ms);
-        
+
         if elapsed > self.limits.max_validation_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
@@ -171,10 +171,10 @@ impl ResourceMonitor {
         let current_timestamp = self.timestamp_service.system_time().await
             .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
             .unwrap_or_else(|_| start_timestamp); // Use start if service fails
-        
+
         let elapsed_ms = (current_timestamp - start_timestamp) as u64;
         let elapsed = Duration::from_millis(elapsed_ms);
-        
+
         if elapsed > self.limits.max_expression_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
@@ -318,7 +318,7 @@ mod tests {
         };
         let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
         let mut monitor = ResourceMonitor::new(limits, timestamp_service);
-        
+
         // Initialize the timestamp
         monitor.initialize_timestamp().await.expect("Failed to initialize timestamp");
 

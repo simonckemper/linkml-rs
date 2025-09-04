@@ -7,8 +7,8 @@
 //! have access to the full RootReal service implementations.
 
 // Removed unused import
+use crate::factory::create_logger_service;
 use serde_json::json;
-use crate::factory::{create_logger_service};
 
 #[test]
 fn test_typedb_integration_pattern() {

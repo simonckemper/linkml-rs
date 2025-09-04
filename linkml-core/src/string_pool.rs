@@ -35,10 +35,8 @@ impl StringPool {
             // If lock is poisoned, we create a fresh string instead of panicking
             // This allows the system to continue operating even after a panic
             let pool_result = self.pool.read();
-            if let Ok(pool) = pool_result {
-                if let Some(interned) = pool.get(s) {
-                    return Arc::clone(interned);
-                }
+            if let Ok(pool) = pool_result && let Some(interned) = pool.get(s) {
+                return Arc::clone(interned);
             }
         }
 

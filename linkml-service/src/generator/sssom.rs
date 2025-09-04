@@ -103,7 +103,7 @@ impl SssomGenerator {
             // integrated into ClassDefinition. Using annotations is the OFFICIAL approach for mapping
             // metadata until the core types are updated. This follows LinkML's extensibility pattern
             // where annotations provide forward-compatible metadata storage.
-            
+
             // Extract mapping metadata from annotations (standard LinkML pattern)
             if let Some(annotations) = class_def.annotations.as_ref() {
                 for (key, value) in annotations {
@@ -115,7 +115,7 @@ impl SssomGenerator {
                         "related_mapping" | "related_mappings" => "skos:relatedMatch",
                         _ => continue,
                     };
-                    
+
                     // Parse value which might be a list or single value
                     let value_str = match value {
                         AnnotationValue::String(s) => s.clone(),
@@ -128,7 +128,7 @@ impl SssomGenerator {
                     } else {
                         vec![value_str]
                     };
-                    
+
                     for target in targets {
                         if !target.is_empty() {
                             mappings.push(self._create_mapping(
@@ -151,7 +151,7 @@ impl SssomGenerator {
         for (slot_name, slot_def) in &schema.slots {
             // DESIGN NOTE: Following LinkML's extensibility pattern, slot mappings are stored
             // in annotations until ElementMetadata is integrated into SlotDefinition.
-            
+
             // Check for mapping annotations
             if let Some(annotations) = slot_def.annotations.as_ref() {
                 for (key, value) in annotations {
@@ -160,7 +160,7 @@ impl SssomGenerator {
                         "close_mapping" | "close_mappings" => "skos:closeMatch",
                         _ => continue,
                     };
-                    
+
                     // Parse value which might be a list or single value
                     let value_str = match value {
                         AnnotationValue::String(s) => s.clone(),
@@ -173,7 +173,7 @@ impl SssomGenerator {
                     } else {
                         vec![value_str]
                     };
-                    
+
                     for target in targets {
                         if !target.is_empty() {
                             mappings.push(self._create_mapping(
@@ -214,7 +214,7 @@ impl SssomGenerator {
                             let confidence = parts.get(3)
                                 .and_then(|s| s.parse::<f64>().ok())
                                 .unwrap_or(self.config.default_confidence);
-                            
+
                             if !subject.is_empty() && !object.is_empty() {
                                 mappings.push(self._create_mapping(
                                     subject,
@@ -293,7 +293,7 @@ impl SssomGenerator {
                     };
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
-            
+
             self._construct_uri(name, &id_prefixes, schema)
         }
     }
@@ -320,7 +320,7 @@ impl SssomGenerator {
                     };
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
-            
+
             self._construct_uri(name, &id_prefixes, schema)
         }
     }

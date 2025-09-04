@@ -13,8 +13,8 @@ use tokio::time::timeout;
 
 // Import mock services
 mod mock_services;
+use crate::factory::create_logger_service;
 use mock_services::*;
-use crate::factory::{create_logger_service};
 
 /// Helper to measure memory usage
 fn get_memory_usage() -> usize {
@@ -423,7 +423,10 @@ slots:
     let mut valid_count = 0;
 
     for data in &test_data {
-        let report = service.validate(data, &schema, "Record").await.expect("Test operation failed");
+        let report = service
+            .validate(data, &schema, "Record")
+            .await
+            .expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         }
@@ -712,7 +715,10 @@ slots:
         });
 
         let start = Instant::now();
-        let _ = service.validate(&data, &schema, "Item").await.expect("Test operation failed");
+        let _ = service
+            .validate(&data, &schema, "Item")
+            .await
+            .expect("Test operation failed");
         validation_times.push(start.elapsed());
     }
 

@@ -5,6 +5,7 @@
 
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::hash::{BuildHasher, Hash};
 
 use crate::error::{LinkMLError, Result};
 use crate::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
@@ -36,6 +37,10 @@ use crate::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 }
 
 /// Get all slot names for a class including inherited slots (returns references)
+///
+/// # Errors
+///
+/// Returns an error if there are issues resolving parent or mixin classes.
 pub fn get_class_slots<'a>(
     class: &'a ClassDefinition,
     schema: &'a SchemaDefinition,
@@ -213,10 +218,13 @@ pub fn get_class_slots<'a>(
 }
 
 /// Merge two vectors efficiently
-fn merge_vec_cow<T: Clone + PartialEq + Eq + std::hash::Hash>(
+fn merge_vec_cow<T>(
     base: &[T],
     override_vec: &[T],
-) -> Vec<T> {
+) -> Vec<T>
+where
+    T: Clone + PartialEq + Eq + Hash,
+{
     if override_vec.is_empty() {
         return base.to_vec();
     }
@@ -234,6 +242,10 @@ fn merge_vec_cow<T: Clone + PartialEq + Eq + std::hash::Hash>(
 }
 
 /// Get effective slot definition for a class (returns reference when possible)
+///
+/// # Errors
+///
+/// Returns an error if the slot is not found in the class or its inheritance chain.
 pub fn get_slot_definition<'a>(
     schema: &'a SchemaDefinition,
     class: &'a ClassDefinition,
@@ -287,10 +299,17 @@ pub fn get_slot_definition<'a>(
 }
 
 /// Get all imports recursively (returns references)
-pub fn get_all_imports<'a>(
+///
+/// # Errors
+///
+/// This function does not return errors.
+pub fn get_all_imports<'a, S>(
     schema: &'a SchemaDefinition,
-    visited: &mut HashSet<&'a str>,
-) -> Vec<&'a str> {
+    visited: &mut HashSet<&'a str, S>,
+) -> Vec<&'a str>
+where
+    S: BuildHasher,
+{
     let mut all_imports = Vec::new();
 
     for import in &schema.imports {

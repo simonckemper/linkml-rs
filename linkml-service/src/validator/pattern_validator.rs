@@ -29,7 +29,7 @@ static UUID_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
         .map_err(|e| LinkMLError::service(format!("Invalid UUID regex: {}", e)))
 });
 
-static ISO_DATE_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| 
+static ISO_DATE_PATTERN: Lazy<Result<Regex>> = Lazy::new(||
     Regex::new(r"^\d{4}-\d{2}-\d{2}$")
         .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {}", e))));
 
@@ -58,25 +58,25 @@ impl PatternValidator {
     /// Returns an error if any of the built-in regex patterns fail to compile
     pub fn new() -> Result<Self> {
         let mut structured_patterns = HashMap::new();
-        
+
         // Handle potential regex compilation errors
         if let Ok(ref email_regex) = *EMAIL_PATTERN {
             structured_patterns.insert("email".to_string(), email_regex.clone());
         }
-        
+
         if let Ok(ref url_regex) = *URL_PATTERN {
             structured_patterns.insert("url".to_string(), url_regex.clone());
             structured_patterns.insert("uri".to_string(), url_regex.clone());
         }
-        
+
         if let Ok(ref uuid_regex) = *UUID_PATTERN {
             structured_patterns.insert("uuid".to_string(), uuid_regex.clone());
         }
-        
+
         if let Ok(ref date_regex) = *ISO_DATE_PATTERN {
             structured_patterns.insert("date".to_string(), date_regex.clone());
         }
-        
+
         if let Ok(ref datetime_regex) = *ISO_DATETIME_PATTERN {
             structured_patterns.insert("datetime".to_string(), datetime_regex.clone());
             structured_patterns.insert("timestamp".to_string(), datetime_regex.clone());

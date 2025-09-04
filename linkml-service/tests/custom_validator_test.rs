@@ -37,7 +37,8 @@ async fn test_custom_validator_registration() {
             if let Value::String(s) = value {
                 // Simple email validation
                 let email_regex =
-                    regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").expect("Test operation failed");
+                    regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                        .expect("Test operation failed");
 
                 if !email_regex.is_match(s) {
                     let mut issue = linkml_service::validator::report::ValidationIssue::error(

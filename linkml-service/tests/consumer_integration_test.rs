@@ -839,7 +839,11 @@ slots:
     // Verify schema was stored
     let stored_schema = typedb_service.get_schema(&schema.name).await;
     assert!(stored_schema.is_some());
-    assert!(stored_schema.expect("Test operation failed").contains("define"));
+    assert!(
+        stored_schema
+            .expect("Test operation failed")
+            .contains("define")
+    );
 
     // Validate data using TypeDB service
     let person_data = json!({
@@ -976,7 +980,9 @@ slots:
         }
     "#;
 
-    let result = graphql_service.execute_query(query, &schema.name).expect("Test operation failed");
+    let result = graphql_service
+        .execute_query(query, &schema.name)
+        .expect("Test operation failed");
     assert!(result["data"].is_object());
 }
 
@@ -1249,7 +1255,10 @@ enums:
     assert_eq!(inserted_count, 3);
 
     // Query the table
-    let stored_data = lakehouse_service.query_table("transactions").await.expect("Test operation failed");
+    let stored_data = lakehouse_service
+        .query_table("transactions")
+        .await
+        .expect("Test operation failed");
     assert_eq!(stored_data.len(), 3);
 
     // Verify data integrity
@@ -1554,7 +1563,10 @@ EVT-202401200003,system_start,2024-01-20T08:30:00Z,monitoring,{"version":"2.0.1"
     assert_eq!(stored_count, 3);
 
     // Step 4: Query and verify
-    let stored_events = lakehouse_service.query_table("events").await.expect("Test operation failed");
+    let stored_events = lakehouse_service
+        .query_table("events")
+        .await
+        .expect("Test operation failed");
     assert_eq!(stored_events.len(), 3);
 
     // Verify all stored events are still valid

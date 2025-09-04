@@ -37,7 +37,7 @@ impl RustGenerator {
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field_name = self.convert_field_name(slot_name);
                 let field_type = self.get_rust_type(slot, schema)?;
-                
+
                 writeln!(
                     output,
                     "{}pub {}: Option<{}>,",

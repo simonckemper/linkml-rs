@@ -1,13 +1,13 @@
 //! Comprehensive performance benchmarks for LinkML service
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use linkml_core::types::SchemaDefinition;
 use linkml_service::factory::create_linkml_service;
+use linkml_service::generator::python_dataclass::PythonDataclassGenerator;
+use linkml_service::generator::traits::Generator;
+use linkml_service::generator::typescript::TypeScriptGenerator;
 use linkml_service::parser::yaml_parser::YamlParser;
 use linkml_service::validator::ValidationEngine;
-use linkml_service::generator::python_dataclass::PythonDataclassGenerator;
-use linkml_service::generator::typescript::TypeScriptGenerator;
-use linkml_service::generator::traits::Generator;
-use linkml_core::types::SchemaDefinition;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -204,13 +204,15 @@ types:
 "#;
 
     let parser = YamlParser::new();
-    parser.parse_str(schema_yaml).expect("Failed to parse benchmark schema")
+    parser
+        .parse_str(schema_yaml)
+        .expect("Failed to parse benchmark schema")
 }
 
 /// Generate test data for benchmarking
 fn generate_test_data(count: usize) -> Vec<serde_json::Value> {
     let mut data = Vec::with_capacity(count);
-    
+
     for i in 0..count {
         let person = json!({
             "id": format!("person:{:06}", i),
@@ -239,7 +241,7 @@ fn generate_test_data(count: usize) -> Vec<serde_json::Value> {
                 "name": format!("Organization {}", i % 10),
                 "type": match i % 4 {
                     0 => "university",
-                    1 => "company", 
+                    1 => "company",
                     2 => "government",
                     _ => "nonprofit"
                 },
@@ -248,7 +250,7 @@ fn generate_test_data(count: usize) -> Vec<serde_json::Value> {
         });
         data.push(person);
     }
-    
+
     data
 }
 
@@ -270,19 +272,15 @@ types:
 
     c.bench_function("schema_parsing_simple", |b| {
         let parser = YamlParser::new();
-        b.iter(|| {
-            black_box(parser.parse_str(schema_yaml).unwrap())
-        })
+        b.iter(|| black_box(parser.parse_str(schema_yaml).unwrap()))
     });
 
     let complex_schema = create_complex_schema();
     let complex_yaml = serde_yaml::to_string(&complex_schema).unwrap();
-    
+
     c.bench_function("schema_parsing_complex", |b| {
         let parser = YamlParser::new();
-        b.iter(|| {
-            black_box(parser.parse_str(&complex_yaml).unwrap())
-        })
+        b.iter(|| black_box(parser.parse_str(&complex_yaml).unwrap()))
     });
 }
 
@@ -291,48 +289,47 @@ fn bench_validation(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let schema = Arc::new(create_complex_schema());
     let engine = ValidationEngine::new(schema);
-    
+
     let mut group = c.benchmark_group("validation");
-    
+
     for size in [1, 10, 100, 1000].iter() {
         let test_data = generate_test_data(*size);
-        
+
         group.throughput(Throughput::Elements(*size as u64));
         group.bench_with_input(BenchmarkId::new("person_validation", size), size, |b, _| {
             b.iter(|| {
                 rt.block_on(async {
                     for person in &test_data {
-                        let result = engine.validate_instance(black_box(person), "Person").await.unwrap();
+                        let result = engine
+                            .validate_instance(black_box(person), "Person")
+                            .await
+                            .unwrap();
                         black_box(result);
                     }
                 })
             })
         });
     }
-    
+
     group.finish();
 }
 
 /// Benchmark code generation performance
 fn bench_code_generation(c: &mut Criterion) {
     let schema = create_complex_schema();
-    
+
     let mut group = c.benchmark_group("code_generation");
-    
+
     group.bench_function("python_dataclass", |b| {
         let generator = PythonDataclassGenerator::new();
-        b.iter(|| {
-            black_box(generator.generate(&schema).unwrap())
-        })
+        b.iter(|| black_box(generator.generate(&schema).unwrap()))
     });
-    
+
     group.bench_function("typescript", |b| {
         let generator = TypeScriptGenerator::new();
-        b.iter(|| {
-            black_box(generator.generate(&schema).unwrap())
-        })
+        b.iter(|| black_box(generator.generate(&schema).unwrap()))
     });
-    
+
     group.finish();
 }
 
@@ -340,27 +337,30 @@ fn bench_code_generation(c: &mut Criterion) {
 fn bench_memory_usage(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
     let schema = Arc::new(create_complex_schema());
-    
+
     let mut group = c.benchmark_group("memory_usage");
-    
+
     // Test memory efficiency with different data sizes
     for size in [100, 1000, 10000].iter() {
         let test_data = generate_test_data(*size);
-        
+
         group.throughput(Throughput::Elements(*size as u64));
         group.bench_with_input(BenchmarkId::new("validation_memory", size), size, |b, _| {
             b.iter(|| {
                 rt.block_on(async {
                     let engine = ValidationEngine::new(Arc::clone(&schema));
                     for person in &test_data {
-                        let result = engine.validate_instance(black_box(person), "Person").await.unwrap();
+                        let result = engine
+                            .validate_instance(black_box(person), "Person")
+                            .await
+                            .unwrap();
                         black_box(result);
                     }
                 })
             })
         });
     }
-    
+
     group.finish();
 }
 

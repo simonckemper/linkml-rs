@@ -423,7 +423,7 @@ impl MemoryPressureMonitor {
             memory_tracker: None,
         }
     }
-    
+
     /// Create new memory pressure monitor with tracker
     #[must_use]
     pub fn with_tracker(config: MemorySafetyConfig, tracker: Arc<MemoryTracker>) -> Self {
@@ -477,7 +477,7 @@ impl MemoryPressureMonitor {
             self.estimate_system_memory_usage()
         }
     }
-    
+
     /// Estimate system memory usage when no tracker is available
     fn estimate_system_memory_usage(&self) -> usize {
         // This is a real implementation that queries process memory

@@ -45,12 +45,8 @@ async fn test_basic_owl_generation() {
     assert_eq!(owl.filename, "person_schema.owl");
 
     // Check content
-    assert!(
-        owl            .contains("# OWL Ontology generated from LinkML schema")
-    );
-    assert!(
-        owl            .contains("@prefix owl: <http://www.w3.org/2002/07/owl#>")
-    );
+    assert!(owl.contains("# OWL Ontology generated from LinkML schema"));
+    assert!(owl.contains("@prefix owl: <http://www.w3.org/2002/07/owl#>"));
     assert!(owl.contains("<https://example.org/person>"));
     assert!(owl.contains("a owl:Ontology"));
     assert!(owl.contains("owl:versionInfo \"1.0.0\""));
@@ -70,9 +66,7 @@ async fn test_basic_owl_generation() {
     assert!(owl.contains("rdfs:range xsd:integer"));
 
     assert!(owl.contains("person_schema:email"));
-    assert!(
-        owl            .contains("xsd:pattern \"^[^@]+@[^@]+\\.[^@]+$\"")
-    );
+    assert!(owl.contains("xsd:pattern \"^[^@]+@[^@]+\\.[^@]+$\""));
 
     // Check property restrictions
     assert!(owl.contains("owl:Restriction"));
@@ -172,9 +166,7 @@ async fn test_inheritance_owl() {
 
     // Check Person has restrictions for all properties (inherited + own)
     assert!(owl.contains("owl:onProperty entity_schema:id"));
-    assert!(
-        owl            .contains("owl:onProperty entity_schema:created_at")
-    );
+    assert!(owl.contains("owl:onProperty entity_schema:created_at"));
     assert!(owl.contains("owl:onProperty entity_schema:name"));
 
     // Check datetime mapping
@@ -214,7 +206,10 @@ async fn test_multivalued_owl() {
     assert!(owl.contains("team_schema:members"));
     assert!(owl.contains("a owl:DatatypeProperty"));
     // Should NOT have FunctionalProperty for members
-    let members_section = owl.split("team_schema:members").nth(1).expect("Test operation failed");
+    let members_section = owl
+        .split("team_schema:members")
+        .nth(1)
+        .expect("Test operation failed");
     let next_property = members_section
         .find("# Property:")
         .unwrap_or(members_section.len());
@@ -266,7 +261,10 @@ async fn test_object_references_owl() {
     assert!(owl.contains("rdfs:range org_schema:Person"));
 
     assert!(owl.contains("org_schema:employees"));
-    let employees_section = owl.split("org_schema:employees").nth(1).expect("Test operation failed");
+    let employees_section = owl
+        .split("org_schema:employees")
+        .nth(1)
+        .expect("Test operation failed");
     assert!(employees_section.contains("a owl:ObjectProperty"));
     assert!(employees_section.contains("rdfs:range org_schema:Person"));
 }
@@ -303,7 +301,5 @@ async fn test_property_domains_owl() {
     assert!(owl.contains("domain_schema:name"));
     assert!(owl.contains("rdfs:domain"));
     assert!(owl.contains("owl:unionOf"));
-    assert!(
-        owl            .contains("domain_schema:Person domain_schema:Organization domain_schema:Product")
-    );
+    assert!(owl.contains("domain_schema:Person domain_schema:Organization domain_schema:Product"));
 }

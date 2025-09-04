@@ -34,7 +34,9 @@ fn test_basic_schema_merging() {
 
     // Merge schemas
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Verify merge
     assert_eq!(merged.name, "schema1"); // First schema name is used
@@ -74,8 +76,13 @@ fn test_conflicting_class_definitions() {
 
     // Union strategy for slots
     let merger_union = SchemaMerger::new().with_merge_slots(true);
-    let merged_union = merger_union.merge(vec![schema1, schema2]).expect("Test operation failed");
-    let person_union = merged_union.classes.get("Person").expect("Test operation failed");
+    let merged_union = merger_union
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
+    let person_union = merged_union
+        .classes
+        .get("Person")
+        .expect("Test operation failed");
     assert_eq!(person_union.slots.len(), 4); // Combined slots
     assert!(person_union.slots.contains(&"name".to_string()));
     assert!(person_union.slots.contains(&"full_name".to_string()));
@@ -101,7 +108,9 @@ fn test_slot_merging_with_conflicts() {
     schema2.slots.insert("name".to_string(), name_slot2);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     let name_slot = merged.slots.get("name").expect("Test operation failed");
     // Last schema wins
@@ -150,7 +159,9 @@ fn test_type_and_enum_merging() {
     schema2.types.insert("Email".to_string(), email_type);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Check types were merged
     assert_eq!(merged.types.len(), 2);
@@ -187,7 +198,9 @@ fn test_prefix_merging() {
         .insert("bio".to_string(), "https://bio.org/".to_string());
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Check prefixes
     assert_eq!(merged.prefixes.len(), 3);
@@ -225,12 +238,17 @@ fn test_subset_merging() {
         .insert("administrative".to_string(), vec!["Billing".to_string()]);
 
     let merger = SchemaMerger::new().with_merge_subsets(true);
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Check subsets were merged
     assert_eq!(merged.subsets.len(), 3);
 
-    let clinical = merged.subsets.get("clinical").expect("Test operation failed");
+    let clinical = merged
+        .subsets
+        .get("clinical")
+        .expect("Test operation failed");
     assert_eq!(clinical.len(), 3); // Combined values
     assert!(clinical.contains(&"Patient".to_string()));
     assert!(clinical.contains(&"Treatment".to_string()));
@@ -257,16 +275,28 @@ fn test_inheritance_preservation() {
     schema2.classes.insert("Derived2".to_string(), derived2);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Check inheritance is preserved
     assert_eq!(merged.classes.len(), 3);
     assert_eq!(
-        merged.classes.get("Derived1").expect("Test operation failed").is_a.as_deref(),
+        merged
+            .classes
+            .get("Derived1")
+            .expect("Test operation failed")
+            .is_a
+            .as_deref(),
         Some("Base")
     );
     assert_eq!(
-        merged.classes.get("Derived2").expect("Test operation failed").is_a.as_deref(),
+        merged
+            .classes
+            .get("Derived2")
+            .expect("Test operation failed")
+            .is_a
+            .as_deref(),
         Some("Base")
     );
 }
@@ -294,7 +324,9 @@ fn test_mixin_merging() {
     schema2.classes.insert("Document".to_string(), document);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Check all mixins are present
     assert!(
@@ -314,7 +346,10 @@ fn test_mixin_merging() {
             .unwrap_or(false)
     );
 
-    let doc = merged.classes.get("Document").expect("Test operation failed");
+    let doc = merged
+        .classes
+        .get("Document")
+        .expect("Test operation failed");
     assert_eq!(doc.mixins.len(), 2);
 }
 
@@ -343,15 +378,27 @@ fn test_circular_reference_handling() {
     schema2.slots.insert("parent".to_string(), parent_slot);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Verify circular references are preserved
     assert_eq!(
-        merged.slots.get("spouse").expect("Test operation failed").range.as_deref(),
+        merged
+            .slots
+            .get("spouse")
+            .expect("Test operation failed")
+            .range
+            .as_deref(),
         Some("Person")
     );
     assert_eq!(
-        merged.slots.get("parent").expect("Test operation failed").range.as_deref(),
+        merged
+            .slots
+            .get("parent")
+            .expect("Test operation failed")
+            .range
+            .as_deref(),
         Some("Organization")
     );
 }
@@ -367,13 +414,17 @@ fn test_empty_schema_merging() {
     let merger = SchemaMerger::new();
 
     // Merge empty with non-empty
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
     assert_eq!(merged.classes.len(), 1);
 
     // Merge two empty schemas
     let empty1 = SchemaDefinition::new("empty1");
     let empty2 = SchemaDefinition::new("empty2");
-    let merged_empty = merger.merge(vec![empty1, empty2]).expect("Test operation failed");
+    let merged_empty = merger
+        .merge(vec![empty1, empty2])
+        .expect("Test operation failed");
     assert_eq!(merged_empty.classes.len(), 0);
 }
 
@@ -426,11 +477,21 @@ fn test_complex_multi_schema_merge() {
             .unwrap_or(false)
     );
     assert_eq!(
-        merged.classes.get("Patient").expect("Test operation failed").is_a.as_deref(),
+        merged
+            .classes
+            .get("Patient")
+            .expect("Test operation failed")
+            .is_a
+            .as_deref(),
         Some("Entity")
     );
     assert_eq!(
-        merged.classes.get("StudyPatient").expect("Test operation failed").is_a.as_deref(),
+        merged
+            .classes
+            .get("StudyPatient")
+            .expect("Test operation failed")
+            .is_a
+            .as_deref(),
         Some("Patient")
     );
 }
@@ -468,15 +529,25 @@ fn test_merge_with_slot_usage() {
     schema2.classes.insert("Employee".to_string(), employee);
 
     let merger = SchemaMerger::new();
-    let merged = merger.merge(vec![schema1, schema2]).expect("Test operation failed");
+    let merged = merger
+        .merge(vec![schema1, schema2])
+        .expect("Test operation failed");
 
     // Verify slot usage is preserved
     let person = merged.classes.get("Person").expect("Test operation failed");
     assert!(person.slot_usage.contains_key("name"));
 
-    let employee = merged.classes.get("Employee").expect("Test operation failed");
+    let employee = merged
+        .classes
+        .get("Employee")
+        .expect("Test operation failed");
     assert_eq!(
-        employee.slot_usage.get("name").expect("Test operation failed").pattern.as_deref(),
+        employee
+            .slot_usage
+            .get("name")
+            .expect("Test operation failed")
+            .pattern
+            .as_deref(),
         Some("[A-Z]+ [A-Z]+")
     );
 }

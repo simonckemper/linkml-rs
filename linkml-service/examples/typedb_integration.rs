@@ -307,8 +307,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "email": "alice@example.com",
                 "birth_date": "1985-03-15",
                 "age": 39
-            }))
-            ?,
+            }))?,
         },
         DataInstance {
             class_name: "Person".to_string(),
@@ -318,8 +317,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "email": "bob@example.com",
                 "birth_date": "1990-07-22",
                 "age": 34
-            }))
-            ?,
+            }))?,
         },
         DataInstance {
             class_name: "Organization".to_string(),
@@ -328,8 +326,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "name": "TechCorp",
                 "founded_date": "2010-01-01",
                 "industry": "Technology"
-            }))
-            ?,
+            }))?,
         },
         DataInstance {
             class_name: "Employment".to_string(),
@@ -344,8 +341,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 },
                 "start_date": "2020-06-01",
                 "role": "Senior Engineer"
-            }))
-            ?,
+            }))?,
         },
         DataInstance {
             class_name: "Friendship".to_string(),
@@ -359,8 +355,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                     "id": "person-002"
                 },
                 "since_date": "2018-09-15"
-            }))
-            ?,
+            }))?,
         },
     ]
 }

@@ -62,10 +62,10 @@ impl InstanceValidator {
             .unwrap_or_default();
 
         let values_arc = Arc::new(values);
-        
+
         // Cache the loaded data
         self.loaded_data_cache.insert(slot_name.to_string(), Arc::clone(&values_arc));
-        
+
         Ok(values_arc)
     }
 
@@ -77,7 +77,7 @@ impl InstanceValidator {
             if !config.is_valid() {
                 return false;
             }
-            
+
             // First check the cache for loaded data
             if let Some(cached_values) = self.loaded_data_cache.get(slot_name) {
                 return cached_values.contains(&value.to_string());
@@ -96,7 +96,7 @@ impl InstanceValidator {
         if self.slot_configs.contains_key(slot_name) {
             return false; // Value not found in required instance data
         }
-        
+
         // No instance validation configured means all values are allowed
         true
     }
@@ -163,16 +163,16 @@ impl Validator for InstanceValidator {
                 // Actually use the loader to load and validate data
                 // We'll need to handle this synchronously for now
                 let runtime = tokio::runtime::Handle::try_current();
-                
+
                 if let Ok(handle) = runtime {
                     // We're in an async context, can use block_on safely
                     let file_path = "instance_data.json"; // Default filename for instance data
-                    
+
                     // Use the async loader method synchronously
                     let load_result = handle.block_on(async {
                         self.load_instance_data_for_slot(&slot.name, file_path).await
                     });
-                    
+
                     match load_result {
                         Ok(loaded_values) => {
                             // Validate the value against loaded data
@@ -184,7 +184,7 @@ impl Validator for InstanceValidator {
                                     } else {
                                         format!("{preview:?}")
                                     };
-                                    
+
                                     issues.push(ValidationIssue::error(
                                         format!("Value '{}' not in loaded instance values. Available: {}", val_str, available),
                                         &context.path(),
@@ -219,7 +219,7 @@ impl Validator for InstanceValidator {
                         let load_result = runtime.block_on(async {
                             self.load_instance_data_for_slot(&slot.name, file_path).await
                         });
-                        
+
                         match load_result {
                             Ok(loaded_values) => {
                                 if let Some(val_str) = value.as_str() {

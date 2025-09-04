@@ -38,7 +38,7 @@ impl TypeQLGenerator {
         if name.is_empty() {
             return false;
         }
-        
+
         // Must start with a letter
         let mut chars = name.chars();
         if let Some(first) = chars.next() {
@@ -46,19 +46,19 @@ impl TypeQLGenerator {
                 return false;
             }
         }
-        
+
         // Rest must be letters, numbers, or underscores
         for ch in chars {
             if !ch.is_ascii_alphanumeric() && ch != '_' && ch != '-' {
                 return false;
             }
         }
-        
+
         // Check it's not a TypeQL reserved keyword
         !matches!(
             name,
             "sub" | "entity" | "relation" | "attribute" | "role" | "plays" | "owns" | "relates" |
-            "as" | "abstract" | "rule" | "when" | "then" | "match" | "insert" | "delete" | 
+            "as" | "abstract" | "rule" | "when" | "then" | "match" | "insert" | "delete" |
             "define" | "undefine" | "compute" | "get" | "aggregate" | "group" | "sort" | "limit" |
             "offset" | "contains" | "regex" | "key" | "unique" | "ordered" | "unordered"
         )
@@ -593,16 +593,16 @@ impl CodeFormatter for TypeQLGenerator {
     fn format_code(&self, code: &str) -> GeneratorResult<String> {
         let mut formatted = String::new();
         let mut indent_level = 0;
-        
+
         for line in code.lines() {
             let trimmed = line.trim();
-            
+
             // Skip empty lines
             if trimmed.is_empty() {
                 formatted.push('\n');
                 continue;
             }
-            
+
             // Handle comments
             if trimmed.starts_with('#') {
                 formatted.push_str(&"    ".repeat(indent_level));
@@ -610,24 +610,24 @@ impl CodeFormatter for TypeQLGenerator {
                 formatted.push('\n');
                 continue;
             }
-            
+
             // Decrease indent for closing braces
             if trimmed == "}" || trimmed.ends_with("};") {
                 indent_level = indent_level.saturating_sub(1);
             }
-            
+
             // Add proper indentation
             formatted.push_str(&"    ".repeat(indent_level));
             formatted.push_str(trimmed);
             formatted.push('\n');
-            
+
             // Increase indent after define, when, then, or opening braces
-            if trimmed == "define" || trimmed == "when {" || trimmed == "then {" || 
+            if trimmed == "define" || trimmed == "when {" || trimmed == "then {" ||
                trimmed.ends_with(" {") || trimmed == "{" {
                 indent_level += 1;
             }
         }
-        
+
         Ok(formatted)
     }
 

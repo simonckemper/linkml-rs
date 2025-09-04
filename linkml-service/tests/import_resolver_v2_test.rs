@@ -56,7 +56,10 @@ slots:
 
     // Load and resolve
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
+    let schema = loader
+        .load_file(base_path.join("main.yaml"))
+        .await
+        .expect("Test operation failed");
 
     // Verify imports were resolved
     assert!(schema.classes.contains_key("BaseClass"));
@@ -76,7 +79,9 @@ async fn test_import_aliases() {
 
     // Create schemas in subdirectory
     let schemas_dir = base_path.join("schemas");
-    fs::create_dir_all(&schemas_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&schemas_dir)
+        .await
+        .expect("Test operation failed");
 
     let common_schema = r#"
 id: https://example.org/common
@@ -114,16 +119,24 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
     // No need to add alias since it's in the schema settings
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Verify alias resolution
     assert!(resolved.types.contains_key("Identifier"));
@@ -199,15 +212,23 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // All elements should be imported for now
     assert!(resolved.classes.contains_key("Book"));
@@ -241,7 +262,9 @@ slots:
     range: string
 "#;
 
-    fs::write(base_path.join("a.yaml"), schema_a).await.expect("Test operation failed");
+    fs::write(base_path.join("a.yaml"), schema_a)
+        .await
+        .expect("Test operation failed");
 
     // Schema B with different Status class
     let schema_b = r#"
@@ -263,7 +286,9 @@ slots:
     range: datetime
 "#;
 
-    fs::write(base_path.join("b.yaml"), schema_b).await.expect("Test operation failed");
+    fs::write(base_path.join("b.yaml"), schema_b)
+        .await
+        .expect("Test operation failed");
 
     // Main schema importing both
     let main_schema = r#"
@@ -279,15 +304,23 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Should have Status from first import and qualified name for second
     assert!(resolved.classes.contains_key("Status"));
@@ -358,15 +391,23 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Verify import worked
     assert!(resolved.classes.contains_key("Location"));
@@ -381,8 +422,12 @@ async fn test_import_resolution_strategies() {
     // Create directory structure
     let lib_dir = base_path.join("lib");
     let local_dir = base_path.join("local");
-    fs::create_dir_all(&lib_dir).await.expect("Test operation failed");
-    fs::create_dir_all(&local_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&lib_dir)
+        .await
+        .expect("Test operation failed");
+    fs::create_dir_all(&local_dir)
+        .await
+        .expect("Test operation failed");
 
     // Same filename in different locations
     let lib_common = r#"
@@ -428,18 +473,26 @@ imports:
         .expect("Test operation failed");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     // Test relative resolution
     let mut settings = ImportSettings::default();
     settings.search_paths = vec![
-        local_dir.to_str().expect("Test operation failed").to_string(),
+        local_dir
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
         lib_dir.to_str().expect("Test operation failed").to_string(),
     ];
     settings.resolution_strategy = Some(ImportResolutionStrategy::Relative);
 
     let resolver = ImportResolverV2::with_settings(settings.clone());
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Should get local version with relative strategy
     assert!(resolved.types.contains_key("Version"));
@@ -453,7 +506,10 @@ imports:
     settings.search_paths = vec![lib_dir.to_str().expect("Test operation failed").to_string()];
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Should get lib version with absolute strategy
     assert!(resolved.types.contains_key("Version"));
@@ -518,7 +574,10 @@ classes:
         .expect("Test operation failed");
 
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
+    let schema = loader
+        .load_file(base_path.join("main.yaml"))
+        .await
+        .expect("Test operation failed");
 
     // Verify entire chain was resolved
     assert!(schema.types.contains_key("BaseType"));
@@ -585,9 +644,12 @@ classes:
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
     settings.max_import_depth = Some(5); // Set low limit
 
     let resolver = ImportResolverV2::with_settings(settings);
@@ -637,7 +699,9 @@ classes:
     name: ClassA
 "#;
 
-    fs::write(base_path.join("a.yaml"), schema_a).await.expect("Test operation failed");
+    fs::write(base_path.join("a.yaml"), schema_a)
+        .await
+        .expect("Test operation failed");
 
     let schema_b = r#"
 id: https://example.org/b
@@ -649,7 +713,9 @@ classes:
     name: ClassB
 "#;
 
-    fs::write(base_path.join("b.yaml"), schema_b).await.expect("Test operation failed");
+    fs::write(base_path.join("b.yaml"), schema_b)
+        .await
+        .expect("Test operation failed");
 
     // Main imports both a and b (which both import shared)
     let main_schema = r#"
@@ -661,16 +727,24 @@ imports:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(main_schema).expect("Test operation failed");
+    let schema = parser
+        .parse_str(main_schema)
+        .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
-    settings
-        .search_paths
-        .push(base_path.to_str().expect("Test operation failed").to_string());
+    settings.search_paths.push(
+        base_path
+            .to_str()
+            .expect("Test operation failed")
+            .to_string(),
+    );
     settings.cache_imports = Some(true);
 
     let resolver = ImportResolverV2::with_settings(settings);
-    let resolved = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Should have all elements without duplication
     assert!(resolved.types.contains_key("SharedType"));
@@ -679,7 +753,10 @@ imports:
 
     // Clear cache and resolve again
     resolver.clear_cache();
-    let resolved2 = resolver.resolve_imports(&schema).await.expect("Test operation failed");
+    let resolved2 = resolver
+        .resolve_imports(&schema)
+        .await
+        .expect("Test operation failed");
 
     // Should get same result
     assert_eq!(resolved.types.len(), resolved2.types.len());
@@ -693,7 +770,9 @@ async fn test_schema_settings_override() {
 
     // Create lib directory
     let lib_dir = base_path.join("lib");
-    fs::create_dir_all(&lib_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&lib_dir)
+        .await
+        .expect("Test operation failed");
 
     let lib_schema = r#"
 id: https://example.org/lib
@@ -727,7 +806,10 @@ imports:
         .expect("Test operation failed");
 
     let loader = SchemaLoader::new();
-    let schema = loader.load_file(base_path.join("main.yaml")).await.expect("Test operation failed");
+    let schema = loader
+        .load_file(base_path.join("main.yaml"))
+        .await
+        .expect("Test operation failed");
 
     // Verify settings were used
     assert!(schema.classes.contains_key("LibClass"));

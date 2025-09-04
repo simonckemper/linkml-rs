@@ -14,8 +14,8 @@ use logger_core::LoggerService;
 
 // Import the complete mock implementations from the mock_services module
 mod mock_services;
+use crate::factory::create_logger_service;
 use mock_services::*;
-use crate::factory::{create_logger_service};
 
 #[tokio::test]
 async fn test_logger_service_integration() {
@@ -49,7 +49,10 @@ async fn test_logger_service_integration() {
 
     // Test schema loading with logging
     use logger_core::LoggerService;
-    logger.info("Loading test schema").await.expect("Test operation failed");
+    logger
+        .info("Loading test schema")
+        .await
+        .expect("Test operation failed");
 
     let schema_yaml = r#"
 id: https://example.org/test-schema
@@ -99,7 +102,10 @@ slots:
         "JSON data being validated: {}",
         serde_json::to_string_pretty(&data).expect("Test operation failed")
     );
-    let report = service.validate(&data, &schema, "TestClass").await.expect("Test operation failed");
+    let report = service
+        .validate(&data, &schema, "TestClass")
+        .await
+        .expect("Test operation failed");
 
     println!(
         "Validation report: valid={}, errors={:?}",
@@ -107,7 +113,10 @@ slots:
     );
 
     if report.valid {
-        logger.info("Validation passed").await.expect("Test operation failed");
+        logger
+            .info("Validation passed")
+            .await
+            .expect("Test operation failed");
     } else {
         logger
             .error(&format!(
@@ -230,7 +239,10 @@ slots:
         "description": "Test event"
     });
 
-    let report = service.validate(&data, &schema, "Event").await.expect("Test operation failed");
+    let report = service
+        .validate(&data, &schema, "Event")
+        .await
+        .expect("Test operation failed");
     if !report.valid {
         println!("Validation errors:");
         for error in &report.errors {
@@ -319,7 +331,10 @@ slots:
         "id": "item1",
         "value": 42
     });
-    let report = service.validate(&data, &schema, "Item").await.expect("Test operation failed");
+    let report = service
+        .validate(&data, &schema, "Item")
+        .await
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Test configuration-driven behavior (e.g., strict validation)
@@ -894,7 +909,10 @@ slots:
     // Wait for all tasks to complete
     let mut results = Vec::new();
     for task in tasks {
-        let result = task.await.expect("Test operation failed").expect("Test operation failed");
+        let result = task
+            .await
+            .expect("Test operation failed")
+            .expect("Test operation failed");
         results.push(result);
     }
 
@@ -1091,7 +1109,10 @@ enums:
         .await;
 
     if report.valid {
-        logger_ref.info("Order validation passed").await.expect("Test operation failed");
+        logger_ref
+            .info("Order validation passed")
+            .await
+            .expect("Test operation failed");
         health_service.set_health("linkml_workflow", true).await;
     } else {
         logger_ref
@@ -1121,7 +1142,10 @@ enums:
             "status": "pending"
         });
 
-        let result = service.validate(&order, &schema, "Order").await.expect("Test operation failed");
+        let result = service
+            .validate(&order, &schema, "Order")
+            .await
+            .expect("Test operation failed");
         batch_results.push(result.valid);
     }
 

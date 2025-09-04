@@ -282,7 +282,11 @@ fn test_edge_cases() {
 
     let result = generator.generate(&attr_only);
     assert!(result.is_ok());
-    assert!(result.expect("Test operation failed").contains("test-attr sub attribute"));
+    assert!(
+        result
+            .expect("Test operation failed")
+            .contains("test-attr sub attribute")
+    );
 
     // Test deeply nested inheritance
     let mut nested = SchemaDefinition::default();

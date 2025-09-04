@@ -260,7 +260,7 @@ impl ParallelEvaluator for ExpressionEngine {
             .unwrap_or_else(|_| SystemTime::now());
         let duration = end_time.duration_since(start_time)
             .unwrap_or_else(|_| std::time::Duration::from_millis(0));
-        
+
         ParallelResult {
             successful,
             failed,

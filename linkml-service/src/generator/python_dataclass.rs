@@ -44,7 +44,7 @@ impl PythonDataclassGenerator {
         if name.is_empty() {
             return false;
         }
-        
+
         // Must start with letter or underscore
         let mut chars = name.chars();
         if let Some(first) = chars.next() {
@@ -52,14 +52,14 @@ impl PythonDataclassGenerator {
                 return false;
             }
         }
-        
+
         // Rest must be letters, numbers, or underscores
         for ch in chars {
             if !ch.is_ascii_alphanumeric() && ch != '_' {
                 return false;
             }
         }
-        
+
         // Check it's not a Python keyword
         !matches!(
             name,
@@ -575,10 +575,10 @@ impl CodeFormatter for PythonDataclassGenerator {
         let mut formatted = String::new();
         let mut indent_level = 0;
         let indent = "    ";
-        
+
         for line in code.lines() {
             let trimmed = line.trim();
-            
+
             // Decrease indent for dedent keywords
             if trimmed == "pass" || trimmed.starts_with("return") || trimmed.starts_with("raise") {
                 // Keep current indent
@@ -599,7 +599,7 @@ impl CodeFormatter for PythonDataclassGenerator {
                     indent_level = indent_level.saturating_sub(1);
                 }
             }
-            
+
             // Write the line with proper indentation
             if !trimmed.is_empty() {
                 formatted.push_str(&indent.repeat(indent_level));
@@ -607,7 +607,7 @@ impl CodeFormatter for PythonDataclassGenerator {
                 formatted.push('\n');
             }
         }
-        
+
         Ok(formatted)
     }
 

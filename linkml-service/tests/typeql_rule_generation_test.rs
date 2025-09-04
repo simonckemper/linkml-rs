@@ -162,7 +162,9 @@ async fn test_multiple_classes_with_rules() {
 
     // Add salary range constraint
     let mut salary_slot = SlotDefinition::default();
-    salary_slot.minimum_value = Some(Value::Number(serde_json::Number::from_f64(0.0).expect("Test operation failed")));
+    salary_slot.minimum_value = Some(Value::Number(
+        serde_json::Number::from_f64(0.0).expect("Test operation failed"),
+    ));
     salary_slot.maximum_value = Some(Value::Number(
         serde_json::Number::from_f64(1000000.0).expect("Test operation failed"),
     ));

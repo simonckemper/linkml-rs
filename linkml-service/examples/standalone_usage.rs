@@ -93,10 +93,7 @@ classes:
     println!("1. Parsing LinkML schema...");
     let parser = YamlParser::new();
     let schema = parser.parse_str(schema_yaml)?;
-    println!(
-        "   ✓ Schema parsed successfully: {}",
-        schema.name.as_ref()?
-    );
+    println!("   ✓ Schema parsed successfully: {}", schema.name.as_ref()?);
 
     // Create test data
     let valid_book = json!({

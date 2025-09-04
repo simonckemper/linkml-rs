@@ -253,10 +253,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = PythonDataclassGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -267,10 +264,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = PydanticGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -281,10 +275,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = TypeScriptGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -295,10 +286,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JavaScriptGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -309,10 +297,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = RustGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -323,10 +308,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JavaGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -337,10 +319,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = JsonSchemaGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });
@@ -351,10 +330,7 @@ fn bench_all_generators_comparison(c: &mut Criterion) {
             let runtime = tokio::runtime::Runtime::new()?;
             runtime.block_on(async {
                 let generator = ProtobufGenerator::new();
-                generator
-                    .generate(black_box(&schema), &options)
-                    .await
-                    ?
+                generator.generate(black_box(&schema), &options).await?
             })
         })
     });

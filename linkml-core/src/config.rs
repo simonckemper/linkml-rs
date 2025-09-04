@@ -61,18 +61,37 @@ impl Default for SchemaConfig {
     }
 }
 
+/// Validation modes for configuration
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum ValidationMode {
+    /// Strict validation - all rules enforced
+    Strict,
+    /// Standard validation - most rules enforced
+    Standard,
+    /// Permissive validation - only critical rules enforced
+    Permissive,
+}
+
+/// Feature flags for validation
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ValidationFeatures {
+    /// Enable pattern validation
+    pub patterns: bool,
+    /// Enable instance validation
+    pub instances: bool,
+    /// Enable type coercion
+    pub coercion: bool,
+}
+
 /// Validation configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ValidationConfig {
-    /// Enable strict mode
-    pub strict_mode: bool,
+    /// Validation mode
+    pub mode: ValidationMode,
 
-    /// Enable pattern validation
-    pub enable_patterns: bool,
-
-    /// Enable instance validation
-    pub enable_instances: bool,
+    /// Validation features
+    pub features: ValidationFeatures,
 
     /// Instance file search paths
     pub instance_paths: Vec<PathBuf>,
@@ -83,21 +102,26 @@ pub struct ValidationConfig {
     /// Validation timeout
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,
+}
 
-    /// Enable type coercion
-    pub enable_coercion: bool,
+impl Default for ValidationMode {
+    fn default() -> Self {
+        ValidationMode::Standard
+    }
 }
 
 impl Default for ValidationConfig {
     fn default() -> Self {
         Self {
-            strict_mode: false,
-            enable_patterns: true,
-            enable_instances: true,
+            mode: ValidationMode::Standard,
+            features: ValidationFeatures {
+                patterns: true,
+                instances: true,
+                coercion: true,
+            },
             instance_paths: vec![PathBuf::from("instances")],
             max_errors: 100,
             timeout: Duration::from_secs(60),
-            enable_coercion: true,
         }
     }
 }
@@ -138,6 +162,19 @@ impl Default for PerformanceConfig {
     }
 }
 
+/// Generation targets
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct GenerationTargets {
+    /// Enable `TypeQL` generation
+    pub typeql: bool,
+    /// Enable Rust generation
+    pub rust: bool,
+    /// Enable GraphQL generation
+    pub graphql: bool,
+    /// Enable documentation generation
+    pub docs: bool,
+}
+
 /// Code generation configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -145,17 +182,8 @@ pub struct GenerationConfig {
     /// Output directory for generated code
     pub output_dir: PathBuf,
 
-    /// Enable `TypeQL` generation
-    pub enable_typeql: bool,
-
-    /// Enable Rust generation
-    pub enable_rust: bool,
-
-    /// Enable GraphQL generation
-    pub enable_graphql: bool,
-
-    /// Enable documentation generation
-    pub enable_docs: bool,
+    /// Generation targets
+    pub targets: GenerationTargets,
 
     /// Documentation format
     pub doc_format: String,
@@ -168,10 +196,12 @@ impl Default for GenerationConfig {
     fn default() -> Self {
         Self {
             output_dir: PathBuf::from("generated"),
-            enable_typeql: true,
-            enable_rust: true,
-            enable_graphql: true,
-            enable_docs: true,
+            targets: GenerationTargets {
+                typeql: true,
+                rust: true,
+                graphql: true,
+                docs: true,
+            },
             doc_format: "markdown".to_string(),
             include_source_info: true,
         }
@@ -259,6 +289,7 @@ mod tests {
         assert!(config.schema.enable_cache);
         assert_eq!(config.validation.max_errors, 100);
         assert_eq!(config.performance.thread_pool_size, num_cpus::get());
+        assert!(matches!(config.validation.mode, ValidationMode::Standard));
     }
 
     #[test]

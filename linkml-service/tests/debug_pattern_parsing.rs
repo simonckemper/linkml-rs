@@ -51,11 +51,17 @@ slots:
 
     // Check class slots
     if let Some(date_record) = schema.classes.get("DateRecord") {
-        eprintln!("\nDEBUG: DateRecord class has slots: {:?}", date_record.slots);
+        eprintln!(
+            "\nDEBUG: DateRecord class has slots: {:?}",
+            date_record.slots
+        );
 
         for slot_name in &date_record.slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
-                eprintln!("  Slot '{}' from class: pattern = {:?}", slot_name, slot_def.pattern);
+                eprintln!(
+                    "  Slot '{}' from class: pattern = {:?}",
+                    slot_name, slot_def.pattern
+                );
             } else {
                 eprintln!("  WARNING: Slot '{}' not found in schema.slots!", slot_name);
             }
@@ -63,7 +69,34 @@ slots:
     }
 
     // Verify each slot has the right pattern
-    assert!(schema.slots.get("iso_date").unwrap().pattern.as_ref().unwrap().contains("year"));
-    assert!(schema.slots.get("us_date").unwrap().pattern.as_ref().unwrap().contains("month"));
-    assert!(schema.slots.get("custom_date").unwrap().pattern.as_ref().unwrap().contains("dayname"));
+    assert!(
+        schema
+            .slots
+            .get("iso_date")
+            .unwrap()
+            .pattern
+            .as_ref()
+            .unwrap()
+            .contains("year")
+    );
+    assert!(
+        schema
+            .slots
+            .get("us_date")
+            .unwrap()
+            .pattern
+            .as_ref()
+            .unwrap()
+            .contains("month")
+    );
+    assert!(
+        schema
+            .slots
+            .get("custom_date")
+            .unwrap()
+            .pattern
+            .as_ref()
+            .unwrap()
+            .contains("dayname")
+    );
 }

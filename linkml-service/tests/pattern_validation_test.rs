@@ -42,7 +42,9 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Debug: Check patterns in parsed schema
     eprintln!("DEBUG: Checking parsed schema slots:");
@@ -115,7 +117,9 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Valid semantic version strings
     let valid_data = json!({
@@ -161,7 +165,9 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Valid phone numbers in different formats
     let valid_data = json!({
@@ -221,7 +227,9 @@ slots:
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Generate large array of items to test caching
     let mut items = Vec::new();

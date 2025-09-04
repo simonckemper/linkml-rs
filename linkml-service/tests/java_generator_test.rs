@@ -97,9 +97,7 @@ async fn test_enum_generation() {
     assert!(java.contains("public enum OrderStatus {"));
     assert!(java.contains("PENDING,"));
     assert!(java.contains("PROCESSING,"));
-    assert!(
-        java.contains("/**\n     * Order has been shipped\n     */")
-    );
+    assert!(java.contains("/**\n     * Order has been shipped\n     */"));
     assert!(java.contains("SHIPPED,"));
     assert!(java.contains("DELIVERED,"));
     assert!(java.contains("CANCELLED;"));
@@ -279,15 +277,9 @@ async fn test_builder_pattern() {
 
     // Check builder class
     assert!(java.contains("public static class Builder {"));
-    assert!(
-        java.contains("private final User instance = new User();")
-    );
-    assert!(
-        java.contains("public Builder withUsername(String username)")
-    );
-    assert!(
-        java.contains("public Builder withEmail(String email)")
-    );
+    assert!(java.contains("private final User instance = new User();"));
+    assert!(java.contains("public Builder withUsername(String username)"));
+    assert!(java.contains("public Builder withEmail(String email)"));
     assert!(java.contains("public User build()"));
     assert!(java.contains("public static Builder builder()"));
 }
@@ -325,11 +317,7 @@ async fn test_case_handling() {
 
     // Check getter/setter names
     assert!(java.contains("public Long getResponseCode()"));
-    assert!(
-        java.contains("public void setResponseCode(Long responseCode)")
-    );
+    assert!(java.contains("public void setResponseCode(Long responseCode)"));
     assert!(java.contains("public Boolean getIsActive()"));
-    assert!(
-        java.contains("public void setIsActive(Boolean isActive)")
-    );
+    assert!(java.contains("public void setIsActive(Boolean isActive)"));
 }

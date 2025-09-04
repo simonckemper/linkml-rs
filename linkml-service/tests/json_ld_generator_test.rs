@@ -89,7 +89,9 @@ async fn test_json_ld_schema_document() {
     assert!(schema_doc["@context"].is_object());
     assert!(schema_doc["@graph"].is_array());
 
-    let graph = schema_doc["@graph"].as_array().expect("Test operation failed");
+    let graph = schema_doc["@graph"]
+        .as_array()
+        .expect("Test operation failed");
 
     // Find schema metadata
     let schema_meta = graph
@@ -167,7 +169,9 @@ async fn test_inheritance_json_ld() {
     let output = generator.generate(&schema).expect("Test operation failed");
 
     let schema_doc: Value = serde_json::from_str(&output).expect("Test operation failed");
-    let graph = schema_doc["@graph"].as_array().expect("Test operation failed");
+    let graph = schema_doc["@graph"]
+        .as_array()
+        .expect("Test operation failed");
 
     // Find Person class
     let person = graph
@@ -271,7 +275,12 @@ async fn test_json_ld_examples() {
     // Check example structure
     assert_eq!(example["@context"], "person_schema.context.jsonld");
     assert_eq!(example["@type"], "Person");
-    assert!(example["@id"].as_str().expect("Test operation failed").contains("example-person"));
+    assert!(
+        example["@id"]
+            .as_str()
+            .expect("Test operation failed")
+            .contains("example-person")
+    );
     assert_eq!(example["name"], "example string");
 }
 

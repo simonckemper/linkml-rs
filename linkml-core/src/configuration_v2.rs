@@ -187,11 +187,24 @@ pub struct RuleCacheConfig {
     pub ttl_seconds: u64,
 }
 
+/// Performance features configuration
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct PerformanceFeatures {
+    /// Enable performance monitoring
+    pub monitoring: bool,
+    /// Enable string interning
+    pub string_interning: bool,
+    /// Enable background tasks
+    pub background_tasks: bool,
+    /// Enable cache warming
+    pub cache_warming: bool,
+}
+
 /// Performance configuration
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PerformanceConfig {
-    /// Enable performance monitoring
-    pub enable_monitoring: bool,
+    /// Performance features
+    pub features: PerformanceFeatures,
 
     /// Memory limit in bytes
     pub memory_limit_bytes: Option<u64>,
@@ -199,17 +212,8 @@ pub struct PerformanceConfig {
     /// CPU limit (percentage)
     pub cpu_limit_percent: Option<u8>,
 
-    /// Enable string interning
-    pub enable_string_interning: bool,
-
     /// String intern pool size
     pub string_pool_size: usize,
-
-    /// Enable background tasks
-    pub enable_background_tasks: bool,
-
-    /// Enable cache warming
-    pub enable_cache_warming: bool,
 
     /// Background task interval in seconds
     pub background_task_interval_secs: u64,
@@ -469,13 +473,15 @@ impl Default for RuleCacheConfig {
 impl Default for PerformanceConfig {
     fn default() -> Self {
         Self {
-            enable_monitoring: true,
+            features: PerformanceFeatures {
+                monitoring: true,
+                string_interning: true,
+                background_tasks: true,
+                cache_warming: false,
+            },
             memory_limit_bytes: None,
             cpu_limit_percent: None,
-            enable_string_interning: true,
             string_pool_size: 10000,
-            enable_background_tasks: true,
-            enable_cache_warming: false,
             background_task_interval_secs: 3600,
             string_cache: StringCacheConfig::default(),
             memory_pool: MemoryPoolConfig::default(),
@@ -545,7 +551,7 @@ impl LinkMLServiceConfig {
         config.typedb.server_address = String::from("localhost:1729");
         config.validator.fail_fast = true;
         config.cache.max_entries = 100;
-        config.performance.enable_monitoring = true;
+        config.performance.features.monitoring = true;
         config.security_limits.max_validation_time_ms = 1000; // More lenient for dev
         config
     }
@@ -558,7 +564,7 @@ impl LinkMLServiceConfig {
         config.typedb.batch_size = 10;
         config.validator.thread_count = 1;
         config.cache.max_entries = 10;
-        config.performance.enable_background_tasks = false;
+        config.performance.features.background_tasks = false;
         config
     }
 
@@ -570,8 +576,8 @@ impl LinkMLServiceConfig {
         config.typedb.max_retries = 5;
         config.validator.enable_parallel = true;
         config.cache.enable_compression = true;
-        config.performance.enable_string_interning = true;
-        config.performance.enable_cache_warming = true;
+        config.performance.features.string_interning = true;
+        config.performance.features.cache_warming = true;
         config
     }
 }

@@ -310,7 +310,7 @@ mod tests {
 
         // Accessing pattern2 should still be cached
         let _ = validator.get_regex(pattern2)?;
-        
+
         Ok(())
     }
 }

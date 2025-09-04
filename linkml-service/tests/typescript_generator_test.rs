@@ -285,7 +285,10 @@ async fn test_inheritance() {
     assert!(output.contains("export interface Person extends NamedEntity {"));
 
     // Check Person only has its own fields (not inherited ones)
-    let person_section = output.split("export interface Person").nth(1).expect("Test operation failed");
+    let person_section = output
+        .split("export interface Person")
+        .nth(1)
+        .expect("Test operation failed");
     let person_end = person_section.find("}").expect("Test operation failed");
     let person_body = &person_section[..person_end];
 

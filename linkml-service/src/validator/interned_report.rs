@@ -223,10 +223,10 @@ impl InternedValidationReport {
         let mut report = super::report::ValidationReport::new(
             interner.get(self.schema_id).unwrap_or_default()
         );
-        
+
         report.valid = self.valid;
         report.stats = self.stats.clone();
-        
+
         if let Some(tc) = self.target_class {
             report.target_class = Some(interner.get(tc).unwrap_or_default());
         }
@@ -363,7 +363,7 @@ impl InternedMemoryStats {
     pub fn calculate() -> Self {
         let interner = global_interner();
         let stats = interner.stats();
-        
+
         // Estimate bytes saved (assuming average 3 references per string)
         let estimated_references = stats.total_strings * 3;
         let bytes_without_interning = stats.total_bytes * 3;
@@ -400,13 +400,13 @@ mod tests {
     #[test]
     fn test_issue_builder() {
         let builder = IssueBuilder::new();
-        
+
         let issue = builder.required_field_missing("name", "$.person");
         assert_eq!(issue.severity, Severity::Error);
         assert!(issue.message_str().contains("Required field"));
         assert!(issue.message_str().contains("name"));
         assert_eq!(issue.path_str(), "$.person");
-        
+
         let issue2 = builder.type_mismatch("string", "number", "$.age");
         assert!(issue2.message_str().contains("Type mismatch"));
         assert_eq!(issue2.path_str(), "$.age");
@@ -415,13 +415,13 @@ mod tests {
     #[test]
     fn test_interned_report() {
         let mut report = InternedValidationReport::new("test-schema");
-        
+
         report.add_issue(InternedValidationIssue::error(
             "Error 1",
             "$.field1",
             "Validator1",
         ));
-        
+
         report.add_issue(InternedValidationIssue::warning(
             "Warning 1",
             "$.field2",
@@ -450,7 +450,7 @@ mod tests {
 
         // The interner should have deduplicated the common strings
         let stats = InternedMemoryStats::calculate();
-        
+
         // We should have fewer unique strings than total issues
         assert!(stats.unique_strings < issues.len() * 3);
     }

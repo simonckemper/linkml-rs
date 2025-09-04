@@ -46,10 +46,7 @@ EXP004,Sample D,20.0,7.0,0.6,"treatment;low-temp",Cold treatment
         println!("\nExperiment {}:", i + 1);
         println!("  ID: {}", instance.id.as_ref()?);
         println!("  Sample: {}", instance.data.get("sample_name")?);
-        println!(
-            "  Temperature: {}°C",
-            instance.data.get("temperature")?
-        );
+        println!("  Temperature: {}°C", instance.data.get("temperature")?);
         println!("  Tags: {}", instance.data.get("tags")?);
     }
 

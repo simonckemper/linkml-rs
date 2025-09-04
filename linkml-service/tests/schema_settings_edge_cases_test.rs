@@ -2,7 +2,8 @@
 
 use linkml_core::{
     settings::{
-        ImportResolutionStrategy, SchemaSettings, ValidationSettings,
+        DefaultSettings, GenerationSettings, ImportResolutionStrategy, ImportSettings,
+        NamingSettings, SchemaSettings, ValidationSettings,
     },
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
@@ -146,7 +147,11 @@ async fn test_default_settings_application() {
 
     // In a real implementation, the engine would apply defaults
     // Here we verify the settings are stored correctly
-    let defaults = &schema.settings.as_ref().expect("Test operation failed").defaults;
+    let defaults = &schema
+        .settings
+        .as_ref()
+        .expect("Test operation failed")
+        .defaults;
     assert_eq!(defaults.range.as_deref(), Some("string"));
     assert_eq!(defaults.required, Some(false));
 }
@@ -163,7 +168,11 @@ async fn test_conflicting_settings_resolution() {
     schema.settings = Some(settings);
 
     // The specific setting should override the preset
-    let validation = &schema.settings.as_ref().expect("Test operation failed").validation;
+    let validation = &schema
+        .settings
+        .as_ref()
+        .expect("Test operation failed")
+        .validation;
     assert!(validation.allow_additional_properties);
     assert!(validation.fail_on_warning); // From strict preset
     assert!(!validation.allow_undefined_slots); // From strict preset
@@ -225,8 +234,14 @@ async fn test_empty_settings_behavior() {
     let data = json!({"test": "value"});
 
     // Both should allow additional properties by default
-    let report1 = engine1.validate(&data, None).await.expect("Test operation failed");
-    let report2 = engine2.validate(&data, None).await.expect("Test operation failed");
+    let report1 = engine1
+        .validate(&data, None)
+        .await
+        .expect("Test operation failed");
+    let report2 = engine2
+        .validate(&data, None)
+        .await
+        .expect("Test operation failed");
 
     assert_eq!(report1.valid, report2.valid);
 }

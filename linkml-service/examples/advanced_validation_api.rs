@@ -203,10 +203,7 @@ fn demonstrate_validation() {
     });
 
     println!("\nInvalid - employed without salary:");
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&invalid_employed)?
-    );
+    println!("{}", serde_json::to_string_pretty(&invalid_employed)?);
     println!("Expected error: Rule violation - employed persons must have salary");
 
     // Invalid: minor as supervisor
@@ -219,10 +216,7 @@ fn demonstrate_validation() {
     });
 
     println!("\nInvalid - minor as supervisor:");
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&invalid_supervisor)?
-    );
+    println!("{}", serde_json::to_string_pretty(&invalid_supervisor)?);
     println!("Expected error: Rule violation - minors cannot be supervisors");
 }
 
@@ -254,11 +248,7 @@ fn demonstrate_error_handling() {
     ];
 
     for error in &example_errors {
-        println!(
-            "\nError at {}: {}",
-            error.path.as_ref()?,
-            error.message
-        );
+        println!("\nError at {}: {}", error.path.as_ref()?, error.message);
         if let Some(expected) = &error.expected {
             println!("  Expected: {}", expected);
         }

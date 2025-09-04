@@ -74,7 +74,10 @@ slots:
     assert!(rule.preconditions.is_some());
     let preconditions = rule.preconditions.as_ref().expect("Test operation failed");
     assert!(preconditions.slot_conditions.is_some());
-    let slot_conditions = preconditions.slot_conditions.as_ref().expect("Test operation failed");
+    let slot_conditions = preconditions
+        .slot_conditions
+        .as_ref()
+        .expect("Test operation failed");
 
     let age_condition = slot_conditions.get("age").expect("age condition not found");
     assert_eq!(age_condition.maximum_value, Some(serde_json::json!(17)));
@@ -83,7 +86,10 @@ slots:
     assert!(rule.postconditions.is_some());
     let postconditions = rule.postconditions.as_ref().expect("Test operation failed");
     assert!(postconditions.slot_conditions.is_some());
-    let post_slot_conditions = postconditions.slot_conditions.as_ref().expect("Test operation failed");
+    let post_slot_conditions = postconditions
+        .slot_conditions
+        .as_ref()
+        .expect("Test operation failed");
 
     let guardian_name_condition = post_slot_conditions
         .get("guardian_name")
@@ -176,24 +182,39 @@ slots:
     // Test expression-based rule
     let expr_rule = &order_class.rules[0];
     assert!(expr_rule.preconditions.is_some());
-    let preconditions = expr_rule.preconditions.as_ref().expect("Test operation failed");
+    let preconditions = expr_rule
+        .preconditions
+        .as_ref()
+        .expect("Test operation failed");
     assert!(preconditions.expression_conditions.is_some());
-    let expressions = preconditions.expression_conditions.as_ref().expect("Test operation failed");
+    let expressions = preconditions
+        .expression_conditions
+        .as_ref()
+        .expect("Test operation failed");
     assert_eq!(expressions.len(), 1);
     assert_eq!(expressions[0], "{total_amount} > 10000");
 
     // Test composite conditions
     let composite_rule = &order_class.rules[1];
     assert!(composite_rule.preconditions.is_some());
-    let preconditions = composite_rule.preconditions.as_ref().expect("Test operation failed");
+    let preconditions = composite_rule
+        .preconditions
+        .as_ref()
+        .expect("Test operation failed");
     assert!(preconditions.composite_conditions.is_some());
-    let composite = preconditions.composite_conditions.as_ref().expect("Test operation failed");
+    let composite = preconditions
+        .composite_conditions
+        .as_ref()
+        .expect("Test operation failed");
     assert!(composite.all_of.is_some());
 
     // Test else conditions
     let else_rule = &order_class.rules[2];
     assert!(else_rule.else_conditions.is_some());
-    let else_conditions = else_rule.else_conditions.as_ref().expect("Test operation failed");
+    let else_conditions = else_rule
+        .else_conditions
+        .as_ref()
+        .expect("Test operation failed");
     assert!(else_conditions.slot_conditions.is_some());
 }
 
@@ -251,7 +272,10 @@ slots:
         .expect("Address class not found");
     assert!(address_class.if_required.is_some());
 
-    let if_required = address_class.if_required.as_ref().expect("Test operation failed");
+    let if_required = address_class
+        .if_required
+        .as_ref()
+        .expect("Test operation failed");
     assert_eq!(if_required.len(), 2);
 
     // Check US requirements
@@ -263,7 +287,10 @@ slots:
     assert_eq!(condition.equals_string.as_deref(), Some("USA"));
 
     assert!(us_req.then_required.is_some());
-    let then_required = us_req.then_required.as_ref().expect("Test operation failed");
+    let then_required = us_req
+        .then_required
+        .as_ref()
+        .expect("Test operation failed");
     assert_eq!(then_required.len(), 2);
     assert!(then_required.contains(&"state".to_string()));
     assert!(then_required.contains(&"postal_code".to_string()));

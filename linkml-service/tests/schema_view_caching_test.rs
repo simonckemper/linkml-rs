@@ -13,14 +13,18 @@ async fn test_schema_view_basic_caching() {
 
     // First call - cache miss
     let start = Instant::now();
-    let ancestors1 = view.class_ancestors("GrandChild").expect("Test operation failed");
+    let ancestors1 = view
+        .class_ancestors("GrandChild")
+        .expect("Test operation failed");
     let first_call_time = start.elapsed();
 
     assert_eq!(ancestors1.len(), 2); // Child, Parent (not including self)
 
     // Second call - cache hit
     let start = Instant::now();
-    let ancestors2 = view.class_ancestors("GrandChild").expect("Test operation failed");
+    let ancestors2 = view
+        .class_ancestors("GrandChild")
+        .expect("Test operation failed");
     let second_call_time = start.elapsed();
 
     assert_eq!(ancestors1, ancestors2);
@@ -67,7 +71,11 @@ async fn test_cache_invalidation_not_needed() {
 #[tokio::test]
 async fn test_concurrent_cache_access() {
     let schema = Arc::new(create_complex_schema());
-    let view = Arc::new(SchemaView::new(schema.as_ref().clone()).await.expect("Test operation failed"));
+    let view = Arc::new(
+        SchemaView::new(schema.as_ref().clone())
+            .await
+            .expect("Test operation failed"),
+    );
 
     let mut handles = vec![];
 
@@ -85,7 +93,9 @@ async fn test_concurrent_cache_access() {
                     _ => "Department",
                 };
 
-                let slots = view_clone.class_slots(class_name).expect("Test operation failed");
+                let slots = view_clone
+                    .class_slots(class_name)
+                    .expect("Test operation failed");
                 results.push((class_name, slots.len()));
             }
 
@@ -119,15 +129,23 @@ async fn test_navigation_cache_statistics() {
     let view = SchemaView::new(schema).expect("Test operation failed");
 
     // Perform various operations to populate cache
-    let _ = view.class_ancestors("Employee").expect("Test operation failed");
-    let _ = view.class_descendants("Person").expect("Test operation failed");
+    let _ = view
+        .class_ancestors("Employee")
+        .expect("Test operation failed");
+    let _ = view
+        .class_descendants("Person")
+        .expect("Test operation failed");
     let _ = view.class_slots("Employee").expect("Test operation failed");
-    let _ = view.induced_class("Employee").expect("Test operation failed");
+    let _ = view
+        .induced_class("Employee")
+        .expect("Test operation failed");
     let _ = view.usage_index().expect("Test operation failed");
 
     // Access cached data multiple times
     for _ in 0..10 {
-        let _ = view.class_ancestors("Employee").expect("Test operation failed");
+        let _ = view
+            .class_ancestors("Employee")
+            .expect("Test operation failed");
         let _ = view.class_slots("Employee").expect("Test operation failed");
     }
 
@@ -135,7 +153,9 @@ async fn test_navigation_cache_statistics() {
     // For now, just verify operations complete quickly
     let start = Instant::now();
     for _ in 0..1000 {
-        let _ = view.class_ancestors("Employee").expect("Test operation failed");
+        let _ = view
+            .class_ancestors("Employee")
+            .expect("Test operation failed");
     }
     let elapsed = start.elapsed();
 
@@ -164,7 +184,9 @@ async fn test_complex_inheritance_caching() {
 
     // First access - builds cache
     let start = Instant::now();
-    let ancestors = view.class_ancestors("Class19").expect("Test operation failed");
+    let ancestors = view
+        .class_ancestors("Class19")
+        .expect("Test operation failed");
     let first_time = start.elapsed();
 
     assert_eq!(ancestors.len(), 19); // All parent classes (not including self)
@@ -172,7 +194,9 @@ async fn test_complex_inheritance_caching() {
     // Subsequent accesses should be instant
     let start = Instant::now();
     for i in 0..20 {
-        let ancestors = view.class_ancestors(&format!("Class{}", i)).expect("Test operation failed");
+        let ancestors = view
+            .class_ancestors(&format!("Class{}", i))
+            .expect("Test operation failed");
         assert_eq!(ancestors.len(), i); // Ancestors don't include self
     }
     let cached_time = start.elapsed();
@@ -245,7 +269,9 @@ async fn test_mixin_resolution_caching() {
     // Measure mixin resolution performance
     let start = Instant::now();
     for i in 0..10 {
-        let mixed_class = view.induced_class(&format!("Mixed{}", i)).expect("Test operation failed");
+        let mixed_class = view
+            .induced_class(&format!("Mixed{}", i))
+            .expect("Test operation failed");
         assert!(mixed_class.slots.len() >= 4); // Own slot + 3 mixin slots
     }
     let first_time = start.elapsed();
@@ -254,7 +280,9 @@ async fn test_mixin_resolution_caching() {
     let start = Instant::now();
     for _ in 0..100 {
         for i in 0..10 {
-            let mixed_class = view.induced_class(&format!("Mixed{}", i)).expect("Test operation failed");
+            let mixed_class = view
+                .induced_class(&format!("Mixed{}", i))
+                .expect("Test operation failed");
             assert!(mixed_class.slots.len() >= 4);
         }
     }
@@ -319,7 +347,9 @@ async fn test_memory_efficiency() {
     let start = Instant::now();
     for i in 0..100 {
         let class_name = format!("Class{}", i * 10);
-        let _ = view.class_slots(&class_name).expect("Test operation failed");
+        let _ = view
+            .class_slots(&class_name)
+            .expect("Test operation failed");
     }
     let elapsed = start.elapsed();
 

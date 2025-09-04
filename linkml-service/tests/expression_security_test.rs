@@ -55,7 +55,10 @@ fn test_expression_injection_variable_escape() {
 
     // The variable content should be treated as a string, not parsed as expression
     let result = engine.evaluate("{evil}", &context);
-    assert_eq!(result.expect("Test operation failed"), json!("} + 1000 + {x"));
+    assert_eq!(
+        result.expect("Test operation failed"),
+        json!("} + 1000 + {x")
+    );
 }
 
 #[test]
@@ -80,7 +83,10 @@ fn test_expression_injection_function_in_variable() {
 
     // Should treat as string, not execute function
     let result = engine.evaluate("{evil}", &context);
-    assert_eq!(result.expect("Test operation failed"), json!("max(999999999)"));
+    assert_eq!(
+        result.expect("Test operation failed"),
+        json!("max(999999999)")
+    );
 }
 
 // ==================== Code Injection Tests ====================
@@ -325,8 +331,18 @@ fn test_unicode_homograph_attack() {
     context.insert("а".to_string(), json!(999)); // Cyrillic а
 
     // Should distinguish between the two
-    assert_eq!(engine.evaluate("{a}", &context).expect("Test operation failed"), json!(100));
-    assert_eq!(engine.evaluate("{а}", &context).expect("Test operation failed"), json!(999));
+    assert_eq!(
+        engine
+            .evaluate("{a}", &context)
+            .expect("Test operation failed"),
+        json!(100)
+    );
+    assert_eq!(
+        engine
+            .evaluate("{а}", &context)
+            .expect("Test operation failed"),
+        json!(999)
+    );
 }
 
 #[test]
@@ -390,7 +406,10 @@ fn test_sql_injection_in_strings() {
 
     // Should treat as literal string
     let result = engine.evaluate("{input}", &context);
-    assert_eq!(result.expect("Test operation failed"), json!("'; DROP TABLE users; --"));
+    assert_eq!(
+        result.expect("Test operation failed"),
+        json!("'; DROP TABLE users; --")
+    );
 }
 
 // ==================== Format String Attacks ====================
@@ -572,13 +591,17 @@ fn test_legitimate_string_operations() {
 
     // Should handle Unicode properly
     assert_eq!(
-        engine.evaluate("{greeting}", &context).expect("Test operation failed"),
+        engine
+            .evaluate("{greeting}", &context)
+            .expect("Test operation failed"),
         json!("Hello, 世界! 🌍")
     );
 
     // String operations with Unicode
     // Note: The actual character count depends on how the engine counts
-    let len_result = engine.evaluate("len({greeting})", &context).expect("Test operation failed");
+    let len_result = engine
+        .evaluate("len({greeting})", &context)
+        .expect("Test operation failed");
     assert!(len_result.is_number());
 
     assert_eq!(

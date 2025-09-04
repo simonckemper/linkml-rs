@@ -791,7 +791,7 @@ impl Generator for HtmlGenerator {
 
         // Check for XSS-prone content in names
         for (class_name, _class_def) in &schema.classes {
-            if class_name.contains('<') || class_name.contains('>') || 
+            if class_name.contains('<') || class_name.contains('>') ||
                class_name.contains("script") || class_name.contains("javascript:") {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!(
@@ -872,32 +872,32 @@ impl CodeFormatter for HtmlGenerator {
         let mut formatted = String::new();
         let indent = "    ";
         let mut indent_level: usize = 0;
-        
+
         for line in code.lines() {
             let trimmed = line.trim();
-            
+
             // Skip empty lines
             if trimmed.is_empty() {
                 formatted.push('\n');
                 continue;
             }
-            
+
             // Decrease indent for closing braces
             if trimmed.starts_with('}') || trimmed.starts_with(']') || trimmed.starts_with(')') {
                 indent_level = indent_level.saturating_sub(1);
             }
-            
+
             // Add proper indentation
             formatted.push_str(&indent.repeat(indent_level));
             formatted.push_str(trimmed);
             formatted.push('\n');
-            
+
             // Increase indent after opening braces
             if trimmed.ends_with('{') || trimmed.ends_with('[') || trimmed.ends_with('(') {
                 indent_level += 1;
             }
         }
-        
+
         Ok(formatted)
     }
     fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {

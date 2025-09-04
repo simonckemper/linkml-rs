@@ -24,14 +24,18 @@ classes:
 "#;
 
     let common_dir = base_path.join("common");
-    fs::create_dir_all(&common_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&common_dir)
+        .await
+        .expect("Test operation failed");
     fs::write(common_dir.join("v2.yaml"), common_v2)
         .await
         .expect("Test operation failed");
 
     // Create base schemas directory
     let base_schemas_dir = base_path.join("base_schemas");
-    fs::create_dir_all(&base_schemas_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&base_schemas_dir)
+        .await
+        .expect("Test operation failed");
 
     let entity_schema = r#"
 id: https://base.example.org/schemas/entity
@@ -86,7 +90,10 @@ classes:
             .await
             .expect("Test operation failed");
     } else {
-        resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
+        resolver
+            .resolve_imports(&mut schema, None)
+            .await
+            .expect("Test operation failed");
     }
 
     // Verify imports were resolved
@@ -251,7 +258,10 @@ classes:
         )
         .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
+    resolver
+        .resolve_imports(&mut schema, None)
+        .await
+        .expect("Test operation failed");
 
     // In a full implementation with selective imports, we would verify
     // only the requested elements were imported
@@ -333,7 +343,10 @@ classes:
         )
         .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
+    resolver
+        .resolve_imports(&mut schema, None)
+        .await
+        .expect("Test operation failed");
 
     // Last import wins strategy - schema2's Person should override
     let person = schema.classes.get("Person").expect("Test operation failed");
@@ -352,7 +365,9 @@ async fn test_nested_import_resolution() {
         .join("example")
         .join("schemas")
         .join("v1");
-    fs::create_dir_all(&deep_path).await.expect("Test operation failed");
+    fs::create_dir_all(&deep_path)
+        .await
+        .expect("Test operation failed");
 
     let nested_schema = r#"
 id: https://example.org/nested
@@ -395,7 +410,10 @@ classes:
         )
         .expect("Test operation failed");
 
-    resolver.resolve_imports(&mut schema, None).await.expect("Test operation failed");
+    resolver
+        .resolve_imports(&mut schema, None)
+        .await
+        .expect("Test operation failed");
 
     assert!(schema.classes.contains_key("NestedClass"));
     assert!(schema.classes.contains_key("MainClass"));
@@ -501,8 +519,12 @@ async fn test_import_with_version_specifiers() {
     // Create versioned schemas
     let v1_dir = base_path.join("common").join("v1");
     let v2_dir = base_path.join("common").join("v2");
-    fs::create_dir_all(&v1_dir).await.expect("Test operation failed");
-    fs::create_dir_all(&v2_dir).await.expect("Test operation failed");
+    fs::create_dir_all(&v1_dir)
+        .await
+        .expect("Test operation failed");
+    fs::create_dir_all(&v2_dir)
+        .await
+        .expect("Test operation failed");
 
     let common_v1 = r#"
 id: https://example.org/common/v1

@@ -71,7 +71,7 @@ impl RustGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let base_type = self.get_base_type(&slot.range, schema)?;
-        
+
         if slot.multivalued.unwrap_or(false) {
             Ok(format!("Vec<{}>", base_type))
         } else if slot.required.unwrap_or(false) {

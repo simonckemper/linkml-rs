@@ -152,7 +152,10 @@ async fn test_multiple_interpolation_variables() {
         "filename": "myapp_v2.1_20240115.tar.gz"
     });
 
-    let report = engine.validate_as_class(&data, "File", None).await.expect("Test operation failed");
+    let report = engine
+        .validate_as_class(&data, "File", None)
+        .await
+        .expect("Test operation failed");
     assert!(report.valid);
 
     // Invalid - wrong project name

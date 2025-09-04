@@ -42,7 +42,9 @@ slots:
 
     // Parse schema
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Valid data
     let valid_data = json!({
@@ -116,7 +118,9 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Test wrong types
     let wrong_types = json!({
@@ -160,7 +164,9 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Valid patterns
     let valid_data = json!({
@@ -214,7 +220,9 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Out of range values
     let invalid_data = json!({
@@ -267,7 +275,9 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Valid enum value
     let valid_data = json!({
@@ -388,14 +398,17 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Person should inherit id and name slots
     let person_missing_inherited = json!({
         "age": 30
     });
 
-    let engine = linkml_service::validator::ValidationEngine::new(&schema).expect("Test operation failed");
+    let engine =
+        linkml_service::validator::ValidationEngine::new(&schema).expect("Test operation failed");
     let report = engine
         .validate_as_class(&person_missing_inherited, "Person", None)
         .await

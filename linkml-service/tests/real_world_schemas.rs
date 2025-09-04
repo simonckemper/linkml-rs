@@ -1,9 +1,9 @@
 //! Real-world schema testing with actual LinkML schemas from biomedical and scientific domains
 
+use linkml_core::types::SchemaDefinition;
 use linkml_service::factory::create_linkml_service;
 use linkml_service::parser::yaml_parser::YamlParser;
 use linkml_service::validator::ValidationEngine;
-use linkml_core::types::SchemaDefinition;
 use serde_json::json;
 use std::sync::Arc;
 use tokio;
@@ -185,13 +185,25 @@ enums:
 
     // Validate each entity
     let gene_result = engine.validate_instance(&test_gene, "Gene").await?;
-    assert!(gene_result.is_valid(), "Gene validation should pass: {:?}", gene_result.issues);
+    assert!(
+        gene_result.is_valid(),
+        "Gene validation should pass: {:?}",
+        gene_result.issues
+    );
 
     let protein_result = engine.validate_instance(&test_protein, "Protein").await?;
-    assert!(protein_result.is_valid(), "Protein validation should pass: {:?}", protein_result.issues);
+    assert!(
+        protein_result.is_valid(),
+        "Protein validation should pass: {:?}",
+        protein_result.issues
+    );
 
     let disease_result = engine.validate_instance(&test_disease, "Disease").await?;
-    assert!(disease_result.is_valid(), "Disease validation should pass: {:?}", disease_result.issues);
+    assert!(
+        disease_result.is_valid(),
+        "Disease validation should pass: {:?}",
+        disease_result.issues
+    );
 
     println!("✅ Biolink model schema validation passed");
     Ok(())
@@ -383,13 +395,27 @@ types:
 
     // Validate each entity
     let person_result = engine.validate_instance(&test_person, "Person").await?;
-    assert!(person_result.is_valid(), "Person validation should pass: {:?}", person_result.issues);
+    assert!(
+        person_result.is_valid(),
+        "Person validation should pass: {:?}",
+        person_result.issues
+    );
 
-    let org_result = engine.validate_instance(&test_organization, "Organization").await?;
-    assert!(org_result.is_valid(), "Organization validation should pass: {:?}", org_result.issues);
+    let org_result = engine
+        .validate_instance(&test_organization, "Organization")
+        .await?;
+    assert!(
+        org_result.is_valid(),
+        "Organization validation should pass: {:?}",
+        org_result.issues
+    );
 
     let dataset_result = engine.validate_instance(&test_dataset, "Dataset").await?;
-    assert!(dataset_result.is_valid(), "Dataset validation should pass: {:?}", dataset_result.issues);
+    assert!(
+        dataset_result.is_valid(),
+        "Dataset validation should pass: {:?}",
+        dataset_result.issues
+    );
 
     println!("✅ FAIR data schema validation passed");
     Ok(())
@@ -505,15 +531,25 @@ types:
     });
 
     // Create validation context with all instances for cross-reference validation
-    let all_instances = vec![author1.clone(), author2.clone(), journal.clone(), publication.clone()];
+    let all_instances = vec![
+        author1.clone(),
+        author2.clone(),
+        journal.clone(),
+        publication.clone(),
+    ];
 
     // Validate with cross-reference context
     let mut context = linkml_service::validator::ValidationContext::new(engine.schema().clone());
     context.set_all_instances(all_instances);
 
     // Test valid cross-references
-    let result = engine.validate_instance(&publication, "Publication").await?;
-    assert!(result.is_valid(), "Publication with valid cross-references should pass");
+    let result = engine
+        .validate_instance(&publication, "Publication")
+        .await?;
+    assert!(
+        result.is_valid(),
+        "Publication with valid cross-references should pass"
+    );
 
     // Test invalid cross-reference
     let invalid_publication = json!({
@@ -523,7 +559,9 @@ types:
         "journal": "journal:nature"
     });
 
-    let invalid_result = engine.validate_instance(&invalid_publication, "Publication").await?;
+    let invalid_result = engine
+        .validate_instance(&invalid_publication, "Publication")
+        .await?;
     // This should fail due to invalid cross-reference (if cross-reference validator is enabled)
 
     println!("✅ Cross-reference validation test completed");
@@ -621,12 +659,20 @@ types:
     let validation_time = validation_start.elapsed();
     let records_per_second = records.len() as f64 / validation_time.as_secs_f64();
 
-    println!("Validated {} records in {:?}", records.len(), validation_time);
+    println!(
+        "Validated {} records in {:?}",
+        records.len(),
+        validation_time
+    );
     println!("Performance: {:.2} records/second", records_per_second);
     println!("Valid: {}, Errors: {}", valid_count, error_count);
 
     // Performance should be reasonable (at least 100 records/second)
-    assert!(records_per_second > 100.0, "Performance should be at least 100 records/second, got {:.2}", records_per_second);
+    assert!(
+        records_per_second > 100.0,
+        "Performance should be at least 100 records/second, got {:.2}",
+        records_per_second
+    );
     assert_eq!(valid_count, 1000, "All records should be valid");
 
     println!("✅ Large dataset performance test passed");

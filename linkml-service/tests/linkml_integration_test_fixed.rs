@@ -5,12 +5,12 @@
 
 mod mock_services;
 
+use crate::factory::create_logger_service;
 use linkml_service::{
-    create_linkml_service,
+    LinkMLServiceImpl, create_linkml_service,
     generator::{Generator, GeneratorOptions},
     parser::Parser,
     schema_view::SchemaView,
-    LinkMLServiceImpl,
     validator::ValidationOptions,
 };
 use mock_services::*;
@@ -18,7 +18,6 @@ use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
-use crate::factory::{create_logger_service};
 
 /// Biomedical research schema with complex relationships
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -189,7 +188,9 @@ async fn test_biomedical_research_workflow() {
     // Generate code
     let gen_start = Instant::now();
     let generator = linkml_service::generator::python::PythonDataclassGenerator::new();
-    let code = generator.generate(&schema, GeneratorOptions::default()).unwrap();
+    let code = generator
+        .generate(&schema, GeneratorOptions::default())
+        .unwrap();
     println!("✓ Python code generated in {:?}", gen_start.elapsed());
     assert!(code.contains("class Study"));
     assert!(code.contains("class Participant"));

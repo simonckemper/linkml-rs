@@ -1058,7 +1058,7 @@ impl Generator for NamespaceManagerGenerator {
                 "Schema must have a name for namespace manager generation"
             ));
         }
-        
+
         // Validate prefixes if present
         for (prefix_name, prefix_def) in &schema.prefixes {
             if prefix_name.is_empty() {
@@ -1091,7 +1091,7 @@ impl Generator for NamespaceManagerGenerator {
                 }
             }
         }
-        
+
         Ok(())
     }
 

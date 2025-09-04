@@ -102,7 +102,9 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Test operation failed");
 
     // Check schema annotations
     assert!(schema.annotations.is_some());
@@ -168,9 +170,14 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml_content).expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml_content)
+        .expect("Test operation failed");
 
-    let dataset_class = schema.classes.get("Dataset").expect("Test operation failed");
+    let dataset_class = schema
+        .classes
+        .get("Dataset")
+        .expect("Test operation failed");
 
     // Check nested object annotation
     if let Some(AnnotationValue::Object(metadata)) = dataset_class.get_annotation("metadata") {

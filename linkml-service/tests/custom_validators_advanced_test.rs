@@ -205,7 +205,10 @@ async fn test_multiple_custom_validators_interaction() {
         "password": "abcdef"  // Contains username, too short, no uppercase, no number
     });
 
-    let report = engine.validate_as_class(&user, "User", None).await.expect("Test operation failed");
+    let report = engine
+        .validate_as_class(&user, "User", None)
+        .await
+        .expect("Test operation failed");
     assert!(!report.valid);
 
     let errors: Vec<_> = report.errors().collect();
@@ -411,7 +414,10 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(1)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone1.lock().expect("Test operation failed").push("validator1");
+            order_clone1
+                .lock()
+                .expect("Test operation failed")
+                .push("validator1");
             vec![]
         })
         .build();
@@ -423,7 +429,10 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(2)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone2.lock().expect("Test operation failed").push("validator2");
+            order_clone2
+                .lock()
+                .expect("Test operation failed")
+                .push("validator2");
             vec![]
         })
         .build();
@@ -435,7 +444,10 @@ async fn test_custom_validator_priority_and_ordering() {
         .with_priority(3)
         .with_applies_to(AppliesTo::All)
         .with_validation_fn(move |_data, _schema, _context| {
-            order_clone3.lock().expect("Test operation failed").push("validator3");
+            order_clone3
+                .lock()
+                .expect("Test operation failed")
+                .push("validator3");
             vec![]
         })
         .build();
@@ -450,7 +462,10 @@ async fn test_custom_validator_priority_and_ordering() {
         "field2": "value2"
     });
 
-    let _ = engine.validate_as_class(&data, "Form", None).await.expect("Test operation failed");
+    let _ = engine
+        .validate_as_class(&data, "Form", None)
+        .await
+        .expect("Test operation failed");
 
     // Check execution order
     let order = execution_order.lock().expect("Test operation failed");
@@ -506,7 +521,10 @@ async fn test_custom_validator_error_recovery() {
     ];
 
     for (data, should_be_valid) in test_cases {
-        let report = engine.validate_as_class(&data, "Data", None).await.expect("Test operation failed");
+        let report = engine
+            .validate_as_class(&data, "Data", None)
+            .await
+            .expect("Test operation failed");
         assert_eq!(report.valid, should_be_valid);
     }
 }

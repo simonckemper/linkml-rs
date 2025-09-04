@@ -451,7 +451,7 @@ impl MultiLayerCache {
     ) {
         // Implement actual prefetching of related validators
         // This proactively loads validators that are likely to be needed next
-        
+
         // Prefetch to L2 cache for durability
         if let Some(ref l2) = self.l2_cache {
             // Note: In a real implementation, we'd need to serialize the validator
@@ -467,7 +467,7 @@ impl MultiLayerCache {
                 }
             }
         }
-        
+
         // Prefetch to L1 if there's available capacity
         {
             let mut l1 = self.l1_cache.lock();
@@ -484,14 +484,14 @@ impl MultiLayerCache {
             }
         }
     }
-    
+
     /// Find related validator keys based on schema relationships
     fn find_related_validator_keys(&self, key: &ValidatorCacheKey) -> Option<Vec<ValidatorCacheKey>> {
         // Look for related schemas, parent classes, or referenced types
         // This would analyze the schema structure to find relationships
-        
+
         let mut related = Vec::new();
-        
+
         // Example: If this is a class validator, prefetch its slot validators
         if key.class_name != "slots" {
             // Add slot validators for this class
@@ -502,14 +502,14 @@ impl MultiLayerCache {
                 options_hash: key.options_hash.clone(),
             });
         }
-        
+
         if related.is_empty() {
             None
         } else {
             Some(related)
         }
     }
-    
+
     /// Mark a validator for background compilation
     fn mark_for_background_compilation(&self, key: ValidatorCacheKey) {
         // In production, this would queue the compilation task
@@ -541,10 +541,10 @@ impl MultiLayerCache {
             // Wait a bit for clean shutdown
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
-        
+
         // Clear L1 cache
         self.l1_cache.lock().clear();
-        
+
         // Clear stats
         *self.stats.write() = CacheStats::default();
     }

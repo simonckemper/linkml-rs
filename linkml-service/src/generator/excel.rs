@@ -803,7 +803,7 @@ impl Generator for ExcelGenerator {
         let concrete_classes = schema.classes.iter()
             .filter(|(_, c)| !c.abstract_.unwrap_or(false))
             .count();
-        
+
         if concrete_classes == 0 {
             return Err(LinkMLError::data_validation(
                 "Schema must have at least one concrete (non-abstract) class for Excel generation"

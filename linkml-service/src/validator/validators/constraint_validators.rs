@@ -235,28 +235,28 @@ impl CrossReferenceValidator {
             reference_cache: parking_lot::RwLock::new(HashMap::new()),
         }
     }
-    
+
     /// Get cached references for a given type
     fn get_cached_references(&self, ref_type: &str) -> Option<HashSet<String>> {
         let cache = self.reference_cache.read();
         cache.get(ref_type).cloned()
     }
-    
+
     /// Cache references for a given type
     fn cache_references(&self, ref_type: String, references: HashSet<String>) {
         let mut cache = self.reference_cache.write();
         cache.insert(ref_type, references);
     }
-    
+
     /// Build reference cache from all instances
     fn build_reference_cache(&self, instances: &[Value]) -> HashMap<String, HashSet<String>> {
         let mut type_refs = HashMap::new();
-        
+
         for instance in instances {
             if let Some(type_name) = instance.get("@type")
                 .or_else(|| instance.get("type"))
                 .and_then(|t| t.as_str()) {
-                
+
                 if let Some(id) = instance.get("id").and_then(|id| id.as_str()) {
                     type_refs.entry(type_name.to_string())
                         .or_insert_with(HashSet::new)
@@ -264,7 +264,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         type_refs
     }
 
@@ -290,12 +290,12 @@ impl CrossReferenceValidator {
                     } else if let Some(ref all_instances) = context.all_instances {
                         // Build cache if we have instances
                         let type_refs = self.build_reference_cache(all_instances);
-                        
+
                         // Cache all discovered references for future use
                         for (ref_type, refs) in type_refs.iter() {
                             self.cache_references(ref_type.clone(), refs.clone());
                         }
-                        
+
                         // Check if reference exists in newly built cache
                         type_refs.get(range)
                             .map_or(false, |refs| refs.contains(ref_id))
@@ -400,7 +400,7 @@ impl CrossReferenceValidator {
                 self.check_dependency_constraint(value, dependency_str, context, issues);
             }
         }
-        
+
         // CRITICAL: Also check class-level dependency rules
         if let Some(class_annotations) = &class_def.annotations {
             // Check for class-wide slot dependency rules
@@ -415,7 +415,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         // Check if this slot appears in any class rules
         for rule in &class_def.rules {
             if let Some(ref preconditions) = rule.preconditions {
@@ -465,7 +465,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         // Use class_def to check class-level conditional constraints
         if let Some(class_annotations) = &class_def.annotations {
             if let Some(constraints) = class_annotations.get("conditional_constraints") {
@@ -486,7 +486,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         // Specific validation based on slot name and value
         match slot.name.as_str() {
             "status" if value.as_str() == Some("published") => {
@@ -581,7 +581,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         // Check schema-wide business rules that might apply
         if let Some(schema_annotations) = &schema.annotations {
             if let Some(global_rules) = schema_annotations.get("business_rules") {
@@ -596,7 +596,7 @@ impl CrossReferenceValidator {
                                     &context.path(),
                                     &self.name,
                                 ));
-                                
+
                                 // Validate the value against the schema rule
                                 if rule_str.contains("required") && value.is_null() {
                                     issues.push(ValidationIssue::error(
@@ -611,7 +611,7 @@ impl CrossReferenceValidator {
                 }
             }
         }
-        
+
         // Class-specific business rules that use the actual value
         match class_def.name.as_str() {
             "Person" => self.validate_person_rules(value, slot, context, issues),
@@ -630,7 +630,7 @@ impl CrossReferenceValidator {
             }
         }
     }
-    
+
     /// Apply custom validation based on validation type
     fn apply_custom_validation(
         &self,
@@ -774,18 +774,18 @@ impl CrossReferenceValidator {
             _ => {}
         }
     }
-    
+
     /// Helper to validate date format
     fn validate_date_format(&self, date_str: &str, format: &str) -> bool {
         match format {
             "YYYY-MM-DD" => {
                 // Simple validation - check format structure
-                date_str.len() == 10 && 
+                date_str.len() == 10 &&
                 date_str.chars().nth(4) == Some('-') &&
                 date_str.chars().nth(7) == Some('-')
             }
             "MM/DD/YYYY" => {
-                date_str.len() == 10 && 
+                date_str.len() == 10 &&
                 date_str.chars().nth(2) == Some('/') &&
                 date_str.chars().nth(5) == Some('/')
             }

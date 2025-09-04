@@ -553,7 +553,7 @@ impl Generator for JavaGenerator {
                     });
                 }
             }
-            
+
             // Check for Java reserved keywords
             if matches!(
                 class_name.as_str(),

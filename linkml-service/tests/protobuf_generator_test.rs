@@ -184,10 +184,7 @@ async fn test_inheritance_and_composition() {
     let proto = generator.generate(&schema).expect("Test operation failed");
 
     // Check that timestamp import is added for datetime
-    assert!(
-        proto
-                        .contains("import \"google/protobuf/timestamp.proto\"")
-    );
+    assert!(proto.contains("import \"google/protobuf/timestamp.proto\""));
 
     // Check Person has inherited fields
     assert!(proto.contains("message Person {"));

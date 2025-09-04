@@ -133,7 +133,9 @@ async fn test_enum_json_schema() {
     assert_eq!(order_status["type"], "string");
     assert_eq!(order_status["description"], "Status of an order");
 
-    let enum_values = order_status["enum"].as_array().expect("Test operation failed");
+    let enum_values = order_status["enum"]
+        .as_array()
+        .expect("Test operation failed");
     assert!(enum_values.contains(&json!("pending")));
     assert!(enum_values.contains(&json!("processing")));
     assert!(enum_values.contains(&json!("shipped")));
@@ -188,7 +190,9 @@ async fn test_inheritance_json_schema() {
     // Check Person uses allOf for inheritance
     let person_def = &parsed["definitions"]["Person"];
     assert!(person_def["allOf"].is_array());
-    let all_of = person_def["allOf"].as_array().expect("Test operation failed");
+    let all_of = person_def["allOf"]
+        .as_array()
+        .expect("Test operation failed");
     assert_eq!(all_of.len(), 2);
 
     // First element should be reference to Entity

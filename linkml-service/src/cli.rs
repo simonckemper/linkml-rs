@@ -697,7 +697,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         println!("Generating {generator_name} code...");
 
         use crate::generator::Generator;
-        
+
         // Create appropriate generator based on type
         let generated_code = match generator {
             GeneratorType::Rust => {
@@ -726,7 +726,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 generator.generate(&_schema)?
             }
         };
-        
+
         // Write generated code to output directory
         let extension = match generator {
             GeneratorType::Rust => "rs",
@@ -735,11 +735,11 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             GeneratorType::Graphql => "graphql",
             GeneratorType::Docs => "md",
         };
-        
+
         let output_file = output_dir.join(format!("generated.{}", extension));
         std::fs::create_dir_all(output_dir)?;
         std::fs::write(&output_file, generated_code)?;
-        
+
         println!("✓ Generated {} code: {}", generator_name, output_file.display());
         Ok(())
     }

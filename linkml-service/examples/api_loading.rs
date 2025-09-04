@@ -422,8 +422,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "email": "alice@example.com",
                 "status": "active",
                 "created_at": "2024-01-15T10:30:00Z"
-            }))
-            ?,
+            }))?,
         },
         DataInstance {
             class_name: "Post".to_string(),
@@ -433,8 +432,7 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "content": "LinkML is a powerful schema language...",
                 "tags": ["linkml", "data-modeling", "schemas"],
                 "published_at": "2024-02-01T14:00:00Z"
-            }))
-            ?,
+            }))?,
         },
     ]
 }

@@ -38,7 +38,9 @@ slots:
 
     // Test parsing
     let parser = Parser::new();
-    let schema = parser.parse_file(&schema_path).expect("Test operation failed");
+    let schema = parser
+        .parse_file(&schema_path)
+        .expect("Test operation failed");
 
     assert_eq!(schema.name, "test_schema");
     assert_eq!(schema.id, "https://example.org/test");
@@ -49,11 +51,17 @@ slots:
 
     // Check slot details
     let name_slot = &schema.slots["name"];
-    assert_eq!(name_slot.range.as_ref().expect("Test operation failed"), "string");
+    assert_eq!(
+        name_slot.range.as_ref().expect("Test operation failed"),
+        "string"
+    );
     assert_eq!(name_slot.required, Some(true));
 
     let age_slot = &schema.slots["age"];
-    assert_eq!(age_slot.range.as_ref().expect("Test operation failed"), "integer");
+    assert_eq!(
+        age_slot.range.as_ref().expect("Test operation failed"),
+        "integer"
+    );
 }
 
 #[test]
@@ -91,7 +99,9 @@ fn test_parse_json_schema() {
 
     // Test parsing
     let parser = Parser::new();
-    let schema = parser.parse_file(&schema_path).expect("Test operation failed");
+    let schema = parser
+        .parse_file(&schema_path)
+        .expect("Test operation failed");
 
     assert_eq!(schema.name, "test_schema");
     assert_eq!(schema.id, "https://example.org/test");
@@ -140,12 +150,20 @@ slots:
     fs::write(&schema_path, yaml_content).expect("Test operation failed");
 
     let parser = Parser::new();
-    let schema = parser.parse_file(&schema_path).expect("Test operation failed");
+    let schema = parser
+        .parse_file(&schema_path)
+        .expect("Test operation failed");
 
     // Check types
     assert!(schema.types.contains_key("EmailAddress"));
     let email_type = &schema.types["EmailAddress"];
-    assert_eq!(email_type.base_type.as_ref().expect("Test operation failed"), "string");
+    assert_eq!(
+        email_type
+            .base_type
+            .as_ref()
+            .expect("Test operation failed"),
+        "string"
+    );
     assert!(email_type.pattern.is_some());
 
     // Check enums
@@ -176,7 +194,9 @@ name: direct_parse_test
 "#;
 
     let parser = Parser::new();
-    let schema = parser.parse_str(yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(yaml, "yaml")
+        .expect("Test operation failed");
 
     assert_eq!(schema.name, "direct_parse_test");
     assert_eq!(schema.id, "https://example.org/test");

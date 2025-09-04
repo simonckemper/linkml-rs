@@ -355,7 +355,10 @@ async fn test_inheritance() {
     let output = generate_rust(schema).await;
 
     // Check Person has all fields (inherited + own)
-    let person_section = output.split("pub struct Person").nth(1).expect("Test operation failed");
+    let person_section = output
+        .split("pub struct Person")
+        .nth(1)
+        .expect("Test operation failed");
     assert!(person_section.contains("pub id: String,"));
     assert!(person_section.contains("pub name: String,"));
     assert!(person_section.contains("pub age: Option<i64>,"));

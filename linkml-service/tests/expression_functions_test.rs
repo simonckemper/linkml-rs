@@ -11,16 +11,22 @@ fn test_string_functions_integration() {
     context.insert("text".to_string(), json!("Hello World"));
 
     // Test upper
-    let result = engine.evaluate("upper(text)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("upper(text)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("HELLO WORLD"));
 
     // Test lower
-    let result = engine.evaluate("lower(text)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("lower(text)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("hello world"));
 
     // Test trim
     context.insert("padded".to_string(), json!("  trim me  "));
-    let result = engine.evaluate("trim(padded)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("trim(padded)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("trim me"));
 
     // Test starts_with
@@ -42,19 +48,27 @@ fn test_string_functions_integration() {
     assert_eq!(result, json!("Hello Rust"));
 
     // Test split
-    let result = engine.evaluate("split(text, \" \")", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("split(text, \" \")", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(["Hello", "World"]));
 
     // Test join
     context.insert("words".to_string(), json!(["Hello", "World"]));
-    let result = engine.evaluate("join(words, \"-\")", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("join(words, \"-\")", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("Hello-World"));
 
     // Test substring
-    let result = engine.evaluate("substring(text, 6)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("substring(text, 6)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("World"));
 
-    let result = engine.evaluate("substring(text, 0, 5)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("substring(text, 0, 5)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!("Hello"));
 }
 
@@ -65,10 +79,14 @@ fn test_date_functions_integration() {
     context.insert("date".to_string(), json!("2024-01-15"));
 
     // Test now and today (just verify they return strings)
-    let result = engine.evaluate("now()", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("now()", &context)
+        .expect("Test operation failed");
     assert!(result.is_string());
 
-    let result = engine.evaluate("today()", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("today()", &context)
+        .expect("Test operation failed");
     assert!(result.is_string());
 
     // Test date_parse
@@ -102,13 +120,19 @@ fn test_date_functions_integration() {
     assert_eq!(result, json!(10));
 
     // Test year, month, day
-    let result = engine.evaluate("year(date)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("year(date)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(2024));
 
-    let result = engine.evaluate("month(date)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("month(date)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(1));
 
-    let result = engine.evaluate("day(date)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("day(date)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(15));
 }
 
@@ -118,53 +142,81 @@ fn test_math_functions_integration() {
     let context = HashMap::new();
 
     // Test abs
-    let result = engine.evaluate("abs(-5)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("abs(-5)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(5.0));
 
     // Test sqrt
-    let result = engine.evaluate("sqrt(16)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("sqrt(16)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(4.0));
 
     // Test pow
-    let result = engine.evaluate("pow(2, 3)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("pow(2, 3)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(8.0));
 
     // Test trigonometric functions
-    let result = engine.evaluate("sin(0)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("sin(0)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(0.0));
 
-    let result = engine.evaluate("cos(0)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("cos(0)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(1.0));
 
-    let result = engine.evaluate("tan(0)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("tan(0)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(0.0));
 
     // Test log
-    let result = engine.evaluate("log(2.718281828459045)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("log(2.718281828459045)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(1.0));
 
-    let result = engine.evaluate("log(100, 10)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("log(100, 10)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(2.0));
 
     // Test exp
-    let result = engine.evaluate("exp(0)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("exp(0)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(1.0));
 
     // Test rounding functions
-    let result = engine.evaluate("floor(3.7)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("floor(3.7)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(3));
 
-    let result = engine.evaluate("ceil(3.2)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("ceil(3.2)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(4));
 
-    let result = engine.evaluate("round(3.5)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("round(3.5)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(4.0));
 
-    let result = engine.evaluate("round(3.14159, 2)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("round(3.14159, 2)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(3.14));
 
     // Test mod
-    let result = engine.evaluate("mod(10, 3)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("mod(10, 3)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(1.0));
 }
 
@@ -175,15 +227,21 @@ fn test_aggregation_functions_integration() {
     context.insert("numbers".to_string(), json!([1, 2, 3, 4, 5]));
 
     // Test sum
-    let result = engine.evaluate("sum(numbers)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("sum(numbers)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(15.0));
 
     // Test avg
-    let result = engine.evaluate("avg(numbers)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("avg(numbers)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(3.0));
 
     // Test count
-    let result = engine.evaluate("count(numbers)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("count(numbers)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(5));
 
     context.insert("mixed".to_string(), json!([1, null, 3, null, 5]));
@@ -193,25 +251,35 @@ fn test_aggregation_functions_integration() {
     assert_eq!(result, json!(3));
 
     // Test median
-    let result = engine.evaluate("median(numbers)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("median(numbers)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(3.0));
 
     // Test mode
     context.insert("modes".to_string(), json!([1, 2, 2, 3, 2, 4]));
-    let result = engine.evaluate("mode(modes)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("mode(modes)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(2));
 
     // Test stddev and variance
     context.insert("stats".to_string(), json!([2, 4, 4, 4, 5, 5, 7, 9]));
-    let result = engine.evaluate("variance(stats)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("variance(stats)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(4.0));
 
-    let result = engine.evaluate("stddev(stats)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("stddev(stats)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!(2.0));
 
     // Test unique
     context.insert("dupes".to_string(), json!([1, 2, 2, 3, 1, 4, 3]));
-    let result = engine.evaluate("unique(dupes)", &context).expect("Test operation failed");
+    let result = engine
+        .evaluate("unique(dupes)", &context)
+        .expect("Test operation failed");
     assert_eq!(result, json!([1, 2, 3, 4]));
 
     // Test group_by
@@ -305,7 +373,10 @@ fn test_complex_expressions() {
         .evaluate("round(avg(scores) + stddev(scores), 2)", &context)
         .expect("Test operation failed");
     // avg = 86.6, stddev ≈ 5.41, sum ≈ 92.01
-    assert!(result.as_f64().expect("Test operation failed") > 92.0 && result.as_f64().expect("Test operation failed") < 93.0);
+    assert!(
+        result.as_f64().expect("Test operation failed") > 92.0
+            && result.as_f64().expect("Test operation failed") < 93.0
+    );
 
     // Conditional with functions
     let result = engine

@@ -28,14 +28,16 @@ use timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
 use dbms_core::{
-    DatabaseConfig, types::{DatabaseEvent, DatabaseInfo, DatabaseMetrics, DatabaseStatus,
-    HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation, SchemaVersion,
-    DatabaseConfig as TypesConfig},
-    ConnectionPool, DatabaseConnection, DBMSError, DBMSService, DBMSResult,
+    ConnectionPool, DBMSError, DBMSResult, DBMSService, DatabaseConfig, DatabaseConnection,
+    types::{
+        DatabaseConfig as TypesConfig, DatabaseEvent, DatabaseInfo, DatabaseMetrics,
+        DatabaseStatus, HealthStatus as DBHealthStatus, OptimizationReport, SchemaValidation,
+        SchemaVersion,
+    },
 };
 use timeout_core::{
-    TimeoutConfig, TimeoutContext, TimeoutError, TimeoutHistory, TimeoutService,
-    TimeoutStatistics, TimeoutValue,
+    TimeoutConfig, TimeoutContext, TimeoutError, TimeoutHistory, TimeoutService, TimeoutStatistics,
+    TimeoutValue,
 };
 
 pub struct MockLoggerService {
@@ -49,7 +51,7 @@ impl MockLoggerService {
         }
     }
 
-        pub async fn get_logs(&self) -> Vec<String> {
+    pub async fn get_logs(&self) -> Vec<String> {
         self.logs.read().await.clone()
     }
 }
@@ -239,22 +241,32 @@ impl ErrorHandlingService for MockErrorHandlerService {
         })
     }
 
-    async fn get_error_statistics(&self) -> Result<error_handling_core::traits::error_handling::ErrorStatistics, Self::Error> {
-        Ok(error_handling_core::traits::error_handling::ErrorStatistics {
-            total_count: 0,
-            is_empty: true,
-            capacity: Some(1000),
-            is_sharded: false,
-            recent_hour_count: 0,
-            recent_day_count: 0,
-        })
+    async fn get_error_statistics(
+        &self,
+    ) -> Result<error_handling_core::traits::error_handling::ErrorStatistics, Self::Error> {
+        Ok(
+            error_handling_core::traits::error_handling::ErrorStatistics {
+                total_count: 0,
+                is_empty: true,
+                capacity: Some(1000),
+                is_sharded: false,
+                recent_hour_count: 0,
+                recent_day_count: 0,
+            },
+        )
     }
 
-    async fn get_recent_errors(&self, _limit: u32) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
+    async fn get_recent_errors(
+        &self,
+        _limit: u32,
+    ) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
         Ok(Vec::new())
     }
 
-    async fn get_service_errors(&self, _service_name: &str) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
+    async fn get_service_errors(
+        &self,
+        _service_name: &str,
+    ) -> Result<Vec<error_handling_core::ErrorReport>, Self::Error> {
         Ok(Vec::new())
     }
 
@@ -338,13 +350,13 @@ impl MockConfigurationService {
         Self { config }
     }
 
-        pub fn set(&self, key: &str, value: &str) {
+    pub fn set(&self, key: &str, value: &str) {
         // Since config is not mutable, this is a no-op for the mock
         // In a real implementation, you'd need Arc<RwLock<HashMap>> or similar
         let _ = (key, value);
     }
 
-        pub fn get(&self, key: &str) -> Option<String> {
+    pub fn get(&self, key: &str) -> Option<String> {
         self.config.get(key).cloned()
     }
 }
@@ -436,7 +448,7 @@ impl MockCacheService {
         }
     }
 
-        pub async fn stats(&self) -> (usize, usize, usize) {
+    pub async fn stats(&self) -> (usize, usize, usize) {
         let cache = self.cache.read().await;
         let size = cache.len();
         // For the mock, we'll just return simple stats
@@ -730,7 +742,11 @@ impl DBMSService for MockDBMSService {
     type Error = DBMSError;
 
     // Database Lifecycle Management
-    async fn create_database(&self, name: &str, config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
+    async fn create_database(
+        &self,
+        name: &str,
+        config: DatabaseConfig,
+    ) -> DBMSResult<DatabaseInfo> {
         use uuid::Uuid;
         // Convert config::DatabaseConfig to types::DatabaseConfig
         let types_config = TypesConfig {
@@ -739,11 +755,11 @@ impl DBMSService for MockDBMSService {
             query_timeout_secs: config.query_limits.max_execution_time_secs,
             transaction_timeout_secs: 600, // Default transaction timeout
             enable_query_logging: config.security_settings.enable_audit_logging,
-            enable_monitoring: true, // Default to enabled
+            enable_monitoring: true,        // Default to enabled
             enable_schema_validation: true, // Default to enabled
-            enable_auto_backup: false, // Default to disabled
-            backup_interval_hours: 24, // Default backup interval
-            max_backup_files: 7, // Default backup file retention
+            enable_auto_backup: false,      // Default to disabled
+            backup_interval_hours: 24,      // Default backup interval
+            max_backup_files: 7,            // Default backup file retention
             database_settings: config.custom_settings,
         };
 

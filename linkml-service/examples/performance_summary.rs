@@ -280,7 +280,9 @@ mod tests {
 
     #[test]
     fn test_performance_summary() -> Result<()> {
-        main().map_err(|e| anyhow::anyhow!("Performance summary should complete successfully: {}", e))?;
+        main().map_err(|e| {
+            anyhow::anyhow!("Performance summary should complete successfully: {}", e)
+        })?;
         Ok(())
     }
 }

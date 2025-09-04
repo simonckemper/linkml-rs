@@ -96,7 +96,7 @@ impl ExpressionCacheV2 {
 
         if let Some(entry) = cache.get_mut(&key) {
             let now = Instant::now();
-            
+
             // Check if entry has expired based on creation time
             if now.duration_since(entry.created) > self.max_age {
                 // Entry has expired, remove it
@@ -109,7 +109,7 @@ impl ExpressionCacheV2 {
                 stats.entries = cache.len();
                 return None;
             }
-            
+
             // Update access time and count
             entry.last_accessed = now;
             entry.hit_count += 1;

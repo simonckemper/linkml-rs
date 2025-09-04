@@ -6,10 +6,8 @@
 
 use linkml_core::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_service::{
-    schema_view::SchemaView,
     expression::{Evaluator, Parser as ExpressionParser},
     generator::{
-        traits::{Generator, GeneratorOptions},
         java::JavaGenerator,
         javascript::JavaScriptGenerator,
         json_ld::JsonLdGenerator,
@@ -19,15 +17,20 @@ use linkml_service::{
         python_dataclass::PythonDataclassGenerator,
         rust_generator::RustGenerator,
         shacl::ShaclGenerator,
+        traits::{Generator, GeneratorOptions},
         typescript::TypeScriptGenerator,
     },
     parser::yaml_parser::YamlParser,
-    rule_engine::{RuleExecutionStrategy, RuleEngine},
+    rule_engine::{RuleEngine, RuleExecutionStrategy},
+    schema_view::SchemaView,
     transform::{
         inheritance_resolver::InheritanceResolver,
         schema_merger::{MergeStrategy, SchemaMerger},
     },
-    validator::{engine::{ValidationEngine, ValidationOptions}, report::ValidationReport},
+    validator::{
+        engine::{ValidationEngine, ValidationOptions},
+        report::ValidationReport,
+    },
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -387,7 +390,9 @@ async fn test_biomedical_research_workflow() {
 
     // Load the complex biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
+    let schema = parser
+        .parse_str(BIOMEDICAL_SCHEMA)
+        .expect("Test operation failed");
     println!("Schema loaded in {:?}", start.elapsed());
 
     // Create test data representing a research study
@@ -458,7 +463,10 @@ async fn test_biomedical_research_workflow() {
     });
 
     // Add more participants to meet minimum requirement
-    let mut participants = study_data["participants"].as_array().expect("Test operation failed").clone();
+    let mut participants = study_data["participants"]
+        .as_array()
+        .expect("Test operation failed")
+        .clone();
     for i in 3..=10 {
         participants.push(json!({
             "id": format!("PAT{:06}", i),
@@ -470,7 +478,10 @@ async fn test_biomedical_research_workflow() {
         }));
     }
 
-    let mut complete_study = study_data.as_object().expect("Test operation failed").clone();
+    let mut complete_study = study_data
+        .as_object()
+        .expect("Test operation failed")
+        .clone();
     complete_study["participants"] = json!(participants);
 
     // Validate the complete research study
@@ -496,7 +507,9 @@ async fn test_biomedical_research_workflow() {
     let evaluator = Evaluator::new();
     let mut context = EvaluationContext::new();
     context.set_variable("value", lab_result["value"].clone());
-    let expr_result = evaluator.evaluate(&expr_ast, &context).expect("Test operation failed");
+    let expr_result = evaluator
+        .evaluate(&expr_ast, &context)
+        .expect("Test operation failed");
     println!("Lab result category: {}", expr_result);
     assert_eq!(expr_result.as_str().expect("Test operation failed"), "High");
 
@@ -527,7 +540,10 @@ async fn test_biomedical_research_workflow() {
     // Python dataclass generation
     let py_generator = PythonDataclassGenerator::new();
     let py_options = GeneratorOptions::default();
-    let py_outputs = py_generator.generate(&schema, &py_options).await.expect("Test operation failed");
+    let py_outputs = py_generator
+        .generate(&schema, &py_options)
+        .await
+        .expect("Test operation failed");
     for output in py_outputs {
         let path = temp_dir.path().join(&output.filename);
         fs::write(&path, &output.content).expect("Test operation failed");
@@ -557,7 +573,9 @@ async fn test_multi_tenant_config_validation() {
 
     // Load configuration schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(CONFIG_SCHEMA).expect("Test operation failed");
+    let schema = parser
+        .parse_str(CONFIG_SCHEMA)
+        .expect("Test operation failed");
 
     // Test valid tenant configuration
     let valid_tenant = json!({
@@ -635,7 +653,9 @@ async fn test_schema_view_introspection() {
 
     // Load biomedical schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
+    let schema = parser
+        .parse_str(BIOMEDICAL_SCHEMA)
+        .expect("Test operation failed");
 
     // Create SchemaView for introspection
     let view = SchemaView::new(schema.clone());
@@ -712,8 +732,12 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let base_schema = parser.parse_str(base_schema_str).expect("Test operation failed");
-    let ext_schema = parser.parse_str(extension_schema_str).expect("Test operation failed");
+    let base_schema = parser
+        .parse_str(base_schema_str)
+        .expect("Test operation failed");
+    let ext_schema = parser
+        .parse_str(extension_schema_str)
+        .expect("Test operation failed");
 
     // Merge schemas
     let merger = SchemaMerger::new();
@@ -735,7 +759,9 @@ classes:
 
     let engine = ValidationEngine::new(merged);
     let options = ValidationOptions::default();
-    let report = engine.validate(&data, "ExtendedEntity", &options).expect("Test operation failed");
+    let report = engine
+        .validate(&data, "ExtendedEntity", &options)
+        .expect("Test operation failed");
     assert!(
         report.valid,
         "Merged schema validation failed: {:?}",
@@ -794,7 +820,9 @@ classes:
     let mut valid_count = 0;
 
     for user in &users {
-        let report = engine.validate(user, "User", &options).expect("Test operation failed");
+        let report = engine
+            .validate(user, "User", &options)
+            .expect("Test operation failed");
         if report.valid {
             valid_count += 1;
         }
@@ -825,7 +853,9 @@ async fn test_code_generation_all_targets() {
     println!("=== Testing Code Generation for All Targets ===");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(CONFIG_SCHEMA).expect("Test operation failed");
+    let schema = parser
+        .parse_str(CONFIG_SCHEMA)
+        .expect("Test operation failed");
     let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Test all generators
@@ -850,7 +880,10 @@ async fn test_code_generation_all_targets() {
 
     for (generator, name) in generators {
         let start = Instant::now();
-        let outputs = generator.generate(&schema, &options).await.expect("Test operation failed");
+        let outputs = generator
+            .generate(&schema, &options)
+            .await
+            .expect("Test operation failed");
 
         for output in outputs {
             let path = temp_dir.path().join(&output.filename);
@@ -939,12 +972,16 @@ enums:
 
     // Resolve inheritance
     let resolver = InheritanceResolver::new();
-    resolver.resolve(&mut schema).expect("Test operation failed");
+    resolver
+        .resolve(&mut schema)
+        .expect("Test operation failed");
 
     let view = SchemaView::new(schema.clone());
 
     // Test inheritance chain
-    let doc_slots = view.induced_slots("Document").expect("Test operation failed");
+    let doc_slots = view
+        .induced_slots("Document")
+        .expect("Test operation failed");
     let slot_names: Vec<_> = doc_slots.iter().map(|s| s.name.as_str()).collect();
 
     assert!(slot_names.contains(&"id"), "Should inherit id from Entity");
@@ -997,7 +1034,9 @@ async fn test_rule_engine_with_expressions() {
     println!("=== Testing Rule Engine with Complex Expressions ===");
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA).expect("Test operation failed");
+    let schema = parser
+        .parse_str(BIOMEDICAL_SCHEMA)
+        .expect("Test operation failed");
 
     // Create rule engine
     let rule_engine = RuleEngine::new(schema.clone());
@@ -1104,13 +1143,18 @@ enums:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(api_schema_str).expect("Test operation failed");
+    let schema = parser
+        .parse_str(api_schema_str)
+        .expect("Test operation failed");
     let temp_dir = TempDir::new().expect("Test operation failed");
 
     // Generate OpenAPI spec
     let openapi_gen = JsonSchemaGenerator::new();
     let options = GeneratorOptions::default();
-    let outputs = openapi_gen.generate(&schema, &options).await.expect("Test operation failed");
+    let outputs = openapi_gen
+        .generate(&schema, &options)
+        .await
+        .expect("Test operation failed");
 
     for output in outputs {
         let path = temp_dir.path().join(&output.filename);

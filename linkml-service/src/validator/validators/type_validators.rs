@@ -33,7 +33,7 @@ impl TypeValidator {
     /// Validate a value against a `LinkML` type
     fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Result<Vec<ValidationIssue>, Box<dyn std::error::Error>> {
         let mut issues = Vec::new();
-        
+
         // Use interned strings for common cases
         let interner = global_interner();
         let _common = interner.common();

@@ -3,46 +3,33 @@
 //! These tests verify that the error handling improvements made during Phase 1
 //! properly propagate errors instead of panicking with unwrap().
 
+use linkml_core::{
+    error::LinkMLError,
+    types::{ClassDefinition, SchemaDefinition, SlotDefinition},
+};
 use linkml_service::{
-    parser::{json_parser::JsonParser, yaml_parser::YamlParser, SchemaParser},
-    validator::{engine::ValidationEngine, engine::ValidationOptions, context::ValidationContext},
+    expression::{
+        evaluator::Evaluator, functions::FunctionRegistry, parser::Parser as ExpressionParser,
+    },
     generator::{
         registry::GeneratorRegistry,
         traits::{Generator, GeneratorOptions as GenOptions},
     },
-    expression::{
-        evaluator::Evaluator,
-        functions::FunctionRegistry,
-        parser::Parser as ExpressionParser,
-    },
     loader::{
-        csv::CsvLoader,
-        json::JsonLoader,
-        rdf::RdfLoader,
-        traits::LoadOptions,
+        csv::CsvLoader, json::JsonLoader, rdf::RdfLoader, traits::LoadOptions, yaml::YamlLoader,
     },
+    parser::{Parser, SchemaParser, json_parser::JsonParser, yaml_parser::YamlParser},
     plugin::{
-        registry::PluginRegistry,
-        discovery::PluginDiscovery,
-        compatibility::CompatibilityChecker,
+        compatibility::CompatibilityChecker, discovery::PluginDiscovery, registry::PluginRegistry,
     },
-    rule_engine::{
-        executor::RuleExecutor,
-        matcher::RuleMatcher,
-        RuleEngine,
-    },
-    schema::{
-        diff::SchemaDiff,
-    },
+    rule_engine::{RuleEngine, executor::RuleExecutor, matcher::RuleMatcher},
+    schema::diff::SchemaDiff,
     transform::schema_merger::SchemaMerger,
+    validator::{context::ValidationContext, engine::ValidationEngine, engine::ValidationOptions},
 };
-use linkml_core::{
-    error::LinkMLError,
-    types::{SchemaDefinition, ClassDefinition, SlotDefinition},
-};
-use std::path::Path;
-use tempfile::TempDir;
 use std::fs;
+use std::path::Path;
+use tempfile::{NamedTempFile, TempDir};
 
 /// Test that parser errors are properly propagated instead of panicking
 #[test]
@@ -57,7 +44,13 @@ invalid: yaml: syntax:
     let yaml_parser = YamlParser::new();
     let result = yaml_parser.parse_str(invalid_yaml);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError { message: _, location: _ }));
+    assert!(matches!(
+        result.unwrap_err(),
+        LinkMLError::ParseError {
+            message: _,
+            location: _
+        }
+    ));
 
     // Test JSON parser with invalid syntax
     let invalid_json = r#"{"invalid": "json", "missing": }"#;
@@ -65,7 +58,13 @@ invalid: yaml: syntax:
     let json_parser = JsonParser::new();
     let result = json_parser.parse_str(invalid_json);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError { message: _, location: _ }));
+    assert!(matches!(
+        result.unwrap_err(),
+        LinkMLError::ParseError {
+            message: _,
+            location: _
+        }
+    ));
 }
 
 /// Test that validator errors are properly propagated
@@ -91,7 +90,9 @@ fn test_validator_error_propagation() {
     let options = ValidationOptions::default();
 
     // This should return error, not panic
-    let result = validator.expect("should create validator").validate(&schema, &context, &options);
+    let result = validator
+        .expect("should create validator")
+        .validate(&schema, &context, &options);
     assert!(result.is_err());
 }
 
@@ -258,14 +259,18 @@ fn test_schema_operations_error_propagation() {
     let mut class_a = ClassDefinition::default();
     class_a.name = Some("ConflictClass".to_string());
     class_a.description = Some("Description A".to_string());
-    schema_a.classes.insert("ConflictClass".to_string(), class_a);
+    schema_a
+        .classes
+        .insert("ConflictClass".to_string(), class_a);
 
     let mut schema_b = SchemaDefinition::default();
     let mut class_b = ClassDefinition::default();
     class_b.name = Some("ConflictClass".to_string());
     class_b.description = Some("Description B".to_string());
     class_b.is_a = Some("DifferentParent".to_string());
-    schema_b.classes.insert("ConflictClass".to_string(), class_b);
+    schema_b
+        .classes
+        .insert("ConflictClass".to_string(), class_b);
 
     // Merge should handle conflicts gracefully
     let result = merger.merge(&[schema_a, schema_b]);
@@ -447,7 +452,8 @@ slots:
         // Generate code - should handle incomplete schema
         let registry = GeneratorRegistry::new();
         if let Ok(generators) = registry.list_generators() {
-            for gen_name in generators.iter().take(3) { // Test a few generators
+            for gen_name in generators.iter().take(3) {
+                // Test a few generators
                 if let Ok(generator) = registry.get_generator(gen_name) {
                     let gen_options = GenOptions::default();
                     let _ = generator.generate(&schema, &gen_options);

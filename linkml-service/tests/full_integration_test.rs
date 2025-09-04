@@ -36,19 +36,25 @@ async fn test_full_integration_pipeline() {
     let schema_view = SchemaView::new(schema.clone()).expect("Test operation failed");
 
     // Test ClassView integration
-    let person_view = schema_view.class_view("Person").expect("Test operation failed");
+    let person_view = schema_view
+        .class_view("Person")
+        .expect("Test operation failed");
     assert!(person_view.slot_names().contains(&"email".to_string()));
     let inherited = person_view.inherited_slots();
     assert!(inherited.iter().any(|&s| s == "id"));
 
     // Test SlotView integration
-    let email_view = schema_view.slot_view("email").expect("Test operation failed");
+    let email_view = schema_view
+        .slot_view("email")
+        .expect("Test operation failed");
     assert_eq!(email_view.range(), Some("string".as_ref()));
     assert!(email_view.pattern().is_some());
 
     // Step 3: Test InheritanceResolver integration
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved_employee = resolver.resolve_class("Employee").expect("Test operation failed");
+    let resolved_employee = resolver
+        .resolve_class("Employee")
+        .expect("Test operation failed");
 
     // Should have slots from Entity (id), Person (name, email), and Employee (employee_id, department)
     assert!(resolved_employee.slots.contains(&"id".to_string()));
@@ -59,7 +65,9 @@ async fn test_full_integration_pipeline() {
 
     // Step 4: Test CURIE/URI resolution
     let curie_resolver = CurieResolver::from_schema(&schema);
-    let expanded = curie_resolver.expand_curie("ex:Person").expect("Test operation failed");
+    let expanded = curie_resolver
+        .expand_curie("ex:Person")
+        .expect("Test operation failed");
     assert_eq!(expanded, "https://example.org/Person");
     let contracted = curie_resolver.contract_uri("https://example.org/Person");
     assert_eq!(contracted, "ex:Person");
@@ -88,7 +96,9 @@ async fn test_full_integration_pipeline() {
     // Step 6: Test default application (IfAbsent)
     let default_applier = DefaultApplier::from_schema(&schema);
     for data in &mut test_data {
-        default_applier.apply_defaults(data, &schema).expect("Test operation failed");
+        default_applier
+            .apply_defaults(data, &schema)
+            .expect("Test operation failed");
     }
 
     // Charlie should now have a default email
@@ -215,13 +225,17 @@ async fn test_full_integration_pipeline() {
         .push("phone".to_string());
 
     let diff_engine = SchemaDiff::new(DiffOptions::default());
-    let diff_result = diff_engine.diff(&schema, &evolved_schema).expect("Test operation failed");
+    let diff_result = diff_engine
+        .diff(&schema, &evolved_schema)
+        .expect("Test operation failed");
     assert!(!diff_result.added_slots.is_empty());
 
     // Create and apply patch
     let patch = create_patch_from_diff(&diff_result);
     let mut patcher = SchemaPatcher::new(PatchOptions::default());
-    let patched_schema = patcher.apply_patch(&schema, &patch).expect("Test operation failed");
+    let patched_schema = patcher
+        .apply_patch(&schema, &patch)
+        .expect("Test operation failed");
 
     // Verify patch was applied
     assert!(

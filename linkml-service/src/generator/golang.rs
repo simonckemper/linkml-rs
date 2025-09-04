@@ -732,7 +732,7 @@ impl Generator for GoGenerator {
                     });
                 }
             }
-            
+
             // Check for Go reserved words
             if matches!(
                 class_name.as_str(),

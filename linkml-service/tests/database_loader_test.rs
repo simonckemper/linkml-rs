@@ -312,7 +312,14 @@ fn test_complex_mapping_scenario() {
 
     assert_eq!(options.table_mapping.len(), 3);
     assert_eq!(options.column_mapping.len(), 2);
-    assert_eq!(options.foreign_keys.get("tbl_ord").expect("Test operation failed").len(), 3);
+    assert_eq!(
+        options
+            .foreign_keys
+            .get("tbl_ord")
+            .expect("Test operation failed")
+            .len(),
+        3
+    );
 }
 
 #[test]
@@ -325,15 +332,27 @@ fn test_type_mapping() {
         Some("string".to_string())
     );
     assert_eq!(
-        schema.slots.get("age").expect("Test operation failed").range,
+        schema
+            .slots
+            .get("age")
+            .expect("Test operation failed")
+            .range,
         Some("integer".to_string())
     );
     assert_eq!(
-        schema.slots.get("active").expect("Test operation failed").range,
+        schema
+            .slots
+            .get("active")
+            .expect("Test operation failed")
+            .range,
         Some("boolean".to_string())
     );
     assert_eq!(
-        schema.slots.get("person").expect("Test operation failed").range,
+        schema
+            .slots
+            .get("person")
+            .expect("Test operation failed")
+            .range,
         Some("Person".to_string())
     );
 }

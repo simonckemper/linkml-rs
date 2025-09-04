@@ -39,10 +39,15 @@ fn test_annotation_inheritance_in_slots() {
 
     // Resolve inheritance for the Person class
     let mut resolver = InheritanceResolver::new(&schema);
-    let resolved_class = resolver.resolve_class("Person").expect("Test operation failed");
+    let resolved_class = resolver
+        .resolve_class("Person")
+        .expect("Test operation failed");
 
     // Check that annotations were properly merged
-    let name_usage = resolved_class.slot_usage.get("name").expect("Test operation failed");
+    let name_usage = resolved_class
+        .slot_usage
+        .get("name")
+        .expect("Test operation failed");
 
     // Should have overridden annotation
     assert_eq!(
@@ -304,7 +309,9 @@ fn test_annotation_serialization_edge_cases() {
 
     annotations.insert(
         "float".to_string(),
-        AnnotationValue::Number(serde_json::Number::from_f64(3.14159).expect("Test operation failed")),
+        AnnotationValue::Number(
+            serde_json::Number::from_f64(3.14159).expect("Test operation failed"),
+        ),
     );
 
     annotations.insert(

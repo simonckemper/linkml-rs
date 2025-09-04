@@ -332,16 +332,22 @@ fn test_json_path_extraction() {
     });
 
     // Extract users array
-    let users = loader.extract_by_path(&json, "data.users").expect("Test operation failed");
+    let users = loader
+        .extract_by_path(&json, "data.users")
+        .expect("Test operation failed");
     assert!(users.is_array());
     assert_eq!(users.as_array().expect("Test operation failed").len(), 2);
 
     // Extract total count
-    let total = loader.extract_by_path(&json, "data.total").expect("Test operation failed");
+    let total = loader
+        .extract_by_path(&json, "data.total")
+        .expect("Test operation failed");
     assert_eq!(total.as_u64(), Some(2));
 
     // Extract first user's name
-    let first_user_name = loader.extract_by_path(&json, "data.users.0.name").expect("Test operation failed");
+    let first_user_name = loader
+        .extract_by_path(&json, "data.users.0.name")
+        .expect("Test operation failed");
     assert_eq!(first_user_name.as_str(), Some("Alice"));
 }
 

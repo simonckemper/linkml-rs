@@ -3,7 +3,7 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use linkml_core::types::{ClassDefinition, SchemaDefinition};
 use linkml_service::expression::{Evaluator, Parser};
-use linkml_service::rule_engine::{RuleExecutionStrategy, Rule, RuleCondition, RuleEngine};
+use linkml_service::rule_engine::{Rule, RuleCondition, RuleEngine, RuleExecutionStrategy};
 use serde_json::json;
 use std::collections::HashMap;
 

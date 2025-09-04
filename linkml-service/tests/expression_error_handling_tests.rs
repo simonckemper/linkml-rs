@@ -9,9 +9,7 @@ use linkml_service::expression::{
     Value,
     cache::ExpressionCache,
     evaluator::Evaluator,
-    functions::{
-        FunctionRegistry, MaxFunction, MinFunction, CaseFunction,
-    },
+    functions::{CaseFunction, FunctionRegistry, MaxFunction, MinFunction},
     parallel::ParallelEvaluator,
     parser::Parser,
 };

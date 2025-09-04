@@ -151,7 +151,7 @@ impl ExpressionEngineV2 {
         function_registry: Arc<FunctionRegistry>,
     ) -> Self {
         let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
-        
+
         Self {
             parser: Parser::new(),
             compiler: Arc::new(
@@ -274,7 +274,7 @@ impl ExpressionEngineV2 {
         if self.config.collect_metrics {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
             metrics.total_evaluations += 1;
-            
+
             // Calculate and record total operation time if we have a start time
             if let Some(start) = start_time {
                 let end = self.timestamp_service.system_time()
@@ -282,7 +282,7 @@ impl ExpressionEngineV2 {
                 if let Ok(duration) = end.duration_since(start) {
                     // Track total evaluation time including cache lookups, parsing, compilation, and execution
                     metrics.total_time_us += duration.as_micros() as u64;
-                    
+
                     // Track average evaluation time
                     let avg_time_us = metrics.total_time_us / metrics.total_evaluations.max(1);
                     metrics.avg_eval_time_us = avg_time_us;

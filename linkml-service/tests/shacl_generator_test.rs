@@ -43,26 +43,14 @@ async fn test_basic_shacl_generation() {
     let shacl = generator.generate(&schema).expect("Test operation failed");
 
     // Check content
-    assert!(
-        shacl
-                        .contains("# SHACL Shapes generated from LinkML schema")
-    );
-    assert!(
-        shacl
-                        .contains("@prefix sh: <http://www.w3.org/ns/shacl#>")
-    );
-    assert!(
-        shacl
-                        .contains("@prefix person_schema: <https://example.org/person#>")
-    );
+    assert!(shacl.contains("# SHACL Shapes generated from LinkML schema"));
+    assert!(shacl.contains("@prefix sh: <http://www.w3.org/ns/shacl#>"));
+    assert!(shacl.contains("@prefix person_schema: <https://example.org/person#>"));
 
     // Check PersonShape
     assert!(shacl.contains("person_schema:PersonShape"));
     assert!(shacl.contains("a sh:NodeShape"));
-    assert!(
-        shacl
-                        .contains("sh:targetClass person_schema:Person")
-    );
+    assert!(shacl.contains("sh:targetClass person_schema:Person"));
     assert!(shacl.contains("rdfs:comment \"A human being\""));
 
     // Check property shapes
@@ -77,10 +65,7 @@ async fn test_basic_shacl_generation() {
     assert!(shacl.contains("sh:maxInclusive 150"));
 
     assert!(shacl.contains("sh:path person_schema:email"));
-    assert!(
-        shacl
-                        .contains("sh:pattern \"^[^@]+@[^@]+\\.[^@]+$\"")
-    );
+    assert!(shacl.contains("sh:pattern \"^[^@]+@[^@]+\\.[^@]+$\""));
 }
 
 #[tokio::test]
@@ -118,10 +103,7 @@ async fn test_enum_shacl() {
 
     // Check enum constraint using sh:in
     assert!(shacl.contains("sh:path status_schema:status"));
-    assert!(
-        shacl
-                        .contains("sh:in (\"pending\" \"processing\" \"shipped\" \"delivered\")")
-    );
+    assert!(shacl.contains("sh:in (\"pending\" \"processing\" \"shipped\" \"delivered\")"));
 }
 
 #[tokio::test]
@@ -164,10 +146,7 @@ async fn test_inheritance_shacl() {
     // Check PersonShape has all properties (inherited + own)
     assert!(shacl.contains("entity_schema:PersonShape"));
     assert!(shacl.contains("entity_schema:PersonShape-id"));
-    assert!(
-        shacl
-                        .contains("entity_schema:PersonShape-created_at")
-    );
+    assert!(shacl.contains("entity_schema:PersonShape-created_at"));
     assert!(shacl.contains("entity_schema:PersonShape-name"));
 
     // Check datetime mapping
@@ -208,7 +187,7 @@ async fn test_multivalued_shacl() {
     assert!(shacl.contains("sh:path team_schema:members"));
     // Check that members property shape doesn't have maxCount (since it's multivalued)
     let members_section = shacl
-                .split("team_schema:TeamShape-members")
+        .split("team_schema:TeamShape-members")
         .nth(1)
         .unwrap_or("");
     let next_section_start = members_section
@@ -265,7 +244,7 @@ async fn test_object_references_shacl() {
     assert!(shacl.contains("sh:path org_schema:employees"));
     assert!(
         shacl
-                        .split("org_schema:OrganizationShape-employees")
+            .split("org_schema:OrganizationShape-employees")
             .nth(1)
             .expect("Test operation failed")
             .contains("sh:class org_schema:Person")

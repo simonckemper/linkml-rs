@@ -227,7 +227,10 @@ fn test_relation_analyzer_directly() {
     let schema = create_advanced_schema();
 
     // Test enrollment detection
-    let enrollment_class = schema.classes.get("Enrollment").expect("Test operation failed");
+    let enrollment_class = schema
+        .classes
+        .get("Enrollment")
+        .expect("Test operation failed");
     let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
 
     assert!(relation_info.is_some());
@@ -283,7 +286,10 @@ fn test_polymorphic_role_detection() {
     schema.slots.insert("attendee".to_string(), attendee_slot);
 
     let mut analyzer = RelationAnalyzer::new();
-    let meeting_class = schema.classes.get("Meeting").expect("Test operation failed");
+    let meeting_class = schema
+        .classes
+        .get("Meeting")
+        .expect("Test operation failed");
     analyzer.analyze_relation("Meeting", meeting_class, &schema);
 
     // Check polymorphic roles
@@ -333,16 +339,27 @@ fn test_role_cardinality() {
     schema.slots.insert("book".to_string(), book_slot);
 
     let mut analyzer = RelationAnalyzer::new();
-    let authorship_class = schema.classes.get("Authorship").expect("Test operation failed");
+    let authorship_class = schema
+        .classes
+        .get("Authorship")
+        .expect("Test operation failed");
     let relation_info = analyzer.analyze_relation("Authorship", authorship_class, &schema);
 
     assert!(relation_info.is_some());
     let info = relation_info.expect("Test operation failed");
 
     // Check role cardinalities
-    let author_role = info.roles.iter().find(|r| r.name == "author").expect("Test operation failed");
+    let author_role = info
+        .roles
+        .iter()
+        .find(|r| r.name == "author")
+        .expect("Test operation failed");
     assert_eq!(author_role.cardinality, Some((1, None))); // 1..* authors
 
-    let book_role = info.roles.iter().find(|r| r.name == "book").expect("Test operation failed");
+    let book_role = info
+        .roles
+        .iter()
+        .find(|r| r.name == "book")
+        .expect("Test operation failed");
     assert_eq!(book_role.cardinality, None); // Default 1..1
 }

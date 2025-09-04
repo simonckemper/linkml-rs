@@ -585,14 +585,14 @@ impl Generator for JsonLdGenerator {
                 "Schema must have a name for JSON-LD generation"
             ));
         }
-        
+
         // JSON-LD requires at least one class or type to generate meaningful output
         if schema.classes.is_empty() && schema.types.is_empty() {
             return Err(LinkMLError::data_validation(
                 "Schema must have at least one class or type for JSON-LD generation"
             ));
         }
-        
+
         Ok(())
     }
 

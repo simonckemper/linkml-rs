@@ -356,14 +356,8 @@ async fn test_commonjs_export() {
 
     // Check CommonJS exports
     assert!(output.contains("// CommonJS exports"));
-    assert!(
-        output
-            .contains("if (typeof module !== 'undefined' && module.exports)")
-    );
-    assert!(
-        output
-            .contains("module.exports.SimpleClass = SimpleClass;")
-    );
+    assert!(output.contains("if (typeof module !== 'undefined' && module.exports)"));
+    assert!(output.contains("module.exports.SimpleClass = SimpleClass;"));
 }
 
 #[tokio::test]

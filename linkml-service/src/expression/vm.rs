@@ -87,7 +87,7 @@ impl VirtualMachine {
         state: &mut VMState,
     ) -> Result<(), ExpressionError> {
         let mut iteration_count = 0;
-        
+
         while state.pc < instructions.len() {
             // Check iteration limit to prevent infinite loops
             iteration_count += 1;
@@ -99,10 +99,10 @@ impl VirtualMachine {
                     ),
                 }));
             }
-            
+
             let inst = &instructions[state.pc];
             state.pc += 1;
-            
+
             // Check if we should continue execution
             if !self.execute_single_instruction(inst, state)? {
                 break;
@@ -225,7 +225,7 @@ impl VirtualMachine {
                 Instruction::Index => Self::execute_index(state)?,
                 Instruction::GetField(field) => Self::execute_get_field(state, field)?
             }
-        
+
         Ok(true)
     }
 

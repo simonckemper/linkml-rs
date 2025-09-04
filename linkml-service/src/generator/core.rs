@@ -68,7 +68,7 @@ impl RustGenerator {
     /// Generate file header with imports
     pub(super) fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
-        
+
         // File header
         writeln!(
             &mut output,
@@ -80,26 +80,26 @@ impl RustGenerator {
             }
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        
+
         if let Some(desc) = &schema.description {
             writeln!(&mut output, "//! {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Standard imports
         writeln!(&mut output, "use serde::{{Deserialize, Serialize}};").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "use std::collections::HashMap;").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "use thiserror::Error;").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         Ok(output)
     }
 
     /// Generate validation error enum
     pub(super) fn generate_validation_error(&self) -> GeneratorResult<String> {
         let mut output = String::new();
-        
+
         writeln!(&mut output, "/// Validation errors for generated types").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "#[derive(Debug, Error)]").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "pub enum ValidationError {{").map_err(Self::fmt_error_to_generator_error)?;
@@ -111,7 +111,7 @@ impl RustGenerator {
         writeln!(&mut output, "    PatternValidation {{ field: &'static str }},").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "}}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         Ok(output)
     }
 }

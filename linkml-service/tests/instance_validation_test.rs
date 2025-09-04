@@ -71,7 +71,9 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Create engine with instance validation
     let _engine = ValidationEngine::new(&schema).expect("Test operation failed");
@@ -153,10 +155,14 @@ slots:
     let categories_file = temp_dir.path().join("categories.csv");
 
     let csv_data = "id,name,parent\nELEC,Electronics,\nCOMP,Computers,ELEC\nPHON,Phones,ELEC\nCLOT,Clothing,\nMENS,Mens,CLOT\nWOMN,Womens,CLOT\n";
-    fs::write(&categories_file, csv_data).await.expect("Test operation failed");
+    fs::write(&categories_file, csv_data)
+        .await
+        .expect("Test operation failed");
 
     let parser = Parser::new();
-    let _schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let _schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Load CSV data
     let loader = InstanceLoader::new();
@@ -225,7 +231,9 @@ slots:
     .expect("Test operation failed");
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser
+        .parse_str(schema_yaml, "yaml")
+        .expect("Test operation failed");
 
     // Load instance data
     let loader = InstanceLoader::new();
@@ -235,12 +243,18 @@ slots:
         filter: None,
     };
 
-    let tag_data = loader.load_json_file(&tags_file, &config).await.expect("Test operation failed");
+    let tag_data = loader
+        .load_json_file(&tags_file, &config)
+        .await
+        .expect("Test operation failed");
 
     // Verify loading worked
     assert_eq!(tag_data.values.len(), 5);
     assert_eq!(
-        tag_data.values.get("important").expect("Test operation failed"),
+        tag_data
+            .values
+            .get("important")
+            .expect("Test operation failed"),
         &vec!["Important"]
     );
 

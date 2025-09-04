@@ -252,7 +252,10 @@ async fn test_inheritance() {
     assert!(output.contains("class Person:"));
 
     // Check Person has all fields (inherited + own)
-    let person_section = output.split("class Person:").nth(1).expect("Test operation failed");
+    let person_section = output
+        .split("class Person:")
+        .nth(1)
+        .expect("Test operation failed");
     assert!(person_section.contains("id: str"));
     assert!(person_section.contains("name: str"));
     assert!(person_section.contains("age: Optional[int] = None"));

@@ -261,7 +261,10 @@ async fn test_typedb_dumper_with_mock() {
         .expect("Test operation failed"),
     }];
 
-    let result = dumper.dump(&instances, &schema).await.expect("Test operation failed");
+    let result = dumper
+        .dump(&instances, &schema)
+        .await
+        .expect("Test operation failed");
     let summary = String::from_utf8(result).expect("Test operation failed");
     assert!(summary.contains("Successfully dumped 1 instances"));
 }

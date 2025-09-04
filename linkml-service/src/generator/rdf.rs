@@ -204,24 +204,24 @@ impl RdfGenerator {
             if let Some(generation_date) = &schema.generation_date {
                 writeln_rdf!(output, "    dcterms:created \"{}\" ;", generation_date)?;
             }
-            
+
             if let Some(source_file) = &schema.source_file {
                 writeln_rdf!(output, "    dcterms:source \"{}\" ;", source_file)?;
             }
-            
+
             if let Some(metamodel_version) = &schema.metamodel_version {
                 writeln_rdf!(output, "    linkml:metamodelVersion \"{}\" ;", metamodel_version)?;
             }
-            
+
             if let Some(status) = &schema.status {
                 writeln_rdf!(output, "    dcterms:conformsTo \"{}\" ;", status)?;
             }
-            
+
             // Categories as subject classification
             for category in &schema.categories {
                 writeln_rdf!(output, "    dcterms:subject \"{}\" ;", category)?;
             }
-            
+
             // Keywords
             for keyword in &schema.keywords {
                 writeln_rdf!(output, "    dcat:keyword \"{}\" ;", keyword)?;
@@ -351,7 +351,7 @@ impl RdfGenerator {
                 domains.push(class_name.clone());
             }
         }
-        
+
         if domains.len() == 1 {
             // Single domain
             writeln_rdf!(output, "    rdfs:domain :{} ;", domains[0])?;

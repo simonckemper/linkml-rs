@@ -1,5 +1,5 @@
 //! Comprehensive usage examples for LinkML service
-//! 
+//!
 //! This example demonstrates all major features of the LinkML service including:
 //! - Schema parsing and validation
 //! - Data validation with advanced features
@@ -7,16 +7,14 @@
 //! - Performance optimization techniques
 //! - Real-world integration patterns
 
+use linkml_core::types::SchemaDefinition;
 use linkml_service::factory::create_linkml_service;
-use linkml_service::parser::yaml_parser::YamlParser;
-use linkml_service::validator::{ValidationEngine, ValidationContext};
 use linkml_service::generator::{
-    python_dataclass::PythonDataclassGenerator,
-    typescript::TypeScriptGenerator,
-    traits::Generator,
+    python_dataclass::PythonDataclassGenerator, traits::Generator, typescript::TypeScriptGenerator,
 };
 use linkml_service::loader::json_v2::JsonV2Loader;
-use linkml_core::types::SchemaDefinition;
+use linkml_service::parser::yaml_parser::YamlParser;
+use linkml_service::validator::{ValidationContext, ValidationEngine};
 use serde_json::json;
 use std::sync::Arc;
 use tokio;
@@ -28,16 +26,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: Basic Schema Parsing and Validation
     basic_schema_example().await?;
-    
+
     // Example 2: Advanced Validation Features
     advanced_validation_example().await?;
-    
+
     // Example 3: Code Generation
     code_generation_example().await?;
-    
+
     // Example 4: Real-world Integration
     real_world_integration_example().await?;
-    
+
     // Example 5: Performance Optimization
     performance_optimization_example().await?;
 
@@ -114,7 +112,14 @@ types:
     });
 
     let result = engine.validate_instance(&valid_person, "Person").await?;
-    println!("✓ Valid person validation: {}", if result.is_valid() { "PASSED" } else { "FAILED" });
+    println!(
+        "✓ Valid person validation: {}",
+        if result.is_valid() {
+            "PASSED"
+        } else {
+            "FAILED"
+        }
+    );
 
     // Test invalid data
     let invalid_person = json!({
@@ -125,7 +130,14 @@ types:
     });
 
     let result = engine.validate_instance(&invalid_person, "Person").await?;
-    println!("✓ Invalid person validation: {} (expected to fail)", if result.is_valid() { "PASSED" } else { "FAILED" });
+    println!(
+        "✓ Invalid person validation: {} (expected to fail)",
+        if result.is_valid() {
+            "PASSED"
+        } else {
+            "FAILED"
+        }
+    );
     if !result.is_valid() {
         println!("  Validation errors:");
         for issue in result.issues.iter().take(3) {
@@ -215,11 +227,27 @@ types:
     context.set_all_instances(vec![author.clone(), publication.clone()]);
 
     let author_result = engine.validate_instance(&author, "Author").await?;
-    let pub_result = engine.validate_instance(&publication, "Publication").await?;
+    let pub_result = engine
+        .validate_instance(&publication, "Publication")
+        .await?;
 
     println!("✓ Cross-reference validation:");
-    println!("  Author: {}", if author_result.is_valid() { "PASSED" } else { "FAILED" });
-    println!("  Publication: {}", if pub_result.is_valid() { "PASSED" } else { "FAILED" });
+    println!(
+        "  Author: {}",
+        if author_result.is_valid() {
+            "PASSED"
+        } else {
+            "FAILED"
+        }
+    );
+    println!(
+        "  Publication: {}",
+        if pub_result.is_valid() {
+            "PASSED"
+        } else {
+            "FAILED"
+        }
+    );
 
     println!();
     Ok(())
@@ -281,7 +309,10 @@ types:
     // Generate Python dataclasses
     let python_generator = PythonDataclassGenerator::new();
     let python_code = python_generator.generate(&schema)?;
-    println!("✓ Python dataclass generated ({} lines)", python_code.lines().count());
+    println!(
+        "✓ Python dataclass generated ({} lines)",
+        python_code.lines().count()
+    );
     println!("  Preview:");
     for line in python_code.lines().take(5) {
         println!("    {}", line);
@@ -291,7 +322,10 @@ types:
     // Generate TypeScript interfaces
     let typescript_generator = TypeScriptGenerator::new();
     let typescript_code = typescript_generator.generate(&schema)?;
-    println!("✓ TypeScript interfaces generated ({} lines)", typescript_code.lines().count());
+    println!(
+        "✓ TypeScript interfaces generated ({} lines)",
+        typescript_code.lines().count()
+    );
     println!("  Preview:");
     for line in typescript_code.lines().take(5) {
         println!("    {}", line);
@@ -316,7 +350,7 @@ async fn real_world_integration_example() -> Result<(), Box<dyn std::error::Erro
             "department": "Engineering"
         },
         {
-            "id": "user:002", 
+            "id": "user:002",
             "name": "Bob Smith",
             "email": "bob@company.com",
             "department": "Marketing"
@@ -399,7 +433,7 @@ types:
 
     let parser = YamlParser::new();
     let schema = Arc::new(parser.parse_str(schema_yaml)?);
-    
+
     // Create reusable validation engine
     let engine = ValidationEngine::new(Arc::clone(&schema));
 
@@ -425,15 +459,27 @@ types:
     let validation_time = validation_start.elapsed();
 
     let records_per_second = records.len() as f64 / validation_time.as_secs_f64();
-    
+
     println!("✓ Performance metrics:");
-    println!("  Generated {} records in {:?}", records.len(), generation_time);
-    println!("  Validated {} records in {:?}", records.len(), validation_time);
+    println!(
+        "  Generated {} records in {:?}",
+        records.len(),
+        generation_time
+    );
+    println!(
+        "  Validated {} records in {:?}",
+        records.len(),
+        validation_time
+    );
     println!("  Throughput: {:.2} records/second", records_per_second);
-    
+
     let valid_count = results.iter().filter(|r| r.is_valid()).count();
-    println!("  Success rate: {}/{} ({:.1}%)", valid_count, records.len(), 
-             (valid_count as f64 / records.len() as f64) * 100.0);
+    println!(
+        "  Success rate: {}/{} ({:.1}%)",
+        valid_count,
+        records.len(),
+        (valid_count as f64 / records.len() as f64) * 100.0
+    );
 
     println!();
     Ok(())

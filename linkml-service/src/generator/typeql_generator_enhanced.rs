@@ -106,7 +106,7 @@ impl EnhancedTypeQLGenerator {
 
         // Check for TypeQL reserved keywords
         let reserved_keywords = [
-            "define", "undefine", "insert", "delete", "match", 
+            "define", "undefine", "insert", "delete", "match",
             "get", "aggregate", "compute", "rule", "when", "then",
             "entity", "attribute", "relation", "role", "plays",
             "owns", "abstract", "sub", "as", "has", "isa",
@@ -1154,7 +1154,7 @@ impl EnhancedTypeQLGenerator {
                         slot_name
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
-                    
+
                     // Add type constraint for the attribute
                     writeln!(
                         output,
@@ -1166,7 +1166,7 @@ impl EnhancedTypeQLGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 // Generate value constraints if present
                 if let Some(equals_string) = &slot_condition.equals_string {
                     writeln!(
@@ -1179,7 +1179,7 @@ impl EnhancedTypeQLGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 if let Some(equals_number) = &slot_condition.equals_number {
                     writeln!(
                         output,
@@ -1191,7 +1191,7 @@ impl EnhancedTypeQLGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 if let Some(minimum_value) = &slot_condition.minimum_value {
                     writeln!(
                         output,
@@ -1203,7 +1203,7 @@ impl EnhancedTypeQLGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 if let Some(maximum_value) = &slot_condition.maximum_value {
                     writeln!(
                         output,
@@ -1215,7 +1215,7 @@ impl EnhancedTypeQLGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-                
+
                 if let Some(pattern) = &slot_condition.pattern {
                     writeln!(
                         output,
@@ -1229,7 +1229,7 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         // Process expression conditions
         if let Some(expressions) = &condition.expression_conditions {
             for expr in expressions {
@@ -1244,12 +1244,12 @@ impl EnhancedTypeQLGenerator {
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
-        
+
         // Process composite conditions (AND/OR/NOT)
         if let Some(composite) = &condition.composite_conditions {
             self.generate_composite_conditions(output, var, composite, schema, indent)?;
         }
-        
+
         Ok(())
     }
 
@@ -1266,7 +1266,7 @@ impl EnhancedTypeQLGenerator {
         if let Some(slot_conditions) = &condition.slot_conditions {
             // First, determine if we're creating an entity or relation
             let entity_type = self.infer_entity_type_from_conditions(condition, schema)?;
-            
+
             // Generate the insertion statement
             writeln!(
                 output,
@@ -1276,7 +1276,7 @@ impl EnhancedTypeQLGenerator {
                 entity_type
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            
+
             // Add attributes from slot conditions
             for (slot_name, slot_condition) in slot_conditions {
                 if let Some(range) = &slot_condition.range {
@@ -1306,7 +1306,7 @@ impl EnhancedTypeQLGenerator {
                         .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
-                
+
                 // Add value assertions if specified in the condition
                 if let Some(equals_string) = &slot_condition.equals_string {
                     writeln!(
@@ -1331,7 +1331,7 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         // Process expression-based assertions
         if let Some(expressions) = &condition.expression_conditions {
             for expr in expressions {
@@ -1349,22 +1349,22 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         // Handle composite assertions (complex logic)
         if let Some(composite) = &condition.composite_conditions {
             self.generate_composite_assertions(output, var, composite, schema, indent)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Get TypeQL type for a LinkML range
     fn get_typeql_type_for_range(&self, range: &str, schema: &SchemaDefinition) -> String {
         // Check if it's a class reference
         if schema.classes.contains_key(range) {
             return range.to_string();
         }
-        
+
         // Map LinkML types to TypeQL types
         match range {
             "string" | "str" | "text" => "string".to_string(),
@@ -1376,7 +1376,7 @@ impl EnhancedTypeQLGenerator {
             _ => "string".to_string(), // Default fallback
         }
     }
-    
+
     // Removed duplicate is_valid_identifier method - using the one defined earlier at line 85
 
     /// Format a value for TypeQL syntax
@@ -1391,7 +1391,7 @@ impl EnhancedTypeQLGenerator {
             format!("\"{}\"", value.replace('\"', "\\\""))
         }
     }
-    
+
     /// Translate LinkML expression to TypeQL predicate
     fn translate_expression_to_typeql(&self, expr: &str, var: &str) -> GeneratorResult<String> {
         // Parse basic comparison expressions
@@ -1402,7 +1402,7 @@ impl EnhancedTypeQLGenerator {
             let field = &caps[1];
             let op = &caps[2];
             let value = &caps[3];
-            
+
             let typeql_op = match op {
                 ">" => ">",
                 ">=" => ">=",
@@ -1412,14 +1412,14 @@ impl EnhancedTypeQLGenerator {
                 "!=" => "!=",
                 _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {}", op))),
             };
-            
+
             Ok(format!("${}_{} {} {}", var, field, typeql_op, self.format_value_for_typeql(value)))
         } else {
             // Complex expression - return as comment for manual translation
             Ok(format!("# Expression: {}", expr))
         }
     }
-    
+
     /// Generate composite conditions (AND/OR/NOT)
     fn generate_composite_conditions(
         &self,
@@ -1436,7 +1436,7 @@ impl EnhancedTypeQLGenerator {
                 self.generate_rule_conditions(output, var, condition, schema, indent)?;
             }
         }
-        
+
         if let Some(any_of) = &composite.any_of {
             writeln!(output, "{}# OR conditions (requires multiple rules):", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -1446,7 +1446,7 @@ impl EnhancedTypeQLGenerator {
                 self.generate_rule_conditions(output, var, condition, schema, indent)?;
             }
         }
-        
+
         // Note: 'not' field is not available in CompositeConditions
         // This logic may need to be implemented differently
         if false { // Placeholder - original logic used composite.not
@@ -1459,10 +1459,10 @@ impl EnhancedTypeQLGenerator {
             writeln!(output, "{}}}", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Infer entity type from rule conditions
     fn infer_entity_type_from_conditions(
         &self,
@@ -1479,22 +1479,22 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         // Default to generic entity
         Ok("entity".to_string())
     }
-    
+
     /// Check if a type is an attribute type
     fn is_attribute_type(&self, range: &str, schema: &SchemaDefinition) -> bool {
         // If it's not a class, it's an attribute type
         !schema.classes.contains_key(range)
     }
-    
+
     /// Get relation name for a slot
     fn get_relation_name(&self, slot_name: &str, _range: &str) -> String {
         format!("has_{}", slot_name)
     }
-    
+
     /// Parse assertion expression into attribute name and value
     fn parse_assertion_expression(&self, expr: &str) -> GeneratorResult<Option<(String, String)>> {
         // Parse assignment expressions like "field = value"
@@ -1509,7 +1509,7 @@ impl EnhancedTypeQLGenerator {
             Ok(None)
         }
     }
-    
+
     /// Generate composite assertions
     fn generate_composite_assertions(
         &self,
@@ -1525,19 +1525,19 @@ impl EnhancedTypeQLGenerator {
                 self.generate_rule_assertions(output, var, condition, schema, indent)?;
             }
         }
-        
+
         // any_of and not don't typically apply to assertions
         if composite.any_of.is_some() {
             writeln!(output, "{}# Warning: OR conditions in assertions require separate rules", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         // Note: 'not' field is not available in CompositeConditions
         if false { // Placeholder - original logic used composite.not.is_some()
             writeln!(output, "{}# Warning: NOT conditions not supported in assertions", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         Ok(())
     }
 }
@@ -1831,16 +1831,16 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
         let mut formatted = String::new();
         let mut indent_level = 0;
         let mut in_rule_block = false;
-        
+
         for line in code.lines() {
             let trimmed = line.trim();
-            
+
             // Skip empty lines
             if trimmed.is_empty() {
                 formatted.push('\n');
                 continue;
             }
-            
+
             // Handle comments
             if trimmed.starts_with('#') || trimmed.starts_with("//") {
                 formatted.push_str(&"    ".repeat(indent_level));
@@ -1848,18 +1848,18 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
                 formatted.push('\n');
                 continue;
             }
-            
+
             // Decrease indent for closing braces
             if trimmed == "}" || trimmed == "};" || trimmed.starts_with("} then") {
                 indent_level = indent_level.saturating_sub(1);
                 in_rule_block = false;
             }
-            
+
             // Add proper indentation
             formatted.push_str(&"    ".repeat(indent_level));
             formatted.push_str(trimmed);
             formatted.push('\n');
-            
+
             // Increase indent after define, when, then, or opening braces
             if trimmed == "define" || trimmed == "undefine" {
                 indent_level += 1;
@@ -1872,7 +1872,7 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
                 indent_level += 1;
             }
         }
-        
+
         Ok(formatted)
     }
 
@@ -1991,14 +1991,14 @@ impl EnhancedTypeQLGenerator {
         writeln!(&mut output, "# ==============================")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Check for previous schema version from options
         if let Some(prev_version) = options.get_custom("previous_schema_version") {
             writeln!(&mut output, "# Migrating from version: {}", prev_version)
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
-        
+
         // Generate DROP statements for removed elements
         writeln!(&mut output, "# Remove deprecated elements")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -2009,7 +2009,7 @@ impl EnhancedTypeQLGenerator {
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Generate ALTER statements for modified elements
         writeln!(&mut output, "# Modify existing elements")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -2026,7 +2026,7 @@ impl EnhancedTypeQLGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-            
+
             // Handle inheritance changes
             if let Some(new_parent) = options.get_custom(&format!("{}_new_parent", class_name)) {
                 writeln!(
@@ -2039,7 +2039,7 @@ impl EnhancedTypeQLGenerator {
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Generate CREATE statements for new elements
         writeln!(&mut output, "# Add new elements")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -2052,18 +2052,18 @@ impl EnhancedTypeQLGenerator {
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Phase 2: Data Migration
         writeln!(&mut output, "# Phase 2: Data Migration")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "# =======================")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Generate data migration queries
         writeln!(&mut output, "# Migrate existing data to new schema")
             .map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Example: Rename attribute values
         if let Some(attr_renames) = options.get_custom("attribute_renames") {
             writeln!(&mut output, "# Rename attributes")
@@ -2086,7 +2086,7 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         // Example: Transform data formats
         if let Some(transforms) = options.get_custom("data_transforms") {
             writeln!(&mut output, "# Transform data formats")
@@ -2096,16 +2096,16 @@ impl EnhancedTypeQLGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
-        
+
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Phase 3: Validation
         writeln!(&mut output, "# Phase 3: Validation")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "# ===================")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Generate validation queries
         writeln!(&mut output, "# Validate migrated data")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -2113,14 +2113,14 @@ impl EnhancedTypeQLGenerator {
             if class.abstract_.unwrap_or(false) {
                 continue;
             }
-            
+
             // Check required attributes
             for slot_name in &class.slots {
                 if let Some(slot) = schema.slots.get(slot_name)
-                    .or_else(|| class.slot_usage.get(slot_name)) 
+                    .or_else(|| class.slot_usage.get(slot_name))
                 {
                     if slot.required.unwrap_or(false) {
-                        writeln!(&mut output, "# Validate required attribute '{}' for '{}'", 
+                        writeln!(&mut output, "# Validate required attribute '{}' for '{}'",
                             slot_name, class_name)
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output, "match")
@@ -2138,7 +2138,7 @@ impl EnhancedTypeQLGenerator {
                 }
             }
         }
-        
+
         writeln!(&mut output, "# Migration complete!")
             .map_err(Self::fmt_error_to_generator_error)?;
 

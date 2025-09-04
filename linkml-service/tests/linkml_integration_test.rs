@@ -6,13 +6,14 @@
 
 mod mock_services;
 
+use crate::factory::create_logger_service;
 use linkml_core::prelude::*;
 use linkml_service::{
+    LinkMLServiceImpl,
     create_linkml_service,
     // TODO: Fix generator API - generator::{Generator, GeneratorOptions},
     parser::Parser,
     schema_view::SchemaView,
-    LinkMLServiceImpl,
     validator::ValidationOptions,
 };
 use mock_services::*;
@@ -23,7 +24,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
-use crate::factory::{create_logger_service};
 
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"

@@ -42,7 +42,7 @@ impl YamlLoaderV2 {
         self.strict = strict;
         self
     }
-    
+
     /// Infer class name from object structure
     fn infer_class_from_object(&self, obj: &serde_json::Map<String, Value>) -> String {
         // Check for explicit type field
@@ -56,36 +56,36 @@ impl YamlLoaderV2 {
                 return type_str.to_string();
             }
         }
-        
+
         // Infer from field patterns
         let fields: Vec<_> = obj.keys().map(|k| k.as_str()).collect();
-        
+
         // Common patterns for different types
         if fields.contains(&"name") && fields.contains(&"slots") {
             return "ClassDefinition".to_string();
         }
-        
+
         if fields.contains(&"range") && fields.contains(&"required") {
             return "SlotDefinition".to_string();
         }
-        
+
         if fields.contains(&"permissible_values") {
             return "EnumDefinition".to_string();
         }
-        
+
         if fields.contains(&"person_id") || fields.contains(&"first_name") || fields.contains(&"last_name") {
             return "Person".to_string();
         }
-        
+
         if fields.contains(&"organization_id") || fields.contains(&"organization_name") {
             return "Organization".to_string();
         }
-        
+
         // Default fallback based on presence of common fields
         if fields.contains(&"id") && fields.contains(&"name") {
             return "Entity".to_string();
         }
-        
+
         "DataObject".to_string()
     }
 }
@@ -131,13 +131,13 @@ impl DataLoaderV2 for YamlLoaderV2 {
                         if let Value::Object(obj) = item {
                             // Infer class name from structure
                             let class_name = self.infer_class_from_object(&obj);
-                            
+
                             // Extract ID if present
                             let id = obj.get("id")
                                 .or_else(|| obj.get("@id"))
                                 .and_then(|v| v.as_str())
                                 .map(|s| s.to_string());
-                            
+
                             Some(DataInstance {
                                 class_name,
                                 data: obj.into_iter().collect(),
@@ -153,13 +153,13 @@ impl DataLoaderV2 for YamlLoaderV2 {
             Value::Object(obj) => {
                 // Infer class name from structure
                 let class_name = self.infer_class_from_object(&obj);
-                
+
                 // Extract ID if present
                 let id = obj.get("id")
                     .or_else(|| obj.get("@id"))
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                
+
                 vec![DataInstance {
                     class_name,
                     data: obj.into_iter().collect(),

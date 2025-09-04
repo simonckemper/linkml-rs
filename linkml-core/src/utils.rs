@@ -4,6 +4,7 @@ use crate::error::{LinkMLError, Result};
 use crate::types::{SchemaDefinition, SlotDefinition};
 use indexmap::IndexMap;
 use std::collections::{HashSet, VecDeque};
+use std::hash::{BuildHasher, Hash};
 
 /// Check if a string is a valid `LinkML` identifier
 #[must_use] pub fn is_valid_identifier(s: &str) -> bool {
@@ -48,6 +49,10 @@ pub fn extract_prefix(curie: &str) -> Option<(&str, &str)> {
 }
 
 /// Expand a CURIE using prefix map
+///
+/// # Errors
+///
+/// Returns an error if the prefix is not found in the prefix map.
 pub fn expand_curie(curie: &str, prefixes: &IndexMap<String, String>) -> Result<String> {
     if let Some((prefix, local)) = extract_prefix(curie) {
         if let Some(expansion) = prefixes.get(prefix) {
@@ -62,11 +67,18 @@ pub fn expand_curie(curie: &str, prefixes: &IndexMap<String, String>) -> Result<
 }
 
 /// Get all slots for a class including inherited ones
-pub fn get_class_slots(
+///
+/// # Errors
+///
+/// Returns an error if the class is not found in the schema.
+pub fn get_class_slots<S>(
     schema: &SchemaDefinition,
     class_name: &str,
-    visited: &mut HashSet<String>,
-) -> Result<Vec<String>> {
+    visited: &mut HashSet<String, S>,
+) -> Result<Vec<String>>
+where
+    S: BuildHasher,
+{
     if visited.contains(class_name) {
         return Ok(Vec::new());
     }
@@ -109,6 +121,10 @@ pub fn get_class_slots(
 }
 
 /// Check if a class is a subclass of another
+///
+/// # Errors
+///
+/// Returns an error if there are issues accessing the schema structure.
 pub fn is_subclass_of(schema: &SchemaDefinition, child: &str, parent: &str) -> Result<bool> {
     if child == parent {
         return Ok(true);
@@ -256,6 +272,10 @@ fn merge_vec<T: Clone + PartialEq>(base: &[T], override_vec: &[T]) -> Vec<T> {
 }
 
 /// Get the effective slot definition for a class
+///
+/// # Errors
+///
+/// Returns an error if the class or slot is not found.
 pub fn get_effective_slot(
     schema: &SchemaDefinition,
     class_name: &str,
@@ -288,12 +308,24 @@ pub fn get_effective_slot(
 }
 
 /// Topologically sort classes based on inheritance
+///
+/// # Errors
+///
+/// Returns an error if circular inheritance is detected.
 pub fn topological_sort_classes(schema: &SchemaDefinition) -> Result<Vec<String>> {
     let mut sorted = Vec::new();
     let mut visited = HashSet::new();
     let mut visiting = HashSet::new();
 
-    fn visit(
+    for class_name in schema.classes.keys() {
+        visit(class_name, schema, &mut sorted, &mut visited, &mut visiting)?;
+    }
+
+    Ok(sorted)
+}
+
+/// Helper function for topological sort
+fn visit(
         name: &str,
         schema: &SchemaDefinition,
         sorted: &mut Vec<String>,
@@ -330,13 +362,6 @@ pub fn topological_sort_classes(schema: &SchemaDefinition) -> Result<Vec<String>
 
         Ok(())
     }
-
-    for class_name in schema.classes.keys() {
-        visit(class_name, schema, &mut sorted, &mut visited, &mut visiting)?;
-    }
-
-    Ok(sorted)
-}
 
 #[cfg(test)]
 mod tests {

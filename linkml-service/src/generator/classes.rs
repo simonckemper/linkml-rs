@@ -51,7 +51,7 @@ impl RustGenerator {
         // Struct definition with derives
         writeln!(&mut output, "#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]")
             .map_err(Self::fmt_error_to_generator_error)?;
-        
+
         // Add serde rename if class name differs from struct name
         if class_name != struct_name.to_lowercase() {
             writeln!(&mut output, "#[serde(rename = \"{}\")]", class_name)
@@ -161,7 +161,7 @@ impl RustGenerator {
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field_name = self.convert_field_name(slot_name);
                 let default_value = self.get_default_value(slot, schema)?;
-                
+
                 writeln!(
                     output,
                     "{}{}: {},",

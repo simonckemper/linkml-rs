@@ -18,8 +18,8 @@ use tempfile::TempDir;
 
 // Import mock services
 mod mock_services;
+use crate::factory::create_logger_service;
 use mock_services::*;
-use crate::factory::{create_logger_service};
 
 /// Large enterprise schema for performance testing
 const ENTERPRISE_SCHEMA: &str = r#"
@@ -534,8 +534,12 @@ async fn test_concurrent_schema_operations() {
                     1 => {
                         // SchemaView operations
                         let view = SchemaView::new((*schema_clone).clone());
-                        let _ = view.class_slots("Customer", true).expect("Test operation failed");
-                        let _ = view.class_ancestors("Order").expect("Test operation failed");
+                        let _ = view
+                            .class_slots("Customer", true)
+                            .expect("Test operation failed");
+                        let _ = view
+                            .class_ancestors("Order")
+                            .expect("Test operation failed");
                     }
                     2 => {
                         // Expression evaluation
@@ -718,10 +722,15 @@ async fn test_code_generation_performance() {
         };
 
         let start = Instant::now();
-        service.generate_code(&schema, config).await.expect("Test operation failed");
+        service
+            .generate_code(&schema, config)
+            .await
+            .expect("Test operation failed");
         let elapsed = start.elapsed();
 
-        let file_size = fs::metadata(temp_dir.path().join(filename)).expect("Test operation failed").len();
+        let file_size = fs::metadata(temp_dir.path().join(filename))
+            .expect("Test operation failed")
+            .len();
 
         println!(
             "  - {}: {:?} ({:.1} KB)",
@@ -946,7 +955,10 @@ async fn test_stress_test_with_errors() {
         match i % 5 {
             0 => {
                 // Missing required field
-                customer.as_object_mut().expect("Test operation failed").remove("company_name");
+                customer
+                    .as_object_mut()
+                    .expect("Test operation failed")
+                    .remove("company_name");
             }
             1 => {
                 // Invalid pattern
@@ -982,7 +994,10 @@ async fn test_stress_test_with_errors() {
     let mut total_validation_errors = 0;
 
     for (data, expected_valid) in &test_data {
-        let report = service.validate(data, &schema, "Customer").await.expect("Test operation failed");
+        let report = service
+            .validate(data, &schema, "Customer")
+            .await
+            .expect("Test operation failed");
 
         if report.valid {
             valid_count += 1;
