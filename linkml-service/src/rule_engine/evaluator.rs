@@ -111,19 +111,16 @@ impl RuleEvaluator {
     ) -> Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
 
-        let instance_obj = match &context.instance {
-            Value::Object(map) => map,
-            _ => {
-                issues.push(
-                    ValidationIssue::error(
-                        "Instance must be an object for slot condition evaluation",
-                        &context.validation_context.path(),
-                        "RuleEvaluator",
-                    )
-                    .with_code("INVALID_INSTANCE_TYPE"),
-                );
-                return Ok(issues);
-            }
+        let Value::Object(instance_obj) = &context.instance else {
+            issues.push(
+                ValidationIssue::error(
+                    "Instance must be an object for slot condition evaluation",
+                    &context.validation_context.path(),
+                    "RuleEvaluator",
+                )
+                .with_code("INVALID_INSTANCE_TYPE"),
+            );
+            return Ok(issues);
         };
 
         for (slot_name, condition) in conditions {
@@ -225,7 +222,7 @@ impl RuleEvaluator {
                 Err(e) => {
                     issues.push(
                         ValidationIssue::error(
-                            &format!("Failed to evaluate expression: {}", e),
+                            format!("Failed to evaluate expression: {}", e),
                             path,
                             "RuleEvaluator",
                         )
@@ -275,7 +272,7 @@ impl RuleEvaluator {
                 Ok(_) => {
                     issues.push(
                         ValidationIssue::error(
-                            &format!("Expression {} must evaluate to boolean", i + 1),
+                            format!("Expression {} must evaluate to boolean", i + 1),
                             &context.validation_context.path(),
                             "RuleEvaluator",
                         )
@@ -285,7 +282,7 @@ impl RuleEvaluator {
                 Err(e) => {
                     issues.push(
                         ValidationIssue::error(
-                            &format!("Failed to evaluate expression {}: {}", i + 1, e),
+                            format!("Failed to evaluate expression {}: {}", i + 1, e),
                             &context.validation_context.path(),
                             "RuleEvaluator",
                         )

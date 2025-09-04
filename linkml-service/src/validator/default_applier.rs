@@ -235,15 +235,19 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with ifabsent
-        let mut slot = SlotDefinition::default();
-        slot.name = "identifier".to_string();
-        slot.ifabsent = Some(IfAbsentAction::SlotName);
+        let mut slot = SlotDefinition {
+            name: "identifier".to_string(),
+            ifabsent: Some(IfAbsentAction::SlotName),
+            ..Default::default()
+        };
         schema.slots.insert("identifier".to_string(), slot);
 
         // Create a class using the slot
-        let mut class = ClassDefinition::default();
-        class.name = "Person".to_string();
-        class.slots = vec!["identifier".to_string()];
+        let mut class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["identifier".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), class);
 
         // Create instance without the slot value
@@ -272,15 +276,19 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with bnode default
-        let mut slot = SlotDefinition::default();
-        slot.name = "id".to_string();
-        slot.ifabsent = Some(IfAbsentAction::Bnode);
+        let mut slot = SlotDefinition {
+            name: "id".to_string(),
+            ifabsent: Some(IfAbsentAction::Bnode),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), slot);
 
         // Create a class
-        let mut class = ClassDefinition::default();
-        class.name = "Entity".to_string();
-        class.slots = vec!["id".to_string()];
+        let mut class = ClassDefinition {
+            name: "Entity".to_string(),
+            slots: vec!["id".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Entity".to_string(), class);
 
         // Create two instances
@@ -310,19 +318,23 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with expression default
-        let mut slot = SlotDefinition::default();
-        slot.name = "full_id".to_string();
-        slot.ifabsent = Some(IfAbsentAction::Expression("{prefix}_{number}".to_string()));
+        let mut slot = SlotDefinition {
+            name: "full_id".to_string(),
+            ifabsent: Some(IfAbsentAction::Expression("{prefix}_{number}".to_string())),
+            ..Default::default()
+        };
         schema.slots.insert("full_id".to_string(), slot);
 
         // Create a class
-        let mut class = ClassDefinition::default();
-        class.name = "Item".to_string();
-        class.slots = vec![
-            "full_id".to_string(),
-            "prefix".to_string(),
-            "number".to_string(),
-        ];
+        let mut class = ClassDefinition {
+            name: "Item".to_string(),
+            slots: vec![
+                "full_id".to_string(),
+                "prefix".to_string(),
+                "number".to_string(),
+            ],
+            ..Default::default()
+        };
         schema.classes.insert("Item".to_string(), class);
 
         // Create instance with partial data

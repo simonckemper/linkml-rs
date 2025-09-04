@@ -4,8 +4,8 @@
 //! properly propagate errors instead of panicking with unwrap().
 
 use linkml_service::{
-    parser::{json_parser::JsonParser, yaml_parser::YamlParser, Parser},
-    validator::{engine::ValidationEngine, context::ValidationContext, engine::ValidationOptions},
+    parser::{json_parser::JsonParser, yaml_parser::YamlParser, SchemaParser},
+    validator::{engine::ValidationEngine, engine::ValidationOptions, context::ValidationContext},
     generator::{
         registry::GeneratorRegistry,
         traits::{Generator, GeneratorOptions as GenOptions},
@@ -18,9 +18,8 @@ use linkml_service::{
     loader::{
         csv::CsvLoader,
         json::JsonLoader,
-        yaml::YamlLoader,
         rdf::RdfLoader,
-        traits::LoaderOptions,
+        traits::LoadOptions,
     },
     plugin::{
         registry::PluginRegistry,
@@ -30,18 +29,19 @@ use linkml_service::{
     rule_engine::{
         executor::RuleExecutor,
         matcher::RuleMatcher,
+        RuleEngine,
     },
     schema::{
         diff::SchemaDiff,
-        merge::SchemaMerger,
     },
+    transform::schema_merger::SchemaMerger,
 };
 use linkml_core::{
     error::LinkMLError,
-    types::{Schema, ClassDefinition, SlotDefinition},
+    types::{SchemaDefinition, ClassDefinition, SlotDefinition},
 };
 use std::path::Path;
-use tempfile::{TempDir, NamedTempFile};
+use tempfile::TempDir;
 use std::fs;
 
 /// Test that parser errors are properly propagated instead of panicking
@@ -57,7 +57,7 @@ invalid: yaml: syntax:
     let yaml_parser = YamlParser::new();
     let result = yaml_parser.parse_str(invalid_yaml);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError(_)));
+    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError { message: _, location: _ }));
 
     // Test JSON parser with invalid syntax
     let invalid_json = r#"{"invalid": "json", "missing": }"#;
@@ -65,7 +65,7 @@ invalid: yaml: syntax:
     let json_parser = JsonParser::new();
     let result = json_parser.parse_str(invalid_json);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError(_)));
+    assert!(matches!(result.unwrap_err(), LinkMLError::ParseError { message: _, location: _ }));
 }
 
 /// Test that validator errors are properly propagated
@@ -86,39 +86,38 @@ fn test_validator_error_propagation() {
     class.attributes.insert("test_slot".to_string(), slot);
     schema.classes.insert("TestClass".to_string(), class);
 
-    let validator = ValidationEngine::new();
-    let context = // ValidationContext removed(&schema);
+    let validator = ValidationEngine::new(&schema);
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
     let options = ValidationOptions::default();
 
     // This should return error, not panic
-    let result = validator.validate(&schema, &context, &options);
+    let result = validator.expect("should create validator").validate(&schema, &context, &options);
     assert!(result.is_err());
 }
 
 /// Test that expression evaluator errors are properly propagated
 #[test]
 fn test_expression_error_propagation() {
-    let evaluator = ExpressionEvaluator::new();
-    let mut registry = FunctionRegistry::new();
-    registry.register_defaults();
+    let evaluator = Evaluator::new();
+    let registry = FunctionRegistry::new();
 
     // Test division by zero
     let expr = "10 / 0";
     let parser = ExpressionParser::new();
-    let parsed = parser.parse_str(expr);
+    let parsed = parser.parse(expr);
 
     if let Ok(parsed_expr) = parsed {
-        let result = evaluator.evaluate(&parsed_expr, &registry, &Default::default());
+        let result = evaluator.evaluate(&parsed_expr, &Default::default());
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("division"));
     }
 
     // Test undefined function
     let expr = "undefined_function(42)";
-    let parsed = parser.parse_str(expr);
+    let parsed = parser.parse(expr);
 
     if let Ok(parsed_expr) = parsed {
-        let result = evaluator.evaluate(&parsed_expr, &registry, &Default::default());
+        let result = evaluator.evaluate(&parsed_expr, &Default::default());
         assert!(result.is_err());
     }
 }
@@ -360,8 +359,8 @@ fn test_error_recovery() {
     };
     schema.classes.insert("".to_string(), invalid_class);
 
-    let context = // ValidationContext removed(&schema);
     let options = ValidationOptions::default();
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
     let result1 = validator.validate(&schema, &context, &options);
     assert!(result1.is_err());
 
@@ -373,7 +372,7 @@ fn test_error_recovery() {
     };
     schema.classes.insert("ValidClass".to_string(), valid_class);
 
-    let context = // ValidationContext removed(&schema);
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
     let result2 = validator.validate(&schema, &context, &options);
     // Should recover and validate successfully
     assert!(result2.is_ok() || result2.is_err()); // Depends on other validation rules
@@ -441,7 +440,7 @@ slots:
     if let Ok(schema) = schema_result {
         // Validate - should report errors without panicking
         let validator = ValidationEngine::new();
-        let context = // ValidationContext removed(&schema);
+        let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
         let options = ValidationOptions::default();
         let _ = validator.validate(&schema, &context, &options);
 

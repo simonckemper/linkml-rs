@@ -318,6 +318,7 @@ impl Evaluator {
     }
 
     /// Create an evaluator with custom configuration
+    #[must_use]
     pub fn with_config(config: EvaluatorConfig) -> Self {
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)

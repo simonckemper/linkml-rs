@@ -207,17 +207,17 @@ where
             .await
         {
             self.logger
-                .warn(&format!("Failed to register service for monitoring: {}", e))
+                .warn(&format!("Failed to register service for monitoring: {e}"))
                 .await
-                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+                .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
         }
 
         // Check initial health status
         if let Err(e) = self.monitor.check_service_health("linkml-service").await {
             self.logger
-                .warn(&format!("Initial health check failed: {}", e))
+                .warn(&format!("Initial health check failed: {e}"))
                 .await
-                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+                .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
         }
 
         self.logger
@@ -255,7 +255,7 @@ where
                 }
                 Err(e) => {
                     self.logger
-                        .warn(&format!("Failed to load built-in schema {}: {}", name, e))
+                        .warn(&format!("Failed to load built-in schema {name}: {e}"))
                         .await
                         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
                 }
@@ -275,9 +275,9 @@ where
         // Initialize validator cache
         if let Err(e) = self.validator_cache.clear().await {
             self.logger
-                .warn(&format!("Failed to clear validator cache during initialization: {}", e))
+                .warn(&format!("Failed to clear validator cache during initialization: {e}"))
                 .await
-                .map_err(|e| LinkMLError::service(format!("Logger error: {}", e)))?;
+                .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
         }
 
         // Pre-warm cache if configured
@@ -297,11 +297,11 @@ where
                 let ttl = Some(cache_core::CacheTtl::Seconds(3600)); // 1 hour TTL
                 if let Err(e) = self.cache.set(&cache_key, &warmup_value, ttl).await {
                     if let Err(log_err) = self.logger
-                        .debug(&format!("Cache warming failed for key '{}': {}", cache_key, e))
+                        .debug(&format!("Cache warming failed for key '{cache_key}': {e}"))
                         .await
                     {
                         // If even logging fails, we can't do much more
-                        eprintln!("Failed to log cache warming error: {}", log_err);
+                        eprintln!("Failed to log cache warming error: {log_err}");
                     }
                 }
             }
@@ -366,10 +366,10 @@ where
                         // Record health check
                         if let Ok(now) = timestamp.now_utc().await {
                             if let Err(e) = logger
-                                .debug(&format!("Health check #{} at {}", iteration_count, now))
+                                .debug(&format!("Health check #{iteration_count} at {now}"))
                                 .await
                             {
-                                eprintln!("Failed to log health check: {}", e);
+                                eprintln!("Failed to log health check: {e}");
                             }
                         }
 
@@ -398,10 +398,10 @@ where
                             if cache_stats.cached_validators > 1000 {
                                 if let Err(e) = validator_cache.clear().await {
                                     if let Err(log_err) = logger
-                                        .error(&format!("Failed to clear validator cache: {}", e))
+                                        .error(&format!("Failed to clear validator cache: {e}"))
                                         .await
                                     {
-                                        eprintln!("Failed to log cache clear error: {}", log_err);
+                                        eprintln!("Failed to log cache clear error: {log_err}");
                                     }
                                 } else {
                                     if let Err(e) = logger
@@ -561,7 +561,7 @@ where
                         .await;
 
                     self.logger
-                        .warn(&format!("Failed to cancel background task: {}", e))
+                        .warn(&format!("Failed to cancel background task: {e}"))
                         .await
                         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
                 }
@@ -616,7 +616,8 @@ where
 {
     async fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
         // Track operation with error handler
-        let operation_id = format!("load_schema_{}", path.display());
+        let path_display = path.display();
+        let operation_id = format!("load_schema_{path_display}");
         // Record start time
         let start_time = self
             .timestamp
@@ -626,7 +627,7 @@ where
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
 
         self.logger
-            .debug(&format!("Loading schema from: {}", path.display()))
+            .debug(&format!("Loading schema from: {path_display}"))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 

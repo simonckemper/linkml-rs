@@ -335,7 +335,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 Err(e) => {
                     results[idx] = Err(EvaluationError::TypeError {
                         message: format!("Task join error: {}", e),
-                    })
+                    });
                 }
             }
         }

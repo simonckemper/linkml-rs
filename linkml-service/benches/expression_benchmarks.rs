@@ -2,8 +2,8 @@
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use linkml_core::types::{ClassDefinition, SchemaDefinition};
-use linkml_service::expression::{EvaluationContext, Evaluator, Parser};
-use linkml_service::rule_engine::{ExecutionStrategy, Rule, RuleCondition, RuleEngine};
+use linkml_service::expression::{Evaluator, Parser};
+use linkml_service::rule_engine::{RuleExecutionStrategy, Rule, RuleCondition, RuleEngine};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -41,12 +41,12 @@ fn bench_expression_evaluation(c: &mut Criterion) {
     let evaluator = Evaluator::new();
 
     // Prepare context
-    let mut context = EvaluationContext::new();
-    context.set_variable("name", json!("John Doe"));
-    context.set_variable("age", json!(30));
-    context.set_variable("status", json!("active"));
-    context.set_variable("premium", json!(100.0));
-    context.set_variable("value", json!(42));
+    let mut context = HashMap::new();
+    context.insert("name".to_string(), json!("John Doe"));
+    context.insert("age".to_string(), json!(30));
+    context.insert("status".to_string(), json!("active"));
+    context.insert("premium".to_string(), json!(100.0));
+    context.insert("value".to_string(), json!(42));
     context.set_variable("a", json!(10));
     context.set_variable("b", json!(20));
     context.set_variable("c", json!(5));
@@ -136,7 +136,7 @@ fn bench_rule_engine(c: &mut Criterion) {
             let result = engine.execute_class_rules(
                 black_box("Entity"),
                 black_box(&context),
-                black_box(&ExecutionStrategy::Sequential),
+                black_box(&RuleExecutionStrategy::Sequential),
             );
             assert!(result.is_ok());
         })
@@ -151,7 +151,7 @@ fn bench_rule_engine(c: &mut Criterion) {
             let result = engine.execute_class_rules(
                 black_box("Entity"),
                 black_box(&context),
-                black_box(&ExecutionStrategy::Priority),
+                black_box(&RuleExecutionStrategy::Priority),
             );
             assert!(result.is_ok());
         })
@@ -241,7 +241,7 @@ fn bench_complex_rule_scenarios(c: &mut Criterion) {
             let result = engine.execute_class_rules(
                 black_box("Order"),
                 black_box(&context),
-                black_box(&ExecutionStrategy::Sequential),
+                black_box(&RuleExecutionStrategy::Sequential),
             );
             assert!(result.is_ok());
         })
@@ -255,7 +255,7 @@ fn bench_complex_rule_scenarios(c: &mut Criterion) {
             let result = engine.execute_class_rules(
                 black_box("Order"),
                 black_box(&context),
-                black_box(&ExecutionStrategy::Sequential),
+                black_box(&RuleExecutionStrategy::Sequential),
             );
             assert!(result.is_ok());
         })
@@ -276,12 +276,12 @@ fn bench_expression_caching_impact(c: &mut Criterion) {
     // Multiple contexts to simulate real usage
     let contexts: Vec<_> = (0..100)
         .map(|i| {
-            let mut ctx = EvaluationContext::new();
-            ctx.set_variable("a", json!(i));
-            ctx.set_variable("b", json!(i * 2));
-            ctx.set_variable("c", json!(i / 2));
-            ctx.set_variable("d", json!(i + 10));
-            ctx.set_variable("items", json!(vec!["a"; i % 10 + 1]));
+            let mut ctx = HashMap::new();
+            ctx.insert("a".to_string(), json!(i));
+            ctx.insert("b".to_string(), json!(i * 2));
+            ctx.insert("c".to_string(), json!(i / 2));
+            ctx.insert("d".to_string(), json!(i + 10));
+            ctx.insert("items".to_string(), json!(vec!["a"; i % 10 + 1]));
             ctx.set_variable(
                 "status",
                 json!(if i % 2 == 0 { "active" } else { "inactive" }),

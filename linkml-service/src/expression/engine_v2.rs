@@ -4,9 +4,9 @@
 //! parsing, compilation, caching, and VM execution for optimal performance.
 
 use super::ast::Expression;
-use super::cache::{ExpressionCache, ExpressionKey, GlobalExpressionCache};
+use super::cache::{ExpressionKey, GlobalExpressionCache};
 use super::compiler::{CompiledExpression, Compiler};
-use super::error::{ExpressionError, EvaluationError};
+use super::error::{ExpressionError, ParseError};
 use super::evaluator::Evaluator;
 use super::functions::FunctionRegistry;
 use super::parser::Parser;
@@ -14,9 +14,8 @@ use super::vm::VirtualMachine;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 use timestamp_core::SyncTimestampService;
-use timestamp_service::SyncChronoTimestampService;
 
 /// Configuration for the enhanced expression engine
 #[derive(Clone)]
@@ -66,6 +65,10 @@ pub struct PerformanceMetrics {
     pub compile_time_us: u64,
     /// Total time spent evaluating (microseconds)
     pub eval_time_us: u64,
+    /// Total end-to-end time for all operations (microseconds)
+    pub total_time_us: u64,
+    /// Average evaluation time (microseconds)
+    pub avg_eval_time_us: u64,
     /// Cache hit rate
     pub cache_hit_rate: f64,
 }
@@ -155,7 +158,9 @@ impl ExpressionEngineV2 {
                 Compiler::new(Arc::clone(&function_registry))
                     .with_optimization_level(config.optimization_level)
             ),
-            evaluator: Arc::new(Evaluator::with_functions(Arc::clone(&function_registry))),
+            evaluator: Arc::new(Evaluator::with_functions(
+                FunctionRegistry::default() // Create a new instance for the evaluator
+            )),
             vm: Arc::new(VirtualMachine::new(function_registry)),
             cache: Arc::new(GlobalExpressionCache::new(
                 config.cache_capacity,
@@ -182,7 +187,9 @@ impl ExpressionEngineV2 {
                 Compiler::new(Arc::clone(&function_registry))
                     .with_optimization_level(config.optimization_level)
             ),
-            evaluator: Arc::new(Evaluator::with_functions(Arc::clone(&function_registry))),
+            evaluator: Arc::new(Evaluator::with_functions(
+                FunctionRegistry::default() // Create a new instance for the evaluator
+            )),
             vm: Arc::new(VirtualMachine::new(function_registry)),
             cache: Arc::new(GlobalExpressionCache::new(
                 config.cache_capacity,
@@ -212,7 +219,9 @@ impl ExpressionEngineV2 {
     ) -> Result<Value, ExpressionError> {
         let start_time = if self.config.collect_metrics {
             Some(self.timestamp_service.system_time()
-                .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?)
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Failed to get system time: {}", e)
+                }))?)
         } else {
             None
         };
@@ -229,6 +238,13 @@ impl ExpressionEngineV2 {
                 if let Some(start) = start_time {
                     let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
                     metrics.cache_hit_rate = self.cache.overall_hit_rate();
+                    // Track cache hit timing - this is very fast
+                    if let Ok(now) = self.timestamp_service.system_time() {
+                        if let Ok(duration) = now.duration_since(start) {
+                            // Cache hits are typically sub-microsecond
+                            metrics.total_time_us += duration.as_micros() as u64;
+                        }
+                    }
                 }
                 (cached.ast, cached.compiled)
             } else {
@@ -247,15 +263,31 @@ impl ExpressionEngineV2 {
 
         // Decide whether to use compiled or interpreted evaluation
         let result = if self.should_use_compiled(&compiled) {
-            self.evaluate_compiled(compiled.as_ref().map_err(|e| anyhow::anyhow!("should have compiled expression when use_compiled is true: {}", e))?, context, start_time)?
+            let compiled_expr = compiled.as_ref()
+                .ok_or_else(|| ExpressionError::Other("should have compiled expression when use_compiled is true".to_string()))?;
+            self.evaluate_compiled(compiled_expr, context, start_time)?
         } else {
             self.evaluate_interpreted(&ast, context, start_time)?
         };
 
-        // Update metrics
+        // Update metrics including total operation time
         if self.config.collect_metrics {
             let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
             metrics.total_evaluations += 1;
+            
+            // Calculate and record total operation time if we have a start time
+            if let Some(start) = start_time {
+                let end = self.timestamp_service.system_time()
+                    .map_err(|e| ExpressionError::Other(format!("Failed to get end time: {}", e)))?;
+                if let Ok(duration) = end.duration_since(start) {
+                    // Track total evaluation time including cache lookups, parsing, compilation, and execution
+                    metrics.total_time_us += duration.as_micros() as u64;
+                    
+                    // Track average evaluation time
+                    let avg_time_us = metrics.total_time_us / metrics.total_evaluations.max(1);
+                    metrics.avg_eval_time_us = avg_time_us;
+                }
+            }
         }
 
         Ok(result)
@@ -269,31 +301,42 @@ impl ExpressionEngineV2 {
     ) -> Result<(Expression, Option<Arc<CompiledExpression>>), ExpressionError> {
         // Parse
         let parse_start = self.timestamp_service.system_time()
-            .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
-        let ast = self.parser.parse(expression)
-            .map_err(|e| ExpressionError::Parse(e.to_string()))?;
+            .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                message: format!("Failed to get system time: {}", e)
+            }))?;
+        let ast = self.parser.parse(expression)?;
 
         if let Some(start) = start_time {
             let parse_end = self.timestamp_service.system_time()
-                .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Failed to get system time: {}", e)
+                }))?;
             let parse_duration = parse_end.duration_since(parse_start)
-                .map_err(|e| ExpressionError::Parse(format!("Time calculation error: {}", e)))?;
-            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Time calculation error: {}", e)
+                }))?;
+            let mut metrics = self.metrics.write().map_err(|e| ExpressionError::Other(format!("metrics lock should not be poisoned: {}", e)))?;
             metrics.parse_time_us += parse_duration.as_micros() as u64;
         }
 
         // Compile if enabled
         let compiled = if self.config.use_compilation {
             let compile_start = self.timestamp_service.system_time()
-                .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Failed to get system time: {}", e)
+                }))?;
             let compiled = self.compiler.compile(&ast, expression)?;
 
             if let Some(start) = start_time {
                 let compile_end = self.timestamp_service.system_time()
-                    .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+                    .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                        message: format!("Failed to get system time: {}", e)
+                    }))?;
                 let compile_duration = compile_end.duration_since(compile_start)
-                    .map_err(|e| ExpressionError::Parse(format!("Time calculation error: {}", e)))?;
-                let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+                    .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                        message: format!("Time calculation error: {}", e)
+                    }))?;
+                let mut metrics = self.metrics.write().map_err(|e| ExpressionError::Other(format!("metrics lock should not be poisoned: {}", e)))?;
                 metrics.compile_time_us += compile_duration.as_micros() as u64;
             }
 
@@ -323,15 +366,21 @@ impl ExpressionEngineV2 {
         start_time: Option<SystemTime>,
     ) -> Result<Value, ExpressionError> {
         let eval_start = self.timestamp_service.system_time()
-            .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                message: format!("Failed to get system time: {}", e)
+            }))?;
         let result = self.vm.execute(compiled, context)?;
 
         if let Some(start) = start_time {
             let eval_end = self.timestamp_service.system_time()
-                .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Failed to get system time: {}", e)
+                }))?;
             let eval_duration = eval_end.duration_since(eval_start)
-                .map_err(|e| ExpressionError::Parse(format!("Time calculation error: {}", e)))?;
-            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Time calculation error: {}", e)
+                }))?;
+            let mut metrics = self.metrics.write().map_err(|e| ExpressionError::Other(format!("metrics lock should not be poisoned: {}", e)))?;
             metrics.compiled_evaluations += 1;
             metrics.eval_time_us += eval_duration.as_micros() as u64;
         }
@@ -347,16 +396,22 @@ impl ExpressionEngineV2 {
         start_time: Option<SystemTime>,
     ) -> Result<Value, ExpressionError> {
         let eval_start = self.timestamp_service.system_time()
-            .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                message: format!("Failed to get system time: {}", e)
+            }))?;
         let result = self.evaluator.evaluate(ast, context)
             .map_err(|e| ExpressionError::Evaluation(e))?;
 
         if let Some(start) = start_time {
             let eval_end = self.timestamp_service.system_time()
-                .map_err(|e| ExpressionError::Parse(format!("Failed to get system time: {}", e)))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Failed to get system time: {}", e)
+                }))?;
             let eval_duration = eval_end.duration_since(eval_start)
-                .map_err(|e| ExpressionError::Parse(format!("Time calculation error: {}", e)))?;
-            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+                .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
+                    message: format!("Time calculation error: {}", e)
+                }))?;
+            let mut metrics = self.metrics.write().map_err(|e| ExpressionError::Other(format!("metrics lock should not be poisoned: {}", e)))?;
             metrics.interpreted_evaluations += 1;
             metrics.eval_time_us += eval_duration.as_micros() as u64;
         }
@@ -366,7 +421,7 @@ impl ExpressionEngineV2 {
 
     /// Get performance metrics
     pub fn metrics(&self) -> PerformanceMetrics {
-        self.metrics.read().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?.clone()
+        self.metrics.read().unwrap_or_else(|poisoned| poisoned.into_inner()).clone()
     }
 
     /// Clear the expression cache

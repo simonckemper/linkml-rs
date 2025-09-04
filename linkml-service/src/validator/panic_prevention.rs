@@ -213,27 +213,27 @@ impl PanicSafeWrapper {
     }
 
     /// Extract panic message from Any
-    fn extract_panic_message(&self, panic: &Box<dyn Any + Send>) -> Option<String> {
+    fn extract_panic_message(&self, panic: &Box<dyn Any + Send>) -> String {
         // Check configuration to determine how detailed the panic message should be
         let config = self.config.read();
         let include_debug_info = config.catch_panics;
 
         if let Some(s) = panic.downcast_ref::<String>() {
             if include_debug_info {
-                Some(format!("Panic: {}", s))
+                format!("Panic: {s}")
             } else {
-                Some("Validation error occurred".to_string())
+                "Validation error occurred".to_string()
             }
         } else if let Some(s) = panic.downcast_ref::<&str>() {
             if include_debug_info {
-                Some(format!("Panic: {}", s))
+                format!("Panic: {s}")
             } else {
-                Some("Validation error occurred".to_string())
+                "Validation error occurred".to_string()
             }
         } else if include_debug_info {
-            Some("Unknown panic type".to_string())
+            "Unknown panic type".to_string()
         } else {
-            Some("Validation error occurred".to_string())
+            "Validation error occurred".to_string()
         }
     }
 
@@ -624,7 +624,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_stack_depth_tracker() {
+    fn test_stack_depth_tracker() -> Result<(), Box<dyn std::error::Error>> {
         let tracker = StackDepthTracker::new(3);
 
         let _g1 = tracker.enter()?;
@@ -633,10 +633,11 @@ mod tests {
 
         // Fourth should fail
         assert!(tracker.enter().is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_panic_wrapper() {
+    fn test_panic_wrapper() -> Result<(), Box<dyn std::error::Error>> {
         let wrapper = PanicSafeWrapper::new(PanicPreventionConfig::default());
 
         // Normal operation
@@ -652,20 +653,22 @@ mod tests {
         // Check stats
         let stats = wrapper.get_panic_stats();
         assert_eq!(stats.total_panics, 1);
+        Ok(())
     }
 
     #[test]
-    fn test_safe_arithmetic() {
+    fn test_safe_arithmetic() -> Result<(), Box<dyn std::error::Error>> {
         assert!(SafeArithmetic::add(i32::MAX, 1).is_err());
         assert!(SafeArithmetic::sub(0u32, 1).is_err());
         assert!(SafeArithmetic::div(10, 0).is_err());
 
         assert_eq!(SafeArithmetic::add(5, 3)?, 8);
         assert_eq!(SafeArithmetic::div(10, 2)?, 5);
+        Ok(())
     }
 
     #[test]
-    fn test_safe_bounds() {
+    fn test_safe_bounds() -> Result<(), Box<dyn std::error::Error>> {
         let vec = vec![1, 2, 3];
 
         assert_eq!(*SafeBounds::get(&vec, 1)?, 2);
@@ -674,5 +677,6 @@ mod tests {
         let s = "hello";
         assert_eq!(SafeBounds::slice_str(s, 0, 5)?, "hello");
         assert!(SafeBounds::slice_str(s, 1, 10).is_err());
+        Ok(())
     }
 }

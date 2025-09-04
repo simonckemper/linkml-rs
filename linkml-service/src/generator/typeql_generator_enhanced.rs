@@ -677,7 +677,7 @@ impl EnhancedTypeQLGenerator {
                     range_parts.push(format!("{}", min_num));
                 }
             } else {
-                range_parts.push("".to_string());
+                range_parts.push(String::new());
             }
 
             range_parts.push("..".to_string());

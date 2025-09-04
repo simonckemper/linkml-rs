@@ -4,7 +4,7 @@
 //! and speed up string comparisons during validation.
 
 use dashmap::DashMap;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use std::sync::Arc;
 use thiserror::Error;
 
@@ -33,6 +33,7 @@ pub struct StringInterner {
 
 impl StringInterner {
     /// Create a new string interner
+    #[must_use]
     pub fn new() -> Self {
         Self {
             cache: DashMap::new(),
@@ -40,6 +41,8 @@ impl StringInterner {
     }
 
     /// Intern a string, returning a shared reference
+    ///
+    /// # Errors
     ///
     /// Returns an error if the string is too large or the cache is full
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
@@ -65,16 +68,19 @@ impl StringInterner {
     }
 
     /// Try to intern a string, falling back to creating a new Arc on error
+    #[must_use]
     pub fn intern_or_new(&self, s: &str) -> Arc<str> {
         self.intern(s).unwrap_or_else(|_| Arc::from(s))
     }
 
     /// Get the number of interned strings
+    #[must_use]
     pub fn len(&self) -> usize {
         self.cache.len()
     }
 
     /// Check if the interner is empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.cache.is_empty()
     }
@@ -84,7 +90,7 @@ impl StringInterner {
         self.cache.clear();
     }
 
-    /// Pre-populate with common LinkML type names and keywords
+    /// Pre-populate with common `LinkML` type names and keywords
     pub fn populate_common_strings(&self) {
         // Common type names
         let common_types = [
@@ -111,7 +117,7 @@ impl StringInterner {
             // These are all small, known strings so they should never fail
             // We can safely ignore errors here as this is just cache warming
             if let Err(e) = self.intern(type_name) {
-                eprintln!("Warning: Failed to intern common type '{}': {}", type_name, e);
+                eprintln!("Warning: Failed to intern common type '{type_name}': {e}");
             }
         }
 
@@ -134,7 +140,7 @@ impl StringInterner {
 
         for slot in common_slots {
             if let Err(e) = self.intern(slot) {
-                eprintln!("Warning: Failed to intern common slot '{}': {}", slot, e);
+                eprintln!("Warning: Failed to intern common slot '{slot}': {e}");
             }
         }
 
@@ -156,7 +162,7 @@ impl StringInterner {
 
         for keyword in keywords {
             if let Err(e) = self.intern(keyword) {
-                eprintln!("Warning: Failed to intern common keyword '{}': {}", keyword, e);
+                eprintln!("Warning: Failed to intern common keyword '{keyword}': {e}");
             }
         }
     }
@@ -169,13 +175,14 @@ impl Default for StringInterner {
 }
 
 /// Global string interner instance
-static GLOBAL_INTERNER: Lazy<StringInterner> = Lazy::new(|| {
+static GLOBAL_INTERNER: LazyLock<StringInterner> = LazyLock::new(|| {
     let interner = StringInterner::new();
     interner.populate_common_strings();
     interner
 });
 
 /// Get the global string interner
+#[must_use]
 pub fn global_interner() -> &'static StringInterner {
     &GLOBAL_INTERNER
 }
@@ -183,12 +190,14 @@ pub fn global_interner() -> &'static StringInterner {
 /// Intern a string using the global interner
 ///
 /// Falls back to creating a new Arc if interning fails
+#[must_use]
 pub fn intern(s: &str) -> Arc<str> {
     global_interner().intern_or_new(s)
 }
 
 /// Fast string comparison using interned strings
 #[inline]
+#[must_use]
 pub fn str_eq_fast(a: &Arc<str>, b: &Arc<str>) -> bool {
     // Arc comparison is just pointer comparison for interned strings
     Arc::ptr_eq(a, b)

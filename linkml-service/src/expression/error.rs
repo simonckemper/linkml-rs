@@ -20,6 +20,12 @@ pub enum ExpressionError {
     Other(String),
 }
 
+impl From<anyhow::Error> for ExpressionError {
+    fn from(err: anyhow::Error) -> Self {
+        ExpressionError::Other(err.to_string())
+    }
+}
+
 /// Errors that can occur during parsing
 #[derive(Debug, Error)]
 pub enum ParseError {
@@ -70,6 +76,10 @@ pub enum ParseError {
     /// Trailing input after expression
     #[error("Unexpected input after expression: '{input}'")]
     TrailingInput { input: String },
+
+    /// System error (e.g., time operations)
+    #[error("System error: {message}")]
+    SystemError { message: String },
 }
 
 /// Errors that can occur during evaluation

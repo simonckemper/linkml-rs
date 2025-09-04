@@ -61,7 +61,7 @@ impl Validator for ExpressionValidator {
                 Err(e) => {
                     issues.push(
                         ValidationIssue::error(
-                            &format!("Failed to evaluate equals_expression: {}", e),
+                            format!("Failed to evaluate equals_expression: {}", e),
                             context.path(),
                             self.name(),
                         )
@@ -93,7 +93,7 @@ impl Validator for ExpressionValidator {
                         } else if !result.is_boolean() {
                             issues.push(
                                 ValidationIssue::error(
-                                    &format!(
+                                    format!(
                                         "Rule {} did not evaluate to boolean: {}",
                                         i + 1,
                                         rule
@@ -111,7 +111,7 @@ impl Validator for ExpressionValidator {
                     Err(e) => {
                         issues.push(
                             ValidationIssue::error(
-                                &format!("Failed to evaluate rule {}: {}", i + 1, e),
+                                format!("Failed to evaluate rule {}: {}", i + 1, e),
                                 context.path(),
                                 self.name(),
                             )

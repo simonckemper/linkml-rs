@@ -380,7 +380,7 @@ impl ArrayData {
         let flat_index = self.spec.indices_to_flat(indices, &self.shape)?;
         self.data
             .get(flat_index)
-            .ok_or_else(|| ArrayError::IndexOutOfBounds {
+            .ok_or(ArrayError::IndexOutOfBounds {
                 index: flat_index,
                 size: self.data.len(),
             })

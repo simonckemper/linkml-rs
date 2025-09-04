@@ -35,7 +35,7 @@ impl PythonDataclassGenerator {
     fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Formatting error: {}", err),
+            format!("Formatting error: {err}"),
         ))
     }
 
@@ -419,7 +419,7 @@ impl Generator for PythonDataclassGenerator {
             if !Self::is_valid_python_identifier(class_name) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Class name '{}' is not a valid Python identifier", class_name),
-                    element: Some(format!("class.{}", class_name)),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -429,7 +429,7 @@ impl Generator for PythonDataclassGenerator {
             if !Self::is_valid_python_identifier(slot_name) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Slot name '{}' is not a valid Python identifier", slot_name),
-                    element: Some(format!("slot.{}", slot_name)),
+                    element: Some(format!("slot.{slot_name}")),
                 });
             }
         }
@@ -640,7 +640,11 @@ impl CodeFormatter for PythonDataclassGenerator {
     ) -> String {
         items
             .iter()
-            .map(|item| format!("{}{}", indent.to_string(level), item.as_ref()))
+            .map(|item| {
+                let indent_str = indent.to_string(level);
+                let item_str = item.as_ref();
+                format!("{indent_str}{item_str}")
+            })
             .collect::<Vec<_>>()
             .join(separator)
     }

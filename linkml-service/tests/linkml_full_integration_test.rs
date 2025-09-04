@@ -6,20 +6,28 @@
 
 use linkml_core::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_service::{
-    SchemaView,
-    expression::{EvaluationContext, Evaluator, Parser as ExpressionParser},
+    schema_view::SchemaView,
+    expression::{Evaluator, Parser as ExpressionParser},
     generator::{
-        Generator, GeneratorOptions, IndentStyle, JavaGenerator, JavaScriptGenerator,
-        JsonLdGenerator, JsonSchemaGenerator, LineEnding, OwlRdfGenerator, ProtobufGenerator,
-        PydanticGenerator, PythonDataclassGenerator, RustGenerator, ShaclGenerator,
-        TypeScriptGenerator,
+        traits::{Generator, GeneratorOptions},
+        java::JavaGenerator,
+        javascript::JavaScriptGenerator,
+        json_ld::JsonLdGenerator,
+        json_schema::JsonSchemaGenerator,
+        protobuf::ProtobufGenerator,
+        pydantic::PydanticGenerator,
+        python_dataclass::PythonDataclassGenerator,
+        rust_generator::RustGenerator,
+        shacl::ShaclGenerator,
+        typescript::TypeScriptGenerator,
     },
-    parser::YamlParser,
-    rule_engine::{ExecutionStrategy, RuleEngine},
+    parser::yaml_parser::YamlParser,
+    rule_engine::{RuleExecutionStrategy, RuleEngine},
     transform::{
-        ConflictResolution, InheritanceResolver, MergeOptions, MergeStrategy, SchemaMerger,
+        inheritance_resolver::InheritanceResolver,
+        schema_merger::{MergeStrategy, SchemaMerger},
     },
-    validator::{ValidationEngine, ValidationOptions, ValidationReport},
+    validator::{engine::{ValidationEngine, ValidationOptions}, report::ValidationReport},
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;

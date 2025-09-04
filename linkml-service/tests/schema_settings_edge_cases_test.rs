@@ -2,8 +2,7 @@
 
 use linkml_core::{
     settings::{
-        DefaultSettings, GenerationSettings, ImportResolutionStrategy, ImportSettings,
-        NamingSettings, SchemaSettings, ValidationSettings,
+        ImportResolutionStrategy, SchemaSettings, ValidationSettings,
     },
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };

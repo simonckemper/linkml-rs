@@ -37,6 +37,8 @@ fn create_secure_engine() -> ExpressionEngine {
         max_call_depth: 20,
         timeout: Duration::from_millis(100),
         max_memory: 1024 * 1024, // 1MB
+        enable_cache: true,
+        cache_size: 100,
     };
     let evaluator = Arc::new(Evaluator::with_config(config));
     ExpressionEngine::with_evaluator(evaluator)

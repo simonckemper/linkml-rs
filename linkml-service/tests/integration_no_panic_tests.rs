@@ -319,7 +319,7 @@ slots:
 #[test]
 fn test_expression_evaluation_no_panic() {
     let config = EvaluatorConfig::default();
-    let evaluator = Evaluator::new(config);
+    let evaluator = Evaluator::with_config(config);
     let parser = ExpressionParser::new();
 
     // Test various expressions that might cause issues

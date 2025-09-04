@@ -297,7 +297,7 @@ impl NamespaceContext {
                 let local = captures.get(2)
                     .expect("CURIE regex has capture group 2")
                     .as_str();
-                return Ok(format!("{}{}", uri_base, local));
+                return Ok(format!("{uri_base}{local}"));
             }
         }
 
@@ -327,7 +327,7 @@ pub mod utils {
 
     /// Create a CURIE from prefix and local parts
     pub fn make_curie(prefix: &str, local: &str) -> String {
-        format!("{}:{}", prefix, local)
+        format!("{prefix}:{local}")
     }
 
     /// Extract the local part from a URI given a base
@@ -351,7 +351,7 @@ pub mod utils {
         } else {
             let base = base.trim_end_matches('/');
             let relative = relative.trim_start_matches('/');
-            format!("{}/{}", base, relative)
+            format!("{base}/{relative}")
         }
     }
 }

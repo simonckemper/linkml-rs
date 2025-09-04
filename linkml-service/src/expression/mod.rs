@@ -17,7 +17,9 @@ pub mod string_functions;
 
 // Performance optimization modules
 pub mod cache;
+pub mod cache_v2;
 pub mod compiler;
+pub mod engine_v2;
 pub mod parallel;
 pub mod vm;
 
@@ -54,6 +56,7 @@ impl ExpressionEngine {
     }
 
     /// Create an expression engine with custom evaluator
+    #[must_use]
     pub fn with_evaluator(evaluator: Arc<Evaluator>) -> Self {
         Self {
             parser: Parser::new(),

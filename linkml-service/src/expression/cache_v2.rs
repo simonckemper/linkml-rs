@@ -5,22 +5,21 @@
 
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
-use linked_hash_map::LinkedHashMap;
 use linkml_core::{
     error::Result,
     hashmap_utils::{collect_keys_for_removal, ArcCache},
     string_pool::intern,
 };
 
-use super::{Expression, ParsedExpression};
+use super::Expression;
 
 /// Cached expression entry with metadata
 #[derive(Clone)]
 struct CacheEntryV2 {
     /// The parsed expression (using Arc for sharing)
-    expression: Arc<ParsedExpression>,
+    expression: Arc<Expression>,
     /// When this entry was created
     created: Instant,
     /// When this entry was last accessed
@@ -32,10 +31,15 @@ struct CacheEntryV2 {
 /// Expression cache statistics
 #[derive(Debug, Clone, Default)]
 pub struct CacheStats {
+    /// Number of cache hits (successful lookups)
     pub hits: u64,
+    /// Number of cache misses (unsuccessful lookups)
     pub misses: u64,
+    /// Number of entries evicted from cache (due to capacity or expiry)
     pub evictions: u64,
+    /// Current number of entries in the cache
     pub entries: usize,
+    /// Approximate memory usage in bytes
     pub size_bytes: usize,
 }
 
@@ -53,8 +57,10 @@ impl CacheStats {
 
 /// Optimized expression cache using Arc and efficient eviction
 pub struct ExpressionCacheV2 {
-    /// The actual cache storage (LRU)
-    cache: Arc<RwLock<LinkedHashMap<Arc<str>, CacheEntryV2>>>,
+    /// The actual cache storage
+    cache: Arc<RwLock<HashMap<Arc<str>, CacheEntryV2>>>,
+    /// LRU order tracking
+    lru_order: Arc<RwLock<VecDeque<Arc<str>>>>,
     /// Maximum number of entries
     capacity: usize,
     /// Maximum age for entries
@@ -67,7 +73,8 @@ impl ExpressionCacheV2 {
     /// Create a new expression cache
     pub fn new(capacity: usize) -> Self {
         Self {
-            cache: Arc::new(RwLock::new(LinkedHashMap::with_capacity(capacity))),
+            cache: Arc::new(RwLock::new(HashMap::with_capacity(capacity))),
+            lru_order: Arc::new(RwLock::new(VecDeque::with_capacity(capacity))),
             capacity,
             max_age: Duration::from_secs(3600), // 1 hour default
             stats: Arc::new(RwLock::new(CacheStats::default())),
@@ -81,21 +88,38 @@ impl ExpressionCacheV2 {
     }
 
     /// Get a parsed expression from cache
-    pub fn get(&self, expression: &str) -> Option<Arc<ParsedExpression>> {
+    pub fn get(&self, expression: &str) -> Option<Arc<Expression>> {
         let key = intern(expression);
         let mut cache = self.cache.write().ok()?;
+        let mut lru_order = self.lru_order.write().ok()?;
         let mut stats = self.stats.write().ok()?;
 
         if let Some(entry) = cache.get_mut(&key) {
+            let now = Instant::now();
+            
+            // Check if entry has expired based on creation time
+            if now.duration_since(entry.created) > self.max_age {
+                // Entry has expired, remove it
+                cache.remove(&key);
+                if let Some(pos) = lru_order.iter().position(|k| k == &key) {
+                    lru_order.remove(pos);
+                }
+                stats.evictions += 1;
+                stats.misses += 1;
+                stats.entries = cache.len();
+                return None;
+            }
+            
             // Update access time and count
-            entry.last_accessed = Instant::now();
+            entry.last_accessed = now;
             entry.hit_count += 1;
             stats.hits += 1;
 
-            // Move to end (most recently used)
-            let cloned = entry.clone();
-            cache.remove(&key);
-            cache.insert(Arc::clone(&key), cloned);
+            // Move to end of LRU order (most recently used)
+            if let Some(pos) = lru_order.iter().position(|k| k == &key) {
+                lru_order.remove(pos);
+            }
+            lru_order.push_back(Arc::clone(&key));
 
             Some(Arc::clone(&entry.expression))
         } else {
@@ -105,19 +129,20 @@ impl ExpressionCacheV2 {
     }
 
     /// Store a parsed expression in cache
-    pub fn put(&self, expression: &str, parsed: ParsedExpression) {
+    pub fn put(&self, expression: &str, parsed: Expression) {
         let key = intern(expression);
         let now = Instant::now();
 
         let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut lru_order = self.lru_order.write().unwrap_or_else(|poisoned| poisoned.into_inner());
         let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // Check if we need to evict
         if cache.len() >= self.capacity {
             // Remove least recently used
-            if let Some((old_key, _)) = cache.pop_front() {
+            if let Some(old_key) = lru_order.pop_front() {
+                cache.remove(&old_key);
                 stats.evictions += 1;
-                drop(old_key); // Release the Arc<str>
             }
         }
 
@@ -129,15 +154,16 @@ impl ExpressionCacheV2 {
             hit_count: 0,
         };
 
-        cache.insert(key, entry);
+        cache.insert(Arc::clone(&key), entry);
+        lru_order.push_back(key);
         stats.entries = cache.len();
         stats.size_bytes = stats.entries * std::mem::size_of::<CacheEntryV2>();
     }
 
     /// Get or compute and cache an expression
-    pub fn get_or_compute<F>(&self, expression: &str, compute: F) -> Result<Arc<ParsedExpression>>
+    pub fn get_or_compute<F>(&self, expression: &str, compute: F) -> Result<Arc<Expression>>
     where
-        F: FnOnce() -> Result<ParsedExpression>,
+        F: FnOnce() -> Result<Expression>,
     {
         // Check cache first
         if let Some(parsed) = self.get(expression) {
@@ -150,7 +176,7 @@ impl ExpressionCacheV2 {
 
         // Return the Arc we just stored
         self.get(expression)
-            .ok_or_else(|| linkml_core::error::LinkMLError::internal("Cache put/get mismatch"))
+            .ok_or_else(|| linkml_core::LinkMLError::parse("Cache put/get mismatch".to_string()))
     }
 
     /// Clear the cache
@@ -194,9 +220,9 @@ impl ExpressionCacheV2 {
 /// Global expression cache using ArcCache
 pub struct GlobalExpressionCacheV2 {
     /// Primary cache for all expressions
-    primary: ArcCache<Arc<str>, ParsedExpression>,
+    primary: ArcCache<Arc<str>, Expression>,
     /// Hot cache for frequently used expressions
-    hot: ArcCache<Arc<str>, ParsedExpression>,
+    hot: ArcCache<Arc<str>, Expression>,
     /// Access counter for promotion
     access_counts: Arc<RwLock<HashMap<Arc<str>, u64>>>,
     /// Threshold for hot promotion
@@ -219,9 +245,9 @@ impl GlobalExpressionCacheV2 {
         &mut self,
         expression: &str,
         compute: F,
-    ) -> Result<Arc<ParsedExpression>>
+    ) -> Result<Arc<Expression>>
     where
-        F: FnOnce() -> Result<ParsedExpression>,
+        F: FnOnce() -> Result<Expression>,
     {
         let key = intern(expression);
 
@@ -243,15 +269,21 @@ impl GlobalExpressionCacheV2 {
             *count += 1;
         }
 
-        // Use primary cache
-        self.primary.get_or_compute(&key, compute)
+        // Use primary cache - handle Result properly
+        match compute() {
+            Ok(parsed) => Ok(self.primary.get_or_compute(&key, || parsed)),
+            Err(e) => Err(e),
+        }
     }
 
     /// Clear all caches
-    pub fn clear(&mut self) {
+    pub fn clear(&mut self) -> Result<()> {
         self.primary.clear();
         self.hot.clear();
-        self.access_counts.write().map_err(|e| anyhow::anyhow!("access_counts lock poisoned: {}", e))?.clear();
+        self.access_counts.write()
+            .map_err(|e| linkml_core::LinkMLError::parse(format!("access_counts lock poisoned: {}", e)))?
+            .clear();
+        Ok(())
     }
 }
 
@@ -276,13 +308,13 @@ impl ThreadSafeGlobalCache {
         &self,
         expression: &str,
         compute: F,
-    ) -> Result<Arc<ParsedExpression>>
+    ) -> Result<Arc<Expression>>
     where
-        F: FnOnce() -> Result<ParsedExpression>,
+        F: FnOnce() -> Result<Expression>,
     {
         self.inner
             .write()
-            .map_err(|e| anyhow::anyhow!("inner cache lock poisoned: {}", e))?
+            .map_err(|e| linkml_core::LinkMLError::parse(format!("inner cache lock poisoned: {}", e)))?
             .get_or_compute(expression, compute)
     }
 }
@@ -298,7 +330,7 @@ mod tests {
         // Test basic operations
         assert!(cache.get("test").is_none());
 
-        let parsed = ParsedExpression::default(); // Assuming default impl
+        let parsed = Expression::default(); // Assuming default impl
         cache.put("test", parsed.clone());
 
         assert!(cache.get("test").is_some());
@@ -312,9 +344,9 @@ mod tests {
     fn test_lru_eviction() {
         let cache = ExpressionCacheV2::new(2);
 
-        cache.put("expr1", ParsedExpression::default());
-        cache.put("expr2", ParsedExpression::default());
-        cache.put("expr3", ParsedExpression::default()); // Should evict expr1
+        cache.put("expr1", Expression::default());
+        cache.put("expr2", Expression::default());
+        cache.put("expr3", Expression::default()); // Should evict expr1
 
         assert!(cache.get("expr1").is_none());
         assert!(cache.get("expr2").is_some());
@@ -329,7 +361,7 @@ mod tests {
         let cache = ExpressionCacheV2::new(10)
             .with_max_age(Duration::from_millis(100));
 
-        cache.put("old", ParsedExpression::default());
+        cache.put("old", Expression::default());
 
         // Wait for expiry
         std::thread::sleep(Duration::from_millis(150));

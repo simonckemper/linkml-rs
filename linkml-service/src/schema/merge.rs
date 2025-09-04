@@ -1,4 +1,4 @@
-//! Schema merge functionality for LinkML
+//! Schema merge functionality for `LinkML`
 //!
 //! This module provides tools to merge multiple schemas into one.
 
@@ -84,11 +84,18 @@ pub struct SchemaMerge {
 
 impl SchemaMerge {
     /// Create new schema merge engine
+    #[must_use]
     pub fn new(options: MergeOptions) -> Self {
         Self { options }
     }
 
     /// Merge multiple schemas
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - No schemas are provided
+    /// - Conflicts are found and conflict resolution is set to Error
     pub fn merge(&self, schemas: &[SchemaDefinition]) -> Result<SchemaDefinition> {
         if schemas.is_empty() {
             return Err(LinkMLError::config("No schemas to merge"));
@@ -108,7 +115,7 @@ impl SchemaMerge {
         match self.options.strategy {
             MergeStrategy::Union => self.merge_union(schemas, &mut merged, &mut conflicts)?,
             MergeStrategy::Intersection => {
-                self.merge_intersection(schemas, &mut merged, &mut conflicts)?
+                self.merge_intersection(schemas, &mut merged, &mut conflicts)?;
             }
             MergeStrategy::Override => self.merge_override(schemas, &mut merged, &mut conflicts)?,
             MergeStrategy::Custom => self.merge_custom(schemas, &mut merged, &mut conflicts)?,
@@ -135,10 +142,10 @@ impl SchemaMerge {
     ) -> Result<()> {
         // Use first schema's metadata as base
         if let Some(first) = schemas.first() {
-            merged.name = first.name.clone();
-            merged.version = first.version.clone();
-            merged.description = first.description.clone();
-            merged.license = first.license.clone();
+            merged.name.clone_from(&first.name);
+            merged.version.clone_from(&first.version);
+            merged.description.clone_from(&first.description);
+            merged.license.clone_from(&first.license);
 
             // Merge prefixes
             for schema in schemas {
@@ -221,7 +228,7 @@ impl SchemaMerge {
         }
 
         // Merge enums
-        for (_i, schema) in schemas.iter().enumerate() {
+        for schema in schemas.iter() {
             for (name, enum_def) in &schema.enums {
                 if let Some(existing) = merged.enums.get(name) {
                     // Conflict detected - merge enum values

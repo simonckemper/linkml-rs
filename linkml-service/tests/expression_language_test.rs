@@ -407,6 +407,8 @@ fn test_expression_security_limits() {
         max_call_depth: 10,
         timeout: Duration::from_millis(100),
         max_memory: 1024, // 1KB
+        enable_cache: false,
+        cache_size: 10,
     };
 
     let evaluator = Arc::new(Evaluator::with_config(config));

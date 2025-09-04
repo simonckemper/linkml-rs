@@ -22,9 +22,9 @@ use linkml_service::{
     },
     expression::{
         ExpressionEngine,
-        parser::Parser as ExpressionParser,
         evaluator::Evaluator,
         functions::FunctionRegistry,
+        parser::Parser as ExpressionParser,
     },
     loader::{
         yaml::YamlLoader,
