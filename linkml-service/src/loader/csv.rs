@@ -788,7 +788,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_csv_load_and_dump() {
+    async fn test_csv_load_and_dump() -> Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::new();
         let dumper = CsvDumper::new();
@@ -843,10 +843,11 @@ p2,Bob,25,bob@example.com,tag3
         assert!(dumped.contains("Alice"));
         assert!(dumped.contains("Bob"));
         assert!(dumped.contains("tag1;tag2"));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_tsv_format() {
+    async fn test_tsv_format() -> Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::tsv();
 
@@ -867,17 +868,18 @@ p2,Bob,25,bob@example.com,tag3
             instances[0].data.get("name"),
             Some(&JsonValue::String("Alice".to_string()))
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_type_conversion() {
+    async fn test_type_conversion() -> Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::new();
 
-        let csv_content = r#"id,name,age,email,tags
+        let csv_content = r"id,name,age,email,tags
 p1,Alice,30,alice@example.com,single
 p2,Bob,not_a_number,bob@example.com,
-"#;
+";
 
         let options = LoadOptions {
             target_class: Some("Person".to_string()),
@@ -901,5 +903,6 @@ p2,Bob,not_a_number,bob@example.com,
             .await
             .map_err(|e| anyhow::anyhow!("should load with skip_invalid: {}", e))?;
         assert_eq!(instances.len(), 1); // Only valid record
+        Ok(())
     }
 }

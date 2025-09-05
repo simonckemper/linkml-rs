@@ -186,7 +186,8 @@ pub trait HasMetadata {
 }
 
 /// Merge two sets of element metadata
-#[must_use] pub fn merge_element_metadata(
+#[must_use]
+pub fn merge_element_metadata(
     base: &ElementMetadata,
     override_metadata: &ElementMetadata,
 ) -> ElementMetadata {
@@ -282,7 +283,8 @@ mod tests {
             role: Some("maintainer".to_string()),
         };
 
-        let json = serde_json::to_string(&contributor).map_err(|e| anyhow::anyhow!("Error: {}", e))?;
+        let json =
+            serde_json::to_string(&contributor).map_err(|e| anyhow::anyhow!("Error: {}", e))?;
         assert!(json.contains("Jane Doe"));
         assert!(json.contains("maintainer"));
         Ok(())

@@ -795,8 +795,7 @@ impl Generator for YamlValidatorGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::prelude::*;
-    use std::collections::HashMap;
+    use super::*;
 
     #[test]
     fn test_yaml_validator_generation() {

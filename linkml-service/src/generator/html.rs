@@ -930,7 +930,7 @@ impl CodeFormatter for HtmlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generator::GeneratorOptions;
+
 
     #[tokio::test]
     async fn test_html_generation() {

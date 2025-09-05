@@ -286,12 +286,12 @@ mod tests {
             temp_dir.path().to_path_buf(),
         ));
 
-        let yaml_content = r#"
+        let yaml_content = r"
 - name: Alice
   age: 30
 - name: Bob
   age: 25
-"#;
+";
 
         let file_path = Path::new("data.yaml");
         fs.write(file_path, yaml_content)

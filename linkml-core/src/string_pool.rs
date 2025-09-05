@@ -22,7 +22,8 @@ impl Default for StringPool {
 
 impl StringPool {
     /// Create a new string pool
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self {
             pool: RwLock::new(HashMap::new()),
         }
@@ -35,7 +36,9 @@ impl StringPool {
             // If lock is poisoned, we create a fresh string instead of panicking
             // This allows the system to continue operating even after a panic
             let pool_result = self.pool.read();
-            if let Ok(pool) = pool_result && let Some(interned) = pool.get(s) {
+            if let Ok(pool) = pool_result
+                && let Some(interned) = pool.get(s)
+            {
                 return Arc::clone(interned);
             }
         }
@@ -66,10 +69,7 @@ impl StringPool {
     /// Get current pool size for monitoring
     pub fn size(&self) -> usize {
         // If lock is poisoned, return 0 as a safe default
-        self.pool
-            .read()
-            .map(|guard| guard.len())
-            .unwrap_or(0)
+        self.pool.read().map(|guard| guard.len()).unwrap_or(0)
     }
 
     /// Clear the pool (mainly for testing)
@@ -94,7 +94,8 @@ pub fn intern_option(s: Option<&str>) -> Option<Arc<str>> {
 }
 
 /// Convenience function to intern a Vec<String>
-#[must_use] pub fn intern_vec(v: Vec<String>) -> Vec<Arc<str>> {
+#[must_use]
+pub fn intern_vec(v: Vec<String>) -> Vec<Arc<str>> {
     v.into_iter().map(|s| intern(&s)).collect()
 }
 

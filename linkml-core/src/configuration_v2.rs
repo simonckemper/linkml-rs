@@ -187,17 +187,25 @@ pub struct RuleCacheConfig {
     pub ttl_seconds: u64,
 }
 
+/// Performance feature flags
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+pub enum PerformanceFeature {
+    /// Performance monitoring
+    #[default]
+    Monitoring,
+    /// String interning optimization
+    StringInterning,
+    /// Background task processing
+    BackgroundTasks,
+    /// Cache warming on startup
+    CacheWarming,
+}
+
 /// Performance features configuration
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct PerformanceFeatures {
-    /// Enable performance monitoring
-    pub monitoring: bool,
-    /// Enable string interning
-    pub string_interning: bool,
-    /// Enable background tasks
-    pub background_tasks: bool,
-    /// Enable cache warming
-    pub cache_warming: bool,
+    /// Enabled performance features
+    pub enabled_features: Vec<PerformanceFeature>,
 }
 
 /// Performance configuration
@@ -368,11 +376,12 @@ impl Validate for LinkMLServiceConfig {
 
         // Validate performance config
         if let Some(cpu_limit) = self.performance.cpu_limit_percent
-            && (cpu_limit == 0 || cpu_limit > 100) {
-                return Err(ConfigurationError::validation_error(
-                    "CPU limit must be between 1 and 100 percent".to_string(),
-                ));
-            }
+            && (cpu_limit == 0 || cpu_limit > 100)
+        {
+            return Err(ConfigurationError::validation_error(
+                "CPU limit must be between 1 and 100 percent".to_string(),
+            ));
+        }
 
         // Validate security limits
         if self.security_limits.max_string_length == 0 {
@@ -472,12 +481,10 @@ impl Default for RuleCacheConfig {
 
 impl Default for PerformanceConfig {
     fn default() -> Self {
+        use PerformanceFeature::{BackgroundTasks, Monitoring, StringInterning};
         Self {
             features: PerformanceFeatures {
-                monitoring: true,
-                string_interning: true,
-                background_tasks: true,
-                cache_warming: false,
+                enabled_features: vec![Monitoring, StringInterning, BackgroundTasks],
             },
             memory_limit_bytes: None,
             cpu_limit_percent: None,
@@ -551,7 +558,7 @@ impl LinkMLServiceConfig {
         config.typedb.server_address = String::from("localhost:1729");
         config.validator.fail_fast = true;
         config.cache.max_entries = 100;
-        config.performance.features.monitoring = true;
+        // Performance monitoring is already enabled by default
         config.security_limits.max_validation_time_ms = 1000; // More lenient for dev
         config
     }
@@ -564,7 +571,11 @@ impl LinkMLServiceConfig {
         config.typedb.batch_size = 10;
         config.validator.thread_count = 1;
         config.cache.max_entries = 10;
-        config.performance.features.background_tasks = false;
+        config
+            .performance
+            .features
+            .enabled_features
+            .retain(|f| !matches!(f, PerformanceFeature::BackgroundTasks));
         config
     }
 
@@ -576,8 +587,12 @@ impl LinkMLServiceConfig {
         config.typedb.max_retries = 5;
         config.validator.enable_parallel = true;
         config.cache.enable_compression = true;
-        config.performance.features.string_interning = true;
-        config.performance.features.cache_warming = true;
+        // String interning and cache warming already enabled by default
+        config
+            .performance
+            .features
+            .enabled_features
+            .push(PerformanceFeature::CacheWarming);
         config
     }
 }

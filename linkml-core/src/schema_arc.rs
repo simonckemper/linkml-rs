@@ -1,16 +1,9 @@
 //!  Arc-based schema handling for efficient sharing
 //!  This module provides utilities and patterns for working with schemas
 //!  wrapped in Arc to minimize cloning and improve performance.
+use crate::types::SchemaDefinition;
 use std::ops::Deref;
 use std::sync::Arc;
-use
-crate ::{
-    error ::{
-        LinkMLError ,
-        Result
-    } ,
-    types ::SchemaDefinition ,
-} ;
 ///  Type alias for Arc-wrapped schema
 pub type ArcSchema = Arc<SchemaDefinition>;
 ///  Trait for types that can provide an Arc<SchemaDefinition>
@@ -25,7 +18,7 @@ pub trait SchemaProvider {
 
 ///  Wrapper for schema operations that need Arc
 pub struct SchemaHandle {
-    schema: ArcSchema ,
+    schema: ArcSchema,
 }
 impl SchemaHandle {
     ///  Create a new schema handle
@@ -39,9 +32,7 @@ impl SchemaHandle {
     ///  Create from existing Arc
     #[must_use]
     pub fn from_arc(schema: ArcSchema) -> Self {
-        Self {
-            schema
-        }
+        Self { schema }
     }
 
     ///  Get the inner Arc
@@ -102,12 +93,14 @@ impl SchemaBuilder {
     }
 
     ///  Set schema name
+    #[must_use]
     pub fn with_name(mut self, name: impl Into<String>) -> Self {
         self.modifications.name = Some(name.into());
         self
     }
 
     ///  Set schema version
+    #[must_use]
     pub fn with_version(mut self, version: impl Into<String>) -> Self {
         self.modifications.version = Some(version.into());
         self
@@ -140,7 +133,9 @@ impl SchemaBuilder {
         }
     }
     fn has_modifications(&self) -> bool {
-        self.modifications.name.is_some() || self.modifications.version.is_some() || self.modifications.imports.is_some()
+        self.modifications.name.is_some()
+            || self.modifications.version.is_some()
+            || self.modifications.imports.is_some()
     }
 }
 
@@ -159,10 +154,15 @@ impl SchemaCache {
 
     ///  Get or insert schema
     pub fn get_or_insert<F>(&self, key: &str, f: F) -> ArcSchema
-    where F: FnOnce() -> SchemaDefinition {
+    where
+        F: FnOnce() -> SchemaDefinition,
+    {
         use crate::string_pool::intern;
         let key = intern(key);
-        self.cache.entry(key).or_insert_with(|| Arc::new(f())).clone()
+        self.cache
+            .entry(key)
+            .or_insert_with(|| Arc::new(f()))
+            .clone()
     }
 
     ///  Get schema if exists
@@ -203,7 +203,12 @@ impl SchemaDefinitionExt for SchemaDefinition {
     }
 }
 
-///  Helper to work with multiple schemas efficiently
+/// Helper to work with multiple schemas efficiently
+/// 
+/// Note: Schema merging functionality is provided by the `SchemaMerger` 
+/// in the linkml-service crate at `linkml_service::transform::schema_merger`.
+/// This keeps the core crate focused on basic data structures while 
+/// complex operations are handled in the service layer.
 pub struct SchemaSet {
     schemas: Vec<ArcSchema>,
 }
@@ -232,20 +237,33 @@ impl SchemaSet {
         self.schemas.iter().find(|s| s.name == name)
     }
 
-    ///  Merge all schemas into one
-    fn merge(self) -> Result<ArcSchema> {
-        if self.schemas.is_empty() {
-            return Err(LinkMLError::Other {
-                message: "Cannot merge empty schema set".to_string(),
-                source: None,
-            });
-        }
-        if self.schemas.len() == 1 {
-            return Ok(self.schemas.into_iter().next().expect("Operation failed"));
-        }
-        let mut merged = (*self.schemas[0]).clone();
-        merged.name = "merged_schema".to_string();
-        Ok(Arc::new(merged))
+    /// Get all schemas as a vector
+    #[must_use]
+    pub fn schemas(&self) -> &[ArcSchema] {
+        &self.schemas
+    }
+
+    /// Convert to vector of schemas (consumes self)
+    pub fn into_schemas(self) -> Vec<ArcSchema> {
+        self.schemas
+    }
+    
+    /// Get the number of schemas in the set
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.schemas.len()
+    }
+    
+    /// Check if the set is empty
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.schemas.is_empty()
+    }
+}
+
+impl Default for SchemaSet {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -276,7 +294,9 @@ mod tests {
         });
         let same = SchemaBuilder::from_schema(&original).build();
         assert!(Arc::ptr_eq(&original, &same));
-        let modified = SchemaBuilder::from_schema(&original).with_name("modified").build();
+        let modified = SchemaBuilder::from_schema(&original)
+            .with_name("modified")
+            .build();
         assert!(!Arc::ptr_eq(&original, &modified));
         assert_eq!(modified.name, "modified");
     }

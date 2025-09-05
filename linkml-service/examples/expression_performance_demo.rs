@@ -1,11 +1,9 @@
-#![doc = " Demonstration of expression performance optimizations"]
-#![doc = ""]
-#![doc = " This example shows the performance benefits of JIT compilation and caching"]
-#![doc = " for LinkML expressions."]
+//! Demonstration of expression performance optimizations
+
+//! This example shows the performance benefits of JIT compilation and caching
+//! for LinkML expressions.
 use linkml_service::expression::{
-    ExpressionEngine,
-    engine_v2::{EngineBuilder, ExpressionEngineV2},
-};
+    ExpressionEngine, engine_v2::{EngineBuilder, ExpressionEngineV2}, };
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;
@@ -25,41 +23,18 @@ fn create_test_context() -> HashMap<String, serde_json::Value> {
     context.insert("name".to_string(), json!("John Doe"));
     context.insert("scores".to_string(), json!([85, 90, 78, 92, 88]));
     context.insert(
-        "profile".to_string(),
-        json ! ( {
-        "active" : true ,
-             "role" : "user" ,
-             "permissions" : ["read" ,
-             "write"]
+        "profile".to_string(), json ! ( {
+        "active" : true, "role" : "user", "permissions" : ["read", "write"]
         }
-        ),
-    );
+        ), );
     context
 }
 fn create_test_expressions() -> Vec<(&'static str, &'static str)> {
     vec![
-        ("Simple arithmetic", "age + 5"),
-        ("String manipulation", "upper(name)"),
-        ("Complex calculation", "avg(scores) * 1.1 + stddev(scores)"),
-        (
-            "Conditional logic",
-            "case(age >= 18,
-     \"adult\",
-     age >= 13,
-     \"teen\",
-     \"child\")",
-        ),
-        (
-            "Field access",
-            "profile.active && contains(profile.permissions,
-     \"write\")",
-        ),
-        (
-            "Function composition",
-            "round(sqrt(sum(scores)) / count(scores),
-     2)",
-        ),
-    ]
+        ("Simple arithmetic", "age + 5"), ("String manipulation", "upper(name)"), ("Complex calculation", "avg(scores) * 1.1 + stddev(scores)"), (
+            "Conditional logic", "case(age >= 18, \"adult\", age >= 13, \"teen\", \"child\")", ), (
+            "Field access", "profile.active && contains(profile.permissions, \"write\")", ), (
+            "Function composition", "round(sqrt(sum(scores)) / count(scores), 2)", ), ]
 }
 fn compare_engines(expressions: &[(&str, &str)], context: &HashMap<String, serde_json::Value>) {
     println!("Engine Performance Comparison");
@@ -81,14 +56,13 @@ fn compare_engines(expressions: &[(&str, &str)], context: &HashMap<String, serde
     }
     for (name, expr) in expressions {
         println!(
-            "Expression:  {
+            "Expression:{
 
 }
 -  {
 
 }
-",
-            name, expr
+", name, expr
         );
         let start = Instant::now();
         for _ in 0..1000 {
@@ -105,79 +79,56 @@ fn compare_engines(expressions: &[(&str, &str)], context: &HashMap<String, serde
             v2_no_opt.evaluate(expr, context).expect("Operation failed");
         }
         let v2_no_opt_time = start.elapsed();
-        println!(
-            "  V1 Engine:           {
-:?
-}
-",
-            v1_time
+        println!(" V1 Engine:{:?}", v1_time );
+        println!("  V2 (no opt):{:?}", v2_no_opt_time
+        );
+        println!("  V2 (optimized):{:?}", v2_opt_time
         );
         println!(
-            "  V2 (no opt):         {
-:?
-}
-",
-            v2_no_opt_time
-        );
-        println!(
-            "  V2 (optimized):      {
-:?
-}
-",
-            v2_opt_time
-        );
-        println!(
-            "  Speedup:             {
+            "  Speedup:{
 :.2
 }
-x",
-            v1_time.as_nanos() as f64 / v2_opt_time.as_nanos() as f64
+x", v1_time.as_nanos() as f64 / v2_opt_time.as_nanos() as f64
         );
         println!();
     }
     let metrics = v2_engine.metrics();
     println!("V2 Engine Metrics:");
     println!(
-        "  Total evaluations:      {
+        "  Total evaluations:{
 
 }
-",
-        metrics.total_evaluations
+", metrics.total_evaluations
     );
     println!(
-        "  Compiled evaluations:   {
+        "  Compiled evaluations:{
 
 }
-",
-        metrics.compiled_evaluations
+", metrics.compiled_evaluations
     );
     println!(
-        "  Cache hit rate:         {
+        "  Cache hit rate:{
 :.2
 }
-%",
-        metrics.cache_hit_rate * 100.0
+%", metrics.cache_hit_rate * 100.0
     );
     println!(
-        "  Parse time:             {
+        "  Parse time:{
 
 }
-µs",
-        metrics.parse_time_us
+µs", metrics.parse_time_us
     );
     println!(
-        "  Compile time:           {
+        "  Compile time:{
 
 }
-µs",
-        metrics.compile_time_us
+µs", metrics.compile_time_us
     );
     println!(
-        "  Eval time:              {
+        "  Eval time:{
 
 }
-µs",
-        metrics.eval_time_us
+µs", metrics.eval_time_us
     );
     println!();
 }
@@ -192,65 +143,23 @@ fn demonstrate_caching() {
     println!("First pass (cache misses):");
     let start = Instant::now();
     for i in 0..50 {
-        let expr = format!(
-            " {
-
-}
-+  {
-
-}
-",
-            i,
-            i + 1
-        );
-        engine.evaluate(&expr, &context).expect("Operation failed");
-    }
-    let first_pass = start.elapsed();
-    println!(
-        "  Time:  {
-:?
-}
-",
-        first_pass
-    );
+ let expr = format!("{println!(" Time:{:?}", first_pass );
     println!("Second pass (cache hits):");
     let start = Instant::now();
     for i in 0..50 {
-        let expr = format!(
-            " {
-
-}
-+  {
-
-}
-",
-            i,
-            i + 1
-        );
-        engine.evaluate(&expr, &context).expect("Operation failed");
-    }
-    let second_pass = start.elapsed();
+ let expr = format!("{println!(" Time:{:?}", second_pass );
     println!(
-        "  Time:  {
-:?
-}
-",
-        second_pass
-    );
-    println!(
-        "  Speedup:  {
+        "  Speedup:{
 :.2
 }
-x",
-        first_pass.as_nanos() as f64 / second_pass.as_nanos() as f64
+x", first_pass.as_nanos() as f64 / second_pass.as_nanos() as f64
     );
     let metrics = engine.metrics();
     println!(
-        "  Cache hit rate:  {
+        "  Cache hit rate:{
 :.2
 }
-%",
-        metrics.cache_hit_rate * 100.0
+%", metrics.cache_hit_rate * 100.0
     );
     println!();
 }
@@ -291,32 +200,18 @@ fn demonstrate_compilation() {
     }
     let compiled_time = start.elapsed();
     println!(
-        "Expression:  {
+        "Expression:{
 
 }
-",
-        complex_expr
+", complex_expr
     );
+    println!(" Interpreted:{:?}", interpreted_time );
+    println!(" Compiled:{:?}", compiled_time );
     println!(
-        "  Interpreted:  {
-:?
-}
-",
-        interpreted_time
-    );
-    println!(
-        "  Compiled:     {
-:?
-}
-",
-        compiled_time
-    );
-    println!(
-        "  Speedup:      {
+        "  Speedup:{
 :.2
 }
-x",
-        interpreted_time.as_nanos() as f64 / compiled_time.as_nanos() as f64
+x", interpreted_time.as_nanos() as f64 / compiled_time.as_nanos() as f64
     );
     println!();
 }
@@ -331,36 +226,25 @@ fn benchmark_validation_scenario() {
     println!("Scenario: Schema Validation Rules");
     let engine = EngineBuilder::new().cache_capacity(500).build();
     let rules = vec![
-        "age >= 0 && age <= 150",
-        "len(email) > 0 && contains(email,
-     \"@\")",
-        "salary >= min_salary && salary <= max_salary",
-        "start_date < end_date",
-        "status == \"active\" || status == \"pending\"",
-    ];
+        "age >= 0 && age <= 150", "len(email) > 0 && contains(email, \"@\")", "salary >= min_salary && salary <= max_salary", "start_date < end_date", "status == \"active\" || status == \"pending\"", ];
     let mut total_time = std::time::Duration::ZERO;
     for i in 0..1000 {
         let mut context = HashMap::new();
         context.insert("age".to_string(), json!(25 + i % 50));
         context.insert(
-            "email".to_string(),
-            json!(format!(
+            "email".to_string(), json!(format!(
                 "user {
 
 }
-@example.com",
-                i
-            )),
-        );
+@example.com", i
+            )), );
         context.insert("salary".to_string(), json!(50000 + i * 100));
         context.insert("min_salary".to_string(), json!(30000));
         context.insert("max_salary".to_string(), json!(200000));
         context.insert("start_date".to_string(), json!("2024-01-01"));
         context.insert("end_date".to_string(), json!("2024-12-31"));
         context.insert(
-            "status".to_string(),
-            json!(if i % 2 == 0 { "active" } else { "pending" }),
-        );
+            "status".to_string(), json!(if i % 2 == 0 { "active" } else { "pending" }), );
         let start = Instant::now();
         for rule in &rules {
             engine.evaluate(rule, &context).expect("Operation failed");
@@ -368,20 +252,8 @@ fn benchmark_validation_scenario() {
         total_time += start.elapsed();
     }
     println!("  Validated 1000 records with 5 rules each");
-    println!(
-        "  Total time:  {
-:?
-}
-",
-        total_time
-    );
-    println!(
-        "  Per record:  {
-:?
-}
-",
-        total_time / 1000
-    );
+    println!(" Total time:{:?}", total_time );
+    println!(" Per record:{:?}", total_time / 1000 );
     println!();
 }
 fn benchmark_computed_fields_scenario() {
@@ -392,10 +264,7 @@ fn benchmark_computed_fields_scenario() {
         .expect("Operation failed");
     engine
         .precompile(
-            "round(price * (1 - discount / 100),
-     2)",
-            Some("product"),
-        )
+            "round(price * (1 - discount / 100), 2)", Some("product"), )
         .expect("Operation failed");
     engine
         .precompile("year(now()) - year(birth_date)", Some("person"))
@@ -413,11 +282,7 @@ fn benchmark_computed_fields_scenario() {
             .expect("Operation failed");
         engine
             .evaluate_with_schema(
-                "round(price * (1 - discount / 100),
-     2)",
-                &context,
-                Some("product"),
-            )
+                "round(price * (1 - discount / 100), 2)", &context, Some("product"), )
             .expect("Operation failed");
         engine
             .evaluate_with_schema("year(now()) - year(birth_date)", &context, Some("person"))
@@ -425,24 +290,10 @@ fn benchmark_computed_fields_scenario() {
     }
     let elapsed = start.elapsed();
     println!(
-        "  Computed 30,
-    000 fields (10,
-    000 records × 3 fields)"
+        "  Computed 30, 000 fields (10, 000 records × 3 fields)"
     );
-    println!(
-        "  Total time:  {
-:?
-}
-",
-        elapsed
-    );
-    println!(
-        "  Per field:  {
-:?
-}
-",
-        elapsed / 30_000
-    );
+    println!(" Total time:{:?}", elapsed );
+    println!(" Per field:{:?}", elapsed / 30_000 );
     println!();
 }
 fn benchmark_filtering_scenario() {
@@ -451,8 +302,7 @@ fn benchmark_filtering_scenario() {
     let mut records = Vec::new();
     for i in 0..100 {
         records.push(json ! ( {
-        "id" : i ,
-             "type" :
+        "id" : i, "type" :
             if i % 3 == 0  {
         "A"
         }
@@ -462,22 +312,14 @@ fn benchmark_filtering_scenario() {
         }
         else  {
         "C"
-        }
-        ,
-             "value" : i * 10 ,
-             "active" : i % 2 == 0
+        }, "value" : i * 10, "active" : i % 2 == 0
         }
         ));
     }
     let mut context = HashMap::new();
     context.insert("records".to_string(), json!(records));
     let expressions = vec![
-        "count(records,
-     \"non-null\")",
-        "avg(group_by(records,
-     \"type\").\"\\\"A\\\"\".value)",
-        "sum(records.value)",
-    ];
+        "count(records, \"non-null\")", "avg(group_by(records, \"type\").\"\\\"A\\\"\".value)", "sum(records.value)", ];
     let start = Instant::now();
     for _ in 0..1000 {
         for expr in &expressions {
@@ -486,21 +328,13 @@ fn benchmark_filtering_scenario() {
     }
     let elapsed = start.elapsed();
     println!(
-        "  Performed 3,
-    000 filtering/aggregation operations"
+        "  Performed 3, 000 filtering/aggregation operations"
     );
-    println!(
-        "  Total time:  {
-:?
+    println!(" Total time:{:?}", elapsed );
+    println!(" Per operation:{:?}", elapsed / 3_000 );
 }
-",
-        elapsed
-    );
-    println!(
-        "  Per operation:  {
-:?
+
 }
-",
-        elapsed / 3_000
-    );
+}
+}
 }

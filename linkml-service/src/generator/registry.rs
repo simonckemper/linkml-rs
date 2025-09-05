@@ -316,7 +316,6 @@ pub struct GeneratorInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generator::traits::GeneratedOutput;
     use async_trait::async_trait;
     use linkml_core::LinkMLError;
     use linkml_core::prelude::SchemaDefinition;
@@ -348,6 +347,10 @@ mod tests {
 
         fn get_default_filename(&self) -> &str {
             "output.test"
+        }
+
+        fn validate_schema(&self, _schema: &SchemaDefinition) -> Result<(), LinkMLError> {
+            Ok(())
         }
     }
 

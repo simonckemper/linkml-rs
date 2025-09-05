@@ -336,7 +336,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_nested_xml() {
-        let xml = r#"
+        let xml = r"
             <organization>
                 <name>ACME Corp</name>
                 <employees>
@@ -350,7 +350,7 @@ mod tests {
                     </employee>
                 </employees>
             </organization>
-        "#;
+        ";
 
         let loader = XmlLoader::new();
         let value = loader.parse_xml(xml)?;

@@ -332,7 +332,7 @@ pub struct GlobalCacheStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::ast::{BinaryOp, Expression};
+    use crate::expression::ast::Expression;
 
     #[test]
     fn test_basic_caching() {

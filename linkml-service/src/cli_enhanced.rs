@@ -948,7 +948,7 @@ println ! ("  Valid:  {
 {
 
 }
-" ,
+",
      total_valid ,
 
     if total_valid > 0  {
@@ -1108,7 +1108,7 @@ fn convert_command (& self ,
 println ! (" {
 
 }
-" ,
+",
      "Schema Conversion" . bold () . blue ()) ;
 println ! (" {
 
@@ -1690,8 +1690,7 @@ LoadFormat ::  Csv =>  {
 let mut csv_options = CsvOptions ::  default () ;
 if
     let Some (delimiter) = load_options . get ("delimiter")  {
-csv_options . delimiter = delimiter . chars () . next () . unwrap_or (',
-    ') as u8 ;
+csv_options . delimiter = delimiter . chars () . next () . unwrap_or (',') as u8 ;
 
 }
 if
@@ -1896,8 +1895,7 @@ DumpFormat ::  Csv =>  {
 let mut csv_options = CsvOptions ::  default () ;
 if
     let Some (delimiter) = dump_options . get ("delimiter")  {
-csv_options . delimiter = delimiter . chars () . next () . unwrap_or (',
-    ') as u8 ;
+csv_options . delimiter = delimiter . chars () . next () . unwrap_or (',') as u8 ;
 
 }
 let dumper = CsvDumper ::  with_options (csv_options) ;

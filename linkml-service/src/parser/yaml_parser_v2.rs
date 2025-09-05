@@ -100,7 +100,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_yaml_parser_v2() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_yaml_parser_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let temp_dir = TempDir::new()?;
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
@@ -108,7 +108,7 @@ mod tests {
         let parser = YamlParserV2::new(fs.clone());
 
         // Create a test schema
-        let schema_content = r#"
+        let schema_content = r"
 id: https://example.org/test
 name: TestSchema
 description: A test schema
@@ -124,7 +124,7 @@ classes:
       age:
         name: age
         range: integer
-"#;
+";
 
         // Write to file
         let schema_path = Path::new("test_schema.yaml");

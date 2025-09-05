@@ -62,11 +62,12 @@ impl Default for SchemaConfig {
 }
 
 /// Validation modes for configuration
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub enum ValidationMode {
     /// Strict validation - all rules enforced
     Strict,
     /// Standard validation - most rules enforced
+    #[default]
     Standard,
     /// Permissive validation - only critical rules enforced
     Permissive,
@@ -102,12 +103,6 @@ pub struct ValidationConfig {
     /// Validation timeout
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,
-}
-
-impl Default for ValidationMode {
-    fn default() -> Self {
-        ValidationMode::Standard
-    }
 }
 
 impl Default for ValidationConfig {
@@ -162,17 +157,25 @@ impl Default for PerformanceConfig {
     }
 }
 
-/// Generation targets
+/// Generation target options
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+pub enum GenerationTarget {
+    /// Generate `TypeQL` schemas
+    TypeQL,
+    /// Generate Rust code
+    Rust,
+    /// Generate GraphQL schemas
+    GraphQL,
+    /// Generate documentation
+    #[default]
+    Documentation,
+}
+
+/// Generation targets configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct GenerationTargets {
-    /// Enable `TypeQL` generation
-    pub typeql: bool,
-    /// Enable Rust generation
-    pub rust: bool,
-    /// Enable GraphQL generation
-    pub graphql: bool,
-    /// Enable documentation generation
-    pub docs: bool,
+    /// Enabled generation targets
+    pub enabled_targets: Vec<GenerationTarget>,
 }
 
 /// Code generation configuration
@@ -194,13 +197,11 @@ pub struct GenerationConfig {
 
 impl Default for GenerationConfig {
     fn default() -> Self {
+        use GenerationTarget::{Documentation, GraphQL, Rust, TypeQL};
         Self {
             output_dir: PathBuf::from("generated"),
             targets: GenerationTargets {
-                typeql: true,
-                rust: true,
-                graphql: true,
-                docs: true,
+                enabled_targets: vec![TypeQL, Rust, GraphQL, Documentation],
             },
             doc_format: "markdown".to_string(),
             include_source_info: true,

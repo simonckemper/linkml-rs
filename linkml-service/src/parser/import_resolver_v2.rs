@@ -545,7 +545,7 @@ mod tests {
         let base_path = temp_dir.path();
 
         // Base schema
-        let base_schema = r#"
+        let base_schema = r"
 id: https://example.org/base
 name: base
 version: 1.0.0
@@ -560,14 +560,14 @@ slots:
   base_slot:
     name: base_slot
     range: string
-"#;
+";
 
         tokio::fs::write(base_path.join("base.yaml"), base_schema)
             .await
             .map_err(|e| anyhow::anyhow!("should write base schema: {}", e))?;
 
         // Another schema with conflicts
-        let other_schema = r#"
+        let other_schema = r"
 id: https://example.org/other
 name: other
 classes:
@@ -577,7 +577,7 @@ classes:
   SharedClass:
     name: SharedClass
     description: Different shared class
-"#;
+";
 
         tokio::fs::write(base_path.join("other.yaml"), other_schema)
             .await
@@ -646,20 +646,20 @@ classes:
         let base_path = temp_dir.path();
 
         // Schema A imports B
-        let schema_a = r#"
+        let schema_a = r"
 id: https://example.org/a
 name: a
 imports:
   - b
-"#;
+";
 
         // Schema B imports A (circular)
-        let schema_b = r#"
+        let schema_b = r"
 id: https://example.org/b
 name: b
 imports:
   - a
-"#;
+";
 
         tokio::fs::write(base_path.join("a.yaml"), schema_a)
             .await

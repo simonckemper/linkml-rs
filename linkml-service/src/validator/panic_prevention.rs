@@ -177,7 +177,7 @@ impl PanicSafeWrapper {
 
                 let info = PanicInfo {
                     thread_id: thread::current().id(),
-                    message: message.clone(),
+                    message: Some(message.clone()),
                     stack_depth,
                     timestamp: std::time::Instant::now(),
                     operation,
@@ -188,7 +188,7 @@ impl PanicSafeWrapper {
                 Err(LinkMLError::service(format!(
                     "Operation '{}' panicked: {}",
                     operation_name,
-                    message.unwrap_or_else(|| "unknown panic".to_string())
+                    message
                 )))
             }
         }
@@ -624,7 +624,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_stack_depth_tracker() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_stack_depth_tracker() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let tracker = StackDepthTracker::new(3);
 
         let _g1 = tracker.enter()?;
@@ -637,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn test_panic_wrapper() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_panic_wrapper() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let wrapper = PanicSafeWrapper::new(PanicPreventionConfig::default());
 
         // Normal operation
@@ -657,7 +657,7 @@ mod tests {
     }
 
     #[test]
-    fn test_safe_arithmetic() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_safe_arithmetic() -> std::result::Result<(), Box<dyn std::error::Error>> {
         assert!(SafeArithmetic::add(i32::MAX, 1).is_err());
         assert!(SafeArithmetic::sub(0u32, 1).is_err());
         assert!(SafeArithmetic::div(10, 0).is_err());
@@ -668,7 +668,7 @@ mod tests {
     }
 
     #[test]
-    fn test_safe_bounds() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_safe_bounds() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let vec = vec![1, 2, 3];
 
         assert_eq!(*SafeBounds::get(&vec, 1)?, 2);

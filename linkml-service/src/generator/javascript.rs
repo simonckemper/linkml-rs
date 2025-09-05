@@ -668,7 +668,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_generation() {
+    fn test_basic_generation() -> Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "test_schema".to_string();
 
@@ -702,5 +702,6 @@ mod tests {
         assert!(output.contains("static fromJSON(json)"));
         assert!(output.contains("toObject()"));
         assert!(output.contains("toJSON()"));
+        Ok(())
     }
 }

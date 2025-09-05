@@ -223,11 +223,12 @@ impl Validate for LinkMLServiceConfig {
 
         // Validate performance config
         if let Some(cpu_limit) = self.performance.cpu_limit_percent
-            && (cpu_limit == 0 || cpu_limit > 100) {
-                return Err(ConfigurationError::validation_error(
-                    "CPU limit must be between 1 and 100 percent".to_string(),
-                ));
-            }
+            && (cpu_limit == 0 || cpu_limit > 100)
+        {
+            return Err(ConfigurationError::validation_error(
+                "CPU limit must be between 1 and 100 percent".to_string(),
+            ));
+        }
 
         Ok(())
     }

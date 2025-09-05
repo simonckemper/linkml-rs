@@ -4,10 +4,11 @@ use crate::error::{LinkMLError, Result};
 use crate::types::{SchemaDefinition, SlotDefinition};
 use indexmap::IndexMap;
 use std::collections::{HashSet, VecDeque};
-use std::hash::{BuildHasher, Hash};
+use std::hash::BuildHasher;
 
 /// Check if a string is a valid `LinkML` identifier
-#[must_use] pub fn is_valid_identifier(s: &str) -> bool {
+#[must_use]
+pub fn is_valid_identifier(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
@@ -326,42 +327,42 @@ pub fn topological_sort_classes(schema: &SchemaDefinition) -> Result<Vec<String>
 
 /// Helper function for topological sort
 fn visit(
-        name: &str,
-        schema: &SchemaDefinition,
-        sorted: &mut Vec<String>,
-        visited: &mut HashSet<String>,
-        visiting: &mut HashSet<String>,
-    ) -> Result<()> {
-        if visited.contains(name) {
-            return Ok(());
-        }
-
-        if visiting.contains(name) {
-            return Err(LinkMLError::other(format!(
-                "Circular inheritance detected at: {name}"
-            )));
-        }
-
-        visiting.insert(name.to_string());
-
-        if let Some(class) = schema.classes.get(name) {
-            // Visit parent first
-            if let Some(parent) = &class.is_a {
-                visit(parent, schema, sorted, visited, visiting)?;
-            }
-
-            // Visit mixins
-            for mixin in &class.mixins {
-                visit(mixin, schema, sorted, visited, visiting)?;
-            }
-        }
-
-        visiting.remove(name);
-        visited.insert(name.to_string());
-        sorted.push(name.to_string());
-
-        Ok(())
+    name: &str,
+    schema: &SchemaDefinition,
+    sorted: &mut Vec<String>,
+    visited: &mut HashSet<String>,
+    visiting: &mut HashSet<String>,
+) -> Result<()> {
+    if visited.contains(name) {
+        return Ok(());
     }
+
+    if visiting.contains(name) {
+        return Err(LinkMLError::other(format!(
+            "Circular inheritance detected at: {name}"
+        )));
+    }
+
+    visiting.insert(name.to_string());
+
+    if let Some(class) = schema.classes.get(name) {
+        // Visit parent first
+        if let Some(parent) = &class.is_a {
+            visit(parent, schema, sorted, visited, visiting)?;
+        }
+
+        // Visit mixins
+        for mixin in &class.mixins {
+            visit(mixin, schema, sorted, visited, visiting)?;
+        }
+    }
+
+    visiting.remove(name);
+    visited.insert(name.to_string());
+    sorted.push(name.to_string());
+
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {

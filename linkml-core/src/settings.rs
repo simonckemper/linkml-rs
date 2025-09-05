@@ -278,12 +278,14 @@ pub enum NamingConvention {
 
 impl SchemaSettings {
     /// Create new schema settings with defaults
-    #[must_use] pub fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self::default()
     }
 
     /// Create settings optimized for strict validation
-    #[must_use] pub fn strict() -> Self {
+    #[must_use]
+    pub fn strict() -> Self {
         Self {
             validation: Some(ValidationSettings {
                 strict: Some(true),
@@ -300,7 +302,8 @@ impl SchemaSettings {
     }
 
     /// Create settings optimized for code generation
-    #[must_use] pub fn for_generation() -> Self {
+    #[must_use]
+    pub fn for_generation() -> Self {
         Self {
             generation: Some(GenerationSettings {
                 generate_builders: Some(true),
@@ -316,7 +319,8 @@ impl SchemaSettings {
     }
 
     /// Merge two settings, with other taking precedence
-    #[must_use] pub fn merge(self, other: Self) -> Self {
+    #[must_use]
+    pub fn merge(self, other: Self) -> Self {
         Self {
             validation: other.validation.or(self.validation),
             generation: other.generation.or(self.generation),
@@ -332,7 +336,8 @@ impl SchemaSettings {
     }
 
     /// Get a custom setting value
-    #[must_use] pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
+    #[must_use]
+    pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
         self.custom
             .get(key)
             .and_then(|v| serde_json::from_value(v.clone()).ok())
@@ -356,19 +361,22 @@ impl SchemaSettings {
 
 impl ValidationSettings {
     /// Check if strict validation is enabled
-    #[must_use] pub fn is_strict(&self) -> bool {
+    #[must_use]
+    pub fn is_strict(&self) -> bool {
         self.strict.unwrap_or(false)
     }
 
     /// Check if additional properties are allowed
-    #[must_use] pub fn allows_additional_properties(&self) -> bool {
+    #[must_use]
+    pub fn allows_additional_properties(&self) -> bool {
         self.allow_additional_properties.unwrap_or(true)
     }
 }
 
 impl GenerationSettings {
     /// Get language-specific options
-    #[must_use] pub fn get_language_options(&self, language: &str) -> Option<&LanguageOptions> {
+    #[must_use]
+    pub fn get_language_options(&self, language: &str) -> Option<&LanguageOptions> {
         self.language_options.get(language)
     }
 
@@ -380,12 +388,14 @@ impl GenerationSettings {
 
 impl ImportSettings {
     /// Check if imports should be followed
-    #[must_use] pub fn should_follow_imports(&self) -> bool {
+    #[must_use]
+    pub fn should_follow_imports(&self) -> bool {
         self.follow_imports.unwrap_or(true)
     }
 
     /// Get the resolution strategy
-    #[must_use] pub fn get_resolution_strategy(&self) -> ImportResolutionStrategy {
+    #[must_use]
+    pub fn get_resolution_strategy(&self) -> ImportResolutionStrategy {
         self.resolution_strategy
             .unwrap_or(ImportResolutionStrategy::Mixed)
     }
@@ -417,7 +427,9 @@ mod tests {
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = settings.generation.expect("generation settings should be present");
+        let generation = settings
+            .generation
+            .expect("generation settings should be present");
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
         assert_eq!(generation.generate_docs, Some(true));
@@ -428,9 +440,12 @@ mod tests {
         let mut settings = SchemaSettings::new();
 
         // Set a custom value
-        settings
-            .set_custom("max_items", 100)
-            .map_err(|e| anyhow::anyhow!("setting custom value with valid data should not fail in test: {}", e))?;
+        settings.set_custom("max_items", 100).map_err(|e| {
+            anyhow::anyhow!(
+                "setting custom value with valid data should not fail in test: {}",
+                e
+            )
+        })?;
 
         // Get the custom value
         let max_items: Option<i32> = settings.get_custom("max_items");
@@ -472,11 +487,19 @@ mod tests {
     #[test]
     fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
         let settings = SchemaSettings::strict();
-        let json = serde_json::to_string_pretty(&settings)
-            .map_err(|e| anyhow::anyhow!("serialization of valid settings should not fail in test: {}", e))?;
+        let json = serde_json::to_string_pretty(&settings).map_err(|e| {
+            anyhow::anyhow!(
+                "serialization of valid settings should not fail in test: {}",
+                e
+            )
+        })?;
 
-        let deserialized: SchemaSettings = serde_json::from_str(&json)
-            .map_err(|e| anyhow::anyhow!("deserialization of valid JSON should not fail in test: {}", e))?;
+        let deserialized: SchemaSettings = serde_json::from_str(&json).map_err(|e| {
+            anyhow::anyhow!(
+                "deserialization of valid JSON should not fail in test: {}",
+                e
+            )
+        })?;
         assert_eq!(settings, deserialized);
         Ok(())
     }

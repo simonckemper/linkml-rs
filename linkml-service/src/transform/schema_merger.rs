@@ -722,7 +722,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_merge() {
+    fn test_basic_merge() -> Result<(), Box<dyn std::error::Error>> {
         let schema1 = create_test_schema("schema1");
         let schema2 = create_test_schema("schema2");
 
@@ -741,6 +741,7 @@ mod tests {
 
         // Should have the common class
         assert!(result.classes.contains_key("Person"));
+        Ok(())
     }
 
     #[test]
@@ -759,7 +760,7 @@ mod tests {
     }
 
     #[test]
-    fn test_override_strategy() {
+    fn test_override_strategy() -> Result<(), Box<dyn std::error::Error>> {
         let mut schema1 = create_test_schema("schema1");
         let mut schema2 = create_test_schema("schema2");
 
@@ -794,10 +795,11 @@ mod tests {
         // Should have schema2's version
         let name_slot = result.slots.get("name").ok_or_else(|| anyhow::anyhow!("name slot should exist"))?;
         assert_eq!(name_slot.range, Some("text".to_string()));
+        Ok(())
     }
 
     #[test]
-    fn test_merge_imports() {
+    fn test_merge_imports() -> Result<(), Box<dyn std::error::Error>> {
         let schema1 = SchemaDefinition {
             id: "schema1".to_string(),
             name: "schema1".to_string(),
@@ -822,5 +824,6 @@ mod tests {
         assert!(result.imports.contains(&"import1".to_string()));
         assert!(result.imports.contains(&"import2".to_string()));
         assert!(result.imports.contains(&"import3".to_string()));
+        Ok(())
     }
 }

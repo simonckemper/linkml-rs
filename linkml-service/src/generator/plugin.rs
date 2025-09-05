@@ -236,7 +236,7 @@ impl GeneratorPlugin for CustomGeneratorPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generator::{GeneratedOutput, GeneratorOptions};
+
     use linkml_core::prelude::*;
 
     /// Test generator for plugin system
@@ -268,6 +268,10 @@ mod tests {
 
         fn get_default_filename(&self) -> &str {
             "test.test"
+        }
+
+        fn validate_schema(&self, _schema: &SchemaDefinition) -> Result<(), LinkMLError> {
+            Ok(())
         }
     }
 

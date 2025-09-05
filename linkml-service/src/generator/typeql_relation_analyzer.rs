@@ -351,11 +351,11 @@ mod tests {
         let employment_class = schema
             .classes
             .get("Employment")
-            .map_err(|e| anyhow::anyhow!("Employment class should exist: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("Employment class should exist"))?;
         let relation_info = analyzer.analyze_relation("Employment", employment_class, &schema);
 
         assert!(relation_info.is_some());
-        let info = relation_info.map_err(|e| anyhow::anyhow!("relation info should exist: {}", e))?;
+        let info = relation_info.ok_or_else(|| anyhow::anyhow!("relation info should exist"))?;
         assert_eq!(info.roles.len(), 2);
         assert!(!info.is_multiway);
     }
@@ -369,11 +369,11 @@ mod tests {
         let enrollment_class = schema
             .classes
             .get("Enrollment")
-            .map_err(|e| anyhow::anyhow!("Enrollment class should exist: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("Enrollment class should exist"))?;
         let relation_info = analyzer.analyze_relation("Enrollment", enrollment_class, &schema);
 
         assert!(relation_info.is_some());
-        let info = relation_info.map_err(|e| anyhow::anyhow!("relation info should exist: {}", e))?;
+        let info = relation_info.ok_or_else(|| anyhow::anyhow!("relation info should exist"))?;
         assert_eq!(info.roles.len(), 3);
         assert!(info.is_multiway);
     }

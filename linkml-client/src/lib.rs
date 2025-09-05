@@ -1,6 +1,6 @@
-//! LinkML Client Library
+//! `LinkML` Client Library
 //!
-//! This crate provides a client interface for interacting with the LinkML service.
+//! This crate provides a client interface for interacting with the `LinkML` service.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -11,10 +11,10 @@ use async_trait::async_trait;
 use linkml_core::{error::Result, traits::LinkMLService};
 use std::sync::Arc;
 
-/// Client for remote LinkML service
+/// Client for remote `LinkML` service
 ///
-/// Generic over the concrete LinkML service implementation
-/// since LinkMLService is not dyn-compatible (has generic methods)
+/// Generic over the concrete `LinkML` service implementation
+/// since `LinkMLService` is not dyn-compatible (has generic methods)
 pub struct LinkMLClient<S> {
     service: Arc<S>,
 }
@@ -29,6 +29,7 @@ where
     }
 
     /// Get reference to the underlying service
+    #[must_use]
     pub fn service(&self) -> &Arc<S> {
         &self.service
     }

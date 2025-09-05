@@ -382,19 +382,19 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             inlined_as_list: v1.inlined_as_list,
             key: None, // Not in v1
             identifier: v1.identifier,
-            designates_type: None,       // Not in v1
-            alias: None,                 // Not in v1
-            owner: None,                 // Not in v1
-            readonly: None,              // Not in v1
-            ifabsent: None,              // Not in v1
+            designates_type: None, // Not in v1
+            alias: None,           // Not in v1
+            owner: None,           // Not in v1
+            readonly: None,        // Not in v1
+            ifabsent: None,        // Not in v1
             list_elements_unique: v1.unique,
             list_elements_ordered: v1.ordered,
-            shared: None,                // Not in v1
-            locally_defined: None,       // Not in v1
-            asymmetric: None,            // Not in v1
-            reflexive: None,             // Not in v1
-            irreflexive: None,           // Not in v1
-            transitive: None,            // Not in v1
+            shared: None,          // Not in v1
+            locally_defined: None, // Not in v1
+            asymmetric: None,      // Not in v1
+            reflexive: None,       // Not in v1
+            irreflexive: None,     // Not in v1
+            transitive: None,      // Not in v1
 
             minimum_value: v1.minimum_value,
             maximum_value: v1.maximum_value,
@@ -559,31 +559,42 @@ impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
             vec![]
         };
 
-        let base_url = v1.imports
+        let base_url = v1
+            .imports
             .as_ref()
             .and_then(|i| i.base_url.as_deref())
             .map(intern);
 
         let aliases = if let Some(imports) = &v1.imports {
-            imports.aliases.iter()
+            imports
+                .aliases
+                .iter()
                 .map(|(k, v)| (intern(k), intern(v)))
                 .collect()
         } else {
             HashMap::new()
         };
 
-        let slot_range = v1.defaults
+        let slot_range = v1
+            .defaults
             .as_ref()
             .and_then(|d| d.slot_range.as_deref())
             .map(intern);
 
-        let package_name = v1.generation
+        let package_name = v1
+            .generation
             .as_ref()
-            .and_then(|g| g.language_options.values().find_map(|opts| opts.package_name.as_deref()))
+            .and_then(|g| {
+                g.language_options
+                    .values()
+                    .find_map(|opts| opts.package_name.as_deref())
+            })
             .map(intern);
 
         let imports = if let Some(generation) = &v1.generation {
-            generation.language_options.values()
+            generation
+                .language_options
+                .values()
                 .flat_map(|opts| opts.imports.iter())
                 .map(|s| intern(s))
                 .collect()
@@ -592,7 +603,9 @@ impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
         };
 
         let type_mappings = if let Some(generation) = &v1.generation {
-            generation.language_options.values()
+            generation
+                .language_options
+                .values()
                 .flat_map(|opts| opts.type_mappings.iter())
                 .map(|(k, v)| (intern(k), intern(v)))
                 .collect()
@@ -601,7 +614,9 @@ impl From<crate::settings::SchemaSettings> for SchemaSettingsV2 {
         };
 
         let features = if let Some(generation) = &v1.generation {
-            generation.language_options.values()
+            generation
+                .language_options
+                .values()
                 .flat_map(|opts| opts.features.iter())
                 .map(|s| intern(s))
                 .collect()

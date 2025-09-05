@@ -171,7 +171,8 @@ impl From<AnnotationValue> for Value {
 }
 
 /// Helper to merge annotations from multiple sources
-#[must_use] pub fn merge_annotations(
+#[must_use]
+pub fn merge_annotations(
     base: Option<&Annotations>,
     override_annotations: Option<&Annotations>,
 ) -> Option<Annotations> {

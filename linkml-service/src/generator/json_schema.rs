@@ -434,7 +434,7 @@ impl CodeFormatter for JsonSchemaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generator::GeneratorOptions;
+
 
     #[tokio::test]
     async fn test_json_schema_generation() {
@@ -491,13 +491,13 @@ mod tests {
         assert!(
             status_enum
                 .as_array()
-                .map_err(|e| anyhow::anyhow!("enum should be array: {}", e))?
+                .ok_or_else(|| anyhow::anyhow!("enum should be array"))?
                 .contains(&json!("ACTIVE"))
         );
         assert!(
             status_enum
                 .as_array()
-                .map_err(|e| anyhow::anyhow!("enum should be array: {}", e))?
+                .ok_or_else(|| anyhow::anyhow!("enum should be array"))?
                 .contains(&json!("INACTIVE"))
         );
     }
