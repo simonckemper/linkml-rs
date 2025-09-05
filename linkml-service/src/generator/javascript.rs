@@ -668,7 +668,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_generation() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "test_schema".to_string();
 

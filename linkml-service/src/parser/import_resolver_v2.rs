@@ -621,8 +621,8 @@ classes:
             }
         }
 
-        let resolver = ImportResolverV2::new();
-        let resolved = resolver
+        let import_resolver = ImportResolverV2::new();
+        let resolved = import_resolver
             .resolve_imports(&schema)
             .await
             .map_err(|e| anyhow::anyhow!("should resolve imports: {}", e))?;
@@ -674,7 +674,7 @@ imports:
         let schema = parser.parse_str(schema_a).map_err(|e| anyhow::anyhow!("should parse schema a: {}", e))?;
 
         let mut settings = ImportSettings::default();
-        settings.search_paths = vec![base_path.to_str()?.to_string()];
+        settings.search_paths = vec![base_path.to_str().ok_or("Failed to convert path to string")?.to_string()];
 
         let resolver = ImportResolverV2::with_settings(settings);
         let result = resolver.resolve_imports(&schema).await;

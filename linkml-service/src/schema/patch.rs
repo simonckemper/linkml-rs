@@ -176,11 +176,10 @@ impl SchemaPatcher {
                 Err(e) => {
                     if self.options.strict {
                         return Err(e);
-                    } else {
-                        result
-                            .skipped_operations
-                            .push((operation.clone(), e.to_string()));
                     }
+                    result
+                        .skipped_operations
+                        .push((operation.clone(), e.to_string()));
                 }
             }
         }

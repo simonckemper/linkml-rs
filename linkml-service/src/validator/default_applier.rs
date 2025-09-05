@@ -151,8 +151,8 @@ impl<'a> DefaultApplier<'a> {
 
             IfAbsentAction::Date => {
                 // Use current date
-                let date = Local::now().format("%Y-%m-%d").to_string();
-                Ok(Some(Value::String(date)))
+                let current_date = Local::now().format("%Y-%m-%d").to_string();
+                Ok(Some(Value::String(current_date)))
             }
 
             IfAbsentAction::Datetime => {
@@ -235,7 +235,7 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with ifabsent
-        let mut slot = SlotDefinition {
+        let slot = SlotDefinition {
             name: "identifier".to_string(),
             ifabsent: Some(IfAbsentAction::SlotName),
             ..Default::default()
@@ -243,7 +243,7 @@ mod tests {
         schema.slots.insert("identifier".to_string(), slot);
 
         // Create a class using the slot
-        let mut class = ClassDefinition {
+        let class = ClassDefinition {
             name: "Person".to_string(),
             slots: vec!["identifier".to_string()],
             ..Default::default()
@@ -276,7 +276,7 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with bnode default
-        let mut slot = SlotDefinition {
+        let slot = SlotDefinition {
             name: "id".to_string(),
             ifabsent: Some(IfAbsentAction::Bnode),
             ..Default::default()
@@ -284,7 +284,7 @@ mod tests {
         schema.slots.insert("id".to_string(), slot);
 
         // Create a class
-        let mut class = ClassDefinition {
+        let class = ClassDefinition {
             name: "Entity".to_string(),
             slots: vec!["id".to_string()],
             ..Default::default()
@@ -318,7 +318,7 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a slot with expression default
-        let mut slot = SlotDefinition {
+        let slot = SlotDefinition {
             name: "full_id".to_string(),
             ifabsent: Some(IfAbsentAction::Expression("{prefix}_{number}".to_string())),
             ..Default::default()
@@ -326,7 +326,7 @@ mod tests {
         schema.slots.insert("full_id".to_string(), slot);
 
         // Create a class
-        let mut class = ClassDefinition {
+        let class = ClassDefinition {
             name: "Item".to_string(),
             slots: vec![
                 "full_id".to_string(),

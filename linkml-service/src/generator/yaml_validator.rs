@@ -795,7 +795,7 @@ impl Generator for YamlValidatorGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::*;
+    use linkml_core::prelude::*;
 
     #[test]
     fn test_yaml_validator_generation() {

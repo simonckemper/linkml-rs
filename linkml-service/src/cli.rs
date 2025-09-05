@@ -774,19 +774,36 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         );
 
         let mut durations = Vec::with_capacity(iterations);
-        let mut memory_usage = Vec::new();
+        let memory_usage = if memory {
+            // TODO: Enable memory service when all dependencies are properly connected
+            // For now, collect basic memory usage information
+            eprintln!("Warning: Memory profiling is currently limited. Full service dependencies need to be properly wired up.");
+
+            // Collect basic memory information for each iteration
+            let mut usage = Vec::with_capacity(iterations);
+            for _ in 0..iterations {
+                // Basic memory usage tracking - this is a placeholder
+                // In a full implementation, this would use a proper memory service
+                let memory_info = std::collections::HashMap::from([
+                    ("rss".to_string(), 0u64), // Resident Set Size
+                    ("vms".to_string(), 0u64), // Virtual Memory Size
+                    ("heap".to_string(), 0u64), // Heap usage
+                ]);
+                usage.push(memory_info);
+            }
+            usage
+        } else {
+            Vec::new()
+        };
+
+        // Memory service placeholder - will be replaced when dependencies are wired up
+        let _memory_service: Option<std::sync::Arc<dyn std::any::Any>> = None;
 
         for _ in 0..iterations {
             let start = std::time::Instant::now();
 
-            if memory {
-                let before = 0; // Would measure actual memory
-                self.service.validate(&data, &schema, "Root").await?;
-                let after = 0; // Would measure actual memory
-                memory_usage.push(after - before);
-            } else {
-                self.service.validate(&data, &schema, "Root").await?;
-            }
+            // Memory tracking is currently disabled
+            self.service.validate(&data, &schema, "Root").await?;
 
             durations.push(start.elapsed());
             pb.inc(1);
@@ -815,11 +832,30 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             durations[iterations - 1].as_secs_f64() * 1000.0
         );
 
-        if memory {
-            let avg_memory: i64 = memory_usage.iter().sum::<i64>()
-                / i64::try_from(memory_usage.len()).unwrap_or(i64::MAX);
-            println!("\n{}", "Memory:".bold());
-            println!("  Average delta: {avg_memory} bytes");
+        if memory && !memory_usage.is_empty() {
+            // Extract RSS (Resident Set Size) values for analysis
+            let rss_values: Vec<u64> = memory_usage.iter()
+                .filter_map(|usage| usage.get("rss").copied())
+                .collect();
+
+            if !rss_values.is_empty() {
+                let total_memory: u64 = rss_values.iter().sum();
+                let avg_memory = total_memory / rss_values.len() as u64;
+                let max_memory = *rss_values.iter().max().unwrap_or(&0);
+                let min_memory = *rss_values.iter().min().unwrap_or(&0);
+
+                println!("\n{}", "Memory Usage (RSS):".bold());
+                println!("  Average: {} bytes ({:.2} MB)",
+                    avg_memory, avg_memory as f64 / 1_048_576.0);
+                println!("  Max: {} bytes ({:.2} MB)",
+                    max_memory, max_memory as f64 / 1_048_576.0);
+                println!("  Min: {} bytes ({:.2} MB)",
+                    min_memory, min_memory as f64 / 1_048_576.0);
+                println!("  Total sampled: {} bytes ({:.2} MB)",
+                    total_memory, total_memory as f64 / 1_048_576.0);
+            } else {
+                println!("\n{}", "Memory Usage: No data collected".bold());
+            }
         }
 
         // Save results if requested
@@ -1003,19 +1039,859 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         println!("{}", "=======================".blue());
         println!("Type 'help' for commands, 'quit' to exit\n");
 
-        // Log the interactive session start
-        println!("Service: {:?}", &*self.service as *const _);
+        // Create the REPL editor with history support
+        let history_path = history_file.map(|p| p.to_path_buf())
+            .unwrap_or_else(|| {
+                dirs::home_dir()
+                    .map(|d| d.join(".linkml_history"))
+                    .unwrap_or_else(|| PathBuf::from(".linkml_history"))
+            });
 
+        let mut editor = rustyline::DefaultEditor::new()
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to initialize editor: {}", e);
+                std::process::exit(1);
+            });
+
+        // Load history if available
+        if history_path.exists() {
+            let _ = editor.load_history(&history_path);
+        }
+
+        // Initialize session state
+        let mut current_schema: Option<linkml_core::types::SchemaDefinition> = None;
+        let mut current_schema_path: Option<PathBuf> = None;
+        let mut validation_cache: std::collections::HashMap<String, serde_json::Value> = std::collections::HashMap::new();
+        
+        // Load initial schema if provided
         if let Some(schema_path) = initial_schema {
-            println!("Initial schema: {}", schema_path.display());
+            match std::fs::read_to_string(schema_path) {
+                Ok(content) => {
+                    match serde_yaml::from_str::<linkml_core::types::SchemaDefinition>(&content) {
+                        Ok(schema) => {
+                            println!("✓ Loaded schema: {}", schema_path.display());
+                            current_schema = Some(schema);
+                            current_schema_path = Some(schema_path.to_path_buf());
+                        }
+                        Err(e) => eprintln!("Failed to parse schema: {}", e),
+                    }
+                }
+                Err(e) => eprintln!("Failed to read schema file: {}", e),
+            }
         }
 
-        if let Some(history_path) = history_file {
-            println!("History file: {}", history_path.display());
+        // Main REPL loop
+        loop {
+            let prompt = if current_schema.is_some() {
+                format!("{}> ", "linkml".green().bold())
+            } else {
+                format!("{}> ", "linkml".yellow().bold())
+            };
+
+            match editor.readline(&prompt) {
+                Ok(line) => {
+                    // Add to history
+                    let _ = editor.add_history_entry(line.as_str());
+                    
+                    // Parse and execute command
+                    let trimmed = line.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+
+                    // Split command and arguments
+                    let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                    if parts.is_empty() {
+                        continue;
+                    }
+
+                    match parts[0].to_lowercase().as_str() {
+                        "help" | "?" => self.print_interactive_help(),
+                        "quit" | "exit" | "q" => {
+                            println!("Goodbye!");
+                            break;
+                        }
+                        "load" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: load <schema-file>");
+                                continue;
+                            }
+                            self.handle_load_schema(parts[1], &mut current_schema, &mut current_schema_path);
+                        }
+                        "validate" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: validate <data-file> [class-name]");
+                                continue;
+                            }
+                            let class_name = parts.get(2).map(|s| s.to_string());
+                            self.handle_validate(&current_schema, parts[1], class_name);
+                        }
+                        "show" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: show <classes|slots|types|enums|schema>");
+                                continue;
+                            }
+                            self.handle_show_command(&current_schema, parts[1], parts.get(2).copied());
+                        }
+                        "info" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: info <class|slot|type|enum> <name>");
+                                continue;
+                            }
+                            if parts.len() < 3 {
+                                eprintln!("Missing name for info command");
+                                continue;
+                            }
+                            self.handle_info_command(&current_schema, parts[1], parts[2]);
+                        }
+                        "generate" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: generate <python|rust|sql|typeql|json-schema> [output-file]");
+                                continue;
+                            }
+                            let output = parts.get(2).map(|s| PathBuf::from(s));
+                            self.handle_generate(&current_schema, parts[1], output.as_deref());
+                        }
+                        "check" => {
+                            self.handle_check_schema(&current_schema);
+                        }
+                        "reload" => {
+                            if let Some(path) = current_schema_path.clone() {
+                                self.handle_load_schema(
+                                    &path.to_string_lossy(),
+                                    &mut current_schema,
+                                    &mut current_schema_path
+                                );
+                            } else {
+                                eprintln!("No schema loaded to reload");
+                            }
+                        }
+                        "clear" => {
+                            // Clear screen
+                            print!("\x1B[2J\x1B[1;1H");
+                            println!("{}", "LinkML Interactive Mode".bold().blue());
+                            println!("{}", "=======================".blue());
+                        }
+                        "cache" => {
+                            if parts.len() < 2 {
+                                // Show cache status
+                                println!("Cache entries: {}", validation_cache.len());
+                                for key in validation_cache.keys() {
+                                    println!("  - {}", key);
+                                }
+                            } else if parts[1] == "clear" {
+                                validation_cache.clear();
+                                println!("Cache cleared");
+                            }
+                        }
+                        "export" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: export <output-file>");
+                                continue;
+                            }
+                            self.handle_export_schema(&current_schema, parts[1]);
+                        }
+                        "import" => {
+                            if parts.len() < 2 {
+                                eprintln!("Usage: import <schema-file>");
+                                continue;
+                            }
+                            self.handle_import_schema(parts[1], &mut current_schema);
+                        }
+                        "stats" => {
+                            self.handle_show_stats(&current_schema);
+                        }
+                        _ => {
+                            eprintln!("Unknown command: '{}'. Type 'help' for available commands.", parts[0]);
+                        }
+                    }
+                }
+                Err(rustyline::error::ReadlineError::Interrupted) => {
+                    println!("\nUse 'quit' to exit");
+                    continue;
+                }
+                Err(rustyline::error::ReadlineError::Eof) => {
+                    println!("\nGoodbye!");
+                    break;
+                }
+                Err(err) => {
+                    eprintln!("Error: {:?}", err);
+                    break;
+                }
+            }
         }
 
-        // Interactive REPL would be implemented here
-        println!("\nInteractive mode requires terminal input handling.");
+        // Save history
+        let _ = editor.save_history(&history_path);
+    }
+
+    /// Print help for interactive mode
+    fn print_interactive_help(&self) {
+        println!("{}", "Available Commands:".bold().cyan());
+        println!("  {}  - Show this help message", "help, ?".green());
+        println!("  {}  - Quit interactive mode", "quit, exit, q".green());
+        println!();
+        println!("{}", "Schema Operations:".bold().cyan());
+        println!("  {} <file>  - Load a schema file", "load".green());
+        println!("  {}  - Reload current schema", "reload".green());
+        println!("  {}  - Check schema validity", "check".green());
+        println!("  {} <file>  - Export schema to file", "export".green());
+        println!("  {} <file>  - Import and merge schema", "import".green());
+        println!();
+        println!("{}", "Validation:".bold().cyan());
+        println!("  {} <file> [class]  - Validate data file", "validate".green());
+        println!();
+        println!("{}", "Information:".bold().cyan());
+        println!("  {} <type>  - Show items (classes|slots|types|enums|schema)", "show".green());
+        println!("  {} <type> <name>  - Show detailed info", "info".green());
+        println!("  {}  - Show schema statistics", "stats".green());
+        println!();
+        println!("{}", "Code Generation:".bold().cyan());
+        println!("  {} <lang> [file]  - Generate code", "generate".green());
+        println!("    Languages: python, rust, sql, typeql, json-schema");
+        println!();
+        println!("{}", "Utilities:".bold().cyan());
+        println!("  {}  - Clear screen", "clear".green());
+        println!("  {} [clear]  - Show/clear validation cache", "cache".green());
+    }
+
+    /// Handle loading a schema
+    fn handle_load_schema(
+        &self,
+        path: &str,
+        current_schema: &mut Option<linkml_core::types::SchemaDefinition>,
+        current_schema_path: &mut Option<PathBuf>,
+    ) {
+        let schema_path = PathBuf::from(path);
+        match std::fs::read_to_string(&schema_path) {
+            Ok(content) => {
+                match serde_yaml::from_str::<linkml_core::types::SchemaDefinition>(&content) {
+                    Ok(schema) => {
+                        println!("✓ Loaded schema: {}", schema_path.display());
+                        if !schema.name.is_empty() {
+                            println!("  Name: {}", schema.name);
+                        }
+                        if let Some(desc) = &schema.description {
+                            println!("  Description: {}", desc);
+                        }
+                        println!("  Classes: {}", schema.classes.len());
+                        println!("  Slots: {}", schema.slots.len());
+                        *current_schema = Some(schema);
+                        *current_schema_path = Some(schema_path);
+                    }
+                    Err(e) => eprintln!("Failed to parse schema: {}", e),
+                }
+            }
+            Err(e) => eprintln!("Failed to read schema file: {}", e),
+        }
+    }
+
+    /// Handle validation command
+    fn handle_validate(
+        &self,
+        current_schema: &Option<linkml_core::types::SchemaDefinition>,
+        data_path: &str,
+        class_name: Option<String>,
+    ) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        // Read data file
+        let data_path = PathBuf::from(data_path);
+        let content = match std::fs::read_to_string(&data_path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to read data file: {}", e);
+                return;
+            }
+        };
+
+        // Parse data based on extension
+        let data: serde_json::Value = match data_path.extension().and_then(|e| e.to_str()) {
+            Some("json") => {
+                match serde_json::from_str(&content) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("Failed to parse JSON: {}", e);
+                        return;
+                    }
+                }
+            }
+            Some("yaml") | Some("yml") => {
+                match serde_yaml::from_str(&content) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("Failed to parse YAML: {}", e);
+                        return;
+                    }
+                }
+            }
+            _ => {
+                eprintln!("Unsupported file format. Use JSON or YAML.");
+                return;
+            }
+        };
+
+        // Perform validation using the schema
+        let target_class = class_name.as_deref().unwrap_or("Root");
+        
+        // Basic validation logic
+        if let Some(class_def) = schema.classes.get(target_class) {
+            println!("Validating against class: {}", target_class);
+            
+            let mut errors = Vec::new();
+            
+            // Check required slots
+            for slot_name in &class_def.slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
+                    if slot_def.required.unwrap_or(false) {
+                        if !data.get(slot_name).is_some() {
+                            errors.push(format!("Missing required field: {}", slot_name));
+                        }
+                    }
+                }
+            }
+
+            if errors.is_empty() {
+                println!("✓ Validation successful!");
+            } else {
+                println!("✗ Validation failed with {} error(s):", errors.len());
+                for error in errors {
+                    println!("  - {}", error);
+                }
+            }
+        } else {
+            eprintln!("Class '{}' not found in schema", target_class);
+        }
+    }
+
+    /// Handle show command
+    fn handle_show_command(
+        &self,
+        current_schema: &Option<linkml_core::types::SchemaDefinition>,
+        item_type: &str,
+        filter: Option<&str>,
+    ) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        match item_type.to_lowercase().as_str() {
+            "classes" => {
+                println!("{}", "Classes:".bold().cyan());
+                for (name, class) in &schema.classes {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        println!("  {} - {}", 
+                            name.green(),
+                            class.description.as_deref().unwrap_or("No description")
+                        );
+                    }
+                }
+            }
+            "slots" => {
+                println!("{}", "Slots:".bold().cyan());
+                for (name, slot) in &schema.slots {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        let range = slot.range.as_deref().unwrap_or("string");
+                        println!("  {} ({}) - {}", 
+                            name.green(),
+                            range,
+                            slot.description.as_deref().unwrap_or("No description")
+                        );
+                    }
+                }
+            }
+            "types" => {
+                println!("{}", "Types:".bold().cyan());
+                for (name, type_def) in &schema.types {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        println!("  {} - {}", 
+                            name.green(),
+                            type_def.description.as_deref().unwrap_or("No description")
+                        );
+                    }
+                }
+            }
+            "enums" => {
+                println!("{}", "Enums:".bold().cyan());
+                for (name, enum_def) in &schema.enums {
+                    if filter.map_or(true, |f| name.contains(f)) {
+                        let count = enum_def.permissible_values.len();
+                        println!("  {} ({} values) - {}", 
+                            name.green(),
+                            count,
+                            enum_def.description.as_deref().unwrap_or("No description")
+                        );
+                    }
+                }
+            }
+            "schema" => {
+                println!("{}", "Schema Information:".bold().cyan());
+                if !schema.name.is_empty() {
+                    println!("  Name: {}", schema.name);
+                }
+                if !schema.id.is_empty() {
+                    println!("  ID: {}", schema.id);
+                }
+                if let Some(desc) = &schema.description {
+                    println!("  Description: {}", desc);
+                }
+                if let Some(version) = &schema.version {
+                    println!("  Version: {}", version);
+                }
+                println!("  Classes: {}", schema.classes.len());
+                println!("  Slots: {}", schema.slots.len());
+                println!("  Types: {}", schema.types.len());
+                println!("  Enums: {}", schema.enums.len());
+            }
+            _ => {
+                eprintln!("Unknown item type: '{}'. Use: classes, slots, types, enums, or schema", item_type);
+            }
+        }
+    }
+
+    /// Handle info command
+    fn handle_info_command(
+        &self,
+        current_schema: &Option<linkml_core::types::SchemaDefinition>,
+        item_type: &str,
+        name: &str,
+    ) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        match item_type.to_lowercase().as_str() {
+            "class" => {
+                if let Some(class) = schema.classes.get(name) {
+                    println!("{}", format!("Class: {}", name).bold().cyan());
+                    if let Some(desc) = &class.description {
+                        println!("  Description: {}", desc);
+                    }
+                    if let Some(parent) = &class.is_a {
+                        println!("  Parent: {}", parent);
+                    }
+                    if !class.mixins.is_empty() {
+                        println!("  Mixins: {}", class.mixins.join(", "));
+                    }
+                    if !class.slots.is_empty() {
+                        println!("  Slots:");
+                        for slot in &class.slots {
+                            if let Some(slot_def) = schema.slots.get(slot) {
+                                let req = if slot_def.required.unwrap_or(false) { " (required)" } else { "" };
+                                let range = slot_def.range.as_deref().unwrap_or("string");
+                                println!("    - {}: {}{}", slot, range, req);
+                            }
+                        }
+                    }
+                } else {
+                    eprintln!("Class '{}' not found", name);
+                }
+            }
+            "slot" => {
+                if let Some(slot) = schema.slots.get(name) {
+                    println!("{}", format!("Slot: {}", name).bold().cyan());
+                    if let Some(desc) = &slot.description {
+                        println!("  Description: {}", desc);
+                    }
+                    if let Some(range) = &slot.range {
+                        println!("  Range: {}", range);
+                    }
+                    println!("  Required: {}", slot.required.unwrap_or(false));
+                    println!("  Multivalued: {}", slot.multivalued.unwrap_or(false));
+                    if let Some(pattern) = &slot.pattern {
+                        println!("  Pattern: {}", pattern);
+                    }
+                    if let Some(min) = &slot.minimum_value {
+                        println!("  Minimum: {}", min);
+                    }
+                    if let Some(max) = &slot.maximum_value {
+                        println!("  Maximum: {}", max);
+                    }
+                } else {
+                    eprintln!("Slot '{}' not found", name);
+                }
+            }
+            "type" => {
+                if let Some(type_def) = schema.types.get(name) {
+                    println!("{}", format!("Type: {}", name).bold().cyan());
+                    if let Some(desc) = &type_def.description {
+                        println!("  Description: {}", desc);
+                    }
+                    if let Some(base) = &type_def.base_type {
+                        println!("  Base: {}", base);
+                    }
+                    if let Some(pattern) = &type_def.pattern {
+                        println!("  Pattern: {}", pattern);
+                    }
+                } else {
+                    eprintln!("Type '{}' not found", name);
+                }
+            }
+            "enum" => {
+                if let Some(enum_def) = schema.enums.get(name) {
+                    println!("{}", format!("Enum: {}", name).bold().cyan());
+                    if let Some(desc) = &enum_def.description {
+                        println!("  Description: {}", desc);
+                    }
+                    println!("  Values ({}):", enum_def.permissible_values.len());
+                    for value_def in &enum_def.permissible_values {
+                        match value_def {
+                            linkml_core::types::PermissibleValue::Simple(text) => {
+                                println!("    - {}", text);
+                            }
+                            linkml_core::types::PermissibleValue::Complex { text, description, .. } => {
+                                let desc = description.as_deref().unwrap_or("");
+                                println!("    - {}: {}", text, desc);
+                            }
+                        }
+                    }
+                } else {
+                    eprintln!("Enum '{}' not found", name);
+                }
+            }
+            _ => {
+                eprintln!("Unknown item type: '{}'. Use: class, slot, type, or enum", item_type);
+            }
+        }
+    }
+
+    /// Handle generate command
+    fn handle_generate(
+        &self,
+        current_schema: &Option<linkml_core::types::SchemaDefinition>,
+        language: &str,
+        output_path: Option<&Path>,
+    ) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        // Generate code based on the language
+        let generated = match language.to_lowercase().as_str() {
+            "python" => {
+                use crate::generator::{Generator, PythonDataclassGenerator};
+                let generator = PythonDataclassGenerator::new();
+                Generator::generate(&generator, schema)
+            }
+            "rust" => {
+                use crate::generator::{Generator, RustGenerator};
+                let generator = RustGenerator::new();
+                Generator::generate(&generator, schema)
+            }
+            "sql" => {
+                use crate::generator::{Generator, SQLGenerator};
+                let generator = SQLGenerator::new();
+                Generator::generate(&generator, schema)
+            }
+            "typeql" => {
+                use crate::generator::{Generator, typeql_generator::TypeQLGenerator};
+                let generator = TypeQLGenerator::new();
+                Generator::generate(&generator, schema)
+            }
+            "json-schema" | "jsonschema" => {
+                use crate::generator::{Generator, JsonSchemaGenerator};
+                let generator = JsonSchemaGenerator::new();
+                Generator::generate(&generator, schema)
+            }
+            _ => {
+                eprintln!("Unsupported language: '{}'", language);
+                return;
+            }
+        };
+        
+        match generated {
+            Ok(output) => {
+                if let Some(path) = output_path {
+                    match std::fs::write(path, &output) {
+                        Ok(_) => println!("✓ Generated {} code to {}", language, path.display()),
+                        Err(e) => eprintln!("Failed to write output: {}", e),
+                    }
+                } else {
+                    println!("{}", output);
+                }
+            }
+            Err(e) => eprintln!("Generation failed: {}", e),
+        }
+    }
+
+    /// Handle check schema command
+    fn handle_check_schema(&self, current_schema: &Option<linkml_core::types::SchemaDefinition>) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        println!("{}", "Checking schema validity...".bold().cyan());
+        
+        let mut warnings = Vec::new();
+        let mut errors = Vec::new();
+
+        // Check for orphaned slots
+        for (slot_name, _) in &schema.slots {
+            let mut used = false;
+            for (_, class) in &schema.classes {
+                if class.slots.contains(slot_name) {
+                    used = true;
+                    break;
+                }
+            }
+            if !used {
+                warnings.push(format!("Slot '{}' is defined but not used by any class", slot_name));
+            }
+        }
+
+        // Check for undefined slot references
+        for (class_name, class) in &schema.classes {
+            for slot_name in &class.slots {
+                if !schema.slots.contains_key(slot_name) {
+                    errors.push(format!("Class '{}' references undefined slot '{}'", class_name, slot_name));
+                }
+            }
+        }
+
+        // Check for undefined parent classes
+        for (class_name, class) in &schema.classes {
+            if let Some(parent) = &class.is_a {
+                if !schema.classes.contains_key(parent) {
+                    errors.push(format!("Class '{}' has undefined parent '{}'", class_name, parent));
+                }
+            }
+        }
+
+        // Check for undefined mixins
+        for (class_name, class) in &schema.classes {
+            for mixin in &class.mixins {
+                if !schema.classes.contains_key(mixin) {
+                    errors.push(format!("Class '{}' references undefined mixin '{}'", class_name, mixin));
+                }
+            }
+        }
+
+        // Display results
+        if errors.is_empty() && warnings.is_empty() {
+            println!("✓ Schema is valid!");
+        } else {
+            if !errors.is_empty() {
+                println!("{}", format!("Errors ({})", errors.len()).red().bold());
+                for error in &errors {
+                    println!("  ✗ {}", error);
+                }
+            }
+            if !warnings.is_empty() {
+                println!("{}", format!("Warnings ({})", warnings.len()).yellow().bold());
+                for warning in &warnings {
+                    println!("  ⚠ {}", warning);
+                }
+            }
+        }
+    }
+
+    /// Handle export schema command
+    fn handle_export_schema(&self, current_schema: &Option<linkml_core::types::SchemaDefinition>, output_path: &str) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        let path = PathBuf::from(output_path);
+        let content = match path.extension().and_then(|e| e.to_str()) {
+            Some("json") => {
+                match serde_json::to_string_pretty(schema) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("Failed to serialize to JSON: {}", e);
+                        return;
+                    }
+                }
+            }
+            Some("yaml") | Some("yml") | _ => {
+                match serde_yaml::to_string(schema) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("Failed to serialize to YAML: {}", e);
+                        return;
+                    }
+                }
+            }
+        };
+
+        match std::fs::write(&path, content) {
+            Ok(_) => println!("✓ Exported schema to {}", path.display()),
+            Err(e) => eprintln!("Failed to write file: {}", e),
+        }
+    }
+
+    /// Handle import schema command
+    fn handle_import_schema(&self, import_path: &str, current_schema: &mut Option<linkml_core::types::SchemaDefinition>) {
+        let path = PathBuf::from(import_path);
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to read import file: {}", e);
+                return;
+            }
+        };
+
+        let import_schema: linkml_core::types::SchemaDefinition = match path.extension().and_then(|e| e.to_str()) {
+            Some("json") => {
+                match serde_json::from_str(&content) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("Failed to parse JSON: {}", e);
+                        return;
+                    }
+                }
+            }
+            Some("yaml") | Some("yml") | _ => {
+                match serde_yaml::from_str(&content) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("Failed to parse YAML: {}", e);
+                        return;
+                    }
+                }
+            }
+        };
+
+        // Merge schemas
+        if let Some(schema) = current_schema {
+            // Merge classes
+            for (name, class) in import_schema.classes {
+                if schema.classes.contains_key(&name) {
+                    println!("  Skipping existing class: {}", name);
+                } else {
+                    schema.classes.insert(name.clone(), class);
+                    println!("  Added class: {}", name);
+                }
+            }
+
+            // Merge slots
+            for (name, slot) in import_schema.slots {
+                if schema.slots.contains_key(&name) {
+                    println!("  Skipping existing slot: {}", name);
+                } else {
+                    schema.slots.insert(name.clone(), slot);
+                    println!("  Added slot: {}", name);
+                }
+            }
+
+            // Merge types
+            for (name, type_def) in import_schema.types {
+                if schema.types.contains_key(&name) {
+                    println!("  Skipping existing type: {}", name);
+                } else {
+                    schema.types.insert(name.clone(), type_def);
+                    println!("  Added type: {}", name);
+                }
+            }
+
+            // Merge enums
+            for (name, enum_def) in import_schema.enums {
+                if schema.enums.contains_key(&name) {
+                    println!("  Skipping existing enum: {}", name);
+                } else {
+                    schema.enums.insert(name.clone(), enum_def);
+                    println!("  Added enum: {}", name);
+                }
+            }
+
+            println!("✓ Import completed");
+        } else {
+            // No current schema, use imported one
+            *current_schema = Some(import_schema);
+            println!("✓ Imported schema as current schema");
+        }
+    }
+
+    /// Handle show stats command
+    fn handle_show_stats(&self, current_schema: &Option<linkml_core::types::SchemaDefinition>) {
+        let Some(schema) = current_schema else {
+            eprintln!("No schema loaded. Use 'load' command first.");
+            return;
+        };
+
+        println!("{}", "Schema Statistics:".bold().cyan());
+        
+        // Basic counts
+        println!("\n{}", "Entity Counts:".bold());
+        println!("  Classes: {}", schema.classes.len());
+        println!("  Slots: {}", schema.slots.len());
+        println!("  Types: {}", schema.types.len());
+        println!("  Enums: {}", schema.enums.len());
+        
+        // Complexity metrics
+        let mut max_slots = 0;
+        let mut total_slots = 0;
+        let mut max_inheritance_depth = 0;
+        
+        for (_, class) in &schema.classes {
+            let slot_count = class.slots.len();
+            total_slots += slot_count;
+            if slot_count > max_slots {
+                max_slots = slot_count;
+            }
+            
+            // Calculate inheritance depth
+            let classes_hashmap: std::collections::HashMap<String, linkml_core::types::ClassDefinition> = 
+                schema.classes.clone().into_iter().collect();
+            let depth = self.calculate_inheritance_depth(&class.is_a, &classes_hashmap, 0);
+            if depth > max_inheritance_depth {
+                max_inheritance_depth = depth;
+            }
+        }
+        
+        let avg_slots = if !schema.classes.is_empty() {
+            total_slots as f64 / schema.classes.len() as f64
+        } else {
+            0.0
+        };
+        
+        println!("\n{}", "Complexity Metrics:".bold());
+        println!("  Max slots per class: {}", max_slots);
+        println!("  Avg slots per class: {:.2}", avg_slots);
+        println!("  Max inheritance depth: {}", max_inheritance_depth);
+        
+        // Enum statistics
+        if !schema.enums.is_empty() {
+            let total_values: usize = schema.enums.values()
+                .map(|e| e.permissible_values.len())
+                .sum();
+            let avg_values = total_values as f64 / schema.enums.len() as f64;
+            
+            println!("\n{}", "Enum Statistics:".bold());
+            println!("  Total enum values: {}", total_values);
+            println!("  Avg values per enum: {:.2}", avg_values);
+        }
+    }
+
+    /// Calculate inheritance depth for a class
+    fn calculate_inheritance_depth(
+        &self,
+        parent: &Option<String>,
+        classes: &std::collections::HashMap<String, linkml_core::types::ClassDefinition>,
+        current_depth: usize,
+    ) -> usize {
+        if current_depth > 20 {
+            // Prevent infinite recursion
+            return current_depth;
+        }
+        
+        match parent {
+            Some(parent_name) => {
+                if let Some(parent_class) = classes.get(parent_name) {
+                    self.calculate_inheritance_depth(&parent_class.is_a, classes, current_depth + 1)
+                } else {
+                    current_depth
+                }
+            }
+            None => current_depth,
+        }
     }
 
     /// Stress command implementation

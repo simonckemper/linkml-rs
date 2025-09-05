@@ -788,7 +788,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_csv_load_and_dump() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_csv_load_and_dump() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::new();
         let dumper = CsvDumper::new();
@@ -847,7 +847,7 @@ p2,Bob,25,bob@example.com,tag3
     }
 
     #[tokio::test]
-    async fn test_tsv_format() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_tsv_format() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::tsv();
 
@@ -872,7 +872,7 @@ p2,Bob,25,bob@example.com,tag3
     }
 
     #[tokio::test]
-    async fn test_type_conversion() -> Result<(), Box<dyn std::error::Error>> {
+    async fn test_type_conversion() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let loader = CsvLoader::new();
 

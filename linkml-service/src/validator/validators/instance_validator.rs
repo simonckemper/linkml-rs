@@ -243,9 +243,8 @@ impl Validator for InstanceValidator {
                     }
                 }
                 return issues;
-            } else {
-                return issues; // No instance validation needed
             }
+            return issues; // No instance validation needed
         }
 
         if slot.multivalued.unwrap_or(false) {

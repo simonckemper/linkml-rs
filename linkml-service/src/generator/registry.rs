@@ -372,7 +372,7 @@ mod tests {
         let retrieved = registry
             .get("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should retrieve generator: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("should retrieve generator"))?;
         assert_eq!(retrieved.name(), "test");
 
         // List should include it
@@ -383,7 +383,7 @@ mod tests {
         let info = registry
             .get_info("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should get generator info: {}", e))?;
+            .ok_or_else(|| anyhow::anyhow!("should get generator info"))?;
         assert_eq!(info.name, "test");
         assert_eq!(info.description, "Test generator");
 

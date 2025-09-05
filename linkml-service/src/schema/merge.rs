@@ -497,7 +497,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_merge_union() {
+    fn test_merge_union() -> Result<(), Box<dyn std::error::Error>> {
         let mut schema1 = SchemaDefinition::default();
         schema1.name = "Schema1".to_string();
 
@@ -518,18 +518,19 @@ mod tests {
             ..Default::default()
         };
 
-        let merger = SchemaMerge::new(options);
-        let merged = merger
+        let schema_merger = SchemaMerge::new(options);
+        let merged = schema_merger
             .merge(&[schema1, schema2])
             .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
 
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
         assert!(merged.classes.contains_key("Car"));
+        Ok(())
     }
 
     #[test]
-    fn test_merge_intersection() {
+    fn test_merge_intersection() -> Result<(), Box<dyn std::error::Error>> {
         let mut schema1 = SchemaDefinition::default();
         let class1 = ClassDefinition::default();
         schema1.classes.insert("Person".to_string(), class1.clone());
@@ -544,8 +545,8 @@ mod tests {
             ..Default::default()
         };
 
-        let merger = SchemaMerge::new(options);
-        let merged = merger
+        let schema_merger = SchemaMerge::new(options);
+        let merged = schema_merger
             .merge(&[schema1, schema2])
             .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
 
@@ -553,5 +554,6 @@ mod tests {
         assert!(merged.classes.contains_key("Person"));
         assert!(!merged.classes.contains_key("Car"));
         assert!(!merged.classes.contains_key("Bike"));
+        Ok(())
     }
 }

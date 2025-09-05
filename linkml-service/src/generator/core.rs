@@ -65,6 +65,165 @@ impl RustGenerator {
         GeneratorError::Generation(format!("Format error: {}", err))
     }
 
+    /// Map LinkML type to Rust type
+    pub(super) fn linkml_type_to_rust(&self, linkml_type: &str) -> &str {
+        match linkml_type {
+            "string" | "str" => "String",
+            "integer" | "int" => "i64",
+            "float" | "double" | "decimal" => "f64",
+            "boolean" | "bool" => "bool",
+            "date" => "chrono::NaiveDate",
+            "datetime" => "chrono::DateTime<chrono::Utc>",
+            "time" => "chrono::NaiveTime",
+            "uri" | "uriorcurie" | "curie" => "String",
+            "ncname" => "String",
+            _ => "String", // Default to String for unknown types
+        }
+    }
+
+    /// Generate an enum from LinkML enum definition
+    pub(super) fn generate_enum(&self, enum_name: &str, enum_def: &EnumDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        
+        // Add documentation if available
+        if let Some(ref desc) = enum_def.description {
+            writeln!(&mut output, "\n/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        } else {
+            writeln!(&mut output, "\n/// {} enum", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        }
+        
+        writeln!(&mut output, "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "pub enum {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        
+        // Generate enum variants
+        for pv in &enum_def.permissible_values {
+            match pv {
+                PermissibleValue::Simple(value) => {
+                    // Convert to PascalCase for Rust enum variant
+                    let variant_name = BaseCodeFormatter::to_pascal_case(value);
+                    writeln!(&mut output, "    #[serde(rename = \"{}\")]", value).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
+                }
+                PermissibleValue::Complex { text, description, .. } => {
+                    if let Some(desc) = description {
+                        writeln!(&mut output, "    /// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                    }
+                    let variant_name = BaseCodeFormatter::to_pascal_case(text);
+                    writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
+                }
+            }
+        }
+        
+        writeln!(&mut output, "}}\n").map_err(Self::fmt_error_to_generator_error)?;
+        Ok(output)
+    }
+
+    /// Generate a class/struct from LinkML class definition
+    pub(super) fn generate_class(&self, class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
+        let mut output = String::new();
+        
+        // Add documentation
+        if let Some(ref desc) = class_def.description {
+            writeln!(&mut output, "\n/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        } else {
+            writeln!(&mut output, "\n/// {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        }
+        
+        // Add derive macros
+        writeln!(&mut output, "#[derive(Debug, Clone, Serialize, Deserialize)]").map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "pub struct {} {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        
+        // Collect all slots for this class
+        let slots = self.collect_class_slots(class_def, schema);
+        
+        if slots.is_empty() {
+            writeln!(&mut output, "    // No fields defined").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
+            // Generate fields for each slot
+            for slot_name in &slots {
+                if let Some(slot_def) = schema.slots.get(slot_name) {
+                    self.generate_field(&mut output, slot_name, slot_def, schema)?;
+                }
+            }
+        }
+        
+        writeln!(&mut output, "}}\n").map_err(Self::fmt_error_to_generator_error)?;
+        Ok(output)
+    }
+
+    /// Generate a field from a slot definition
+    pub(super) fn generate_field(&self, output: &mut String, slot_name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<()> {
+        // Add field documentation
+        if let Some(ref desc) = slot_def.description {
+            writeln!(output, "    /// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        }
+        
+        // Add serde rename if needed (to preserve original casing)
+        let rust_field_name = self.convert_field_name(slot_name);
+        if rust_field_name != slot_name {
+            writeln!(output, "    #[serde(rename = \"{}\")]", slot_name).map_err(Self::fmt_error_to_generator_error)?;
+        }
+        
+        // Determine field type
+        let base_type = if let Some(ref range) = slot_def.range {
+            // Check if it's an enum
+            if schema.enums.contains_key(range) {
+                range.clone()
+            }
+            // Check if it's a class
+            else if schema.classes.contains_key(range) {
+                format!("Box<{}>", range) // Box to avoid infinite size for recursive types
+            }
+            // Otherwise treat as primitive
+            else {
+                self.linkml_type_to_rust(range).to_string()
+            }
+        } else {
+            "String".to_string() // Default type
+        };
+        
+        // Handle multivalued
+        let field_type = if slot_def.multivalued.unwrap_or(false) {
+            format!("Vec<{}>", base_type)
+        } else {
+            base_type
+        };
+        
+        // Handle optional
+        let final_type = if !slot_def.required.unwrap_or(false) && !slot_def.multivalued.unwrap_or(false) {
+            format!("Option<{}>", field_type)
+        } else {
+            field_type
+        };
+        
+        // Write the field
+        writeln!(output, "    pub {}: {},", rust_field_name, final_type).map_err(Self::fmt_error_to_generator_error)?;
+        
+        Ok(())
+    }
+
+    /// Collect all slots for a class (including inherited)
+    pub(super) fn collect_class_slots(&self, class_def: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+        let mut slots = Vec::new();
+        
+        // Add inherited slots if there's a parent class
+        if let Some(ref parent) = class_def.is_a {
+            if let Some(parent_class) = schema.classes.get(parent) {
+                slots.extend(self.collect_class_slots(parent_class, schema));
+            }
+        }
+        
+        // Add this class's slots
+        slots.extend_from_slice(&class_def.slots);
+        
+        // Remove duplicates while preserving order
+        let mut seen = std::collections::HashSet::new();
+        slots.retain(|slot| seen.insert(slot.clone()));
+        
+        slots
+    }
+
     /// Generate file header with imports
     pub(super) fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
@@ -151,12 +310,14 @@ impl Generator for RustGenerator {
         // Generate validation error enum
         output.push_str(&self.generate_validation_error().map_err(|e| LinkMLError::data_validation(e.to_string()))?);
 
+        // Generate enums first
+        for (enum_name, enum_def) in &schema.enums {
+            output.push_str(&self.generate_enum(enum_name, enum_def).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
+        }
+
         // Generate basic structs for classes
         for (class_name, class_def) in &schema.classes {
-            output.push_str(&format!("\n/// {}\n", class_def.description.as_deref().unwrap_or(class_name)));
-            output.push_str(&format!("#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct {} {{\n", class_name));
-            output.push_str("    // TODO: Add fields based on slots\n");
-            output.push_str("}\n\n");
+            output.push_str(&self.generate_class(class_name, class_def, schema).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
         }
 
         Ok(output)

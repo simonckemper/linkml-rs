@@ -62,28 +62,36 @@ linkml-service = "2.0"  # Full service implementation
 ### Basic Usage
 
 ```rust
-use linkml::prelude::*;
+use linkml_service::parser::Parser;
+use linkml_service::validator::ValidationEngine;
+use serde_json::json;
 
 // Load a schema
-let schema_yaml = r#"
+let schema_yaml = r"
 id: https://example.org/person
 name: person_schema
-prefixes:
-  person: https://example.org/person/
 
 classes:
   Person:
-    attributes:
-      name:
-        required: true
-        range: string
-      age:
-        range: integer
-        minimum_value: 0
-"#;
+    name: Person
+    description: A person
+    slots:
+      - name
+      - age
+
+slots:
+  name:
+    name: name
+    range: string
+    required: true
+  age:
+    name: age
+    range: integer
+";
 
 // Parse the schema
-let schema = YamlParser::new().parse_str(schema_yaml)?;
+let parser = Parser::new();
+let schema = parser.parse_str(schema_yaml, "yaml")?;
 
 // Validate data
 let data = json!({
@@ -91,58 +99,67 @@ let data = json!({
     "age": 30
 });
 
-let validator = Validator::new();
-let result = validator.validate(&data, &schema, "Person")?;
-assert!(result.is_valid());
+let validation_engine = ValidationEngine::new(&schema)?;
+let result = validation_engine.validate_as_class(&data, "Person", None).await?;
+assert!(result.valid);
 ```
 
-### TypeQL Generation
+### Code Generation
 
 ```rust
-use linkml::generator::TypeQLGenerator;
+use linkml_service::generator::json_schema::JsonSchemaGenerator;
+use linkml_service::generator::Generator;
 
-let generator = TypeQLGenerator::new();
-let typeql = generator.generate(&schema, &Default::default())?;
+let generator = JsonSchemaGenerator::new();
+let json_schema = generator.generate(&schema)?;
 
-// Output:
-// define
-// person:Person sub entity,
-//   owns person:name,
-//   owns person:age;
-// person:name sub attribute, value string;
-// person:age sub attribute, value long;
+// For TypeQL generation:
+use linkml_service::generator::typeql::TypeQLGenerator;
+let typeql_generator = TypeQLGenerator::new();
+let typeql = typeql_generator.generate(&schema)?;
+
+// Output includes TypeDB schema definitions with constraints
 ```
 
 ### Advanced Features
 
 ```rust
-// Expression language
-let schema_with_expressions = r#"
-classes:
-  Person:
-    attributes:
-      full_name:
-        expression: "{first_name} {last_name}"
-"#;
+// Schema with inheritance
+let schema_with_inheritance = r"
+id: https://example.org/inheritance
+name: inheritance_example
 
-// Boolean constraints
-let schema_with_constraints = r#"
 classes:
-  Document:
-    rules:
-      - exactly_one_of:
-          - slot: doi
-          - slot: isbn
-          - slot: issn
-"#;
+  Entity:
+    name: Entity
+    description: Base entity
+    slots:
+      - id
+  Person:
+    name: Person
+    description: A person
+    is_a: Entity
+    slots:
+      - name
+
+slots:
+  id:
+    name: id
+    range: string
+    required: true
+  name:
+    name: name
+    range: string
+";
 
 // Pattern validation
-let schema_with_patterns = r#"
-types:
-  EmailType:
-    base: string
-    pattern: "^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
-"#;
+let schema_with_patterns = r"
+slots:
+  email:
+    name: email
+    range: string
+    pattern: '^[^@]+@[^@]+\.[^@]+$'
+";
 ```
 
 ## 📚 Documentation

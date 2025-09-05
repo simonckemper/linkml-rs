@@ -28,6 +28,7 @@ use timestamp_core::TimestampService;
 /// # Errors
 ///
 /// Returns an error if service initialization fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service<T, E, C, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,

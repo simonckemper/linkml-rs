@@ -862,7 +862,7 @@ mod tests {
 
     #[test]
     fn test_sensitive_data_handler() {
-        let handler = SensitiveDataHandler::new(SecurityConfig::default());
+        let handler = SensitiveDataHandler::new(SecurityConfig::default()).unwrap();
 
         assert_eq!(handler.mask_string("password: secret123"), "[REDACTED]");
 

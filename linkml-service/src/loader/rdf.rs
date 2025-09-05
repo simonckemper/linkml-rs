@@ -6,7 +6,7 @@
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use oxigraph::io::{RdfFormat, RdfParser, RdfSerializer};
-use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term};
+use oxigraph::model::{BlankNode, GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Subject, Term};
 use oxigraph::store::Store;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -226,7 +226,11 @@ impl RdfLoader {
         let typed_subjects: Vec<NamedOrBlankNode> = store
             .quads_for_pattern(None, Some((&type_predicate).into()), None, None)
             .filter_map(|quad| quad.ok())
-            .map(|quad| quad.subject.clone())
+            .filter_map(|quad| match quad.subject {
+                Subject::NamedNode(node) => Some(NamedOrBlankNode::NamedNode(node)),
+                Subject::BlankNode(node) => Some(NamedOrBlankNode::BlankNode(node)),
+                _ => None,
+            })
             .collect();
 
         // Process each subject
@@ -308,7 +312,11 @@ impl RdfLoader {
                 let quad = quad_result
                     .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {}", e)))?;
 
-                let subject_str = self.subject_to_string(&quad.subject);
+                let subject_str = match &quad.subject {
+                    Subject::NamedNode(node) => self.subject_to_string(&NamedOrBlankNode::NamedNode(node.clone())),
+                    Subject::BlankNode(node) => self.subject_to_string(&NamedOrBlankNode::BlankNode(node.clone())),
+                    _ => continue, // Skip triple subjects
+                };
 
                 // Skip if already processed
                 if instance_map.contains_key(&subject_str) {
@@ -316,8 +324,13 @@ impl RdfLoader {
                 }
 
                 // Try to infer class from properties
+                let subject_node = match &quad.subject {
+                    Subject::NamedNode(node) => NamedOrBlankNode::NamedNode(node.clone()),
+                    Subject::BlankNode(node) => NamedOrBlankNode::BlankNode(node.clone()),
+                    _ => continue, // Skip triple subjects
+                };
                 if let Some(class_name) =
-                    self.infer_class_from_properties(&quad.subject, store, schema)
+                    self.infer_class_from_properties(&subject_node, store, schema)
                 {
                     let mut data = HashMap::new();
 
@@ -405,12 +418,11 @@ impl RdfLoader {
             Term::NamedNode(n) => n.as_str().to_string(),
             Term::BlankNode(b) => format!("_:{}", b.as_str()),
             Term::Literal(l) => l.value().to_string(),
-            // TODO: Add Triple support when oxigraph adds RDF-star support
-            // Term::Triple(t) => format!("<<{} {} {}>>",
-            //     self.subject_to_string(&t.subject),
-            //     t.predicate.as_str(),
-            //     self._term_to_string(&t.object)
-            // ),
+            Term::Triple(_) => {
+                // TODO: Add proper Triple support when RDF-star is needed
+                // For now, return a placeholder representation
+                "[RDF-star triple not yet supported]".to_string()
+            }
         }
     }
 
@@ -478,12 +490,12 @@ impl RdfLoader {
                     },
                     _ => Ok(JsonValue::String(value.to_string())),
                 }
-            } // TODO: Add Triple support when oxigraph adds RDF-star support
-              // Term::Triple(t) => Ok(JsonValue::String(format!("<<{} {} {}>>",
-              //     self.subject_to_string(&t.subject),
-              //     t.predicate.as_str(),
-              //     self._term_to_string(&t.object)
-              // ))),
+            }
+            Term::Triple(_) => {
+                // TODO: Add proper Triple support when RDF-star is needed
+                // For now, return a string representation
+                Ok(JsonValue::String("[RDF-star triple not yet supported]".to_string()))
+            }
         }
     }
 
@@ -522,7 +534,7 @@ impl RdfLoader {
         schema: &SchemaDefinition,
     ) -> Option<String> {
         // Get all properties
-        let properties: Vec<String> = store
+        let property_list: Vec<String> = store
             .quads_for_pattern(Some(subject.into()), None, None, None)
             .filter_map(|quad| quad.ok())
             .map(|quad| self.predicate_to_property(&quad.predicate))
@@ -533,17 +545,17 @@ impl RdfLoader {
         let mut best_score = 0;
 
         for (class_name, class_def) in &schema.classes {
-            let mut score = 0;
+            let mut match_score = 0;
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
 
-            for prop in &properties {
+            for prop in &property_list {
                 if all_slots.contains(prop) {
-                    score += 1;
+                    match_score += 1;
                 }
             }
 
-            if score > best_score {
-                best_score = score;
+            if match_score > best_score {
+                best_score = match_score;
                 best_match = Some(class_name.clone());
             }
         }
@@ -727,7 +739,7 @@ impl RdfDumper {
                 .map_err(|e| DumperError::Serialization(format!("Invalid class URI: {}", e)))?;
 
             let type_quad = Quad {
-                subject: subject.clone(),
+                subject: subject.clone().into(),
                 predicate: type_predicate.clone(),
                 object: Term::NamedNode(class_node),
                 graph_name: GraphName::DefaultGraph,
@@ -753,7 +765,7 @@ impl RdfDumper {
                         for item in arr {
                             let object = self.json_to_term(item, property, schema)?;
                             let quad = Quad {
-                                subject: subject.clone(),
+                                subject: subject.clone().into(),
                                 predicate: predicate.clone(),
                                 object,
                                 graph_name: GraphName::DefaultGraph,
@@ -769,7 +781,7 @@ impl RdfDumper {
                     _ => {
                         let object = self.json_to_term(value, property, schema)?;
                         let quad = Quad {
-                            subject: subject.clone(),
+                            subject: subject.clone().into(),
                             predicate: predicate.clone(),
                             object,
                             graph_name: GraphName::DefaultGraph,

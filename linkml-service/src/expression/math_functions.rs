@@ -486,7 +486,7 @@ mod tests {
         assert_eq!(sqrt_fn.call(vec![json!(9)])?, json!(3.0));
         assert_eq!(
             sqrt_fn.call(vec![json!(2)])?,
-            json!(1.4142135623730951)
+            json!(1.414_213_562_373_095_1)
         );
 
         // Negative number should error
@@ -522,7 +522,7 @@ mod tests {
         let pi_2 = std::f64::consts::PI / 2.0;
         let sin_result = sin_fn.call(vec![json!(pi_2)])?;
         if let Value::Number(n) = sin_result {
-            assert!((n.as_f64()? - 1.0).abs() < 1e-10);
+            assert!((n.as_f64().ok_or("Failed to convert to f64")? - 1.0).abs() < 1e-10);
         }
         Ok(())
     }

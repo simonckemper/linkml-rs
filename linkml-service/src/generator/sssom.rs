@@ -621,8 +621,8 @@ mod tests {
         person_class.description = Some("A person".to_string());
         // Add mapping annotations (temporary until mapping fields are available)
         let mut annotations = indexmap::IndexMap::new();
-        annotations.insert("exact_mappings".to_string(), "foaf:Person, schema:Person".to_string());
-        annotations.insert("close_mappings".to_string(), "dbo:Person".to_string());
+        annotations.insert("exact_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("foaf:Person, schema:Person".to_string()));
+        annotations.insert("close_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("dbo:Person".to_string()));
         person_class.annotations = Some(annotations);
 
         let mut classes = indexmap::IndexMap::new();

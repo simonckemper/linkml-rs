@@ -28,6 +28,11 @@ use timestamp_core::TimestampService;
 /// This is the primary factory function that should be used in production.
 /// It loads configuration from the Configuration Service and validates it
 /// before creating the service instance.
+///
+/// # Errors
+///
+/// Returns an error if service creation fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_with_configuration<C, T, E, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
@@ -47,13 +52,13 @@ where
     O: TimeoutService + Send + Sync + 'static,
 {
     // Load configuration from Configuration Service
+    use configuration_core::Validate;
     let config: LinkMLServiceConfig = configuration_service
         .load_configuration()
         .await
         .map_err(|e| LinkMLError::service(format!("Failed to load configuration: {e}")))?;
 
     // Validate configuration
-    use configuration_core::Validate;
     config
         .validate()
         .map_err(|e| LinkMLError::service(format!("Configuration validation failed: {e}")))?;
@@ -83,6 +88,11 @@ where
 ///
 /// This factory function accepts a pre-loaded configuration, useful for
 /// testing or when configuration needs to be customized before service creation.
+///
+/// # Errors
+///
+/// Returns an error if service creation fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_with_custom_config<C, T, E, D, O>(
     config: LinkMLServiceConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -104,12 +114,11 @@ where
 {
     // Validate custom configuration
     use configuration_core::Validate;
+    use crate::factory::LinkMLServiceDependencies as FactoryDeps;
+
     config
         .validate()
         .map_err(|e| LinkMLError::service(format!("Configuration validation failed: {e}")))?;
-
-    // Import the correct dependencies struct from factory module
-    use crate::factory::LinkMLServiceDependencies as FactoryDeps;
 
     // Create service dependencies
     let dependencies = FactoryDeps {
@@ -137,6 +146,11 @@ where
 ///
 /// This factory function loads configuration from a specific source
 /// (e.g., a specific configuration file) through the Configuration Service.
+///
+/// # Errors
+///
+/// Returns an error if service creation fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_from_source<C, T, E, D, O>(
     config_source: &str,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -162,15 +176,13 @@ where
         .await
         .map_err(|e| {
             LinkMLError::service(format!(
-                "Failed to load configuration from source '{}': {}",
-                config_source, e
+                "Failed to load configuration from source '{config_source}': {e}"
             ))
         })?;
 
     logger
         .info(&format!(
-            "LinkML configuration loaded from source: {}",
-            config_source
+            "LinkML configuration loaded from source: {config_source}"
         ))
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;

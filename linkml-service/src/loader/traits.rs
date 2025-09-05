@@ -83,6 +83,55 @@ impl From<anyhow::Error> for DumperError {
     }
 }
 
+impl From<anyhow::Error> for LoaderError {
+    fn from(err: anyhow::Error) -> Self {
+        LoaderError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{}", err))))
+    }
+}
+
+// Conversions to LinkMLError
+impl From<LoaderError> for linkml_core::LinkMLError {
+    fn from(err: LoaderError) -> Self {
+        match err {
+            LoaderError::Io(io_err) => linkml_core::LinkMLError::IoError(io_err),
+            LoaderError::Parse(msg) => linkml_core::LinkMLError::parse(msg),
+            LoaderError::SchemaValidation(msg) => linkml_core::LinkMLError::schema_validation(msg),
+            LoaderError::TypeConversion(msg) => linkml_core::LinkMLError::CoercionError {
+                from: "unknown".to_string(),
+                to: "unknown".to_string(),
+                context: Some(msg),
+            },
+            LoaderError::MissingField(field) => linkml_core::LinkMLError::data_validation(format!("Missing required field: {}", field)),
+            LoaderError::InvalidFormat(msg) => linkml_core::LinkMLError::parse(msg),
+            LoaderError::Configuration(msg) => linkml_core::LinkMLError::config(msg),
+            LoaderError::Other(boxed_err) => linkml_core::LinkMLError::Other {
+                message: "Loader error".to_string(),
+                source: Some(boxed_err),
+            },
+        }
+    }
+}
+
+impl From<DumperError> for linkml_core::LinkMLError {
+    fn from(err: DumperError) -> Self {
+        match err {
+            DumperError::Io(io_err) => linkml_core::LinkMLError::IoError(io_err),
+            DumperError::Serialization(msg) => linkml_core::LinkMLError::SerializationError(msg),
+            DumperError::SchemaValidation(msg) => linkml_core::LinkMLError::schema_validation(msg),
+            DumperError::TypeConversion(msg) => linkml_core::LinkMLError::CoercionError {
+                from: "unknown".to_string(),
+                to: "unknown".to_string(),
+                context: Some(msg),
+            },
+            DumperError::Configuration(msg) => linkml_core::LinkMLError::config(msg),
+            DumperError::Other(boxed_err) => linkml_core::LinkMLError::Other {
+                message: "Dumper error".to_string(),
+                source: Some(boxed_err),
+            },
+        }
+    }
+}
+
 /// Represents a loaded data instance
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DataInstance {

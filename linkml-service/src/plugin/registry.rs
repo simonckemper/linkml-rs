@@ -462,7 +462,7 @@ mod tests {
 
     #[async_trait]
     impl logger_core::LoggerService for TestLogger {
-        type Error = anyhow::Error;
+        type Error = logger_core::LoggerError;
 
         async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
@@ -556,14 +556,14 @@ mod tests {
         registry.initialize_all(context.clone()).await?;
 
         // Verify plugin is initialized
-        let reg_info = registry.get_registration("lifecycle-test")?;
+        let reg_info = registry.get_registration("lifecycle-test").ok_or("Plugin not found")?;
         assert!(reg_info.initialized);
 
         // Test shutdown
         registry.shutdown_all().await?;
 
         // Verify plugin is shutdown
-        let reg_info = registry.get_registration("lifecycle-test")?;
+        let reg_info = registry.get_registration("lifecycle-test").ok_or("Plugin not found")?;
         assert!(!reg_info.initialized);
         Ok(())
     }

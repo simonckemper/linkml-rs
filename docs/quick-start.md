@@ -22,55 +22,63 @@ linkml = "2.0"
 Create a simple schema for a person:
 
 ```rust
-use linkml::prelude::*;
+use linkml_service::parser::Parser;
+use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Define a schema in YAML
-    let schema_yaml = r#"
+    let schema_yaml = r"
 id: https://example.org/person-schema
 name: PersonSchema
 description: A simple schema for people
 
-prefixes:
-  ex: https://example.org/
-  schema: http://schema.org/
-
 classes:
   Person:
+    name: Person
     description: A person with basic attributes
-    attributes:
-      id:
-        identifier: true
-        range: string
-        
-      name:
-        description: Full name of the person
-        required: true
-        range: string
-        
-      email:
-        description: Email address
-        range: string
-        pattern: "^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$"
-        
-      age:
-        description: Age in years
-        range: integer
-        minimum_value: 0
-        maximum_value: 150
-        
-      occupation:
-        description: Job title or profession
-        range: string
-"#;
+    slots:
+      - id
+      - name
+      - email
+      - age
+      - occupation
+
+slots:
+  id:
+    name: id
+    identifier: true
+    range: string
+  name:
+    name: name
+    description: Full name of the person
+    required: true
+    range: string
+  email:
+    name: email
+    description: Email address
+    range: string
+    pattern: '^[^@]+@[^@]+\.[^@]+$'
+  age:
+    name: age
+    description: Age in years
+    range: integer
+  occupation:
+    name: occupation
+    description: Job title or profession
+    range: string
+";
 
     // Parse the schema
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
-    
-    println!("Schema loaded: {}", schema.name.as_ref().unwrap());
-    
+    let parser = Parser::new();
+    let schema = parser.parse_str(schema_yaml, "yaml")?;
+
+    println!("Schema loaded: {}", schema.name);
+
+    // Create validation engine
+    let validation_engine = ValidationEngine::new(&schema)?;
+
     // Create some test data
     let valid_person = json!({
         "id": "person-001",
@@ -83,26 +91,23 @@ classes:
     let invalid_person = json!({
         "id": "person-002",
         "email": "not-an-email",  // Invalid format
-        "age": 200  // Exceeds maximum
+        "age": 30
         // Missing required 'name' field
     });
-    
-    // Create a validator
-    let validator = Validator::new();
-    
+
     // Validate the data
     println!("\nValidating valid person:");
-    let result = validator.validate(&valid_person, &schema, "Person")?;
-    println!("Valid: {}", result.is_valid());
-    
+    let result = validation_engine.validate_as_class(&valid_person, "Person", None).await?;
+    println!("Valid: {}", result.valid);
+
     println!("\nValidating invalid person:");
-    let result = validator.validate(&invalid_person, &schema, "Person")?;
-    println!("Valid: {}", result.is_valid());
-    
-    if !result.is_valid() {
-        println!("Errors found:");
-        for error in result.errors() {
-            println!("  - {}: {}", error.field, error.message);
+    let result = validation_engine.validate_as_class(&invalid_person, "Person", None).await?;
+    println!("Valid: {}", result.valid);
+
+    if !result.valid {
+        println!("Validation issues found:");
+        for issue in &result.issues {
+            println!("  - {}", issue.message);
         }
     }
     

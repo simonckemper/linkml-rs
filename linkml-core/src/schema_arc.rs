@@ -244,6 +244,7 @@ impl SchemaSet {
     }
 
     /// Convert to vector of schemas (consumes self)
+    #[must_use]
     pub fn into_schemas(self) -> Vec<ArcSchema> {
         self.schemas
     }

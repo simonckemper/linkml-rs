@@ -270,7 +270,7 @@ mod tests {
             "test.test"
         }
 
-        fn validate_schema(&self, _schema: &SchemaDefinition) -> Result<(), LinkMLError> {
+        fn validate_schema(&self, _schema: &SchemaDefinition) -> linkml_core::Result<()> {
             Ok(())
         }
     }

@@ -484,7 +484,20 @@ mod tests {
 
     #[test]
     fn test_ttl_rules() {
-        let manager = TtlManager::new(TtlConfig::default());
+        use std::sync::Arc;
+        use timestamp_core::{TimestampService, TimestampError};
+
+        // Create a mock timestamp service
+        struct MockTimestampService;
+        impl TimestampService for MockTimestampService {
+            type Error = TimestampError;
+            fn now(&self) -> chrono::DateTime<chrono::Utc> {
+                chrono::Utc::now()
+            }
+        }
+
+        let timestamp_service = Arc::new(MockTimestampService);
+        let manager = TtlManager::new(TtlConfig::default(), timestamp_service);
 
         // Add a rule for schema patterns
         manager.add_rule(TtlRule {

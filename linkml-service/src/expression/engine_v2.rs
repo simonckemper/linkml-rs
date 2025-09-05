@@ -306,7 +306,7 @@ impl ExpressionEngineV2 {
             }))?;
         let ast = self.parser.parse(expression)?;
 
-        if let Some(start) = start_time {
+        if let Some(_start) = start_time {
             let parse_end = self.timestamp_service.system_time()
                 .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
                     message: format!("Failed to get system time: {}", e)
@@ -327,7 +327,7 @@ impl ExpressionEngineV2 {
                 }))?;
             let compiled = self.compiler.compile(&ast, expression)?;
 
-            if let Some(start) = start_time {
+            if let Some(_start) = start_time {
                 let compile_end = self.timestamp_service.system_time()
                     .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
                         message: format!("Failed to get system time: {}", e)
@@ -371,7 +371,7 @@ impl ExpressionEngineV2 {
             }))?;
         let result = self.vm.execute(compiled, context)?;
 
-        if let Some(start) = start_time {
+        if let Some(_start) = start_time {
             let eval_end = self.timestamp_service.system_time()
                 .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
                     message: format!("Failed to get system time: {}", e)
@@ -402,7 +402,7 @@ impl ExpressionEngineV2 {
         let result = self.evaluator.evaluate(ast, context)
             .map_err(|e| ExpressionError::Evaluation(e))?;
 
-        if let Some(start) = start_time {
+        if let Some(_start) = start_time {
             let eval_end = self.timestamp_service.system_time()
                 .map_err(|e| ExpressionError::Parse(ParseError::SystemError {
                     message: format!("Failed to get system time: {}", e)

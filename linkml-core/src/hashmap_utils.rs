@@ -50,11 +50,10 @@ impl<K: Eq + Hash + Clone, V, S: BuildHasher> HashMapExt<K, V, S> for HashMap<K,
     where
         F: FnOnce(Option<V>) -> V,
     {
-        let key_for_lookup = key.clone();
         let old_value = self.remove(&key);
         let new_value = f(old_value);
-        self.insert(key_for_lookup.clone(), new_value);
-        self.get_mut(&key_for_lookup).expect("Operation failed")
+        self.insert(key.clone(), new_value);
+        self.get_mut(&key).unwrap()
     }
 }
 

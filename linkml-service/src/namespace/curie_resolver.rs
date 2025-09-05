@@ -151,10 +151,9 @@ impl CurieResolver {
                 return Ok(format!("{}{}", uri_base, local));
             } else if self.strict {
                 return Err(LinkMLError::service(format!("Unknown prefix: {}", prefix)));
-            } else {
-                // In non-strict mode, return as-is
-                return Ok(curie.to_string());
             }
+            // In non-strict mode, return as-is
+            return Ok(curie.to_string());
         }
 
         // Handle default prefix

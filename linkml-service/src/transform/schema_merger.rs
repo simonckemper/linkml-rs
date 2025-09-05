@@ -41,6 +41,23 @@ pub enum MergeError {
 /// Result type for merge operations
 pub type MergeResult<T> = std::result::Result<T, MergeError>;
 
+impl From<MergeError> for linkml_core::LinkMLError {
+    fn from(err: MergeError) -> Self {
+        match err {
+            MergeError::ConflictingDefinition { element_type, name, details } => {
+                linkml_core::LinkMLError::schema_validation(format!(
+                    "Conflicting definitions for {} '{}': {}",
+                    element_type, name, details
+                ))
+            }
+            MergeError::InvalidMerge(msg) => linkml_core::LinkMLError::schema_validation(msg),
+            MergeError::InvalidInput(msg) => linkml_core::LinkMLError::parse(msg),
+            MergeError::SchemaNotFound(name) => linkml_core::LinkMLError::import(name, "Schema not found"),
+            MergeError::IncompatibleSchemas(msg) => linkml_core::LinkMLError::schema_validation(msg),
+        }
+    }
+}
+
 /// Merge strategy for handling conflicts
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MergeStrategy {
@@ -722,7 +739,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_merge() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_basic_merge() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema1 = create_test_schema("schema1");
         let schema2 = create_test_schema("schema2");
 
@@ -760,7 +777,7 @@ mod tests {
     }
 
     #[test]
-    fn test_override_strategy() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_override_strategy() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema1 = create_test_schema("schema1");
         let mut schema2 = create_test_schema("schema2");
 
@@ -799,7 +816,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_imports() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_merge_imports() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema1 = SchemaDefinition {
             id: "schema1".to_string(),
             name: "schema1".to_string(),
