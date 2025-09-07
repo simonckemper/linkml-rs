@@ -45,7 +45,7 @@ impl UniqueKeyValidator {
         }
     }
 
-    /// Create from a LinkML schema
+    /// Create from a `LinkML` schema
     pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut validator = Self::new();
 
@@ -69,7 +69,7 @@ impl UniqueKeyValidator {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     if slot_def.identifier.unwrap_or(false) {
                         keys.push(UniqueKeyDefinition {
-                            name: format!("{}_id", class_name),
+                            name: format!("{class_name}_id"),
                             unique_key_slots: vec![slot_name.clone()],
                             is_primary: true,
                             case_sensitive: true,
@@ -329,7 +329,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_simple_unique_key() {
+    fn test_simple_unique_key() -> anyhow::Result<()> {
         let mut validator = UniqueKeyValidator::new();
 
         validator.add_unique_key(
@@ -354,10 +354,11 @@ mod tests {
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].key_name, "person_id");
         assert_eq!(violations[0].duplicate_indices, vec![0, 2]);
+        Ok(())
     }
 
     #[test]
-    fn test_composite_unique_key() {
+    fn test_composite_unique_key() -> anyhow::Result<()> {
         let mut validator = UniqueKeyValidator::new();
 
         validator.add_unique_key(
@@ -384,10 +385,11 @@ mod tests {
 
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].duplicate_indices, vec![0, 3]);
+        Ok(())
     }
 
     #[test]
-    fn test_case_insensitive_key() {
+    fn test_case_insensitive_key() -> anyhow::Result<()> {
         let mut validator = UniqueKeyValidator::new();
 
         validator.add_unique_key(
@@ -411,10 +413,11 @@ mod tests {
 
         assert_eq!(violations.len(), 1);
         assert_eq!(violations[0].duplicate_indices, vec![0, 2]);
+        Ok(())
     }
 
     #[test]
-    fn test_unique_key_index() {
+    fn test_unique_key_index() -> anyhow::Result<()> {
         let key_def = UniqueKeyDefinition {
             name: "id_key".to_string(),
             unique_key_slots: vec!["id".to_string()],
@@ -438,5 +441,6 @@ mod tests {
         assert_eq!(index.lookup(&[json!("004")]), None);
         assert!(index.contains(&[json!("001")]));
         assert!(!index.contains(&[json!("999")]));
+        Ok(())
     }
 }

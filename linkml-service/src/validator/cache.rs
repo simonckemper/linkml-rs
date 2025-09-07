@@ -383,7 +383,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_cache_operations() {
+    async fn test_cache_operations() -> anyhow::Result<()> {
         let cache = CompiledValidatorCache::new();
 
         let mut schema = SchemaDefinition::default();
@@ -412,10 +412,11 @@ mod tests {
         assert!(cache.get(&key).await.is_some());
         assert_eq!(cache.stats().hits, 1);
         assert_eq!(cache.stats().cached_validators, 1);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_cache_eviction() {
+    async fn test_cache_eviction() -> anyhow::Result<()> {
         let cache = CompiledValidatorCache::with_config(2, 1024 * 1024);
 
         let mut schema = SchemaDefinition::default();
@@ -441,5 +442,6 @@ mod tests {
 
         assert_eq!(cache.stats().cached_validators, 2);
         assert_eq!(cache.stats().evictions, 1);
+        Ok(())
     }
 }

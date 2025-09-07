@@ -10,7 +10,7 @@ use linkml_core::prelude::*;
 use linkml_core::types::PrefixDefinition;
 use serde_yaml;
 
-/// YAML schema generator
+/// `YAML` schema generator
 pub struct YamlGenerator {
     /// Whether to include generated metadata
     include_metadata: bool,
@@ -29,7 +29,7 @@ impl Default for YamlGenerator {
 }
 
 impl YamlGenerator {
-    /// Create a new YAML generator
+    /// Create a new `YAML` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -68,7 +68,7 @@ impl YamlGenerator {
         self
     }
 
-    /// Generate YAML from schema
+    /// Generate `YAML` from schema
     fn generate_yaml(&self, schema: &SchemaDefinition) -> Result<String> {
         // Create ordered map for consistent output
         let mut root = IndexMap::new();
@@ -339,10 +339,10 @@ impl YamlGenerator {
                 .map(|(k, v)| (serde_yaml::Value::String(k), v)),
         ));
         serde_yaml::to_string(&yaml_value)
-            .map_err(|e| LinkMLError::SerializationError(format!("YAML generation failed: {}", e)))
+            .map_err(|e| LinkMLError::SerializationError(format!("YAML generation failed: {e}")))
     }
 
-    /// Convert contributor to YAML
+    /// Convert contributor to `YAML`
     fn contributor_to_yaml(&self, contributor: &Contributor) -> serde_yaml::Value {
         let mut map = IndexMap::new();
         map.insert(
@@ -378,7 +378,7 @@ impl YamlGenerator {
         ))
     }
 
-    /// Convert subset to YAML
+    /// Convert subset to `YAML`
     fn subset_to_yaml(&self, subset: &SubsetDefinition) -> serde_yaml::Value {
         let mut map = IndexMap::new();
 
@@ -406,7 +406,7 @@ impl YamlGenerator {
         }
     }
 
-    /// Convert type to YAML
+    /// Convert type to `YAML`
     fn type_to_yaml(&self, type_def: &TypeDefinition) -> serde_yaml::Value {
         let mut map = IndexMap::new();
 
@@ -452,7 +452,7 @@ impl YamlGenerator {
         ))
     }
 
-    /// Convert enum to YAML
+    /// Convert enum to `YAML`
     fn enum_to_yaml(&self, enum_def: &EnumDefinition) -> serde_yaml::Value {
         let mut map = IndexMap::new();
 
@@ -489,7 +489,7 @@ impl YamlGenerator {
         ))
     }
 
-    /// Convert permissible value to YAML
+    /// Convert permissible value to `YAML`
     fn permissible_value_to_yaml(&self, pv: &PermissibleValue) -> serde_yaml::Value {
         match pv {
             PermissibleValue::Simple(_) => {
@@ -535,7 +535,7 @@ impl YamlGenerator {
         }
     }
 
-    /// Convert slot to YAML
+    /// Convert slot to `YAML`
     fn slot_to_yaml(&self, slot: &SlotDefinition) -> serde_yaml::Value {
         let mut map = IndexMap::new();
 
@@ -625,7 +625,7 @@ impl YamlGenerator {
         ))
     }
 
-    /// Convert class to YAML
+    /// Convert class to `YAML`
     fn class_to_yaml(&self, class: &ClassDefinition) -> serde_yaml::Value {
         let mut map = IndexMap::new();
 
@@ -718,7 +718,7 @@ impl YamlGenerator {
         ))
     }
 
-    /// Convert settings to YAML
+    /// Convert settings to `YAML`
     fn settings_to_yaml(&self, settings: &SchemaSettings) -> serde_yaml::Value {
         let yaml_str = serde_yaml::to_string(settings).unwrap_or_default();
         serde_yaml::from_str(&yaml_str).unwrap_or(serde_yaml::Value::Null)

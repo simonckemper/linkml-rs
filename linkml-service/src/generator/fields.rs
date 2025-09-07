@@ -73,11 +73,11 @@ impl RustGenerator {
         let base_type = self.get_base_type(&slot.range, schema)?;
 
         if slot.multivalued.unwrap_or(false) {
-            Ok(format!("Vec<{}>", base_type))
+            Ok(format!("Vec<{base_type}>"))
         } else if slot.required.unwrap_or(false) {
             Ok(base_type)
         } else {
-            Ok(format!("Option<{}>", base_type))
+            Ok(format!("Option<{base_type}>"))
         }
     }
 
@@ -139,7 +139,7 @@ impl RustGenerator {
         }
     }
 
-    /// Generate enum from LinkML enum definition
+    /// Generate enum from `LinkML` enum definition
     pub(super) fn generate_enum_rust(
         &self,
         enum_name: &str,

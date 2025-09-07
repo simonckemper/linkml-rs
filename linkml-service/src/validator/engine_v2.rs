@@ -148,7 +148,7 @@ impl ValidationEngineV2 {
                 Err(e) => {
                     errors.push(ValidationError {
                         path: "/".to_string(),
-                        message: format!("Validator error: {}", e),
+                        message: format!("Validator error: {e}"),
                         severity: super::Severity::Error,
                     });
                     if !self.config.collect_all_errors {

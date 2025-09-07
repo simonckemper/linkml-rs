@@ -437,7 +437,7 @@ impl MarkdownGenerator {
             let pattern_str = if pattern.is_empty() {
                 String::new()
             } else {
-                format!("`{}`", pattern)
+                format!("`{pattern}`")
             };
 
             writeln!(
@@ -589,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn test_markdown_generation() {
+    fn test_markdown_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = MarkdownGenerator::new();
 
@@ -605,6 +605,7 @@ mod tests {
         assert!(result.contains("### Person"));
         assert!(result.contains("## Enumerations"));
         assert!(result.contains("### EmploymentStatus"));
+        Ok(())
     }
 
     #[test]

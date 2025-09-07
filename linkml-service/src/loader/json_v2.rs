@@ -14,7 +14,7 @@ use super::traits::{DataInstance, DumperError, LoaderError};
 use super::traits_v2::{DataDumperV2, DataLoaderV2, DumperResult, LoaderResult};
 use crate::file_system_adapter::FileSystemOperations;
 
-/// JSON loader v2 with file system adapter support
+/// `JSON` loader v2 with file system adapter support
 #[derive(Default)]
 pub struct JsonLoaderV2 {
     /// Options for loading
@@ -23,7 +23,7 @@ pub struct JsonLoaderV2 {
 }
 
 impl JsonLoaderV2 {
-    /// Create a new JSON loader
+    /// Create a new `JSON` loader
     pub fn new() -> Self {
         Self {
             validate: true,
@@ -145,17 +145,17 @@ impl DataLoaderV2 for JsonLoaderV2 {
     }
 }
 
-/// JSON dumper v2 with file system adapter support
+/// `JSON` dumper v2 with file system adapter support
 #[derive(Default)]
 pub struct JsonDumperV2 {
     /// Pretty print output
     pretty: bool,
-    /// Use JSON Lines format
+    /// Use `JSON` Lines format
     jsonl: bool,
 }
 
 impl JsonDumperV2 {
-    /// Create a new JSON dumper
+    /// Create a new `JSON` dumper
     pub fn new() -> Self {
         Self {
             pretty: true,
@@ -169,7 +169,7 @@ impl JsonDumperV2 {
         self
     }
 
-    /// Set JSON Lines format
+    /// Set `JSON` Lines format
     pub fn with_jsonl(mut self, jsonl: bool) -> Self {
         self.jsonl = jsonl;
         self

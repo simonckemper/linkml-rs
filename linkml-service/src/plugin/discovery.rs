@@ -75,7 +75,7 @@ impl PluginDiscovery {
         if !path.is_dir() {
             return Err(LinkMLError::IoError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                format!("Path is not a directory: {:?}", path),
+                format!("Path is not a directory: {path:?}"),
             )));
         }
 
@@ -103,7 +103,7 @@ impl PluginDiscovery {
             let entry = entry.map_err(|e| {
                 LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to read directory entry: {}", e),
+                    format!("Failed to read directory entry: {e}"),
                 ))
             })?;
             let path = entry.path();
@@ -127,13 +127,13 @@ impl PluginDiscovery {
             for entry in glob(&pattern_str).map_err(|e| {
                 LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
-                    format!("Invalid glob pattern: {}", e),
+                    format!("Invalid glob pattern: {e}"),
                 ))
             })? {
                 let path = entry.map_err(|e| {
                     LinkMLError::IoError(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        format!("Failed to read glob entry: {}", e),
+                        format!("Failed to read glob entry: {e}"),
                     ))
                 })?;
                 if path.is_file() {
@@ -232,7 +232,7 @@ impl PluginDiscovery {
                 if pattern.contains('*') {
                     // Simple glob matching
                     let regex_pattern = pattern.replace("*", ".*");
-                    if let Ok(re) = regex::Regex::new(&format!("^{}$", regex_pattern)) {
+                    if let Ok(re) = regex::Regex::new(&format!("^{regex_pattern}$")) {
                         re.is_match(&name_str)
                     } else {
                         false

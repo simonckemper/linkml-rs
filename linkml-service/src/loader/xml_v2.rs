@@ -10,7 +10,7 @@ use serde_json::{Value, Map};
 use std::sync::Arc;
 use parse_core::{ParseService, ParseFormat, XmlFormat};
 
-/// XML loader that uses Parse Service
+/// `XML` loader that uses Parse Service
 pub struct XmlLoaderV2<P: ParseService> {
     /// Parse service instance
     parse_service: Arc<P>,
@@ -21,7 +21,7 @@ pub struct XmlLoaderV2<P: ParseService> {
 }
 
 impl<P: ParseService> XmlLoaderV2<P> {
-    /// Create a new XML loader with Parse Service
+    /// Create a new `XML` loader with Parse Service
     pub fn new(parse_service: Arc<P>) -> Self {
         Self {
             parse_service,
@@ -53,7 +53,7 @@ impl<P: ParseService + Send + Sync> DataLoader for XmlLoaderV2<P> {
         let parsed_doc = self.parse_service
             .parse_document(content, ParseFormat::Xml(XmlFormat::Generic))
             .await
-            .map_err(|e| LoaderError::Parser(format!("Parse service error: {}", e)))?;
+            .map_err(|e| LoaderError::Parser(format!("Parse service error: {e}")))?;
 
         // Convert parsed document to LinkML data instances
         let instances = convert_parsed_to_instances(&parsed_doc, schema)?;
@@ -62,7 +62,7 @@ impl<P: ParseService + Send + Sync> DataLoader for XmlLoaderV2<P> {
     }
 }
 
-/// Convert parsed document to LinkML data instances
+/// Convert parsed document to `LinkML` data instances
 fn convert_parsed_to_instances(
     parsed_doc: &parse_core::ParsedDocument,
     schema: &SchemaDefinition,
@@ -200,7 +200,7 @@ fn process_child_element(
     Ok(())
 }
 
-/// Convert element to JSON value
+/// Convert element to `JSON` value
 fn element_to_value(
     element: &parse_core::ContentElement,
     schema: &SchemaDefinition,

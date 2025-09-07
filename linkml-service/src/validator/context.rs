@@ -12,11 +12,11 @@ use std::sync::Arc;
 pub struct ValidationContext {
     /// The schema being validated against
     pub schema: Arc<SchemaDefinition>,
-    /// Current JSON path being validated
+    /// Current `JSON` path being validated
     pub current_path: Vec<String>,
-    /// Optimized JSON path object
+    /// Optimized `JSON` path object
     path_object: JsonPath,
-    /// JSON path navigator for efficient traversal
+    /// `JSON` path navigator for efficient traversal
     navigator: JsonNavigator,
     /// Stack of classes being validated (for inheritance)
     pub class_stack: Vec<String>,
@@ -82,7 +82,7 @@ impl ValidationContext {
         }
     }
 
-    /// Get the current JSON path as a string
+    /// Get the current `JSON` path as a string
     #[must_use]
     pub fn path(&self) -> String {
         self.path_object.to_string()
@@ -299,7 +299,7 @@ impl ValidationContext {
             .and_then(|v| v.as_object())
     }
 
-    /// Navigate to values using a JSON path
+    /// Navigate to values using a `JSON` path
     ///
     /// # Errors
     ///
@@ -312,7 +312,7 @@ impl ValidationContext {
         self.navigator.navigate(value, path)
     }
 
-    /// Get the JSON navigator
+    /// Get the `JSON` navigator
     pub fn navigator(&mut self) -> &mut JsonNavigator {
         &mut self.navigator
     }

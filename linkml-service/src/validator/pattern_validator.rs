@@ -17,25 +17,25 @@ use std::collections::HashMap;
 /// Common structured patterns with error handling
 static EMAIL_PATTERN: Lazy<Result<Regex>> =
     Lazy::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-        .map_err(|e| LinkMLError::service(format!("Invalid email regex: {}", e))));
+        .map_err(|e| LinkMLError::service(format!("Invalid email regex: {e}"))));
 
 static URL_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
-        .map_err(|e| LinkMLError::service(format!("Invalid URL regex: {}", e)))
+        .map_err(|e| LinkMLError::service(format!("Invalid URL regex: {e}")))
 });
 
 static UUID_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-        .map_err(|e| LinkMLError::service(format!("Invalid UUID regex: {}", e)))
+        .map_err(|e| LinkMLError::service(format!("Invalid UUID regex: {e}")))
 });
 
 static ISO_DATE_PATTERN: Lazy<Result<Regex>> = Lazy::new(||
     Regex::new(r"^\d{4}-\d{2}-\d{2}$")
-        .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {}", e))));
+        .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {e}"))));
 
 static ISO_DATETIME_PATTERN: Lazy<Result<Regex>> = Lazy::new(|| {
     Regex::new(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$")
-        .map_err(|e| LinkMLError::service(format!("Invalid ISO datetime regex: {}", e)))
+        .map_err(|e| LinkMLError::service(format!("Invalid ISO datetime regex: {e}")))
 });
 
 /// Pattern validator for slot values
@@ -297,7 +297,7 @@ impl PatternValidator {
         let class = schema
             .classes
             .get(class_name)
-            .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found", class_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found")))?;
 
         if let Value::Object(obj) = instance {
             for slot_name in &class.slots {
@@ -325,8 +325,8 @@ impl PatternValidator {
                             // Default error formatting
                             issues.push(ValidationIssue::error(
                                 error_msg,
-                                format!("/{}", slot_name),
-                                format!("pattern:{}", slot_name),
+                                format!("/{slot_name}"),
+                                format!("pattern:{slot_name}"),
                             ));
                         }
                         Ok(()) => {}
@@ -395,7 +395,7 @@ impl PatternTransformer {
         replacement: &str,
     ) -> Result<()> {
         let regex = Regex::new(pattern)
-            .map_err(|e| LinkMLError::service(format!("Invalid transform pattern: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Invalid transform pattern: {e}")))?;
 
         self.transformations.insert(
             slot_name.to_string(),

@@ -281,7 +281,7 @@ impl GlobalExpressionCacheV2 {
         self.primary.clear();
         self.hot.clear();
         self.access_counts.write()
-            .map_err(|e| linkml_core::LinkMLError::parse(format!("access_counts lock poisoned: {}", e)))?
+            .map_err(|e| linkml_core::LinkMLError::parse(format!("access_counts lock poisoned: {e}")))?
             .clear();
         Ok(())
     }
@@ -314,7 +314,7 @@ impl ThreadSafeGlobalCache {
     {
         self.inner
             .write()
-            .map_err(|e| linkml_core::LinkMLError::parse(format!("inner cache lock poisoned: {}", e)))?
+            .map_err(|e| linkml_core::LinkMLError::parse(format!("inner cache lock poisoned: {e}")))?
             .get_or_compute(expression, compute)
     }
 }

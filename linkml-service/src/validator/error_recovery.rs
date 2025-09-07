@@ -581,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn test_circuit_breaker() {
+    fn test_circuit_breaker() -> anyhow::Result<()> {
         let config = ErrorRecoveryConfig {
             failure_threshold: 2,
             ..Default::default()
@@ -594,12 +594,14 @@ mod tests {
         manager.record_failure("test_service");
 
         // Check circuit state
-        let breaker = manager.circuit_breakers.get("test_service")?;
+        let breaker = manager.circuit_breakers.get("test_service")
+            .ok_or_else(|| anyhow::anyhow!("Circuit breaker not found for test_service"))?;
         assert_eq!(breaker.read().state, CircuitState::Open);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_retry_strategy() {
+    async fn test_retry_strategy() -> anyhow::Result<()> {
         let strategy = NetworkTimeoutStrategy;
         let mut context = ErrorContext::new(LinkMLError::service("timeout"));
         context.error_type = Some(RecoverableErrorType::NetworkTimeout);
@@ -610,5 +612,6 @@ mod tests {
             }
             _ => panic!("Expected retry action"),
         }
+        Ok(())
     }
 }

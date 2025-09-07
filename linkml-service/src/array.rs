@@ -157,7 +157,7 @@ pub struct ArraySpec {
     /// Dimensions of the array
     pub dimensions: Vec<ArrayDimension>,
 
-    /// Element type (LinkML type)
+    /// Element type (`LinkML` type)
     pub element_type: String,
 
     /// Whether to store in row-major (C) or column-major (Fortran) order
@@ -409,7 +409,7 @@ impl ArrayData {
         }
 
         let dim_size = self.shape.get(dimension).copied().ok_or_else(|| {
-            ArrayError::InvalidDimension(format!("Dimension {} out of range", dimension))
+            ArrayError::InvalidDimension(format!("Dimension {dimension} out of range"))
         })?;
 
         if index >= dim_size {
@@ -461,7 +461,7 @@ impl ArrayData {
         new_spec.dimensions = new_shape
             .iter()
             .enumerate()
-            .map(|(i, &size)| ArrayDimension::fixed(format!("dim_{}", i), size))
+            .map(|(i, &size)| ArrayDimension::fixed(format!("dim_{i}"), size))
             .collect();
 
         // Validate new shape

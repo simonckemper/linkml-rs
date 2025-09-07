@@ -14,7 +14,7 @@ use super::traits::{DataInstance, DumperError, LoaderError};
 use super::traits_v2::{DataDumperV2, DataLoaderV2, DumperResult, LoaderResult};
 use crate::file_system_adapter::FileSystemOperations;
 
-/// YAML loader v2 with file system adapter support
+/// `YAML` loader v2 with file system adapter support
 #[derive(Default)]
 pub struct YamlLoaderV2 {
     /// Options for loading
@@ -23,7 +23,7 @@ pub struct YamlLoaderV2 {
 }
 
 impl YamlLoaderV2 {
-    /// Create a new YAML loader
+    /// Create a new `YAML` loader
     pub fn new() -> Self {
         Self {
             validate: true,
@@ -186,7 +186,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
     }
 }
 
-/// YAML dumper v2 with file system adapter support
+/// `YAML` dumper v2 with file system adapter support
 #[derive(Default)]
 pub struct YamlDumperV2 {
     /// Pretty print output
@@ -194,7 +194,7 @@ pub struct YamlDumperV2 {
 }
 
 impl YamlDumperV2 {
-    /// Create a new YAML dumper
+    /// Create a new `YAML` dumper
     pub fn new() -> Self {
         Self { pretty: true }
     }

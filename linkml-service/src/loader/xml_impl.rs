@@ -12,13 +12,13 @@ use std::collections::HashMap;
 use crate::loader::{DataInstance, DataLoader, LoadOptions, LoaderError, LoaderResult};
 use linkml_core::prelude::*;
 
-/// XML loader implementation
+/// `XML` loader implementation
 pub struct XmlLoader {
     /// Parser configuration
     config: XmlConfig,
 }
 
-/// XML parser configuration
+/// `XML` parser configuration
 #[derive(Debug, Clone)]
 pub struct XmlConfig {
     /// Trim whitespace from text nodes
@@ -43,19 +43,19 @@ impl Default for XmlConfig {
 }
 
 impl XmlLoader {
-    /// Create a new XML loader with default configuration
+    /// Create a new `XML` loader with default configuration
     pub fn new() -> Self {
         Self {
             config: XmlConfig::default(),
         }
     }
 
-    /// Create XML loader with custom configuration
+    /// Create `XML` loader with custom configuration
     pub fn with_config(config: XmlConfig) -> Self {
         Self { config }
     }
 
-    /// Parse XML content into JSON-like structure
+    /// Parse `XML` content into `JSON`-like structure
     fn parse_xml(&self, xml_content: &str) -> LoaderResult<Value> {
         let mut reader = Reader::from_str(xml_content);
         reader.trim_text(self.config.trim_text);
@@ -85,7 +85,7 @@ impl XmlLoader {
                     let text = e
                         .unescape()
                         .map_err(|err| {
-                            LoaderError::Parse(format!("XML text unescape error: {}", err))
+                            LoaderError::Parse(format!("XML text unescape error: {err}"))
                         })?
                         .to_string();
 
@@ -106,7 +106,7 @@ impl XmlLoader {
                     }
                 }
                 Ok(Event::Eof) => break,
-                Err(e) => return Err(LoaderError::Parse(format!("XML parse error: {}", e))),
+                Err(e) => return Err(LoaderError::Parse(format!("XML parse error: {e}"))),
                 _ => {} // Ignore other events (comments, processing instructions, etc.)
             }
 
@@ -116,19 +116,19 @@ impl XmlLoader {
         root.ok_or_else(|| LoaderError::Parse("No root element found in XML".to_string()))
     }
 
-    /// Parse XML element start tag
+    /// Parse `XML` element start tag
     fn parse_element(&self, e: &BytesStart) -> LoaderResult<XmlElement> {
         let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
         let mut attributes = HashMap::new();
 
         for attr_result in e.attributes() {
             let attr = attr_result
-                .map_err(|err| LoaderError::Parse(format!("XML attribute error: {}", err)))?;
+                .map_err(|err| LoaderError::Parse(format!("XML attribute error: {err}")))?;
 
             let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
             let value = attr
                 .unescape_value()
-                .map_err(|err| LoaderError::Parse(format!("XML attribute value error: {}", err)))?
+                .map_err(|err| LoaderError::Parse(format!("XML attribute value error: {err}")))?
                 .to_string();
 
             attributes.insert(key, value);
@@ -142,7 +142,7 @@ impl XmlLoader {
         })
     }
 
-    /// Convert XML element to JSON value
+    /// Convert `XML` element to `JSON` value
     fn element_to_value(&self, element: XmlElement) -> Value {
         let mut obj = Map::new();
 
@@ -152,7 +152,7 @@ impl XmlLoader {
         // Add attributes
         if self.config.attributes_as_properties && !element.attributes.is_empty() {
             for (key, value) in element.attributes {
-                obj.insert(format!("@{}", key), Value::String(value));
+                obj.insert(format!("@{key}"), Value::String(value));
             }
         }
 
@@ -208,7 +208,7 @@ impl XmlLoader {
         Value::Object(obj)
     }
 
-    /// Convert JSON value to LinkML data instance
+    /// Convert `JSON` value to `LinkML` data instance
     fn value_to_instance(&self, value: Value, target_class: &str) -> DataInstance {
         // Convert Value to HashMap<String, JsonValue>
         let data = match value {
@@ -232,7 +232,7 @@ impl XmlLoader {
     }
 }
 
-/// Internal XML element representation
+/// Internal `XML` element representation
 struct XmlElement {
     name: String,
     attributes: HashMap<String, String>,

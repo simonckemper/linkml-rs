@@ -19,7 +19,7 @@ pub struct InternedValidationIssue {
     pub severity: Severity,
     /// Human-readable message (interned)
     pub message: InternedString,
-    /// JSON path to the problematic value (interned)
+    /// `JSON` path to the problematic value (interned)
     pub path: InternedString,
     /// The validator that raised this issue (interned)
     pub validator: InternedString,
@@ -263,7 +263,7 @@ impl IssueBuilder {
         let common = self.interner.common();
         InternedValidationIssue {
             severity: Severity::Error,
-            message: self.interner.intern(&format!("Required field '{}' is missing", field_name)),
+            message: self.interner.intern(&format!("Required field '{field_name}' is missing")),
             path: self.interner.intern(path),
             validator: self.interner.intern("RequiredValidator"),
             code: Some(common.error_required),
@@ -442,7 +442,7 @@ mod tests {
         for i in 0..100 {
             let issue = InternedValidationIssue::error(
                 "Required field is missing", // Same message
-                &format!("$.items[{}].name", i), // Different paths
+                &format!("$.items[{i}].name"), // Different paths
                 "RequiredValidator", // Same validator
             );
             issues.push(issue);

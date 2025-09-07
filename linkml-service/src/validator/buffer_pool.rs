@@ -55,7 +55,7 @@ pub struct StringBuffer {
 
 impl StringBuffer {
     /// Get a mutable reference to the string
-    pub fn as_mut(&mut self) -> &mut String {
+    pub fn as_mut_string(&mut self) -> &mut String {
         &mut self.buffer
     }
 
@@ -186,7 +186,7 @@ impl<T> std::ops::DerefMut for VecBuffer<T> {
 
 /// Global buffer pools for the validation system
 pub struct ValidationBufferPools {
-    /// Pool for JSON path strings
+    /// Pool for `JSON` path strings
     pub path_strings: StringPool,
     /// Pool for error message strings
     pub error_messages: StringPool,

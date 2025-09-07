@@ -57,7 +57,7 @@ impl RustGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Add serialization support
-        writeln!(&mut output, "    /// Serialize to JSON")
+        writeln!(&mut output, "    /// Serialize to `JSON`")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             &mut output,

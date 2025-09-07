@@ -254,7 +254,7 @@ impl<'a> Tokenizer<'a> {
                             _ => {
                                 return Err(ParseError::InvalidString {
                                     position: self.position,
-                                    reason: format!("Invalid escape sequence \\{}", ch),
+                                    reason: format!("Invalid escape sequence \\{ch}"),
                                 });
                             }
                         };
@@ -407,6 +407,13 @@ impl Parser {
         }
 
         Ok(expr)
+    }
+
+    /// Parse an expression string (alias for parse method)
+    ///
+    /// This method provides compatibility with code expecting a `parse_str` method.
+    pub fn parse_str(&self, input: &str) -> Result<Expression, ParseError> {
+        self.parse(input)
     }
 }
 

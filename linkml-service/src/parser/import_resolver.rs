@@ -18,7 +18,7 @@ pub struct ImportResolver {
     search_paths: Arc<RwLock<Vec<PathBuf>>>,
     /// Base path for relative imports
     base_path: Arc<RwLock<Option<PathBuf>>>,
-    /// Base URL for URL imports
+    /// Base `URL` for `URL` imports
     base_url: Arc<RwLock<Option<String>>>,
     /// Maximum import depth to prevent infinite recursion
     max_depth: usize,
@@ -54,7 +54,7 @@ impl ImportResolver {
         *self.base_path.write() = Some(path.to_path_buf());
     }
 
-    /// Set the base URL for URL imports
+    /// Set the base `URL` for `URL` imports
     pub fn set_base_url(&self, url: &str) {
         *self.base_url.write() = Some(url.to_string());
     }

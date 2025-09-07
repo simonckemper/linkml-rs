@@ -76,7 +76,7 @@ impl OpenApiGenerator {
         // Handle inheritance using allOf
         if let Some(parent) = &class.is_a {
             let parent_ref = json!({
-                "$ref": format!("#/components/schemas/{}", parent)
+                "$ref": format!("#/components/schemas/{parent}")
             });
 
             schema_obj = json!({
@@ -120,7 +120,7 @@ impl OpenApiGenerator {
                         "items": {
                             "type": "array",
                             "items": {
-                                "$ref": format!("#/components/schemas/{}", class_name)
+                                "$ref": format!("#/components/schemas/{class_name}")
                             }
                         },
                         "total": {
@@ -213,7 +213,7 @@ impl OpenApiGenerator {
                 // Check if it's an enum or class reference
                 if schema.enums.contains_key(other) || schema.classes.contains_key(other) {
                     Ok(json!({
-                        "$ref": format!("#/components/schemas/{}", other)
+                        "$ref": format!("#/components/schemas/{other}")
                     }))
                 } else {
                     Ok(json!({"type": "string"}))
@@ -252,7 +252,7 @@ impl OpenApiGenerator {
         Ok(())
     }
 
-    /// Generate paths for REST API operations
+    /// Generate paths for REST `API` operations
     fn generate_paths(
         &self,
         schema: &SchemaDefinition,
@@ -274,8 +274,8 @@ impl OpenApiGenerator {
 
             // GET list
             collection_ops.insert("get".to_string(), json!({
-                "summary": format!("List {}", resource_name),
-                "operationId": format!("list{}", class_name),
+                "summary": format!("List {resource_name}"),
+                "operationId": format!("list{class_name}"),
                 "tags": [class_name],
                 "parameters": [
                     {
@@ -309,7 +309,7 @@ impl OpenApiGenerator {
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": format!("#/components/schemas/{}ListResponse", class_name)
+                                    "$ref": format!("#/components/schemas/{class_name}ListResponse")
                                 }
                             }
                         }
@@ -320,14 +320,14 @@ impl OpenApiGenerator {
             // POST create
             collection_ops.insert("post".to_string(), json!({
                 "summary": format!("Create a new {}", class_name.to_lowercase()),
-                "operationId": format!("create{}", class_name),
+                "operationId": format!("create{class_name}"),
                 "tags": [class_name],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": format!("#/components/schemas/{}CreateRequest", class_name)
+                                "$ref": format!("#/components/schemas/{class_name}CreateRequest")
                             }
                         }
                     }
@@ -338,7 +338,7 @@ impl OpenApiGenerator {
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": format!("#/components/schemas/{}", class_name)
+                                    "$ref": format!("#/components/schemas/{class_name}")
                                 }
                             }
                         }
@@ -359,7 +359,7 @@ impl OpenApiGenerator {
                 "get".to_string(),
                 json!({
                     "summary": format!("Get {} by ID", class_name.to_lowercase()),
-                    "operationId": format!("get{}ById", class_name),
+                    "operationId": format!("get{class_name}ById"),
                     "tags": [class_name],
                     "parameters": [
                         {
@@ -375,7 +375,7 @@ impl OpenApiGenerator {
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "$ref": format!("#/components/schemas/{}", class_name)
+                                        "$ref": format!("#/components/schemas/{class_name}")
                                     }
                                 }
                             }
@@ -390,7 +390,7 @@ impl OpenApiGenerator {
             // PUT update
             item_ops.insert("put".to_string(), json!({
                 "summary": format!("Update {}", class_name.to_lowercase()),
-                "operationId": format!("update{}", class_name),
+                "operationId": format!("update{class_name}"),
                 "tags": [class_name],
                 "parameters": [
                     {
@@ -405,7 +405,7 @@ impl OpenApiGenerator {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": format!("#/components/schemas/{}CreateRequest", class_name)
+                                "$ref": format!("#/components/schemas/{class_name}CreateRequest")
                             }
                         }
                     }
@@ -416,7 +416,7 @@ impl OpenApiGenerator {
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": format!("#/components/schemas/{}", class_name)
+                                    "$ref": format!("#/components/schemas/{class_name}")
                                 }
                             }
                         }
@@ -433,7 +433,7 @@ impl OpenApiGenerator {
             // PATCH partial update
             item_ops.insert("patch".to_string(), json!({
                 "summary": format!("Partially update {}", class_name.to_lowercase()),
-                "operationId": format!("patch{}", class_name),
+                "operationId": format!("patch{class_name}"),
                 "tags": [class_name],
                 "parameters": [
                     {
@@ -448,7 +448,7 @@ impl OpenApiGenerator {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": format!("#/components/schemas/{}UpdateRequest", class_name)
+                                "$ref": format!("#/components/schemas/{class_name}UpdateRequest")
                             }
                         }
                     }
@@ -459,7 +459,7 @@ impl OpenApiGenerator {
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": format!("#/components/schemas/{}", class_name)
+                                    "$ref": format!("#/components/schemas/{class_name}")
                                 }
                             }
                         }
@@ -478,7 +478,7 @@ impl OpenApiGenerator {
                 "delete".to_string(),
                 json!({
                     "summary": format!("Delete {}", class_name.to_lowercase()),
-                    "operationId": format!("delete{}", class_name),
+                    "operationId": format!("delete{class_name}"),
                     "tags": [class_name],
                     "parameters": [
                         {
@@ -677,7 +677,7 @@ impl Generator for OpenApiGenerator {
 
         // Format output
         let content = serde_json::to_string_pretty(&openapi)
-            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {e}")))?;
 
         Ok(content)
     }
@@ -769,7 +769,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_openapi_generation() {
+    fn test_openapi_generation() -> anyhow::Result<()> {
         let generator = OpenApiGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -803,5 +803,6 @@ mod tests {
         // Check components
         assert!(parsed["components"]["schemas"]["User"].is_object());
         assert!(parsed["components"]["schemas"]["UserCreateRequest"].is_object());
+        Ok(())
     }
 }

@@ -9,12 +9,12 @@ use std::path::Path;
 
 use super::SchemaParser;
 
-/// JSON parser implementation
+/// `JSON` parser implementation
 #[derive(Default)]
 pub struct JsonParser;
 
 impl JsonParser {
-    /// Create a new JSON parser
+    /// Create a new `JSON` parser
     #[must_use]
     pub fn new() -> Self {
         Self

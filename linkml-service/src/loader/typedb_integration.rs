@@ -19,16 +19,16 @@ pub struct TypeDBIntegrationOptions {
     /// Database name in TypeDB
     pub database_name: String,
 
-    /// TypeQL type to LinkML class mapping
+    /// TypeQL type to `LinkML` class mapping
     pub type_mapping: HashMap<String, String>,
 
-    /// TypeQL attribute to LinkML slot mapping (per type)
+    /// TypeQL attribute to `LinkML` slot mapping (per type)
     pub attribute_mapping: HashMap<String, HashMap<String, String>>,
 
     /// Batch size for operations
     pub batch_size: usize,
 
-    /// Whether to infer LinkML types from TypeDB schema
+    /// Whether to infer `LinkML` types from TypeDB schema
     pub infer_types: bool,
 
     /// Include inferred facts in results
@@ -59,7 +59,7 @@ impl Default for TypeDBIntegrationOptions {
 /// to work with either the DBMS service or a direct TypeDB connection.
 #[async_trait]
 pub trait TypeDBQueryExecutor: Send + Sync {
-    /// Execute a TypeQL query and return results as JSON
+    /// Execute a TypeQL query and return results as `JSON`
     async fn execute_query(
         &self,
         query: &str,
@@ -103,7 +103,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .map_err(|e| {
                 LoaderError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to query entity types: {}", e),
+                    format!("Failed to query entity types: {e}"),
                 ))
             })?;
 
@@ -120,7 +120,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .map_err(|e| {
                 LoaderError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to query relation types: {}", e),
+                    format!("Failed to query relation types: {e}"),
                 ))
             })?;
 
@@ -134,7 +134,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         root_type: &str,
     ) -> LoaderResult<Vec<TypeInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {e}")))?;
 
         let mut types = Vec::new();
 
@@ -185,7 +185,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Parse attribute query results
     fn parse_attribute_results(&self, json_result: &str) -> LoaderResult<Vec<AttributeInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {e}")))?;
 
         let mut attributes = Vec::new();
 
@@ -237,7 +237,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Parse role query results
     fn parse_role_results(&self, json_result: &str) -> LoaderResult<Vec<RoleInfo>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {e}")))?;
 
         let mut roles = Vec::new();
 
@@ -316,7 +316,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         attributes: &[AttributeInfo],
     ) -> LoaderResult<Vec<DataInstance>> {
         let parsed: Value = serde_json::from_str(json_result)
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON: {e}")))?;
 
         let mut instances = Vec::new();
 
@@ -356,7 +356,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         Ok(instances)
     }
 
-    /// Get the LinkML slot name for a TypeDB attribute
+    /// Get the `LinkML` slot name for a TypeDB attribute
     fn get_slot_name(&self, type_name: &str, attr_name: &str) -> String {
         if let Some(type_mapping) = self.options.attribute_mapping.get(type_name) {
             if let Some(slot_name) = type_mapping.get(attr_name) {
@@ -478,7 +478,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
         Self { options, executor }
     }
 
-    /// Create TypeDB schema for a LinkML class
+    /// Create TypeDB schema for a `LinkML` class
     async fn create_schema_if_needed(
         &self,
         class_name: &str,
@@ -499,7 +499,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
         let mut define_query = String::new();
 
         if is_relation {
-            define_query.push_str(&format!("define {} sub relation", type_name));
+            define_query.push_str(&format!("define {type_name} sub relation"));
 
             // Add roles based on object-valued slots
             for slot_name in &class_def.slots {
@@ -507,13 +507,13 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                     if let Some(range) = &slot_def.range {
                         if schema.classes.contains_key(range) {
                             let role_name = to_snake_case(slot_name);
-                            define_query.push_str(&format!(", relates {}", role_name));
+                            define_query.push_str(&format!(", relates {role_name}"));
                         }
                     }
                 }
             }
         } else {
-            define_query.push_str(&format!("define {} sub entity", type_name));
+            define_query.push_str(&format!("define {type_name} sub entity"));
         }
 
         // Add attributes
@@ -545,7 +545,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to define schema: {}", e),
+                    format!("Failed to define schema: {e}"),
                 ))
             })?;
 
@@ -580,7 +580,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .unwrap_or_else(|| to_snake_case(class_name));
 
         let class_def = schema.classes.get(class_name).ok_or_else(|| {
-            DumperError::SchemaValidation(format!("Class {} not found in schema", class_name))
+            DumperError::SchemaValidation(format!("Class {class_name} not found in schema"))
         })?;
 
         let is_relation = self.is_relation_class(class_def, schema);
@@ -607,7 +607,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                     .map_err(|e| {
                         DumperError::Io(std::io::Error::new(
                             std::io::ErrorKind::Other,
-                            format!("Failed to insert instance: {}", e),
+                            format!("Failed to insert instance: {e}"),
                         ))
                     })?;
             }
@@ -623,7 +623,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
         instance: &DataInstance,
         schema: &SchemaDefinition,
     ) -> DumperResult<String> {
-        let mut query = format!("insert $x isa {}", type_name);
+        let mut query = format!("insert $x isa {type_name}");
 
         for (slot_name, value) in &instance.data {
             if slot_name.starts_with('_') {

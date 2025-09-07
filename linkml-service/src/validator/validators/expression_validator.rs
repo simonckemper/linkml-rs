@@ -61,7 +61,7 @@ impl Validator for ExpressionValidator {
                 Err(e) => {
                     issues.push(
                         ValidationIssue::error(
-                            format!("Failed to evaluate equals_expression: {}", e),
+                            format!("Failed to evaluate equals_expression: {e}"),
                             context.path(),
                             self.name(),
                         )

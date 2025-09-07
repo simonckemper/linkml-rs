@@ -154,7 +154,7 @@ impl Validator for RangeValidator {
     }
 }
 
-/// Get the type name of a JSON value
+/// Get the type name of a `JSON` value
 fn value_type(value: &Value) -> &'static str {
     match value {
         Value::Null => "null",

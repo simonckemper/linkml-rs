@@ -697,7 +697,7 @@ impl Generator for GraphQLGenerator {
                             "Class name '{}' is not valid for GraphQL: must start with letter or underscore",
                             class_name
                         ),
-                        element: Some(format!("class.{}", class_name)),
+                        element: Some(format!("class.{class_name}")),
                     });
                 }
             }
@@ -710,7 +710,7 @@ impl Generator for GraphQLGenerator {
                             "Class name '{}' contains invalid characters for GraphQL",
                             class_name
                         ),
-                        element: Some(format!("class.{}", class_name)),
+                        element: Some(format!("class.{class_name}")),
                     });
                 }
             }
@@ -722,8 +722,8 @@ impl Generator for GraphQLGenerator {
                 "Int" | "Float" | "Boolean" | "ID" | "__Schema" | "__Type"
             ) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Class name '{}' conflicts with GraphQL reserved type", class_name),
-                    element: Some(format!("class.{}", class_name)),
+                    message: format!("Class name '{class_name}' conflicts with GraphQL reserved type"),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -738,7 +738,7 @@ impl Generator for GraphQLGenerator {
                             "Slot name '{}' is not valid for GraphQL fields",
                             slot_name
                         ),
-                        element: Some(format!("slot.{}", slot_name)),
+                        element: Some(format!("slot.{slot_name}")),
                     });
                 }
             }
@@ -750,7 +750,7 @@ impl Generator for GraphQLGenerator {
                         "Slot name '{}' conflicts with GraphQL introspection naming",
                         slot_name
                     ),
-                    element: Some(format!("slot.{}", slot_name)),
+                    element: Some(format!("slot.{slot_name}")),
                 });
             }
         }
@@ -978,7 +978,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_graphql_generation() {
+    fn test_graphql_generation() -> anyhow::Result<()> {
         let generator = GraphQLGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -1006,6 +1006,7 @@ mod tests {
 
         assert!(output.contains("type Person"));
         assert!(output.contains("name: String!"));
+        Ok(())
     }
 
     #[test]

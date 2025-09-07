@@ -8,6 +8,9 @@ use crate::error::Result;
 use crate::types::{NamedCaptures, SchemaDefinition, ValidationReport};
 
 /// Main trait for `LinkML` service operations
+///
+/// This trait is dyn-compatible and can be used as `Arc<dyn LinkMLService>`.
+/// For generic operations, see `LinkMLServiceExt`.
 #[async_trait]
 pub trait LinkMLService: Send + Sync {
     /// Load a schema from a file path
@@ -27,7 +30,14 @@ pub trait LinkMLService: Send + Sync {
         schema: &SchemaDefinition,
         target_class: &str,
     ) -> Result<ValidationReport>;
+}
 
+/// Extension trait for generic `LinkML` operations
+///
+/// This trait contains methods with generic parameters that make it non-dyn-compatible.
+/// Use this trait when you need typed validation operations.
+#[async_trait]
+pub trait LinkMLServiceExt: LinkMLService {
     /// Validate and return typed value
     async fn validate_typed<T>(
         &self,
@@ -42,9 +52,9 @@ pub trait LinkMLService: Send + Sync {
 /// Schema format enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SchemaFormat {
-    /// YAML format
+    /// `YAML` format
     Yaml,
-    /// JSON format
+    /// `JSON` format
     Json,
 }
 

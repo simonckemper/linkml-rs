@@ -192,13 +192,13 @@ impl PythonDataclassGenerator {
             // Use more specific collection types based on constraints
             if slot.unique_keys.len() > 0 || slot.unique.unwrap_or(false) {
                 imports.add_import("typing", "Set");
-                format!("Set[{}]", base_type)
+                format!("Set[{base_type}]")
             } else if slot.ordered.unwrap_or(false) {
                 imports.add_import("typing", "List");
-                format!("List[{}]", base_type)
+                format!("List[{base_type}]")
             } else {
                 imports.add_import("typing", "Sequence");
-                format!("Sequence[{}]", base_type)
+                format!("Sequence[{base_type}]")
             }
         } else {
             base_type
@@ -206,7 +206,7 @@ impl PythonDataclassGenerator {
 
         let final_type = if is_optional_slot(slot) && !slot.multivalued.unwrap_or(false) {
             imports.add_import("typing", "Optional");
-            format!("Optional[{}]", field_type)
+            format!("Optional[{field_type}]")
         } else {
             field_type
         };
@@ -347,7 +347,7 @@ impl PythonDataclassGenerator {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
                             linkml_core::types::PermissibleValue::Complex { text, .. } => text,
                         };
-                        format!("'{}'", text)
+                        format!("'{text}'")
                     }).collect();
                     writeln!(
                         output,
@@ -418,7 +418,7 @@ impl Generator for PythonDataclassGenerator {
         for (class_name, _class_def) in &schema.classes {
             if !Self::is_valid_python_identifier(class_name) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Class name '{}' is not a valid Python identifier", class_name),
+                    message: format!("Class name '{class_name}' is not a valid Python identifier"),
                     element: Some(format!("class.{class_name}")),
                 });
             }
@@ -428,7 +428,7 @@ impl Generator for PythonDataclassGenerator {
         for (slot_name, _slot_def) in &schema.slots {
             if !Self::is_valid_python_identifier(slot_name) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Slot name '{}' is not a valid Python identifier", slot_name),
+                    message: format!("Slot name '{slot_name}' is not a valid Python identifier"),
                     element: Some(format!("slot.{slot_name}")),
                 });
             }

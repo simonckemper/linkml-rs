@@ -207,7 +207,7 @@ impl SchemaDiff {
             result.removed_classes.push(class_name.clone());
             result
                 .breaking_changes
-                .push(format!("Class '{}' was removed", class_name));
+                .push(format!("Class '{class_name}' was removed"));
         }
 
         // Modified classes
@@ -342,7 +342,7 @@ impl SchemaDiff {
                     if slot.has_annotation(standard_annotations::BREAKING_IF_CHANGED) {
                         result
                             .breaking_changes
-                            .push(format!("Breaking: Slot '{}' was removed", slot_name));
+                            .push(format!("Breaking: Slot '{slot_name}' was removed"));
                     }
                 }
             }
@@ -437,7 +437,7 @@ impl SchemaDiff {
             result.removed_types.push(type_name.clone());
             result
                 .breaking_changes
-                .push(format!("Type '{}' was removed", type_name));
+                .push(format!("Type '{type_name}' was removed"));
         }
 
         // Modified types
@@ -507,7 +507,7 @@ impl SchemaDiff {
             result.removed_enums.push(enum_name.clone());
             result
                 .breaking_changes
-                .push(format!("Enum '{}' was removed", enum_name));
+                .push(format!("Enum '{enum_name}' was removed"));
         }
 
         // Modified enums
@@ -597,22 +597,22 @@ impl DiffResult {
             output.push_str("@@ Classes @@\n");
 
             for class in &self.removed_classes {
-                output.push_str(&format!("- class: {}\n", class));
+                output.push_str(&format!("- class: {class}\n"));
             }
 
             for class in &self.added_classes {
-                output.push_str(&format!("+ class: {}\n", class));
+                output.push_str(&format!("+ class: {class}\n"));
             }
 
             for class_diff in &self.modified_classes {
                 output.push_str(&format!("  class: {}\n", class_diff.name));
 
                 for slot in &class_diff.removed_slots {
-                    output.push_str(&format!("    - slot: {}\n", slot));
+                    output.push_str(&format!("    - slot: {slot}\n"));
                 }
 
                 for slot in &class_diff.added_slots {
-                    output.push_str(&format!("    + slot: {}\n", slot));
+                    output.push_str(&format!("    + slot: {slot}\n"));
                 }
             }
 
@@ -627,11 +627,11 @@ impl DiffResult {
             output.push_str("@@ Slots @@\n");
 
             for slot in &self.removed_slots {
-                output.push_str(&format!("- slot: {}\n", slot));
+                output.push_str(&format!("- slot: {slot}\n"));
             }
 
             for slot in &self.added_slots {
-                output.push_str(&format!("+ slot: {}\n", slot));
+                output.push_str(&format!("+ slot: {slot}\n"));
             }
 
             for slot_diff in &self.modified_slots {
@@ -670,7 +670,7 @@ impl DiffResult {
         output
     }
 
-    /// Convert to JSON patch format
+    /// Convert to `JSON` patch format
     pub fn to_json_patch(&self) -> Result<String> {
         let mut patches = Vec::new();
 
@@ -678,7 +678,7 @@ impl DiffResult {
         for class in &self.added_classes {
             patches.push(serde_json::json!({
                 "op": "add",
-                "path": format!("/classes/{}", class),
+                "path": format!("/classes/{class}"),
                 "value": {}
             }));
         }
@@ -687,7 +687,7 @@ impl DiffResult {
         for class in &self.removed_classes {
             patches.push(serde_json::json!({
                 "op": "remove",
-                "path": format!("/classes/{}", class)
+                "path": format!("/classes/{class}")
             }));
         }
 
@@ -731,7 +731,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             html.push_str("<h2>Added Classes</h2>\n<ul>\n");
             for class in &self.added_classes {
-                html.push_str(&format!("<li class='added'>{}</li>\n", class));
+                html.push_str(&format!("<li class='added'>{class}</li>\n"));
             }
             html.push_str("</ul>\n");
         }
@@ -739,7 +739,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             html.push_str("<h2>Removed Classes</h2>\n<ul>\n");
             for class in &self.removed_classes {
-                html.push_str(&format!("<li class='removed'>{}</li>\n", class));
+                html.push_str(&format!("<li class='removed'>{class}</li>\n"));
             }
             html.push_str("</ul>\n");
         }
@@ -777,7 +777,7 @@ impl DiffResult {
         if !self.breaking_changes.is_empty() {
             md.push_str("## ⚠️ Breaking Changes\n\n");
             for change in &self.breaking_changes {
-                md.push_str(&format!("- {}\n", change));
+                md.push_str(&format!("- {change}\n"));
             }
             md.push_str("\n");
         }
@@ -786,7 +786,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             md.push_str("## Added Classes\n\n");
             for class in &self.added_classes {
-                md.push_str(&format!("- ✅ `{}`\n", class));
+                md.push_str(&format!("- ✅ `{class}`\n"));
             }
             md.push_str("\n");
         }
@@ -795,7 +795,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             md.push_str("## Removed Classes\n\n");
             for class in &self.removed_classes {
-                md.push_str(&format!("- ❌ `{}`\n", class));
+                md.push_str(&format!("- ❌ `{class}`\n"));
             }
             md.push_str("\n");
         }
@@ -809,7 +809,7 @@ impl DiffResult {
                 if !class_diff.added_slots.is_empty() {
                     md.push_str("**Added slots:**\n");
                     for slot in &class_diff.added_slots {
-                        md.push_str(&format!("- ✅ `{}`\n", slot));
+                        md.push_str(&format!("- ✅ `{slot}`\n"));
                     }
                     md.push_str("\n");
                 }
@@ -817,7 +817,7 @@ impl DiffResult {
                 if !class_diff.removed_slots.is_empty() {
                     md.push_str("**Removed slots:**\n");
                     for slot in &class_diff.removed_slots {
-                        md.push_str(&format!("- ❌ `{}`\n", slot));
+                        md.push_str(&format!("- ❌ `{slot}`\n"));
                     }
                     md.push_str("\n");
                 }

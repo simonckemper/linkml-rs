@@ -38,7 +38,7 @@ pub struct RoleInfo {
     pub is_inherited: bool,
 }
 
-/// Analyzes relations in LinkML schemas for TypeQL generation
+/// Analyzes relations in `LinkML` schemas for TypeQL generation
 pub struct RelationAnalyzer {
     /// Cache of analyzed relations
     relation_cache: HashMap<String, RelationInfo>,

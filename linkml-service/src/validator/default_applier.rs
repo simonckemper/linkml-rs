@@ -32,7 +32,7 @@ impl<'a> DefaultApplier<'a> {
         Self::new(schema)
     }
 
-    /// Apply defaults to a JSON value
+    /// Apply defaults to a `JSON` value
     pub fn apply_defaults(
         &self,
         data: &mut Value,
@@ -65,7 +65,7 @@ impl<'a> DefaultApplier<'a> {
             .schema
             .classes
             .get(class_name)
-            .ok_or_else(|| format!("Class '{}' not found", class_name))?;
+            .ok_or_else(|| format!("Class '{class_name}' not found"))?;
 
         // Process all slots for this class
         for slot_name in &class.slots {

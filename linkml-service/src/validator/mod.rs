@@ -58,7 +58,7 @@ use linkml_core::error::Result;
 use linkml_core::types::SchemaDefinition;
 use serde_json::Value;
 
-/// Main validation function - validates JSON data against a schema
+/// Main validation function - validates `JSON` data against a schema
 ///
 /// # Errors
 ///

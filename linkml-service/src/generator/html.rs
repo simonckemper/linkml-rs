@@ -798,7 +798,7 @@ impl Generator for HtmlGenerator {
                         "Class name '{}' contains potentially unsafe HTML characters",
                         class_name
                     ),
-                    element: Some(format!("class.{}", class_name)),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -933,7 +933,7 @@ mod tests {
 
 
     #[tokio::test]
-    async fn test_html_generation() {
+    async fn test_html_generation() -> anyhow::Result<()> {
         let generator = HtmlGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -959,6 +959,7 @@ mod tests {
         assert!(html.contains("A test schema for HTML generation"));
         assert!(html.contains("Person"));
         assert!(html.contains("Represents a person"));
+        Ok(())
     }
 
     #[test]

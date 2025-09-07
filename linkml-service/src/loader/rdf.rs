@@ -25,7 +25,7 @@ pub enum RdfSerializationFormat {
     Turtle,
     /// N-Triples format (.nt)
     NTriples,
-    /// RDF/XML format (.rdf, .xml)
+    /// RDF/`XML` format (.rdf, .xml)
     RdfXml,
     /// N-Quads format (.nq)
     NQuads,
@@ -58,7 +58,7 @@ pub enum SkolemnizationOptions {
         /// Prefix for skolem identifiers
         prefix: String,
     },
-    /// Generate UUIDs for blank nodes
+    /// Generate `UUID`s for blank nodes
     Uuid {
         /// Base URI for skolem URIs
         base_uri: String,
@@ -175,7 +175,7 @@ impl RdfLoader {
         let store = Store::new().map_err(|e| {
             LoaderError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to create store: {}", e),
+                format!("Failed to create store: {e}"),
             ))
         })?;
 
@@ -185,7 +185,7 @@ impl RdfLoader {
         let parser = if let Some(base) = &self.options.base_iri {
             parser
                 .with_base_iri(base)
-                .map_err(|e| LoaderError::Configuration(format!("Invalid base IRI: {}", e)))?
+                .map_err(|e| LoaderError::Configuration(format!("Invalid base IRI: {e}")))?
         } else {
             parser
         };
@@ -194,13 +194,13 @@ impl RdfLoader {
         let quads: Vec<_> = parser
             .for_reader(cursor)
             .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse RDF: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse RDF: {e}")))?;
 
         for quad in quads {
             store.insert(&quad).map_err(|e| {
                 LoaderError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to insert quad: {}", e),
+                    format!("Failed to insert quad: {e}"),
                 ))
             })?;
         }
@@ -220,7 +220,7 @@ impl RdfLoader {
 
         // Find all subjects that have a type
         let type_predicate = NamedNode::new(&self.options.type_predicate)
-            .map_err(|e| LoaderError::Configuration(format!("Invalid type predicate: {}", e)))?;
+            .map_err(|e| LoaderError::Configuration(format!("Invalid type predicate: {e}")))?;
 
         // Get all typed subjects
         let typed_subjects: Vec<NamedOrBlankNode> = store
@@ -272,7 +272,7 @@ impl RdfLoader {
             // Get all properties for this subject
             for quad_result in store.quads_for_pattern(Some((&subject).into()), None, None, None) {
                 let quad = quad_result
-                    .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {}", e)))?;
+                    .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {e}")))?;
 
                 // Skip type predicates
                 if quad.predicate == type_predicate {
@@ -310,7 +310,7 @@ impl RdfLoader {
         if options.infer_types {
             for quad_result in store.iter() {
                 let quad = quad_result
-                    .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {}", e)))?;
+                    .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {e}")))?;
 
                 let subject_str = match &quad.subject {
                     Subject::NamedNode(node) => self.subject_to_string(&NamedOrBlankNode::NamedNode(node.clone())),
@@ -339,7 +339,7 @@ impl RdfLoader {
                         store.quads_for_pattern(Some((&quad.subject).into()), None, None, None)
                     {
                         let prop_quad = prop_quad_result.map_err(|e| {
-                            LoaderError::Parse(format!("Failed to read quad: {}", e))
+                            LoaderError::Parse(format!("Failed to read quad: {e}"))
                         })?;
 
                         let property = self.predicate_to_property(&prop_quad.predicate);
@@ -446,7 +446,7 @@ impl RdfLoader {
         }
     }
 
-    /// Convert RDF term to JSON value
+    /// Convert RDF term to `JSON` value
     fn term_to_json(&self, term: &Term) -> LoaderResult<JsonValue> {
         match term {
             Term::NamedNode(n) => Ok(JsonValue::String(n.as_str().to_string())),
@@ -499,7 +499,7 @@ impl RdfLoader {
         }
     }
 
-    /// Infer LinkML class from RDF types
+    /// Infer `LinkML` class from RDF types
     fn infer_class_from_types(
         &self,
         types: &[String],
@@ -697,12 +697,12 @@ impl RdfDumper {
         let store = Store::new().map_err(|e| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to create store: {}", e),
+                format!("Failed to create store: {e}"),
             ))
         })?;
 
         let type_predicate = NamedNode::new(&self.options.type_predicate)
-            .map_err(|e| DumperError::Configuration(format!("Invalid type predicate: {}", e)))?;
+            .map_err(|e| DumperError::Configuration(format!("Invalid type predicate: {e}")))?;
 
         for instance in instances {
             // Create subject
@@ -711,18 +711,18 @@ impl RdfDumper {
                     if id.starts_with("_:") {
                         // Blank node
                         NamedOrBlankNode::BlankNode(BlankNode::new(&id[2..]).map_err(|e| {
-                            DumperError::Serialization(format!("Invalid blank node ID: {}", e))
+                            DumperError::Serialization(format!("Invalid blank node ID: {e}"))
                         })?)
                     } else if id.starts_with("http://") || id.starts_with("https://") {
                         // Already a full URI
                         NamedOrBlankNode::NamedNode(NamedNode::new(id).map_err(|e| {
-                            DumperError::Serialization(format!("Invalid URI: {}", e))
+                            DumperError::Serialization(format!("Invalid URI: {e}"))
                         })?)
                     } else {
                         // Create URI with default namespace
                         let uri = format!("{}{}", self.options.default_namespace, id);
                         NamedOrBlankNode::NamedNode(NamedNode::new(&uri).map_err(|e| {
-                            DumperError::Serialization(format!("Invalid URI: {}", e))
+                            DumperError::Serialization(format!("Invalid URI: {e}"))
                         })?)
                     }
                 } else if self.options.generate_blank_nodes {
@@ -736,7 +736,7 @@ impl RdfDumper {
             // Add type triple
             let class_uri = format!("{}{}", self.options.default_namespace, instance.class_name);
             let class_node = NamedNode::new(&class_uri)
-                .map_err(|e| DumperError::Serialization(format!("Invalid class URI: {}", e)))?;
+                .map_err(|e| DumperError::Serialization(format!("Invalid class URI: {e}")))?;
 
             let type_quad = Quad {
                 subject: subject.clone().into(),
@@ -748,7 +748,7 @@ impl RdfDumper {
             store.insert(&type_quad).map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to insert type quad: {}", e),
+                    format!("Failed to insert type quad: {e}"),
                 ))
             })?;
 
@@ -773,7 +773,7 @@ impl RdfDumper {
                             store.insert(&quad).map_err(|e| {
                                 DumperError::Io(std::io::Error::new(
                                     std::io::ErrorKind::Other,
-                                    format!("Failed to insert quad: {}", e),
+                                    format!("Failed to insert quad: {e}"),
                                 ))
                             })?;
                         }
@@ -789,7 +789,7 @@ impl RdfDumper {
                         store.insert(&quad).map_err(|e| {
                             DumperError::Io(std::io::Error::new(
                                 std::io::ErrorKind::Other,
-                                format!("Failed to insert quad: {}", e),
+                                format!("Failed to insert quad: {e}"),
                             ))
                         })?;
                     }
@@ -814,7 +814,7 @@ impl RdfDumper {
             if let Some(namespace) = self.options.prefixes.get(prefix) {
                 let uri = format!("{}{}", namespace, local);
                 return NamedNode::new(&uri).map_err(|e| {
-                    DumperError::Serialization(format!("Invalid predicate URI: {}", e))
+                    DumperError::Serialization(format!("Invalid predicate URI: {e}"))
                 });
             }
         }
@@ -822,10 +822,10 @@ impl RdfDumper {
         // Otherwise use default namespace
         let uri = format!("{}{}", self.options.default_namespace, property);
         NamedNode::new(&uri)
-            .map_err(|e| DumperError::Serialization(format!("Invalid predicate URI: {}", e)))
+            .map_err(|e| DumperError::Serialization(format!("Invalid predicate URI: {e}")))
     }
 
-    /// Convert JSON value to RDF term
+    /// Convert `JSON` value to RDF term
     fn json_to_term(
         &self,
         value: &JsonValue,
@@ -873,7 +873,7 @@ impl RdfDumper {
                             || slot.range.as_deref() == Some("uriorcurie")
                         {
                             let node = NamedNode::new(s).map_err(|e| {
-                                DumperError::Serialization(format!("Invalid URI: {}", e))
+                                DumperError::Serialization(format!("Invalid URI: {e}"))
                             })?;
                             return Ok(Term::NamedNode(node));
                         }
@@ -883,7 +883,7 @@ impl RdfDumper {
                 // Check if it's a blank node reference
                 if s.starts_with("_:") {
                     let blank = BlankNode::new(&s[2..]).map_err(|e| {
-                        DumperError::Serialization(format!("Invalid blank node: {}", e))
+                        DumperError::Serialization(format!("Invalid blank node: {e}"))
                     })?;
                     return Ok(Term::BlankNode(blank));
                 }
@@ -915,20 +915,20 @@ impl RdfDumper {
             let quad = quad_result.map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to read quad from store: {}", e),
+                    format!("Failed to read quad from store: {e}"),
                 ))
             })?;
             writer.serialize_quad(&quad).map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to serialize quad: {}", e),
+                    format!("Failed to serialize quad: {e}"),
                 ))
             })?;
         }
         writer.finish().map_err(|e| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to finish RDF serialization: {}", e),
+                format!("Failed to finish RDF serialization: {e}"),
             ))
         })?;
 
@@ -988,7 +988,7 @@ impl DataDumper for RdfDumper {
     ) -> DumperResult<String> {
         let data = self.dump_bytes(instances, schema, options).await?;
         String::from_utf8(data)
-            .map_err(|e| DumperError::Serialization(format!("Invalid UTF-8: {}", e)))
+            .map_err(|e| DumperError::Serialization(format!("Invalid UTF-8: {e}")))
     }
 
     async fn dump_bytes(

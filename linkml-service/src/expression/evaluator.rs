@@ -205,7 +205,7 @@ fn hash_context(context: &HashMap<String, Value>) -> u64 {
     hasher.finish()
 }
 
-/// Hash a JSON value securely
+/// Hash a `JSON` value securely
 fn hash_value<H: Hasher>(value: &Value, hasher: &mut H) {
     match value {
         Value::Null => 0u8.hash(hasher),

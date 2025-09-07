@@ -6,17 +6,16 @@
 use linkml_service::{
     expression::{Evaluator, parse_expression},
     generator::{
-        PythonDataclassGenerator, RustGenerator, TypeQLGenerator,
-        typeql_generator::create_typeql_generator,
+        PythonDataclassGenerator, RustGenerator,
+        typeql_generator::TypeQLGenerator,
     },
     parser::yaml_parser::YamlParser,
-    performance::global_profiler,
-    validator::{Validator, ValidatorBuilder},
+    validator::ValidatorBuilder,
 };
 use serde_json::json;
 use std::time::Instant;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     println!("LinkML Service Performance Summary");
     println!("==================================\n");
 
@@ -110,11 +109,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("-----------------------------");
 
     let start = Instant::now();
-    let simple_parsed = YamlParser::parse_string(simple_schema)?;
+    let simple_parsed = YamlParser::parse_str(simple_schema)?;
     let simple_parse_time = start.elapsed();
 
     let start = Instant::now();
-    let complex_parsed = YamlParser::parse_string(complex_schema)?;
+    let complex_parsed = YamlParser::parse_str(complex_schema)?;
     let complex_parse_time = start.elapsed();
 
     println!("Simple schema:  {:?}", simple_parse_time);
@@ -166,26 +165,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("------------------------------");
 
     let generators = vec![
-        (
-            "Rust",
-            Box::new(RustGenerator::new())
-                as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>,
-        ),
-        (
-            "TypeQL",
-            Box::new(create_typeql_generator())
-                as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>,
-        ),
-        (
-            "Python",
-            Box::new(PythonDataclassGenerator::new())
-                as Box<dyn Fn(&_) -> Result<String, Box<dyn std::error::Error + Send + Sync>>>,
-        ),
+        ("Rust", Box::new(RustGenerator::new()) as Box<dyn linkml_service::generator::Generator>),
+        ("TypeQL", Box::new(TypeQLGenerator::new()) as Box<dyn linkml_service::generator::Generator>),
+        ("Python", Box::new(PythonDataclassGenerator::new()) as Box<dyn linkml_service::generator::Generator>),
     ];
 
     for (name, generator) in generators {
         let start = Instant::now();
-        let _ = generator(&complex_parsed)?;
+        let _ = generator.generate(&complex_parsed)?;
         let gen_time = start.elapsed();
         println!("{:10} generator: {:?}", name, gen_time);
     }
@@ -279,10 +266,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_performance_summary() -> Result<()> {
-        main().map_err(|e| {
-            anyhow::anyhow!("Performance summary should complete successfully: {}", e)
-        })?;
+    fn test_performance_summary() -> anyhow::Result<()> {
+        main()?;
         Ok(())
     }
 }

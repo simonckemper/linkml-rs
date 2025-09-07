@@ -45,7 +45,7 @@ impl Default for CacheConfig {
 }
 
 impl CacheConfig {
-    /// Create cache config from LinkML service configuration
+    /// Create cache config from `LinkML` service configuration
     pub fn from_service_config(config: &linkml_core::configuration_v2::RuleCacheConfig) -> Self {
         Self {
             max_entries: config.max_entries,

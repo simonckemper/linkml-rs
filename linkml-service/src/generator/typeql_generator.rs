@@ -29,7 +29,7 @@ impl TypeQLGenerator {
     fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
         GeneratorError::Io(std::io::Error::new(
             std::io::ErrorKind::Other,
-            format!("Formatting error: {}", err),
+            format!("Formatting error: {err}"),
         ))
     }
 
@@ -543,7 +543,7 @@ impl Generator for TypeQLGenerator {
     fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
         // Use tokio to run the async validation
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         runtime
             .block_on(AsyncGenerator::validate_schema(self, schema))
@@ -553,7 +553,7 @@ impl Generator for TypeQLGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         let options = GeneratorOptions::new();
         let outputs = runtime
@@ -670,7 +670,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_typeql_generation() {
+    async fn test_typeql_generation() -> anyhow::Result<()> {
         let generator = TypeQLGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -705,6 +705,7 @@ mod tests {
                 .content
                 .contains("name sub attribute, value string")
         );
+        Ok(())
     }
 
     #[test]

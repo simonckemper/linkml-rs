@@ -24,9 +24,9 @@ use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
 use timestamp_core::TimestampService;
 
-/// Create LinkML service with DBMS integration
+/// Create `LinkML` service with DBMS integration
 ///
-/// This factory creates a LinkML service that fully integrates with
+/// This factory creates a `LinkML` service that fully integrates with
 /// RootReal's DBMS service for TypeDB schema management and data operations.
 ///
 /// # Arguments
@@ -34,7 +34,7 @@ use timestamp_core::TimestampService;
 /// * `logger` - Logger service for structured logging
 /// * `timestamp` - Timestamp service for time operations
 /// * `cache` - Cache service for performance optimization
-/// * `monitoring` - Monitoring service for metrics and telemetry
+/// * `monitoring` - Monitoring service for metrics and telemetry (currently disabled)
 /// * `configuration_service` - Configuration service for hot-reload support
 /// * `task_manager` - Task management service for async operations
 /// * `error_handler` - Error handling service for comprehensive error tracking
@@ -86,8 +86,7 @@ where
             // Log warning and use default configuration
             logger
                 .warn(&format!(
-                    "Failed to load LinkML config: {}, using defaults",
-                    e
+                    "Failed to load LinkML config: {e}, using defaults"
                 ))
                 .await
                 .ok();
@@ -115,9 +114,9 @@ where
     Ok(Arc::new(service))
 }
 
-/// Create LinkML service with DBMS and custom configuration
+/// Create `LinkML` service with DBMS and custom configuration
 ///
-/// This variant allows providing a custom LinkML configuration
+/// This variant allows providing a custom `LinkML` configuration
 /// instead of loading from the configuration service.
 ///
 /// # Arguments

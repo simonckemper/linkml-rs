@@ -296,7 +296,7 @@ pub struct SecurityLimitsConfig {
     /// Maximum identifier length
     pub max_identifier_length: usize,
 
-    /// Maximum JSON size in bytes
+    /// Maximum `JSON` size in bytes
     pub max_json_size_bytes: usize,
 
     /// Maximum slots per class

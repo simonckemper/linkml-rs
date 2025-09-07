@@ -48,13 +48,13 @@ impl InstanceValidator {
 
         // Get configuration for this slot
         let config = self.slot_configs.get(slot_name)
-            .ok_or_else(|| format!("No configuration for slot '{}'", slot_name))?;
+            .ok_or_else(|| format!("No configuration for slot '{slot_name}'"))?;
 
         // Load data using the loader
         let instance_data = self.loader
             .load_json_file(file_path, config)
             .await
-            .map_err(|e| format!("Failed to load instance data: {}", e))?;
+            .map_err(|e| format!("Failed to load instance data: {e}"))?;
 
         // Extract values for this slot
         let values = instance_data.values.get(slot_name)
@@ -225,7 +225,7 @@ impl Validator for InstanceValidator {
                                 if let Some(val_str) = value.as_str() {
                                     if !loaded_values.contains(&val_str.to_string()) {
                                         issues.push(ValidationIssue::error(
-                                            format!("Value '{}' not in loaded instance values", val_str),
+                                            format!("Value '{val_str}' not in loaded instance values"),
                                             &context.path(),
                                             &self.name,
                                         ));
@@ -234,7 +234,7 @@ impl Validator for InstanceValidator {
                             }
                             Err(e) => {
                                 issues.push(ValidationIssue::warning(
-                                    format!("Failed to load instance data: {}", e),
+                                    format!("Failed to load instance data: {e}"),
                                     &context.path(),
                                     &self.name,
                                 ));

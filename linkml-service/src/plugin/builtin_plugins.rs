@@ -70,7 +70,7 @@ impl BuiltinPluginRegistry {
     }
 }
 
-/// JSON Schema generator plugin
+/// `JSON` Schema generator plugin
 struct JsonSchemaGeneratorPlugin {
     info: PluginInfo,
     status: PluginStatus,
@@ -123,7 +123,7 @@ impl Plugin for JsonSchemaGeneratorPlugin {
     }
 }
 
-/// SQL generator plugin
+/// `SQL` generator plugin
 struct SqlGeneratorPlugin {
     info: PluginInfo,
     status: PluginStatus,

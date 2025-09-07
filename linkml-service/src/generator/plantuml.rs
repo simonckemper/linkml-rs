@@ -9,7 +9,7 @@ use std::fmt::Write;
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
 
-/// PlantUML diagram type
+/// `PlantUML` diagram type
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PlantUmlDiagramType {
     /// Class diagram (default)
@@ -26,7 +26,7 @@ pub enum PlantUmlDiagramType {
     Component,
 }
 
-/// PlantUML skin parameters
+/// `PlantUML` skin parameters
 #[derive(Debug, Clone)]
 pub struct PlantUmlSkin {
     /// Background color
@@ -56,7 +56,7 @@ impl Default for PlantUmlSkin {
     }
 }
 
-/// Options for PlantUML generation
+/// Options for `PlantUML` generation
 #[derive(Debug, Clone)]
 pub struct PlantUmlOptions {
     /// Diagram type
@@ -92,7 +92,7 @@ impl Default for PlantUmlOptions {
     }
 }
 
-/// PlantUML generator
+/// `PlantUML` generator
 pub struct PlantUmlGenerator {
     /// Generation options
     options: PlantUmlOptions,
@@ -104,7 +104,7 @@ impl PlantUmlGenerator {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
-    /// Create a new PlantUML generator
+    /// Create a new `PlantUML` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -125,7 +125,7 @@ impl PlantUmlGenerator {
         self
     }
 
-    /// Generate PlantUML diagram
+    /// Generate `PlantUML` diagram
     fn generate_plantuml(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         match self.options.diagram_type {
             PlantUmlDiagramType::Class => self.generate_class_diagram(schema),
@@ -937,7 +937,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_class_diagram_generation() {
+    async fn test_class_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = PlantUmlGenerator::new();
         let options = GeneratorOptions::default();
@@ -952,10 +952,11 @@ mod tests {
         assert!(output.contains("abstract class Base"));
         assert!(output.contains("class Person"));
         assert!(output.contains("Person --|> Base"));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_er_diagram_generation() {
+    async fn test_er_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator =
             PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::EntityRelationship);
@@ -967,10 +968,11 @@ mod tests {
 
         assert!(output.contains("!define ENTITY"));
         assert!(output.contains("TABLE(Person)"));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_mindmap_generation() {
+    async fn test_mindmap_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::MindMap);
         let options = GeneratorOptions::default();
@@ -982,5 +984,6 @@ mod tests {
         assert!(output.contains("@startmindmap"));
         assert!(output.contains("@endmindmap"));
         assert!(output.contains("** Classes"));
+        Ok(())
     }
 }

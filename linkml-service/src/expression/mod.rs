@@ -83,7 +83,7 @@ impl ExpressionEngine {
     /// Parse an expression string into an AST
     pub fn parse(&self, expression: &str) -> Result<Expression> {
         self.parser.parse(expression).map_err(|e| {
-            linkml_core::error::LinkMLError::other(format!("Expression parse error: {}", e))
+            linkml_core::error::LinkMLError::other(format!("Expression parse error: {e}"))
         })
     }
 
@@ -91,7 +91,7 @@ impl ExpressionEngine {
     pub fn evaluate(&self, expression: &str, context: &HashMap<String, Value>) -> Result<Value> {
         let ast = self.parse(expression)?;
         self.evaluator.evaluate(&ast, context).map_err(|e| {
-            linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {}", e))
+            linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {e}"))
         })
     }
 
@@ -102,7 +102,7 @@ impl ExpressionEngine {
         context: &HashMap<String, Value>,
     ) -> Result<Value> {
         self.evaluator.evaluate(ast, context).map_err(|e| {
-            linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {}", e))
+            linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {e}"))
         })
     }
 

@@ -2,7 +2,7 @@
 
 use serde_json::Value;
 
-/// Get the type name of a JSON value
+/// Get the type name of a `JSON` value
 #[must_use]
 pub fn value_type(value: &Value) -> &'static str {
     match value {

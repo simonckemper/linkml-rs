@@ -21,7 +21,7 @@ static URI_REGEX: Lazy<Regex> = Lazy::new(|| {
         .expect("Valid URI regex pattern")
 });
 
-/// CURIE/URI resolver for LinkML schemas
+/// CURIE/URI resolver for `LinkML` schemas
 #[derive(Debug, Clone)]
 pub struct CurieResolver {
     /// Prefix to URI mappings
@@ -56,7 +56,7 @@ impl CurieResolver {
         resolver
     }
 
-    /// Create from a LinkML schema
+    /// Create from a `LinkML` schema
     pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut resolver = Self::new();
 
@@ -150,7 +150,7 @@ impl CurieResolver {
             if let Some(uri_base) = self.prefixes.get(prefix) {
                 return Ok(format!("{}{}", uri_base, local));
             } else if self.strict {
-                return Err(LinkMLError::service(format!("Unknown prefix: {}", prefix)));
+                return Err(LinkMLError::service(format!("Unknown prefix: {prefix}")));
             }
             // In non-strict mode, return as-is
             return Ok(curie.to_string());

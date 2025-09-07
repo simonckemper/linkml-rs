@@ -15,7 +15,7 @@ use linkml_core::error::LinkMLError;
 pub enum ShExStyle {
     /// Compact syntax (ShExC)
     Compact,
-    /// JSON representation (ShExJ)
+    /// `JSON` representation (ShExJ)
     Json,
     /// RDF representation (ShExR)
     Rdf,
@@ -324,23 +324,23 @@ impl ShExGenerator {
                 }
 
                 if let Some(min_val) = &slot_def.minimum_value {
-                    facets.push(format!("MININCLUSIVE {}", min_val));
+                    facets.push(format!("MININCLUSIVE {min_val}"));
                 }
 
                 if let Some(max_val) = &slot_def.maximum_value {
-                    facets.push(format!("MAXINCLUSIVE {}", max_val));
+                    facets.push(format!("MAXINCLUSIVE {max_val}"));
                 }
 
                 // TODO: min_length and max_length not available, using minimum_value/maximum_value as approximation
                 if let Some(min_val) = &slot_def.minimum_value {
                     if range == "string" {
-                        facets.push(format!("MINLENGTH {}", min_val));
+                        facets.push(format!("MINLENGTH {min_val}"));
                     }
                 }
 
                 if let Some(max_val) = &slot_def.maximum_value {
                     if range == "string" {
-                        facets.push(format!("MAXLENGTH {}", max_val));
+                        facets.push(format!("MAXLENGTH {max_val}"));
                     }
                 }
 
@@ -436,7 +436,7 @@ impl ShExGenerator {
         Ok(())
     }
 
-    /// Generate ShExJ (JSON format)
+    /// Generate ShExJ (`JSON` format)
     fn generate_shexj(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified JSON representation
         let mut shex_json = serde_json::json!({
@@ -456,10 +456,10 @@ impl ShExGenerator {
             shapes.push(shape);
         }
 
-        serde_json::to_string_pretty(&shex_json).map_err(|e| GeneratorError::Generation(format!("ShExJ: {}", e)))
+        serde_json::to_string_pretty(&shex_json).map_err(|e| GeneratorError::Generation(format!("ShExJ: {e}")))
     }
 
-    /// Generate JSON representation of a shape
+    /// Generate `JSON` representation of a shape
     fn generate_json_shape(
         &self,
         class_name: &str,
@@ -521,7 +521,7 @@ ex:MyShape a shex:Shape ;
         Ok(())
     }
 
-    /// Get XSD datatype for LinkML range
+    /// Get XSD datatype for `LinkML` range
     fn get_xsd_datatype(&self, range: &str) -> String {
         match range {
             "string" | "str" => "xsd:string",

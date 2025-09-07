@@ -11,7 +11,7 @@ use tokio::fs;
 
 use super::{ImportResolverV2, Parser};
 
-/// Loader for LinkML schemas from various sources
+/// Loader for `LinkML` schemas from various sources
 pub struct SchemaLoader {
     parser: Parser,
     http_client: reqwest::Client,
@@ -33,7 +33,7 @@ impl SchemaLoader {
         // Read file content
         let content = fs::read_to_string(path)
             .await
-            .map_err(|e| LinkMLError::service(format!("Failed to read file: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to read file: {e}")))?;
 
         // Determine format from extension
         let extension = path
@@ -87,7 +87,7 @@ impl SchemaLoader {
         import_resolver.resolve_imports(&schema).await
     }
 
-    /// Load a schema from a URL
+    /// Load a schema from a `URL`
     pub async fn load_url(&self, url: &str) -> Result<SchemaDefinition> {
         // Fetch content from URL
         let response = self
@@ -95,7 +95,7 @@ impl SchemaLoader {
             .get(url)
             .send()
             .await
-            .map_err(|e| LinkMLError::service(format!("Failed to fetch URL: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to fetch URL: {e}")))?;
 
         if !response.status().is_success() {
             return Err(LinkMLError::service(format!(
@@ -108,7 +108,7 @@ impl SchemaLoader {
         let content = response
             .text()
             .await
-            .map_err(|e| LinkMLError::service(format!("Failed to read response: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to read response: {e}")))?;
 
         // Determine format from URL extension or content type
         let format = if url.ends_with(".json") {

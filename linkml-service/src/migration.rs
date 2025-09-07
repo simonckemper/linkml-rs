@@ -17,6 +17,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use indexmap::IndexMap;
 use timestamp_core::{TimestampService, TimestampError};
 
 /// Migration configuration
@@ -475,7 +476,7 @@ where
             let step = match &change.migration_strategy {
                 MigrationStrategy::Automatic { transform } => MigrationStep {
                     id: format!("step_{i}"),
-                    description: change.description.clone(),
+                    description: format!("Migration step for {}", change.element),
                     step_type: StepType::DataMigration {
                         migration: DataMigration {
                             source_class: change.element.clone(),
@@ -496,7 +497,7 @@ where
                 },
                 _ => MigrationStep {
                     id: format!("step_{i}"),
-                    description: change.description.clone(),
+                    description: format!("Manual migration step for {}", change.element),
                     step_type: StepType::Custom {
                         script: "manual_migration_required".to_string(),
                     },
@@ -637,7 +638,13 @@ where
         match &step.step_type {
             StepType::SchemaTransform { transform } => {
                 // Apply schema transformations
-                self.apply_schema_transform(transform)?;
+                // Get the latest schema version to transform
+                let mut versions = self.versions.write();
+                if let Some(latest_version) = versions.last_mut() {
+                    self.apply_schema_transform(&mut latest_version.schema, transform)?;
+                } else {
+                    return Err(LinkMLError::service("No schema versions available for transformation".to_string()));
+                }
             }
             StepType::DataMigration { migration } => {
                 // Perform data migration
@@ -709,16 +716,107 @@ where
     }
 
     /// Apply schema transformation
-    fn apply_schema_transform(&self, _transform: &SchemaTransform) -> Result<()> {
-        // TODO: This method needs to be reimplemented based on the actual SchemaTransform structure
-        // SchemaTransform doesn't have target_version, transform_type, or target_element fields
-        // It has: add_classes, remove_classes, rename_classes, add_slots, remove_slots, rename_slots, type_changes
-        
-        // For now, return a placeholder implementation
-        eprintln!("Warning: apply_schema_transform is not yet implemented properly");
-        Ok(())
-        
-        /* TODO: Reimplement this based on actual SchemaTransform structure
+    fn apply_schema_transform(&self, schema: &mut SchemaDefinition, transform: &SchemaTransform) -> Result<()> {
+
+        // Add new classes
+        for class in &transform.add_classes {
+            if schema.classes.contains_key(&class.name) {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Class '{}' already exists", class.name),
+                    path: Some(format!("classes.{}", class.name)),
+                    expected: None,
+                    actual: None,
+                });
+            }
+            schema.classes.insert(class.name.clone(), class.clone());
+        }
+
+        // Remove classes
+        for class_name in &transform.remove_classes {
+            if !schema.classes.contains_key(class_name) {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Class '{class_name}' does not exist"),
+                    path: Some(format!("classes.{class_name}")),
+                    expected: None,
+                    actual: None,
+                });
+            }
+            schema.classes.shift_remove(class_name);
+        }
+
+        // Rename classes
+        for (old_name, new_name) in &transform.rename_classes {
+            if let Some(class_def) = schema.classes.shift_remove(old_name) {
+                let mut renamed_class = class_def;
+                renamed_class.name = new_name.clone();
+                schema.classes.insert(new_name.clone(), renamed_class);
+            } else {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Class '{old_name}' does not exist for renaming"),
+                    path: Some(format!("classes.{old_name}")),
+                    expected: None,
+                    actual: None,
+                });
+            }
+        }
+
+        // Add new slots
+        for slot in &transform.add_slots {
+            if schema.slots.contains_key(&slot.name) {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Slot '{}' already exists", slot.name),
+                    path: Some(format!("slots.{}", slot.name)),
+                    expected: None,
+                    actual: None,
+                });
+            }
+            schema.slots.insert(slot.name.clone(), slot.clone());
+        }
+
+        // Remove slots
+        for slot_name in &transform.remove_slots {
+            if !schema.slots.contains_key(slot_name) {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Slot '{slot_name}' does not exist"),
+                    path: Some(format!("slots.{slot_name}")),
+                    expected: None,
+                    actual: None,
+                });
+            }
+            schema.slots.shift_remove(slot_name);
+        }
+
+        // Rename slots
+        for (old_name, new_name) in &transform.rename_slots {
+            if let Some(slot_def) = schema.slots.shift_remove(old_name) {
+                let mut renamed_slot = slot_def;
+                renamed_slot.name = new_name.clone();
+                schema.slots.insert(new_name.clone(), renamed_slot);
+            } else {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Slot '{old_name}' does not exist for renaming"),
+                    path: Some(format!("slots.{old_name}")),
+                    expected: None,
+                    actual: None,
+                });
+            }
+        }
+
+        // Apply type changes
+        for (element_name, new_type) in &transform.type_changes {
+            // Check if it's a slot type change
+            if let Some(slot) = schema.slots.get_mut(element_name) {
+                slot.range = Some(new_type.to_type.clone());
+            } else {
+                return Err(LinkMLError::DataValidationError {
+                    message: format!("Element '{element_name}' not found for type change"),
+                    path: Some(format!("type_changes.{element_name}")),
+                    expected: None,
+                    actual: None,
+                });
+            }
+        }
+
         // Apply the schema transformation based on the transform type
         match &transform.transform_type {
             TransformType::AddClass => {
@@ -727,31 +825,49 @@ where
                 // Create new class definition
                 let new_class = ClassDefinition {
                     name: transform.target_element.clone(),
-                    description: transform.description.clone(),
-                    slots: vec![],
+                    description: None,
+                    abstract_: None,
+                    mixin: None,
                     is_a: None,
                     mixins: vec![],
-                    attributes: HashMap::new(),
+                    slots: vec![],
+                    slot_usage: IndexMap::new(),
+                    attributes: IndexMap::new(),
+                    class_uri: None,
+                    subclass_of: vec![],
+                    tree_root: None,
+                    rules: vec![],
+                    if_required: None,
+                    unique_keys: IndexMap::new(),
+                    annotations: None,
+                    recursion_options: None,
+                    aliases: vec![],
+                    notes: vec![],
+                    comments: vec![],
+                    todos: vec![],
+                    see_also: vec![],
+                    deprecated: None,
+                    examples: vec![],
+
                 };
-                
+
                 // Add the class to the schema
-                current_version.schema.classes.insert(
+                schema.classes.insert(
                     transform.target_element.clone(),
                     new_class,
                 );
                 
                 println!("✓ Class '{}' added to schema", transform.target_element);
-                Ok(())
             }
             TransformType::RemoveClass => {
                 println!("Removing class: {}", transform.target_element);
                 
                 // Remove the class from the schema
-                if current_version.schema.classes.remove(&transform.target_element).is_some() {
+                if schema.classes.shift_remove(&transform.target_element).is_some() {
                     println!("✓ Class '{}' removed from schema", transform.target_element);
-                    
+
                     // Also remove any references to this class in other classes
-                    for class in current_version.schema.classes.values_mut() {
+                    for class in schema.classes.values_mut() {
                         // Remove from mixins
                         class.mixins.retain(|m| m != &transform.target_element);
                         
@@ -766,13 +882,12 @@ where
                         transform.target_element
                     )));
                 }
-                Ok(())
             }
             TransformType::ModifyClass => {
                 println!("Modifying class: {}", transform.target_element);
                 
                 // Get the class to modify
-                let class = current_version.schema.classes
+                let class = schema.classes
                     .get_mut(&transform.target_element)
                     .ok_or_else(|| {
                         LinkMLError::service(format!(
@@ -803,7 +918,6 @@ where
                     }
                     println!("✓ Applied transformation script to class '{}'", transform.target_element);
                 }
-                Ok(())
             }
             TransformType::AddSlot => {
                 println!("Adding slot: {}", transform.target_element);
@@ -811,7 +925,7 @@ where
                 // Create new slot definition
                 let new_slot = SlotDefinition {
                     name: transform.target_element.clone(),
-                    description: transform.description.clone(),
+                    description: Some(format!("Added slot: {}", transform.target_element)),
                     range: Some("string".to_string()), // Default range
                     required: Some(false),
                     multivalued: Some(false),
@@ -819,23 +933,22 @@ where
                 };
                 
                 // Add the slot to the schema
-                current_version.schema.slots.insert(
+                schema.slots.insert(
                     transform.target_element.clone(),
                     new_slot,
                 );
                 
                 println!("✓ Slot '{}' added to schema", transform.target_element);
-                Ok(())
             }
             TransformType::RemoveSlot => {
                 println!("Removing slot: {}", transform.target_element);
                 
                 // Remove the slot from the schema
-                if current_version.schema.slots.remove(&transform.target_element).is_some() {
+                if schema.slots.shift_remove(&transform.target_element).is_some() {
                     println!("✓ Slot '{}' removed from schema", transform.target_element);
-                    
+
                     // Also remove references to this slot in classes
-                    for class in current_version.schema.classes.values_mut() {
+                    for class in schema.classes.values_mut() {
                         class.slots.retain(|s| s != &transform.target_element);
                     }
                 } else {
@@ -844,13 +957,12 @@ where
                         transform.target_element
                     )));
                 }
-                Ok(())
             }
             TransformType::ModifySlot => {
                 println!("Modifying slot: {}", transform.target_element);
                 
                 // Get the slot to modify
-                let slot = current_version.schema.slots
+                let slot = schema.slots
                     .get_mut(&transform.target_element)
                     .ok_or_else(|| {
                         LinkMLError::service(format!(
@@ -878,10 +990,9 @@ where
                     }
                     println!("✓ Applied transformation script to slot '{}'", transform.target_element);
                 }
-                Ok(())
             }
         }
-        */
+        Ok(())
     }
 
     /// Migrate data
@@ -899,16 +1010,16 @@ where
 
         // Read the data file content
         let content = std::fs::read_to_string(data_path)
-            .map_err(|e| LinkMLError::service(format!("Failed to read data file: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to read data file: {e}")))?;
         
         // Parse data based on file extension
         let mut data: Value = if data_path.extension().and_then(|e| e.to_str()) == Some("yaml") 
             || data_path.extension().and_then(|e| e.to_str()) == Some("yml") {
             serde_yaml::from_str(&content)
-                .map_err(|e| LinkMLError::service(format!("Failed to parse YAML data: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to parse YAML data: {e}")))?
         } else {
             serde_json::from_str(&content)
-                .map_err(|e| LinkMLError::service(format!("Failed to parse JSON data: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to parse JSON data: {e}")))?
         };
 
         // Apply the migration based on type
@@ -969,21 +1080,21 @@ where
         // Create backup of original file
         let backup_path = data_path.with_extension("bak");
         std::fs::copy(data_path, &backup_path)
-            .map_err(|e| LinkMLError::service(format!("Failed to create backup: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create backup: {e}")))?;
         println!("✓ Created backup at: {}", backup_path.display());
 
         // Write the transformed data back
         let output = if data_path.extension().and_then(|e| e.to_str()) == Some("yaml") 
             || data_path.extension().and_then(|e| e.to_str()) == Some("yml") {
             serde_yaml::to_string(&data)
-                .map_err(|e| LinkMLError::service(format!("Failed to serialize YAML: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to serialize YAML: {e}")))?
         } else {
             serde_json::to_string_pretty(&data)
-                .map_err(|e| LinkMLError::service(format!("Failed to serialize JSON: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to serialize JSON: {e}")))?
         };
 
         std::fs::write(data_path, output)
-            .map_err(|e| LinkMLError::service(format!("Failed to write migrated data: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to write migrated data: {e}")))?;
 
         println!("✓ Data migration completed successfully");
         println!("✓ Original data backed up to: {}", backup_path.display());
@@ -1259,15 +1370,15 @@ where
         
         // Read the migrated data
         let content = std::fs::read_to_string(data_path)
-            .map_err(|e| LinkMLError::service(format!("Failed to read data for validation: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to read data for validation: {e}")))?;
         
         let data: Value = if data_path.extension().and_then(|e| e.to_str()) == Some("yaml") 
             || data_path.extension().and_then(|e| e.to_str()) == Some("yml") {
             serde_yaml::from_str(&content)
-                .map_err(|e| LinkMLError::service(format!("Failed to parse YAML for validation: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to parse YAML for validation: {e}")))?
         } else {
             serde_json::from_str(&content)
-                .map_err(|e| LinkMLError::service(format!("Failed to parse JSON for validation: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("Failed to parse JSON for validation: {e}")))?
         };
 
         let mut validation_errors = Vec::new();
@@ -1422,7 +1533,7 @@ where
                             }
                         }
                     } else {
-                        errors.push(format!("Unknown class type: '{}'", type_name));
+                        errors.push(format!("Unknown class type: '{type_name}'"));
                     }
                 }
             }
@@ -1448,7 +1559,7 @@ where
                 // Check for null values in non-nullable fields
                 for (field, value) in map {
                     if value.is_null() {
-                        errors.push(format!("Null value found in field '{}'", field));
+                        errors.push(format!("Null value found in field '{field}'"));
                     }
                     
                     // Recursively check nested objects
@@ -1498,7 +1609,7 @@ where
                             for field in fields {
                                 if let Some(field_name) = field.as_str() {
                                     if !map.contains_key(field_name) {
-                                        errors.push(format!("Required field '{}' not found", field_name));
+                                        errors.push(format!("Required field '{field_name}' not found"));
                                     }
                                 }
                             }
@@ -1555,7 +1666,7 @@ where
                             for item in arr {
                                 if let Value::Object(map) = item {
                                     if let Some(value) = map.get(field) {
-                                        let value_str = format!("{}", value);
+                                        let value_str = format!("{value}");
                                         if !seen.insert(value_str.clone()) {
                                             errors.push(format!("Duplicate value '{}' in field '{}'", value_str, field));
                                         }
@@ -1566,7 +1677,7 @@ where
                     }
                 }
                 _ => {
-                    errors.push(format!("Unknown validation rule type: '{}'", rule_type));
+                    errors.push(format!("Unknown validation rule type: '{rule_type}'"));
                 }
             }
         }

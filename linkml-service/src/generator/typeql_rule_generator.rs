@@ -211,7 +211,7 @@ impl RuleGenerator {
 
         let when_patterns = vec![
             format!("$x isa {}", class_name.to_lowercase()),
-            format!("not {{ $x has {} $v; }}", slot_name),
+            format!("not {{ $x has {slot_name} $v; }}"),
         ];
 
         let then_patterns = vec![format!(
@@ -246,7 +246,7 @@ impl RuleGenerator {
 
         let when_patterns = vec![
             format!("$x isa {}", class_name.to_lowercase()),
-            format!("$x has {} $v", slot_name),
+            format!("$x has {slot_name} $v"),
             format!("not {{ $v like \"{}\"; }}", pattern),
         ];
 
@@ -280,7 +280,7 @@ impl RuleGenerator {
 
         let mut when_patterns = vec![
             format!("$x isa {}", class_name.to_lowercase()),
-            format!("$x has {} $v", slot_name),
+            format!("$x has {slot_name} $v"),
         ];
 
         // Add range conditions
@@ -400,7 +400,7 @@ impl RuleGenerator {
             //         .map(|v| format!("\"{}\"", v))
             //         .collect::<Vec<_>>()
             //         .join(", ");
-            //     when_patterns.push(format!("$cond = {{{}}}", values_str));
+            //     when_patterns.push(format!("$cond = {{{values_str}}}"));
             // }
         }
 

@@ -12,14 +12,14 @@ use serde_json::{Map, Value};
 use serde_yaml;
 use std::collections::HashMap;
 
-/// YAML loader for LinkML data
+/// `YAML` loader for `LinkML` data
 pub struct YamlLoader {
     /// Input file path
     file_path: Option<String>,
 }
 
 impl YamlLoader {
-    /// Create a new YAML loader
+    /// Create a new `YAML` loader
     pub fn new() -> Self {
         Self { file_path: None }
     }
@@ -106,7 +106,7 @@ impl DataLoader for YamlLoader {
                         instances.push(instance);
                     } else if !options.skip_invalid {
                         return Err(LoaderError::InvalidFormat(
-                            format!("Array item {} is not a mapping", index)
+                            format!("Array item {index} is not a mapping")
                         ));
                     }
                 }
@@ -209,14 +209,14 @@ impl YamlLoader {
     }
 }
 
-/// YAML dumper for LinkML data
+/// `YAML` dumper for `LinkML` data
 pub struct YamlDumper {
     /// Include document markers
     include_markers: bool,
 }
 
 impl YamlDumper {
-    /// Create a new YAML dumper
+    /// Create a new `YAML` dumper
     pub fn new() -> Self {
         Self {
             include_markers: true,
@@ -282,8 +282,8 @@ impl DataDumper for YamlDumper {
                 // Convert to YAML value
                 let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
                 let json_str =
-                    serde_json::to_string(&json_obj).map_err(|e| DumperError::Serialization(format!("JSON serialization failed: {}", e)))?;
-                serde_yaml::from_str(&json_str).map_err(|e| DumperError::Serialization(format!("YAML parsing failed: {}", e)))
+                    serde_json::to_string(&json_obj).map_err(|e| DumperError::Serialization(format!("JSON serialization failed: {e}")))?;
+                serde_yaml::from_str(&json_str).map_err(|e| DumperError::Serialization(format!("YAML parsing failed: {e}")))
             })
             .collect::<std::result::Result<Vec<_>, DumperError>>();
         let yaml_instances = yaml_instances?;

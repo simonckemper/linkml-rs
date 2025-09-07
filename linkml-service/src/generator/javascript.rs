@@ -57,7 +57,7 @@ impl JavaScriptGenerator {
 
         // Generate class definition
         let extends_clause = if let Some(ref parent) = class.is_a {
-            format!(" extends {}", parent)
+            format!(" extends {parent}")
         } else {
             String::new()
         };
@@ -387,7 +387,7 @@ impl JavaScriptGenerator {
         };
 
         if slot.multivalued.unwrap_or(false) {
-            Ok(format!("{}[]", base_type))
+            Ok(format!("{base_type}[]"))
         } else {
             Ok(base_type)
         }
@@ -626,7 +626,7 @@ impl CodeFormatter for JavaScriptGenerator {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();
 
-        let mut result = format!("{}/**", indent_str);
+        let mut result = format!("{indent_str}/**");
         for line in lines {
             result.push('\n');
             result.push_str(&indent_str);

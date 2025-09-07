@@ -153,7 +153,7 @@ impl RustGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
             } else if slot.required.unwrap_or(false) {
                 // Validate required field directly
-                self.generate_pattern_check(output, slot_name, pattern, &format!("&self.{}", field_name), indent.to_string(2))?;
+                self.generate_pattern_check(output, slot_name, pattern, &format!("&self.{field_name}"), indent.to_string(2))?;
             } else {
                 // Validate optional field if present
                 writeln!(
@@ -239,7 +239,7 @@ impl RustGenerator {
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let check_expr = if slot.required.unwrap_or(false) {
-            format!("self.{}", field_name)
+            format!("self.{field_name}")
         } else {
             format!("*value")
         };

@@ -279,7 +279,7 @@ impl ValidationEngine {
     ) -> Result<ValidationReport> {
         let profiler = &self.profiler;
         let start = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
 
         // Merge options with schema settings
         let options = profiler.time("validate_as_class.merge_options", || {
@@ -317,9 +317,9 @@ impl ValidationEngine {
 
         // Update statistics
         let end = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
         let duration = end.duration_since(start)
-            .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Time calculation error: {e}")))?;
         report.stats.duration_ms = duration.as_millis().try_into().unwrap_or(u64::MAX);
         report.stats.total_validated = 1; // For now, we validate one root object
 
@@ -344,7 +344,7 @@ impl ValidationEngine {
         let default_applier = DefaultApplier::from_schema(&self.schema);
         if let Err(e) = default_applier.apply_defaults(&mut data, &self.schema) {
             report.add_issue(ValidationIssue::warning(
-                format!("Failed to apply defaults: {}", e),
+                format!("Failed to apply defaults: {e}"),
                 context.path().to_string(),
                 "default_applier",
             ));
@@ -425,7 +425,7 @@ impl ValidationEngine {
                 } else {
                     // Compile and cache
                     let compile_start = self.timestamp_service.system_time()
-                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
                     let validator = CompiledValidator::compile_class(
                         &self.schema,
                         class_name,
@@ -434,9 +434,9 @@ impl ValidationEngine {
                     )?;
 
                     let compile_end = self.timestamp_service.system_time()
-                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+                        .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
                     let _compilation_time: u64 = compile_end.duration_since(compile_start)
-                        .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?
+                        .map_err(|e| LinkMLError::service(format!("Time calculation error: {e}")))?
                         .as_millis().try_into().unwrap_or(u64::MAX);
 
                     // Store in cache
@@ -626,7 +626,7 @@ impl ValidationEngine {
         // Run each validator
         for validator in validators {
             let validator_name = validator.name();
-            let issues = profiler.time(&format!("slot_validation.{}", validator_name), || {
+            let issues = profiler.time(&format!("slot_validation.{validator_name}"), || {
                 validator.validate(value, slot_def, context)
             });
 
@@ -696,7 +696,7 @@ impl ValidationEngine {
         options: Option<ValidationOptions>,
     ) -> Result<ValidationReport> {
         let start = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
         let options = options.unwrap_or_default();
 
         // Check that the class exists
@@ -724,7 +724,7 @@ impl ValidationEngine {
 
             // Validate the instance
             let class_def = self.schema.classes.get(class_name).ok_or_else(|| {
-                LinkMLError::schema_validation(format!("Class not found: {}", class_name))
+                LinkMLError::schema_validation(format!("Class not found: {class_name}"))
             })?;
             self.validate_class_instance(
                 instance,
@@ -763,9 +763,9 @@ impl ValidationEngine {
         }
 
         let end = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
         let duration = end.duration_since(start)
-            .map_err(|e| LinkMLError::service(format!("Time calculation error: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Time calculation error: {e}")))?;
         report.stats.duration_ms = duration.as_millis() as u64;
         Ok(report)
     }
@@ -791,7 +791,7 @@ impl ValidationEngine {
     }
 }
 
-/// Get a human-readable name for a JSON value type
+/// Get a human-readable name for a `JSON` value type
 fn data_type_name(value: &Value) -> &'static str {
     match value {
         Value::Null => "null",

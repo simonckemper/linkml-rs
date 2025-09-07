@@ -9,7 +9,7 @@ use semver::{Op, Version, VersionReq};
 
 /// Version compatibility checker
 pub struct CompatibilityChecker {
-    /// Current LinkML version
+    /// Current `LinkML` version
     linkml_version: Version,
     /// Compatibility rules
     rules: CompatibilityRules,
@@ -18,13 +18,13 @@ pub struct CompatibilityChecker {
 /// Compatibility rules configuration
 #[derive(Debug, Clone)]
 pub struct CompatibilityRules {
-    /// Allow plugins built for newer LinkML versions
+    /// Allow plugins built for newer `LinkML` versions
     pub allow_newer: bool,
     /// Allow plugins with wildcard version requirements
     pub allow_wildcards: bool,
     /// Strict mode - require exact major version match
     pub strict_mode: bool,
-    /// Deprecated API versions to warn about
+    /// Deprecated `API` versions to warn about
     pub deprecated_versions: Vec<VersionReq>,
 }
 
@@ -89,7 +89,7 @@ impl CompatibilityChecker {
         Ok(())
     }
 
-    /// Check version requirement against current LinkML version
+    /// Check version requirement against current `LinkML` version
     fn check_version_requirement(&self, requirement: &VersionReq) -> Result<()> {
         // Check if requirement matches current version
         if requirement.matches(&self.linkml_version) {
@@ -123,7 +123,7 @@ impl CompatibilityChecker {
         )))
     }
 
-    /// Check if plugin uses deprecated APIs
+    /// Check if plugin uses deprecated `API`s
     fn check_deprecated_apis(&self, requirement: &VersionReq) -> Result<()> {
         for deprecated in &self.rules.deprecated_versions {
             if requirement.matches(&Version::new(0, 8, 0))
@@ -161,7 +161,7 @@ impl CompatibilityChecker {
         Ok(())
     }
 
-    /// Check API version compatibility
+    /// Check `API` version compatibility
     fn _check_api_version(&self, api_version: u32) -> Result<()> {
         if api_version != PLUGIN_API_VERSION {
             return Err(LinkMLError::ServiceError(format!(
@@ -172,7 +172,7 @@ impl CompatibilityChecker {
         Ok(())
     }
 
-    /// Check if requirement needs newer LinkML version
+    /// Check if requirement needs newer `LinkML` version
     fn requires_newer_version(&self, requirement: &VersionReq) -> bool {
         // Parse the requirement to check if it requires newer version
         for comparator in &requirement.comparators {

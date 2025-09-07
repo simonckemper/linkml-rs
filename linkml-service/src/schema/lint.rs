@@ -167,7 +167,7 @@ impl LintResult {
             .count()
     }
 
-    /// Convert to JUnit XML format
+    /// Convert to JUnit `XML` format
     pub fn to_junit_xml(&self, test_name: &str) -> String {
         let mut xml = String::new();
 
@@ -291,7 +291,7 @@ impl LintRule for NamingConventionRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Class name '{}' should be in PascalCase", class_name),
+                    message: format!("Class name '{class_name}' should be in PascalCase"),
                     element_type: Some("class".to_string()),
                     element_name: Some(class_name.clone()),
                     line: None,
@@ -309,7 +309,7 @@ impl LintRule for NamingConventionRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Slot name '{}' should be in snake_case", slot_name),
+                    message: format!("Slot name '{slot_name}' should be in snake_case"),
                     element_type: Some("slot".to_string()),
                     element_name: Some(slot_name.clone()),
                     line: None,
@@ -370,7 +370,7 @@ impl LintRule for MissingDocumentationRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Class '{}' has no description", name),
+                    message: format!("Class '{name}' has no description"),
                     element_type: Some("class".to_string()),
                     element_name: Some(name.clone()),
                     line: None,
@@ -387,7 +387,7 @@ impl LintRule for MissingDocumentationRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Slot '{}' has no description", name),
+                    message: format!("Slot '{name}' has no description"),
                     element_type: Some("slot".to_string()),
                     element_name: Some(name.clone()),
                     line: None,
@@ -442,7 +442,7 @@ impl LintRule for UnusedDefinitionsRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Slot '{}' is defined but never used", slot_name),
+                    message: format!("Slot '{slot_name}' is defined but never used"),
                     element_type: Some("slot".to_string()),
                     element_name: Some(slot_name.clone()),
                     line: None,
@@ -469,7 +469,7 @@ impl LintRule for UnusedDefinitionsRule {
                 issues.push(LintIssue {
                     rule: self.name().to_string(),
                     severity: self.severity(),
-                    message: format!("Type '{}' is defined but never used", type_name),
+                    message: format!("Type '{type_name}' is defined but never used"),
                     element_type: Some("type".to_string()),
                     element_name: Some(type_name.clone()),
                     line: None,

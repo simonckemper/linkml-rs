@@ -242,8 +242,8 @@ impl SchemaMerger {
                                     self.handle_conflict(
                                         "annotation",
                                         key,
-                                        &format!("{:?}", existing),
-                                        &format!("{:?}", value),
+                                        &format!("{existing:?}"),
+                                        &format!("{value:?}"),
                                     )?;
                                 }
                             } else {
@@ -317,7 +317,7 @@ impl SchemaMerger {
                     }
                     _ => {
                         self.conflicts
-                            .push(format!("Subset '{}' exists in both schemas", name));
+                            .push(format!("Subset '{name}' exists in both schemas"));
                         if self.config.strategy == MergeStrategy::Strict {
                             return Err(MergeError::ConflictingDefinition {
                                 element_type: "subset".to_string(),
@@ -534,7 +534,7 @@ impl SchemaMerger {
                     }
                     _ => {
                         self.conflicts
-                            .push(format!("Type '{}' exists in both schemas", name));
+                            .push(format!("Type '{name}' exists in both schemas"));
                         if self.config.strategy == MergeStrategy::Strict {
                             return Err(MergeError::ConflictingDefinition {
                                 element_type: "type".to_string(),
@@ -721,16 +721,16 @@ mod tests {
             "Person".to_string(),
             ClassDefinition {
                 name: "Person".to_string(),
-                description: Some(format!("Person from {}", id)),
+                description: Some(format!("Person from {id}")),
                 ..Default::default()
             },
         );
 
         // Add a unique class
         schema.classes.insert(
-            format!("{}_Class", id),
+            format!("{id}_Class"),
             ClassDefinition {
-                name: format!("{}_Class", id),
+                name: format!("{id}_Class"),
                 ..Default::default()
             },
         );

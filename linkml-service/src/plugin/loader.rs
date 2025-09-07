@@ -69,7 +69,7 @@ impl DynamicLoader {
         let content = fs::read_to_string(path)?;
         let manifest: PluginManifest =
             toml::from_str(&content).map_err(|e| LinkMLError::ParseError {
-                message: format!("Invalid plugin manifest: {}", e),
+                message: format!("Invalid plugin manifest: {e}"),
                 location: Some(path.to_string_lossy().to_string()),
             })?;
 
@@ -362,20 +362,20 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             .timeout_service
             .calculate_timeout(&operation_name, Some(&context))
             .await
-            .map_err(|e| LinkMLError::other(format!("Failed to calculate timeout: {}", e)))?;
+            .map_err(|e| LinkMLError::other(format!("Failed to calculate timeout: {e}")))?;
 
         // Record the start time for duration tracking
         let start_time = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {e}")))?;
 
         // Execute with the calculated timeout
         let result = timeout(timeout_value.duration, async { f(&*self.plugin) }).await;
 
         // Record the actual duration
         let end_time = self.timestamp_service.system_time()
-            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {}", e)))?;
+            .map_err(|e| LinkMLError::other(format!("Failed to get system time: {e}")))?;
         let actual_duration = end_time.duration_since(start_time)
-            .map_err(|e| LinkMLError::other(format!("Time calculation error: {}", e)))?;
+            .map_err(|e| LinkMLError::other(format!("Time calculation error: {e}")))?;
         let success = result.is_ok();
 
         // Report the duration back to the timeout service for adaptive learning

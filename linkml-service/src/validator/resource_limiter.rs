@@ -635,7 +635,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resource_limiter() {
+    async fn test_resource_limiter() -> anyhow::Result<()> {
         let limits = ResourceLimits {
             max_concurrent_validations: 2,
             ..Default::default()
@@ -663,5 +663,6 @@ mod tests {
 
         // Third should wait (would block in real scenario)
         assert_eq!(limiter.active_operations.len(), 2);
+        Ok(())
     }
 }

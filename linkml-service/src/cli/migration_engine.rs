@@ -141,7 +141,7 @@ pub struct DataMigration {
     pub migration_type: MigrationType,
     /// Affected entity
     pub entity: String,
-    /// SQL or transformation script
+    /// `SQL` or transformation script
     pub script: String,
     /// Validation query
     pub validation: String,
@@ -211,7 +211,7 @@ pub struct MigrationStep {
     pub description: String,
     /// Step type
     pub step_type: StepType,
-    /// SQL or script to execute
+    /// `SQL` or script to execute
     pub script: String,
     /// Validation query
     pub validation: String,
@@ -489,7 +489,7 @@ impl MigrationEngine {
                         migration_type: MigrationType::Delete,
                         entity: name.clone(),
                         script: format!("-- Archive data from table {}\nINSERT INTO archive.{} SELECT * FROM {};", name, name, name),
-                        validation: format!("SELECT COUNT(*) FROM archive.{};", name),
+                        validation: format!("SELECT COUNT(*) FROM archive.{name};"),
                     });
                 }
                 BreakingChange::TypeChanged {
@@ -648,8 +648,8 @@ impl MigrationEngine {
     fn create_migration_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
         let (description, script, validation) = match change {
             BreakingChange::ClassRemoved { name } => (
-                format!("Remove class {}", name),
-                format!("DROP TABLE IF EXISTS {};", name),
+                format!("Remove class {name}"),
+                format!("DROP TABLE IF EXISTS {name};"),
                 format!(
                     "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{}';",
                     name
@@ -704,9 +704,9 @@ impl MigrationEngine {
     fn create_rollback_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
         let (description, script, validation) = match change {
             BreakingChange::ClassRemoved { name } => (
-                format!("Restore class {}", name),
+                format!("Restore class {name}"),
                 format!("CREATE TABLE {} AS SELECT * FROM archive.{};", name, name),
-                format!("SELECT COUNT(*) FROM {};", name),
+                format!("SELECT COUNT(*) FROM {name};"),
             ),
             _ => (
                 "Rollback migration".to_string(),

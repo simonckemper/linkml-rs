@@ -135,7 +135,7 @@ impl InputValidator {
         Ok(())
     }
 
-    /// Validate JSON size
+    /// Validate `JSON` size
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size_bytes {
             return Err(ValidationError::JsonTooLarge {

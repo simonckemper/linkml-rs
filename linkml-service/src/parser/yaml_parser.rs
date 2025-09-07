@@ -9,15 +9,22 @@ use std::path::Path;
 
 use super::SchemaParser;
 
-/// YAML parser implementation
+/// `YAML` parser implementation
 #[derive(Default)]
 pub struct YamlParser;
 
 impl YamlParser {
-    /// Create a new YAML parser
+    /// Create a new `YAML` parser
     #[must_use]
     pub fn new() -> Self {
         Self
+    }
+
+    /// Parse `YAML` content (alias for parse_str)
+    ///
+    /// This method provides compatibility with code expecting a `parse` method.
+    pub fn parse(&self, content: &str) -> Result<SchemaDefinition> {
+        self.parse_str(content)
     }
 }
 

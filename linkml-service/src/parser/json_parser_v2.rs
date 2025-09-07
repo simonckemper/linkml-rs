@@ -13,13 +13,13 @@ use std::sync::Arc;
 use super::{AsyncSchemaParser, SchemaParser};
 use crate::file_system_adapter::FileSystemOperations;
 
-/// JSON parser implementation with file system adapter
+/// `JSON` parser implementation with file system adapter
 pub struct JsonParserV2<F: FileSystemOperations> {
     fs: Arc<F>,
 }
 
 impl<F: FileSystemOperations> JsonParserV2<F> {
-    /// Create a new JSON parser with file system adapter
+    /// Create a new `JSON` parser with file system adapter
     pub fn new(fs: Arc<F>) -> Self {
         Self { fs }
     }

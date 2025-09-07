@@ -64,7 +64,7 @@ pub struct PatternMetadata {
     pub flags: HashMap<String, String>,
 }
 
-/// Pattern matcher for LinkML schemas
+/// Pattern matcher for `LinkML` schemas
 pub struct PatternMatcher {
     /// Compiled patterns cache
     patterns: HashMap<String, CompiledPattern>,
@@ -147,7 +147,7 @@ impl PatternMatcher {
 
         // Replace {var} with variable values
         for (key, value) in variables {
-            let placeholder = format!("{{{}}}", key);
+            let placeholder = format!("{{{key}}}");
             let escaped_value = regex::escape(value);
             result = result.replace(&placeholder, &escaped_value);
         }

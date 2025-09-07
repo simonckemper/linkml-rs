@@ -81,7 +81,7 @@ impl TokioFileSystemAdapter {
                 if matches!(component, std::path::Component::ParentDir) {
                     return Err(LinkMLError::IoError(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
-                        format!("Path contains '..' which could escape sandbox: {:?}", path),
+                        format!("Path contains '..' which could escape sandbox: {path:?}"),
                     )));
                 }
             }
@@ -90,7 +90,7 @@ impl TokioFileSystemAdapter {
             if path.is_absolute() {
                 return Err(LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
-                    format!("Absolute paths not allowed in sandbox: {:?}", path),
+                    format!("Absolute paths not allowed in sandbox: {path:?}"),
                 )));
             }
 
@@ -122,7 +122,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
             fs::create_dir_all(parent).await.map_err(|e| {
                 LinkMLError::IoError(std::io::Error::new(
                     e.kind(),
-                    format!("Failed to create parent directory: {}", e),
+                    format!("Failed to create parent directory: {e}"),
                 ))
             })?;
         }
@@ -142,7 +142,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
             Err(e) => Err(LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to check existence: {}", e),
+                format!("Failed to check existence: {e}"),
             ))),
         }
     }
@@ -152,7 +152,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         fs::create_dir_all(&resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to create directory: {}", e),
+                format!("Failed to create directory: {e}"),
             ))
         })
     }
@@ -163,14 +163,14 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let mut dir = fs::read_dir(&resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to read directory: {}", e),
+                format!("Failed to read directory: {e}"),
             ))
         })?;
 
         while let Some(entry) = dir.next_entry().await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to read directory entry: {}", e),
+                format!("Failed to read directory entry: {e}"),
             ))
         })? {
             entries.push(entry.path());
@@ -184,7 +184,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         let meta = fs::metadata(&resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to get metadata: {}", e),
+                format!("Failed to get metadata: {e}"),
             ))
         })?;
 
@@ -212,7 +212,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
             fs::create_dir_all(parent).await.map_err(|e| {
                 LinkMLError::IoError(std::io::Error::new(
                     e.kind(),
-                    format!("Failed to create parent directory: {}", e),
+                    format!("Failed to create parent directory: {e}"),
                 ))
             })?;
         }
@@ -220,7 +220,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         fs::copy(&from_resolved, &to_resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to copy file: {}", e),
+                format!("Failed to copy file: {e}"),
             ))
         })?;
 
@@ -232,7 +232,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         fs::remove_file(&resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to remove file: {}", e),
+                format!("Failed to remove file: {e}"),
             ))
         })
     }
@@ -242,7 +242,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         fs::remove_dir(&resolved).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to remove directory: {}", e),
+                format!("Failed to remove directory: {e}"),
             ))
         })
     }

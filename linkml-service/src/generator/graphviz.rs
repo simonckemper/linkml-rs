@@ -611,7 +611,7 @@ impl Generator for GraphvizGenerator {
                         "Class name '{}' contains characters that need escaping in DOT format",
                         class_name
                     ),
-                    element: Some(format!("class.{}", class_name)),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -624,7 +624,7 @@ impl Generator for GraphvizGenerator {
                         "Slot name '{}' contains characters that need escaping in DOT format",
                         slot_name
                     ),
-                    element: Some(format!("slot.{}", slot_name)),
+                    element: Some(format!("slot.{slot_name}")),
                 });
             }
         }
@@ -682,7 +682,7 @@ mod tests {
     }
 
     #[test]
-    fn test_graphviz_generation() {
+    fn test_graphviz_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = GraphvizGenerator::new();
 
@@ -695,6 +695,7 @@ mod tests {
         assert!(result.contains("Animal"));
         assert!(result.contains("Dog"));
         assert!(result.contains("->"));
+        Ok(())
     }
 
     #[test]

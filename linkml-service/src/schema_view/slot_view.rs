@@ -12,9 +12,9 @@ use std::sync::Arc;
 
 use super::view::SchemaView;
 
-/// High-level view of a LinkML slot with all inherited properties resolved
+/// High-level view of a `LinkML` slot with all inherited properties resolved
 ///
-/// This provides a denormalized view similar to Python LinkML's SlotDefinitionView,
+/// This provides a denormalized view similar to Python `LinkML`'s SlotDefinitionView,
 /// making it easier to work with slots without manually resolving inheritance.
 #[derive(Debug, Clone)]
 pub struct SlotView {
@@ -46,7 +46,7 @@ impl SlotView {
         // Get the base slot definition
         let definition = schema_view
             .get_slot(slot_name)?
-            .ok_or_else(|| LinkMLError::service(format!("Slot '{}' not found", slot_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Slot '{slot_name}' not found")))?;
 
         // Find classes that use this slot
         let mut used_by_classes = HashSet::new();

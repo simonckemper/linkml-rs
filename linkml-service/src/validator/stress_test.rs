@@ -657,14 +657,14 @@ impl StressOperation for ValidationStressOperation {
                 // Check required constraint
                 if slot.required.unwrap_or(false) && value.is_null() {
                     return Err(LinkMLError::data_validation(
-                        format!("Required field '{}' is null", key)
+                        format!("Required field '{key}' is null")
                     ));
                 }
 
                 // Check multivalued constraint
                 if slot.multivalued.unwrap_or(false) && !value.is_array() {
                     return Err(LinkMLError::data_validation(
-                        format!("Multivalued field '{}' is not an array", key)
+                        format!("Multivalued field '{key}' is not an array")
                     ));
                 }
             }

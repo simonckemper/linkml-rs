@@ -111,7 +111,7 @@ impl CsvLoader {
 
         // Get class definition
         let _class_def = schema.classes.get(class_name).ok_or_else(|| {
-            LoaderError::SchemaValidation(format!("Class '{}' not found in schema", class_name))
+            LoaderError::SchemaValidation(format!("Class '{class_name}' not found in schema"))
         })?;
 
         // Process each field
@@ -155,7 +155,7 @@ impl CsvLoader {
         })
     }
 
-    /// Convert a string value to the appropriate JSON type
+    /// Convert a string value to the appropriate `JSON` type
     fn convert_value(
         &self,
         value: &str,
@@ -221,7 +221,7 @@ impl CsvLoader {
                 .parse::<i64>()
                 .map(|n| JsonValue::Number(n.into()))
                 .map_err(|_| {
-                    LoaderError::TypeConversion(format!("Cannot parse '{}' as integer", value))
+                    LoaderError::TypeConversion(format!("Cannot parse '{value}' as integer"))
                 }),
 
             "float" | "double" | "decimal" => value
@@ -230,7 +230,7 @@ impl CsvLoader {
                     JsonValue::Number(serde_json::Number::from_f64(n).unwrap_or_else(|| 0.into()))
                 })
                 .map_err(|_| {
-                    LoaderError::TypeConversion(format!("Cannot parse '{}' as float", value))
+                    LoaderError::TypeConversion(format!("Cannot parse '{value}' as float"))
                 }),
 
             "boolean" => match value.to_lowercase().as_str() {
@@ -372,7 +372,7 @@ impl DataLoader for CsvLoader {
         let headers: Vec<String> = if self.options.has_headers {
             reader
                 .headers()
-                .map_err(|e| LoaderError::Parse(format!("Failed to read headers: {}", e)))?
+                .map_err(|e| LoaderError::Parse(format!("Failed to read headers: {e}")))?
                 .iter()
                 .map(|s| s.to_string())
                 .collect()
@@ -454,7 +454,7 @@ impl DataLoader for CsvLoader {
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         let content = String::from_utf8(data.to_vec())
-            .map_err(|e| LoaderError::Parse(format!("Invalid UTF-8: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Invalid UTF-8: {e}")))?;
         self.load_string(&content, schema, options).await
     }
 
@@ -525,7 +525,7 @@ impl CsvDumper {
         headers
     }
 
-    /// Convert JSON value to CSV string
+    /// Convert `JSON` value to CSV string
     fn value_to_string(&self, value: &JsonValue) -> String {
         match value {
             JsonValue::Null => String::new(),
@@ -679,7 +679,7 @@ impl DataDumper for CsvDumper {
         wtr.write_record(&headers).map_err(|e| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to write headers: {}", e),
+                format!("Failed to write headers: {e}"),
             ))
         })?;
 
@@ -707,7 +707,7 @@ impl DataDumper for CsvDumper {
             wtr.write_record(&record).map_err(|e| {
                 DumperError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
-                    format!("Failed to write record: {}", e),
+                    format!("Failed to write record: {e}"),
                 ))
             })?;
         }
@@ -716,12 +716,12 @@ impl DataDumper for CsvDumper {
         let data = wtr.into_inner().map_err(|e| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to finish writing: {}", e),
+                format!("Failed to finish writing: {e}"),
             ))
         })?;
 
         String::from_utf8(data)
-            .map_err(|e| DumperError::Serialization(format!("Invalid UTF-8: {}", e)))
+            .map_err(|e| DumperError::Serialization(format!("Invalid UTF-8: {e}")))
     }
 
     async fn dump_bytes(

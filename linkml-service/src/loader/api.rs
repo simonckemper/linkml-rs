@@ -18,10 +18,10 @@ use std::collections::HashMap;
 use std::time::Duration;
 use tracing::{error, info, warn};
 
-/// Options for API loading and dumping
+/// Options for `API` loading and dumping
 #[derive(Debug, Clone)]
 pub struct ApiOptions {
-    /// Base URL for the API
+    /// Base `URL` for the `API`
     pub base_url: String,
 
     /// Authentication configuration
@@ -39,7 +39,7 @@ pub struct ApiOptions {
     /// Pagination configuration
     pub pagination: Option<PaginationConfig>,
 
-    /// Endpoint to LinkML class mapping
+    /// Endpoint to `LinkML` class mapping
     pub endpoint_mapping: HashMap<String, EndpointConfig>,
 
     /// Field mapping for responses
@@ -69,17 +69,17 @@ pub enum AuthConfig {
         password: String,
     },
 
-    /// API key authentication
+    /// `API` key authentication
     ApiKey {
-        /// HTTP header name for API key
+        /// `HTTP` header name for API key
         header_name: String,
-        /// API key value
+        /// `API` key value
         key: String,
     },
 
     /// OAuth2 configuration
     OAuth2 {
-        /// Token endpoint URL
+        /// Token endpoint `URL`
         token_url: String,
         /// OAuth2 client ID
         client_id: String,
@@ -105,7 +105,7 @@ pub struct RetryConfig {
     /// Exponential backoff factor
     pub backoff_factor: f64,
 
-    /// HTTP status codes to retry on
+    /// `HTTP` status codes to retry on
     pub retry_on_status: Vec<u16>,
 }
 
@@ -127,13 +127,13 @@ pub struct PaginationConfig {
     /// Maximum page size
     pub max_size: usize,
 
-    /// JSON path to data array in response
+    /// `JSON` path to data array in response
     pub data_path: String,
 
-    /// JSON path to next page token/URL
+    /// `JSON` path to next page token/URL
     pub next_path: Option<String>,
 
-    /// JSON path to total count
+    /// `JSON` path to total count
     pub total_path: Option<String>,
 }
 
@@ -156,13 +156,13 @@ pub enum PaginationStyle {
 /// Endpoint configuration
 #[derive(Debug, Clone)]
 pub struct EndpointConfig {
-    /// HTTP method
+    /// `HTTP` method
     pub method: Method,
 
-    /// Endpoint path (relative to base URL)
+    /// Endpoint path (relative to base `URL`)
     pub path: String,
 
-    /// LinkML class name
+    /// `LinkML` class name
     pub class_name: String,
 
     /// Query parameters
@@ -171,7 +171,7 @@ pub struct EndpointConfig {
     /// Request body template (for POST/PUT)
     pub body_template: Option<Value>,
 
-    /// Response data path (JSON path to array/object)
+    /// Response data path (`JSON` path to array/object)
     pub response_data_path: Option<String>,
 
     /// ID field in response
@@ -208,7 +208,7 @@ impl Default for RetryConfig {
     }
 }
 
-/// API loader for LinkML data
+/// `API` loader for `LinkML` data
 pub struct ApiLoader {
     options: ApiOptions,
     client: Client,
@@ -216,7 +216,7 @@ pub struct ApiLoader {
 }
 
 impl ApiLoader {
-    /// Create a new API loader
+    /// Create a new `API` loader
     pub fn new(options: ApiOptions) -> Self {
         let mut headers = HeaderMap::new();
 
@@ -356,7 +356,7 @@ impl ApiLoader {
 
                     return Err(LoaderError::Io(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        format!("Request failed with status: {}", status),
+                        format!("Request failed with status: {status}"),
                     )));
                 }
                 Err(e) => {
@@ -379,7 +379,7 @@ impl ApiLoader {
 
                     return Err(LoaderError::Io(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        format!("Request failed: {}", e),
+                        format!("Request failed: {e}"),
                     )));
                 }
             }
@@ -402,7 +402,7 @@ impl ApiLoader {
         // Add query parameters
         if !endpoint_config.query_params.is_empty() {
             let query = serde_urlencoded::to_string(&endpoint_config.query_params)
-                .map_err(|e| LoaderError::Parse(format!("Failed to encode query params: {}", e)))?;
+                .map_err(|e| LoaderError::Parse(format!("Failed to encode query params: {e}")))?;
             url.push('?');
             url.push_str(&query);
         }
@@ -490,7 +490,7 @@ impl ApiLoader {
         let json: Value = response
             .json()
             .await
-            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON response: {}", e)))?;
+            .map_err(|e| LoaderError::Parse(format!("Failed to parse JSON response: {e}")))?;
 
         // Extract data based on response path
         let data = if let Some(path) = &endpoint_config.response_data_path {
@@ -503,7 +503,7 @@ impl ApiLoader {
         self.json_to_instances(data, &endpoint_config.class_name, endpoint_config, schema)
     }
 
-    /// Extract data by JSON path
+    /// Extract data by `JSON` path
     fn extract_by_path(&self, json: &Value, path: &str) -> LoaderResult<Value> {
         let parts: Vec<&str> = path.split('.').collect();
         let mut current = json;
@@ -512,16 +512,16 @@ impl ApiLoader {
             match current {
                 Value::Object(obj) => {
                     current = obj.get(part).ok_or_else(|| {
-                        LoaderError::Parse(format!("Path '{}' not found in response", part))
+                        LoaderError::Parse(format!("Path '{part}' not found in response"))
                     })?;
                 }
                 Value::Array(arr) => {
                     if let Ok(index) = part.parse::<usize>() {
                         current = arr.get(index).ok_or_else(|| {
-                            LoaderError::Parse(format!("Array index {} out of bounds", index))
+                            LoaderError::Parse(format!("Array index {index} out of bounds"))
                         })?;
                     } else {
-                        return Err(LoaderError::Parse(format!("Invalid array index: {}", part)));
+                        return Err(LoaderError::Parse(format!("Invalid array index: {part}")));
                     }
                 }
                 _ => {
@@ -536,7 +536,7 @@ impl ApiLoader {
         Ok(current.clone())
     }
 
-    /// Convert JSON to LinkML instances
+    /// Convert `JSON` to `LinkML` instances
     fn json_to_instances(
         &self,
         json: Value,
@@ -604,7 +604,7 @@ impl ApiLoader {
     ) -> LoaderResult<()> {
         // Get the class definition
         let class_def = schema.classes.get(class_name).ok_or_else(|| {
-            LoaderError::Parse(format!("Class '{}' not found in schema", class_name))
+            LoaderError::Parse(format!("Class '{class_name}' not found in schema"))
         })?;
 
         // Validate required fields
@@ -748,7 +748,7 @@ impl ApiLoader {
         Ok(())
     }
 
-    /// Convert JSON object to instance
+    /// Convert `JSON` object to instance
     fn object_to_instance(
         &self,
         mut obj: Map<String, Value>,
@@ -853,7 +853,7 @@ impl DataLoader for ApiLoader {
     }
 }
 
-/// API dumper for LinkML data
+/// `API` dumper for `LinkML` data
 pub struct ApiDumper {
     options: ApiOptions,
     client: Client,
@@ -861,7 +861,7 @@ pub struct ApiDumper {
 }
 
 impl ApiDumper {
-    /// Create a new API dumper
+    /// Create a new `API` dumper
     pub fn new(options: ApiOptions) -> Self {
         let mut headers = HeaderMap::new();
 
@@ -1018,7 +1018,7 @@ impl ApiDumper {
         let response = request.send().await.map_err(|e| {
             DumperError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to send request: {}", e),
+                format!("Failed to send request: {e}"),
             ))
         })?;
 

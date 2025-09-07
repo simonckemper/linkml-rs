@@ -29,11 +29,11 @@ pub enum TypeQLError {
     #[error("Invalid schema structure: {0}")]
     InvalidSchema(String),
 
-    /// LinkML feature not supported in TypeQL
+    /// `LinkML` feature not supported in TypeQL
     #[error("Unsupported LinkML feature: {0}")]
     UnsupportedFeature(String),
 
-    /// Error translating LinkML constraint to TypeQL
+    /// Error translating `LinkML` constraint to TypeQL
     #[error("Constraint translation error: {0}")]
     ConstraintError(String),
 
@@ -478,7 +478,7 @@ impl EnhancedTypeQLGenerator {
             .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
             .analyze_relation(name, class, schema)
             .ok_or_else(|| {
-                GeneratorError::SchemaValidation(format!("{} is not a valid relation", name))
+                GeneratorError::SchemaValidation(format!("{name} is not a valid relation"))
             })?;
 
         // Add documentation
@@ -674,7 +674,7 @@ impl EnhancedTypeQLGenerator {
 
             if let Some(min) = &slot.minimum_value {
                 if let Some(min_num) = self.value_to_number(min) {
-                    range_parts.push(format!("{}", min_num));
+                    range_parts.push(format!("{min_num}"));
                 }
             } else {
                 range_parts.push(String::new());
@@ -684,7 +684,7 @@ impl EnhancedTypeQLGenerator {
 
             if let Some(max) = &slot.maximum_value {
                 if let Some(max_num) = self.value_to_number(max) {
-                    range_parts.push(format!("{}", max_num));
+                    range_parts.push(format!("{max_num}"));
                 }
             }
 
@@ -853,7 +853,7 @@ impl EnhancedTypeQLGenerator {
         Ok(())
     }
 
-    /// Generate rule from LinkML rule definition
+    /// Generate rule from `LinkML` rule definition
     fn generate_class_rule(
         &self,
         output: &mut String,
@@ -1087,7 +1087,7 @@ impl EnhancedTypeQLGenerator {
             .any(|pattern| name_lower.contains(pattern))
     }
 
-    /// Map LinkML range to TypeQL value type
+    /// Map `LinkML` range to TypeQL value type
     fn map_range_to_typeql(
         &self,
         range: &Option<String>,
@@ -1118,7 +1118,7 @@ impl EnhancedTypeQLGenerator {
         pattern.replace('\\', "\\\\").replace('"', "\\\"")
     }
 
-    /// Convert LinkML Value to number
+    /// Convert `LinkML` Value to number
     fn value_to_number(&self, value: &linkml_core::Value) -> Option<f64> {
         // Try to convert LinkML Value (serde_json::Value) to number
         if let Some(n) = value.as_f64() {
@@ -1358,7 +1358,7 @@ impl EnhancedTypeQLGenerator {
         Ok(())
     }
 
-    /// Get TypeQL type for a LinkML range
+    /// Get TypeQL type for a `LinkML` range
     fn get_typeql_type_for_range(&self, range: &str, schema: &SchemaDefinition) -> String {
         // Check if it's a class reference
         if schema.classes.contains_key(range) {
@@ -1392,11 +1392,11 @@ impl EnhancedTypeQLGenerator {
         }
     }
 
-    /// Translate LinkML expression to TypeQL predicate
+    /// Translate `LinkML` expression to TypeQL predicate
     fn translate_expression_to_typeql(&self, expr: &str, var: &str) -> GeneratorResult<String> {
         // Parse basic comparison expressions
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*([><=!]+)\s*(.+)")
-            .map_err(|e| GeneratorError::Generation(format!("expression parsing: {}", e)))?
+            .map_err(|e| GeneratorError::Generation(format!("expression parsing: {e}")))?
             .captures(expr)
         {
             let field = &caps[1];
@@ -1410,13 +1410,13 @@ impl EnhancedTypeQLGenerator {
                 "<=" => "<=",
                 "==" | "=" => "==",
                 "!=" => "!=",
-                _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {}", op))),
+                _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {op}"))),
             };
 
             Ok(format!("${}_{} {} {}", var, field, typeql_op, self.format_value_for_typeql(value)))
         } else {
             // Complex expression - return as comment for manual translation
-            Ok(format!("# Expression: {}", expr))
+            Ok(format!("# Expression: {expr}"))
         }
     }
 
@@ -1492,14 +1492,14 @@ impl EnhancedTypeQLGenerator {
 
     /// Get relation name for a slot
     fn get_relation_name(&self, slot_name: &str, _range: &str) -> String {
-        format!("has_{}", slot_name)
+        format!("has_{slot_name}")
     }
 
     /// Parse assertion expression into attribute name and value
     fn parse_assertion_expression(&self, expr: &str) -> GeneratorResult<Option<(String, String)>> {
         // Parse assignment expressions like "field = value"
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*=\s*(.+)")
-            .map_err(|e| GeneratorError::Generation(format!("composite condition parsing: {}", e)))?
+            .map_err(|e| GeneratorError::Generation(format!("composite condition parsing: {e}")))?
             .captures(expr)
         {
             let field = caps[1].to_string();
@@ -1742,7 +1742,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         };
 
         let mut outputs = vec![GeneratedOutput {
-            filename: format!("{}.typeql", filename_base),
+            filename: format!("{filename_base}.typeql"),
             content: schema_output,
             metadata: {
                 let mut meta = HashMap::new();
@@ -1757,7 +1757,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         if options.get_custom("generate_migration").map(|s| s.as_str()) == Some("true") {
             let migration = self.generate_migration_script(schema, options)?;
             outputs.push(GeneratedOutput {
-                filename: format!("{}-migration.tql", filename_base),
+                filename: format!("{filename_base}-migration.tql"),
                 content: migration,
                 metadata: HashMap::new(),
             });
@@ -1780,7 +1780,7 @@ impl Generator for EnhancedTypeQLGenerator {
     fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         // Use tokio to run the async validation
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         runtime
             .block_on(AsyncGenerator::validate_schema(self, schema))
@@ -1790,7 +1790,7 @@ impl Generator for EnhancedTypeQLGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         let options = GeneratorOptions::new();
         let outputs = runtime
@@ -2015,7 +2015,7 @@ impl EnhancedTypeQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         for (class_name, _class) in &schema.classes {
             // Generate modifications for changed attributes
-            if let Some(modified_attrs) = options.get_custom(&format!("{}_modified_attrs", class_name)) {
+            if let Some(modified_attrs) = options.get_custom(&format!("{class_name}_modified_attrs")) {
                 for attr in modified_attrs.split(',') {
                     writeln!(
                         &mut output,
@@ -2028,7 +2028,7 @@ impl EnhancedTypeQLGenerator {
             }
 
             // Handle inheritance changes
-            if let Some(new_parent) = options.get_custom(&format!("{}_new_parent", class_name)) {
+            if let Some(new_parent) = options.get_custom(&format!("{class_name}_new_parent")) {
                 writeln!(
                     &mut output,
                     "redefine {} sub {};",
@@ -2045,10 +2045,10 @@ impl EnhancedTypeQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         for (class_name, _class) in &schema.classes {
             // Check if this is a new class (not in previous version)
-            if options.get_custom(&format!("{}_is_new", class_name)).map(|s| s.as_str()) == Some("true") {
+            if options.get_custom(&format!("{class_name}_is_new")).map(|s| s.as_str()) == Some("true") {
                 // Note: generate_class is async but this context is not async
                 // This needs to be refactored to work properly
-                writeln!(&mut output, "# Class: {}", class_name).map_err(|e| GeneratorError::Generation(format!("writing class comment: {}", e)))?;
+                writeln!(&mut output, "# Class: {}", class_name).map_err(|e| GeneratorError::Generation(format!("writing class comment: {e}")))?;
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -2152,7 +2152,7 @@ mod tests {
     use serde_json::json;
 
     #[tokio::test]
-    async fn test_enhanced_typeql_generation() {
+    async fn test_enhanced_typeql_generation() -> anyhow::Result<()> {
         let generator = EnhancedTypeQLGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -2196,6 +2196,7 @@ mod tests {
         assert!(content.contains("age sub attribute, value long, range [0..150]"));
         assert!(content.contains("# TypeQL Schema generated from LinkML"));
         assert!(content.contains("# Version: 1.0.0"));
+        Ok(())
     }
 
     #[test]
@@ -2212,7 +2213,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_relation_detection() {
+    async fn test_relation_detection() -> anyhow::Result<()> {
         let generator = EnhancedTypeQLGenerator::new();
         let mut schema = SchemaDefinition::default();
 
@@ -2260,6 +2261,7 @@ mod tests {
                 .get("Employment"),
             Some(&TypeQLType::Relation)
         );
+        Ok(())
     }
 }
 

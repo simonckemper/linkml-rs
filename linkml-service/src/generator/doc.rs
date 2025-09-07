@@ -355,7 +355,7 @@ impl Generator for DocGenerator {
 
         // For now, always generate markdown
         self.generate_markdown(schema)
-            .map_err(|e| LinkMLError::service(format!("Documentation generation error: {}", e)))
+            .map_err(|e| LinkMLError::service(format!("Documentation generation error: {e}")))
     }
 
     fn get_file_extension(&self) -> &str {

@@ -40,7 +40,7 @@ pub enum SchemaViewError {
     #[error("Circular dependency detected: {0}")]
     CircularDependency(String),
 
-    /// Error loading schema from file or URL
+    /// Error loading schema from file or `URL`
     #[error("Schema loading error: {0}")]
     LoadError(String),
 
@@ -55,9 +55,9 @@ impl From<SchemaViewError> for LinkMLError {
     }
 }
 
-/// High-level API for LinkML schema introspection and navigation
+/// High-level `API` for `LinkML` schema introspection and navigation
 ///
-/// SchemaView provides a denormalized view of LinkML schemas, resolving
+/// SchemaView provides a denormalized view of `LinkML` schemas, resolving
 /// inheritance, imports, and slot usage patterns to make schema analysis easier.
 #[derive(Clone, Debug)]
 pub struct SchemaView {
@@ -103,7 +103,7 @@ impl SchemaView {
         Self::new(schema)
     }
 
-    /// Load a schema from a URL
+    /// Load a schema from a `URL`
     pub async fn load_from_url(url: &str) -> Result<Self> {
         let loader = SchemaLoader::new();
         let schema = loader.load_url(url).await?;
@@ -156,7 +156,7 @@ impl SchemaView {
         let base_class = merged
             .classes
             .get(name)
-            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Class '{}'", name)))?;
+            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Class '{name}'")))?;
 
         let mut induced = base_class.clone();
 
@@ -289,7 +289,7 @@ impl SchemaView {
         let base_enum = merged
             .enums
             .get(name)
-            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Enum '{}'", name)))?;
+            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Enum '{name}'")))?;
 
         // In LinkML, enums don't have inheritance like classes do
         // Just return a clone of the base enum
@@ -318,7 +318,7 @@ impl SchemaView {
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
 
         if !merged.classes.contains_key(class_name) {
-            return Err(SchemaViewError::ElementNotFound(format!("Class '{}'", class_name)).into());
+            return Err(SchemaViewError::ElementNotFound(format!("Class '{class_name}'")).into());
         }
         drop(merged); // Release lock before creating view
 
@@ -335,7 +335,7 @@ impl SchemaView {
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
 
         if !merged.slots.contains_key(slot_name) {
-            return Err(SchemaViewError::ElementNotFound(format!("Slot '{}'", slot_name)).into());
+            return Err(SchemaViewError::ElementNotFound(format!("Slot '{slot_name}'")).into());
         }
         drop(merged); // Release lock before creating view
 
@@ -393,7 +393,7 @@ impl SchemaView {
 
     /// Materialize structured patterns to regular expressions
     ///
-    /// This expands LinkML structured patterns (e.g., for identifiers)
+    /// This expands `LinkML` structured patterns (e.g., for identifiers)
     /// into their full regular expression form.
     pub fn materialize_patterns(&mut self) -> Result<()> {
         let mut merged = self
@@ -431,7 +431,7 @@ impl SchemaView {
             if pattern.partial_match.unwrap_or(false) {
                 Ok(pattern_str.clone())
             } else {
-                Ok(format!("^{}$", pattern_str))
+                Ok(format!("^{pattern_str}$"))
             }
         } else {
             // No pattern specified

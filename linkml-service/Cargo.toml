@@ -11,8 +11,7 @@ categories = ["data-structures", "encoding", "parser-implementations", "developm
 readme = "README.md"
 [features]
 default = []
-database = []  # Feature flag for database support (temporarily without sqlx dependency due to SQLite conflicts)
-# database = ["dep:sqlx"]  # Full database support - temporarily disabled due to SQLite conflicts
+database = ["dep:sqlx"]  # Database support for PostgreSQL and MySQL (no SQLite to avoid burn conflicts)
 
 [dependencies]
 # Core dependencies
@@ -110,8 +109,8 @@ csv = "1.3"
 # RDF support
 oxigraph = { version = "0.4.11" }
 
-# Database support - temporarily removed to resolve libsqlite3-sys conflict with burn
-# sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "mysql"], optional = true }
+# Database support - PostgreSQL and MySQL only (no SQLite to avoid burn conflicts)
+sqlx = { workspace = true, features = ["postgres", "mysql"], optional = true, default-features = false }
 
 # HTTP client
 reqwest = { version = "0.12", features = ["json", "stream"] }

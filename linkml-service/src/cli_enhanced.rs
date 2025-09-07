@@ -61,13 +61,8 @@ DumpOptions ,
 }
 ;
 
-#[cfg (feature = "database")]
-use crate ::  loader ::   {
-DatabaseDumper ,
-     DatabaseLoader ,
-     DatabaseOptions
-}
-;
+#[cfg(feature = "database")]
+use crate::loader::{DatabaseDumper, DatabaseLoader, DatabaseOptions};
 use crate ::  schema ::   {
 diff ::   {
 DiffOptions ,

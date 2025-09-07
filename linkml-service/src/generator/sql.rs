@@ -10,14 +10,14 @@ use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-/// SQL DDL generator for `LinkML` schemas
+/// `SQL` DDL generator for `LinkML` schemas
 pub struct SQLGenerator {
     /// Generator name
     name: String,
 }
 
 impl SQLGenerator {
-    /// Create a new SQL generator
+    /// Create a new `SQL` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -30,7 +30,7 @@ impl SQLGenerator {
         GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
     }
 
-    /// Generate SQL table for a class
+    /// Generate `SQL` table for a class
     fn generate_table(
         &self,
         class_name: &str,
@@ -501,11 +501,11 @@ impl SQLGenerator {
         Ok(all_slots)
     }
 
-    /// Get SQL type for a slot
+    /// Get `SQL` type for a slot
     ///
     /// # Errors
     ///
-    /// Returns an error if the slot type cannot be mapped to SQL.
+    /// Returns an error if the slot type cannot be mapped to `SQL`.
     fn get_sql_type(
         &self,
         slot: &SlotDefinition,
@@ -526,11 +526,11 @@ impl SQLGenerator {
         }
     }
 
-    /// Get base SQL type from `LinkML` range
+    /// Get base `SQL` type from `LinkML` range
     ///
     /// # Errors
     ///
-    /// Returns an error if the range type cannot be mapped to SQL.
+    /// Returns an error if the range type cannot be mapped to `SQL`.
     fn get_base_sql_type(
         &self,
         range: &Option<String>,
@@ -594,7 +594,7 @@ impl SQLGenerator {
         }
     }
 
-    /// Convert to SQL table name
+    /// Convert to `SQL` table name
     fn convert_table_name(&self, name: &str) -> String {
         // Convert to snake_case and lowercase
         let mut result = String::new();
@@ -611,7 +611,7 @@ impl SQLGenerator {
         result
     }
 
-    /// Convert to SQL column name
+    /// Convert to `SQL` column name
     fn convert_column_name(&self, name: &str) -> String {
         self.convert_table_name(name)
     }
@@ -788,7 +788,7 @@ impl Generator for SQLGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         let options = GeneratorOptions::new();
         let outputs = runtime

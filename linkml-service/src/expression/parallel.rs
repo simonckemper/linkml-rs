@@ -105,7 +105,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     Err(e) => {
                         return (
                             key_clone,
-                            Err(format!("semaphore should not be closed: {}", e)),
+                            Err(format!("semaphore should not be closed: {e}")),
                         )
                     }
                 };
@@ -222,7 +222,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     Err(e) => {
                         return (
                             key_clone,
-                            Err(format!("semaphore should not be closed: {}", e)),
+                            Err(format!("semaphore should not be closed: {e}")),
                         )
                     }
                 };
@@ -282,7 +282,7 @@ impl ParallelEvaluator for ExpressionEngine {
             Err(e) => {
                 // Return error for all contexts
                 let error = Err(EvaluationError::TypeError {
-                    message: format!("Parse error: {}", e),
+                    message: format!("Parse error: {e}"),
                 });
                 return (0..contexts.len()).map(|_| error.clone()).collect();
             }
@@ -303,7 +303,7 @@ impl ParallelEvaluator for ExpressionEngine {
                         return (
                             idx,
                             Err(EvaluationError::TypeError {
-                                message: format!("semaphore should not be closed: {}", e),
+                                message: format!("semaphore should not be closed: {e}"),
                             }),
                         )
                     }
@@ -334,7 +334,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 Ok((task_idx, result)) => results[task_idx] = result,
                 Err(e) => {
                     results[idx] = Err(EvaluationError::TypeError {
-                        message: format!("Task join error: {}", e),
+                        message: format!("Task join error: {e}"),
                     });
                 }
             }

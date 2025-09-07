@@ -276,7 +276,7 @@ impl YumlGenerator {
                 actors.push(name.clone());
             } else if !class_def.abstract_.unwrap_or(false) {
                 // Non-abstract classes can be use cases
-                let use_case_name = format!("Manage {}", name);
+                let use_case_name = format!("Manage {name}");
                 use_cases.push(use_case_name.clone());
 
                 // Create relationships
@@ -508,7 +508,7 @@ impl Generator for YumlGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         let options = GeneratorOptions::new();
         let outputs = runtime
@@ -602,7 +602,7 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should generate yuml: {}", e))?;
 
             let output = &result[0];
-            assert!(output.content.contains(&format!("diagram/{}/", style)));
+            assert!(output.content.contains(&format!("diagram/{style}/")));
         }
     }
 }

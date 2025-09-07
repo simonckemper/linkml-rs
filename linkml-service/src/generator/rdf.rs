@@ -7,14 +7,14 @@ use super::traits::Generator;
 use linkml_core::prelude::*;
 use std::fmt::Write;
 
-/// Helper macro to convert fmt::Error to LinkMLError with newline
+/// Helper macro to convert fmt::Error to `LinkML`Error with newline
 macro_rules! writeln_rdf {
     ($dst:expr, $($arg:tt)*) => {
-        writeln!($dst, $($arg)*).map_err(|e| LinkMLError::ServiceError(format!("Failed to write RDF: {}", e)))
+        writeln!($dst, $($arg)*).map_err(|e| LinkMLError::ServiceError(format!("Failed to write RDF: {e}")))
     };
 }
 
-/// RDF/Turtle generator for LinkML schemas
+/// RDF/Turtle generator for `LinkML` schemas
 pub struct RdfGenerator {
     /// Base URI for the schema
     base_uri: Option<String>,
@@ -22,7 +22,7 @@ pub struct RdfGenerator {
     include_metadata: bool,
     /// Whether to use compact Turtle syntax
     compact_syntax: bool,
-    /// Whether to include LinkML-specific properties
+    /// Whether to include `LinkML`-specific properties
     include_linkml_props: bool,
 }
 
@@ -509,7 +509,7 @@ impl RdfGenerator {
     }
 }
 
-/// Map LinkML range to XSD datatype
+/// Map `LinkML` range to XSD datatype
 fn map_range_to_xsd(range: &str) -> String {
     match range {
         "string" => "xsd:string".to_string(),
@@ -522,7 +522,7 @@ fn map_range_to_xsd(range: &str) -> String {
         "time" => "xsd:time".to_string(),
         "uri" => "xsd:anyURI".to_string(),
         "uriorcurie" => "xsd:anyURI".to_string(),
-        _ => format!(":{}", range), // Assume it's a class reference
+        _ => format!(":{range}"), // Assume it's a class reference
     }
 }
 

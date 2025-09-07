@@ -6,7 +6,7 @@
 use super::*;
 use std::any::Any;
 
-/// Plugin API version
+/// Plugin `API` version
 pub const PLUGIN_API_VERSION: u32 = 1;
 
 /// Plugin capability flags
@@ -41,7 +41,7 @@ pub enum PluginCapability {
 /// Plugin metadata for runtime introspection
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginMetadata {
-    /// API version this plugin was built against
+    /// `API` version this plugin was built against
     pub api_version: u32,
     /// Plugin SDK version
     pub sdk_version: String,
@@ -80,7 +80,7 @@ pub trait PluginEventHandler: Send + Sync {
 /// Plugin configuration schema
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigSchema {
-    /// JSON Schema for configuration validation
+    /// `JSON` Schema for configuration validation
     pub schema: serde_json::Value,
     /// Default configuration values
     pub defaults: HashMap<String, serde_json::Value>,
@@ -184,7 +184,7 @@ impl PluginSDK {
         PluginBuilder::new()
     }
 
-    /// Get current API version
+    /// Get current `API` version
     pub fn api_version() -> u32 {
         PLUGIN_API_VERSION
     }

@@ -92,7 +92,7 @@ impl Default for ResourceLimits {
 }
 
 impl ResourceLimits {
-    /// Create resource limits from LinkML service configuration
+    /// Create resource limits from `LinkML` service configuration
     pub fn from_service_config(
         config: &linkml_core::configuration_v2::SecurityLimitsConfig,
     ) -> Self {
@@ -143,7 +143,7 @@ impl ResourceMonitor {
                 .map(|d| d.as_secs() as i64)
                 .unwrap_or(0))
             .map_err(|e| ResourceError::ValidationError {
-                message: format!("Failed to get initial timestamp: {}", e),
+                message: format!("Failed to get initial timestamp: {e}"),
             })?;
         Ok(())
     }

@@ -12,9 +12,9 @@ use std::sync::Arc;
 
 use super::view::SchemaView;
 
-/// High-level view of a LinkML class with all inherited properties resolved
+/// High-level view of a `LinkML` class with all inherited properties resolved
 ///
-/// This provides a denormalized view similar to Python LinkML's ClassDefinitionView,
+/// This provides a denormalized view similar to Python `LinkML`'s ClassDefinitionView,
 /// making it easier to work with classes without manually resolving inheritance.
 #[derive(Debug, Clone)]
 pub struct ClassView {

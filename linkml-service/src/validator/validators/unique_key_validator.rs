@@ -232,7 +232,7 @@ impl UniqueKeyValidator {
             Ok(issues) => issues,
             Err(e) => vec![ValidationIssue::error(
                 &context.path(),
-                &format!("Unique key validation error: {}", e),
+                &format!("Unique key validation error: {e}"),
                 "UniqueKeyValidator",
             )],
         }
@@ -286,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn test_identifier_uniqueness() {
+    fn test_identifier_uniqueness() -> anyhow::Result<()> {
         let validator = UniqueKeyValidator::new();
         let mut schema = SchemaDefinition::default();
         schema.slots.insert(
@@ -309,7 +309,8 @@ mod tests {
             "id": "person-1"
         });
 
-        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]");
+        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues1.is_empty());
 
         // Duplicate ID
@@ -317,14 +318,16 @@ mod tests {
             "id": "person-1"
         });
 
-        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]");
+        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert_eq!(issues2.len(), 1);
         assert!(issues2[0].message.contains("Duplicate identifier"));
         assert_eq!(issues2[0].code.as_deref(), Some("DUPLICATE_IDENTIFIER"));
+        Ok(())
     }
 
     #[test]
-    fn test_composite_unique_key() {
+    fn test_composite_unique_key() -> anyhow::Result<()> {
         let validator = UniqueKeyValidator::new();
         let schema = SchemaDefinition::default();
 
@@ -360,7 +363,8 @@ mod tests {
             "email": "john.doe@example.com"
         });
 
-        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]");
+        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues1.is_empty());
 
         // Different person with same first name
@@ -370,7 +374,8 @@ mod tests {
             "email": "john.smith@example.com"
         });
 
-        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]");
+        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues2.is_empty());
 
         // Duplicate person
@@ -380,7 +385,8 @@ mod tests {
             "email": "john.doe@example.com"
         });
 
-        let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]");
+        let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert_eq!(issues3.len(), 1);
         assert!(
             issues3[0]
@@ -388,10 +394,11 @@ mod tests {
                 .contains("Duplicate values for unique key 'name_email'")
         );
         assert_eq!(issues3[0].code.as_deref(), Some("DUPLICATE_UNIQUE_KEY"));
+        Ok(())
     }
 
     #[test]
-    fn test_null_handling_in_unique_keys() {
+    fn test_null_handling_in_unique_keys() -> anyhow::Result<()> {
         let validator = UniqueKeyValidator::new();
         let schema = SchemaDefinition::default();
 
@@ -422,18 +429,21 @@ mod tests {
             "email": null
         });
 
-        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]");
+        let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues1.is_empty());
 
-        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]");
+        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(
             issues2.is_empty(),
             "Null values should be considered unique when consider_nulls_inequal is true"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_null_handling_inequal_false() {
+    fn test_null_handling_inequal_false() -> anyhow::Result<()> {
         let validator = UniqueKeyValidator::new();
         let schema = SchemaDefinition::default();
 
@@ -472,20 +482,25 @@ mod tests {
             "email": "test@example.com"
         });
 
-        validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]");
-        validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]");
-        validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]");
+        validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+        validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+        validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
 
-        let issues = validator.validate_class(&instance4, &class_def, &schema, "$.persons[3]");
+        let issues = validator.validate_class(&instance4, &class_def, &schema, "$.persons[3]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert_eq!(
             issues.len(),
             1,
             "Non-null duplicate values should still be caught"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_multiple_unique_keys() {
+    fn test_multiple_unique_keys() -> anyhow::Result<()> {
         let validator = UniqueKeyValidator::new();
         let schema = SchemaDefinition::default();
 
@@ -518,7 +533,8 @@ mod tests {
             "email": "john@example.com"
         });
 
-        validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]");
+        validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
 
         // Different SSN but same email - should fail
         let instance2 = serde_json::json!({
@@ -526,7 +542,8 @@ mod tests {
             "email": "john@example.com"
         });
 
-        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]");
+        let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert_eq!(issues2.len(), 1);
         assert!(issues2[0].message.contains("email"));
 
@@ -536,13 +553,15 @@ mod tests {
             "email": "jane@example.com"
         });
 
-        let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]");
+        let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert_eq!(issues3.len(), 1);
         assert!(issues3[0].message.contains("ssn"));
+        Ok(())
     }
 
     #[test]
-    fn test_reset_functionality() {
+    fn test_reset_functionality() -> anyhow::Result<()> {
         let mut validator = UniqueKeyValidator::new();
         let schema = SchemaDefinition::default();
 
@@ -567,16 +586,20 @@ mod tests {
         });
 
         // First time should pass
-        let issues1 = validator.validate_class(&instance, &class_def, &schema, "$");
+        let issues1 = validator.validate_class(&instance, &class_def, &schema, "$")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues1.is_empty());
 
         // Second time should fail
-        let issues2 = validator.validate_class(&instance, &class_def, &schema, "$");
+        let issues2 = validator.validate_class(&instance, &class_def, &schema, "$")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(!issues2.is_empty());
 
         // After reset, should pass again
         validator.reset();
-        let issues3 = validator.validate_class(&instance, &class_def, &schema, "$");
+        let issues3 = validator.validate_class(&instance, &class_def, &schema, "$")
+            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
         assert!(issues3.is_empty());
+        Ok(())
     }
 }

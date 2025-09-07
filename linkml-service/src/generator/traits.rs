@@ -39,7 +39,7 @@ pub enum GeneratorError {
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
-    /// LinkML core error
+    /// `LinkML` core error
     #[error("LinkML error: {0}")]
     LinkML(#[from] LinkMLError),
 
@@ -153,15 +153,15 @@ pub enum OutputFormat {
     TypeQL,
     /// GraphQL schema
     GraphQL,
-    /// SQL DDL
+    /// `SQL` DDL
     SQL,
     /// TypeScript code
     TypeScript,
     /// Python code
     Python,
-    /// JSON schema
+    /// `JSON` schema
     JSON,
-    /// YAML
+    /// `YAML`
     YAML,
     /// Markdown documentation
     Markdown,

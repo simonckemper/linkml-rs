@@ -8,7 +8,7 @@ use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::{Map, Value, json};
 
-/// JSON-LD Context generator configuration
+/// `JSON`-LD Context generator configuration
 #[derive(Debug, Clone)]
 pub struct JsonLdContextGeneratorConfig {
     /// Base generator configuration
@@ -41,13 +41,13 @@ impl Default for JsonLdContextGeneratorConfig {
     }
 }
 
-/// JSON-LD Context generator
+/// `JSON`-LD Context generator
 pub struct JsonLdContextGenerator {
     config: JsonLdContextGeneratorConfig,
 }
 
 impl JsonLdContextGenerator {
-    /// Create a new JSON-LD Context generator
+    /// Create a new `JSON`-LD Context generator
     pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
         Self { config }
     }
@@ -356,7 +356,7 @@ impl Generator for JsonLdContextGenerator {
 
         // Pretty print the JSON
         serde_json::to_string_pretty(&output).map_err(|e| {
-            LinkMLError::ServiceError(format!("Failed to serialize JSON-LD context: {}", e))
+            LinkMLError::ServiceError(format!("Failed to serialize JSON-LD context: {e}"))
         })
     }
 
@@ -376,7 +376,7 @@ mod tests {
     use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 
     #[test]
-    fn test_jsonld_context_generation() {
+    fn test_jsonld_context_generation() -> anyhow::Result<()> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
 
@@ -433,5 +433,6 @@ mod tests {
         assert!(result.contains("ex"));
         assert!(result.contains("schema"));
         assert!(result.contains("xsd:integer"));
+        Ok(())
     }
 }

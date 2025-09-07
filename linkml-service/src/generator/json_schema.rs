@@ -6,14 +6,14 @@ use linkml_core::prelude::*;
 use serde_json::{Value as JsonValue, json};
 use std::collections::HashMap;
 
-/// JSON Schema generator for `LinkML` schemas
+/// `JSON` Schema generator for `LinkML` schemas
 pub struct JsonSchemaGenerator {
     /// Generator name
     name: String,
 }
 
 impl JsonSchemaGenerator {
-    /// Create a new JSON Schema generator
+    /// Create a new `JSON` Schema generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -21,7 +21,7 @@ impl JsonSchemaGenerator {
         }
     }
 
-    /// Generate JSON Schema for a class
+    /// Generate `JSON` Schema for a class
     fn generate_class_schema(
         &self,
         class_name: &str,
@@ -66,7 +66,7 @@ impl JsonSchemaGenerator {
         // Handle inheritance using allOf
         if let Some(parent) = &class.is_a {
             let parent_ref = json!({
-                "$ref": format!("#/definitions/{}", parent)
+                "$ref": format!("#/definitions/{parent}")
             });
 
             schema_obj = json!({
@@ -80,7 +80,7 @@ impl JsonSchemaGenerator {
         Ok(schema_obj)
     }
 
-    /// Generate JSON Schema for a property (slot)
+    /// Generate `JSON` Schema for a property (slot)
     fn generate_property_schema(
         &self,
         slot: &SlotDefinition,
@@ -117,7 +117,7 @@ impl JsonSchemaGenerator {
         Ok(property)
     }
 
-    /// Get base JSON Schema type from `LinkML` range
+    /// Get base `JSON` Schema type from `LinkML` range
     fn get_base_type_schema(
         &self,
         range: &Option<String>,
@@ -144,17 +144,17 @@ impl JsonSchemaGenerator {
                 // Check if it's an enum
                 if schema.enums.contains_key(other) {
                     Ok(json!({
-                        "$ref": format!("#/definitions/{}", other)
+                        "$ref": format!("#/definitions/{other}")
                     }))
                 } else if schema.classes.contains_key(other) {
                     // Reference to another class
                     Ok(json!({
-                        "$ref": format!("#/definitions/{}", other)
+                        "$ref": format!("#/definitions/{other}")
                     }))
                 } else if schema.types.contains_key(other) {
                     // Custom type
                     Ok(json!({
-                        "$ref": format!("#/definitions/{}", other)
+                        "$ref": format!("#/definitions/{other}")
                     }))
                 } else {
                     // Default to string
@@ -336,14 +336,14 @@ impl Generator for JsonSchemaGenerator {
             // Multiple root classes - use oneOf
             let refs: Vec<JsonValue> = root_classes
                 .iter()
-                .map(|name| json!({"$ref": format!("#/definitions/{}", name)}))
+                .map(|name| json!({"$ref": format!("#/definitions/{name}")}))
                 .collect();
             json_schema["oneOf"] = json!(refs);
         }
 
         // Format output
         let content = serde_json::to_string_pretty(&json_schema)
-            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("JSON formatting error: {e}")))?;
 
         Ok(content)
     }
@@ -437,7 +437,7 @@ mod tests {
 
 
     #[tokio::test]
-    async fn test_json_schema_generation() {
+    async fn test_json_schema_generation() -> anyhow::Result<()> {
         let generator = JsonSchemaGenerator::new();
 
         let mut schema = SchemaDefinition::default();
@@ -500,5 +500,6 @@ mod tests {
                 .ok_or_else(|| anyhow::anyhow!("enum should be array"))?
                 .contains(&json!("INACTIVE"))
         );
+        Ok(())
     }
 }

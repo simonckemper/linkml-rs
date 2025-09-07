@@ -87,7 +87,7 @@ impl CsvGenerator {
             .iter()
             .map(|(_, slot)| {
                 let range = slot.range.as_deref().unwrap_or("string");
-                self.escape_field(&format!("<{}>", range))
+                self.escape_field(&format!("<{range}>"))
             })
             .collect();
         output.push_str(&type_row.join(&self.delimiter.to_string()));
@@ -214,7 +214,7 @@ impl CsvGenerator {
             .iter()
             .map(|(name, slot)| {
                 let value = match slot.range.as_deref() {
-                    Some("string") => format!("Sample {}", name),
+                    Some("string") => format!("Sample {name}"),
                     Some("integer") => "123".to_string(),
                     Some("float") => "45.67".to_string(),
                     Some("boolean") => "true".to_string(),
@@ -331,7 +331,7 @@ impl Generator for CsvGenerator {
                 for slot_name in slots {
                     if slot_name.contains(',') || slot_name.contains('\n') || slot_name.contains('\r') {
                         return Err(LinkMLError::data_validation(
-                            format!("Slot name '{}' contains invalid CSV characters", slot_name)
+                            format!("Slot name '{slot_name}' contains invalid CSV characters")
                         ));
                     }
                 }
@@ -358,12 +358,12 @@ impl Generator for CsvGenerator {
             match self.generate_class_csv(class_name, class_def, schema) {
                 Ok(content) => {
                     if !content.is_empty() {
-                        result.push_str(&format!("=== {} ===\n", class_name));
+                        result.push_str(&format!("=== {class_name} ===\n"));
                         result.push_str(&content);
                         result.push_str("\n\n");
                     }
                 }
-                Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {}", e))),
+                Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {e}"))),
             }
         }
 
@@ -422,7 +422,7 @@ mod tests {
     }
 
     #[test]
-    fn test_csv_generation() {
+    fn test_csv_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
 
@@ -435,10 +435,11 @@ mod tests {
         // Slots are in alphabetical order due to BTreeMap
         assert!(result.contains("age,id,name"));
         assert!(result.contains("<integer>,<string>,<string>"));
+        Ok(())
     }
 
     #[test]
-    fn test_tsv_generation() {
+    fn test_tsv_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
 
@@ -448,6 +449,7 @@ mod tests {
         // Slots are in alphabetical order due to BTreeMap
         assert!(result.contains("age\tid\tname"));
         assert!(result.contains("<integer>\t<string>\t<string>"));
+        Ok(())
     }
 
     #[test]

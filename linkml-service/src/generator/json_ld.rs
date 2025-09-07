@@ -11,13 +11,13 @@ use serde_json::{Value as JsonValue, json};
 
 use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult};
 
-/// JSON-LD generator for linked data contexts
+/// `JSON`-LD generator for linked data contexts
 pub struct JsonLdGenerator {
     options: GeneratorOptions,
 }
 
 impl JsonLdGenerator {
-    /// Create a new JSON-LD generator
+    /// Create a new `JSON`-LD generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -31,7 +31,7 @@ impl JsonLdGenerator {
         Self { options }
     }
 
-    /// Generate JSON-LD context
+    /// Generate `JSON`-LD context
     fn generate_context(&self, schema: &SchemaDefinition) -> JsonValue {
         let mut context = serde_json::Map::new();
 
@@ -176,7 +176,7 @@ impl JsonLdGenerator {
         json!(frame)
     }
 
-    /// Generate JSON-LD schema document
+    /// Generate `JSON`-LD schema document
     fn generate_schema_document(&self, schema: &SchemaDefinition) -> JsonValue {
         let mut doc = serde_json::Map::new();
 
@@ -384,7 +384,7 @@ impl JsonLdGenerator {
         let class = schema
             .classes
             .get(class_name)
-            .ok_or_else(|| GeneratorError::Generation(format!("example: Class {} not found", class_name)))?;
+            .ok_or_else(|| GeneratorError::Generation(format!("example: Class {class_name} not found")))?;
 
         let mut instance = serde_json::Map::new();
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -392,7 +392,7 @@ impl JsonLdGenerator {
         // Add context reference
         instance.insert(
             "@context".to_string(),
-            json!(format!("{}.context.jsonld", schema_prefix)),
+            json!(format!("{schema_prefix}.context.jsonld")),
         );
 
         // Add type
@@ -490,7 +490,7 @@ impl JsonLdGenerator {
         all_slots
     }
 
-    /// Get JSON-LD type for LinkML range
+    /// Get `JSON`-LD type for `LinkML` range
     fn get_json_ld_type(&self, range: &str, schema: &SchemaDefinition) -> Option<String> {
         // Check if it's a custom type first
         if let Some(type_def) = schema.types.get(range) {
@@ -719,10 +719,10 @@ impl Generator for JsonLdGenerator {
             .map_or(false, |v| v == "true");
         let result = if use_compact {
             serde_json::to_string(&doc)
-                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {e}")))?
         } else {
             serde_json::to_string_pretty(&doc)
-                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {}", e)))?
+                .map_err(|e| LinkMLError::service(format!("JSON formatting error: {e}")))?
         };
 
         Ok(result)

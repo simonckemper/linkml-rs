@@ -14,7 +14,7 @@ use linkml_core::annotations::AnnotationValue;
 pub struct SssomGeneratorConfig {
     /// Base generator configuration
     pub base: GeneratorConfig,
-    /// Output format (TSV or JSON)
+    /// Output format (TSV or `JSON`)
     pub format: SssomFormat,
     /// Include metadata header
     pub include_metadata: bool,
@@ -33,7 +33,7 @@ pub struct SssomGeneratorConfig {
 pub enum SssomFormat {
     /// Tab-separated values (standard SSSOM format)
     Tsv,
-    /// JSON representation
+    /// `JSON` representation
     Json,
 }
 
@@ -121,7 +121,7 @@ impl SssomGenerator {
                         AnnotationValue::String(s) => s.clone(),
                         AnnotationValue::Number(n) => n.to_string(),
                         AnnotationValue::Bool(b) => b.to_string(),
-                        _ => format!("{:?}", value), // Fallback for complex types
+                        _ => format!("{value:?}"), // Fallback for complex types
                     };
                     let targets = if value_str.contains(',') {
                         value_str.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
@@ -139,7 +139,7 @@ impl SssomGenerator {
                                 &mapping_date,
                                 class_def.description.as_deref(),
                                 "class",
-                                Some(format!("Mapping from LinkML class '{}'", class_name)),
+                                Some(format!("Mapping from LinkML class '{class_name}'")),
                             ));
                         }
                     }
@@ -166,7 +166,7 @@ impl SssomGenerator {
                         AnnotationValue::String(s) => s.clone(),
                         AnnotationValue::Number(n) => n.to_string(),
                         AnnotationValue::Bool(b) => b.to_string(),
-                        _ => format!("{:?}", value), // Fallback for complex types
+                        _ => format!("{value:?}"), // Fallback for complex types
                     };
                     let targets = if value_str.contains(',') {
                         value_str.split(',').map(|s| s.trim().to_string()).collect::<Vec<_>>()
@@ -184,7 +184,7 @@ impl SssomGenerator {
                                 &mapping_date,
                                 slot_def.description.as_deref(),
                                 "property",
-                                Some(format!("Mapping from LinkML slot '{}'", slot_name)),
+                                Some(format!("Mapping from LinkML slot '{slot_name}'")),
                             ));
                         }
                     }
@@ -203,7 +203,7 @@ impl SssomGenerator {
                         AnnotationValue::String(s) => s.clone(),
                         AnnotationValue::Number(n) => n.to_string(),
                         AnnotationValue::Bool(b) => b.to_string(),
-                        _ => format!("{:?}", value), // Fallback for complex types
+                        _ => format!("{value:?}"), // Fallback for complex types
                     };
                     for mapping_str in value_str.split(';') {
                         let parts: Vec<&str> = mapping_str.trim().split(':').collect();
@@ -289,7 +289,7 @@ impl SssomGenerator {
                         AnnotationValue::String(s) => s.clone(),
                         AnnotationValue::Number(n) => n.to_string(),
                         AnnotationValue::Bool(b) => b.to_string(),
-                        _ => format!("{:?}", v), // Fallback for complex types
+                        _ => format!("{v:?}"), // Fallback for complex types
                     };
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
@@ -316,7 +316,7 @@ impl SssomGenerator {
                         AnnotationValue::String(s) => s.clone(),
                         AnnotationValue::Number(n) => n.to_string(),
                         AnnotationValue::Bool(b) => b.to_string(),
-                        _ => format!("{:?}", v), // Fallback for complex types
+                        _ => format!("{v:?}"), // Fallback for complex types
                     };
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
@@ -386,11 +386,11 @@ impl SssomGenerator {
             output.push('\n');
 
             if let Some(license) = &self.config.license {
-                output.push_str(&format!("# license: {}\n", license));
+                output.push_str(&format!("# license: {license}\n"));
             }
 
             if let Some(creator) = &self.config.creator {
-                output.push_str(&format!("# creator_id: {}\n", creator));
+                output.push_str(&format!("# creator_id: {creator}\n"));
             }
 
             output.push_str(&format!(
@@ -452,7 +452,7 @@ impl SssomGenerator {
         Ok(output)
     }
 
-    /// Generate JSON format
+    /// Generate `JSON` format
     fn generate_json(
         &self,
         mappings: &[SssomMapping],
@@ -495,7 +495,7 @@ impl SssomGenerator {
         if let Some(description) = &schema.description {
             metadata.insert(
                 "comment".to_string(),
-                json!(format!("Generated from LinkML schema - {}", description)),
+                json!(format!("Generated from LinkML schema - {description}")),
             );
         }
 
@@ -565,7 +565,7 @@ impl SssomGenerator {
         root.insert("mappings".to_string(), json!(mapping_objects));
 
         serde_json::to_string_pretty(&root).map_err(|e| {
-            LinkMLError::ServiceError(format!("Failed to serialize SSSOM JSON: {}", e))
+            LinkMLError::ServiceError(format!("Failed to serialize SSSOM JSON: {e}"))
         })
     }
 }

@@ -96,7 +96,7 @@ impl Validator for AnyOfValidator {
 
             // Check if at least one constraint is satisfied
             for (i, constraint) in constraints.iter().enumerate() {
-                context.push_path(&format!("any_of[{}]", i));
+                context.push_path(&format!("any_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -321,7 +321,7 @@ impl Validator for AllOfValidator {
 
                 // Check that all constraints are satisfied
                 for (i, constraint) in constraints.iter().enumerate() {
-                    context.push_path(&format!("all_of[{}]", i));
+                    context.push_path(&format!("all_of[{i}]"));
                     let sub_issues = self.validate_expression(value, constraint, context);
 
                     if !sub_issues.is_empty() {
@@ -441,7 +441,7 @@ impl Validator for ExactlyOneOfValidator {
 
             // Count how many constraints are satisfied
             for (i, constraint) in constraints.iter().enumerate() {
-                context.push_path(&format!("exactly_one_of[{}]", i));
+                context.push_path(&format!("exactly_one_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -668,7 +668,7 @@ impl Validator for NoneOfValidator {
                     continue;
                 }
 
-                context.push_path(&format!("none_of[{}]", i));
+                context.push_path(&format!("none_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -678,7 +678,7 @@ impl Validator for NoneOfValidator {
                     context.pop_path();
                     issues.push(
                         ValidationIssue::error(
-                            format!("Value satisfies constraint none_of[{}]", i),
+                            format!("Value satisfies constraint none_of[{i}]"),
                             context.path(),
                             self.name(),
                         )

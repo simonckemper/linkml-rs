@@ -193,7 +193,7 @@ impl RustGenerator {
     ) -> GeneratorResult<()> {
         // Generate from_json method
         if options.include_docs {
-            writeln!(output, "{}/// Create from JSON string", indent.single())
+            writeln!(output, "{}/// Create from `JSON` string", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(output, "{}pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {{", indent.single())
@@ -206,7 +206,7 @@ impl RustGenerator {
 
         // Generate to_json method
         if options.include_docs {
-            writeln!(output, "{}/// Convert to JSON string", indent.single())
+            writeln!(output, "{}/// Convert to `JSON` string", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(output, "{}pub fn to_json(&self) -> Result<String, serde_json::Error> {{", indent.single())

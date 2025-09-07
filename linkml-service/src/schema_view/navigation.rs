@@ -135,7 +135,7 @@ impl<'a> SlotResolution<'a> {
         let base_slot = self
             .schema_view
             .get_slot(slot_name)?
-            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Slot '{}'", slot_name)))?;
+            .ok_or_else(|| SchemaViewError::ElementNotFound(format!("Slot '{slot_name}'")))?;
 
         let mut resolved = base_slot.clone();
 

@@ -7,7 +7,7 @@ use linkml_core::error::{LinkMLError, Result as LinkMLResult};
 use serde_json::Value;
 use std::fmt;
 
-/// Compiled JSON path for efficient navigation
+/// Compiled `JSON` path for efficient navigation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsonPath {
     /// The path segments
@@ -16,7 +16,7 @@ pub struct JsonPath {
     string_repr: String,
 }
 
-/// A segment in a JSON path
+/// A segment in a `JSON` path
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PathSegment {
     /// Root marker ($)
@@ -30,7 +30,7 @@ pub enum PathSegment {
 }
 
 impl JsonPath {
-    /// Create a new JSON path from a string
+    /// Create a new `JSON` path from a string
     ///
     /// # Errors
     ///
@@ -148,7 +148,7 @@ impl JsonPath {
         self
     }
 
-    /// Navigate to a value in JSON data
+    /// Navigate to a value in `JSON` data
     #[must_use]
     pub fn navigate<'a>(&self, value: &'a Value) -> Vec<(&'a Value, String)> {
         let mut results = Vec::new();
@@ -273,7 +273,7 @@ impl fmt::Display for JsonPath {
     }
 }
 
-/// Optimized JSON path navigator with caching
+/// Optimized `JSON` path navigator with caching
 pub struct JsonNavigator {
     /// Cache of compiled paths
     path_cache: std::collections::HashMap<String, JsonPath>,

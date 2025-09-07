@@ -64,7 +64,7 @@ impl InstanceLoader {
         }
     }
 
-    /// Load instance data from a JSON file
+    /// Load instance data from a `JSON` file
     ///
     /// # Errors
     ///
@@ -194,7 +194,7 @@ impl InstanceLoader {
         Ok(instance_data)
     }
 
-    /// Extract values from JSON based on configuration
+    /// Extract values from `JSON` based on configuration
     fn extract_values_from_json(
         &self,
         json: &Value,
@@ -227,7 +227,7 @@ impl InstanceLoader {
         Ok(values)
     }
 
-    /// Extract key-value pair from a JSON object
+    /// Extract key-value pair from a `JSON` object
     fn extract_from_object(
         &self,
         obj: &Value,
@@ -283,7 +283,7 @@ impl InstanceLoader {
         Err(LinkMLError::not_implemented("GraphQL instance loading"))
     }
 
-    /// Load from a SQL database (future enhancement)
+    /// Load from a `SQL` database (future enhancement)
     ///
     /// # Errors
     ///
@@ -352,7 +352,7 @@ mod tests {
     use tokio::fs;
 
     #[tokio::test]
-    async fn test_load_json_file() {
+    async fn test_load_json_file() -> anyhow::Result<()> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.json");
 
@@ -400,10 +400,11 @@ mod tests {
                 .ok_or_else(|| anyhow::anyhow!("should have CA entry"))?,
             &vec!["Canada"]
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_load_csv_file() {
+    async fn test_load_csv_file() -> anyhow::Result<()> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.csv");
 
@@ -432,10 +433,11 @@ mod tests {
                 .ok_or_else(|| anyhow::anyhow!("should have US entry in CSV data"))?,
             &vec!["United States"]
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_caching() {
+    async fn test_caching() -> anyhow::Result<()> {
         let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
         let file_path = temp_dir.path().join("instances.json");
 
@@ -465,5 +467,6 @@ mod tests {
         // Check cache stats
         let stats = loader.cache_stats();
         assert_eq!(stats.entries, 1);
+        Ok(())
     }
 }

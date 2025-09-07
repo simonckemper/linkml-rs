@@ -337,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn test_class_resolution() {
+    fn test_class_resolution() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let mut composer = SchemaComposer::new(schema);
 
@@ -362,6 +362,7 @@ mod tests {
         // Check properties
         assert!(!person.is_abstract);
         assert!(person.is_tree_root);
+        Ok(())
     }
 
     #[test]

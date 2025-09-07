@@ -165,7 +165,7 @@ impl ConditionalValidator {
         }
     }
 
-    /// Create from LinkML schema
+    /// Create from `LinkML` schema
     pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut validator = Self::new();
 
@@ -200,7 +200,7 @@ impl ConditionalValidator {
                             };
 
                             let rule = ConditionalRule {
-                                name: format!("{}_conditional_requirement", trigger_slot),
+                                name: format!("{trigger_slot}_conditional_requirement"),
                                 condition: our_condition,
                                 then_requirements: then_required
                                     .iter()
@@ -420,7 +420,7 @@ impl ConditionalValidator {
             Condition::Matches { slot, pattern } => {
                 if let Some(Value::String(s)) = obj.get(slot) {
                     let re = regex::Regex::new(pattern)
-                        .map_err(|e| LinkMLError::service(format!("Invalid pattern: {}", e)))?;
+                        .map_err(|e| LinkMLError::service(format!("Invalid pattern: {e}")))?;
                     Ok(re.is_match(s))
                 } else {
                     Ok(false)
@@ -486,7 +486,7 @@ impl ConditionalValidator {
             Requirement::MustMatch { slot, pattern } => {
                 if let Some(Value::String(s)) = obj.get(slot) {
                     let re = regex::Regex::new(pattern)
-                        .map_err(|e| LinkMLError::service(format!("Invalid pattern: {}", e)))?;
+                        .map_err(|e| LinkMLError::service(format!("Invalid pattern: {e}")))?;
                     Ok(re.is_match(s))
                 } else {
                     Ok(false)
@@ -503,7 +503,7 @@ impl ConditionalValidator {
         }
     }
 
-    /// Convert a JSON Value to a context map for expression evaluation
+    /// Convert a `JSON` Value to a context map for expression evaluation
     fn value_to_context(value: &Value) -> Result<HashMap<String, Value>> {
         match value {
             Value::Object(map) => {
@@ -564,7 +564,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_simple_conditional() {
+    fn test_simple_conditional() -> anyhow::Result<()> {
         let mut validator = ConditionalValidator::new();
 
         // Rule: if country is "US", then state is required
@@ -612,10 +612,11 @@ mod tests {
                 ?
                 .is_empty()
         );
+        Ok(())
     }
 
     #[test]
-    fn test_complex_conditions() {
+    fn test_complex_conditions() -> anyhow::Result<()> {
         let mut validator = ConditionalValidator::new();
 
         // Rule: if age >= 18 AND country = "US", then ssn is required
@@ -674,5 +675,6 @@ mod tests {
                 ?
                 .is_empty()
         );
+        Ok(())
     }
 }

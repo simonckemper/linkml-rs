@@ -46,7 +46,7 @@ impl Generator for TypeScriptGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         // Use tokio to run the async version
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create runtime: {e}")))?;
 
         let options = GeneratorOptions::new();
         let outputs = runtime
@@ -109,7 +109,7 @@ impl TypeScriptGenerator {
 
         // Check if we have inheritance
         let extends_clause = if let Some(ref parent) = class.is_a {
-            format!(" extends {}", parent)
+            format!(" extends {parent}")
         } else {
             String::new()
         };
@@ -182,11 +182,11 @@ impl TypeScriptGenerator {
         // Handle multivalued with advanced collection types
         let field_type = if slot.multivalued.unwrap_or(false) {
             if slot.unique.unwrap_or(false) {
-                format!("Set<{}>", base_type)
+                format!("Set<{base_type}>")
             } else if slot.ordered.unwrap_or(false) {
-                format!("{}[]", base_type)
+                format!("{base_type}[]")
             } else {
-                format!("ReadonlyArray<{}>", base_type)
+                format!("ReadonlyArray<{base_type}>")
             }
         } else {
             base_type
@@ -444,7 +444,7 @@ impl TypeScriptGenerator {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
                             linkml_core::types::PermissibleValue::Complex { text, .. } => text,
                         };
-                        format!("'{}'", text)
+                        format!("'{text}'")
                     }).collect();
                     writeln!(
                         output,
@@ -713,7 +713,7 @@ impl CodeFormatter for TypeScriptGenerator {
         let indent_str = indent.to_string(level);
         let lines: Vec<&str> = doc.lines().collect();
 
-        let mut result = format!("{}/**", indent_str);
+        let mut result = format!("{indent_str}/**");
         for line in lines {
             result.push('\n');
             result.push_str(&indent_str);

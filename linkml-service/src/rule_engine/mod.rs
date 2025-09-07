@@ -89,7 +89,7 @@ impl RuleEngine {
             Ok(rule_issues) => issues.extend(rule_issues),
             Err(e) => {
                 issues.push(ValidationIssue::error(
-                    &format!("Rule execution failed: {}", e),
+                    &format!("Rule execution failed: {e}"),
                     context.path(),
                     "RuleEngine",
                 ));

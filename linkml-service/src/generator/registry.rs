@@ -195,6 +195,13 @@ impl GeneratorRegistry {
         generators.get(name).cloned()
     }
 
+    /// Get a generator by name (alias for get method)
+    ///
+    /// This method provides compatibility with code expecting a `get_generator` method.
+    pub async fn get_generator(&self, name: &str) -> Option<Arc<dyn Generator>> {
+        self.get(name).await
+    }
+
     /// Get all registered generator names
     pub async fn list_generators(&self) -> Vec<String> {
         let generators = self.generators.read().await;
@@ -355,7 +362,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_registry_operations() {
+    async fn test_registry_operations() -> anyhow::Result<()> {
         let registry = GeneratorRegistry::new();
 
         // Register a generator
@@ -393,10 +400,11 @@ mod tests {
             .await
             .map_err(|e| anyhow::anyhow!("should unregister generator: {}", e))?;
         assert!(registry.get("test").await.is_none());
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_duplicate_registration() {
+    async fn test_duplicate_registration() -> anyhow::Result<()> {
         let registry = GeneratorRegistry::new();
 
         let gen1 = Arc::new(TestGenerator {
@@ -414,5 +422,6 @@ mod tests {
         // Second registration should fail
         let result = registry.register(gen2).await;
         assert!(result.is_err());
+        Ok(())
     }
 }

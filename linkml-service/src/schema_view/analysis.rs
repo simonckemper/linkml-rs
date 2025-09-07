@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 use super::view::{SchemaView, SchemaViewError};
 
-/// Statistics about a LinkML schema
+/// Statistics about a `LinkML` schema
 #[derive(Debug, Clone, Default)]
 pub struct SchemaStatistics {
     /// Number of classes
@@ -255,7 +255,7 @@ impl<'a> SchemaAnalyzer<'a> {
         let usage_index = self.schema_view.usage_index()?;
         let unused = usage_index.find_unused_elements();
         for element in unused {
-            issues.push(format!("Unused element: {}", element));
+            issues.push(format!("Unused element: {element}"));
         }
 
         // Check for very deep inheritance
@@ -283,7 +283,7 @@ impl<'a> SchemaAnalyzer<'a> {
         for (class_name, class_def) in self.schema_view.all_classes()? {
             if let Some(parent) = &class_def.is_a {
                 if parent == &class_name {
-                    issues.push(format!("Class '{}' inherits from itself", class_name));
+                    issues.push(format!("Class '{class_name}' inherits from itself"));
                 }
             }
         }
@@ -295,7 +295,7 @@ impl<'a> SchemaAnalyzer<'a> {
     pub fn find_elements_by_pattern(&self, pattern: &str) -> Result<HashMap<String, Vec<String>>> {
         let mut results = HashMap::new();
         let regex = regex::Regex::new(pattern)
-            .map_err(|e| SchemaViewError::LoadError(format!("Invalid regex pattern: {}", e)))?;
+            .map_err(|e| SchemaViewError::LoadError(format!("Invalid regex pattern: {e}")))?;
 
         // Search classes
         let mut matching_classes = Vec::new();

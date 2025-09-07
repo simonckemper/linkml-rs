@@ -230,7 +230,7 @@ impl CaptureExtractor {
                 _ => Err(CaptureError::ConversionError {
                     name: definition.name.clone(),
                     target_type: "boolean".to_string(),
-                    error: format!("Invalid boolean value: {}", text),
+                    error: format!("Invalid boolean value: {text}"),
                 }),
             },
 
@@ -321,7 +321,7 @@ impl CaptureExtractor {
                     } else {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Custom validator '{}' not found", validator_name),
+                            reason: format!("Custom validator '{validator_name}' not found"),
                         });
                     }
                 }

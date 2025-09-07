@@ -27,7 +27,7 @@ pub struct SecurityLimits {
     /// Maximum length for identifiers (names, keys, etc.)
     pub max_identifier_length: usize,
 
-    /// Maximum size for JSON payloads
+    /// Maximum size for `JSON` payloads
     pub max_json_size: usize,
 
     /// Maximum number of slots in a class
@@ -166,7 +166,7 @@ impl InputValidator {
         Ok(())
     }
 
-    /// Validate JSON payload size
+    /// Validate `JSON` payload size
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size {
             return Err(ValidationError::JsonTooLarge {

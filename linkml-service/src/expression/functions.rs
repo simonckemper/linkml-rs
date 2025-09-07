@@ -121,7 +121,7 @@ impl BuiltinFunction for CustomFunction {
             if args.len() > max {
                 return Err(FunctionError::wrong_arity(
                     &self.name,
-                    &format!("at most {}", max),
+                    &format!("at most {max}"),
                     args.len(),
                 ));
             }
@@ -308,7 +308,7 @@ impl FunctionRegistry {
                 function.validate_arity(&args)?;
                 function.call(args)
             }
-            None => Err(FunctionError::new(format!("Unknown function: {}", name))),
+            None => Err(FunctionError::new(format!("Unknown function: {name}"))),
         }
     }
 

@@ -187,14 +187,14 @@ impl PydanticGenerator {
         // Handle optional and multivalued
         let field_type = if slot.multivalued.unwrap_or(false) {
             imports.add_import("typing", "List");
-            format!("List[{}]", base_type)
+            format!("List[{base_type}]")
         } else {
             base_type
         };
 
         let final_type = if is_optional_slot(slot) && !slot.multivalued.unwrap_or(false) {
             imports.add_import("typing", "Optional");
-            format!("Optional[{}]", field_type)
+            format!("Optional[{field_type}]")
         } else {
             field_type
         };
@@ -226,10 +226,10 @@ impl PydanticGenerator {
 
         // Add numeric constraints
         if let Some(ref min) = slot.minimum_value {
-            field_args.push(format!("ge={}", min));
+            field_args.push(format!("ge={min}"));
         }
         if let Some(ref max) = slot.maximum_value {
-            field_args.push(format!("le={}", max));
+            field_args.push(format!("le={max}"));
         }
 
         // Note: LinkML doesn't have minimum_cardinality/maximum_cardinality in SlotDefinition

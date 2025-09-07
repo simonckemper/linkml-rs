@@ -114,7 +114,7 @@ impl Validator for CustomValidator {
     }
 }
 
-/// Builder for creating custom validators with a fluent API
+/// Builder for creating custom validators with a fluent `API`
 pub struct CustomValidatorBuilder {
     name: String,
     description: Option<String>,
@@ -208,7 +208,7 @@ pub mod helpers {
         let name_clone = name_str.clone();
 
         CustomValidatorBuilder::new(name_str)
-            .description(format!("Validates {} format", format))
+            .description(format!("Validates {format} format"))
             .validate_with(move |value, _slot, context| {
                 let mut issues = Vec::new();
 
@@ -220,7 +220,7 @@ pub mod helpers {
                                 context.path(),
                                 &name_clone,
                             );
-                            issue.code = Some(format!("{}_FORMAT_INVALID", format_upper));
+                            issue.code = Some(format!("{format_upper}_FORMAT_INVALID"));
                             issues.push(issue);
                         }
                     }
@@ -229,7 +229,7 @@ pub mod helpers {
                     }
                     _ => {
                         let mut issue = ValidationIssue::error(
-                            format!("Expected string for {} validation", format_clone),
+                            format!("Expected string for {format_clone} validation"),
                             context.path(),
                             &name_clone,
                         );
@@ -316,7 +316,7 @@ mod tests {
     use linkml_core::types::SchemaDefinition;
 
     #[test]
-    fn test_custom_validator_basic() {
+    fn test_custom_validator_basic() -> anyhow::Result<()> {
         let validator = CustomValidatorBuilder::new("uppercase_validator")
             .description("Ensures strings are uppercase")
             .validate_with(|value, _slot, context| {
@@ -325,7 +325,7 @@ mod tests {
                 if let Value::String(s) = value {
                     if s != &s.to_uppercase() {
                         issues.push(ValidationIssue::error(
-                            format!("Value '{}' must be uppercase", s),
+                            format!("Value '{s}' must be uppercase"),
                             context.path(),
                             "uppercase_validator",
                         ));
@@ -350,10 +350,11 @@ mod tests {
         let value = Value::String("hello".to_string());
         let issues = validator.validate(&value, &slot, &mut context);
         assert_eq!(issues.len(), 1);
+        Ok(())
     }
 
     #[test]
-    fn test_custom_validator_for_specific_slots() {
+    fn test_custom_validator_for_specific_slots() -> anyhow::Result<()> {
         let validator = CustomValidatorBuilder::new("email_validator")
             .for_slots(vec!["email".to_string(), "contact_email".to_string()])
             .validate_with(|value, _slot, context| {
@@ -362,7 +363,7 @@ mod tests {
                 if let Value::String(s) = value {
                     if !s.contains('@') {
                         issues.push(ValidationIssue::error(
-                            format!("'{}' is not a valid email", s),
+                            format!("'{s}' is not a valid email"),
                             context.path(),
                             "email_validator",
                         ));
@@ -387,10 +388,11 @@ mod tests {
         let name_slot = SlotDefinition::new("name");
         let issues = validator.validate(&value, &name_slot, &mut context);
         assert!(issues.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn test_format_validator_helper() {
+    fn test_format_validator_helper() -> anyhow::Result<()> {
         let validator = helpers::format_validator("phone_validator", "phone number", |s| {
             // Simple phone validation
             s.chars().filter(|c| c.is_numeric()).count() >= 10
@@ -410,10 +412,11 @@ mod tests {
         let value = Value::String("123".to_string());
         let issues = validator.validate(&value, &slot, &mut context);
         assert_eq!(issues.len(), 1);
+        Ok(())
     }
 
     #[test]
-    fn test_custom_enum_validator_helper() {
+    fn test_custom_enum_validator_helper() -> anyhow::Result<()> {
         let validator = helpers::custom_enum_validator(
             "priority_validator",
             vec!["low".to_string(), "medium".to_string(), "high".to_string()],
@@ -433,10 +436,11 @@ mod tests {
         let value = Value::String("urgent".to_string());
         let issues = validator.validate(&value, &slot, &mut context);
         assert_eq!(issues.len(), 1);
+        Ok(())
     }
 
     #[test]
-    fn test_predicate_based_validator() {
+    fn test_predicate_based_validator() -> anyhow::Result<()> {
         let validator = CustomValidatorBuilder::new("range_validator")
             .when(|slot| slot.range.as_deref() == Some("integer"))
             .validate_with(|value, _slot, context| {
@@ -465,7 +469,7 @@ mod tests {
         int_slot.range = Some("integer".to_string());
 
         let value = Value::Number(
-            serde_json::Number::from_f64(3.14).map_err(|e| anyhow::anyhow!("should create number from f64: {}", e))?,
+            serde_json::Number::from_f64(3.14).ok_or_else(|| anyhow::anyhow!("should create number from f64"))?,
         );
         let issues = validator.validate(&value, &int_slot, &mut context);
         assert_eq!(issues.len(), 1);
@@ -475,5 +479,6 @@ mod tests {
         str_slot.range = Some("string".to_string());
         let issues = validator.validate(&value, &str_slot, &mut context);
         assert!(issues.is_empty());
+        Ok(())
     }
 }

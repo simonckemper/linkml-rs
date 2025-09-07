@@ -225,7 +225,7 @@ impl From<anyhow::Error> for LinkMLError {
     fn from(err: anyhow::Error) -> Self {
         Self::Other {
             message: err.to_string(),
-            source: Some(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{}", err)))),
+            source: Some(Box::new(std::io::Error::other(err))),
         }
     }
 }

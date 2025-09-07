@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use linkml_core::{error::Result as LinkMLResult, prelude::*};
-use linkml_service::LinkMLService;
+use linkml_core::traits::{LinkMLService, LinkMLServiceExt};
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -298,6 +298,10 @@ impl LinkMLService for MockLinkMLService {
         })
     }
 
+}
+
+#[async_trait]
+impl LinkMLServiceExt for MockLinkMLService {
     async fn validate_typed<T>(
         &self,
         data: &serde_json::Value,

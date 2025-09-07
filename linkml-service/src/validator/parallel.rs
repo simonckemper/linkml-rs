@@ -388,7 +388,7 @@ mod tests {
     use serde_json::json;
 
     #[tokio::test]
-    async fn test_parallel_batch_validation() {
+    async fn test_parallel_batch_validation() -> anyhow::Result<()> {
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
             name: "TestSchema".to_string(),
@@ -410,10 +410,11 @@ mod tests {
             .await;
 
         assert_eq!(reports.len(), 3);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_aggregated_validation() {
+    async fn test_aggregated_validation() -> anyhow::Result<()> {
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
             name: "TestSchema".to_string(),
@@ -436,5 +437,6 @@ mod tests {
         assert_eq!(aggregated.reports.len(), 2);
         assert!(aggregated.reports.contains_key("id1"));
         assert!(aggregated.reports.contains_key("id2"));
+        Ok(())
     }
 }

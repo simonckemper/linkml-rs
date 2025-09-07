@@ -63,9 +63,9 @@ pub struct PluginInfo {
     pub author: Option<String>,
     /// License
     pub license: Option<String>,
-    /// Homepage URL
+    /// Homepage `URL`
     pub homepage: Option<String>,
-    /// Required LinkML version
+    /// Required `LinkML` version
     pub linkml_version: VersionReq,
     /// Plugin dependencies
     pub dependencies: Vec<PluginDependency>,
@@ -264,7 +264,7 @@ pub struct ValidationResult {
 pub struct ValidationError {
     /// Error message
     pub message: String,
-    /// JSON path to the error
+    /// `JSON` path to the error
     pub path: Option<String>,
     /// Error code
     pub code: Option<String>,
@@ -275,7 +275,7 @@ pub struct ValidationError {
 pub struct ValidationWarning {
     /// Warning message
     pub message: String,
-    /// JSON path to the warning
+    /// `JSON` path to the warning
     pub path: Option<String>,
     /// Warning code
     pub code: Option<String>,

@@ -59,7 +59,7 @@ pub mod expression;
 /// Rule engine for class-level validation
 pub mod rule_engine;
 
-/// SchemaView - High-level API for schema introspection
+/// SchemaView - High-level `API` for schema introspection
 pub mod schema_view;
 
 /// Performance optimization utilities
@@ -77,7 +77,7 @@ pub mod array;
 /// Schema manipulation utilities (diff, merge, lint)
 pub mod schema;
 
-/// Enhanced CLI with all LinkML commands
+/// Enhanced CLI with all `LinkML` commands
 pub mod cli_enhanced;
 
 /// Plugin architecture for extensibility

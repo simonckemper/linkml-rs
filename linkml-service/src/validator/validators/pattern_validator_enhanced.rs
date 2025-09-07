@@ -60,7 +60,7 @@ impl EnhancedPatternValidator {
         let mut cache = self
             .pattern_cache
             .lock()
-            .map_err(|e| regex::Error::Syntax(format!("pattern cache mutex should not be poisoned: {}", e)))?;
+            .map_err(|e| regex::Error::Syntax(format!("pattern cache mutex should not be poisoned: {e}")))?;
 
         if let Some(regex) = cache.get(pattern) {
             return Ok(Arc::clone(regex));

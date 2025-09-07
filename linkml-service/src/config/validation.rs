@@ -20,7 +20,7 @@ pub async fn validate_config(config: &LinkMLConfig) -> Result<()> {
 
     // Convert config to JSON for validation
     let config_json = serde_json::to_value(config)
-        .map_err(|e| LinkMLError::ConfigError(format!("Failed to serialize config: {}", e)))?;
+        .map_err(|e| LinkMLError::ConfigError(format!("Failed to serialize config: {e}")))?;
 
     // Validate
     let options = ValidationOptions::default();

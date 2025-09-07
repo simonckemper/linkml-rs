@@ -8,7 +8,7 @@ use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-/// Inheritance resolver for LinkML schemas
+/// Inheritance resolver for `LinkML` schemas
 pub struct InheritanceResolver<'a> {
     schema: &'a SchemaDefinition,
     /// Cache of resolved classes
@@ -47,7 +47,7 @@ impl<'a> InheritanceResolver<'a> {
             .schema
             .classes
             .get(class_name)
-            .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found", class_name)))?
+            .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found")))?
             .clone();
 
         self.visited.insert(class_name.to_string());
@@ -293,7 +293,7 @@ impl<'a> InheritanceResolver<'a> {
                 .schema
                 .slots
                 .get(slot_name)
-                .ok_or_else(|| LinkMLError::service(format!("Slot '{}' not found", slot_name)))?
+                .ok_or_else(|| LinkMLError::service(format!("Slot '{slot_name}' not found")))?
                 .clone();
 
             // Apply slot_usage overrides
@@ -372,7 +372,7 @@ pub fn get_inheritance_chain(class_name: &str, schema: &SchemaDefinition) -> Res
     let class = schema
         .classes
         .get(class_name)
-        .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found", class_name)))?;
+        .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found")))?;
 
     let ancestors = resolver.get_all_ancestors(class)?;
     resolver.c3_linearization(class_name, &ancestors)

@@ -15,7 +15,7 @@ pub struct GoGenerator {
     package_name: String,
     /// Whether to generate validation methods
     generate_validation: bool,
-    /// Whether to generate JSON tags
+    /// Whether to generate `JSON` tags
     generate_json_tags: bool,
     /// Whether to generate interfaces
     generate_interfaces: bool,
@@ -52,7 +52,7 @@ impl GoGenerator {
         self
     }
 
-    /// Configure JSON tag generation
+    /// Configure `JSON` tag generation
     #[must_use]
     pub fn with_json_tags(mut self, enabled: bool) -> Self {
         self.generate_json_tags = enabled;
@@ -600,7 +600,7 @@ impl GoGenerator {
         }
     }
 
-    /// Map LinkML type to Go type
+    /// Map `LinkML` type to Go type
     fn map_type(&self, linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" => "string",
@@ -631,7 +631,7 @@ impl GoGenerator {
         };
 
         if slot.multivalued.unwrap_or(false) {
-            format!("[]{}", base_type)
+            format!("[]{base_type}")
         } else {
             base_type
         }
@@ -728,7 +728,7 @@ impl Generator for GoGenerator {
                             "Class name '{}' is not valid for Go: must start with a letter",
                             class_name
                         ),
-                        element: Some(format!("class.{}", class_name)),
+                        element: Some(format!("class.{class_name}")),
                     });
                 }
             }
@@ -743,8 +743,8 @@ impl Generator for GoGenerator {
                 "continue" | "for" | "import" | "return" | "var"
             ) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Class name '{}' is a Go reserved keyword", class_name),
-                    element: Some(format!("class.{}", class_name)),
+                    message: format!("Class name '{class_name}' is a Go reserved keyword"),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -758,7 +758,7 @@ impl Generator for GoGenerator {
                             "Slot name '{}' is not valid for Go: must start with letter or underscore",
                             slot_name
                         ),
-                        element: Some(format!("slot.{}", slot_name)),
+                        element: Some(format!("slot.{slot_name}")),
                     });
                 }
             }
@@ -774,32 +774,32 @@ impl Generator for GoGenerator {
         content.push_str(
             &self
                 .generate_header(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
         content.push_str(
             &self
                 .generate_imports(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
         content.push_str(
             &self
                 .generate_types(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
         content.push_str(
             &self
                 .generate_enums(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
         content.push_str(
             &self
                 .generate_interfaces(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
         content.push_str(
             &self
                 .generate_structs(schema)
-                .map_err(|e| LinkMLError::service(format!("Go generation error: {}", e)))?,
+                .map_err(|e| LinkMLError::service(format!("Go generation error: {e}")))?,
         );
 
         Ok(content)
@@ -857,7 +857,7 @@ mod tests {
     }
 
     #[test]
-    fn test_go_generation() {
+    fn test_go_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = GoGenerator::new();
 
@@ -873,6 +873,7 @@ mod tests {
         assert!(content.contains("type Status string"));
         assert!(content.contains("StatusACTIVE Status = \"ACTIVE\""));
         assert!(content.contains("func (s *Person) Validate() error"));
+        Ok(())
     }
 
     #[test]

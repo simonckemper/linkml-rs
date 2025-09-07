@@ -9,8 +9,7 @@
 use linkml_core::prelude::*;
 use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{
-    DiscoveryStrategy, GeneratorPlugin, PluginCapability, PluginContext, PluginManager, PluginSDK,
-    PluginType,
+    PluginContext, PluginManager, PluginType,
 };
 use std::collections::HashMap;
 use std::path::Path;
@@ -58,7 +57,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config: HashMap::new(),
         working_dir: std::env::current_dir()?,
         temp_dir: std::env::temp_dir(),
-        logger: logger.clone(),
     };
 
     plugin_manager
@@ -229,54 +227,8 @@ system = ["cargo", "rustc"]
 // Simple logger implementation for the example
 struct SimpleLogger;
 
-#[async_trait::async_trait]
-impl LoggerService for SimpleLogger {
-    type Error = LoggerError;
-
-    async fn log(
-        &self,
-        level: LogLevel,
-        message: &str,
-        context: Option<LogContext>,
-    ) -> Result<(), Self::Error> {
-        println!("[{:?}] {}", level, message);
-        Ok(())
-    }
-
-    async fn log_debug(&self, message: &str) -> Result<(), Self::Error> {
-        self.log(LogLevel::Debug, message, None).await
-    }
-
-    async fn log_info(&self, message: &str) -> Result<(), Self::Error> {
-        self.log(LogLevel::Info, message, None).await
-    }
-
-    async fn log_warning(&self, message: &str) -> Result<(), Self::Error> {
-        self.log(LogLevel::Warning, message, None).await
-    }
-
-    async fn log_error(&self, message: &str) -> Result<(), Self::Error> {
-        self.log(LogLevel::Error, message, None).await
-    }
-
-    async fn log_critical(&self, message: &str) -> Result<(), Self::Error> {
-        self.log(LogLevel::Critical, message, None).await
-    }
-
-    async fn log_exception(
-        &self,
-        message: &str,
-        exception: &dyn std::error::Error,
-    ) -> Result<(), Self::Error> {
-        self.log(
-            LogLevel::Error,
-            &format!("{}: {}", message, exception),
-            None,
-        )
-        .await
-    }
-
-    async fn flush(&self) -> Result<(), Self::Error> {
-        Ok(())
+impl SimpleLogger {
+    fn log(&self, level: &str, message: &str) {
+        println!("[{}] {}", level, message);
     }
 }

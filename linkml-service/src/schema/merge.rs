@@ -497,7 +497,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_merge_union() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_merge_union() -> Result<()> {
         let mut schema1 = SchemaDefinition::default();
         schema1.name = "Schema1".to_string();
 
@@ -530,7 +530,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_intersection() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_merge_intersection() -> Result<()> {
         let mut schema1 = SchemaDefinition::default();
         let class1 = ClassDefinition::default();
         schema1.classes.insert("Person".to_string(), class1.clone());

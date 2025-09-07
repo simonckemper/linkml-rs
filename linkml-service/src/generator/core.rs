@@ -9,7 +9,7 @@ use super::GeneratorOptions;
 use linkml_core::prelude::*;
 use std::fmt::Write;
 
-/// Rust code generator for LinkML schemas
+/// Rust code generator for `LinkML` schemas
 pub struct RustGenerator {
     /// Generator name
     pub name: String,
@@ -62,10 +62,10 @@ impl RustGenerator {
 
     /// Convert error from fmt::Error to GeneratorError
     pub(super) fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Generation(format!("Format error: {}", err))
+        GeneratorError::Generation(format!("Format error: {err}"))
     }
 
-    /// Map LinkML type to Rust type
+    /// Map `LinkML` type to Rust type
     pub(super) fn linkml_type_to_rust(&self, linkml_type: &str) -> &str {
         match linkml_type {
             "string" | "str" => "String",
@@ -81,7 +81,7 @@ impl RustGenerator {
         }
     }
 
-    /// Generate an enum from LinkML enum definition
+    /// Generate an enum from `LinkML` enum definition
     pub(super) fn generate_enum(&self, enum_name: &str, enum_def: &EnumDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
@@ -119,7 +119,7 @@ impl RustGenerator {
         Ok(output)
     }
 
-    /// Generate a class/struct from LinkML class definition
+    /// Generate a class/struct from `LinkML` class definition
     pub(super) fn generate_class(&self, class_name: &str, class_def: &ClassDefinition, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
@@ -173,7 +173,7 @@ impl RustGenerator {
             }
             // Check if it's a class
             else if schema.classes.contains_key(range) {
-                format!("Box<{}>", range) // Box to avoid infinite size for recursive types
+                format!("Box<{range}>") // Box to avoid infinite size for recursive types
             }
             // Otherwise treat as primitive
             else {
@@ -185,14 +185,14 @@ impl RustGenerator {
         
         // Handle multivalued
         let field_type = if slot_def.multivalued.unwrap_or(false) {
-            format!("Vec<{}>", base_type)
+            format!("Vec<{base_type}>")
         } else {
             base_type
         };
         
         // Handle optional
         let final_type = if !slot_def.required.unwrap_or(false) && !slot_def.multivalued.unwrap_or(false) {
-            format!("Option<{}>", field_type)
+            format!("Option<{field_type}>")
         } else {
             field_type
         };

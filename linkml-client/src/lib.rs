@@ -8,7 +8,7 @@
 #![allow(clippy::module_name_repetitions)]
 
 use async_trait::async_trait;
-use linkml_core::{error::Result, traits::LinkMLService};
+use linkml_core::{error::Result, traits::{LinkMLService, LinkMLServiceExt}};
 use std::sync::Arc;
 
 /// Client for remote `LinkML` service
@@ -65,6 +65,13 @@ where
         self.service.validate(data, schema, target_class).await
     }
 
+}
+
+#[async_trait]
+impl<S> LinkMLServiceExt for LinkMLClient<S>
+where
+    S: LinkMLServiceExt + Send + Sync,
+{
     async fn validate_typed<T>(
         &self,
         data: &serde_json::Value,

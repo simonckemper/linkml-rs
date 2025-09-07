@@ -23,7 +23,7 @@ use tokio::fs;
 /// Import specification with advanced options
 #[derive(Debug, Clone)]
 pub struct ImportSpec {
-    /// The import path/URL
+    /// The import path/`URL`
     pub path: String,
     /// Alias for the imported schema
     pub alias: Option<String>,
@@ -53,7 +53,7 @@ pub struct ImportResolverV2 {
     cache: Arc<RwLock<HashMap<String, SchemaDefinition>>>,
     /// Import settings from schema
     settings: Arc<RwLock<ImportSettings>>,
-    /// HTTP client for URL imports
+    /// `HTTP` client for URL imports
     http_client: reqwest::Client,
     /// Visited imports for circular dependency detection
     visited_stack: Arc<RwLock<Vec<String>>>,
@@ -156,7 +156,7 @@ impl ImportResolverV2 {
             if depth >= max_depth {
                 return Err(LinkMLError::import(
                     &schema.name,
-                    format!("Maximum import depth ({}) exceeded", max_depth),
+                    format!("Maximum import depth ({max_depth}) exceeded"),
                 ));
             }
 
@@ -250,7 +250,7 @@ impl ImportResolverV2 {
         Ok(schema)
     }
 
-    /// Load schema from URL
+    /// Load schema from `URL`
     async fn load_url_import(&self, url_str: &str) -> Result<SchemaDefinition> {
         // Resolve relative URLs against base URL if available
         let final_url = {
@@ -273,7 +273,7 @@ impl ImportResolverV2 {
 
         let response =
             self.http_client.get(&final_url).send().await.map_err(|e| {
-                LinkMLError::import(&final_url, format!("Failed to fetch URL: {}", e))
+                LinkMLError::import(&final_url, format!("Failed to fetch URL: {e}"))
             })?;
 
         if !response.status().is_success() {
@@ -284,7 +284,7 @@ impl ImportResolverV2 {
         }
 
         let content = response.text().await.map_err(|e| {
-            LinkMLError::import(&final_url, format!("Failed to read response: {}", e))
+            LinkMLError::import(&final_url, format!("Failed to read response: {e}"))
         })?;
 
         // Parse based on URL extension
@@ -297,7 +297,7 @@ impl ImportResolverV2 {
 
         let content = fs::read_to_string(&file_path)
             .await
-            .map_err(|e| LinkMLError::import(path, format!("Failed to read file: {}", e)))?;
+            .map_err(|e| LinkMLError::import(path, format!("Failed to read file: {e}")))?;
 
         self.parse_schema_content(&content, path)
     }
@@ -365,7 +365,7 @@ impl ImportResolverV2 {
 
         Err(LinkMLError::import(
             import,
-            format!("File not found in paths: {:?}", paths),
+            format!("File not found in paths: {paths:?}"),
         ))
     }
 
@@ -674,7 +674,7 @@ imports:
         let schema = parser.parse_str(schema_a).map_err(|e| anyhow::anyhow!("should parse schema a: {}", e))?;
 
         let mut settings = ImportSettings::default();
-        settings.search_paths = vec![base_path.to_str().ok_or("Failed to convert path to string")?.to_string()];
+        settings.search_paths = vec![base_path.to_str().ok_or_else(|| anyhow::anyhow!("Failed to convert path to string"))?.to_string()];
 
         let resolver = ImportResolverV2::with_settings(settings);
         let result = resolver.resolve_imports(&schema).await;

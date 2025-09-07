@@ -21,10 +21,10 @@ pub struct TypeDBOptions {
     /// Database name
     pub database_name: String,
 
-    /// TypeQL type to LinkML class mapping
+    /// TypeQL type to `LinkML` class mapping
     pub type_mapping: HashMap<String, String>,
 
-    /// TypeQL attribute to LinkML slot mapping (per type)
+    /// TypeQL attribute to `LinkML` slot mapping (per type)
     pub attribute_mapping: HashMap<String, HashMap<String, String>>,
 
     /// Batch size for loading/dumping
@@ -57,7 +57,7 @@ impl Default for TypeDBOptions {
     }
 }
 
-/// TypeDB loader for LinkML data
+/// TypeDB loader for `LinkML` data
 ///
 /// This loader requires a DBMS service instance to perform all TypeDB operations.
 pub struct TypeDBLoader<S: dbms_core::DBMSService + 'static> {
@@ -141,7 +141,7 @@ where
     }
 }
 
-/// TypeDB dumper for LinkML data
+/// TypeDB dumper for `LinkML` data
 ///
 /// This dumper requires a DBMS service instance to perform all TypeDB operations.
 pub struct TypeDBDumper<S: dbms_core::DBMSService + 'static> {

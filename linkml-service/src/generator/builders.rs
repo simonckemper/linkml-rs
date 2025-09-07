@@ -17,7 +17,7 @@ impl RustGenerator {
         options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        let builder_name = format!("{}Builder", struct_name);
+        let builder_name = format!("{struct_name}Builder");
 
         // Documentation
         if options.include_docs {

@@ -194,7 +194,7 @@ impl ExampleGeneratorV2 {
 
         // Use options to control generation behavior
         if let Some(output_dir) = &options.output_dir {
-            result.files.push(format!("{}/schema.generated", output_dir));
+            result.files.push(format!("{output_dir}/schema.generated"));
         }
 
         // Process schema based on options

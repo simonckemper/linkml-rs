@@ -16,7 +16,7 @@ use linkml_core::error::LinkMLError;
 pub struct ProtobufGenerator {
     /// Generator options
     options: GeneratorOptions,
-    /// Type mapping from LinkML to Proto
+    /// Type mapping from `LinkML` to Proto
     type_map: HashMap<String, String>,
 }
 
@@ -245,7 +245,7 @@ impl ProtobufGenerator {
         Ok(output)
     }
 
-    /// Get proto type for a LinkML range
+    /// Get proto type for a `LinkML` range
     fn get_proto_type(
         &self,
         range: &Option<String>,
@@ -410,7 +410,7 @@ mod tests {
     use linkml_core::types::SlotDefinition;
 
     #[test]
-    fn test_protobuf_generation() {
+    fn test_protobuf_generation() -> anyhow::Result<()> {
         let mut schema = SchemaDefinition::new("test_schema");
         schema.id = "https://example.org/test".to_string();
         schema.version = Some("1.0.0".to_string());
@@ -481,6 +481,7 @@ mod tests {
         assert!(proto_content.contains("int64 age = 2"));
         assert!(proto_content.contains("repeated string tags = 3"));
         assert!(proto_content.contains("Status status = 4"));
+        Ok(())
     }
 
     #[test]
@@ -503,7 +504,7 @@ mod tests {
     }
 
     #[test]
-    fn test_type_mapping() {
+    fn test_type_mapping() -> anyhow::Result<()> {
         let generator = ProtobufGenerator::new();
         let schema = SchemaDefinition::new("test");
 
@@ -537,5 +538,6 @@ mod tests {
                 .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
             "string"
         );
+        Ok(())
     }
 }

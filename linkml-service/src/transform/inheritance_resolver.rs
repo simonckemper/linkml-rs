@@ -45,7 +45,7 @@ pub enum InheritanceError {
 /// Result type for inheritance operations
 pub type InheritanceResult<T> = std::result::Result<T, InheritanceError>;
 
-/// Inheritance resolver for LinkML schemas
+/// Inheritance resolver for `LinkML` schemas
 pub struct InheritanceResolver {
     /// Cache of resolved classes
     resolved_cache: HashMap<String, Arc<ClassDefinition>>,
@@ -175,7 +175,7 @@ impl InheritanceResolver {
         schema: &SchemaDefinition,
         visited: &mut HashSet<String>,
     ) -> InheritanceResult<()> {
-        if !visited.insert(format!("mixin:{}", mixin_name)) {
+        if !visited.insert(format!("mixin:{mixin_name}")) {
             return Err(InheritanceError::CircularInheritance(format!(
                 "Circular mixin reference involving {}",
                 mixin_name

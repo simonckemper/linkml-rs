@@ -1,31 +1,37 @@
-//! TypeDB service integration for LinkML schemas
+//! `TypeDB` service integration for `LinkML` schemas
 //!
-//! This module provides integration between LinkML schemas and TypeDB, enabling:
-//! - Automatic TypeDB schema generation from LinkML definitions
-//! - Data migration between LinkML and TypeDB formats
+//! This module provides integration between `LinkML` schemas and `TypeDB`, enabling:
+//! - Automatic `TypeDB` schema generation from `LinkML` definitions
+//! - Data migration between `LinkML` and `TypeDB` formats
 //! - Query generation and execution
 //! - Schema validation and synchronization
 
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use dbms_core::{
-    DBMSService, DatabaseConfig, DBMSError, DBMSResult,
-    SchemaVersion, DatabaseStatus, HealthStatus, SchemaValidation,
-    DatabaseConnection, ConnectionPool, DatabaseMetrics, OptimizationReport,
-    DatabaseEvent,
-};
+use dbms_core::{DBMSService, DatabaseConfig};
+#[cfg(test)]
+use dbms_core::{HealthState, HealthStatus, SchemaValidation, SchemaVersion};
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_core::error::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// TypeDB integration service for LinkML
+/// Query result from `TypeDB` (local type until dbms-core is updated)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QueryResult {
+    /// Result data as `JSON` string
+    pub data: String,
+    /// Number of affected rows for mutations
+    pub affected_rows: usize,
+}
+
+/// `TypeDB` integration service for `LinkML`
 pub struct TypeDBIntegration<D>
 where
     D: DBMSService,
 {
-    /// DBMS service for TypeDB operations
+    /// DBMS service for `TypeDB` operations
     dbms_service: Arc<D>,
     /// Schema mapping cache
     schema_cache: HashMap<String, TypeDBSchema>,
@@ -33,10 +39,10 @@ where
     config: TypeDBIntegrationConfig,
 }
 
-/// Configuration for TypeDB integration
+/// Configuration for `TypeDB` integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeDBIntegrationConfig {
-    /// Database name for LinkML schemas
+    /// Database name for `LinkML` schemas
     pub database_name: String,
     /// Enable automatic schema synchronization
     pub auto_sync: bool,
@@ -60,47 +66,18 @@ impl Default for TypeDBIntegrationConfig {
     }
 }
 
-/// Schema deployment configuration (local type until dbms-core is updated)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SchemaDeployment {
-    /// Schema content to deploy
-    pub schema_content: String,
-    /// Version of the schema
-    pub version: Option<String>,
-    /// Description of the schema
-    pub description: Option<String>,
-    /// Whether to rollback on error
-    pub rollback_on_error: bool,
-}
 
-/// Query result from TypeDB (local type until dbms-core is updated)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueryResult {
-    /// Result rows
-    pub rows: Vec<HashMap<String, Value>>,
-    /// Number of affected rows for mutations
-    pub affected_rows: usize,
-}
 
-/// Database information (local type until dbms-core is updated)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DatabaseInfo {
-    /// Database name
-    pub name: String,
-    /// Database status
-    pub status: String,
-}
-
-/// TypeDB schema representation
+/// `TypeDB` schema representation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeDBSchema {
     /// Schema name
     pub name: String,
-    /// TypeQL schema definition
+    /// `TypeQL` schema definition
     pub typeql: String,
-    /// Mapping of LinkML classes to TypeDB entities
+    /// Mapping of `LinkML` classes to `TypeDB` entities
     pub entity_mappings: HashMap<String, String>,
-    /// Mapping of LinkML slots to TypeDB attributes
+    /// Mapping of `LinkML` slots to `TypeDB` attributes
     pub attribute_mappings: HashMap<String, String>,
     /// Mapping of relationships
     pub relation_mappings: HashMap<String, RelationMapping>,
@@ -108,14 +85,14 @@ pub struct TypeDBSchema {
     pub version: String,
 }
 
-/// Mapping for TypeDB relations
+/// Mapping for `TypeDB` relations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RelationMapping {
-    /// Relation type name in TypeDB
+    /// Relation type name in `TypeDB`
     pub relation_type: String,
     /// Roles in the relation
     pub roles: Vec<String>,
-    /// Mapping of LinkML slots to roles
+    /// Mapping of `LinkML` slots to roles
     pub role_mappings: HashMap<String, String>,
 }
 
@@ -123,7 +100,8 @@ impl<D> TypeDBIntegration<D>
 where
     D: DBMSService,
 {
-    /// Create a new TypeDB integration instance
+    /// Create a new `TypeDB` integration instance
+    #[must_use]
     pub fn new(dbms_service: Arc<D>, config: TypeDBIntegrationConfig) -> Self {
         Self {
             dbms_service,
@@ -132,7 +110,13 @@ where
         }
     }
 
-    /// Convert LinkML schema to TypeDB schema
+    /// Convert `LinkML` schema to `TypeDB` schema
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Schema conversion fails
+    /// - Invalid class or slot definitions are encountered
     pub fn linkml_to_typedb(&self, schema: &SchemaDefinition) -> Result<TypeDBSchema> {
         let mut typeql = String::new();
         let mut entity_mappings = HashMap::new();
@@ -144,19 +128,21 @@ where
 
         // Convert LinkML types to TypeDB attributes
         for (slot_name, slot_def) in &schema.slots {
-            let attribute_type = self.map_slot_to_attribute(slot_name, slot_def)?;
-            typeql.push_str(&format!("{}\n", attribute_type));
-            attribute_mappings.insert(slot_name.clone(), self.sanitize_name(slot_name));
+            let attribute_type = self.map_slot_to_attribute(slot_name, slot_def);
+            use std::fmt::Write;
+            let _ = write!(typeql, "{attribute_type}\n");
+            attribute_mappings.insert(slot_name.clone(), Self::sanitize_name(slot_name));
         }
 
         // Convert LinkML classes to TypeDB entities
         for (class_name, class_def) in &schema.classes {
             let entity_type = self.map_class_to_entity(class_name, class_def, schema)?;
-            typeql.push_str(&format!("\n{}\n", entity_type));
-            entity_mappings.insert(class_name.clone(), self.sanitize_name(class_name));
+            use std::fmt::Write;
+            let _ = write!(typeql, "\n{entity_type}\n");
+            entity_mappings.insert(class_name.clone(), Self::sanitize_name(class_name));
 
             // Check for relationships
-            if let Some(relations) = self.extract_relations(class_def, schema)? {
+            if let Some(relations) = self.extract_relations(class_def, schema) {
                 for relation in relations {
                     relation_mappings.insert(relation.relation_type.clone(), relation);
                 }
@@ -164,10 +150,11 @@ where
         }
 
         // Add relations to TypeQL
-        for (_, relation) in &relation_mappings {
-            typeql.push_str(&format!("\n{} sub relation,\n", relation.relation_type));
+        for relation in relation_mappings.values() {
+            use std::fmt::Write;
+            let _ = write!(typeql, "\n{} sub relation,\n", relation.relation_type);
             for role in &relation.roles {
-                typeql.push_str(&format!("  relates {},\n", role));
+                let _ = write!(typeql, "  relates {role},\n");
             }
             typeql.push_str(";\n");
         }
@@ -182,67 +169,67 @@ where
         })
     }
 
-    /// Map LinkML slot to TypeDB attribute
-    fn map_slot_to_attribute(&self, slot_name: &str, slot_def: &SlotDefinition) -> Result<String> {
-        let sanitized_name = self.sanitize_name(slot_name);
-        let value_type = self.map_range_to_typedb_type(slot_def.range.as_deref().unwrap_or("string"));
-        
-        let mut attribute = format!("{} sub attribute, value {};", sanitized_name, value_type);
-        
+    /// Map `LinkML` slot to `TypeDB` attribute
+    fn map_slot_to_attribute(&self, slot_name: &str, slot_def: &SlotDefinition) -> String {
+        let sanitized_name = Self::sanitize_name(slot_name);
+        let value_type = Self::map_range_to_typedb_type(slot_def.range.as_deref().unwrap_or("string"));
+
+        let mut attribute = format!("{sanitized_name} sub attribute, value {value_type};");
+
         // Add regex constraint if pattern is specified
         if let Some(ref pattern) = slot_def.pattern {
-            attribute.push_str(&format!(" regex \"{}\";", pattern));
+            attribute.push_str(&format!(" regex \"{pattern}\";"));
         }
-        
-        Ok(attribute)
+
+        attribute
     }
 
-    /// Map LinkML class to TypeDB entity
+    /// Map `LinkML` class to `TypeDB` entity
     fn map_class_to_entity(
         &self,
         class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> Result<String> {
-        let sanitized_name = self.sanitize_name(class_name);
+        let sanitized_name = Self::sanitize_name(class_name);
         let mut entity = String::new();
 
         // Determine parent entity
         let parent = if let Some(ref is_a) = class_def.is_a {
-            self.sanitize_name(is_a)
+            Self::sanitize_name(is_a)
         } else {
             "entity".to_string()
         };
 
-        entity.push_str(&format!("{} sub {},\n", sanitized_name, parent));
+        use std::fmt::Write;
+        let _ = write!(entity, "{sanitized_name} sub {parent},\n");
 
         // Add attributes
         for slot_name in &class_def.slots {
             if schema.slots.contains_key(slot_name) {
-                let attr_name = self.sanitize_name(slot_name);
-                entity.push_str(&format!("  owns {},\n", attr_name));
-                
+                let attr_name = Self::sanitize_name(slot_name);
+                let _ = write!(entity, "  owns {attr_name},\n");
+
                 // Add key constraint for identifiers
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if slot_def.identifier.unwrap_or(false) {
-                        entity.push_str(&format!("  key {},\n", attr_name));
-                    }
+                if let Some(slot_def) = schema.slots.get(slot_name) && slot_def.identifier.unwrap_or(false) {
+                    let _ = write!(entity, "  key {attr_name},\n");
                 }
             }
         }
 
         // Handle relations (plays roles)
-        if let Some(relations) = self.extract_relations(class_def, schema)? {
+        if let Some(relations) = self.extract_relations(class_def, schema) {
             for relation in relations {
                 for (slot, role) in &relation.role_mappings {
                     if class_def.slots.contains(slot) {
-                        entity.push_str(&format!("  plays {}:{},\n", relation.relation_type, role));
+                        use std::fmt::Write;
+                        let _ = write!(entity, "  plays {}:{role},\n", relation.relation_type);
                     }
                 }
             }
         }
 
-        entity.push_str(";");
+        entity.push(';');
         Ok(entity)
     }
 
@@ -251,7 +238,7 @@ where
         &self,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> Result<Option<Vec<RelationMapping>>> {
+    ) -> Option<Vec<RelationMapping>> {
         let mut relations = Vec::new();
 
         for slot_name in &class_def.slots {
@@ -260,11 +247,11 @@ where
                 if let Some(ref range) = slot_def.range {
                     if schema.classes.contains_key(range) {
                         // This is a relation
-                        let relation_type = format!("has_{}", self.sanitize_name(slot_name));
+                        let relation_type = format!("has_{}", Self::sanitize_name(slot_name));
                         let mut role_mappings = HashMap::new();
-                        
+
                         role_mappings.insert(slot_name.clone(), "target".to_string());
-                        role_mappings.insert(format!("{}_owner", slot_name), "owner".to_string());
+                        role_mappings.insert(format!("{slot_name}_owner"), "owner".to_string());
                         
                         relations.push(RelationMapping {
                             relation_type,
@@ -277,14 +264,14 @@ where
         }
 
         if relations.is_empty() {
-            Ok(None)
+            None
         } else {
-            Ok(Some(relations))
+            Some(relations)
         }
     }
 
-    /// Map LinkML range to TypeDB value type
-    fn map_range_to_typedb_type(&self, range: &str) -> &str {
+    /// Map `LinkML` range to `TypeDB` value type
+    fn map_range_to_typedb_type(range: &str) -> &str {
         match range {
             "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             "integer" | "int" => "long",
@@ -295,8 +282,8 @@ where
         }
     }
 
-    /// Sanitize names for TypeDB compatibility
-    fn sanitize_name(&self, name: &str) -> String {
+    /// Sanitize names for `TypeDB` compatibility
+    fn sanitize_name(name: &str) -> String {
         // TypeDB names must start with letter and contain only alphanumeric and underscore
         let mut sanitized = String::new();
         
@@ -315,7 +302,14 @@ where
         sanitized
     }
 
-    /// Deploy LinkML schema to TypeDB
+    /// Deploy `LinkML` schema to `TypeDB`
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Schema conversion fails
+    /// - Database creation fails
+    /// - Schema deployment fails
     pub async fn deploy_schema(&mut self, schema: &SchemaDefinition) -> Result<()> {
         // Convert schema to TypeDB format
         let typedb_schema = self.linkml_to_typedb(schema)?;
@@ -328,28 +322,28 @@ where
         let db_info = self.dbms_service
             .create_database(&self.config.database_name, db_config)
             .await
-            .map_err(|e| LinkMLError::service(format!("Failed to create database: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to create database: {e}")))?;
         
         println!("✓ Created/connected to database: {}", db_info.name);
         
         // Deploy the schema
-        let deployment = SchemaDeployment {
-            schema_content: typedb_schema.typeql.clone(),
-            version: Some(typedb_schema.version.clone()),
-            description: schema.description.clone(),
-            rollback_on_error: true,
-        };
-        
         self.dbms_service
-            .deploy_schema(&self.config.database_name, &deployment.schema_content)
+            .deploy_schema(&self.config.database_name, &typedb_schema.typeql)
             .await
-            .map_err(|e| LinkMLError::service(format!("Failed to deploy schema: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Failed to deploy schema: {e}")))?;
         
         println!("✓ Deployed TypeDB schema for '{}'", schema.name);
         Ok(())
     }
 
-    /// Insert data from LinkML instance to TypeDB
+    /// Insert data from `LinkML` instance to `TypeDB`
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Schema is not found in cache
+    /// - Class is not found in schema
+    /// - Data insertion fails
     pub async fn insert_data(
         &self,
         schema_name: &str,
@@ -359,37 +353,45 @@ where
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
-            .ok_or_else(|| LinkMLError::service(format!("Schema '{}' not found in cache", schema_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
         
         // Get entity mapping
         let entity_type = typedb_schema.entity_mappings
             .get(class_name)
-            .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found in schema", class_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found in schema")))?;
         
         // Build insert query
-        let mut query = format!("insert $x isa {};", entity_type);
+        let mut query = format!("insert $x isa {entity_type};");
         
         // Add attributes from data
         if let Value::Object(map) = data {
             for (field, value) in map {
                 if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
                     let value_str = self.format_value_for_typedb(value)?;
-                    query.push_str(&format!(" $x has {} {};", attr_name, value_str));
+                    use std::fmt::Write;
+                    let _ = write!(query, " $x has {attr_name} {value_str};");
                 }
             }
         }
         
-        // TODO: Re-enable when execute_query is added to DBMSService trait
-        // self.dbms_service
-        //     .execute_query(&self.config.database_name, &query, HashMap::new())
-        //     .await
-        //     .map_err(|e| LinkMLError::service(format!("Failed to insert data: {}", e)))?;
-        
-        println!("✓ Would insert data for entity type '{}' (disabled - execute_query not available)", entity_type);
+        // Execute the insert query
+        let _result = self.dbms_service
+            .execute_string_query(&self.config.database_name, &query)
+            .await
+            .map_err(|e| LinkMLError::service(format!("Failed to insert data: {e}")))?;
+
+        println!("✓ Inserted data for entity type '{}'", entity_type);
         Ok(())
     }
 
-    /// Query data from TypeDB based on LinkML class
+    /// Query data from `TypeDB` based on `LinkML` class
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Schema is not found in cache
+    /// - Class is not found in schema
+    /// - Query execution fails
     pub async fn query_data(
         &self,
         schema_name: &str,
@@ -399,41 +401,40 @@ where
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
-            .ok_or_else(|| LinkMLError::service(format!("Schema '{}' not found in cache", schema_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
         
         // Get entity mapping
         let entity_type = typedb_schema.entity_mappings
             .get(class_name)
-            .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found in schema", class_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found in schema")))?;
         
         // Build match query
-        let mut query = format!("match $x isa {};", entity_type);
+        let mut query = format!("match $x isa {entity_type};");
         
         // Add filters
         for (field, value) in &filters {
             if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
-                query.push_str(&format!(" $x has {} {};", attr_name, value));
+                use std::fmt::Write;
+                let _ = write!(query, " $x has {attr_name} {value};");
             }
         }
         
         // Add fetch clause to get all attributes
         query.push_str(" get $x;");
         
-        // TODO: Re-enable when execute_query is added to DBMSService trait
-        // let results = self.dbms_service
-        //     .execute_query(&self.config.database_name, &query, HashMap::new())
-        //     .await
-        //     .map_err(|e| LinkMLError::service(format!("Failed to query data: {}", e)))?;
+        // Execute the query
+        let result_data = self.dbms_service
+            .execute_string_query(&self.config.database_name, &query)
+            .await
+            .map_err(|e| LinkMLError::service(format!("Failed to query data: {e}")))?;
         
-        // Temporary empty result
-        let results = QueryResult {
-            rows: vec![],
-            affected_rows: 0,
-        };
-        
+        // Parse the result data
+        let parsed_results: Vec<HashMap<String, Value>> = serde_json::from_str(&result_data)
+            .unwrap_or_else(|_| vec![]);
+
         // Convert results to JSON values
         let mut json_results = Vec::new();
-        for row in results.rows {
+        for row in parsed_results {
             let mut obj = serde_json::Map::new();
             
             // Convert TypeDB results back to LinkML format
@@ -454,19 +455,25 @@ where
         Ok(json_results)
     }
 
-    /// Format value for TypeDB query
+    /// Format value for `TypeDB` query
     fn format_value_for_typedb(&self, value: &Value) -> Result<String> {
         match value {
             Value::String(s) => Ok(format!("\"{}\"", s.replace('"', "\\\""))),
             Value::Number(n) => Ok(n.to_string()),
             Value::Bool(b) => Ok(b.to_string()),
             Value::Null => Err(LinkMLError::service("Cannot insert null values into TypeDB".to_string())),
-            _ => Err(LinkMLError::service(format!("Unsupported value type for TypeDB: {:?}", value))),
+            _ => Err(LinkMLError::service(format!("Unsupported value type for TypeDB: {value:?}"))),
         }
     }
 
-    /// Validate LinkML data against TypeDB schema constraints
-    pub async fn validate_data(
+    /// Validate `LinkML` data against `TypeDB` schema constraints
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Schema is not found in cache
+    /// - Data validation fails
+    pub fn validate_data(
         &self,
         schema_name: &str,
         class_name: &str,
@@ -477,11 +484,11 @@ where
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
-            .ok_or_else(|| LinkMLError::service(format!("Schema '{}' not found in cache", schema_name)))?;
+            .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
         
         // Check if class exists
         if !typedb_schema.entity_mappings.contains_key(class_name) {
-            errors.push(format!("Class '{}' not found in TypeDB schema", class_name));
+            errors.push(format!("Class '{class_name}' not found in TypeDB schema"));
             return Ok(errors);
         }
         
@@ -490,7 +497,7 @@ where
             // Check for unknown fields
             for field in map.keys() {
                 if !typedb_schema.attribute_mappings.contains_key(field) {
-                    errors.push(format!("Field '{}' is not mapped to any TypeDB attribute", field));
+                    errors.push(format!("Field '{field}' is not mapped to any TypeDB attribute"));
                 }
             }
             
@@ -505,7 +512,14 @@ where
         Ok(errors)
     }
 
-    /// Synchronize LinkML schema changes with TypeDB
+    /// Synchronize `LinkML` schema changes with `TypeDB`
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Migration command generation fails
+    /// - Migration execution fails
+    /// - Schema caching fails
     pub async fn sync_schema(&mut self, old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> Result<()> {
         println!("Synchronizing schema '{}' with TypeDB...", new_schema.name);
         
@@ -521,12 +535,11 @@ where
         
         // Execute migration commands
         for command in migration_commands {
-            println!("  Would execute: {}", command);
-            // TODO: Re-enable when execute_query is added to DBMSService trait
-            // self.dbms_service
-            //     .execute_query(&self.config.database_name, &command, HashMap::new())
-            //     .await
-            //     .map_err(|e| LinkMLError::service(format!("Failed to execute migration: {}", e)))?;
+            println!("  Executing: {}", command);
+            self.dbms_service
+                .execute_string_query(&self.config.database_name, &command)
+                .await
+                .map_err(|e| LinkMLError::service(format!("Failed to execute migration: {e}")))?;
         }
         
         // Update cached schema
@@ -546,7 +559,7 @@ where
             if !old_schema.classes.contains_key(class_name) {
                 // New class - generate define statement
                 let entity_type = self.map_class_to_entity(class_name, class_def, new_schema)?;
-                commands.push(format!("define {}", entity_type));
+                commands.push(format!("define {entity_type}"));
             }
         }
         
@@ -554,24 +567,24 @@ where
         for (slot_name, slot_def) in &new_schema.slots {
             if !old_schema.slots.contains_key(slot_name) {
                 // New slot - generate define statement
-                let attribute_type = self.map_slot_to_attribute(slot_name, slot_def)?;
-                commands.push(format!("define {}", attribute_type));
+                let attribute_type = self.map_slot_to_attribute(slot_name, slot_def);
+                commands.push(format!("define {attribute_type}"));
             }
         }
         
         // Check for deleted classes
         for class_name in old_schema.classes.keys() {
             if !new_schema.classes.contains_key(class_name) {
-                let sanitized_name = self.sanitize_name(class_name);
-                commands.push(format!("undefine {} sub entity;", sanitized_name));
+                let sanitized_name = Self::sanitize_name(class_name);
+                commands.push(format!("undefine {sanitized_name} sub entity;"));
             }
         }
         
         // Check for deleted slots
         for slot_name in old_schema.slots.keys() {
             if !new_schema.slots.contains_key(slot_name) {
-                let sanitized_name = self.sanitize_name(slot_name);
-                commands.push(format!("undefine {} sub attribute;", sanitized_name));
+                let sanitized_name = Self::sanitize_name(slot_name);
+                commands.push(format!("undefine {sanitized_name} sub attribute;"));
             }
         }
         
@@ -593,6 +606,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use async_trait::async_trait;
+    use dbms_core::{
+        DatabaseStatus, DatabaseConnection, ConnectionPool, DatabaseInfo,
+        DatabaseMetrics, OptimizationReport, DatabaseEvent, DBMSResult
+    };
+    use uuid;
 
     #[test]
     fn test_sanitize_name() {
@@ -624,6 +643,104 @@ mod tests {
         assert_eq!(integration.map_range_to_typedb_type("unknown"), "string");
     }
 
+    // Mock database connection implementation
+    #[derive(Debug)]
+    struct MockDatabaseConnection {
+        database_name: String,
+    }
+
+    impl MockDatabaseConnection {
+        fn new(database_name: String) -> Self {
+            Self { database_name }
+        }
+    }
+
+    #[async_trait]
+    impl DatabaseConnection for MockDatabaseConnection {
+        type Error = std::io::Error;
+
+        fn database_name(&self) -> &str {
+            &self.database_name
+        }
+
+        fn connection_id(&self) -> uuid::Uuid {
+            uuid::Uuid::new_v4()
+        }
+
+        async fn is_active(&self) -> bool {
+            true
+        }
+
+        async fn create_session(&self) -> std::result::Result<String, Self::Error> {
+            Ok(format!("mock_session_{}", uuid::Uuid::new_v4()))
+        }
+
+        async fn execute_query(&self, _query: &dbms_core::types::Query) -> std::result::Result<String, Self::Error> {
+            Ok(format!(r#"{{"result": "mock_query_result", "database": "{}"}}"#, self.database_name))
+        }
+
+        async fn close(&self) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
+    // Mock connection pool implementation
+    #[derive(Debug)]
+    struct MockConnectionPool {
+        database_name: String,
+    }
+
+    impl MockConnectionPool {
+        fn new(database_name: String) -> Self {
+            Self { database_name }
+        }
+    }
+
+    #[async_trait]
+    impl ConnectionPool for MockConnectionPool {
+        type Error = std::io::Error;
+
+        fn database_name(&self) -> &str {
+            &self.database_name
+        }
+
+        fn pool_stats(&self) -> dbms_core::types::PoolStatistics {
+            dbms_core::types::PoolStatistics {
+                total_connections: 10,
+                active_connections: 1,
+                idle_connections: 9,
+                pending_requests: 0,
+                connections_created: 10,
+                connections_closed: 0,
+                avg_wait_time_ms: 5.0,
+                max_wait_time_ms: 10.0,
+            }
+        }
+
+        async fn acquire_connection(&self) -> std::result::Result<Arc<dyn DatabaseConnection<Error = Self::Error>>, Self::Error> {
+            Ok(Arc::new(MockDatabaseConnection::new(self.database_name.clone())))
+        }
+
+        async fn return_connection(&self, _connection: Arc<dyn DatabaseConnection<Error = Self::Error>>) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn health_check(&self) -> std::result::Result<dbms_core::types::HealthStatus, Self::Error> {
+            Ok(dbms_core::types::HealthStatus {
+                status: dbms_core::types::HealthState::Healthy,
+                timestamp: chrono::Utc::now(),
+                database: self.database_name.clone(),
+                components: std::collections::HashMap::new(),
+                details: Some("Mock pool is healthy".to_string()),
+                check_duration_ms: 5,
+            })
+        }
+
+        async fn resize_pool(&self, _new_size: u32) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+    }
+
     // Mock DBMS service for testing
     struct MockDBMSService;
     
@@ -631,60 +748,132 @@ mod tests {
     impl DBMSService for MockDBMSService {
         type Error = std::io::Error;
         
-        async fn create_database(&self, _name: &str, _config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
-            unimplemented!("Mock implementation")
+        async fn create_database(&self, name: &str, _config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
+            Ok(DatabaseInfo {
+                id: uuid::Uuid::new_v4(),
+                name: name.to_string(),
+                description: Some("Mock TypeDB database for testing".to_string()),
+                created_at: chrono::Utc::now(),
+                modified_at: chrono::Utc::now(),
+                owner: "mock_user".to_string(),
+                config: dbms_core::types::DatabaseConfig::default(),
+                status: DatabaseStatus::Active,
+                size_bytes: 1024,
+                entity_count: 0,
+                relation_count: 0,
+                attribute_count: 0,
+                schema_version: Some("1.0.0".to_string()),
+                tags: Vec::new(),
+                metadata: std::collections::HashMap::new(),
+            })
         }
         
         async fn delete_database(&self, _name: &str) -> DBMSResult<()> {
-            unimplemented!("Mock implementation")
+            // Mock implementation - simulate successful deletion
+            Ok(())
         }
         
         async fn list_databases(&self) -> DBMSResult<Vec<DatabaseInfo>> {
-            unimplemented!("Mock implementation")
+            // Mock implementation - return empty list for testing
+            Ok(Vec::new())
         }
         
-        async fn deploy_schema(&self, _database: &str, _deployment: SchemaDeployment) -> DBMSResult<()> {
-            unimplemented!("Mock implementation")
+        async fn deploy_schema(&self, _database: &str, _schema: &str) -> DBMSResult<()> {
+            Ok(())
         }
         
-        async fn execute_query(&self, _database: &str, _query: &str, _params: HashMap<String, Value>) -> DBMSResult<QueryResult> {
-            unimplemented!("Mock implementation")
+        async fn execute_string_query(&self, _database: &str, _query: &str) -> DBMSResult<String> {
+            Ok("[]".to_string())
         }
 
         async fn get_database_status(&self, _name: &str) -> DBMSResult<DatabaseStatus> {
-            Ok(DatabaseStatus::Online)
+            Ok(DatabaseStatus::Active)
         }
 
-        async fn get_connection(&self, _database: &str) -> DBMSResult<Arc<dyn DatabaseConnection<Error = Self::Error>>> {
-            unimplemented!("Mock implementation")
+        async fn get_connection(&self, database: &str) -> DBMSResult<Arc<dyn DatabaseConnection<Error = Self::Error>>> {
+            // Create a mock connection for the specified database
+            let connection = MockDatabaseConnection::new(database.to_string());
+            Ok(Arc::new(connection))
         }
 
-        async fn get_connection_pool(&self, _database: &str) -> DBMSResult<Arc<dyn ConnectionPool<Error = Self::Error>>> {
-            unimplemented!("Mock implementation")
+        async fn get_connection_pool(&self, database: &str) -> DBMSResult<Arc<dyn ConnectionPool<Error = Self::Error>>> {
+            // Create a mock connection pool for the specified database
+            let pool = MockConnectionPool::new(database.to_string());
+            Ok(Arc::new(pool))
         }
 
         async fn health_check(&self, _database: &str) -> DBMSResult<HealthStatus> {
-            Ok(HealthStatus::Healthy)
+            Ok(HealthStatus {
+                status: HealthState::Healthy,
+                timestamp: chrono::Utc::now(),
+                database: _database.to_string(),
+                components: std::collections::HashMap::new(),
+                details: Some("Mock DBMS service is healthy".to_string()),
+                check_duration_ms: 5,
+            })
         }
 
-        async fn validate_schema(&self, _database: &str) -> DBMSResult<SchemaValidation> {
-            Ok(SchemaValidation::Valid)
+        async fn validate_schema(&self, _schema: &str) -> DBMSResult<SchemaValidation> {
+            Ok(SchemaValidation {
+                is_valid: true,
+                schema_version: "1.0.0".to_string(),
+                validated_at: chrono::Utc::now(),
+                errors: Vec::new(),
+                warnings: Vec::new(),
+                validation_duration_ms: 10,
+                elements_validated: 1,
+            })
         }
 
         async fn get_schema_version(&self, _database: &str) -> DBMSResult<SchemaVersion> {
-            Ok(SchemaVersion::new(1, 0, 0))
+            Ok(SchemaVersion {
+                version: "1.0.0".to_string(),
+                description: Some("Mock schema version".to_string()),
+                deployed_at: chrono::Utc::now(),
+                deployed_by: "mock_user".to_string(),
+                content_hash: "mock_hash".to_string(),
+                migrations: Vec::new(),
+                status: dbms_core::types::SchemaVersionStatus::Active,
+                previous_version: None,
+                tags: Vec::new(),
+            })
         }
 
-        async fn execute_string_query(&self, _database: &str, _query: &str) -> DBMSResult<String> {
-            Ok("{}".to_string())
-        }
+
 
         async fn get_database_metrics(&self, _database: &str) -> DBMSResult<DatabaseMetrics> {
-            unimplemented!("Mock implementation")
+            // Mock implementation - return basic metrics for testing
+            Ok(DatabaseMetrics {
+                database_name: _database.to_string(),
+                entity_count: 0,
+                relation_count: 0,
+                attribute_count: 0,
+                rule_count: 0,
+                query_count: 0,
+                avg_query_time_ms: 5.0,
+                max_query_time_ms: 10.0,
+                cache_hit_rate: 0.95,
+                memory_usage_bytes: 1024,
+                disk_usage_bytes: 2048,
+                connection_count: 1,
+                last_updated: chrono::Utc::now(),
+            })
         }
 
         async fn optimize_database(&self, _database: &str) -> DBMSResult<OptimizationReport> {
-            unimplemented!("Mock implementation")
+            // Mock implementation - return basic optimization report for testing
+            Ok(OptimizationReport {
+                database_name: _database.to_string(),
+                optimization_type: "mock_optimization".to_string(),
+                started_at: chrono::Utc::now(),
+                completed_at: chrono::Utc::now(),
+                duration_ms: 100,
+                improvements: vec!["Mock improvement: Reduced query time by 10%".to_string()],
+                metrics_before: std::collections::HashMap::new(),
+                metrics_after: std::collections::HashMap::new(),
+                success: true,
+                error_message: None,
+            })
         }
 
         async fn get_events(&self, _database: Option<&str>, _since: chrono::DateTime<chrono::Utc>, _limit: u32) -> DBMSResult<Vec<DatabaseEvent>> {

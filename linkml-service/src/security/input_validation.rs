@@ -26,7 +26,7 @@ pub mod limits {
     /// Maximum length for identifiers (names, keys, etc.)
     pub const MAX_IDENTIFIER_LENGTH: usize = 256;
 
-    /// Maximum size for JSON payloads
+    /// Maximum size for `JSON` payloads
     pub const MAX_JSON_SIZE: usize = 10_000_000; // 10MB
 
     /// Maximum number of slots in a class
@@ -96,7 +96,7 @@ pub enum ValidationError {
     #[error("String contains null bytes")]
     NullBytes,
 
-    /// JSON payload too large
+    /// `JSON` payload too large
     #[error("JSON payload too large: {size} bytes (max: {max})")]
     JsonTooLarge {
         /// Actual size in bytes
@@ -154,7 +154,7 @@ pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-/// Validate JSON size before parsing
+/// Validate `JSON` size before parsing
 pub fn validate_json_size(json_str: &str) -> Result<(), ValidationError> {
     if json_str.len() > limits::MAX_JSON_SIZE {
         return Err(ValidationError::JsonTooLarge {

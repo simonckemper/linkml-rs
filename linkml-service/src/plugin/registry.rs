@@ -128,7 +128,7 @@ impl PluginRegistry {
                 LinkMLError::ServiceError("Plugin registry lock poisoned".to_string())
             })?;
             plugins.remove(id).ok_or_else(|| {
-                LinkMLError::ServiceError(format!("Plugin error: Plugin '{}' not found", id))
+                LinkMLError::ServiceError(format!("Plugin error: Plugin '{id}' not found"))
             })?
         };
 
@@ -242,7 +242,7 @@ impl PluginRegistry {
                 .get(id)
                 .map(|reg| Arc::clone(&reg.plugin))
                 .ok_or_else(|| {
-                    LinkMLError::ServiceError(format!("Plugin error: Plugin '{}' not found", id))
+                    LinkMLError::ServiceError(format!("Plugin error: Plugin '{id}' not found"))
                 })?
         };
 
@@ -291,7 +291,7 @@ impl PluginRegistry {
                 .get(id)
                 .map(|reg| Arc::clone(&reg.plugin))
                 .ok_or_else(|| {
-                    LinkMLError::ServiceError(format!("Plugin error: Plugin '{}' not found", id))
+                    LinkMLError::ServiceError(format!("Plugin error: Plugin '{id}' not found"))
                 })?
         };
 

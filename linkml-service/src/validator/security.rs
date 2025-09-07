@@ -29,7 +29,7 @@ static SENSITIVE_DATA_PATTERNS: Lazy<Vec<Result<Regex>>> = Lazy::new(|| {
         Regex::new(r"\b\d{3}-\d{2}-\d{4}\b"), // SSN
     ]
     .into_iter()
-    .map(|r| r.map_err(|e| LinkMLError::service(format!("Invalid regex pattern: {}", e))))
+    .map(|r| r.map_err(|e| LinkMLError::service(format!("Invalid regex pattern: {e}"))))
     .collect()
 });
 
@@ -196,11 +196,11 @@ impl InputSanitizer {
         Ok(sanitized)
     }
 
-    /// Sanitize JSON value
+    /// Sanitize `JSON` value
     ///
     /// # Errors
     ///
-    /// Returns an error if any string in the JSON contains blocked patterns or exceeds size limits.
+    /// Returns an error if any string in the `JSON` contains blocked patterns or exceeds size limits.
     pub fn sanitize_json(&self, value: &mut serde_json::Value) -> Result<()> {
         match value {
             serde_json::Value::String(s) => {
@@ -323,11 +323,11 @@ impl PathValidator {
 pub struct InjectionPrevention;
 
 impl InjectionPrevention {
-    /// Validate and escape SQL-like query
+    /// Validate and escape `SQL`-like query
     ///
     /// # Errors
     ///
-    /// Returns an error if the query contains potential SQL injection patterns.
+    /// Returns an error if the query contains potential `SQL` injection patterns.
     ///
     /// # Panics
     ///
@@ -347,7 +347,7 @@ impl InjectionPrevention {
 
         for pattern in &dangerous_patterns {
             let re = regex::Regex::new(pattern).map_err(|e| LinkMLError::DataValidationError {
-                message: format!("SQL injection pattern should be valid regex: {}", e),
+                message: format!("SQL injection pattern should be valid regex: {e}"),
                 path: None,
                 expected: None,
                 actual: None
@@ -455,7 +455,7 @@ impl SensitiveDataHandler {
         for pattern_result in SENSITIVE_DATA_PATTERNS.iter() {
             match pattern_result {
                 Ok(regex) => patterns.push(regex.clone()),
-                Err(e) => return Err(LinkMLError::service(format!("Failed to compile sensitive data pattern: {}", e))),
+                Err(e) => return Err(LinkMLError::service(format!("Failed to compile sensitive data pattern: {e}"))),
             }
         }
 
@@ -795,7 +795,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_input_sanitizer() {
+    fn test_input_sanitizer() -> anyhow::Result<()> {
         let config = SecurityConfig::default();
         let sanitizer = InputSanitizer::new(config)?;
 
@@ -811,6 +811,7 @@ mod tests {
         // Size limit
         let large = "x".repeat(200 * 1024 * 1024);
         assert!(sanitizer.sanitize_string(&large).is_err());
+        Ok(())
     }
 
     #[test]

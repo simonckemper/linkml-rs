@@ -79,13 +79,13 @@ pub type DumperResult<T> = std::result::Result<T, DumperError>;
 
 impl From<anyhow::Error> for DumperError {
     fn from(err: anyhow::Error) -> Self {
-        DumperError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{}", err))))
+        DumperError::Other(Box::new(std::io::Error::other(format!("{err}"))))
     }
 }
 
 impl From<anyhow::Error> for LoaderError {
     fn from(err: anyhow::Error) -> Self {
-        LoaderError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("{}", err))))
+        LoaderError::Other(Box::new(std::io::Error::other(format!("{err}"))))
     }
 }
 
@@ -94,15 +94,14 @@ impl From<LoaderError> for linkml_core::LinkMLError {
     fn from(err: LoaderError) -> Self {
         match err {
             LoaderError::Io(io_err) => linkml_core::LinkMLError::IoError(io_err),
-            LoaderError::Parse(msg) => linkml_core::LinkMLError::parse(msg),
             LoaderError::SchemaValidation(msg) => linkml_core::LinkMLError::schema_validation(msg),
             LoaderError::TypeConversion(msg) => linkml_core::LinkMLError::CoercionError {
                 from: "unknown".to_string(),
                 to: "unknown".to_string(),
                 context: Some(msg),
             },
-            LoaderError::MissingField(field) => linkml_core::LinkMLError::data_validation(format!("Missing required field: {}", field)),
-            LoaderError::InvalidFormat(msg) => linkml_core::LinkMLError::parse(msg),
+            LoaderError::MissingField(field) => linkml_core::LinkMLError::data_validation(format!("Missing required field: {field}")),
+            LoaderError::InvalidFormat(msg) | LoaderError::Parse(msg) => linkml_core::LinkMLError::parse(msg),
             LoaderError::Configuration(msg) => linkml_core::LinkMLError::config(msg),
             LoaderError::Other(boxed_err) => linkml_core::LinkMLError::Other {
                 message: "Loader error".to_string(),
@@ -229,6 +228,10 @@ pub trait DataLoader: Send + Sync {
     ) -> LoaderResult<Vec<DataInstance>>;
 
     /// Validate that the loader can handle the given schema
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the schema is not compatible with this loader
     fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()>;
 }
 
@@ -270,6 +273,10 @@ pub trait DataDumper: Send + Sync {
     ) -> DumperResult<Vec<u8>>;
 
     /// Validate that the dumper can handle the given schema
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the schema is not compatible with this dumper
     fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()>;
 }
 
@@ -300,16 +307,19 @@ impl LoaderRegistry {
     }
 
     /// Get a loader by name
+    #[must_use]
     pub fn get_loader(&self, name: &str) -> Option<&dyn DataLoader> {
-        self.loaders.get(name).map(|l| l.as_ref())
+        self.loaders.get(name).map(std::convert::AsRef::as_ref)
     }
 
     /// Get a dumper by name
+    #[must_use]
     pub fn get_dumper(&self, name: &str) -> Option<&dyn DataDumper> {
-        self.dumpers.get(name).map(|d| d.as_ref())
+        self.dumpers.get(name).map(std::convert::AsRef::as_ref)
     }
 
     /// Get loader for file extension
+    #[must_use]
     pub fn get_loader_for_extension(&self, extension: &str) -> Option<&dyn DataLoader> {
         for loader in self.loaders.values() {
             if loader.supported_extensions().contains(&extension) {
@@ -320,6 +330,7 @@ impl LoaderRegistry {
     }
 
     /// Get dumper for file extension
+    #[must_use]
     pub fn get_dumper_for_extension(&self, extension: &str) -> Option<&dyn DataDumper> {
         for dumper in self.dumpers.values() {
             if dumper.supported_extensions().contains(&extension) {

@@ -11,14 +11,14 @@ use linkml_core::prelude::*;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
-/// JSON loader for LinkML data
+/// `JSON` loader for `LinkML` data
 pub struct JsonLoader {
     /// Input file path
     file_path: Option<String>,
 }
 
 impl JsonLoader {
-    /// Create a new JSON loader
+    /// Create a new `JSON` loader
     pub fn new() -> Self {
         Self { file_path: None }
     }
@@ -99,7 +99,7 @@ impl DataLoader for JsonLoader {
                         instances.push(instance);
                     } else if !options.skip_invalid {
                         return Err(LoaderError::InvalidFormat(
-                            format!("Array item {} is not an object", index)
+                            format!("Array item {index} is not an object")
                         ));
                     }
                 }
@@ -149,7 +149,7 @@ impl DataLoader for JsonLoader {
 }
 
 impl JsonLoader {
-    /// Convert JSON object to DataInstance
+    /// Convert `JSON` object to DataInstance
     fn object_to_instance(
         &self,
         obj: Map<String, Value>,
@@ -200,14 +200,14 @@ impl JsonLoader {
     }
 }
 
-/// JSON dumper for LinkML data
+/// `JSON` dumper for `LinkML` data
 pub struct JsonDumper {
     /// Pretty print output
     pretty: bool,
 }
 
 impl JsonDumper {
-    /// Create a new JSON dumper
+    /// Create a new `JSON` dumper
     pub fn new(pretty: bool) -> Self {
         Self { pretty }
     }

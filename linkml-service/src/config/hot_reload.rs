@@ -73,13 +73,13 @@ impl ConfigHotReloader {
                 Err(e) => error!("File watch error: {}", e),
             }
         }).map_err(|e| LinkMLError::other(
-            format!("Failed to create file watcher: {}", e)
+            format!("Failed to create file watcher: {e}")
         ))?;
 
         // Watch the configuration file
         watcher
             .watch(&self.config_path, RecursiveMode::NonRecursive)
-            .map_err(|e| LinkMLError::other(format!("Failed to watch config file: {}", e)))?;
+            .map_err(|e| LinkMLError::other(format!("Failed to watch config file: {e}")))?;
 
         self.watcher = Some(watcher);
         info!(

@@ -347,7 +347,7 @@ impl SchemaSettings {
     ///
     /// # Errors
     ///
-    /// Returns an error if the value cannot be serialized to JSON.
+    /// Returns an error if the value cannot be serialized to `JSON`.
     pub fn set_custom<T: serde::Serialize>(
         &mut self,
         key: &str,

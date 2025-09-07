@@ -159,7 +159,7 @@ impl RuleEvaluator {
                 let msg = if let Some(desc) = rule_description {
                     format!("Field '{}' is required by rule: {}", field_name, desc)
                 } else {
-                    format!("Field '{}' is required by rule", field_name)
+                    format!("Field '{field_name}' is required by rule")
                 };
 
                 issues.push(
@@ -184,7 +184,7 @@ impl RuleEvaluator {
                         expected,
                         actual,
                         rule_description
-                            .map(|d| format!(" (rule: {})", d))
+                            .map(|d| format!(" (rule: {d})"))
                             .unwrap_or_default()
                     );
 
@@ -207,7 +207,7 @@ impl RuleEvaluator {
                         let msg = format!(
                             "Value must equal computed expression result{}",
                             rule_description
-                                .map(|d| format!(" (rule: {})", d))
+                                .map(|d| format!(" (rule: {d})"))
                                 .unwrap_or_default()
                         );
 
@@ -222,7 +222,7 @@ impl RuleEvaluator {
                 Err(e) => {
                     issues.push(
                         ValidationIssue::error(
-                            format!("Failed to evaluate expression: {}", e),
+                            format!("Failed to evaluate expression: {e}"),
                             path,
                             "RuleEvaluator",
                         )
@@ -254,7 +254,7 @@ impl RuleEvaluator {
                         "Expression {} failed{}",
                         i + 1,
                         rule_description
-                            .map(|d| format!(" (rule: {})", d))
+                            .map(|d| format!(" (rule: {d})"))
                             .unwrap_or_default()
                     );
 
@@ -324,7 +324,7 @@ impl RuleEvaluator {
                     let msg = format!(
                         "At least one condition must be satisfied{}",
                         rule_description
-                            .map(|d| format!(" (rule: {})", d))
+                            .map(|d| format!(" (rule: {d})"))
                             .unwrap_or_default()
                     );
 
@@ -373,7 +373,7 @@ impl RuleEvaluator {
                         "Exactly one condition must be satisfied, but {} were{}",
                         satisfied_count,
                         rule_description
-                            .map(|d| format!(" (rule: {})", d))
+                            .map(|d| format!(" (rule: {d})"))
                             .unwrap_or_default()
                     );
 
@@ -399,7 +399,7 @@ impl RuleEvaluator {
                             "Condition {} must not be satisfied{}",
                             i + 1,
                             rule_description
-                                .map(|d| format!(" (rule: {})", d))
+                                .map(|d| format!(" (rule: {d})"))
                                 .unwrap_or_default()
                         );
 

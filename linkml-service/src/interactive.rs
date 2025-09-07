@@ -47,7 +47,7 @@ pub struct InteractiveSession<S> {
     pub auto_reload: bool,
     /// Show hints
     pub show_hints: bool,
-    /// Pretty print JSON
+    /// Pretty print `JSON`
     pub pretty_json: bool,
     /// Syntax highlighting
     pub syntax_highlighting: bool,
@@ -92,7 +92,7 @@ enum Command {
     List,
     /// Switch to a schema
     Use { name: String },
-    /// Validate JSON data
+    /// Validate `JSON` data
     Validate { data: Value, class: Option<String> },
     /// Validate file
     ValidateFile {

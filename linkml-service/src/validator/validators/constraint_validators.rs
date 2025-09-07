@@ -325,7 +325,7 @@ impl CrossReferenceValidator {
             if let Some(ref_id) = value.as_str() {
                 if current_id == ref_id {
                     issues.push(ValidationIssue::error(
-                        format!("Circular reference detected: object references itself with id '{}'", ref_id),
+                        format!("Circular reference detected: object references itself with id '{ref_id}'"),
                         &context.path(),
                         &self.name,
                     ));
@@ -743,7 +743,7 @@ impl CrossReferenceValidator {
                         if let Ok(re) = regex {
                             if !re.is_match(email) {
                                 issues.push(ValidationIssue::error(
-                                    format!("Email does not match required pattern: {}", pattern),
+                                    format!("Email does not match required pattern: {pattern}"),
                                     &context.path(),
                                     &self.name,
                                 ));
@@ -831,7 +831,7 @@ impl CrossReferenceValidator {
                     let current_year = 2025;
                     if year > current_year {
                         issues.push(ValidationIssue::error(
-                            format!("Founded year {} cannot be in the future", year),
+                            format!("Founded year {year} cannot be in the future"),
                             &context.path(),
                             &self.name,
                         ));
@@ -843,7 +843,7 @@ impl CrossReferenceValidator {
                                 if let Some(min_val) = min.as_f64() {
                                     if (year as f64) < min_val {
                                         issues.push(ValidationIssue::warning(
-                                            format!("Founded year {} seems unusually early", year),
+                                            format!("Founded year {year} seems unusually early"),
                                             &context.path(),
                                             &self.name,
                                         ));
@@ -942,7 +942,7 @@ impl CrossReferenceValidator {
                     if let Some(ref range) = slot.range {
                         if range == "currency" && price > 10000.0 {
                             issues.push(ValidationIssue::warning(
-                                format!("Ticket price ${} seems unusually high", price),
+                                format!("Ticket price ${price} seems unusually high"),
                                 &context.path(),
                                 &self.name,
                             ));

@@ -12,12 +12,12 @@ use linkml_core::types::{
 };
 use std::collections::HashSet;
 
-/// SQLAlchemy generator configuration
+/// `SQL`Alchemy generator configuration
 #[derive(Debug, Clone)]
 pub struct SQLAlchemyGeneratorConfig {
     /// Base generator configuration
     pub base: GeneratorConfig,
-    /// SQLAlchemy version to target (2.0 by default)
+    /// `SQL`Alchemy version to target (2.0 by default)
     pub sqlalchemy_version: String,
     /// Whether to generate type annotations
     pub use_type_annotations: bool,
@@ -54,13 +54,13 @@ impl Default for SQLAlchemyGeneratorConfig {
     }
 }
 
-/// SQLAlchemy ORM model generator
+/// `SQL`Alchemy ORM model generator
 pub struct SQLAlchemyGenerator {
     config: SQLAlchemyGeneratorConfig,
 }
 
 impl SQLAlchemyGenerator {
-    /// Create a new SQLAlchemy generator
+    /// Create a new `SQL`Alchemy generator
     pub fn new(config: SQLAlchemyGeneratorConfig) -> Self {
         Self { config }
     }
@@ -101,7 +101,7 @@ impl SQLAlchemyGenerator {
         format!("{} = declarative_base()", self.config.base_class)
     }
 
-    /// Map LinkML type to SQLAlchemy column type
+    /// Map `LinkML` type to SQLAlchemy column type
     fn map_type_to_column(&self, type_name: &str, type_def: Option<&TypeDefinition>) -> String {
         // Check if we have a type definition with a base
         if let Some(td) = type_def {
@@ -131,7 +131,7 @@ impl SQLAlchemyGenerator {
         let mut lines = vec![];
 
         // Generate Python enum
-        lines.push(format!("class {}(str, Enum):", name));
+        lines.push(format!("class {name}(str, Enum):"));
         lines.push(format!(
             "    \"\"\"{}\"\"\"",
             enum_def.description.as_deref().unwrap_or("An enumeration")
@@ -214,7 +214,7 @@ impl SQLAlchemyGenerator {
 
         // Table name
         if class_def.is_a.is_none() {
-            lines.push(format!("    __tablename__ = '{}'", table_name));
+            lines.push(format!("    __tablename__ = '{table_name}'"));
         }
 
         // Generate columns for slots
@@ -240,7 +240,7 @@ impl SQLAlchemyGenerator {
                         if !has_content {
                             lines.push("    ".to_string());
                         }
-                        lines.push(format!("    {}", column_def));
+                        lines.push(format!("    {column_def}"));
                         has_content = true;
                     }
                 }
@@ -255,7 +255,7 @@ impl SQLAlchemyGenerator {
                     if !has_content {
                         lines.push("    ".to_string());
                     }
-                    lines.push(format!("    {}", column_def));
+                    lines.push(format!("    {column_def}"));
                     has_content = true;
                 }
             }
@@ -268,7 +268,7 @@ impl SQLAlchemyGenerator {
                 if !has_content {
                     lines.push("    ".to_string());
                 }
-                lines.push(format!("    {}", rel));
+                lines.push(format!("    {rel}"));
                 has_content = true;
             }
         }
@@ -280,7 +280,7 @@ impl SQLAlchemyGenerator {
                 lines.push("    ".to_string());
                 lines.push("    __table_args__ = (".to_string());
                 for constraint in constraints {
-                    lines.push(format!("        {},", constraint));
+                    lines.push(format!("        {constraint},"));
                 }
                 lines.push("    )".to_string());
                 has_content = true;
@@ -308,7 +308,7 @@ impl SQLAlchemyGenerator {
         let column_type = if let Some(range) = &slot.range {
             // Check if it's an enum
             if schema.enums.contains_key(range) {
-                format!("Enum({})", range)
+                format!("Enum({range})")
             } else if schema.classes.contains_key(range) {
                 // This is a foreign key
                 return self.generate_foreign_key_column(name, slot, range);
@@ -486,7 +486,7 @@ impl SQLAlchemyGenerator {
                 .map(|k| format!("'{}'", self.to_snake_case(k)))
                 .collect::<Vec<_>>()
                 .join(", ");
-            constraints.push(format!("UniqueConstraint({})", columns));
+            constraints.push(format!("UniqueConstraint({columns})"));
         }
 
         // Index generation
@@ -510,7 +510,7 @@ impl SQLAlchemyGenerator {
         constraints
     }
 
-    /// Get type annotation for SQLAlchemy 2.0
+    /// Get type annotation for `SQL`Alchemy 2.0
     fn get_type_annotation(&self, slot: &SlotDefinition, _schema: &SchemaDefinition) -> String {
         let base_type = if let Some(range) = &slot.range {
             match range.as_str() {
@@ -529,7 +529,7 @@ impl SQLAlchemyGenerator {
         if slot.required == Some(true) {
             base_type.to_string()
         } else {
-            format!("Optional[{}]", base_type)
+            format!("Optional[{base_type}]")
         }
     }
 

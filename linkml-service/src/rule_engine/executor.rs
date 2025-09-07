@@ -157,7 +157,7 @@ impl RuleExecutor {
                     .description
                     .as_deref()
                     .or(rule.original.title.as_deref())
-                    .map(|d| format!("{} (else)", d));
+                    .map(|d| format!("{d} (else)"));
 
                 issues.extend(self.evaluator.evaluate_postconditions(
                     else_conditions,

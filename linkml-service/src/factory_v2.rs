@@ -203,7 +203,7 @@ where
     .await
 }
 
-/// Create LinkML service for specific environment
+/// Create `LinkML` service for specific environment
 ///
 /// This factory function creates a service configured for a specific
 /// environment (development, testing, production).
@@ -249,8 +249,7 @@ where
 
     logger
         .info(&format!(
-            "Creating LinkML service for {} environment",
-            environment
+            "Creating LinkML service for {environment} environment"
         ))
         .await
         .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
@@ -301,7 +300,7 @@ where
     D: DBMSService,
     O: TimeoutService,
 {
-    /// LinkML service configuration
+    /// `LinkML` service configuration
     pub config: LinkMLServiceConfig,
     /// Logger service instance
     pub logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,

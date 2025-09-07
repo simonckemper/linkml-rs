@@ -27,13 +27,13 @@ pub struct PrefixMapGeneratorConfig {
 /// Output format for prefix maps
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrefixMapFormat {
-    /// Simple JSON object mapping prefixes to URIs
+    /// Simple `JSON` object mapping prefixes to URIs
     Simple,
     /// Extended format with metadata
     Extended,
     /// Turtle/SPARQL prefix format
     Turtle,
-    /// YAML format
+    /// `YAML` format
     Yaml,
     /// CSV format
     Csv,
@@ -83,7 +83,7 @@ impl PrefixMapGenerator {
         }
     }
 
-    /// Generate simple JSON format
+    /// Generate simple `JSON` format
     fn generate_simple_json(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut map = Map::new();
 
@@ -110,11 +110,11 @@ impl PrefixMapGenerator {
         self.add_common_prefixes(&mut map);
 
         serde_json::to_string_pretty(&map).map_err(|e| {
-            LinkMLError::ServiceError(format!("Failed to serialize prefix map: {}", e))
+            LinkMLError::ServiceError(format!("Failed to serialize prefix map: {e}"))
         })
     }
 
-    /// Generate extended JSON format with metadata
+    /// Generate extended `JSON` format with metadata
     fn generate_extended_json(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut output = Map::new();
 
@@ -179,7 +179,7 @@ impl PrefixMapGenerator {
         }
 
         serde_json::to_string_pretty(&output).map_err(|e| {
-            LinkMLError::ServiceError(format!("Failed to serialize extended prefix map: {}", e))
+            LinkMLError::ServiceError(format!("Failed to serialize extended prefix map: {e}"))
         })
     }
 
@@ -222,7 +222,7 @@ impl PrefixMapGenerator {
         Ok(lines.join("\n"))
     }
 
-    /// Generate YAML format
+    /// Generate `YAML` format
     fn generate_yaml(&self, schema: &Schema) -> Result<String, LinkMLError> {
         let mut lines = vec![];
 
@@ -448,7 +448,7 @@ mod tests {
     use linkml_core::types::{PrefixDefinition, SchemaDefinition};
 
     #[test]
-    fn test_prefix_map_generation() {
+    fn test_prefix_map_generation() -> anyhow::Result<()> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
 
@@ -488,5 +488,6 @@ mod tests {
 
         assert!(result_ttl.contains("@prefix ex: <https://example.com/> ."));
         assert!(result_ttl.contains("@prefix test: <https://test.org/vocab#> ."));
+        Ok(())
     }
 }

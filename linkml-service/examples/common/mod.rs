@@ -9,7 +9,7 @@
 
 pub mod service_init;
 
-pub use service_init::initialize_example_service;
+pub use service_init::init_linkml_service_with_real_deps;
 
 use linkml_core::error::Result;
 use linkml_service::LinkMLServiceImpl;
@@ -21,7 +21,6 @@ use std::sync::Arc;
 /// simplified functionality suitable for demonstration purposes.
 pub mod example_services {
     use super::*;
-    use linkml_core::error::LinkMLError;
 
     /// Task management implementation for examples
     ///
@@ -46,6 +45,12 @@ pub mod example_services {
 
     /// Monitoring implementation for examples (dyn-compatible)
     pub struct ExampleMonitor;
+
+    /// DBMS implementation for examples
+    pub struct ExampleDBMS;
+
+    /// Timeout implementation for examples
+    pub struct ExampleTimeout;
 }
 
 /// Initialize LinkML service for examples
@@ -65,6 +70,8 @@ pub async fn init_example_linkml_service() -> Result<
             example_services::ExampleTaskManager,
             example_services::ExampleErrorHandler,
             example_services::ExampleConfig,
+            example_services::ExampleDBMS,
+            example_services::ExampleTimeout,
         >,
     >,
 > {
@@ -90,13 +97,18 @@ pub async fn init_example_linkml_service() -> Result<
 ///
 /// This is a simplified initialization for examples that don't need
 /// the full service infrastructure.
-pub async fn create_example_service() -> Result<Arc<dyn linkml_core::traits::LinkMLService>> {
-    // For examples, we can create a minimal service that implements
-    // just the LinkMLService trait methods needed for the example.
-
-    // This would typically be done by the actual linkml-service crate
-    // with proper service initialization.
-
+///
+/// Note: Returns a concrete type instead of trait object due to dyn-compatibility issues.
+/// The LinkMLService trait contains generic methods that make it non-dyn-compatible.
+pub async fn create_example_service() -> Result<
+    LinkMLServiceImpl<
+        example_services::ExampleTaskManager,
+        example_services::ExampleErrorHandler,
+        example_services::ExampleConfig,
+        example_services::ExampleDBMS,
+        example_services::ExampleTimeout,
+    >,
+> {
     Err(LinkMLError::service(
         "Example service creation requires the full RootReal service infrastructure. \
          See the production initialization pattern in docs/architecture/dyn-compatibility-guidelines.md",

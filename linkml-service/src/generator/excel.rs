@@ -72,6 +72,16 @@ impl ExcelGenerator {
         self
     }
 
+    /// Generate Excel file and save to disk
+    ///
+    /// This method provides compatibility with code expecting a `generate_file` method.
+    pub fn generate_file(&self, schema: &SchemaDefinition, path: &str) -> GeneratorResult<()> {
+        let content = self.generate_workbook(schema)?;
+        std::fs::write(path, content)
+            .map_err(|e| GeneratorError::Generation(format!("Failed to write file {}: {}", path, e)))?;
+        Ok(())
+    }
+
     /// Generate the Excel workbook
     fn generate_workbook(&self, schema: &SchemaDefinition) -> GeneratorResult<Vec<u8>> {
         let mut workbook = Workbook::new();
@@ -131,7 +141,7 @@ impl ExcelGenerator {
         // Convert workbook to bytes
         let buffer = workbook
             .save_to_buffer()
-            .map_err(|e| GeneratorError::Generation(format!("Failed to save workbook: {}", e)))?;
+            .map_err(|e| GeneratorError::Generation(format!("Failed to save workbook: {e}")))?;
 
         Ok(buffer)
     }
@@ -570,7 +580,7 @@ impl ExcelGenerator {
                 // Excel doesn't support regex directly, but we can add a custom formula
                 // For now, just add a note about the pattern
                 // Add pattern information to note
-                let note_text = format!("Pattern: {}", pattern);
+                let note_text = format!("Pattern: {pattern}");
                 let note = Note::new(&note_text).set_author("LinkML Generator");
                 worksheet.insert_note(start_row, col, &note).map_err(|e| {
                     GeneratorError::Generation(e.to_string(),)
@@ -657,20 +667,20 @@ impl ExcelGenerator {
 
                 if let Some(range) = &slot_def.range {
                     if schema.enums.contains_key(range) {
-                        constraints.push(format!("Enum: {}", range));
+                        constraints.push(format!("Enum: {range}"));
                     }
                 }
 
                 if let Some(min) = &slot_def.minimum_value {
-                    constraints.push(format!("Min: {}", min));
+                    constraints.push(format!("Min: {min}"));
                 }
 
                 if let Some(max) = &slot_def.maximum_value {
-                    constraints.push(format!("Max: {}", max));
+                    constraints.push(format!("Max: {max}"));
                 }
 
                 if let Some(pattern) = &slot_def.pattern {
-                    constraints.push(format!("Pattern: {}", pattern));
+                    constraints.push(format!("Pattern: {pattern}"));
                 }
 
                 let constraints_str = if constraints.is_empty() {
@@ -814,7 +824,7 @@ impl Generator for ExcelGenerator {
         for (class_name, _) in &schema.classes {
             if class_name.len() > 31 {
                 return Err(LinkMLError::data_validation(
-                    format!("Class name '{}' exceeds Excel's 31 character worksheet name limit", class_name)
+                    format!("Class name '{class_name}' exceeds Excel's 31 character worksheet name limit")
                 ));
             }
         }
@@ -825,7 +835,7 @@ impl Generator for ExcelGenerator {
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self
             .generate_workbook(schema)
-            .map_err(|e| LinkMLError::service(format!("Excel generation error: {}", e)))?;
+            .map_err(|e| LinkMLError::service(format!("Excel generation error: {e}")))?;
 
         // Convert bytes to string for the interface (base64 encoding)
         use base64::Engine;
@@ -891,13 +901,14 @@ mod tests {
     }
 
     #[test]
-    fn test_excel_generation() {
+    fn test_excel_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = ExcelGenerator::new();
 
         let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate Excel: {}", e))?;
         // The old Generator trait returns a String, not Vec<GeneratedOutput>
         assert!(!result.is_empty());
+        Ok(())
     }
 
     #[test]

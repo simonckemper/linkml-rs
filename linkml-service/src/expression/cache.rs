@@ -75,7 +75,7 @@ impl ExpressionCache {
         }
     }
 
-    /// Create expression cache from LinkML service configuration
+    /// Create expression cache from `LinkML` service configuration
     pub fn from_service_config(
         config: &linkml_core::configuration_v2::ExpressionCacheConfig,
     ) -> Self {
@@ -366,7 +366,7 @@ mod tests {
         // Fill cache
         for i in 0..3 {
             let key = ExpressionKey {
-                source: format!("expr{}", i),
+                source: format!("expr{i}"),
                 schema_id: None,
             };
             let ast = Expression::Number(i as f64);

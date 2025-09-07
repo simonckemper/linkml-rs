@@ -8,7 +8,7 @@ use std::sync::Arc;
 use linkml_core::{
     config::LinkMLConfig,
     error::{LinkMLError, Result},
-    traits::{LinkMLService, SchemaFormat},
+    traits::{LinkMLService, LinkMLServiceExt, SchemaFormat},
     types::{SchemaDefinition, ValidationReport},
 };
 
@@ -222,8 +222,7 @@ where
 
         self.logger
             .info(&format!(
-                "LinkML service initialized successfully in {}ms",
-                duration_ms
+                "LinkML service initialized successfully in {duration_ms}ms"
             ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
@@ -326,8 +325,7 @@ where
         let schema_cache_size = self.schema_cache.read().len();
         self.logger
             .debug(&format!(
-                "Schema cache initialized with {} entries",
-                schema_cache_size
+                "Schema cache initialized with {schema_cache_size} entries"
             ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
@@ -378,8 +376,7 @@ where
                         if schema_count > 100 {
                             if let Err(e) = logger
                                 .warn(&format!(
-                                    "Schema cache has {} entries, consider cleanup",
-                                    schema_count
+                                    "Schema cache has {schema_count} entries, consider cleanup"
                                 ))
                                 .await
                             {
@@ -852,7 +849,7 @@ where
 
         // Log validation performance
         self.logger
-            .debug(&format!("Validation completed in {}ms", duration_ms))
+            .debug(&format!("Validation completed in {duration_ms}ms"))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
@@ -907,6 +904,17 @@ where
         })
     }
 
+}
+
+#[async_trait]
+impl<T, E, C, D, O> LinkMLServiceExt for LinkMLServiceImpl<T, E, C, D, O>
+where
+    T: TaskManagementService + Send + Sync,
+    E: ErrorHandlingService + Send + Sync + 'static,
+    C: ConfigurationService + Send + Sync,
+    D: DBMSService + Send + Sync,
+    O: TimeoutService + Send + Sync,
+{
     async fn validate_typed<Ty>(
         &self,
         data: &Value,

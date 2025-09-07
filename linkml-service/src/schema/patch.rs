@@ -166,7 +166,7 @@ impl SchemaPatcher {
                         if let Err(e) = self.validate_schema(&schema) {
                             result
                                 .warnings
-                                .push(format!("Schema validation warning after operation: {}", e));
+                                .push(format!("Schema validation warning after operation: {e}"));
                             if self.options.strict {
                                 return Err(e);
                             }
@@ -211,7 +211,7 @@ impl SchemaPatcher {
         match parts.as_slice() {
             ["classes", class_name] => {
                 let class_def: ClassDefinition = serde_json::from_value(value.clone())
-                    .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {}", e)))?;
+                    .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {e}")))?;
                 schema.classes.insert(class_name.to_string(), class_def);
                 Ok(())
             }
@@ -228,19 +228,19 @@ impl SchemaPatcher {
             }
             ["slots", slot_name] => {
                 let slot_def: SlotDefinition = serde_json::from_value(value.clone())
-                    .map_err(|e| LinkMLError::parse(format!("Invalid slot definition: {}", e)))?;
+                    .map_err(|e| LinkMLError::parse(format!("Invalid slot definition: {e}")))?;
                 schema.slots.insert(slot_name.to_string(), slot_def);
                 Ok(())
             }
             ["types", type_name] => {
                 let type_def: TypeDefinition = serde_json::from_value(value.clone())
-                    .map_err(|e| LinkMLError::parse(format!("Invalid type definition: {}", e)))?;
+                    .map_err(|e| LinkMLError::parse(format!("Invalid type definition: {e}")))?;
                 schema.types.insert(type_name.to_string(), type_def);
                 Ok(())
             }
             ["enums", enum_name] => {
                 let enum_def: EnumDefinition = serde_json::from_value(value.clone())
-                    .map_err(|e| LinkMLError::parse(format!("Invalid enum definition: {}", e)))?;
+                    .map_err(|e| LinkMLError::parse(format!("Invalid enum definition: {e}")))?;
                 schema.enums.insert(enum_name.to_string(), enum_def);
                 Ok(())
             }
@@ -258,7 +258,7 @@ impl SchemaPatcher {
         match parts.as_slice() {
             ["classes", class_name] => {
                 schema.classes.shift_remove(*class_name).ok_or_else(|| {
-                    LinkMLError::service(format!("Class '{}' not found", class_name))
+                    LinkMLError::service(format!("Class '{class_name}' not found"))
                 })?;
                 Ok(())
             }
@@ -275,19 +275,19 @@ impl SchemaPatcher {
             }
             ["slots", slot_name] => {
                 schema.slots.shift_remove(*slot_name).ok_or_else(|| {
-                    LinkMLError::service(format!("Slot '{}' not found", slot_name))
+                    LinkMLError::service(format!("Slot '{slot_name}' not found"))
                 })?;
                 Ok(())
             }
             ["types", type_name] => {
                 schema.types.shift_remove(*type_name).ok_or_else(|| {
-                    LinkMLError::service(format!("Type '{}' not found", type_name))
+                    LinkMLError::service(format!("Type '{type_name}' not found"))
                 })?;
                 Ok(())
             }
             ["enums", enum_name] => {
                 schema.enums.shift_remove(*enum_name).ok_or_else(|| {
-                    LinkMLError::service(format!("Enum '{}' not found", enum_name))
+                    LinkMLError::service(format!("Enum '{enum_name}' not found"))
                 })?;
                 Ok(())
             }
@@ -310,7 +310,7 @@ impl SchemaPatcher {
         match parts.as_slice() {
             ["classes", class_name] => {
                 let class_def: ClassDefinition = serde_json::from_value(value.clone())
-                    .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {}", e)))?;
+                    .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {e}")))?;
                 schema.classes.insert(class_name.to_string(), class_def);
                 Ok(())
             }
@@ -390,16 +390,16 @@ impl SchemaPatcher {
             ["classes", class_name] => schema
                 .classes
                 .get(*class_name)
-                .ok_or_else(|| LinkMLError::service(format!("Class '{}' not found", class_name)))
+                .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found")))
                 .and_then(|c| serde_json::to_value(c)
                     .map_err(|e| LinkMLError::service(format!("Failed to serialize class '{}': {}", class_name, e)))),
             ["slots", slot_name] => schema
                 .slots
                 .get(*slot_name)
-                .ok_or_else(|| LinkMLError::service(format!("Slot '{}' not found", slot_name)))
+                .ok_or_else(|| LinkMLError::service(format!("Slot '{slot_name}' not found")))
                 .and_then(|s| serde_json::to_value(s)
                     .map_err(|e| LinkMLError::service(format!("Failed to serialize slot '{}': {}", slot_name, e)))),
-            _ => Err(LinkMLError::service(format!("Unsupported path: {}", path))),
+            _ => Err(LinkMLError::service(format!("Unsupported path: {path}"))),
         }
     }
 
@@ -420,7 +420,7 @@ pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
     // Add operations for new classes
     for class_name in &diff.added_classes {
         operations.push(PatchOperation::Add {
-            path: format!("/classes/{}", class_name),
+            path: format!("/classes/{class_name}"),
             value: Value::Object(serde_json::Map::new()),
         });
     }
@@ -428,7 +428,7 @@ pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
     // Remove operations for deleted classes
     for class_name in &diff.removed_classes {
         operations.push(PatchOperation::Remove {
-            path: format!("/classes/{}", class_name),
+            path: format!("/classes/{class_name}"),
         });
     }
 
@@ -463,14 +463,14 @@ pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
     // Similar for slots, types, enums...
     for slot_name in &diff.added_slots {
         operations.push(PatchOperation::Add {
-            path: format!("/slots/{}", slot_name),
+            path: format!("/slots/{slot_name}"),
             value: Value::Object(serde_json::Map::new()),
         });
     }
 
     for slot_name in &diff.removed_slots {
         operations.push(PatchOperation::Remove {
-            path: format!("/slots/{}", slot_name),
+            path: format!("/slots/{slot_name}"),
         });
     }
 

@@ -413,7 +413,7 @@ impl ArrayData {
     }
 }
 
-/// Compare two JSON values for sorting
+/// Compare two `JSON` values for sorting
 fn compare_values(a: &Value, b: &Value) -> Ordering {
     match (a, b) {
         (Value::Null, Value::Null) => Ordering::Equal,

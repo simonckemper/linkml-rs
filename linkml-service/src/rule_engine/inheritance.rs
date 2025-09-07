@@ -134,10 +134,10 @@ impl<'a> RuleInheritanceResolver<'a> {
 
         // Hash conditions (simplified - in practice would need deep hashing)
         if let Some(ref pre) = rule.preconditions {
-            format!("{:?}", pre).hash(&mut hasher);
+            format!("{pre:?}").hash(&mut hasher);
         }
         if let Some(ref post) = rule.postconditions {
-            format!("{:?}", post).hash(&mut hasher);
+            format!("{post:?}").hash(&mut hasher);
         }
 
         hasher.finish()
@@ -163,7 +163,7 @@ impl<'a> RuleInheritanceResolver<'a> {
         }
 
         // Add inheritance info to description
-        let inheritance_note = format!(" [inherited from {}]", source_class);
+        let inheritance_note = format!(" [inherited from {source_class}]");
         adjusted.description = Some(adjusted.description.unwrap_or_default() + &inheritance_note);
 
         Ok(adjusted)

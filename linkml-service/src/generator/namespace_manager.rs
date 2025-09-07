@@ -1070,21 +1070,21 @@ impl Generator for NamespaceManagerGenerator {
                 PrefixDefinition::Simple(uri) => {
                     if uri.is_empty() {
                         return Err(LinkMLError::data_validation(
-                            format!("Prefix '{}' has empty URI", prefix_name)
+                            format!("Prefix '{prefix_name}' has empty URI")
                         ));
                     }
                 }
                 PrefixDefinition::Complex { prefix_prefix, prefix_reference } => {
                     if prefix_prefix.is_empty() {
                         return Err(LinkMLError::data_validation(
-                            format!("Prefix '{}' has empty expansion", prefix_name)
+                            format!("Prefix '{prefix_name}' has empty expansion")
                         ));
                     }
                     // Validate prefix_reference if provided
                     if let Some(ref_value) = prefix_reference {
                         if ref_value.is_empty() {
                             return Err(LinkMLError::data_validation(
-                                format!("Prefix '{}' has empty reference value", prefix_name)
+                                format!("Prefix '{prefix_name}' has empty reference value")
                             ));
                         }
                     }
@@ -1120,7 +1120,7 @@ mod tests {
     use linkml_core::types::SchemaDefinition;
 
     #[test]
-    fn test_namespace_manager_generation() {
+    fn test_namespace_manager_generation() -> anyhow::Result<()> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
 
@@ -1148,5 +1148,6 @@ mod tests {
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));
         assert!(result.contains("def contract("));
+        Ok(())
     }
 }

@@ -26,11 +26,11 @@ use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult
 pub enum RdfFormat {
     /// Turtle format (default)
     Turtle,
-    /// RDF/XML format
+    /// RDF/`XML` format
     RdfXml,
     /// N-Triples format
     NTriples,
-    /// JSON-LD format
+    /// `JSON`-LD format
     JsonLd,
 }
 
@@ -168,7 +168,7 @@ impl RdfGenerator {
         Ok(output)
     }
 
-    /// Generate RDF/XML namespace declarations
+    /// Generate RDF/`XML` namespace declarations
     fn generate_rdfxml_prefixes(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut namespaces = String::new();
 
@@ -206,7 +206,7 @@ impl RdfGenerator {
         Ok(namespaces)
     }
 
-    /// Generate JSON-LD context
+    /// Generate `JSON`-LD context
     fn generate_jsonld_context(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut context = serde_json::json!({
             "@context": {
@@ -228,7 +228,7 @@ impl RdfGenerator {
 
         Ok(
             serde_json::to_string_pretty(&context).map_err(|e| GeneratorError::Generation(
-                format!("json-ld context: {}", e)
+                format!("json-ld context: {e}")
             ))?,
         )
     }
@@ -342,7 +342,7 @@ impl RdfGenerator {
         }
     }
 
-    /// Generate OWL class from LinkML class
+    /// Generate OWL class from `LinkML` class
     fn generate_owl_class(
         &self,
         name: &str,
@@ -455,7 +455,7 @@ impl RdfGenerator {
         Ok(restriction)
     }
 
-    /// Generate OWL property from LinkML slot
+    /// Generate OWL property from `LinkML` slot
     fn generate_property(
         &self,
         name: &str,
@@ -680,7 +680,7 @@ impl RdfGenerator {
         all_slots
     }
 
-    /// Get XSD datatype for LinkML range
+    /// Get XSD datatype for `LinkML` range
     fn get_xsd_datatype(&self, range: &str) -> Option<String> {
         match range {
             "string" | "str" => Some("xsd:string".to_string()),
@@ -905,7 +905,7 @@ impl RdfGenerator {
         }
     }
 
-    /// Convert Turtle to RDF/XML
+    /// Convert Turtle to RDF/`XML`
     fn convert_to_rdfxml(
         &self,
         _turtle_content: &str,
@@ -957,7 +957,7 @@ impl RdfGenerator {
         Ok(output)
     }
 
-    /// Convert Turtle to JSON-LD
+    /// Convert Turtle to `JSON`-LD
     fn convert_to_jsonld(
         &self,
         _turtle_content: &str,
@@ -965,7 +965,7 @@ impl RdfGenerator {
     ) -> GeneratorResult<String> {
         let mut doc = serde_json::json!({
             "@context": serde_json::from_str::<serde_json::Value>(&self.generate_jsonld_context(schema)?).map_err(|e| GeneratorError::Generation(
-                format!("json-ld: {}", e)
+                format!("json-ld: {e}")
             ))?["@context"].clone(),
             "@graph": []
         });
@@ -985,7 +985,7 @@ impl RdfGenerator {
         }
 
         serde_json::to_string_pretty(&doc).map_err(|e| GeneratorError::Generation(
-            format!("json-ld: {}", e)
+            format!("json-ld: {e}")
         ))
     }
 }

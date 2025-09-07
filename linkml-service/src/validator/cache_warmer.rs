@@ -56,7 +56,7 @@ impl Default for CacheWarmingConfig {
 }
 
 impl CacheWarmingConfig {
-    /// Create cache warming config from LinkML service configuration
+    /// Create cache warming config from `LinkML` service configuration
     pub fn from_service_config(config: &linkml_core::configuration_v2::CacheConfig) -> Self {
         // Derive settings from available cache config fields
         let max_entries = config.max_entries;

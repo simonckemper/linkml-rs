@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::Value;
 
-/// XML loader for LinkML data
+/// `XML` loader for `LinkML` data
 pub struct XmlLoader {
     /// Input file path
     file_path: Option<String>,
@@ -19,7 +19,7 @@ pub struct XmlLoader {
 }
 
 impl XmlLoader {
-    /// Create a new XML loader
+    /// Create a new `XML` loader
     pub fn new() -> Self {
         Self {
             file_path: None,
@@ -131,7 +131,7 @@ impl DataLoader for XmlLoader {
                     current_element.clear();
                 }
                 Ok(Event::Eof) => break,
-                Err(e) => return Err(LoaderError::InvalidFormat(format!("XML parsing error: {}", e))),
+                Err(e) => return Err(LoaderError::InvalidFormat(format!("XML parsing error: {e}"))),
                 _ => {}
             }
         }
@@ -155,18 +155,18 @@ impl DataLoader for XmlLoader {
     }
 }
 
-/// XML dumper for LinkML data
+/// `XML` dumper for `LinkML` data
 pub struct XmlDumper {
     /// Pretty print output
     pretty: bool,
     /// Root element name
     root_element: String,
-    /// XML namespace
+    /// `XML` namespace
     namespace: Option<String>,
 }
 
 impl XmlDumper {
-    /// Create a new XML dumper
+    /// Create a new `XML` dumper
     pub fn new(pretty: bool) -> Self {
         Self {
             pretty,
@@ -181,7 +181,7 @@ impl XmlDumper {
         self
     }
 
-    /// Set the XML namespace
+    /// Set the `XML` namespace
     pub fn with_namespace(mut self, ns: &str) -> Self {
         self.namespace = Some(ns.to_string());
         self
@@ -321,7 +321,7 @@ impl DataDumper for XmlDumper {
     }
 }
 
-/// Escape XML special characters
+/// Escape `XML` special characters
 fn escape_xml(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -330,7 +330,7 @@ fn escape_xml(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
-/// Convert JSON value to XML string
+/// Convert `JSON` value to XML string
 fn value_to_xml_string(value: &Value) -> String {
     match value {
         Value::String(s) => escape_xml(s),

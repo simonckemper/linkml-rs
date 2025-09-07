@@ -35,7 +35,7 @@ pub enum SummaryFormat {
     Tsv,
     /// Markdown report
     Markdown,
-    /// JSON statistics
+    /// `JSON` statistics
     Json,
     /// HTML report
     Html,
@@ -387,7 +387,7 @@ impl SummaryGenerator {
             output.push_str(&format!("Schema Name\t{}\n", schema.name));
         }
         if let Some(version) = &schema.version {
-            output.push_str(&format!("Schema Version\t{}\n", version));
+            output.push_str(&format!("Schema Version\t{version}\n"));
         }
 
         // Basic counts
@@ -490,7 +490,7 @@ impl SummaryGenerator {
         }
 
         if let Some(description) = &schema.description {
-            output.push_str(&format!("{}\n\n", description));
+            output.push_str(&format!("{description}\n\n"));
         }
 
         // Basic information
@@ -499,7 +499,7 @@ impl SummaryGenerator {
         output.push_str("|--------|-------|\n");
 
         if let Some(version) = &schema.version {
-            output.push_str(&format!("| Version | {} |\n", version));
+            output.push_str(&format!("| Version | {version} |\n"));
         }
 
         output.push_str(&format!("| Total Classes | {} |\n", stats.class_count));
@@ -594,7 +594,7 @@ impl SummaryGenerator {
         Ok(output)
     }
 
-    /// Generate JSON format
+    /// Generate `JSON` format
     fn generate_json(
         &self,
         stats: &SchemaStats,
@@ -718,7 +718,7 @@ impl SummaryGenerator {
         }
 
         serde_json::to_string_pretty(&root).map_err(|e| {
-            LinkMLError::ServiceError(format!("Failed to serialize summary JSON: {}", e))
+            LinkMLError::ServiceError(format!("Failed to serialize summary JSON: {e}"))
         })
     }
 
@@ -763,7 +763,7 @@ impl SummaryGenerator {
         }
 
         if let Some(description) = &schema.description {
-            html.push_str(&format!("    <p>{}</p>\n", description));
+            html.push_str(&format!("    <p>{description}</p>\n"));
         }
 
         // Overview cards

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::Path;
 
-/// Load configuration from YAML file with environment variable substitution
+/// Load configuration from `YAML` file with environment variable substitution
 pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
     // Read the file
     let contents = std::fs::read_to_string(path).map_err(|e| LinkMLError::IoError(e))?;
@@ -22,7 +22,7 @@ pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
 
     // Parse YAML
     serde_yaml::from_str(&substituted)
-        .map_err(|e| LinkMLError::ConfigError(format!("Failed to parse YAML config: {}", e)))
+        .map_err(|e| LinkMLError::ConfigError(format!("Failed to parse YAML config: {e}")))
 }
 
 /// Substitute environment variables in the format ${VAR:-default}
@@ -48,7 +48,7 @@ fn substitute_env_vars(content: &str) -> String {
     .to_string()
 }
 
-/// Complete LinkML service configuration
+/// Complete `LinkML` service configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkMLConfig {
     /// TypeDB configuration
@@ -261,7 +261,7 @@ pub struct SecurityLimits {
     pub max_function_args: usize,
     /// Maximum identifier length
     pub max_identifier_length: usize,
-    /// Maximum JSON payload size in bytes
+    /// Maximum `JSON` payload size in bytes
     pub max_json_size_bytes: u64,
     /// Maximum slots per class
     pub max_slots_per_class: usize,
@@ -288,7 +288,7 @@ pub struct NetworkConfig {
     pub default_host: String,
     /// Default port number
     pub default_port: u16,
-    /// API timeout in seconds
+    /// `API` timeout in seconds
     pub api_timeout_seconds: u64,
 }
 

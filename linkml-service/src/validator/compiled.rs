@@ -43,7 +43,7 @@ impl Default for CompilationOptions {
 pub enum ValidationInstruction {
     /// Check if a field exists
     CheckRequired {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Field name to check
         field: String,
@@ -51,7 +51,7 @@ pub enum ValidationInstruction {
 
     /// Validate against a compiled regex
     ValidatePattern {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Index into compiled patterns array
         pattern_id: usize,
@@ -59,7 +59,7 @@ pub enum ValidationInstruction {
 
     /// Check numeric range
     ValidateRange {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Minimum value (inclusive/exclusive based on inclusive flag)
         min: Option<f64>,
@@ -71,7 +71,7 @@ pub enum ValidationInstruction {
 
     /// Check string length
     ValidateLength {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Minimum length
         min: Option<usize>,
@@ -81,7 +81,7 @@ pub enum ValidationInstruction {
 
     /// Validate against permissible values
     ValidateEnum {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Index into cached enums array
         enum_id: usize,
@@ -89,7 +89,7 @@ pub enum ValidationInstruction {
 
     /// Type validation
     ValidateType {
-        /// JSON path to the value
+        /// `JSON` path to the value
         path: String,
         /// Expected type
         expected_type: CompiledType,
@@ -97,7 +97,7 @@ pub enum ValidationInstruction {
 
     /// Validate array elements
     ValidateArray {
-        /// JSON path to the array
+        /// `JSON` path to the array
         path: String,
         /// Instructions to apply to each element
         element_instructions: Vec<ValidationInstruction>,
@@ -115,7 +115,7 @@ pub enum ValidationInstruction {
 
     /// Nested object validation
     ValidateObject {
-        /// JSON path to the object
+        /// `JSON` path to the object
         path: String,
         /// Instructions for each field
         field_instructions: HashMap<String, Vec<ValidationInstruction>>,
@@ -516,7 +516,7 @@ impl CompiledValidator {
         issues
     }
 
-    /// Extract value at a JSON path
+    /// Extract value at a `JSON` path
     /// Path format: $ (root), $.field, $.field.subfield
     fn extract_value_at_path<'a>(&self, root: &'a JsonValue, path: &str) -> Option<&'a JsonValue> {
         let _ = self;
@@ -547,7 +547,7 @@ impl CompiledValidator {
         Some(current)
     }
 
-    /// Get the compiled type of a JSON value
+    /// Get the compiled type of a `JSON` value
     fn get_json_type(&self, value: &JsonValue) -> CompiledType {
         let _ = self;
         match value {
@@ -855,7 +855,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_compiled_validator() {
+    async fn test_compiled_validator() -> anyhow::Result<()> {
         let mut schema = SchemaDefinition::default();
 
         // Add a simple slot
@@ -899,5 +899,6 @@ mod tests {
 
         let mut context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
         assert!(!validator.execute(&invalid_pattern, &mut context).is_empty());
+        Ok(())
     }
 }

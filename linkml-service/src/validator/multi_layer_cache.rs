@@ -740,7 +740,7 @@ mod tests {
     use linkml_core::types::SchemaDefinition;
 
     #[tokio::test]
-    async fn test_multi_layer_cache_basic() {
+    async fn test_multi_layer_cache_basic() -> anyhow::Result<()> {
         let config = MultiLayerCacheConfig::default();
         let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
 
@@ -765,10 +765,11 @@ mod tests {
         assert_eq!(stats.l1_hits, 1);
         assert_eq!(stats.total_gets, 1);
         assert_eq!(stats.total_puts, 1);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_cache_invalidation() {
+    async fn test_cache_invalidation() -> anyhow::Result<()> {
         let config = MultiLayerCacheConfig::default();
         let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
 
@@ -791,5 +792,6 @@ mod tests {
             .map_err(|e| anyhow::anyhow!("should invalidate cache: {}", e))?;
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
+        Ok(())
     }
 }

@@ -29,6 +29,9 @@ pub mod types;
 /// Configuration types for `LinkML` services
 pub mod config;
 
+/// Validation types and utilities for `LinkML` schemas
+pub mod validation;
+
 /// RootReal-compliant configuration structures
 pub mod configuration;
 

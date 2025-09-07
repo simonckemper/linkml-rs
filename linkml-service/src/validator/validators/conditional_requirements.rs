@@ -138,7 +138,7 @@ impl ConditionalRequirementValidator {
 
         // For each conditional requirement
         for (condition_slot, requirement) in if_required {
-            context.push_path(&format!("if_required[{}]", condition_slot));
+            context.push_path(&format!("if_required[{condition_slot}]"));
 
             match self.check_condition(instance, condition_slot, requirement, context) {
                 Ok(condition_met) => {
@@ -146,7 +146,7 @@ impl ConditionalRequirementValidator {
                         // Condition is satisfied, check then_required slots
                         if let Some(then_slots) = &requirement.then_required {
                             for required_slot in then_slots {
-                                context.push_path(&format!("then_required[{}]", required_slot));
+                                context.push_path(&format!("then_required[{required_slot}]"));
 
                                 // Get the value of the required slot
                                 let slot_value = match instance {

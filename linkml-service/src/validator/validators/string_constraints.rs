@@ -91,7 +91,7 @@ impl Validator for EqualsStringInValidator {
                         }
                     } else {
                         let mut issue = ValidationIssue::error(
-                            format!("Expected string value, got {}", item),
+                            format!("Expected string value, got {item}"),
                             context.path(),
                             "EqualsStringInValidator",
                         );
@@ -115,7 +115,7 @@ impl Validator for EqualsStringInValidator {
             }
             _ => {
                 let mut issue = ValidationIssue::error(
-                    format!("Expected string value, got {}", value),
+                    format!("Expected string value, got {value}"),
                     context.path(),
                     "EqualsStringInValidator",
                 );
@@ -150,7 +150,7 @@ impl StructuredPatternValidator {
 
         // Simple interpolation: replace {variable} with context values
         let var_regex = Regex::new(r"\{(\w+)\}").map_err(|e| {
-            LinkMLError::data_validation(format!("Invalid interpolation pattern: {}", e))
+            LinkMLError::data_validation(format!("Invalid interpolation pattern: {e}"))
         })?;
 
         for cap in var_regex.captures_iter(pattern) {
@@ -166,7 +166,7 @@ impl StructuredPatternValidator {
                         Value::Bool(b) => b.to_string(),
                         _ => continue, // Skip complex types
                     };
-                    result = result.replace(&format!("{{{}}}", var_name), &replacement);
+                    result = result.replace(&format!("{{{var_name}}}"), &replacement);
                     continue;
                 }
 
@@ -180,7 +180,7 @@ impl StructuredPatternValidator {
                                 Value::Bool(b) => b.to_string(),
                                 _ => continue,
                             };
-                            result = result.replace(&format!("{{{}}}", var_name), &replacement);
+                            result = result.replace(&format!("{{{var_name}}}"), &replacement);
                             continue;
                         }
                     }
@@ -196,7 +196,7 @@ impl StructuredPatternValidator {
                                 Value::Bool(b) => b.to_string(),
                                 _ => continue,
                             };
-                            result = result.replace(&format!("{{{}}}", var_name), &replacement);
+                            result = result.replace(&format!("{{{var_name}}}"), &replacement);
                         }
                     }
                 }
@@ -211,7 +211,7 @@ impl StructuredPatternValidator {
     /// Validate using regex syntax
     fn validate_regex(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
         let regex = Regex::new(pattern)
-            .map_err(|e| LinkMLError::data_validation(format!("Invalid regex pattern: {}", e)))?;
+            .map_err(|e| LinkMLError::data_validation(format!("Invalid regex pattern: {e}")))?;
 
         if partial {
             Ok(regex.is_match(value))
@@ -230,8 +230,8 @@ impl StructuredPatternValidator {
             .replace("*", ".*")
             .replace("?", ".");
 
-        let regex = Regex::new(&format!("^{}$", regex_pattern))
-            .map_err(|e| LinkMLError::data_validation(format!("Invalid glob pattern: {}", e)))?;
+        let regex = Regex::new(&format!("^{regex_pattern}$"))
+            .map_err(|e| LinkMLError::data_validation(format!("Invalid glob pattern: {e}")))?;
 
         Ok(regex.is_match(value))
     }
@@ -263,7 +263,7 @@ impl Validator for StructuredPatternValidator {
                 Ok(p) => p,
                 Err(e) => {
                     let mut issue = ValidationIssue::error(
-                        format!("Pattern interpolation failed: {}", e),
+                        format!("Pattern interpolation failed: {e}"),
                         context.path(),
                         "StructuredPatternValidator",
                     );
@@ -290,7 +290,7 @@ impl Validator for StructuredPatternValidator {
                             Ok(m) => m,
                             Err(e) => {
                                 let mut issue = ValidationIssue::error(
-                                    format!("Pattern validation error: {}", e),
+                                    format!("Pattern validation error: {e}"),
                                     context.path(),
                                     "StructuredPatternValidator",
                                 );
@@ -304,7 +304,7 @@ impl Validator for StructuredPatternValidator {
                         Ok(m) => m,
                         Err(e) => {
                             let mut issue = ValidationIssue::error(
-                                format!("Pattern validation error: {}", e),
+                                format!("Pattern validation error: {e}"),
                                 context.path(),
                                 "StructuredPatternValidator",
                             );
@@ -315,7 +315,7 @@ impl Validator for StructuredPatternValidator {
                     },
                     _ => {
                         let mut issue = ValidationIssue::error(
-                            format!("Unsupported pattern syntax: {}", syntax),
+                            format!("Unsupported pattern syntax: {syntax}"),
                             context.path(),
                             "StructuredPatternValidator",
                         );
@@ -356,7 +356,7 @@ impl Validator for StructuredPatternValidator {
                                     Ok(m) => m,
                                     Err(e) => {
                                         let mut issue = ValidationIssue::error(
-                                            format!("Pattern validation error: {}", e),
+                                            format!("Pattern validation error: {e}"),
                                             context.path(),
                                             "StructuredPatternValidator",
                                         );
@@ -371,7 +371,7 @@ impl Validator for StructuredPatternValidator {
                                 Ok(m) => m,
                                 Err(e) => {
                                     let mut issue = ValidationIssue::error(
-                                        format!("Pattern validation error: {}", e),
+                                        format!("Pattern validation error: {e}"),
                                         context.path(),
                                         "StructuredPatternValidator",
                                     );
@@ -383,7 +383,7 @@ impl Validator for StructuredPatternValidator {
                             },
                             _ => {
                                 let mut issue = ValidationIssue::error(
-                                    format!("Unsupported pattern syntax: {}", syntax),
+                                    format!("Unsupported pattern syntax: {syntax}"),
                                     context.path(),
                                     "StructuredPatternValidator",
                                 );

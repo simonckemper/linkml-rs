@@ -32,7 +32,7 @@ pub struct ValidationIssue {
     pub severity: Severity,
     /// Human-readable message
     pub message: String,
-    /// JSON path to the problematic value
+    /// `JSON` path to the problematic value
     pub path: String,
     /// The validator that raised this issue
     pub validator: String,

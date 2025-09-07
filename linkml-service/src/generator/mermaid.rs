@@ -553,7 +553,7 @@ impl MermaidGenerator {
     /// Get type notation for class diagrams
     fn get_class_diagram_type(&self, range: &Option<String>) -> String {
         match range.as_deref() {
-            Some(r) => format!("{}: ", r),
+            Some(r) => format!("{r}: "),
             None => String::new(),
         }
     }
@@ -665,7 +665,7 @@ impl Generator for MermaidGenerator {
         for (class_name, _) in &schema.classes {
             if class_name.contains('"') || class_name.contains('\n') || class_name.contains('\r') {
                 return Err(LinkMLError::data_validation(
-                    format!("Class name '{}' contains characters that break Mermaid syntax", class_name)
+                    format!("Class name '{class_name}' contains characters that break Mermaid syntax")
                 ));
             }
         }
@@ -743,7 +743,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_er_diagram_generation() {
+    async fn test_er_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = MermaidGenerator::new();
         let options = GeneratorOptions::default();
@@ -761,10 +761,11 @@ mod tests {
         assert!(output.contains("Address {"));
         // The relationship format might be different, let's check for the basic components
         assert!(output.contains("Person") && output.contains("Address") && output.contains("has"));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_class_diagram_generation() {
+    async fn test_class_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = MermaidGenerator::new().with_diagram_type(MermaidDiagramType::ClassDiagram);
         let options = GeneratorOptions::default();
@@ -776,6 +777,7 @@ mod tests {
         assert!(output.contains("classDiagram"));
         assert!(output.contains("class Person"));
         assert!(output.contains("class Address"));
+        Ok(())
     }
 
     #[test]

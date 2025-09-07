@@ -16,7 +16,7 @@ use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult
 pub struct JavaGenerator {
     /// Generator options
     options: GeneratorOptions,
-    /// Type mapping from LinkML to Java
+    /// Type mapping from `LinkML` to Java
     type_map: HashMap<String, String>,
 }
 
@@ -418,7 +418,7 @@ impl JavaGenerator {
         Ok(())
     }
 
-    /// Get Java type for a LinkML range
+    /// Get Java type for a `LinkML` range
     fn get_java_type(
         &self,
         range: &Option<String>,
@@ -441,7 +441,7 @@ impl JavaGenerator {
         };
 
         if multivalued {
-            Ok(format!("List<{}>", base_type))
+            Ok(format!("List<{base_type}>"))
         } else {
             Ok(base_type)
         }
@@ -549,7 +549,7 @@ impl Generator for JavaGenerator {
                             "Class name '{}' is not valid for Java: must start with letter, underscore, or $",
                             class_name
                         ),
-                        element: Some(format!("class.{}", class_name)),
+                        element: Some(format!("class.{class_name}")),
                     });
                 }
             }
@@ -566,8 +566,8 @@ impl Generator for JavaGenerator {
                 "this" | "throw" | "throws" | "transient" | "try" | "void" | "volatile" | "while"
             ) {
                 return Err(LinkMLError::SchemaValidationError {
-                    message: format!("Class name '{}' is a Java reserved keyword", class_name),
-                    element: Some(format!("class.{}", class_name)),
+                    message: format!("Class name '{class_name}' is a Java reserved keyword"),
+                    element: Some(format!("class.{class_name}")),
                 });
             }
         }
@@ -581,7 +581,7 @@ impl Generator for JavaGenerator {
                             "Slot name '{}' is not valid for Java fields",
                             slot_name
                         ),
-                        element: Some(format!("slot.{}", slot_name)),
+                        element: Some(format!("slot.{slot_name}")),
                     });
                 }
             }

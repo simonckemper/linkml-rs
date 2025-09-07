@@ -344,7 +344,7 @@ impl ShaclGenerator {
         all_slots
     }
 
-    /// Get XSD datatype for LinkML range
+    /// Get XSD datatype for `LinkML` range
     fn get_xsd_datatype(&self, range: &str) -> Option<String> {
         match range {
             "string" | "str" => Some("xsd:string".to_string()),

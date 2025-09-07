@@ -50,9 +50,9 @@ pub struct Cli {
 enum OutputFormat {
     /// Human-readable output
     Pretty,
-    /// JSON output
+    /// `JSON` output
     Json,
-    /// YAML output
+    /// `YAML` output
     Yaml,
     /// Minimal output
     Minimal,
@@ -230,13 +230,13 @@ enum Commands {
 /// Schema conversion formats
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum ConvertFormat {
-    /// JSON format
+    /// `JSON` format
     Json,
-    /// YAML format
+    /// `YAML` format
     Yaml,
     /// `TypeQL` format
     Typeql,
-    /// SQL DDL
+    /// `SQL` DDL
     Sql,
     /// GraphQL schema
     Graphql,
@@ -251,7 +251,7 @@ enum GeneratorType {
     Rust,
     /// `TypeQL` schema
     Typeql,
-    /// SQL DDL
+    /// `SQL` DDL
     Sql,
     /// GraphQL schema
     Graphql,
@@ -736,7 +736,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             GeneratorType::Docs => "md",
         };
 
-        let output_file = output_dir.join(format!("generated.{}", extension));
+        let output_file = output_dir.join(format!("generated.{extension}"));
         std::fs::create_dir_all(output_dir)?;
         std::fs::write(&output_file, generated_code)?;
 
@@ -1208,7 +1208,6 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 }
                 Err(rustyline::error::ReadlineError::Interrupted) => {
                     println!("\nUse 'quit' to exit");
-                    continue;
                 }
                 Err(rustyline::error::ReadlineError::Eof) => {
                     println!("\nGoodbye!");
@@ -1319,7 +1318,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     }
                 }
             }
-            Some("yaml") | Some("yml") => {
+            Some("yaml" | "yml") => {
                 match serde_yaml::from_str(&content) {
                     Ok(d) => d,
                     Err(e) => {
@@ -1348,7 +1347,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     if slot_def.required.unwrap_or(false) {
                         if !data.get(slot_name).is_some() {
-                            errors.push(format!("Missing required field: {}", slot_name));
+                            errors.push(format!("Missing required field: {slot_name}"));
                         }
                     }
                 }
@@ -1468,7 +1467,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         match item_type.to_lowercase().as_str() {
             "class" => {
                 if let Some(class) = schema.classes.get(name) {
-                    println!("{}", format!("Class: {}", name).bold().cyan());
+                    println!("{}", format!("Class: {name}").bold().cyan());
                     if let Some(desc) = &class.description {
                         println!("  Description: {}", desc);
                     }
@@ -1494,7 +1493,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
             "slot" => {
                 if let Some(slot) = schema.slots.get(name) {
-                    println!("{}", format!("Slot: {}", name).bold().cyan());
+                    println!("{}", format!("Slot: {name}").bold().cyan());
                     if let Some(desc) = &slot.description {
                         println!("  Description: {}", desc);
                     }
@@ -1518,7 +1517,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
             "type" => {
                 if let Some(type_def) = schema.types.get(name) {
-                    println!("{}", format!("Type: {}", name).bold().cyan());
+                    println!("{}", format!("Type: {name}").bold().cyan());
                     if let Some(desc) = &type_def.description {
                         println!("  Description: {}", desc);
                     }
@@ -1534,7 +1533,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
             "enum" => {
                 if let Some(enum_def) = schema.enums.get(name) {
-                    println!("{}", format!("Enum: {}", name).bold().cyan());
+                    println!("{}", format!("Enum: {name}").bold().cyan());
                     if let Some(desc) = &enum_def.description {
                         println!("  Description: {}", desc);
                     }
@@ -1642,7 +1641,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 }
             }
             if !used {
-                warnings.push(format!("Slot '{}' is defined but not used by any class", slot_name));
+                warnings.push(format!("Slot '{slot_name}' is defined but not used by any class"));
             }
         }
 
@@ -1710,7 +1709,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     }
                 }
             }
-            Some("yaml") | Some("yml") | _ => {
+            Some("yaml" | "yml") | _ => {
                 match serde_yaml::to_string(schema) {
                     Ok(c) => c,
                     Err(e) => {
@@ -1748,7 +1747,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     }
                 }
             }
-            Some("yaml") | Some("yml") | _ => {
+            Some("yaml" | "yml") | _ => {
                 match serde_yaml::from_str(&content) {
                     Ok(s) => s,
                     Err(e) => {

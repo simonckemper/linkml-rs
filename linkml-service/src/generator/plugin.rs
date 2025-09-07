@@ -276,7 +276,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_plugin_registration() {
+    async fn test_plugin_registration() -> anyhow::Result<()> {
         let registry = Arc::new(GeneratorRegistry::new());
         let config = PluginConfig::default();
         let mut manager = PluginManager::new(config, registry.clone());
@@ -305,5 +305,6 @@ mod tests {
         // Verify generator is registered
         let generators = registry.list_generators().await;
         assert!(generators.iter().any(|name| name == "test"));
+        Ok(())
     }
 }

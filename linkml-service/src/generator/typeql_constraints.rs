@@ -74,7 +74,7 @@ impl TypeQLConstraintTranslator {
             || name_lower == "isbn"
     }
 
-    /// Translate LinkML cardinality to TypeQL @card constraint
+    /// Translate `LinkML` cardinality to TypeQL @card constraint
     fn translate_cardinality(&self, slot: &SlotDefinition) -> Option<String> {
         let min = self.get_min_cardinality(slot);
         let max = self.get_max_cardinality(slot);
@@ -86,7 +86,7 @@ impl TypeQLConstraintTranslator {
             (0, Some(1)) if slot.required != Some(true) => None, // Default optional
             (1, Some(1)) if slot.required == Some(true) => None, // Default required
             (min, Some(max)) => Some(format!("@card({}..{})", min, max)),
-            (min, None) => Some(format!("@card({}..)", min)),
+            (min, None) => Some(format!("@card({min}..)")),
         }
     }
 
@@ -167,9 +167,9 @@ impl TypeQLConstraintTranslator {
             if has_min && has_max {
                 constraints.push(format!("range [{}..{}]", min_str, max_str));
             } else if has_min {
-                constraints.push(format!("range [{}..)", min_str));
+                constraints.push(format!("range [{min_str}..)"));
             } else if has_max {
-                constraints.push(format!("range (..{}]", max_str));
+                constraints.push(format!("range (..{max_str}]"));
             }
         }
 
@@ -209,7 +209,7 @@ impl TypeQLConstraintTranslator {
 
         // Check for conditional requirements
         if slot.rules.is_some() {
-            rule_parts.push(format!("# Conditional validation for {}", slot_name));
+            rule_parts.push(format!("# Conditional validation for {slot_name}"));
         }
 
         if rule_parts.is_empty() {
@@ -230,10 +230,10 @@ impl TypeQLConstraintTranslator {
         let rule_name = format!("{}-unique-{}", class_typeql, "key");
 
         let mut rule = String::new();
-        rule.push_str(&format!("rule {}:\n", rule_name));
+        rule.push_str(&format!("rule {rule_name}:\n"));
         rule.push_str("when {\n");
-        rule.push_str(&format!("    $x isa {};\n", class_typeql));
-        rule.push_str(&format!("    $y isa {};\n", class_typeql));
+        rule.push_str(&format!("    $x isa {class_typeql};\n"));
+        rule.push_str(&format!("    $y isa {class_typeql};\n"));
         rule.push_str("    not { $x is $y; };\n");
 
         // Add conditions for each slot in the unique key

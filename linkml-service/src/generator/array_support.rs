@@ -62,7 +62,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
                 dtype
             )
         } else {
-            format!("NDArray[Any, {}]", dtype)
+            format!("NDArray[Any, {dtype}]")
         }
     }
 
@@ -271,7 +271,7 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
         // Generate nested array type based on dimensions
         let mut array_type = base_type.to_string();
         for _ in 0..spec.ndim() {
-            array_type = format!("{}[]", array_type);
+            array_type = format!("{array_type}[]");
         }
 
         array_type
@@ -403,7 +403,7 @@ impl TypeScriptArrayGenerator {
                 )
                 .map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
 
-                let next_var = format!("{}[i]", var);
+                let next_var = format!("{var}[i]");
                 self.generate_shape_validation(code, shape, depth + 1, &next_var)?;
 
                 writeln!(code, "{}}}", "  ".repeat(depth + 1)).map_err(|e| anyhow::anyhow!("failed to format string: {}", e))?;
@@ -439,7 +439,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
                 format!("ndarray::Array{}<{}>", shape.len(), element_type)
             }
         } else {
-            format!("ndarray::ArrayD<{}>", element_type)
+            format!("ndarray::ArrayD<{element_type}>")
         }
     }
 

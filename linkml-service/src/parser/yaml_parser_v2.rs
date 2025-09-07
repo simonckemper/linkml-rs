@@ -13,13 +13,13 @@ use std::sync::Arc;
 use super::SchemaParser;
 use crate::file_system_adapter::FileSystemOperations;
 
-/// YAML parser implementation with file system adapter
+/// `YAML` parser implementation with file system adapter
 pub struct YamlParserV2<F: FileSystemOperations> {
     fs: Arc<F>,
 }
 
 impl<F: FileSystemOperations> YamlParserV2<F> {
-    /// Create a new YAML parser with file system adapter
+    /// Create a new `YAML` parser with file system adapter
     pub fn new(fs: Arc<F>) -> Self {
         Self { fs }
     }

@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 pub struct TypeMapper;
 
 impl TypeMapper {
-    /// Map LinkML type to Python type
+    /// Map `LinkML` type to Python type
     pub fn to_python(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" => "str",
@@ -24,7 +24,7 @@ impl TypeMapper {
         }
     }
 
-    /// Map LinkML type to TypeScript type
+    /// Map `LinkML` type to TypeScript type
     pub fn to_typescript(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
@@ -36,7 +36,7 @@ impl TypeMapper {
         }
     }
 
-    /// Map LinkML type to JavaScript JSDoc type
+    /// Map `LinkML` type to JavaScript JSDoc type
     pub fn to_javascript(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",

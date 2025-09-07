@@ -2,7 +2,6 @@ use linkml_service::parser::Parser;
 use linkml_service::validator::ValidationEngine;
 use linkml_service::generator::Generator;
 use serde_json::json;
-use tokio;
 
 /// Integration test to ensure core LinkML functionality works after compilation fixes
 #[tokio::test]
