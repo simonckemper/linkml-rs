@@ -181,6 +181,7 @@ async fn test_conflicting_settings_resolution() {
 #[tokio::test]
 async fn test_settings_serialization_roundtrip() {
     use serde_yaml;
+use linkml_core::types::SchemaDefinition;
 
     let mut settings = SchemaSettings::default();
     settings.validation = ValidationSettings::strict();
@@ -299,6 +300,7 @@ async fn test_settings_with_inheritance_chain() {
 #[tokio::test]
 async fn test_settings_performance_impact() {
     use std::time::Instant;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 
     // Create two schemas - one strict, one lenient
     let mut strict_schema = SchemaDefinition::new("strict");
@@ -326,7 +328,7 @@ async fn test_settings_performance_impact() {
     // Create test data
     let mut data = serde_json::Map::new();
     for i in 0..10 {
-        data.insert(format!("slot{}", i), json!(format!("value{}", i)));
+        data.insert(format!("slot{}", i), json!(format!("value{}", i));
     }
     let data = serde_json::Value::Object(data);
 

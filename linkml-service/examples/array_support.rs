@@ -12,7 +12,7 @@ use linkml_service::generator::array_support::{ArrayCodeGenerator, get_array_gen
 use serde_json::json;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== LinkML Array Support Example ===\n");
 
     // Example 1: Scientific data arrays

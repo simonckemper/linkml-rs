@@ -24,8 +24,8 @@ fn test_basic_rule_generation() {
     // Add an age slot with range constraint
     person.slots.push("age".to_string());
     let mut age_slot = SlotDefinition::default();
-    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
-    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
+    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
+    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150));
     person.slot_usage.insert("age".to_string(), age_slot);
 
     // Generate rules for the class
@@ -112,6 +112,7 @@ fn test_conditional_requirement_rule() {
 #[test]
 fn test_rule_typeql_output() {
     use linkml_service::generator::typeql_rule_generator::TypeQLRule;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     let rule = TypeQLRule {
         name: "person-requires-name".to_string(),

@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     env_logger::init();
 
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let instances_content = std::fs::read_to_string(&country_instances_path)?;
     let instances: serde_json::Value = serde_yaml::from_str(&instances_content)?;
     
-    println!("Loaded {} country instances", instances.as_array().map_or(0, |a| a.len()));
+    println!("Loaded {} country instances", instances.as_array().map_or(0, |a| a.len());
 
     // Validate each instance against the ISO3166Entity class
     let mut valid_count = 0;

@@ -91,8 +91,8 @@ impl InternedValidationIssue {
         self
     }
 
-    /// Convert to a regular ValidationIssue for serialization
-    pub fn to_regular(&self) -> super::report::ValidationIssue {
+    /// Convert to a regular `ValidationIssue` for serialization
+    #[must_use] pub fn to_regular(&self) -> super::report::ValidationIssue {
         let interner = global_interner();
         let mut regular = super::report::ValidationIssue::new(
             self.severity,
@@ -116,22 +116,22 @@ impl InternedValidationIssue {
     }
 
     /// Get message as string
-    pub fn message_str(&self) -> String {
+    #[must_use] pub fn message_str(&self) -> String {
         global_interner().get(self.message).unwrap_or_default()
     }
 
     /// Get path as string
-    pub fn path_str(&self) -> String {
+    #[must_use] pub fn path_str(&self) -> String {
         global_interner().get(self.path).unwrap_or_default()
     }
 
     /// Get validator as string
-    pub fn validator_str(&self) -> String {
+    #[must_use] pub fn validator_str(&self) -> String {
         global_interner().get(self.validator).unwrap_or_default()
     }
 
     /// Get code as string
-    pub fn code_str(&self) -> Option<String> {
+    #[must_use] pub fn code_str(&self) -> Option<String> {
         self.code.map(|c| global_interner().get(c).unwrap_or_default())
     }
 }
@@ -217,15 +217,15 @@ impl InternedValidationReport {
         }
     }
 
-    /// Convert to regular ValidationReport for serialization
-    pub fn to_regular(&self) -> super::report::ValidationReport {
+    /// Convert to regular `ValidationReport` for serialization
+    #[must_use] pub fn to_regular(&self) -> super::report::ValidationReport {
         let interner = global_interner();
         let mut report = super::report::ValidationReport::new(
             interner.get(self.schema_id).unwrap_or_default()
         );
 
         report.valid = self.valid;
-        report.stats = self.stats.clone();
+        report.stats = Arc::clone(&self.stats);
 
         if let Some(tc) = self.target_class {
             report.target_class = Some(interner.get(tc).unwrap_or_default());
@@ -252,14 +252,14 @@ pub struct IssueBuilder {
 
 impl IssueBuilder {
     /// Create a new issue builder
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             interner: global_interner(),
         }
     }
 
     /// Create a required field missing error
-    pub fn required_field_missing(&self, field_name: &str, path: &str) -> InternedValidationIssue {
+    #[must_use] pub fn required_field_missing(&self, field_name: &str, path: &str) -> InternedValidationIssue {
         let common = self.interner.common();
         InternedValidationIssue {
             severity: Severity::Error,
@@ -272,7 +272,7 @@ impl IssueBuilder {
     }
 
     /// Create a type mismatch error
-    pub fn type_mismatch(
+    #[must_use] pub fn type_mismatch(
         &self,
         expected: &str,
         actual: &str,
@@ -282,8 +282,7 @@ impl IssueBuilder {
         InternedValidationIssue {
             severity: Severity::Error,
             message: self.interner.intern(&format!(
-                "Type mismatch: expected {}, got {}",
-                expected, actual
+                "Type mismatch: expected {expected}, got {actual}"
             )),
             path: self.interner.intern(path),
             validator: self.interner.intern("TypeValidator"),
@@ -293,13 +292,12 @@ impl IssueBuilder {
     }
 
     /// Create a pattern mismatch error
-    pub fn pattern_mismatch(&self, value: &str, pattern: &str, path: &str) -> InternedValidationIssue {
+    #[must_use] pub fn pattern_mismatch(&self, value: &str, pattern: &str, path: &str) -> InternedValidationIssue {
         let common = self.interner.common();
         InternedValidationIssue {
             severity: Severity::Error,
             message: self.interner.intern(&format!(
-                "Value '{}' does not match pattern '{}'",
-                value, pattern
+                "Value '{value}' does not match pattern '{pattern}'"
             )),
             path: self.interner.intern(path),
             validator: self.interner.intern("PatternValidator"),
@@ -309,7 +307,7 @@ impl IssueBuilder {
     }
 
     /// Create a range violation error
-    pub fn range_violation(&self, message: &str, path: &str) -> InternedValidationIssue {
+    #[must_use] pub fn range_violation(&self, message: &str, path: &str) -> InternedValidationIssue {
         let common = self.interner.common();
         InternedValidationIssue {
             severity: Severity::Error,
@@ -322,7 +320,7 @@ impl IssueBuilder {
     }
 
     /// Create an enum violation error
-    pub fn enum_violation(&self, value: &str, allowed: &[String], path: &str) -> InternedValidationIssue {
+    #[must_use] pub fn enum_violation(&self, value: &str, allowed: &[String], path: &str) -> InternedValidationIssue {
         let common = self.interner.common();
         InternedValidationIssue {
             severity: Severity::Error,
@@ -360,7 +358,7 @@ pub struct InternedMemoryStats {
 
 impl InternedMemoryStats {
     /// Calculate memory statistics for the current interner state
-    pub fn calculate() -> Self {
+    #[must_use] pub fn calculate() -> Self {
         let interner = global_interner();
         let stats = interner.stats();
 
@@ -382,6 +380,7 @@ impl InternedMemoryStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::string_pool::intern;
 
     #[test]
     fn test_interned_validation_issue() {

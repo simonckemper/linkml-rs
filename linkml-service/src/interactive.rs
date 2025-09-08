@@ -8,7 +8,7 @@
 //! - Debugging validation issues
 
 use colored::Colorize;
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::LinkMLError;
 use linkml_core::types::SchemaDefinition;
 use rustyline::Helper;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
@@ -138,7 +138,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     /// # Errors
     ///
     /// Returns an error if the readline initialization fails or command execution fails.
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run(&mut self) -> crate::Result<()> {
         println!("{}", "LinkML Interactive Mode".bold().blue());
         println!("{}", "=======================".blue());
         println!("Type 'help' for commands, 'quit' to exit\n");
@@ -203,7 +203,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Parse command from input
-    fn parse_command(&self, input: &str) -> Result<Command> {
+    fn parse_command(&self, input: &str) -> crate::Result<Command> {
         let parts: Vec<&str> = input.split_whitespace().collect();
 
         if parts.is_empty() {
@@ -326,7 +326,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Execute command
-    async fn execute_command(&mut self, command: Command) -> Result<()> {
+    async fn execute_command(&mut self, command: Command) -> crate::Result<()> {
         match command {
             Command::Load { path, name } => {
                 self.load_schema(&path, name).await?;
@@ -395,7 +395,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Load a schema
-    async fn load_schema(&mut self, path: &Path, name: Option<String>) -> Result<()> {
+    async fn load_schema(&mut self, path: &Path, name: Option<String>) -> crate::Result<()> {
         println!("Loading schema from {}...", path.display());
 
         let content = std::fs::read_to_string(path)?;
@@ -467,7 +467,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Switch to a schema
-    fn use_schema(&mut self, name: &str) -> Result<()> {
+    fn use_schema(&mut self, name: &str) -> crate::Result<()> {
         if self.schemas.contains_key(name) {
             self.current_schema = Some(name.to_string());
             println!("Switched to schema '{name}'");
@@ -478,7 +478,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Validate data
-    async fn validate_data(&mut self, data: &Value, class_name: Option<&str>) -> Result<()> {
+    async fn validate_data(&mut self, data: &Value, class_name: Option<&str>) -> crate::Result<()> {
         let schema_name = self
             .current_schema
             .as_ref()
@@ -539,7 +539,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Validate file
-    async fn validate_file(&mut self, path: &Path, class_name: Option<&str>) -> Result<()> {
+    async fn validate_file(&mut self, path: &Path, class_name: Option<&str>) -> crate::Result<()> {
         let content = std::fs::read_to_string(path)?;
         let data: Value = if path
             .extension()
@@ -591,7 +591,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Show class details
-    fn show_class(&self, name: &str) -> Result<()> {
+    fn show_class(&self, name: &str) -> crate::Result<()> {
         let schema = self.get_current_schema()?;
 
         if let Some(class) = schema.classes.get(name) {
@@ -618,7 +618,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Show slot details
-    fn show_slot(&self, name: &str) -> Result<()> {
+    fn show_slot(&self, name: &str) -> crate::Result<()> {
         let schema = self.get_current_schema()?;
 
         if let Some(slot) = schema.slots.get(name) {
@@ -645,7 +645,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Show type details
-    fn show_type(&self, name: &str) -> Result<()> {
+    fn show_type(&self, name: &str) -> crate::Result<()> {
         let schema = self.get_current_schema()?;
 
         if let Some(type_def) = schema.types.get(name) {
@@ -663,7 +663,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Show enum details
-    fn show_enum(&self, name: &str) -> Result<()> {
+    fn show_enum(&self, name: &str) -> crate::Result<()> {
         let schema = self.get_current_schema()?;
 
         if let Some(enum_def) = schema.enums.get(name) {
@@ -689,7 +689,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Search in schema
-    fn search_schema(&self, pattern: &str) -> Result<()> {
+    fn search_schema(&self, pattern: &str) -> crate::Result<()> {
         let schema = self.get_current_schema()?;
         let pattern_lower = pattern.to_lowercase();
 
@@ -823,7 +823,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     }
 
     /// Get current schema
-    fn get_current_schema(&self) -> Result<&Arc<SchemaDefinition>> {
+    fn get_current_schema(&self) -> crate::Result<&Arc<SchemaDefinition>> {
         let name = self
             .current_schema
             .as_ref()

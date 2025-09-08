@@ -330,9 +330,10 @@ mod tests {
     use super::*;
     use crate::generator::typeql_migration::diff::SchemaDiffer;
     use linkml_core::prelude::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_safe_changes() {
+    fn test_safe_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
 
@@ -341,16 +342,17 @@ mod tests {
         slot.required = Some(false);
         new_schema.slots.insert("new_field".to_string(), slot);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for safe changes: {}", e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for safe changes: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for safe changes: {}");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for safe changes: {}");
 
         assert_eq!(impact.category, ChangeCategory::Safe);
         assert!(!impact.has_breaking_changes());
         assert!(!impact.requires_data_migration);
+        Ok(())
     }
 
     #[test]
-    fn test_breaking_changes() {
+    fn test_breaking_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
 
@@ -358,17 +360,18 @@ mod tests {
         let class = ClassDefinition::default();
         old_schema.classes.insert("RemovedClass".to_string(), class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for breaking changes: {}", e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for breaking changes: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for breaking changes: {}");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for breaking changes: {}");
 
         assert_eq!(impact.category, ChangeCategory::Breaking);
         assert!(impact.has_breaking_changes());
         assert!(impact.requires_data_migration);
         assert_eq!(impact.breaking_changes.len(), 1);
+        Ok(())
     }
 
     #[test]
-    fn test_warning_changes() {
+    fn test_warning_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
 
@@ -377,11 +380,12 @@ mod tests {
         slot.required = Some(true);
         new_schema.slots.insert("required_field".to_string(), slot);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should generate schema diff for warning changes: {}", e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact for warning changes: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should generate schema diff for warning changes: {}");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact for warning changes: {}");
 
         assert_eq!(impact.category, ChangeCategory::Warning);
         assert!(impact.has_warnings());
         assert!(!impact.has_breaking_changes());
+        Ok(())
     }
 }

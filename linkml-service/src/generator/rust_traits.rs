@@ -23,20 +23,18 @@ impl RustGenerator {
         if options.include_docs {
             writeln!(
                 &mut output,
-                "/// Trait for {} and its subclasses",
-                class_name
+                "/// Trait for {class_name} and its subclasses"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             if let Some(desc) = &class.description {
-                writeln!(&mut output, "/// {}", desc)
+                writeln!(&mut output, "/// {desc}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
         writeln!(
             &mut output,
-            "pub trait {}: std::fmt::Debug + Send + Sync {{",
-            trait_name
+            "pub trait {trait_name}: std::fmt::Debug + Send + Sync {{"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -68,17 +66,16 @@ impl RustGenerator {
         // Add getter methods for key slots from schema
         let all_slots = super::base::collect_all_slots(class, schema)?;
         for slot_name in &all_slots {
-            if let Some(slot) = schema.slots.get(slot_name) {
-                if slot.identifier == Some(true) || slot.required == Some(true) {
+            if let Some(slot) = schema.slots.get(slot_name)
+                && (slot.identifier == Some(true) || slot.required == Some(true)) {
                     let field_name = BaseCodeFormatter::to_snake_case(slot_name);
                     let return_type = self.get_rust_type(slot, schema)?;
                     writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "    /// Get the {} field", field_name)
+                    writeln!(&mut output, "    /// Get the {field_name} field")
                         .map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "    fn {}(&self) -> &{};", field_name, return_type)
+                    writeln!(&mut output, "    fn {field_name}(&self) -> &{return_type};")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
-            }
         }
 
         writeln!(&mut output, "}}")
@@ -111,13 +108,13 @@ impl RustGenerator {
 
         let trait_name = format!("{}Trait", BaseCodeFormatter::to_pascal_case(trait_class));
 
-        writeln!(output, "impl {} for {} {{", trait_name, struct_name)
+        writeln!(output, "impl {trait_name} for {struct_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Implement type_name
         writeln!(output, "    fn type_name(&self) -> &'static str {{")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        \"{}\"", struct_name)
+        writeln!(output, "        \"{struct_name}\"")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    }}")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -165,8 +162,7 @@ impl RustGenerator {
         if options.include_docs {
             writeln!(
                 output,
-                "/// Polymorphic enum for {} and its subclasses",
-                class_name
+                "/// Polymorphic enum for {class_name} and its subclasses"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -175,18 +171,18 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "#[serde(tag = \"type\")]")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "pub enum {} {{", enum_name)
+        writeln!(output, "pub enum {enum_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add base class variant
         let base_struct_name = BaseCodeFormatter::to_pascal_case(class_name);
-        writeln!(output, "    {}({}),", base_struct_name, base_struct_name)
+        writeln!(output, "    {base_struct_name}({base_struct_name}),")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add subclass variants
         for subclass in &subclasses {
             let variant_name = BaseCodeFormatter::to_pascal_case(subclass);
-            writeln!(output, "    {}({}),", variant_name, variant_name)
+            writeln!(output, "    {variant_name}({variant_name}),")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -210,7 +206,7 @@ impl RustGenerator {
     ) -> GeneratorResult<()> {
         let trait_name = format!("{}Trait", BaseCodeFormatter::to_pascal_case(class_name));
 
-        writeln!(output, "impl {} for {} {{", trait_name, enum_name)
+        writeln!(output, "impl {trait_name} for {enum_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Implement type_name
@@ -220,12 +216,12 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
 
         let base_variant = BaseCodeFormatter::to_pascal_case(class_name);
-        writeln!(output, "            {}::{}(inner) => inner.type_name(),", enum_name, base_variant)
+        writeln!(output, "            {enum_name}::{base_variant}(inner) => inner.type_name(),")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         for subclass in subclasses {
             let variant_name = BaseCodeFormatter::to_pascal_case(subclass);
-            writeln!(output, "            {}::{}(inner) => inner.type_name(),", enum_name, variant_name)
+            writeln!(output, "            {enum_name}::{variant_name}(inner) => inner.type_name(),")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -241,12 +237,12 @@ impl RustGenerator {
         writeln!(output, "        match self {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(output, "            {}::{}(inner) => inner.validate(),", enum_name, base_variant)
+        writeln!(output, "            {enum_name}::{base_variant}(inner) => inner.validate(),")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         for subclass in subclasses {
             let variant_name = BaseCodeFormatter::to_pascal_case(subclass);
-            writeln!(output, "            {}::{}(inner) => inner.validate(),", enum_name, variant_name)
+            writeln!(output, "            {enum_name}::{variant_name}(inner) => inner.validate(),")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 

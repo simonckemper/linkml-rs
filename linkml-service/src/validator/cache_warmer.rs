@@ -57,7 +57,7 @@ impl Default for CacheWarmingConfig {
 
 impl CacheWarmingConfig {
     /// Create cache warming config from `LinkML` service configuration
-    pub fn from_service_config(config: &linkml_core::configuration_v2::CacheConfig) -> Self {
+    #[must_use] pub fn from_service_config(config: &linkml_core::configuration_v2::CacheConfig) -> Self {
         // Derive settings from available cache config fields
         let max_entries = config.max_entries;
         let ttl_seconds = config.ttl_seconds;
@@ -65,7 +65,7 @@ impl CacheWarmingConfig {
 
         Self {
             auto_warm: max_entries > 100, // Enable if cache is large enough
-            batch_size: (max_entries / 20).max(10).min(100) as usize, // 5% of max entries
+            batch_size: (max_entries / 20).max(10).min(100), // 5% of max entries
             max_concurrent: 4,
             warming_interval: Duration::from_secs(ttl_seconds), // Use TTL as warming interval
             priority_threshold: 0.5,

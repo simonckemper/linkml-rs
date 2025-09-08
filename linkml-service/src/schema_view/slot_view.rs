@@ -1,4 +1,4 @@
-//! SlotView - High-level API for slot introspection
+//! `SlotView` - High-level API for slot introspection
 //!
 //! Provides a dedicated view for individual slots with all inherited
 //! properties resolved, following the Kapernikov LinkML-Rust pattern.
@@ -14,7 +14,7 @@ use super::view::SchemaView;
 
 /// High-level view of a `LinkML` slot with all inherited properties resolved
 ///
-/// This provides a denormalized view similar to Python `LinkML`'s SlotDefinitionView,
+/// This provides a denormalized view similar to Python `LinkML`'s `SlotDefinitionView`,
 /// making it easier to work with slots without manually resolving inheritance.
 #[derive(Debug, Clone)]
 pub struct SlotView {
@@ -27,7 +27,7 @@ pub struct SlotView {
     /// Classes that use this slot
     used_by_classes: HashSet<String>,
 
-    /// Parent slot (is_a relationship)
+    /// Parent slot (`is_a` relationship)
     parent: Option<String>,
 
     /// All ancestor slots in the inheritance chain
@@ -41,7 +41,11 @@ pub struct SlotView {
 }
 
 impl SlotView {
-    /// Create a new SlotView for the specified slot
+    /// Create a new `SlotView` for the specified slot
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn new(slot_name: &str, schema_view: Arc<SchemaView>) -> Result<Self> {
         // Get the base slot definition
         let definition = schema_view
@@ -95,9 +99,8 @@ impl SlotView {
         while let Some(parent_name) = current {
             if visited.contains(&parent_name) {
                 return Err(LinkMLError::service(format!(
-                    "Circular inheritance detected in slot '{}'",
-                    parent_name
-                )));
+                    "Circular inheritance detected in slot '{parent_name}'"
+                ));
             }
             visited.insert(parent_name.clone());
             ancestors.push(parent_name.clone());
@@ -113,52 +116,52 @@ impl SlotView {
     }
 
     /// Get the slot name
-    pub fn name(&self) -> &str {
+    #[must_use] pub fn name(&self) -> &str {
         &self.name
     }
 
     /// Get the slot definition
-    pub fn definition(&self) -> &SlotDefinition {
+    #[must_use] pub fn definition(&self) -> &SlotDefinition {
         &self.definition
     }
 
     /// Get the slot description
-    pub fn description(&self) -> Option<&str> {
+    #[must_use] pub fn description(&self) -> Option<&str> {
         self.definition.description.as_deref()
     }
 
     /// Get the slot range (type)
-    pub fn range(&self) -> Option<&str> {
+    #[must_use] pub fn range(&self) -> Option<&str> {
         self.definition.range.as_deref()
     }
 
     /// Check if this slot is required
-    pub fn is_required(&self) -> bool {
+    #[must_use] pub fn is_required(&self) -> bool {
         self.definition.required.unwrap_or(false)
     }
 
     /// Check if this slot is multivalued
-    pub fn is_multivalued(&self) -> bool {
+    #[must_use] pub fn is_multivalued(&self) -> bool {
         self.definition.multivalued.unwrap_or(false)
     }
 
     /// Check if this slot is an identifier
-    pub fn is_identifier(&self) -> bool {
+    #[must_use] pub fn is_identifier(&self) -> bool {
         self.definition.identifier.unwrap_or(false)
     }
 
-    /// Get the parent slot name (is_a relationship)
-    pub fn parent(&self) -> Option<&str> {
+    /// Get the parent slot name (`is_a` relationship)
+    #[must_use] pub fn parent(&self) -> Option<&str> {
         self.parent.as_deref()
     }
 
     /// Get all ancestor slot names
-    pub fn ancestors(&self) -> &[String] {
+    #[must_use] pub fn ancestors(&self) -> &[String] {
         &self.ancestors
     }
 
     /// Get mixin slot names
-    pub fn mixins(&self) -> &[String] {
+    #[must_use] pub fn mixins(&self) -> &[String] {
         &self.mixins
     }
 
@@ -168,16 +171,20 @@ impl SlotView {
     }
 
     /// Check if this slot is used by a specific class
-    pub fn is_used_by(&self, class_name: &str) -> bool {
+    #[must_use] pub fn is_used_by(&self, class_name: &str) -> bool {
         self.used_by_classes.contains(class_name)
     }
 
     /// Get the slot definition as resolved for a specific class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn in_class(&self, class_name: &str) -> Result<SlotDefinition> {
         // If there's a class-specific override, use it
         if let Some(override_def) = self.class_overrides.get(class_name) {
             // Merge the override with the base definition
-            let mut resolved = self.definition.clone();
+            let mut resolved = Arc::clone(&self.definition);
 
             // Apply overrides (only non-None values)
             if override_def.description.is_some() {
@@ -210,92 +217,90 @@ impl SlotView {
     }
 
     /// Get pattern constraint if defined
-    pub fn pattern(&self) -> Option<&str> {
+    #[must_use] pub fn pattern(&self) -> Option<&str> {
         self.definition.pattern.as_deref()
     }
 
     /// Get minimum value constraint
-    pub fn minimum_value(&self) -> Option<&serde_json::Value> {
+    #[must_use] pub fn minimum_value(&self) -> Option<&serde_json::Value> {
         self.definition.minimum_value.as_ref()
     }
 
     /// Get maximum value constraint
-    pub fn maximum_value(&self) -> Option<&serde_json::Value> {
+    #[must_use] pub fn maximum_value(&self) -> Option<&serde_json::Value> {
         self.definition.maximum_value.as_ref()
     }
 
     /// Get permissible values for enum slots
-    pub fn permissible_values(&self) -> &[linkml_core::types::PermissibleValue] {
+    #[must_use] pub fn permissible_values(&self) -> &[linkml_core::types::PermissibleValue] {
         &self.definition.permissible_values
     }
 
     /// Check if this slot has permissible values (is an enum)
-    pub fn is_enum(&self) -> bool {
+    #[must_use] pub fn is_enum(&self) -> bool {
         !self.definition.permissible_values.is_empty()
     }
 
     /// Get the slot URI
-    pub fn slot_uri(&self) -> Option<&str> {
+    #[must_use] pub fn slot_uri(&self) -> Option<&str> {
         self.definition.slot_uri.as_deref()
     }
 
     /// Get aliases for this slot
-    pub fn aliases(&self) -> &[String] {
+    #[must_use] pub fn aliases(&self) -> &[String] {
         &self.definition.aliases
     }
 
     /// Check if a string is an alias for this slot
-    pub fn is_alias(&self, name: &str) -> bool {
+    #[must_use] pub fn is_alias(&self, name: &str) -> bool {
         self.aliases().contains(&name.to_string())
     }
 
     /// Get annotations for this slot
-    pub fn annotations(&self) -> Option<&linkml_core::annotations::Annotations> {
+    #[must_use] pub fn annotations(&self) -> Option<&linkml_core::annotations::Annotations> {
         self.definition.annotations.as_ref()
     }
 
     /// Get all class-specific overrides for this slot
-    pub fn class_overrides(&self) -> &HashMap<String, SlotDefinition> {
+    #[must_use] pub fn class_overrides(&self) -> &HashMap<String, SlotDefinition> {
         &self.class_overrides
     }
 
     /// Check if this slot has any class-specific overrides
-    pub fn has_overrides(&self) -> bool {
+    #[must_use] pub fn has_overrides(&self) -> bool {
         !self.class_overrides.is_empty()
     }
 
     /// Get classes where this slot is required (considering overrides)
-    pub fn required_in_classes(&self) -> Vec<String> {
+    #[must_use] pub fn required_in_classes(&self) -> Vec<String> {
         let mut classes = Vec::new();
 
         for class_name in &self.used_by_classes {
-            if let Ok(resolved) = self.in_class(class_name) {
-                if resolved.required.unwrap_or(false) {
+            if let Ok(resolved) = self.in_class(class_name)
+                && resolved.required.unwrap_or(false) {
                     classes.push(class_name.clone());
                 }
-            }
         }
 
         classes
     }
 
     /// Get classes where this slot is optional (considering overrides)
-    pub fn optional_in_classes(&self) -> Vec<String> {
+    #[must_use] pub fn optional_in_classes(&self) -> Vec<String> {
         let mut classes = Vec::new();
 
         for class_name in &self.used_by_classes {
-            if let Ok(resolved) = self.in_class(class_name) {
-                if !resolved.required.unwrap_or(false) {
+            if let Ok(resolved) = self.in_class(class_name)
+                && !resolved.required.unwrap_or(false) {
                     classes.push(class_name.clone());
                 }
-            }
         }
 
         classes
     }
 }
 
-/// Builder for creating SlotView instances with caching
+/// Builder for creating `SlotView` instances with caching
 #[derive(Debug)]
 pub struct SlotViewBuilder {
     schema_view: Arc<SchemaView>,
@@ -303,15 +308,19 @@ pub struct SlotViewBuilder {
 }
 
 impl SlotViewBuilder {
-    /// Create a new SlotViewBuilder
-    pub fn new(schema_view: Arc<SchemaView>) -> Self {
+    /// Create a new `SlotViewBuilder`
+    #[must_use] pub fn new(schema_view: Arc<SchemaView>) -> Self {
         Self {
             schema_view,
             cache: HashMap::new(),
         }
     }
 
-    /// Get or create a SlotView for the specified slot
+    /// Get or create a `SlotView` for the specified slot
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_or_create(&mut self, slot_name: &str) -> Result<Arc<SlotView>> {
         if let Some(view) = self.cache.get(slot_name) {
             return Ok(Arc::clone(view));

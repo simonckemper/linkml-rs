@@ -167,7 +167,7 @@ fn demonstrate_compilation() {
     println!("Compilation Benefits for Complex Expressions");
     println!("-------------------------------------------\n");
     let mut context = HashMap::new();
-    context.insert("values".to_string(), json!((0..100).collect::<Vec<_>>()));
+    context.insert("values".to_string(), json!((0..100).collect::<Vec<_>>());
     let complex_expr = "sum(values) + avg(values) * stddev(values) - median(values) / 2";
     let compiled_engine = EngineBuilder::new()
         .use_compilation(true)

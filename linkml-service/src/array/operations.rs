@@ -1,4 +1,4 @@
-//! Array operations for LinkML arrays
+//! Array operations for `LinkML` arrays
 //!
 //! This module provides common operations on arrays like map, reduce, filter,
 //! and mathematical operations.
@@ -99,7 +99,7 @@ impl ArrayOperations for ArrayData {
         for (i, value) in self.data.iter().enumerate() {
             if f(value) {
                 let indices = self.spec.flat_to_indices(i, &self.shape);
-                results.push((indices, value.clone()));
+                results.push((indices, value.clone());
             }
         }
 
@@ -266,7 +266,7 @@ impl ArrayOperations for ArrayData {
             ));
         }
 
-        Ok((sum_squared_diff / (count - 1) as f64).sqrt())
+        Ok((sum_squared_diff / f64::from(count - 1)).sqrt())
     }
 
     fn flatten(&self) -> Vec<Value> {
@@ -338,9 +338,8 @@ impl ArrayData {
     pub fn sort_along(&self, dimension: usize, descending: bool) -> ArrayResult<ArrayData> {
         if dimension >= self.shape.len() {
             return Err(ArrayError::InvalidDimension(format!(
-                "Dimension {} out of range",
-                dimension
-            )));
+                "Dimension {dimension} out of range"
+            ));
         }
 
         // For simplicity, we'll implement sorting for 1D and 2D arrays
@@ -367,7 +366,7 @@ impl ArrayData {
     }
 
     fn sort_2d(&self, dimension: usize, descending: bool) -> ArrayResult<ArrayData> {
-        let mut result_data = self.data.clone();
+        let mut result_data = Arc::clone(&self.data);
 
         if dimension == 0 {
             // Sort rows
@@ -375,7 +374,7 @@ impl ArrayData {
                 let mut column_data: Vec<(usize, Value)> = Vec::new();
                 for row in 0..self.shape[0] {
                     let idx = self.spec.indices_to_flat(&[row, col], &self.shape)?;
-                    column_data.push((row, self.data[idx].clone()));
+                    column_data.push((row, self.data[idx].clone());
                 }
 
                 column_data.sort_by(|(_, a), (_, b)| {
@@ -394,7 +393,7 @@ impl ArrayData {
                 let mut row_data: Vec<(usize, Value)> = Vec::new();
                 for col in 0..self.shape[1] {
                     let idx = self.spec.indices_to_flat(&[row, col], &self.shape)?;
-                    row_data.push((col, self.data[idx].clone()));
+                    row_data.push((col, self.data[idx].clone());
                 }
 
                 row_data.sort_by(|(_, a), (_, b)| {
@@ -442,7 +441,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(3)];
         let array =
-            ArrayData::new(spec, vec![3], data).map_err(|e| anyhow::anyhow!("test data should create valid array: {}", e))?;
+            ArrayData::new(spec, vec![3], data).expect("test data should create valid array: {}");
 
         let doubled = array
             .map(|v| {
@@ -452,7 +451,7 @@ mod tests {
                     v.clone()
                 }
             })
-            .map_err(|e| anyhow::anyhow!("map operation should succeed with valid data: {}", e))?;
+            .expect("map operation should succeed with valid data: {}");
 
         assert_eq!(doubled.data, vec![json!(2), json!(4), json!(6)]);
         Ok(())
@@ -464,7 +463,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(3), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![5], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - filter test: {}", e))?;
+            .expect("test data should create valid array - filter test: {}");
 
         let evens = array
             .filter(|v| {
@@ -474,7 +473,7 @@ mod tests {
                     false
                 }
             })
-            .map_err(|e| anyhow::anyhow!("filter operation should succeed with valid data: {}", e))?;
+            .expect("filter operation should succeed with valid data: {}");
 
         assert_eq!(evens.len(), 2);
         assert_eq!(evens[0].0, vec![1]); // index 1 -> value 2
@@ -488,13 +487,13 @@ mod tests {
 
         let data = vec![json!(1.0), json!(2.0), json!(3.0), json!(4.0), json!(5.0)];
         let array = ArrayData::new(spec, vec![5], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - statistics test: {}", e))?;
+            .expect("test data should create valid array - statistics test: {}");
 
-        assert_eq!(array.sum().map_err(|e| anyhow::anyhow!("sum should succeed: {}", e))?, 15.0);
-        assert_eq!(array.mean().map_err(|e| anyhow::anyhow!("mean should succeed: {}", e))?, 3.0);
-        assert_eq!(array.min().map_err(|e| anyhow::anyhow!("min should succeed: {}", e))?, 1.0);
-        assert_eq!(array.max().map_err(|e| anyhow::anyhow!("max should succeed: {}", e))?, 5.0);
-        assert!((array.std_dev().map_err(|e| anyhow::anyhow!("std_dev should succeed: {}", e))? - 1.581_138_83).abs() < 0.00001);
+        assert_eq!(array.sum().expect("sum should succeed: {}"), 15.0);
+        assert_eq!(array.mean().expect("mean should succeed: {}"), 3.0);
+        assert_eq!(array.min().expect("min should succeed: {}"), 1.0);
+        assert_eq!(array.max().expect("max should succeed: {}"), 5.0);
+        assert!((array.std_dev().expect("std_dev should succeed: {}") - 1.581_138_83).abs() < 0.00001);
         Ok(())
     }
 
@@ -506,18 +505,18 @@ mod tests {
         let data2 = vec![json!(4), json!(5), json!(6)];
 
         let array1 = ArrayData::new(spec.clone(), vec![3], data1)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array1: {}", e))?;
+            .expect("test data should create valid array1: {}");
         let array2 =
-            ArrayData::new(spec, vec![3], data2).map_err(|e| anyhow::anyhow!("test data should create valid array2: {}", e))?;
+            ArrayData::new(spec, vec![3], data2).expect("test data should create valid array2: {}");
 
         let sum = array1
             .add(&array2)
-            .map_err(|e| anyhow::anyhow!("add operation should succeed with matching shapes: {}", e))?;
+            .expect("add operation should succeed with matching shapes: {}");
         assert_eq!(sum.data, vec![json!(5.0), json!(7.0), json!(9.0)]);
 
         let product = array1
             .multiply(&array2)
-            .map_err(|e| anyhow::anyhow!("multiply operation should succeed with matching shapes: {}", e))?;
+            .expect("multiply operation should succeed with matching shapes: {}");
         assert_eq!(product.data, vec![json!(4.0), json!(10.0), json!(18.0)]);
         Ok(())
     }
@@ -528,11 +527,11 @@ mod tests {
 
         let data = vec![json!(3), json!(1), json!(4), json!(1), json!(5)];
         let array = ArrayData::new(spec, vec![5], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - sorting test: {}", e))?;
+            .expect("test data should create valid array - sorting test: {}");
 
         let sorted = array
             .sort_along(0, false)
-            .map_err(|e| anyhow::anyhow!("sort should succeed on 1D array: {}", e))?;
+            .expect("sort should succeed on 1D array: {}");
         assert_eq!(
             sorted.data,
             vec![json!(1), json!(1), json!(3), json!(4), json!(5)]
@@ -540,7 +539,7 @@ mod tests {
 
         let sorted_desc = array
             .sort_along(0, true)
-            .map_err(|e| anyhow::anyhow!("descending sort should succeed on 1D array: {}", e))?;
+            .expect("descending sort should succeed on 1D array: {}");
         assert_eq!(
             sorted_desc.data,
             vec![json!(5), json!(4), json!(3), json!(1), json!(1)]

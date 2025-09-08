@@ -14,6 +14,7 @@ use crate::metadata::Example;
 use crate::string_pool::{intern, intern_option, intern_vec};
 use crate::types::{PermissibleValue, StructuredPattern};
 
+
 /// Memory-optimized Schema Definition using interned strings
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchemaDefinitionV2 {

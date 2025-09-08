@@ -20,27 +20,29 @@ use serde_json::json;
 /// 1. Initialize all RootReal services at application startup
 /// 2. Create the LinkML service with those dependencies
 /// 3. Use the service throughout your application
-fn main() {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Advanced Validation API Demonstration");
     println!("==========================================\n");
 
     // Show configuration options
-    demonstrate_configuration();
+    demonstrate_configuration()?;
 
     // Show schema definition
     demonstrate_schema();
 
     // Show validation examples
-    demonstrate_validation();
+    demonstrate_validation()?;
 
     // Show error handling
-    demonstrate_error_handling();
+    demonstrate_error_handling()?;
 
     // Show performance patterns
-    demonstrate_performance_patterns();
+    demonstrate_performance_patterns()?;
+
+    Ok(())
 }
 
-fn demonstrate_configuration() {
+fn demonstrate_configuration() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("1. Configuration Options:\n");
 
     // Show how to configure the service for different use cases
@@ -82,6 +84,8 @@ fn demonstrate_configuration() {
         "Lenient validation config: {:#?}\n",
         lenient_config.validation
     );
+
+    Ok(())
 }
 
 fn demonstrate_schema() {
@@ -176,7 +180,7 @@ enums:
     println!("- Enum validation");
 }
 
-fn demonstrate_validation() {
+fn demonstrate_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Validation Examples:\n");
 
     // Valid person
@@ -218,9 +222,11 @@ fn demonstrate_validation() {
     println!("\nInvalid - minor as supervisor:");
     println!("{}", serde_json::to_string_pretty(&invalid_supervisor)?);
     println!("Expected error: Rule violation - minors cannot be supervisors");
+
+    Ok(())
 }
 
-fn demonstrate_error_handling() {
+fn demonstrate_error_handling() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n4. Error Handling Patterns:\n");
 
     println!("The LinkML service provides detailed error information:");
@@ -253,9 +259,11 @@ fn demonstrate_error_handling() {
             println!("  Expected: {}", expected);
         }
     }
+
+    Ok(())
 }
 
-fn demonstrate_performance_patterns() {
+fn demonstrate_performance_patterns() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n5. Performance Optimization Patterns:\n");
 
     println!("a) Parallel Validation:");
@@ -293,6 +301,8 @@ let results = linkml_service.validate_batch(
 ).await?;
 "#
     );
+
+    Ok(())
 }
 
 /// Production initialization pattern
@@ -305,7 +315,7 @@ fn _show_production_pattern() {
         r#"
 // At application startup (e.g., in main.rs):
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {{
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {{
     // 1. Initialize concrete service implementations using factory functions
     let logger = logger_service::factory::create_standard_logger().await?;
     let timestamp = timestamp_service::factory::create_chrono_timestamp_service();

@@ -1,11 +1,20 @@
 # LinkML Service
 
+⚠️ **CRITICAL WARNING: SERVICE CURRENTLY UNSTABLE** ⚠️
+> **DO NOT USE IN PRODUCTION**: This service contains systematic stubbing and incomplete implementations.
+> See [Issue #161](https://github.com/simonckemper/rootreal/issues/161) and remediation plan in `docs/plan/fix/linkml-service-issues-checklist.md`
+> 
+> **Status**: Under active remediation - estimated 5+ weeks for production readiness
+
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/simonckemper/rootreal)
 [![License](https://img.shields.io/badge/license-CC--BY--NC--4.0-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-500%2B-brightgreen.svg)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](coverage/)
+[![Status](https://img.shields.io/badge/status-UNSTABLE-red.svg)](https://github.com/simonckemper/rootreal/issues/161)
 
 A high-performance Rust implementation of LinkML with 100% Python feature parity, exceptional performance, and comprehensive TypeQL generation for TypeDB integration.
+
+**IMPORTANT**: Many core features are currently stubbed and return fake data. Active remediation is in progress.
 
 ## Features
 

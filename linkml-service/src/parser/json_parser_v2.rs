@@ -1,7 +1,7 @@
 //! JSON parser v2 using file system adapter
 //!
-//! This version uses the FileSystemOperations trait instead of direct std::fs access,
-//! following RootReal's architectural patterns.
+//! This version uses the `FileSystemOperations` trait instead of direct `std::fs` access,
+//! following `RootReal`'s architectural patterns.
 
 use linkml_core::{
     error::{LinkMLError, Result},

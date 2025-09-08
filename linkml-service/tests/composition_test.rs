@@ -84,7 +84,7 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Test schema composition
@@ -138,7 +138,7 @@ slots:
         .await
         .expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.path.contains("id")));
+    assert!(report.errors().any(|e| e.path.contains("id"));
 }
 
 #[tokio::test]
@@ -204,7 +204,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Test mixin composition
@@ -275,7 +275,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     let mut composer = SchemaComposer::new(schema);
@@ -287,9 +287,9 @@ slots:
     println!("Concrete classes: {:?}", concrete);
 
     // Only ConcreteChild should be concrete (not abstract)
-    assert!(concrete.contains(&"ConcreteChild".to_string()));
-    assert!(!concrete.contains(&"AbstractBase".to_string()));
-    assert!(!concrete.contains(&"AnotherAbstract".to_string()));
+    assert!(concrete.contains(&"ConcreteChild".to_string());
+    assert!(!concrete.contains(&"AbstractBase".to_string());
+    assert!(!concrete.contains(&"AnotherAbstract".to_string());
 
     // Check subclass relationships
     assert!(
@@ -313,8 +313,8 @@ slots:
         .get_subclasses("AbstractBase")
         .expect("Test operation failed");
     assert_eq!(subclasses.len(), 2);
-    assert!(subclasses.contains(&"ConcreteChild".to_string()));
-    assert!(subclasses.contains(&"AnotherAbstract".to_string()));
+    assert!(subclasses.contains(&"ConcreteChild".to_string());
+    assert!(subclasses.contains(&"AnotherAbstract".to_string());
 }
 
 #[tokio::test]
@@ -348,7 +348,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     let mut composer = SchemaComposer::new(schema);
@@ -356,8 +356,8 @@ slots:
     // Get tree roots
     let roots = composer.get_tree_roots().expect("Test operation failed");
     assert_eq!(roots.len(), 2);
-    assert!(roots.contains(&"RootClass1".to_string()));
-    assert!(roots.contains(&"RootClass2".to_string()));
+    assert!(roots.contains(&"RootClass1".to_string());
+    assert!(roots.contains(&"RootClass2".to_string());
 
     // Check that NonRoot inherits from a tree root but is not itself a tree root
     let non_root = composer

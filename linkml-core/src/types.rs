@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+
 /// Schema definition - the root of a `LinkML` schema
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct SchemaDefinition {
@@ -911,9 +912,10 @@ impl Annotatable for EnumDefinition {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::*;
 
     #[test]
-    fn test_schema_serialization() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_schema_serialization() -> crate::Result<()> {
         let schema = SchemaDefinition {
             id: "https://example.org/test".to_string(),
             name: "test_schema".to_string(),
@@ -929,7 +931,7 @@ mod tests {
     }
 
     #[test]
-    fn test_permissible_value() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_permissible_value() -> crate::Result<()> {
         let simple = PermissibleValue::Simple("test".to_string());
         let json = serde_json::to_string(&simple)?;
         assert_eq!(json, r#""test""#);

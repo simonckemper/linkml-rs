@@ -1,10 +1,11 @@
 //! Tests for OWL/RDF generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, OwlRdfGenerator};
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_owl_generation() {
     let mut schema = SchemaDefinition::new("person_schema");

@@ -1,15 +1,21 @@
-//! TypeQL constraint generation module
+//! `TypeQL` constraint generation module
 //!
-//! This module provides comprehensive constraint translation from LinkML to TypeQL,
-//! supporting TypeDB 3.0 features including @card, @key, @unique, and regex patterns.
+//! This module provides comprehensive constraint translation from `LinkML` to `TypeQL`,
+//! supporting `TypeDB` 3.0 features including @card, @key, @unique, and regex patterns.
 
 use linkml_core::prelude::*;
 use std::collections::HashMap;
 
-/// Enhanced constraint translator for TypeQL generation
+/// Enhanced constraint translator for `TypeQL` generation
 pub struct TypeQLConstraintTranslator {
     /// Cache for compiled regex patterns
     regex_cache: HashMap<String, String>,
+}
+
+impl Default for TypeQLConstraintTranslator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TypeQLConstraintTranslator {
@@ -42,11 +48,10 @@ impl TypeQLConstraintTranslator {
         }
 
         // 4. Regex pattern constraint
-        if let Some(pattern) = &slot.pattern {
-            if let Some(regex) = self.translate_regex(pattern) {
+        if let Some(pattern) = &slot.pattern
+            && let Some(regex) = self.translate_regex(pattern) {
                 constraints.push(regex);
             }
-        }
 
         constraints
     }
@@ -74,7 +79,7 @@ impl TypeQLConstraintTranslator {
             || name_lower == "isbn"
     }
 
-    /// Translate `LinkML` cardinality to TypeQL @card constraint
+    /// Translate `LinkML` cardinality to `TypeQL` @card constraint
     fn translate_cardinality(&self, slot: &SlotDefinition) -> Option<String> {
         let min = self.get_min_cardinality(slot);
         let max = self.get_max_cardinality(slot);
@@ -85,14 +90,14 @@ impl TypeQLConstraintTranslator {
         match (min, max) {
             (0, Some(1)) if slot.required != Some(true) => None, // Default optional
             (1, Some(1)) if slot.required == Some(true) => None, // Default required
-            (min, Some(max)) => Some(format!("@card({}..{})", min, max)),
+            (min, Some(max)) => Some(format!("@card({min}..{max})")),
             (min, None) => Some(format!("@card({min}..)")),
         }
     }
 
     /// Get minimum cardinality for a slot
     fn get_min_cardinality(&self, slot: &SlotDefinition) -> usize {
-        if slot.required == Some(true) { 1 } else { 0 }
+        usize::from(slot.required == Some(true))
     }
 
     /// Get maximum cardinality for a slot
@@ -109,7 +114,7 @@ impl TypeQLConstraintTranslator {
         }
     }
 
-    /// Translate regex pattern to TypeQL format
+    /// Translate regex pattern to `TypeQL` format
     fn translate_regex(&mut self, pattern: &str) -> Option<String> {
         // Cache translated patterns
         if let Some(cached) = self.regex_cache.get(pattern) {
@@ -122,7 +127,7 @@ impl TypeQLConstraintTranslator {
 
         // Validate the pattern
         if self.is_valid_regex(&typeql_pattern) {
-            let constraint = format!("regex \"{}\"", typeql_pattern);
+            let constraint = format!("regex \"{typeql_pattern}\"");
             self.regex_cache
                 .insert(pattern.to_string(), constraint.clone());
             Some(constraint)
@@ -131,7 +136,7 @@ impl TypeQLConstraintTranslator {
         }
     }
 
-    /// Escape regex pattern for TypeQL
+    /// Escape regex pattern for `TypeQL`
     fn escape_regex_for_typeql(&self, pattern: &str) -> String {
         // TypeQL requires double quotes to be escaped in regex
         pattern.replace('"', "\\\"")
@@ -144,7 +149,7 @@ impl TypeQLConstraintTranslator {
     }
 
     /// Generate range constraints for numeric types
-    pub fn translate_range_constraints(&self, slot: &SlotDefinition) -> Vec<String> {
+    #[must_use] pub fn translate_range_constraints(&self, slot: &SlotDefinition) -> Vec<String> {
         let mut constraints = Vec::new();
 
         // TypeDB 3.0 supports range constraints
@@ -165,7 +170,7 @@ impl TypeQLConstraintTranslator {
             };
 
             if has_min && has_max {
-                constraints.push(format!("range [{}..{}]", min_str, max_str));
+                constraints.push(format!("range [{min_str}..{max_str}]"));
             } else if has_min {
                 constraints.push(format!("range [{min_str}..)"));
             } else if has_max {
@@ -177,7 +182,7 @@ impl TypeQLConstraintTranslator {
     }
 
     /// Generate validation rules for complex constraints
-    pub fn generate_validation_rule(
+    #[must_use] pub fn generate_validation_rule(
         &self,
         _class_name: &str,
         slot_name: &str,
@@ -186,26 +191,22 @@ impl TypeQLConstraintTranslator {
         let mut rule_parts = Vec::new();
 
         // Check for enum constraints
-        if let Some(enum_range) = &slot.range {
-            if enum_range.ends_with("Enum") {
+        if let Some(enum_range) = &slot.range
+            && enum_range.ends_with("Enum") {
                 // Generate enum validation rule
                 rule_parts.push(format!(
-                    "# Validates {} is a valid {}",
-                    slot_name, enum_range
+                    "# Validates {slot_name} is a valid {enum_range}"
                 ));
             }
-        }
 
         // Check for pattern validation beyond simple regex
-        if let Some(pattern) = &slot.pattern {
-            if pattern.contains('|') || pattern.contains("(?i)") {
+        if let Some(pattern) = &slot.pattern
+            && (pattern.contains('|') || pattern.contains("(?i)")) {
                 // Complex pattern that might need a rule
                 rule_parts.push(format!(
-                    "# Complex pattern validation for {}: {}",
-                    slot_name, pattern
+                    "# Complex pattern validation for {slot_name}: {pattern}"
                 ));
             }
-        }
 
         // Check for conditional requirements
         if slot.rules.is_some() {
@@ -239,8 +240,8 @@ impl TypeQLConstraintTranslator {
         // Add conditions for each slot in the unique key
         for (i, slot) in unique_key.unique_key_slots.iter().enumerate() {
             let attr = type_name_converter(slot);
-            rule.push_str(&format!("    $x has {} $v{};\n", attr, i));
-            rule.push_str(&format!("    $y has {} $v{};\n", attr, i));
+            rule.push_str(&format!("    $x has {attr} $v{i};\n"));
+            rule.push_str(&format!("    $y has {attr} $v{i};\n"));
         }
 
         rule.push_str("} then {\n");
@@ -310,7 +311,7 @@ mod tests {
     }
 
     #[test]
-    fn test_regex_translation() {
+    fn test_regex_translation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut translator = TypeQLConstraintTranslator::new();
 
         // Test simple pattern
@@ -319,7 +320,7 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .map_err(|e| anyhow::anyhow!("should have regex constraint: {}", e))?
+                .expect("should have regex constraint: {}")
                 .contains("regex")
         );
 
@@ -329,8 +330,9 @@ mod tests {
         assert!(result.is_some());
         assert!(
             result
-                .map_err(|e| anyhow::anyhow!("should have regex constraint with quotes: {}", e))?
+                .expect("should have regex constraint with quotes: {}")
                 .contains(r#"\""#)
         );
+        Ok(())
     }
 }

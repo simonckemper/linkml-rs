@@ -234,8 +234,8 @@ impl CompiledValidator {
         let mut issues = Vec::new();
         match instruction {
             ValidationInstruction::CheckRequired { path, field } => {
-                if let Some(obj) = value.as_object() {
-                    if !obj.contains_key(field) {
+                if let Some(obj) = value.as_object()
+                    && !obj.contains_key(field) {
                         issues.push(ValidationIssue {
                             severity: Severity::Error,
                             path: path.clone(),
@@ -245,14 +245,13 @@ impl CompiledValidator {
                             context: HashMap::new(),
                         });
                     }
-                }
             }
 
             ValidationInstruction::ValidatePattern { path, pattern_id } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path) {
-                    if let Some(s) = field_value.as_str() {
-                        if let Some(pattern) = self.compiled_patterns.get(*pattern_id) {
-                            if !pattern.is_match(s) {
+                if let Some(field_value) = self.extract_value_at_path(value, path)
+                    && let Some(s) = field_value.as_str()
+                        && let Some(pattern) = self.compiled_patterns.get(*pattern_id)
+                            && !pattern.is_match(s) {
                                 let mut context = HashMap::new();
                                 context.insert(
                                     "value".to_string(),
@@ -274,9 +273,6 @@ impl CompiledValidator {
                                     context,
                                 });
                             }
-                        }
-                    }
-                }
             }
 
             ValidationInstruction::ValidateRange {
@@ -285,8 +281,8 @@ impl CompiledValidator {
                 max,
                 inclusive,
             } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path) {
-                    if let Some(num) = field_value.as_f64() {
+                if let Some(field_value) = self.extract_value_at_path(value, path)
+                    && let Some(num) = field_value.as_f64() {
                         let valid = match (min, max) {
                             (Some(min_val), Some(max_val)) => {
                                 if *inclusive {
@@ -320,22 +316,20 @@ impl CompiledValidator {
                                     serde_json::Value::Number(json_num),
                                 );
                             }
-                            if let Some(min_val) = min {
-                                if let Some(json_min) = serde_json::Number::from_f64(*min_val) {
+                            if let Some(min_val) = min
+                                && let Some(json_min) = serde_json::Number::from_f64(*min_val) {
                                     context.insert(
                                         "min".to_string(),
                                         serde_json::Value::Number(json_min),
                                     );
                                 }
-                            }
-                            if let Some(max_val) = max {
-                                if let Some(json_max) = serde_json::Number::from_f64(*max_val) {
+                            if let Some(max_val) = max
+                                && let Some(json_max) = serde_json::Number::from_f64(*max_val) {
                                     context.insert(
                                         "max".to_string(),
                                         serde_json::Value::Number(json_max),
                                     );
                                 }
-                            }
                             issues.push(ValidationIssue {
                                 severity: Severity::Error,
                                 path: path.clone(),
@@ -346,14 +340,13 @@ impl CompiledValidator {
                             });
                         }
                     }
-                }
             }
 
             ValidationInstruction::ValidateEnum { path, enum_id } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path) {
-                    if let Some(s) = field_value.as_str() {
-                        if let Some(enum_set) = self.cached_enums.get(*enum_id) {
-                            if !enum_set.contains(s) {
+                if let Some(field_value) = self.extract_value_at_path(value, path)
+                    && let Some(s) = field_value.as_str()
+                        && let Some(enum_set) = self.cached_enums.get(*enum_id)
+                            && !enum_set.contains(s) {
                                 let mut context = HashMap::new();
                                 context.insert(
                                     "value".to_string(),
@@ -368,9 +361,6 @@ impl CompiledValidator {
                                     context,
                                 });
                             }
-                        }
-                    }
-                }
             }
 
             ValidationInstruction::ValidateType {
@@ -471,8 +461,8 @@ impl CompiledValidator {
             }
 
             ValidationInstruction::ValidateLength { path, min, max } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path) {
-                    if let Some(s) = field_value.as_str() {
+                if let Some(field_value) = self.extract_value_at_path(value, path)
+                    && let Some(s) = field_value.as_str() {
                         let len = s.chars().count();
                         let valid = match (min, max) {
                             (Some(min_len), Some(max_len)) => len >= *min_len && len <= *max_len,
@@ -509,7 +499,6 @@ impl CompiledValidator {
                             });
                         }
                     }
-                }
             }
         }
 
@@ -654,14 +643,12 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Handle inheritance if precompute_inheritance is enabled
-        if self.options.precompute_inheritance {
-            if let Some(parent_name) = &class.is_a {
-                if let Some(parent_class) = self.schema.classes.get(parent_name) {
+        if self.options.precompute_inheritance
+            && let Some(parent_name) = &class.is_a
+                && let Some(parent_class) = self.schema.classes.get(parent_name) {
                     let parent_instructions = self.compile_inherited_slots(parent_class)?;
                     instructions.extend(parent_instructions);
                 }
-            }
-        }
 
         Ok(CompiledValidator {
             name: format!("compiled_validator_{class_name}"),
@@ -691,15 +678,14 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Pattern validation
-        if let Some(pattern) = &slot.pattern {
-            if self.options.compile_patterns {
+        if let Some(pattern) = &slot.pattern
+            && self.options.compile_patterns {
                 let pattern_id = self.compile_pattern(pattern)?;
                 instructions.push(ValidationInstruction::ValidatePattern {
                     path: path.clone(),
                     pattern_id,
                 });
             }
-        }
 
         // Range validation
         if self.options.optimize_ranges
@@ -720,28 +706,25 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Type validation
-        if self.options.optimize_types {
-            if let Some(range) = &slot.range {
+        if self.options.optimize_types
+            && let Some(range) = &slot.range {
                 let compiled_type = self.compile_type(range);
                 instructions.push(ValidationInstruction::ValidateType {
                     path: path.clone(),
                     expected_type: compiled_type,
                 });
             }
-        }
 
         // Enum validation
-        if let Some(range) = &slot.range {
-            if let Some(enum_def) = self.schema.enums.get(range) {
-                if self.options.cache_permissible_values {
+        if let Some(range) = &slot.range
+            && let Some(enum_def) = self.schema.enums.get(range)
+                && self.options.cache_permissible_values {
                     let enum_id = self.cache_enum(range, enum_def);
                     instructions.push(ValidationInstruction::ValidateEnum {
                         path: path.clone(),
                         enum_id,
                     });
                 }
-            }
-        }
 
         // Array validation
         if slot.multivalued == Some(true) {
@@ -777,12 +760,11 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Recursively compile parent's parent
-        if let Some(grandparent_name) = &parent_class.is_a {
-            if let Some(grandparent_class) = self.schema.classes.get(grandparent_name) {
+        if let Some(grandparent_name) = &parent_class.is_a
+            && let Some(grandparent_class) = self.schema.classes.get(grandparent_name) {
                 let grandparent_instructions = self.compile_inherited_slots(grandparent_class)?;
                 instructions.extend(grandparent_instructions);
             }
-        }
 
         Ok(instructions)
     }
@@ -853,6 +835,7 @@ impl<'a> ValidatorCompiler<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[tokio::test]
     async fn test_compiled_validator() -> anyhow::Result<()> {
@@ -876,7 +859,7 @@ mod tests {
         let options = CompilationOptions::default();
         let validator =
             CompiledValidator::compile_class(&schema, "Person", &person_class, &options)
-                .map_err(|e| anyhow::anyhow!("Failed to compile validator: {}", e))?;
+                .expect("Failed to compile validator: {}");
 
         // Test valid data
         let valid_data = serde_json::json!({

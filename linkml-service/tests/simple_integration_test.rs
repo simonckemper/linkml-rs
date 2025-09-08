@@ -1,6 +1,6 @@
 //! Simple integration test to verify core features work
 
-use linkml_core::types::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 use linkml_service::validator::{ValidationEngine, ValidationOptions, ValidationReport};
 use serde_json::json;
 

@@ -38,6 +38,10 @@ impl<F: FileSystemOperations> ParserV2<F> {
     }
 
     /// Parse schema from string with explicit format
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn parse_str(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
         match format.to_lowercase().as_str() {
             "yaml" | "yml" => self.yaml_parser.parse_str(content).await,
@@ -47,6 +51,10 @@ impl<F: FileSystemOperations> ParserV2<F> {
     }
 
     /// Parse schema from file, detecting format from extension
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn parse_file(&self, path: &Path) -> Result<SchemaDefinition> {
         let format = path
             .extension()
@@ -61,6 +69,10 @@ impl<F: FileSystemOperations> ParserV2<F> {
     }
 
     /// Parse with explicit format
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn parse_with_format(
         &self,
         content: &str,
@@ -80,7 +92,7 @@ mod tests {
     #[tokio::test]
     async fn test_parser_v2_yaml() {
         let temp_dir = TempDir::new()?;
-        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
+        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf());
         let parser = ParserV2::new(fs.clone());
 
         let schema_content = r#"
@@ -107,7 +119,7 @@ classes:
     #[tokio::test]
     async fn test_parser_v2_json() {
         let temp_dir = TempDir::new()?;
-        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf()));
+        let fs = Arc::new(TokioFileSystemAdapter::sandboxed(temp_dir.path().to_path_buf());
         let parser = ParserV2::new(fs.clone());
 
         let schema_content = r#"{

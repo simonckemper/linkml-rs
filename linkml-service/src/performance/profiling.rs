@@ -1,7 +1,7 @@
 //! Performance profiling utilities for identifying hot paths
 //!
 //! This module provides tools to profile and optimize performance-critical
-//! sections of the LinkML validation engine.
+//! sections of the `LinkML` validation engine.
 
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -19,9 +19,15 @@ pub trait TimestampService: Send + Sync {
 /// System-based timestamp service implementation
 pub struct SystemTimestampService;
 
+impl Default for SystemTimestampService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SystemTimestampService {
     /// Create a new system timestamp service
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self
     }
 }
@@ -136,7 +142,7 @@ impl Profiler {
     /// Enable or disable profiling
     pub fn set_enabled(&self, enabled: bool) {
         self.enabled
-            .store(if enabled { 1 } else { 0 }, Ordering::Relaxed);
+            .store(u64::from(enabled), Ordering::Relaxed);
     }
 
     /// Check if profiling is enabled
@@ -228,7 +234,7 @@ impl<'a> TimingGuard<'a> {
     }
 }
 
-impl<'a> Drop for TimingGuard<'a> {
+impl Drop for TimingGuard<'_> {
     fn drop(&mut self) {
         if self.profiler.is_enabled() {
             let duration = self.start.elapsed();

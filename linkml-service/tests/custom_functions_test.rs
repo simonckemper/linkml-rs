@@ -7,6 +7,7 @@ use linkml_service::expression::{
 };
 use serde_json::{Value, json};
 
+
 #[test]
 fn test_custom_function_registration() {
     let mut registry = FunctionRegistry::new();
@@ -52,7 +53,7 @@ fn test_custom_function_in_expression() {
     // Parse and evaluate expression with custom function
     let parser = Parser::new();
     let expr = parser
-        .parse_str("reverse(name)")
+        .parse("reverse(name)")
         .expect("Test operation failed");
 
     let mut context = std::collections::HashMap::new();
@@ -92,7 +93,7 @@ fn test_custom_math_function() {
     // Test with integer
     let parser = Parser::new();
     let expr = parser
-        .parse_str("square(5)")
+        .parse("square(5)")
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -101,7 +102,7 @@ fn test_custom_math_function() {
 
     // Test with float
     let expr = parser
-        .parse_str("square(3.5)")
+        .parse("square(3.5)")
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -139,7 +140,7 @@ fn test_custom_function_with_multiple_args() {
     // Test with 2 arguments
     let parser = Parser::new();
     let expr = parser
-        .parse_str(r#"join("Hello", "World")"#)
+        .parse(r#"join("Hello", "World")"#)
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -148,7 +149,7 @@ fn test_custom_function_with_multiple_args() {
 
     // Test with 3 arguments
     let expr = parser
-        .parse_str(r#"join("One", "Two", "Three")"#)
+        .parse(r#"join("One", "Two", "Three")"#)
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -177,7 +178,7 @@ fn test_custom_validation_function() {
     // Test valid email
     let parser = Parser::new();
     let expr = parser
-        .parse_str(r#"is_email("user@example.com")"#)
+        .parse(r#"is_email("user@example.com")"#)
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -186,7 +187,7 @@ fn test_custom_validation_function() {
 
     // Test invalid email
     let expr = parser
-        .parse_str(r#"is_email("not-an-email")"#)
+        .parse(r#"is_email("not-an-email")"#)
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -270,7 +271,7 @@ fn test_custom_function_list_operations() {
     // Test sum function
     let parser = Parser::new();
     let expr = parser
-        .parse_str("sum(numbers)")
+        .parse("sum(numbers)")
         .expect("Test operation failed");
 
     let mut context = std::collections::HashMap::new();
@@ -330,7 +331,7 @@ fn test_custom_function_chaining() {
     // Test function chaining: add_one(double(5)) = add_one(10) = 11
     let parser = Parser::new();
     let expr = parser
-        .parse_str("add_one(double(5))")
+        .parse("add_one(double(5))")
         .expect("Test operation failed");
     let result = evaluator
         .evaluate(&expr, &std::collections::HashMap::new())
@@ -343,8 +344,8 @@ fn test_function_registry_listing() {
     let mut registry = FunctionRegistry::new();
 
     // Register some custom functions
-    registry.register_custom(CustomFunction::new("custom1", 0, Some(0), |_| Ok(json!(1))));
-    registry.register_custom(CustomFunction::new("custom2", 0, Some(0), |_| Ok(json!(2))));
+    registry.register_custom(CustomFunction::new("custom1", 0, Some(0), |_| Ok(json!(1)));
+    registry.register_custom(CustomFunction::new("custom2", 0, Some(0), |_| Ok(json!(2)));
 
     // Get function names
     let mut names = registry.function_names();

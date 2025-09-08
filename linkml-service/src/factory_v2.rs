@@ -9,6 +9,7 @@ use linkml_core::{
     configuration::LinkMLServiceConfig,
     error::{LinkMLError, Result},
 };
+use configuration_core::Validate;
 
 use crate::service::LinkMLServiceImpl;
 
@@ -33,6 +34,9 @@ use timestamp_core::TimestampService;
 ///
 /// Returns an error if service creation fails
 #[allow(clippy::too_many_arguments)]
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
 pub async fn create_linkml_service_with_configuration<C, T, E, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
@@ -93,6 +97,9 @@ where
 ///
 /// Returns an error if service creation fails
 #[allow(clippy::too_many_arguments)]
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
 pub async fn create_linkml_service_with_custom_config<C, T, E, D, O>(
     config: LinkMLServiceConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -113,7 +120,6 @@ where
     O: TimeoutService + Send + Sync + 'static,
 {
     // Validate custom configuration
-    use configuration_core::Validate;
     use crate::factory::LinkMLServiceDependencies as FactoryDeps;
 
     config
@@ -151,6 +157,9 @@ where
 ///
 /// Returns an error if service creation fails
 #[allow(clippy::too_many_arguments)]
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
 pub async fn create_linkml_service_from_source<C, T, E, D, O>(
     config_source: &str,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -207,6 +216,10 @@ where
 ///
 /// This factory function creates a service configured for a specific
 /// environment (development, testing, production).
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub async fn create_linkml_service_for_environment<C, T, E, D, O>(
     environment: Environment,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,

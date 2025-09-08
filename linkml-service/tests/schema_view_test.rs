@@ -1,10 +1,10 @@
 //! Tests for SchemaView API
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
 use linkml_service::schema_view::SchemaView;
 use linkml_service::schema_view::analysis::SchemaAnalyzer;
 use linkml_service::schema_view::navigation::ClassNavigator;
-
+use linkml_core::types::SchemaDefinition;
 /// Create a test schema with inheritance
 fn create_test_schema() -> SchemaDefinition {
     let mut schema = SchemaDefinition {
@@ -96,8 +96,8 @@ fn test_class_inheritance() {
     let descendants = view
         .class_descendants("BaseClass")
         .expect("Failed to get descendants");
-    assert!(descendants.contains(&"DerivedClass".to_string()));
-    assert!(descendants.contains(&"MixedClass".to_string()));
+    assert!(descendants.contains(&"DerivedClass".to_string());
+    assert!(descendants.contains(&"MixedClass".to_string());
 }
 
 #[test]
@@ -111,9 +111,9 @@ fn test_induced_class() {
         .expect("Failed to get induced class");
 
     // Should have both inherited and own slots
-    assert!(induced.slots.contains(&"id".to_string()));
-    assert!(induced.slots.contains(&"name".to_string()));
-    assert!(induced.slots.contains(&"extra_field".to_string()));
+    assert!(induced.slots.contains(&"id".to_string());
+    assert!(induced.slots.contains(&"name".to_string());
+    assert!(induced.slots.contains(&"extra_field".to_string());
 }
 
 #[test]
@@ -127,10 +127,10 @@ fn test_class_with_mixins() {
         .expect("Failed to get induced class");
 
     // Should have base slots and mixin slots
-    assert!(induced.slots.contains(&"id".to_string()));
-    assert!(induced.slots.contains(&"name".to_string()));
-    assert!(induced.slots.contains(&"created_at".to_string()));
-    assert!(induced.slots.contains(&"updated_at".to_string()));
+    assert!(induced.slots.contains(&"id".to_string());
+    assert!(induced.slots.contains(&"name".to_string());
+    assert!(induced.slots.contains(&"created_at".to_string());
+    assert!(induced.slots.contains(&"updated_at".to_string());
 }
 
 #[test]
@@ -142,7 +142,7 @@ fn test_identifier_slot() {
     let id_slot = view
         .get_identifier_slot("BaseClass")
         .expect("Failed to get identifier slot");
-    assert_eq!(id_slot, Some("id".to_string()));
+    assert_eq!(id_slot, Some("id".to_string());
 
     // Mixin should not have identifier
     let mixin_id = view
@@ -179,15 +179,15 @@ fn test_class_navigator() {
     let roots = navigator
         .get_root_classes()
         .expect("Failed to get root classes");
-    assert!(roots.contains(&"BaseClass".to_string()));
-    assert!(roots.contains(&"TimestampMixin".to_string()));
+    assert!(roots.contains(&"BaseClass".to_string());
+    assert!(roots.contains(&"TimestampMixin".to_string());
 
     // Test leaf classes
     let leaves = navigator
         .get_leaf_classes()
         .expect("Failed to get leaf classes");
-    assert!(leaves.contains(&"DerivedClass".to_string()));
-    assert!(leaves.contains(&"MixedClass".to_string()));
+    assert!(leaves.contains(&"DerivedClass".to_string());
+    assert!(leaves.contains(&"MixedClass".to_string());
 
     // Test inheritance chain
     let chain = navigator
@@ -219,9 +219,9 @@ fn test_schema_analyzer() {
         .find_elements_by_pattern(".*Class")
         .expect("Failed to search by pattern");
     let classes = pattern_results.get("classes").expect("No classes found");
-    assert!(classes.contains(&"BaseClass".to_string()));
-    assert!(classes.contains(&"DerivedClass".to_string()));
-    assert!(classes.contains(&"MixedClass".to_string()));
+    assert!(classes.contains(&"BaseClass".to_string());
+    assert!(classes.contains(&"DerivedClass".to_string());
+    assert!(classes.contains(&"MixedClass".to_string());
 }
 
 #[test]

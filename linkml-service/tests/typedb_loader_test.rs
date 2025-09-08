@@ -8,6 +8,8 @@ use linkml_service::loader::{
 };
 use serde_json::json;
 use std::collections::HashMap;
+use std::error::Error as StdError;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 /// Mock TypeDB executor for testing
 struct MockTypeDBExecutor {
@@ -122,7 +124,7 @@ impl TypeDBQueryExecutor for MockTypeDBExecutor {
         &self,
         _query: &str,
         _database: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 
@@ -130,7 +132,7 @@ impl TypeDBQueryExecutor for MockTypeDBExecutor {
         &self,
         _query: &str,
         _database: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
         Ok(())
     }
 }
@@ -228,15 +230,15 @@ async fn test_typedb_loader_with_mock() {
     // Check first person
     let person1 = &instances[0];
     assert_eq!(person1.class_name, "Person");
-    assert_eq!(person1.data.get("full_name"), Some(&json!("Alice Johnson")));
-    assert_eq!(person1.data.get("age"), Some(&json!(30)));
-    assert_eq!(person1.data.get("email"), Some(&json!("alice@example.com")));
+    assert_eq!(person1.data.get("full_name"), Some(&json!("Alice Johnson"));
+    assert_eq!(person1.data.get("age"), Some(&json!(30));
+    assert_eq!(person1.data.get("email"), Some(&json!("alice@example.com"));
 
     // Check second person
     let person2 = &instances[1];
     assert_eq!(person2.class_name, "Person");
-    assert_eq!(person2.data.get("full_name"), Some(&json!("Bob Smith")));
-    assert_eq!(person2.data.get("age"), Some(&json!(25)));
+    assert_eq!(person2.data.get("full_name"), Some(&json!("Bob Smith"));
+    assert_eq!(person2.data.get("age"), Some(&json!(25));
 }
 
 #[tokio::test]

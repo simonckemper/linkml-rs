@@ -1,9 +1,9 @@
 //! Version compatibility checking for plugins
 //!
-//! This module handles checking plugin compatibility with the LinkML version
+//! This module handles checking plugin compatibility with the `LinkML` version
 //! and other dependencies.
 
-use super::*;
+use super::{PluginManifest, Result, PluginMetadata, LinkMLError, PluginDependency, HashMap};
 use crate::plugin::api::PLUGIN_API_VERSION;
 use semver::{Op, Version, VersionReq};
 
@@ -41,9 +41,15 @@ impl Default for CompatibilityRules {
     }
 }
 
+impl Default for CompatibilityChecker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompatibilityChecker {
     /// Create a new compatibility checker
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
                 .expect("CARGO_PKG_VERSION should be a valid semver"),
@@ -52,7 +58,7 @@ impl CompatibilityChecker {
     }
 
     /// Create with custom rules
-    pub fn with_rules(rules: CompatibilityRules) -> Self {
+    #[must_use] pub fn with_rules(rules: CompatibilityRules) -> Self {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
                 .expect("CARGO_PKG_VERSION should be a valid semver"),
@@ -61,6 +67,10 @@ impl CompatibilityChecker {
     }
 
     /// Check if a plugin is compatible
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn check_compatibility(&self, manifest: &PluginManifest) -> Result<()> {
         let plugin_info = &manifest.plugin;
 
@@ -72,7 +82,7 @@ impl CompatibilityChecker {
 
         // Check dependency versions
         for dep in &plugin_info.dependencies {
-            self.validate_dependency(&dep)?;
+            self.validate_dependency(dep)?;
         }
 
         // Check API version
@@ -106,7 +116,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but current version is {}",
                 requirement, self.linkml_version
-            )));
+            ));
         }
 
         // In strict mode, require exact major version match
@@ -114,7 +124,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but strict mode requires major version {}",
                 requirement, self.linkml_version.major
-            )));
+            ));
         }
 
         Err(LinkMLError::ServiceError(format!(
@@ -131,8 +141,7 @@ impl CompatibilityChecker {
             {
                 // Just warn, don't fail
                 eprintln!(
-                    "Warning: Plugin uses deprecated LinkML API version {}",
-                    requirement
+                    "Warning: Plugin uses deprecated LinkML API version {requirement}"
                 );
             }
         }
@@ -146,7 +155,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Invalid version requirement for dependency '{}'",
                 dependency.id
-            )));
+            ));
         }
 
         // Validate version requirement can be parsed
@@ -165,9 +174,8 @@ impl CompatibilityChecker {
     fn _check_api_version(&self, api_version: u32) -> Result<()> {
         if api_version != PLUGIN_API_VERSION {
             return Err(LinkMLError::ServiceError(format!(
-                "Plugin API version {} is not compatible with current API version {}",
-                api_version, PLUGIN_API_VERSION
-            )));
+                "Plugin API version {api_version} is not compatible with current API version {PLUGIN_API_VERSION}"
+            ));
         }
         Ok(())
     }
@@ -226,9 +234,15 @@ pub struct VersionRange {
     pub reason: String,
 }
 
+impl Default for CompatibilityMatrix {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompatibilityMatrix {
     /// Create a new compatibility matrix
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             compatible: HashMap::new(),
             incompatible: HashMap::new(),
@@ -239,7 +253,7 @@ impl CompatibilityMatrix {
     pub fn add_compatible(&mut self, plugin_id: String, range: VersionRange) {
         self.compatible
             .entry(plugin_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(range);
     }
 
@@ -247,16 +261,16 @@ impl CompatibilityMatrix {
     pub fn add_incompatible(&mut self, plugin_id: String, range: VersionRange) {
         self.incompatible
             .entry(plugin_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(range);
     }
 
     /// Check if a specific plugin version is compatible
-    pub fn is_compatible(&self, plugin_id: &str, version: &Version) -> Option<bool> {
+    #[must_use] pub fn is_compatible(&self, plugin_id: &str, version: &Version) -> Option<bool> {
         // Check incompatible list first
         if let Some(ranges) = self.incompatible.get(plugin_id) {
             for range in ranges {
-                if version >= &range.min && range.max.as_ref().map_or(true, |max| version < max) {
+                if version >= &range.min && range.max.as_ref().is_none_or(|max| version < max) {
                     return Some(false);
                 }
             }
@@ -265,7 +279,7 @@ impl CompatibilityMatrix {
         // Check compatible list
         if let Some(ranges) = self.compatible.get(plugin_id) {
             for range in ranges {
-                if version >= &range.min && range.max.as_ref().map_or(true, |max| version < max) {
+                if version >= &range.min && range.max.as_ref().is_none_or(|max| version < max) {
                     return Some(true);
                 }
             }
@@ -299,12 +313,12 @@ pub struct MigrationStep {
 
 impl VersionMigration {
     /// Check if migration is needed
-    pub fn is_needed(&self, current: &Version, target: &Version) -> bool {
+    #[must_use] pub fn is_needed(&self, current: &Version, target: &Version) -> bool {
         current >= &self.from && target >= &self.to
     }
 
     /// Get migration complexity score (0-100)
-    pub fn complexity_score(&self) -> u32 {
+    #[must_use] pub fn complexity_score(&self) -> u32 {
         let manual_steps = self.steps.iter().filter(|s| !s.automated).count();
         let total_steps = self.steps.len();
 
@@ -318,7 +332,6 @@ impl VersionMigration {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_version_compatibility() -> std::result::Result<(), Box<dyn std::error::Error>> {

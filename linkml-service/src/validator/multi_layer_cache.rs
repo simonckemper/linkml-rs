@@ -216,9 +216,9 @@ impl MultiLayerCache {
                 return None; // Skip on error
             };
 
-            if let Ok(Some(value)) = l2.get(&cache_key).await {
-                if let Ok(bytes) = value.to_bytes() {
-                    if let Ok(validator) = self.deserialize_validator(&bytes) {
+            if let Ok(Some(value)) = l2.get(&cache_key).await
+                && let Ok(bytes) = value.to_bytes()
+                    && let Ok(validator) = self.deserialize_validator(&bytes) {
                         let validator = Arc::new(validator);
 
                         // Promote to L1
@@ -234,8 +234,6 @@ impl MultiLayerCache {
 
                         return Some(validator);
                     }
-                }
-            }
         }
 
         let mut stats = self.stats.write();
@@ -243,8 +241,8 @@ impl MultiLayerCache {
         drop(stats);
 
         // Try L3 (disk cache)
-        if let Some(l3) = &self.l3_cache {
-            if let Ok(Some(validator)) = l3.get(key).await {
+        if let Some(l3) = &self.l3_cache
+            && let Ok(Some(validator)) = l3.get(key).await {
                 let validator = Arc::new(validator);
 
                 // Promote to L1 and L2
@@ -260,7 +258,6 @@ impl MultiLayerCache {
 
                 return Some(validator);
             }
-        }
 
         let mut stats = self.stats.write();
         stats.l3_misses += 1;
@@ -433,15 +430,13 @@ impl MultiLayerCache {
     }
 
     async fn promote_to_l2(&self, key: ValidatorCacheKey, validator: Arc<CompiledValidator>) {
-        if let Some(l2) = &self.l2_cache {
-            if let Ok(cache_key) = CacheKey::new(format!("linkml:validator:{key}")) {
-                if let Ok(serialized) = self.serialize_validator(&validator) {
+        if let Some(l2) = &self.l2_cache
+            && let Ok(cache_key) = CacheKey::new(format!("linkml:validator:{key}"))
+                && let Ok(serialized) = self.serialize_validator(&validator) {
                     let cache_value = CacheValue::from_bytes(serialized);
                     let ttl = Some(CacheTtl::Seconds(self.config.l2_ttl.as_secs()));
                     let _ = l2.set(&cache_key, &cache_value, ttl).await;
                 }
-            }
-        }
     }
 
     fn prefetch_related_validators(
@@ -673,17 +668,15 @@ impl DiskCache {
                 .await
                 .map_err(|e| LinkMLError::service(format!("Failed to read directory entry: {e}")))?
             {
-                if let Ok(metadata) = entry.metadata().await {
-                    if metadata.is_file() {
-                        if let Ok(modified) = metadata.modified() {
+                if let Ok(metadata) = entry.metadata().await
+                    && metadata.is_file()
+                        && let Ok(modified) = metadata.modified() {
                             entries.push((
                                 entry.path(),
                                 usize::try_from(metadata.len()).unwrap_or(usize::MAX),
                                 modified,
                             ));
                         }
-                    }
-                }
             }
 
             // Sort by modification time (oldest first)
@@ -723,11 +716,10 @@ impl DiskCache {
             let entry = entry
                 .map_err(|e| LinkMLError::service(format!("Failed to walk directory: {e}")))?;
 
-            if entry.file_type().is_file() {
-                if let Ok(metadata) = entry.metadata() {
+            if entry.file_type().is_file()
+                && let Ok(metadata) = entry.metadata() {
                     total_size += usize::try_from(metadata.len()).unwrap_or(usize::MAX);
                 }
-            }
         }
 
         Ok(total_size)
@@ -742,7 +734,7 @@ mod tests {
     #[tokio::test]
     async fn test_multi_layer_cache_basic() -> anyhow::Result<()> {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
+        let cache = MultiLayerCache::new(config, None).expect("should create cache: {}");
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -756,7 +748,7 @@ mod tests {
         cache
             .put(key.clone(), validator.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should put into cache: {}", e))?;
+            .expect("should put into cache: {}");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
 
@@ -771,7 +763,7 @@ mod tests {
     #[tokio::test]
     async fn test_cache_invalidation() -> anyhow::Result<()> {
         let config = MultiLayerCacheConfig::default();
-        let cache = MultiLayerCache::new(config, None).map_err(|e| anyhow::anyhow!("should create cache: {}", e))?;
+        let cache = MultiLayerCache::new(config, None).expect("should create cache: {}");
 
         let schema = SchemaDefinition {
             id: "test-schema".to_string(),
@@ -785,11 +777,11 @@ mod tests {
         cache
             .put(key.clone(), validator)
             .await
-            .map_err(|e| anyhow::anyhow!("should put into cache: {}", e))?;
+            .expect("should put into cache: {}");
         cache
             .invalidate(&key)
             .await
-            .map_err(|e| anyhow::anyhow!("should invalidate cache: {}", e))?;
+            .expect("should invalidate cache: {}");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
         Ok(())

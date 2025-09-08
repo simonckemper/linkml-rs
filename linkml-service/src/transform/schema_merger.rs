@@ -1,6 +1,6 @@
-//! Schema merging implementation for LinkML
+//! Schema merging implementation for `LinkML`
 //!
-//! This module provides functionality to merge multiple LinkML schemas,
+//! This module provides functionality to merge multiple `LinkML` schemas,
 //! handling conflicts and preserving semantics.
 
 use linkml_core::prelude::*;
@@ -46,8 +46,7 @@ impl From<MergeError> for linkml_core::LinkMLError {
         match err {
             MergeError::ConflictingDefinition { element_type, name, details } => {
                 linkml_core::LinkMLError::schema_validation(format!(
-                    "Conflicting definitions for {} '{}': {}",
-                    element_type, name, details
+                    "Conflicting definitions for {element_type} '{name}': {details}"
                 ))
             }
             MergeError::InvalidMerge(msg) => linkml_core::LinkMLError::schema_validation(msg),
@@ -117,7 +116,7 @@ pub struct SchemaMerger {
 
 impl SchemaMerger {
     /// Create a new schema merger
-    pub fn new(config: MergeConfig) -> Self {
+    #[must_use] pub fn new(config: MergeConfig) -> Self {
         Self {
             config,
             conflicts: Vec::new(),
@@ -125,7 +124,7 @@ impl SchemaMerger {
     }
 
     /// Create with default configuration
-    pub fn with_defaults() -> Self {
+    #[must_use] pub fn with_defaults() -> Self {
         Self::new(MergeConfig::default())
     }
 
@@ -138,10 +137,10 @@ impl SchemaMerger {
         }
 
         if schemas.len() == 1 {
-            return Ok(schemas
+            return schemas
                 .into_iter()
                 .next()
-                .ok_or_else(|| MergeError::InvalidInput("checked that schemas has one element".to_string()))?);
+                .ok_or_else(|| MergeError::InvalidInput("checked that schemas has one element".to_string());
         }
 
         let mut schemas_iter = schemas.into_iter();
@@ -632,15 +631,14 @@ impl SchemaMerger {
         new: &str,
     ) -> MergeResult<()> {
         self.conflicts.push(format!(
-            "{} '{}' has different values: '{}' vs '{}'",
-            element_type, name, existing, new
+            "{element_type} '{name}' has different values: '{existing}' vs '{new}'"
         ));
 
         match self.config.strategy {
             MergeStrategy::Strict => Err(MergeError::ConflictingDefinition {
                 element_type: element_type.to_string(),
                 name: name.to_string(),
-                details: format!("Values differ: '{}' vs '{}'", existing, new),
+                details: format!("Values differ: '{existing}' vs '{new}'"),
             }),
             _ => Ok(()),
         }
@@ -654,42 +652,37 @@ impl SchemaMerger {
 
         // Validate class references
         for (class_name, class_def) in &schema.classes {
-            if let Some(parent) = &class_def.is_a {
-                if !all_classes.contains(parent) {
+            if let Some(parent) = &class_def.is_a
+                && !all_classes.contains(parent) {
                     return Err(MergeError::InvalidMerge(format!(
-                        "Class '{}' references non-existent parent '{}'",
-                        class_name, parent
-                    )));
+                        "Class '{class_name}' references non-existent parent '{parent}'"
+                    ));
                 }
-            }
 
             for mixin in &class_def.mixins {
                 if !all_classes.contains(mixin) {
                     return Err(MergeError::InvalidMerge(format!(
-                        "Class '{}' references non-existent mixin '{}'",
-                        class_name, mixin
-                    )));
+                        "Class '{class_name}' references non-existent mixin '{mixin}'"
+                    ));
                 }
             }
         }
 
         // Validate slot references
         for (slot_name, slot_def) in &schema.slots {
-            if let Some(parent) = &slot_def.is_a {
-                if !all_slots.contains(parent) {
+            if let Some(parent) = &slot_def.is_a
+                && !all_slots.contains(parent) {
                     return Err(MergeError::InvalidMerge(format!(
-                        "Slot '{}' references non-existent parent '{}'",
-                        slot_name, parent
-                    )));
+                        "Slot '{slot_name}' references non-existent parent '{parent}'"
+                    ));
                 }
-            }
         }
 
         Ok(())
     }
 
     /// Get the list of conflicts encountered
-    pub fn conflicts(&self) -> &[String] {
+    #[must_use] pub fn conflicts(&self) -> &[String] {
         &self.conflicts
     }
 
@@ -708,6 +701,7 @@ impl Default for SchemaMerger {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema(id: &str) -> SchemaDefinition {
         let mut schema = SchemaDefinition {
@@ -750,7 +744,7 @@ mod tests {
 
         let result = merger
             .merge_two(schema1, schema2)
-            .map_err(|e| anyhow::anyhow!("merge should succeed: {}", e))?;
+            .expect("merge should succeed: {}");
 
         // Should have both unique classes
         assert!(result.classes.contains_key("schema1_Class"));
@@ -807,11 +801,11 @@ mod tests {
 
         let result = merger
             .merge_two(schema1, schema2)
-            .map_err(|e| anyhow::anyhow!("merge should succeed: {}", e))?;
+            .expect("merge should succeed: {}");
 
         // Should have schema2's version
         let name_slot = result.slots.get("name").ok_or_else(|| anyhow::anyhow!("name slot should exist"))?;
-        assert_eq!(name_slot.range, Some("text".to_string()));
+        assert_eq!(name_slot.range, Some("text".to_string());
         Ok(())
     }
 
@@ -834,13 +828,13 @@ mod tests {
         let mut merger = SchemaMerger::with_defaults();
         let result = merger
             .merge_two(schema1, schema2)
-            .map_err(|e| anyhow::anyhow!("merge should succeed: {}", e))?;
+            .expect("merge should succeed: {}");
 
         // Should have all unique imports
         assert_eq!(result.imports.len(), 3);
-        assert!(result.imports.contains(&"import1".to_string()));
-        assert!(result.imports.contains(&"import2".to_string()));
-        assert!(result.imports.contains(&"import3".to_string()));
+        assert!(result.imports.contains(&"import1".to_string());
+        assert!(result.imports.contains(&"import2".to_string());
+        assert!(result.imports.contains(&"import3".to_string());
         Ok(())
     }
 }

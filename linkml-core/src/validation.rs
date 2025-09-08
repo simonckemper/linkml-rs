@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 
+
 /// Severity level for validation messages
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum ValidationSeverity {
@@ -103,7 +104,7 @@ impl ValidationMessage {
 impl fmt::Display for ValidationMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[{}] {}", self.severity, self.message)?;
-        
+
         if let Some(path) = &self.path {
             write!(f, " at {path}")?;
         }
@@ -118,7 +119,7 @@ impl fmt::Display for ValidationMessage {
         if let Some(rule) = &self.rule {
             write!(f, " [rule: {rule}]")?;
         }
-        
+
         Ok(())
     }
 }
@@ -235,19 +236,19 @@ impl Default for ValidationResult {
 impl fmt::Display for ValidationResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Validation Result: {}", if self.is_valid { "VALID" } else { "INVALID" })?;
-        writeln!(f, "Summary: {} info, {} warnings, {} errors, {} critical", 
-                 self.summary.info_count, 
-                 self.summary.warning_count, 
-                 self.summary.error_count, 
+        writeln!(f, "Summary: {} info, {} warnings, {} errors, {} critical",
+                 self.summary.info_count,
+                 self.summary.warning_count,
+                 self.summary.error_count,
                  self.summary.critical_count)?;
-        
+
         if !self.messages.is_empty() {
             writeln!(f, "Messages:")?;
             for message in &self.messages {
                 writeln!(f, "  {message}")?;
             }
         }
-        
+
         Ok(())
     }
 }

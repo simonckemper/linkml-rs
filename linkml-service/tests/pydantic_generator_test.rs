@@ -1,9 +1,9 @@
 //! Tests for the Pydantic v2 generator
 
-use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, PermissibleValue, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, GeneratorOptions, PydanticGenerator};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 async fn generate_pydantic(schema: SchemaDefinition) -> String {
     let generator = PydanticGenerator::new();
     let options = GeneratorOptions::new()

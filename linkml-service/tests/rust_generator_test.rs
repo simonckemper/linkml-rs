@@ -1,8 +1,9 @@
 //! Comprehensive tests for the Rust code generator
 
-use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, PermissibleValue, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, GeneratorOptions, RustGenerator};
 use serde_json::json;
+use linkml_core::types::SchemaDefinition;
 
 async fn generate_rust(schema: SchemaDefinition) -> String {
     let generator = RustGenerator::new();

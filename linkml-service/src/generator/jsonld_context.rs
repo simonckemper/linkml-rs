@@ -1,12 +1,12 @@
-//! JSON-LD Context generator for LinkML schemas
+//! JSON-LD Context generator for `LinkML` schemas
 //!
-//! This module generates JSON-LD @context definitions from LinkML schemas,
+//! This module generates JSON-LD @context definitions from `LinkML` schemas,
 //! enabling semantic web integration and linked data capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
 use linkml_core::error::LinkMLError;
-use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::{Map, Value, json};
+use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 
 /// `JSON`-LD Context generator configuration
 #[derive(Debug, Clone)]
@@ -48,7 +48,7 @@ pub struct JsonLdContextGenerator {
 
 impl JsonLdContextGenerator {
     /// Create a new `JSON`-LD Context generator
-    pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
         Self { config }
     }
 
@@ -74,7 +74,7 @@ impl JsonLdContextGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                        } => prefix_reference.clone().unwrap_or_default(),
                     };
                     context.insert(prefix.clone(), json!(reference));
                 }
@@ -82,17 +82,16 @@ impl JsonLdContextGenerator {
         }
 
         // Add default prefix if available
-        if let Some(default_prefix) = &schema.default_prefix {
-            if let Some(expansion) = schema.prefixes.get(default_prefix) {
+        if let Some(default_prefix) = &schema.default_prefix
+            && let Some(expansion) = schema.prefixes.get(default_prefix) {
                 let reference = match expansion {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                    } => prefix_reference.clone().unwrap_or_default(),
                 };
                 context.insert("@vocab".to_string(), json!(reference));
             }
-        }
 
         // Add class mappings
         if !schema.classes.is_empty() {
@@ -186,11 +185,10 @@ impl JsonLdContextGenerator {
         slot_mapping.insert("@id".to_string(), json!(slot_iri));
 
         // Add type coercion if enabled
-        if self.config.include_type_coercion {
-            if let Some(type_value) = self.get_type_coercion(slot_def, schema) {
+        if self.config.include_type_coercion
+            && let Some(type_value) = self.get_type_coercion(slot_def, schema) {
                 slot_mapping.insert("@type".to_string(), type_value);
             }
-        }
 
         // Add container mapping for multivalued slots
         if self.config.include_containers && slot_def.multivalued == Some(true) {
@@ -242,8 +240,8 @@ impl JsonLdContextGenerator {
             }
 
             // Check if it's a type
-            if !schema.types.is_empty() {
-                if let Some(type_def) = schema.types.get(range) {
+            if !schema.types.is_empty()
+                && let Some(type_def) = schema.types.get(range) {
                     // Map to XSD types
                     return match type_def.base_type.as_deref() {
                         Some("string") => None, // Default type
@@ -258,7 +256,6 @@ impl JsonLdContextGenerator {
                         _ => None,
                     };
                 }
-            }
 
             // Direct type mapping
             match range.as_str() {
@@ -280,12 +277,11 @@ impl JsonLdContextGenerator {
     /// Check if a slot is translatable
     fn is_translatable_slot(&self, slot_def: &SlotDefinition) -> bool {
         // A slot is translatable if it's a string type and marked as translatable
-        if let Some(range) = &slot_def.range {
-            if range == "string" || range == "text" {
+        if let Some(range) = &slot_def.range
+            && (range == "string" || range == "text") {
                 // In a real implementation, we'd check for a translatable annotation
                 return slot_def.description.is_some();
             }
-        }
         false
     }
 
@@ -297,30 +293,27 @@ impl JsonLdContextGenerator {
         schema: &SchemaDefinition,
     ) -> String {
         // Check if there's a specific prefix for this element
-        if let Some(prefixes) = id_prefixes {
-            if let Some(prefix) = prefixes.first() {
-                if let Some(expansion) = schema.prefixes.get(prefix) {
+        if let Some(prefixes) = id_prefixes
+            && let Some(prefix) = prefixes.first()
+                && let Some(expansion) = schema.prefixes.get(prefix) {
                     let reference = match expansion {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                        } => prefix_reference.clone().unwrap_or_default(),
                     };
-                    return format!("{}{}", reference, name);
+                    return format!("{reference}{name}");
                 }
-            }
-        }
 
         // Use CURIE if enabled and default prefix exists
-        if self.config.use_curies {
-            if let Some(default_prefix) = &schema.default_prefix {
-                return format!("{}:{}", default_prefix, name);
+        if self.config.use_curies
+            && let Some(default_prefix) = &schema.default_prefix {
+                return format!("{default_prefix}:{name}");
             }
-        }
 
         // Use base URI if available
         if let Some(base) = &self.config.base_uri {
-            return format!("{}{}", base, name);
+            return format!("{base}{name}");
         }
 
         // Fallback to just the name
@@ -329,11 +322,11 @@ impl JsonLdContextGenerator {
 }
 
 impl Generator for JsonLdContextGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "jsonld-context"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate JSON-LD context from LinkML schemas"
     }
 
@@ -360,11 +353,11 @@ impl Generator for JsonLdContextGenerator {
         })
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "jsonld"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "context"
     }
 }
@@ -373,7 +366,7 @@ impl Generator for JsonLdContextGenerator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-    use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_jsonld_context_generation() -> anyhow::Result<()> {
@@ -424,7 +417,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JSON-LD context: {}", e))?;
+            .expect("should generate JSON-LD context: {}");
 
         // Verify key elements
         assert!(result.contains("@context"));

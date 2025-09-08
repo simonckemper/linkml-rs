@@ -15,7 +15,7 @@ use linkml_service::loader::{
 use std::collections::HashMap;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Data Transformation Example ===\n");
 
     // Create a knowledge graph schema

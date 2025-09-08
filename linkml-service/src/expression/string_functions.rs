@@ -1,21 +1,21 @@
-//! String manipulation functions for LinkML expressions
+//! String manipulation functions for `LinkML` expressions
 //!
 //! This module provides string manipulation functions like upper, lower, trim, etc.
 
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
 
-/// upper() - Convert string to uppercase
+/// `upper()` - Convert string to uppercase
 pub struct UpperFunction;
 
 impl BuiltinFunction for UpperFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "upper"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -31,17 +31,17 @@ impl BuiltinFunction for UpperFunction {
     }
 }
 
-/// lower() - Convert string to lowercase
+/// `lower()` - Convert string to lowercase
 pub struct LowerFunction;
 
 impl BuiltinFunction for LowerFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "lower"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -57,17 +57,17 @@ impl BuiltinFunction for LowerFunction {
     }
 }
 
-/// trim() - Remove leading and trailing whitespace
+/// `trim()` - Remove leading and trailing whitespace
 pub struct TrimFunction;
 
 impl BuiltinFunction for TrimFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "trim"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -83,17 +83,17 @@ impl BuiltinFunction for TrimFunction {
     }
 }
 
-/// starts_with() - Check if string starts with prefix
+/// `starts_with()` - Check if string starts with prefix
 pub struct StartsWithFunction;
 
 impl BuiltinFunction for StartsWithFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "starts_with"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -123,17 +123,17 @@ impl BuiltinFunction for StartsWithFunction {
     }
 }
 
-/// ends_with() - Check if string ends with suffix
+/// `ends_with()` - Check if string ends with suffix
 pub struct EndsWithFunction;
 
 impl BuiltinFunction for EndsWithFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ends_with"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -163,17 +163,17 @@ impl BuiltinFunction for EndsWithFunction {
     }
 }
 
-/// replace() - Replace all occurrences of a substring
+/// `replace()` - Replace all occurrences of a substring
 pub struct ReplaceFunction;
 
 impl BuiltinFunction for ReplaceFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "replace"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
         }
         Ok(())
     }
@@ -213,17 +213,17 @@ impl BuiltinFunction for ReplaceFunction {
     }
 }
 
-/// split() - Split string into array
+/// `split()` - Split string into array
 pub struct SplitFunction;
 
 impl BuiltinFunction for SplitFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "split"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -258,17 +258,17 @@ impl BuiltinFunction for SplitFunction {
     }
 }
 
-/// join() - Join array elements into string
+/// `join()` - Join array elements into string
 pub struct JoinFunction;
 
 impl BuiltinFunction for JoinFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "join"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -312,11 +312,11 @@ impl BuiltinFunction for JoinFunction {
     }
 }
 
-/// substring() - Extract substring
+/// `substring()` - Extract substring
 pub struct SubstringFunction;
 
 impl BuiltinFunction for SubstringFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "substring"
     }
 
@@ -383,7 +383,7 @@ mod tests {
         assert_eq!(
             upper
                 .call(vec![json!("hello")])
-                .map_err(|e| anyhow::anyhow!("should convert to uppercase: {}", e))?,
+                .expect("should convert to uppercase: {}"),
             json!("HELLO")
         );
 
@@ -391,14 +391,14 @@ mod tests {
         assert_eq!(
             lower
                 .call(vec![json!("HELLO")])
-                .map_err(|e| anyhow::anyhow!("should convert to lowercase: {}", e))?,
+                .expect("should convert to lowercase: {}"),
             json!("hello")
         );
 
         let trim = TrimFunction;
         assert_eq!(
             trim.call(vec![json!("  hello  ")])
-                .map_err(|e| anyhow::anyhow!("should trim whitespace: {}", e))?,
+                .expect("should trim whitespace: {}"),
             json!("hello")
         );
         Ok(())
@@ -410,13 +410,13 @@ mod tests {
         assert_eq!(
             starts_with
                 .call(vec![json!("hello world"), json!("hello")])
-                .map_err(|e| anyhow::anyhow!("should check starts_with: {}", e))?,
+                .expect("should check starts_with: {}"),
             json!(true)
         );
         assert_eq!(
             starts_with
                 .call(vec![json!("hello world"), json!("world")])
-                .map_err(|e| anyhow::anyhow!("should check starts_with: {}", e))?,
+                .expect("should check starts_with: {}"),
             json!(false)
         );
 
@@ -424,13 +424,13 @@ mod tests {
         assert_eq!(
             ends_with
                 .call(vec![json!("hello world"), json!("world")])
-                .map_err(|e| anyhow::anyhow!("should check ends_with: {}", e))?,
+                .expect("should check ends_with: {}"),
             json!(true)
         );
         assert_eq!(
             ends_with
                 .call(vec![json!("hello world"), json!("hello")])
-                .map_err(|e| anyhow::anyhow!("should check ends_with: {}", e))?,
+                .expect("should check ends_with: {}"),
             json!(false)
         );
         Ok(())
@@ -442,7 +442,7 @@ mod tests {
         assert_eq!(
             replace
                 .call(vec![json!("hello world"), json!("world"), json!("rust")])
-                .map_err(|e| anyhow::anyhow!("should replace substring: {}", e))?,
+                .expect("should replace substring: {}"),
             json!("hello rust")
         );
         Ok(())
@@ -454,14 +454,14 @@ mod tests {
         assert_eq!(
             split
                 .call(vec![json!("a,b,c"), json!(",")])
-                .map_err(|e| anyhow::anyhow!("should split string: {}", e))?,
+                .expect("should split string: {}"),
             json!(["a", "b", "c"])
         );
 
         let join = JoinFunction;
         assert_eq!(
             join.call(vec![json!(["a", "b", "c"]), json!("-")])
-                .map_err(|e| anyhow::anyhow!("should join array: {}", e))?,
+                .expect("should join array: {}"),
             json!("a-b-c")
         );
         Ok(())
@@ -475,7 +475,7 @@ mod tests {
         assert_eq!(
             substring
                 .call(vec![json!("hello world"), json!(6), json!(5)])
-                .map_err(|e| anyhow::anyhow!("should extract substring: {}", e))?,
+                .expect("should extract substring: {}"),
             json!("world")
         );
 
@@ -483,7 +483,7 @@ mod tests {
         assert_eq!(
             substring
                 .call(vec![json!("hello world"), json!(6)])
-                .map_err(|e| anyhow::anyhow!("should extract substring to end: {}", e))?,
+                .expect("should extract substring to end: {}"),
             json!("world")
         );
         Ok(())

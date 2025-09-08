@@ -7,6 +7,7 @@
 mod tests {
     use linkml_core::error::LinkMLError;
     use std::fs;
+use std::error::Error as StdError;
     use std::path::Path;
     use tempfile::TempDir;
 
@@ -71,7 +72,7 @@ field1:
     #[test]
     fn test_numeric_operations() {
         // Division by zero in float is OK (gives infinity)
-        let result = 10.0 / 0.0;
+        let result = 10.0_f64 / 0.0_f64;
         assert!(result.is_infinite());
 
         // Integer overflow in release mode wraps
@@ -161,7 +162,7 @@ field1:
     fn test_error_propagation() {
         fn might_fail(should_fail: bool) -> Result<String, LinkMLError> {
             if should_fail {
-                Err(LinkMLError::ParseError("Test error".to_string()))
+                Err(LinkMLError::Parse("Test error".to_string()))
             } else {
                 Ok("Success".to_string())
             }
@@ -175,7 +176,7 @@ field1:
         let result = propagate_error();
         assert!(result.is_err());
         match result {
-            Err(LinkMLError::ParseError(msg)) => assert_eq!(msg, "Test error"),
+            Err(LinkMLError::Parse(msg)) => assert_eq!(msg, "Test error"),
             _ => panic!("Wrong error type"),
         }
     }
@@ -185,6 +186,7 @@ field1:
     fn test_concurrent_safety() {
         use std::sync::{Arc, Mutex};
         use std::thread;
+
 
         let data = Arc::new(Mutex::new(vec![1, 2, 3]));
         let mut handles = vec![];
@@ -236,7 +238,7 @@ field1:
 
     /// Integration test for a complete workflow
     #[test]
-    fn test_integrated_workflow() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_integrated_workflow() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let temp_dir = TempDir::new()?;
 
         // Create test file

@@ -24,6 +24,12 @@ pub struct ImportResolver {
     max_depth: usize,
 }
 
+impl Default for ImportResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImportResolver {
     /// Create a new import resolver
     #[must_use]

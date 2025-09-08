@@ -26,12 +26,11 @@ impl RustGenerator {
                 let mut attrs = Vec::new();
 
                 // Documentation
-                if options.include_docs {
-                    if let Some(desc) = &slot.description {
+                if options.include_docs
+                    && let Some(desc) = &slot.description {
                         writeln!(output, "{}/// {}", indent.single(), desc)
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
-                }
 
                 // Skip serializing if optional
                 if !slot.required.unwrap_or(false) && !slot.multivalued.unwrap_or(false) {
@@ -152,10 +151,10 @@ impl RustGenerator {
 
         // Documentation
         if options.include_docs {
-            writeln!(&mut output, "/// {}", enum_name)
+            writeln!(&mut output, "/// {enum_name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             if let Some(desc) = &enum_def.description {
-                writeln!(&mut output, "/// {}", desc)
+                writeln!(&mut output, "/// {desc}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
@@ -163,7 +162,7 @@ impl RustGenerator {
         // Enum definition
         writeln!(&mut output, "#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "pub enum {} {{", struct_name)
+        writeln!(&mut output, "pub enum {struct_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate variants
@@ -175,12 +174,11 @@ impl RustGenerator {
                     PermissibleValue::Complex { text, description, .. } => (text.as_str(), description.as_deref()),
                 };
 
-                if options.include_docs {
-                    if let Some(desc) = description {
+                if options.include_docs
+                    && let Some(desc) = description {
                         writeln!(&mut output, "{}/// {}", indent.single(), desc)
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
-                }
 
                 let variant_name = BaseCodeFormatter::to_pascal_case(value_name);
                 writeln!(&mut output, "{}{},", indent.single(), variant_name)
@@ -193,7 +191,7 @@ impl RustGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate implementation
-        writeln!(&mut output, "impl {} {{", struct_name)
+        writeln!(&mut output, "impl {struct_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // to_string method

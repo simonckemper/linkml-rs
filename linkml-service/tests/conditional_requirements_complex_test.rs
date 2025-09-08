@@ -1,11 +1,11 @@
 //! Complex tests for conditional requirements with nested conditions and edge cases
 
 use linkml_core::types::{
-    ClassDefinition, ConditionalRequirement, IfRequiredCondition, SchemaDefinition, SlotDefinition,
+    ClassDefinition, ConditionalRequirement, IfRequiredCondition, Definition, SlotDefinition,
 };
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 #[tokio::test]
 async fn test_multiple_conditional_requirements() {
     let mut schema = SchemaDefinition::new("test_schema");
@@ -82,7 +82,7 @@ async fn test_multiple_conditional_requirements() {
         .await
         .expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.message.contains("state")));
+    assert!(report.errors().any(|e| e.message.contains("state"));
 
     // Test Canadian address - valid
     let ca_address = json!({
@@ -626,6 +626,7 @@ async fn test_conditional_requirements_with_null_handling() {
 #[tokio::test]
 async fn test_conditional_requirements_performance() {
     use std::time::Instant;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 
     let mut schema = SchemaDefinition::new("test_schema");
 
@@ -666,7 +667,7 @@ async fn test_conditional_requirements_performance() {
     // Create test data
     let mut data = serde_json::Map::new();
     for i in 0..50 {
-        data.insert(format!("field_{}", i), json!(format!("value_{}", i)));
+        data.insert(format!("field_{}", i), json!(format!("value_{}", i));
     }
     let data = serde_json::Value::Object(data);
 

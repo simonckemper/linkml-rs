@@ -1,13 +1,13 @@
-//! RDF generator for LinkML schemas
+//! RDF generator for `LinkML` schemas
 //!
-//! This generator produces plain RDF/Turtle representation of LinkML schemas,
+//! This generator produces plain RDF/Turtle representation of `LinkML` schemas,
 //! focusing on the data model rather than OWL ontology features.
 
 use super::traits::Generator;
 use linkml_core::prelude::*;
 use std::fmt::Write;
 
-/// Helper macro to convert fmt::Error to `LinkML`Error with newline
+/// Helper macro to convert `fmt::Error` to `LinkML`Error with newline
 macro_rules! writeln_rdf {
     ($dst:expr, $($arg:tt)*) => {
         writeln!($dst, $($arg)*).map_err(|e| LinkMLError::ServiceError(format!("Failed to write RDF: {e}")))
@@ -87,9 +87,7 @@ impl RdfGenerator {
         // Determine base URI
         let default_uri = format!("https://example.org/{}", schema.name);
         let base_uri = self
-            .base_uri
-            .as_ref()
-            .map(|s| s.as_str())
+            .base_uri.as_deref()
             .or_else(|| schema.id.strip_suffix('/').or(Some(&schema.id)))
             .unwrap_or(&default_uri);
 
@@ -157,7 +155,7 @@ impl RdfGenerator {
                 PrefixDefinition::Simple(url) => url.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                } => prefix_reference.clone().unwrap_or_default(),
             };
             writeln_rdf!(output, "@prefix {}: <{}> .", prefix, reference)?;
         }
@@ -264,7 +262,7 @@ impl RdfGenerator {
         class: &ClassDefinition,
         base_uri: &str,
     ) -> Result<()> {
-        let default_uri = format!("{}/{}", base_uri, name);
+        let default_uri = format!("{base_uri}/{name}");
         let class_uri = class.class_uri.as_deref().unwrap_or(&default_uri);
 
         writeln_rdf!(output, "# Class: {}", name)?;
@@ -281,28 +279,26 @@ impl RdfGenerator {
 
         // Parent class
         if let Some(is_a) = &class.is_a {
-            let parent_uri = format!("{}/{}", base_uri, is_a);
+            let parent_uri = format!("{base_uri}/{is_a}");
             writeln_rdf!(output, "    rdfs:subClassOf <{}> ;", parent_uri)?;
         }
 
         // Mixins as additional superclasses
         for mixin in &class.mixins {
-            let mixin_uri = format!("{}/{}", base_uri, mixin);
+            let mixin_uri = format!("{base_uri}/{mixin}");
             writeln_rdf!(output, "    rdfs:subClassOf <{}> ;", mixin_uri)?;
         }
 
         // Class properties
-        if let Some(abstract_) = class.abstract_ {
-            if abstract_ && self.include_linkml_props {
+        if let Some(abstract_) = class.abstract_
+            && abstract_ && self.include_linkml_props {
                 writeln_rdf!(output, "    linkml:abstract true ;")?;
             }
-        }
 
-        if let Some(mixin) = class.mixin {
-            if mixin && self.include_linkml_props {
+        if let Some(mixin) = class.mixin
+            && mixin && self.include_linkml_props {
                 writeln_rdf!(output, "    linkml:mixin true ;")?;
             }
-        }
 
         // Slots as property restrictions
         if self.compact_syntax && !class.slots.is_empty() {
@@ -329,7 +325,7 @@ impl RdfGenerator {
         schema: &SchemaDefinition,
         base_uri: &str,
     ) -> Result<()> {
-        let default_uri = format!("{}/{}", base_uri, name);
+        let default_uri = format!("{base_uri}/{name}");
         let slot_uri = slot.slot_uri.as_deref().unwrap_or(&default_uri);
 
         writeln_rdf!(output, "# Property: {}", name)?;
@@ -379,17 +375,15 @@ impl RdfGenerator {
 
         // Constraints as SHACL
         if self.compact_syntax {
-            if let Some(required) = slot.required {
-                if required {
+            if let Some(required) = slot.required
+                && required {
                     writeln_rdf!(output, "    sh:minCount 1 ;")?;
                 }
-            }
 
-            if let Some(multivalued) = slot.multivalued {
-                if !multivalued {
+            if let Some(multivalued) = slot.multivalued
+                && !multivalued {
                     writeln_rdf!(output, "    sh:maxCount 1 ;")?;
                 }
-            }
 
             if let Some(pattern) = &slot.pattern {
                 writeln_rdf!(output, "    sh:pattern \"{}\" ;", escape_literal(pattern))?;
@@ -408,7 +402,7 @@ impl RdfGenerator {
         type_def: &TypeDefinition,
         base_uri: &str,
     ) -> Result<()> {
-        let default_uri = format!("{}/{}", base_uri, name);
+        let default_uri = format!("{base_uri}/{name}");
         let type_uri = type_def.uri.as_deref().unwrap_or(&default_uri);
 
         writeln_rdf!(output, "# Type: {}", name)?;
@@ -447,11 +441,11 @@ impl RdfGenerator {
                 code_set.clone()
             } else {
                 // Otherwise construct URI from base and code_set
-                format!("{}/{}", base_uri, code_set)
+                format!("{base_uri}/{code_set}")
             }
         } else {
             // Default to base_uri + enum name
-            format!("{}/enums/{}", base_uri, name)
+            format!("{base_uri}/enums/{name}")
         };
 
         writeln_rdf!(output, "# Enumeration: {}", name)?;
@@ -558,11 +552,11 @@ impl Generator for RdfGenerator {
         "Generate RDF/Turtle representation of LinkML schema"
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "ttl"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema.ttl"
     }
 }

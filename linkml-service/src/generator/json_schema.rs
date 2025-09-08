@@ -244,8 +244,8 @@ impl JsonSchemaGenerator {
         }
 
         // Add inherited slots
-        if let Some(parent) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_all_slots(parent_class, schema)?;
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -253,7 +253,6 @@ impl JsonSchemaGenerator {
                     }
                 }
             }
-        }
 
         Ok(all_slots)
     }
@@ -348,21 +347,21 @@ impl Generator for JsonSchemaGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "json"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
 
 impl CodeFormatter for JsonSchemaGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "jsonschema"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for jsonschema output with proper indentation and syntax"
     }
 
@@ -434,6 +433,7 @@ impl CodeFormatter for JsonSchemaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 
     #[tokio::test]
@@ -471,11 +471,11 @@ mod tests {
 
         let json_content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JSON schema: {}", e))?;
+            .expect("should generate JSON schema: {}");
 
         // Parse to verify it's valid JSON
         let parsed: JsonValue =
-            serde_json::from_str(&json_content).map_err(|e| anyhow::anyhow!("should parse as valid JSON: {}", e))?;
+            serde_json::from_str(&json_content).expect("should parse as valid JSON: {}");
 
         // Check basic structure
         assert_eq!(parsed["$schema"], "http://json-schema.org/draft-07/schema#");

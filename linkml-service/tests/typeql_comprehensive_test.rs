@@ -18,7 +18,7 @@ fn create_comprehensive_schema() -> SchemaDefinition {
     // Define types
     let mut positive_int = TypeDefinition::default();
     positive_int.base_type = Some("integer".to_string());
-    positive_int.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
+    positive_int.minimum_value = Some(Value::Number(serde_json::Number::from(0));
     schema.types.insert("PositiveInt".to_string(), positive_int);
 
     // Define enums
@@ -66,8 +66,8 @@ fn create_comprehensive_schema() -> SchemaDefinition {
 
     let mut age_slot = SlotDefinition::default();
     age_slot.range = Some("PositiveInt".to_string());
-    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
-    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
+    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
+    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150));
     schema.slots.insert("age".to_string(), age_slot);
 
     let mut created_at_slot = SlotDefinition::default();
@@ -205,8 +205,8 @@ fn create_comprehensive_schema() -> SchemaDefinition {
 
     let mut duration = SlotDefinition::default();
     duration.range = Some("integer".to_string());
-    duration.minimum_value = Some(Value::Number(serde_json::Number::from(15)));
-    duration.maximum_value = Some(Value::Number(serde_json::Number::from(480)));
+    duration.minimum_value = Some(Value::Number(serde_json::Number::from(15));
+    duration.maximum_value = Some(Value::Number(serde_json::Number::from(480));
     schema
         .slots
         .insert("duration_minutes".to_string(), duration);
@@ -347,6 +347,7 @@ fn test_complex_constraints() {
 #[test]
 fn test_performance_scaling() {
     use std::time::Instant;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     let sizes = vec![10, 50, 100, 500];
     let generator = EnhancedTypeQLGenerator::new();

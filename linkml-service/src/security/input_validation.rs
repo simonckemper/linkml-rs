@@ -1,7 +1,7 @@
 //! Input validation utilities for security
 //!
 //! This module provides comprehensive input validation to prevent
-//! various security vulnerabilities such as DoS attacks, injection
+//! various security vulnerabilities such as `DoS` attacks, injection
 //! attacks, and resource exhaustion.
 
 use thiserror::Error;
@@ -107,6 +107,10 @@ pub enum ValidationError {
 }
 
 /// Validate a general string input
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn validate_string_input(s: &str) -> Result<(), ValidationError> {
     // Check length
     if s.len() > limits::MAX_STRING_LENGTH {
@@ -132,6 +136,10 @@ pub fn validate_string_input(s: &str) -> Result<(), ValidationError> {
 }
 
 /// Validate an identifier (name, key, etc.)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
     // Check length
     if id.len() > limits::MAX_IDENTIFIER_LENGTH {
@@ -142,7 +150,7 @@ pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
     }
 
     // Identifiers should not contain control characters
-    if id.chars().any(|c| c.is_control()) {
+    if id.chars().any(char::is_control) {
         return Err(ValidationError::ControlCharacters);
     }
 
@@ -155,6 +163,10 @@ pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
 }
 
 /// Validate `JSON` size before parsing
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn validate_json_size(json_str: &str) -> Result<(), ValidationError> {
     if json_str.len() > limits::MAX_JSON_SIZE {
         return Err(ValidationError::JsonTooLarge {
@@ -166,14 +178,14 @@ pub fn validate_json_size(json_str: &str) -> Result<(), ValidationError> {
 }
 
 /// Sanitize a string for safe display (removes control characters)
-pub fn sanitize_for_display(s: &str) -> String {
+#[must_use] pub fn sanitize_for_display(s: &str) -> String {
     s.chars()
         .filter(|&c| !c.is_control() || c == '\n' || c == '\r' || c == '\t')
         .collect()
 }
 
 /// Truncate a string to a safe length for logging
-pub fn truncate_for_log(s: &str, max_len: usize) -> String {
+#[must_use] pub fn truncate_for_log(s: &str, max_len: usize) -> String {
     if s.len() <= max_len {
         s.to_string()
     } else {

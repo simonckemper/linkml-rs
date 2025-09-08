@@ -9,11 +9,11 @@
 //! - Migration validation
 
 use chrono::{DateTime, Utc};
-use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -393,11 +393,15 @@ where
     }
 
     /// Analyze differences between versions
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn analyze_changes(
         &self,
         from_version: &str,
         to_version: &str,
-    ) -> Result<Vec<BreakingChange>> {
+    ) -> linkml_core::error::Result<Vec<BreakingChange>> {
         let versions = self.versions.read();
 
         let from = versions
@@ -442,8 +446,8 @@ where
 
         // Check for type changes
         for (name, from_slot) in &from.schema.slots {
-            if let Some(to_slot) = to.schema.slots.get(name) {
-                if from_slot.range != to_slot.range {
+            if let Some(to_slot) = to.schema.slots.get(name)
+                && from_slot.range != to_slot.range {
                     changes.push(BreakingChange {
                         change_type: ChangeType::TypeChanged,
                         element: name.clone(),
@@ -460,14 +464,17 @@ where
                         },
                     });
                 }
-            }
         }
 
         Ok(changes)
     }
 
     /// Create migration plan
-    pub fn create_plan(&self, from_version: &str, to_version: &str) -> Result<MigrationPlan> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn create_plan(&self, from_version: &str, to_version: &str) -> linkml_core::error::Result<MigrationPlan> {
         let changes = self.analyze_changes(from_version, to_version)?;
         let mut steps = Vec::new();
 
@@ -560,11 +567,15 @@ where
     }
 
     /// Execute migration plan
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn execute_plan(
         &self,
         plan: &MigrationPlan,
         data_path: &Path,
-    ) -> Result<MigrationReport> {
+    ) -> linkml_core::error::Result<MigrationReport> {
         let config = self.config.read();
         let start_time = std::time::Instant::now();
         let mut report = MigrationReport {
@@ -621,7 +632,7 @@ where
         step: &MigrationStep,
         data_path: &Path,
         dry_run: bool,
-    ) -> Result<StepResult> {
+    ) -> linkml_core::error::Result<StepResult> {
         let start = std::time::Instant::now();
 
         if dry_run {
@@ -643,7 +654,7 @@ where
                 if let Some(latest_version) = versions.last_mut() {
                     self.apply_schema_transform(&mut latest_version.schema, transform)?;
                 } else {
-                    return Err(LinkMLError::service("No schema versions available for transformation".to_string()));
+                    return Err(LinkMLError::service("No schema versions available for transformation".to_string());
                 }
             }
             StepType::DataMigration { migration } => {
@@ -658,7 +669,7 @@ where
                 // Execute custom script
                 return Err(LinkMLError::service(format!(
                     "Custom scripts not yet implemented: {script}"
-                )));
+                ));
             }
         }
 
@@ -672,14 +683,14 @@ where
     }
 
     /// Create backup of data
-    fn create_backup(&self, data_path: &Path) -> Result<PathBuf> {
+    fn create_backup(&self, data_path: &Path) -> linkml_core::error::Result<PathBuf> {
         let backup_path = data_path.with_extension("backup");
         std::fs::copy(data_path, &backup_path)?;
         Ok(backup_path)
     }
 
     /// Rollback migration
-    fn rollback(&self, report: &MigrationReport) -> Result<()> {
+    fn rollback(&self, report: &MigrationReport) -> linkml_core::error::Result<()> {
         // Rollback completed steps in reverse order
         for step_result in report.steps_completed.iter().rev() {
             // Find the original step
@@ -688,8 +699,7 @@ where
                 .steps
                 .iter()
                 .find(|s| s.id == step_result.step_id)
-            {
-                if let Some(rollback) = &step.rollback {
+                && let Some(rollback) = &step.rollback {
                     match &rollback.strategy {
                         RollbackStrategy::RestoreBackup => {
                             if let Some(backup_path) = &rollback.backup_path {
@@ -706,17 +716,16 @@ where
                         RollbackStrategy::Manual { instructions } => {
                             return Err(LinkMLError::service(format!(
                                 "Manual rollback required: {instructions}"
-                            )));
+                            ));
                         }
                     }
                 }
-            }
         }
         Ok(())
     }
 
     /// Apply schema transformation
-    fn apply_schema_transform(&self, schema: &mut SchemaDefinition, transform: &SchemaTransform) -> Result<()> {
+    fn apply_schema_transform(&self, schema: &mut SchemaDefinition, transform: &SchemaTransform) -> linkml_core::error::Result<()> {
 
         // Add new classes
         for class in &transform.add_classes {
@@ -880,7 +889,7 @@ where
                     return Err(LinkMLError::service(format!(
                         "Class '{}' not found in schema",
                         transform.target_element
-                    )));
+                    ));
                 }
             }
             TransformType::ModifyClass => {
@@ -908,11 +917,10 @@ where
                         }
                         if let Some(add_slots) = mods.get("add_slots").and_then(|v| v.as_array()) {
                             for slot in add_slots {
-                                if let Some(slot_name) = slot.as_str() {
-                                    if !class.slots.contains(&slot_name.to_string()) {
+                                if let Some(slot_name) = slot.as_str()
+                                    && !class.slots.contains(&slot_name.to_string()) {
                                         class.slots.push(slot_name.to_string());
                                     }
-                                }
                             }
                         }
                     }
@@ -955,7 +963,7 @@ where
                     return Err(LinkMLError::service(format!(
                         "Slot '{}' not found in schema",
                         transform.target_element
-                    )));
+                    ));
                 }
             }
             TransformType::ModifySlot => {
@@ -978,10 +986,10 @@ where
                         if let Some(new_range) = mods.get("range").and_then(|v| v.as_str()) {
                             slot.range = Some(new_range.to_string());
                         }
-                        if let Some(new_required) = mods.get("required").and_then(|v| v.as_bool()) {
+                        if let Some(new_required) = mods.get("required").and_then(linkml_core::Value::as_bool) {
                             slot.required = Some(new_required);
                         }
-                        if let Some(new_multivalued) = mods.get("multivalued").and_then(|v| v.as_bool()) {
+                        if let Some(new_multivalued) = mods.get("multivalued").and_then(linkml_core::Value::as_bool) {
                             slot.multivalued = Some(new_multivalued);
                         }
                         if let Some(new_description) = mods.get("description").and_then(|v| v.as_str()) {
@@ -996,13 +1004,13 @@ where
     }
 
     /// Migrate data
-    fn migrate_data(&self, migration: &DataMigration, data_path: &Path) -> Result<()> {
+    fn migrate_data(&self, migration: &DataMigration, data_path: &Path) -> linkml_core::error::Result<()> {
         // Read the data file
         if !data_path.exists() {
             return Err(LinkMLError::service(format!(
                 "Data file not found: {}",
                 data_path.display()
-            )));
+            ));
         }
 
         println!("Migrating data from: {}", data_path.display());
@@ -1102,7 +1110,7 @@ where
     }
 
     /// Apply field mappings to data
-    fn apply_field_mappings(&self, data: &mut Value, mappings: &HashMap<String, String>) -> Result<()> {
+    fn apply_field_mappings(&self, data: &mut Value, mappings: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
                 let mut changes = Vec::new();
@@ -1110,7 +1118,7 @@ where
                 for (old_field, new_field) in mappings {
                     if let Some(value) = map.remove(old_field) {
                         changes.push((new_field.clone(), value));
-                        println!("  ✓ Renamed field '{}' to '{}'", old_field, new_field);
+                        println!("  ✓ Renamed field '{old_field}' to '{new_field}'");
                     }
                 }
                 
@@ -1131,7 +1139,7 @@ where
     }
 
     /// Apply type conversions to data
-    fn apply_type_conversions(&self, data: &mut Value, script: &str) -> Result<()> {
+    fn apply_type_conversions(&self, data: &mut Value, script: &str) -> linkml_core::error::Result<()> {
         if let Ok(conversions) = serde_json::from_str::<HashMap<String, String>>(script) {
             self.apply_type_conversion_recursive(data, &conversions)?;
         }
@@ -1139,7 +1147,7 @@ where
     }
 
     /// Recursively apply type conversions
-    fn apply_type_conversion_recursive(&self, data: &mut Value, conversions: &HashMap<String, String>) -> Result<()> {
+    fn apply_type_conversion_recursive(&self, data: &mut Value, conversions: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
                 for (field, target_type) in conversions {
@@ -1148,27 +1156,26 @@ where
                             "string" => {
                                 if !value.is_string() {
                                     *value = Value::String(value.to_string());
-                                    println!("  ✓ Converted field '{}' to string", field);
+                                    println!("  ✓ Converted field '{field}' to string");
                                 }
                             }
                             "number" => {
-                                if let Some(s) = value.as_str() {
-                                    if let Ok(n) = s.parse::<f64>() {
-                                        *value = Value::Number(serde_json::Number::from_f64(n).unwrap_or_else(|| serde_json::Number::from(0)));
-                                        println!("  ✓ Converted field '{}' to number", field);
+                                if let Some(s) = value.as_str()
+                                    && let Ok(n) = s.parse::<f64>() {
+                                        *value = Value::Number(serde_json::Number::from_f64(n).unwrap_or_else(|| serde_json::Number::from(0));
+                                        println!("  ✓ Converted field '{field}' to number");
                                     }
-                                }
                             }
                             "boolean" => {
                                 if let Some(s) = value.as_str() {
                                     *value = Value::Bool(s == "true" || s == "1" || s == "yes");
-                                    println!("  ✓ Converted field '{}' to boolean", field);
+                                    println!("  ✓ Converted field '{field}' to boolean");
                                 }
                             }
                             "array" => {
                                 if !value.is_array() {
                                     *value = Value::Array(vec![value.clone()]);
-                                    println!("  ✓ Converted field '{}' to array", field);
+                                    println!("  ✓ Converted field '{field}' to array");
                                 }
                             }
                             _ => {}
@@ -1192,10 +1199,10 @@ where
     }
 
     /// Apply data transformations
-    fn apply_data_transformations(&self, data: &mut Value, script: &str) -> Result<()> {
+    fn apply_data_transformations(&self, data: &mut Value, script: &str) -> linkml_core::error::Result<()> {
         // Parse transformation rules from script
-        if let Ok(rules) = serde_json::from_str::<Value>(script) {
-            if let Some(transforms) = rules.get("transforms").and_then(|t| t.as_array()) {
+        if let Ok(rules) = serde_json::from_str::<Value>(script)
+            && let Some(transforms) = rules.get("transforms").and_then(|t| t.as_array()) {
                 for transform in transforms {
                     if let (Some(field), Some(operation)) = 
                         (transform.get("field").and_then(|f| f.as_str()),
@@ -1208,7 +1215,7 @@ where
                                         *v = Value::String(s.to_uppercase());
                                     }
                                 })?;
-                                println!("  ✓ Applied uppercase to field '{}'", field);
+                                println!("  ✓ Applied uppercase to field '{field}'");
                             }
                             "lowercase" => {
                                 self.transform_field_recursive(data, field, |v| {
@@ -1216,7 +1223,7 @@ where
                                         *v = Value::String(s.to_lowercase());
                                     }
                                 })?;
-                                println!("  ✓ Applied lowercase to field '{}'", field);
+                                println!("  ✓ Applied lowercase to field '{field}'");
                             }
                             "trim" => {
                                 self.transform_field_recursive(data, field, |v| {
@@ -1224,19 +1231,18 @@ where
                                         *v = Value::String(s.trim().to_string());
                                     }
                                 })?;
-                                println!("  ✓ Applied trim to field '{}'", field);
+                                println!("  ✓ Applied trim to field '{field}'");
                             }
                             _ => {}
                         }
                     }
                 }
             }
-        }
         Ok(())
     }
 
     /// Transform a field recursively
-    fn transform_field_recursive<F>(&self, data: &mut Value, field: &str, transform: F) -> Result<()>
+    fn transform_field_recursive<F>(&self, data: &mut Value, field: &str, transform: F) -> linkml_core::error::Result<()>
     where
         F: Fn(&mut Value) + Copy,
     {
@@ -1261,7 +1267,7 @@ where
     }
 
     /// Apply default values for new fields
-    fn apply_default_values(&self, data: &mut Value, defaults: &HashMap<String, String>) -> Result<()> {
+    fn apply_default_values(&self, data: &mut Value, defaults: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
                 for (field, default_value) in defaults {
@@ -1274,7 +1280,7 @@ where
                             Value::String(default_value.clone())
                         };
                         map.insert(field.clone(), value);
-                        println!("  ✓ Set default value for field '{}'", field);
+                        println!("  ✓ Set default value for field '{field}'");
                     }
                 }
                 
@@ -1296,7 +1302,7 @@ where
     }
 
     /// Apply custom migration logic
-    fn apply_custom_migration(&self, data: &mut Value, logic: &Value) -> Result<()> {
+    fn apply_custom_migration(&self, data: &mut Value, logic: &Value) -> linkml_core::error::Result<()> {
         // This is a flexible function that can be extended with various custom migration patterns
         if let Some(custom_type) = logic.get("type").and_then(|t| t.as_str()) {
             match custom_type {
@@ -1304,9 +1310,9 @@ where
                     // Merge multiple fields into one
                     if let (Some(sources), Some(target)) = 
                         (logic.get("source_fields").and_then(|s| s.as_array()),
-                         logic.get("target_field").and_then(|t| t.as_str())) {
+                         logic.get("target_field").and_then(|t| t.as_str()))
                         
-                        if let Value::Object(map) = data {
+                        && let Value::Object(map) = data {
                             let mut merged = String::new();
                             for source in sources {
                                 if let Some(field_name) = source.as_str() {
@@ -1320,36 +1326,32 @@ where
                                 }
                             }
                             map.insert(target.to_string(), Value::String(merged));
-                            println!("  ✓ Merged fields into '{}'", target);
+                            println!("  ✓ Merged fields into '{target}'");
                         }
-                    }
                 }
                 "split_field" => {
                     // Split a field into multiple fields
                     if let (Some(source), Some(delimiter)) = 
                         (logic.get("source_field").and_then(|s| s.as_str()),
-                         logic.get("delimiter").and_then(|d| d.as_str())) {
+                         logic.get("delimiter").and_then(|d| d.as_str()))
                         
-                        if let Value::Object(map) = data {
-                            if let Some(Value::String(s)) = map.get(source).cloned() {
+                        && let Value::Object(map) = data
+                            && let Some(Value::String(s)) = map.get(source).cloned() {
                                 let parts: Vec<&str> = s.split(delimiter).collect();
                                 if let Some(target_fields) = logic.get("target_fields").and_then(|t| t.as_array()) {
                                     for (i, target) in target_fields.iter().enumerate() {
-                                        if let Some(field_name) = target.as_str() {
-                                            if let Some(part) = parts.get(i) {
-                                                map.insert(field_name.to_string(), Value::String(part.to_string()));
+                                        if let Some(field_name) = target.as_str()
+                                            && let Some(part) = parts.get(i) {
+                                                map.insert(field_name.to_string(), Value::String((*part).to_string());
                                             }
-                                        }
                                     }
                                     map.remove(source);
-                                    println!("  ✓ Split field '{}' into multiple fields", source);
+                                    println!("  ✓ Split field '{source}' into multiple fields");
                                 }
                             }
-                        }
-                    }
                 }
                 _ => {
-                    println!("  ⚠ Unknown custom migration type: {}", custom_type);
+                    println!("  ⚠ Unknown custom migration type: {custom_type}");
                 }
             }
         }
@@ -1357,13 +1359,13 @@ where
     }
 
     /// Validate migration
-    fn validate_migration(&self, criteria: &ValidationCriteria, data_path: &Path) -> Result<()> {
+    fn validate_migration(&self, criteria: &ValidationCriteria, data_path: &Path) -> linkml_core::error::Result<()> {
         // Validate the migrated data against the specified criteria
         if !data_path.exists() {
             return Err(LinkMLError::service(format!(
                 "Data file not found for validation: {}",
                 data_path.display()
-            )));
+            ));
         }
 
         println!("Validating migration for: {}", data_path.display());
@@ -1399,7 +1401,7 @@ where
                 } else {
                     println!("  ✗ Schema compliance errors found:");
                     for error in &schema_errors {
-                        println!("    - {}", error);
+                        println!("    - {error}");
                         validation_errors.push(error.clone());
                     }
                 }
@@ -1421,7 +1423,7 @@ where
             } else {
                 println!("  ✗ Data integrity errors found:");
                 for error in &integrity_errors {
-                    println!("    - {}", error);
+                    println!("    - {error}");
                     validation_errors.push(error.clone());
                 }
             }
@@ -1434,22 +1436,22 @@ where
             // Parse performance requirements (expecting JSON format)
             if let Ok(reqs) = serde_json::from_str::<Value>(perf_reqs) {
                 // Check file size requirement
-                if let Some(max_size) = reqs.get("max_file_size_mb").and_then(|v| v.as_f64()) {
+                if let Some(max_size) = reqs.get("max_file_size_mb").and_then(linkml_core::Value::as_f64) {
                     let file_size_mb = std::fs::metadata(data_path)
                         .map(|m| m.len() as f64 / 1_048_576.0)
                         .unwrap_or(0.0);
                     
                     if file_size_mb <= max_size {
-                        println!("  ✓ File size ({:.2} MB) within limit ({} MB)", file_size_mb, max_size);
+                        println!("  ✓ File size ({file_size_mb:.2} MB) within limit ({max_size} MB)");
                     } else {
-                        let error = format!("File size ({:.2} MB) exceeds limit ({} MB)", file_size_mb, max_size);
-                        println!("  ✗ {}", error);
+                        let error = format!("File size ({file_size_mb:.2} MB) exceeds limit ({max_size} MB)");
+                        println!("  ✗ {error}");
                         validation_errors.push(error);
                     }
                 }
                 
                 // Check record count requirement
-                if let Some(max_records) = reqs.get("max_records").and_then(|v| v.as_u64()) {
+                if let Some(max_records) = reqs.get("max_records").and_then(linkml_core::Value::as_u64) {
                     let record_count = match &data {
                         Value::Array(arr) => arr.len() as u64,
                         Value::Object(_) => 1,
@@ -1457,15 +1459,15 @@ where
                     };
                     
                     if record_count <= max_records {
-                        println!("  ✓ Record count ({}) within limit ({})", record_count, max_records);
+                        println!("  ✓ Record count ({record_count}) within limit ({max_records})");
                     } else {
-                        let error = format!("Record count ({}) exceeds limit ({})", record_count, max_records);
-                        println!("  ✗ {}", error);
+                        let error = format!("Record count ({record_count}) exceeds limit ({max_records})");
+                        println!("  ✗ {error}");
                         validation_errors.push(error);
                     }
                 }
             } else {
-                println!("  Performance requirements: {}", perf_reqs);
+                println!("  Performance requirements: {perf_reqs}");
             }
         }
 
@@ -1474,7 +1476,7 @@ where
             println!("Running {} custom validation rules", criteria.custom_validation_rules.len());
             
             for rule in &criteria.custom_validation_rules {
-                println!("  Validating rule: {}", rule);
+                println!("  Validating rule: {rule}");
                 
                 // Parse and execute custom validation rule
                 if let Ok(rule_def) = serde_json::from_str::<Value>(rule) {
@@ -1483,13 +1485,13 @@ where
                         println!("    ✓ Rule passed");
                     } else {
                         for error in &rule_errors {
-                            println!("    ✗ {}", error);
+                            println!("    ✗ {error}");
                             validation_errors.push(error.clone());
                         }
                     }
                 } else {
                     // Treat as a simple expression rule
-                    println!("    ✓ Rule: {}", rule);
+                    println!("    ✓ Rule: {rule}");
                 }
             }
         }
@@ -1508,41 +1510,39 @@ where
     }
 
     /// Validate data against a schema
-    fn validate_against_schema(&self, data: &Value, schema: &SchemaDefinition) -> Result<Vec<String>> {
+    fn validate_against_schema(&self, data: &Value, schema: &SchemaDefinition) -> linkml_core::error::Result<Vec<String>> {
         let mut errors = Vec::new();
         
         // Check if data matches any defined classes
         if let Value::Object(map) = data {
             // Look for a type field to identify the class
-            if let Some(type_field) = map.get("type").or_else(|| map.get("@type")) {
-                if let Some(type_name) = type_field.as_str() {
+            if let Some(type_field) = map.get("type").or_else(|| map.get("@type"))
+                && let Some(type_name) = type_field.as_str() {
                     if let Some(class_def) = schema.classes.get(type_name) {
                         // Validate required slots
                         for slot_name in &class_def.slots {
-                            if let Some(slot_def) = schema.slots.get(slot_name) {
-                                if slot_def.required.unwrap_or(false) && !map.contains_key(slot_name) {
-                                    errors.push(format!("Required field '{}' missing in class '{}'", slot_name, type_name));
+                            if let Some(slot_def) = schema.slots.get(slot_name)
+                                && slot_def.required.unwrap_or(false) && !map.contains_key(slot_name) {
+                                    errors.push(format!("Required field '{slot_name}' missing in class '{type_name}'"));
                                 }
-                            }
                         }
                         
                         // Check for unknown fields
                         for field in map.keys() {
                             if field != "type" && field != "@type" && !class_def.slots.contains(field) {
-                                errors.push(format!("Unknown field '{}' in class '{}'", field, type_name));
+                                errors.push(format!("Unknown field '{field}' in class '{type_name}'"));
                             }
                         }
                     } else {
                         errors.push(format!("Unknown class type: '{type_name}'"));
                     }
                 }
-            }
         } else if let Value::Array(arr) = data {
             // Validate each item in the array
             for (i, item) in arr.iter().enumerate() {
                 let item_errors = self.validate_against_schema(item, schema)?;
                 for error in item_errors {
-                    errors.push(format!("[Item {}] {}", i, error));
+                    errors.push(format!("[Item {i}] {error}"));
                 }
             }
         }
@@ -1551,7 +1551,7 @@ where
     }
 
     /// Check data integrity
-    fn check_data_integrity(&self, data: &Value) -> Result<Vec<String>> {
+    fn check_data_integrity(&self, data: &Value) -> linkml_core::error::Result<Vec<String>> {
         let mut errors = Vec::new();
         
         match data {
@@ -1566,7 +1566,7 @@ where
                     if value.is_object() || value.is_array() {
                         let nested_errors = self.check_data_integrity(value)?;
                         for error in nested_errors {
-                            errors.push(format!("[{}] {}", field, error));
+                            errors.push(format!("[{field}] {error}"));
                         }
                     }
                 }
@@ -1586,7 +1586,7 @@ where
                 for (i, item) in arr.iter().enumerate() {
                     let item_errors = self.check_data_integrity(item)?;
                     for error in item_errors {
-                        errors.push(format!("[Item {}] {}", i, error));
+                        errors.push(format!("[Item {i}] {error}"));
                     }
                 }
             }
@@ -1597,84 +1597,70 @@ where
     }
 
     /// Execute custom validation rule
-    fn execute_custom_validation(&self, data: &Value, rule_def: &Value) -> Result<Vec<String>> {
+    fn execute_custom_validation(&self, data: &Value, rule_def: &Value) -> linkml_core::error::Result<Vec<String>> {
         let mut errors = Vec::new();
         
         if let Some(rule_type) = rule_def.get("type").and_then(|t| t.as_str()) {
             match rule_type {
                 "required_fields" => {
                     // Check that specified fields exist
-                    if let Some(fields) = rule_def.get("fields").and_then(|f| f.as_array()) {
-                        if let Value::Object(map) = data {
+                    if let Some(fields) = rule_def.get("fields").and_then(|f| f.as_array())
+                        && let Value::Object(map) = data {
                             for field in fields {
-                                if let Some(field_name) = field.as_str() {
-                                    if !map.contains_key(field_name) {
+                                if let Some(field_name) = field.as_str()
+                                    && !map.contains_key(field_name) {
                                         errors.push(format!("Required field '{field_name}' not found"));
                                     }
-                                }
                             }
                         }
-                    }
                 }
                 "field_values" => {
                     // Check that fields have specific values or patterns
-                    if let Some(constraints) = rule_def.get("constraints").and_then(|c| c.as_object()) {
-                        if let Value::Object(map) = data {
+                    if let Some(constraints) = rule_def.get("constraints").and_then(|c| c.as_object())
+                        && let Value::Object(map) = data {
                             for (field, constraint) in constraints {
                                 if let Some(field_value) = map.get(field) {
                                     // Check constraint type
-                                    if let Some(pattern) = constraint.get("pattern").and_then(|p| p.as_str()) {
-                                        if let Some(value_str) = field_value.as_str() {
-                                            if !value_str.contains(pattern) {
+                                    if let Some(pattern) = constraint.get("pattern").and_then(|p| p.as_str())
+                                        && let Some(value_str) = field_value.as_str()
+                                            && !value_str.contains(pattern) {
                                                 errors.push(format!(
-                                                    "Field '{}' value '{}' doesn't match pattern '{}'",
-                                                    field, value_str, pattern
+                                                    "Field '{field}' value '{value_str}' doesn't match pattern '{pattern}'"
                                                 ));
                                             }
-                                        }
-                                    }
-                                    if let Some(min) = constraint.get("min").and_then(|m| m.as_f64()) {
-                                        if let Some(num) = field_value.as_f64() {
-                                            if num < min {
+                                    if let Some(min) = constraint.get("min").and_then(linkml_core::Value::as_f64)
+                                        && let Some(num) = field_value.as_f64()
+                                            && num < min {
                                                 errors.push(format!(
-                                                    "Field '{}' value {} is less than minimum {}",
-                                                    field, num, min
+                                                    "Field '{field}' value {num} is less than minimum {min}"
                                                 ));
                                             }
-                                        }
-                                    }
-                                    if let Some(max) = constraint.get("max").and_then(|m| m.as_f64()) {
-                                        if let Some(num) = field_value.as_f64() {
-                                            if num > max {
+                                    if let Some(max) = constraint.get("max").and_then(linkml_core::Value::as_f64)
+                                        && let Some(num) = field_value.as_f64()
+                                            && num > max {
                                                 errors.push(format!(
-                                                    "Field '{}' value {} exceeds maximum {}",
-                                                    field, num, max
+                                                    "Field '{field}' value {num} exceeds maximum {max}"
                                                 ));
                                             }
-                                        }
-                                    }
                                 }
                             }
                         }
-                    }
                 }
                 "no_duplicates" => {
                     // Check for duplicate values in specified field
-                    if let Some(field) = rule_def.get("field").and_then(|f| f.as_str()) {
-                        if let Value::Array(arr) = data {
+                    if let Some(field) = rule_def.get("field").and_then(|f| f.as_str())
+                        && let Value::Array(arr) = data {
                             let mut seen = std::collections::HashSet::new();
                             for item in arr {
-                                if let Value::Object(map) = item {
-                                    if let Some(value) = map.get(field) {
+                                if let Value::Object(map) = item
+                                    && let Some(value) = map.get(field) {
                                         let value_str = format!("{value}");
                                         if !seen.insert(value_str.clone()) {
-                                            errors.push(format!("Duplicate value '{}' in field '{}'", value_str, field));
+                                            errors.push(format!("Duplicate value '{value_str}' in field '{field}'"));
                                         }
                                     }
-                                }
                             }
                         }
-                    }
                 }
                 _ => {
                     errors.push(format!("Unknown validation rule type: '{rule_type}'"));

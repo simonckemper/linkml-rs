@@ -6,16 +6,20 @@
 pub mod hot_reload;
 pub mod validation;
 
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
 
 /// Load configuration from `YAML` file with environment variable substitution
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
     // Read the file
-    let contents = std::fs::read_to_string(path).map_err(|e| LinkMLError::IoError(e))?;
+    let contents = std::fs::read_to_string(path).map_err(LinkMLError::IoError)?;
 
     // Substitute environment variables
     let substituted = substitute_env_vars(&contents);
@@ -41,7 +45,7 @@ fn substitute_env_vars(content: &str) -> String {
 
     re.replace_all(content, |caps: &regex::Captures| {
         let var_name = &caps[1];
-        let default_value = caps.get(3).map(|m| m.as_str()).unwrap_or("");
+        let default_value = caps.get(3).map_or("", |m| m.as_str());
 
         env::var(var_name).unwrap_or_else(|_| default_value.to_string())
     })
@@ -51,7 +55,7 @@ fn substitute_env_vars(content: &str) -> String {
 /// Complete `LinkML` service configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LinkMLConfig {
-    /// TypeDB configuration
+    /// `TypeDB` configuration
     pub typedb: TypeDBConfig,
     /// Parser configuration
     pub parser: ParserConfig,
@@ -79,7 +83,7 @@ pub struct LinkMLConfig {
     pub cli: CliConfig,
 }
 
-/// TypeDB configuration
+/// `TypeDB` configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TypeDBConfig {
     /// Server address (e.g., "localhost:1729")
@@ -352,18 +356,30 @@ pub const DEFAULT_CONFIG_PATH: &str = "config/default.yaml";
 pub const PRODUCTION_CONFIG_PATH: &str = "config/production.yaml";
 
 /// Load default configuration
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn load_default_config() -> Result<LinkMLConfig> {
     let path = Path::new(DEFAULT_CONFIG_PATH);
     load_config(path)
 }
 
 /// Load production configuration
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn load_production_config() -> Result<LinkMLConfig> {
     let path = Path::new(PRODUCTION_CONFIG_PATH);
     load_config(path)
 }
 
 /// Load configuration based on environment
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn load_environment_config() -> Result<LinkMLConfig> {
     let env = env::var("LINKML_ENV").unwrap_or_else(|_| "default".to_string());
 
@@ -381,7 +397,7 @@ pub fn get_config() -> &'static LinkMLConfig {
     INSTANCE.get_or_init(|| {
         load_environment_config().unwrap_or_else(|e| {
             // Log the error (in a real implementation, proper logging should be used)
-            eprintln!("Warning: Failed to load LinkML configuration: {}. Using fallback defaults.", e);
+            eprintln!("Warning: Failed to load LinkML configuration: {e}. Using fallback defaults.");
             // Return a minimal working configuration as fallback
             // This ensures the system can still operate even if config files are missing
             create_fallback_config()

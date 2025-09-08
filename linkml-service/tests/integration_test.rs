@@ -1,3 +1,4 @@
+use std::error::Error as StdError;
 use linkml_service::parser::Parser;
 use linkml_service::validator::ValidationEngine;
 use linkml_service::generator::Generator;
@@ -32,7 +33,7 @@ slots:
 
     // Parse the schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
 
     // Test basic schema structure
     assert_eq!(schema.name, "TestSchema");
@@ -47,7 +48,9 @@ slots:
     let valid_instance = json!({
         "name": "John Doe",
         "age": 30
-    });
+    }
+    Ok(())
+});
 
     let validation_result = validation_engine
         .validate_as_class(&valid_instance, "Person", None)
@@ -99,7 +102,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(yaml_schema, "yaml")?;
+    let schema = parser.parse(yaml_schema, "yaml")?;
 
     assert_eq!(schema.name, "TestSchema");
     assert!(schema.classes.contains_key("Person"));
@@ -110,6 +113,8 @@ slots:
     let email_slot = schema.slots.get("email").unwrap();
     assert!(email_slot.pattern.is_some());
 
+    Ok(())
+}
     Ok(())
 }
 
@@ -134,10 +139,11 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
 
     // Test JSON Schema generation
     use linkml_service::generator::json_schema::JsonSchemaGenerator;
+
 
     let generator = JsonSchemaGenerator::new();
     let json_schema_result = generator.generate(&schema);
@@ -147,6 +153,8 @@ slots:
     let json_schema = json_schema_result.unwrap();
     assert!(json_schema.contains("TestClass"), "Generated schema should contain TestClass");
 
+    Ok(())
+}
     Ok(())
 }
 
@@ -181,7 +189,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
 
     let validation_engine = ValidationEngine::new(&schema)?;
 
@@ -189,7 +197,9 @@ slots:
     let instance = json!({
         "id": "person-1",
         "name": "Alice"
-    });
+    }
+    Ok(())
+});
 
     let validation = validation_engine
         .validate_as_class(&instance, "Person", None)
@@ -207,7 +217,7 @@ async fn test_error_handling() -> std::result::Result<(), Box<dyn std::error::Er
 
     // Test invalid YAML
     let invalid_yaml = "invalid: yaml: content: [unclosed";
-    let result = parser.parse_str(invalid_yaml, "yaml");
+    let result = parser.parse(invalid_yaml, "yaml");
     assert!(result.is_err(), "Invalid YAML should return error");
 
     // Test invalid schema structure (this should parse but might have validation issues)
@@ -219,14 +229,16 @@ classes:
       - nonexistent_slot  # This slot is not defined
 ";
 
-    let result = parser.parse_str(invalid_schema_yaml, "yaml");
+    let result = parser.parse(invalid_schema_yaml, "yaml");
     // This might succeed at parsing but would fail at validation
     if let Ok(schema) = result {
         // Try to create validation engine - this might catch the error
         let validation_engine_result = ValidationEngine::new(&schema);
         // Should either fail here or when validating instances
         if let Ok(engine) = validation_engine_result {
-            let test_instance = json!({"name": "test"});
+            let test_instance = json!({"name": "test"}
+    Ok(())
+});
             let validation = engine.validate_as_class(&test_instance, "TestClass", None).await;
             // Should have issues due to undefined slot
             assert!(validation.is_err() || !validation.unwrap().valid);
@@ -246,6 +258,8 @@ async fn test_concurrent_operations() -> std::result::Result<(), Box<dyn std::er
         let handle = tokio::spawn(async move {
             let schema_yaml = format!(r"
 id: https://example.org/concurrent-test-{}
+    Ok(())
+}
 name: ConcurrentTest{}
 
 classes:
@@ -262,7 +276,7 @@ slots:
 ", i, i, i, i);
 
             let parser = Parser::new();
-            parser.parse_str(&schema_yaml, "yaml")
+            parser.parse(&schema_yaml, "yaml")
         });
         handles.push(handle);
     }

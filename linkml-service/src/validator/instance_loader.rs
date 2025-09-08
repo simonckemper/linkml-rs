@@ -73,7 +73,7 @@ impl InstanceLoader {
         &self,
         path: impl AsRef<Path>,
         config: &InstanceConfig,
-    ) -> Result<Arc<InstanceData>> {
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
         let path = path.as_ref();
         let cache_key = format!("file:{}", path.display());
 
@@ -113,7 +113,7 @@ impl InstanceLoader {
         &self,
         path: impl AsRef<Path>,
         config: &InstanceConfig,
-    ) -> Result<Arc<InstanceData>> {
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
         let path = path.as_ref();
         let cache_key = format!("file:{}", path.display());
 
@@ -233,7 +233,7 @@ impl InstanceLoader {
         obj: &Value,
         config: &InstanceConfig,
         values: &mut HashMap<String, Vec<String>>,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         let _ = self; // May need loader configuration in the future
         if let Some(obj_map) = obj.as_object() {
             // Get key
@@ -279,7 +279,7 @@ impl InstanceLoader {
         _endpoint: &str,
         _query: &str,
         _config: &InstanceConfig,
-    ) -> Result<Arc<InstanceData>> {
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("GraphQL instance loading"))
     }
 
@@ -293,7 +293,7 @@ impl InstanceLoader {
         _connection: &str,
         _query: &str,
         _config: &InstanceConfig,
-    ) -> Result<Arc<InstanceData>> {
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SQL instance loading"))
     }
 
@@ -307,7 +307,7 @@ impl InstanceLoader {
         _endpoint: &str,
         _query: &str,
         _config: &InstanceConfig,
-    ) -> Result<Arc<InstanceData>> {
+    ) -> linkml_core::error::Result<Arc<InstanceData>> {
         Err(LinkMLError::not_implemented("SPARQL instance loading"))
     }
 
@@ -352,8 +352,8 @@ mod tests {
     use tokio::fs;
 
     #[tokio::test]
-    async fn test_load_json_file() -> anyhow::Result<()> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+    async fn test_load_json_file() -> anyhow::Result<(), LinkMLError> {
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[
@@ -364,7 +364,7 @@ mod tests {
 
         fs::write(&file_path, json_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test JSON file: {}", e))?;
+            .expect("should write test JSON file: {}");
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -376,7 +376,7 @@ mod tests {
         let instance_data = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON instance data: {}", e))?;
+            .expect("should load JSON instance data: {}");
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
@@ -404,14 +404,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_load_csv_file() -> anyhow::Result<()> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+    async fn test_load_csv_file() -> anyhow::Result<(), LinkMLError> {
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let file_path = temp_dir.path().join("instances.csv");
 
         let csv_data = "code,name\nUS,United States\nUK,United Kingdom\nCA,Canada\n";
         fs::write(&file_path, csv_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test CSV file: {}", e))?;
+            .expect("should write test CSV file: {}");
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig {
@@ -423,7 +423,7 @@ mod tests {
         let instance_data = loader
             .load_csv_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load CSV instance data: {}", e))?;
+            .expect("should load CSV instance data: {}");
 
         assert_eq!(instance_data.values.len(), 3);
         assert_eq!(
@@ -437,14 +437,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_caching() -> anyhow::Result<()> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+    async fn test_caching() -> anyhow::Result<(), LinkMLError> {
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let file_path = temp_dir.path().join("instances.json");
 
         let json_data = r#"[{"id": "1", "value": "test"}]"#;
         fs::write(&file_path, json_data)
             .await
-            .map_err(|e| anyhow::anyhow!("should write test JSON file for caching: {}", e))?;
+            .expect("should write test JSON file for caching: {}");
 
         let loader = InstanceLoader::new();
         let config = InstanceConfig::default();
@@ -453,13 +453,13 @@ mod tests {
         let data1 = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON data first time: {}", e))?;
+            .expect("should load JSON data first time: {}");
 
         // Second load should be from cache
         let data2 = loader
             .load_json_file(&file_path, &config)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON data from cache: {}", e))?;
+            .expect("should load JSON data from cache: {}");
 
         // Should be the same Arc
         assert!(Arc::ptr_eq(&data1, &data2));

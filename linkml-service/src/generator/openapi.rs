@@ -546,8 +546,8 @@ impl OpenApiGenerator {
         }
 
         // Add inherited slots
-        if let Some(parent) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_all_slots(parent_class, schema)?;
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -555,7 +555,6 @@ impl OpenApiGenerator {
                     }
                 }
             }
-        }
 
         Ok(all_slots)
     }
@@ -682,21 +681,21 @@ impl Generator for OpenApiGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "json"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "openapi"
     }
 }
 
 impl CodeFormatter for OpenApiGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "openapi"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for openapi output with proper indentation and syntax"
     }
 
@@ -767,6 +766,7 @@ impl CodeFormatter for OpenApiGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_openapi_generation() -> anyhow::Result<()> {
@@ -786,10 +786,10 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate OpenAPI: {}", e))?;
+            .expect("should generate OpenAPI: {}");
 
         // Parse to verify it's valid JSON
-        let parsed: JsonValue = serde_json::from_str(&content).map_err(|e| anyhow::anyhow!("should parse as valid JSON: {}", e))?;
+        let parsed: JsonValue = serde_json::from_str(&content).expect("should parse as valid JSON: {}");
 
         // Check basic structure
         assert_eq!(parsed["openapi"], "3.0.3");

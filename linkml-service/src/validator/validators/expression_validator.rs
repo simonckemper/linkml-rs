@@ -1,6 +1,6 @@
 //! Expression validator for computed fields and validation rules
 //!
-//! This module validates equals_expression and rules constraints using the expression engine.
+//! This module validates `equals_expression` and rules constraints using the expression engine.
 
 use linkml_core::types::SlotDefinition;
 use serde_json::Value;
@@ -16,9 +16,15 @@ pub struct ExpressionValidator {
     engine: ExpressionEngine,
 }
 
+impl Default for ExpressionValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExpressionValidator {
     /// Create a new expression validator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             engine: ExpressionEngine::new(),
         }
@@ -44,9 +50,8 @@ impl Validator for ExpressionValidator {
                     if value != &computed_value {
                         issues.push(
                             ValidationIssue::error(
-                                &format!(
-                                    "Value does not match computed expression. Expected: {:?}, Got: {:?}",
-                                    computed_value, value
+                                format!(
+                                    "Value does not match computed expression. Expected: {computed_value:?}, Got: {value:?}"
                                 ),
                                 context.path(),
                                 self.name(),
@@ -82,7 +87,7 @@ impl Validator for ExpressionValidator {
                         if let Value::Bool(false) = result {
                             issues.push(
                                 ValidationIssue::error(
-                                    &format!("Rule {} failed: {}", i + 1, rule),
+                                    format!("Rule {} failed: {}", i + 1, rule),
                                     context.path(),
                                     self.name(),
                                 )
@@ -128,7 +133,7 @@ impl Validator for ExpressionValidator {
         issues
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ExpressionValidator"
     }
 }
@@ -242,12 +247,12 @@ mod tests {
         // Test invalid value (negative)
         let issues = validator.validate(&json!(-5), &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
+        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string());
 
         // Test invalid value (too large)
         let issues = validator.validate(&json!(200), &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
+        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string());
     }
 
     #[test]

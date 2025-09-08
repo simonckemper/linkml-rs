@@ -3,6 +3,7 @@
 use linkml_core::prelude::*;
 use linkml_service::generator::{Generator, typeql_generator_enhanced::EnhancedTypeQLGenerator};
 use std::time::Instant;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 #[tokio::test]
 async fn test_typeql_performance() {

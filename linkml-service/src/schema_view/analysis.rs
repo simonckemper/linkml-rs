@@ -1,8 +1,8 @@
 //! Schema analysis utilities for computing statistics and usage patterns
 
-use linkml_core::error::Result;
 use std::collections::{HashMap, HashSet};
 
+use linkml_core::error::Result;
 use super::view::{SchemaView, SchemaViewError};
 
 /// Statistics about a `LinkML` schema
@@ -47,6 +47,7 @@ pub struct SchemaStatistics {
 
 /// Information about where an element is used
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct UsageInfo {
     /// Classes that reference this element
     pub used_by_classes: Vec<String>,
@@ -60,25 +61,13 @@ pub struct UsageInfo {
     /// Whether this element is used as a type range
     pub used_as_range: bool,
 
-    /// Whether this element is used in slot_usage
+    /// Whether this element is used in `slot_usage`
     pub used_in_slot_usage: bool,
 
     /// Total usage count
     pub total_usage_count: usize,
 }
 
-impl Default for UsageInfo {
-    fn default() -> Self {
-        Self {
-            used_by_classes: Vec::new(),
-            used_by_slots: Vec::new(),
-            used_as_mixin: false,
-            used_as_range: false,
-            used_in_slot_usage: false,
-            total_usage_count: 0,
-        }
-    }
-}
 
 /// Index of element usage throughout the schema
 #[derive(Debug, Clone)]
@@ -89,7 +78,11 @@ pub struct UsageIndex {
 
 impl UsageIndex {
     /// Build a usage index for the schema
-    pub fn build(schema_view: &SchemaView) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn build(schema_view: &SchemaView) -> linkml_core::error::Result<Self> {
         let mut index = Self {
             usage_map: HashMap::new(),
         };
@@ -133,12 +126,12 @@ impl UsageIndex {
     }
 
     /// Get usage information for an element
-    pub fn get_usage(&self, element_name: &str) -> Option<&UsageInfo> {
+    #[must_use] pub fn get_usage(&self, element_name: &str) -> Option<&UsageInfo> {
         self.usage_map.get(element_name)
     }
 
     /// Find unused elements
-    pub fn find_unused_elements(&self) -> Vec<String> {
+    #[must_use] pub fn find_unused_elements(&self) -> Vec<String> {
         self.usage_map
             .iter()
             .filter(|(_, usage)| usage.total_usage_count == 0)
@@ -147,7 +140,7 @@ impl UsageIndex {
     }
 
     /// Find heavily used elements
-    pub fn find_heavily_used_elements(&self, threshold: usize) -> Vec<(String, usize)> {
+    #[must_use] pub fn find_heavily_used_elements(&self, threshold: usize) -> Vec<(String, usize)> {
         self.usage_map
             .iter()
             .filter(|(_, usage)| usage.total_usage_count >= threshold)
@@ -193,12 +186,16 @@ pub struct SchemaAnalyzer<'a> {
 
 impl<'a> SchemaAnalyzer<'a> {
     /// Create a new schema analyzer
-    pub fn new(schema_view: &'a SchemaView) -> Self {
+    #[must_use] pub fn new(schema_view: &'a SchemaView) -> Self {
         Self { schema_view }
     }
 
     /// Compute comprehensive statistics about the schema
-    pub fn compute_statistics(&self) -> Result<SchemaStatistics> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn compute_statistics(&self) -> linkml_core::error::Result<SchemaStatistics> {
         let mut stats = SchemaStatistics::default();
 
         // Basic counts
@@ -248,7 +245,11 @@ impl<'a> SchemaAnalyzer<'a> {
     }
 
     /// Find potential issues in the schema
-    pub fn find_potential_issues(&self) -> Result<Vec<String>> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn find_potential_issues(&self) -> linkml_core::error::Result<Vec<String>> {
         let mut issues = Vec::new();
 
         // Check for unused elements
@@ -272,8 +273,7 @@ impl<'a> SchemaAnalyzer<'a> {
             let slot_count = self.schema_view.class_slots(&class_name)?.len();
             if slot_count > 50 {
                 issues.push(format!(
-                    "Class '{}' has {} slots, consider breaking it down",
-                    class_name, slot_count
+                    "Class '{class_name}' has {slot_count} slots, consider breaking it down"
                 ));
             }
         }
@@ -281,17 +281,20 @@ impl<'a> SchemaAnalyzer<'a> {
         // Check for circular dependencies
         // Note: This is a simplified check; a full implementation would need graph analysis
         for (class_name, class_def) in self.schema_view.all_classes()? {
-            if let Some(parent) = &class_def.is_a {
-                if parent == &class_name {
+            if let Some(parent) = &class_def.is_a
+                && parent == &class_name {
                     issues.push(format!("Class '{class_name}' inherits from itself"));
                 }
-            }
         }
 
         Ok(issues)
     }
 
     /// Find all elements matching a pattern
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn find_elements_by_pattern(&self, pattern: &str) -> Result<HashMap<String, Vec<String>>> {
         let mut results = HashMap::new();
         let regex = regex::Regex::new(pattern)
@@ -334,6 +337,10 @@ impl<'a> SchemaAnalyzer<'a> {
     }
 
     /// Generate a dependency graph for classes
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn generate_class_dependency_graph(&self) -> Result<HashMap<String, HashSet<String>>> {
         let mut graph = HashMap::new();
 
@@ -352,14 +359,13 @@ impl<'a> SchemaAnalyzer<'a> {
 
             // Add slot ranges that are classes
             for slot_name in &class_def.slots {
-                if let Some(slot) = self.schema_view.get_slot(slot_name)? {
-                    if let Some(range) = &slot.range {
+                if let Some(slot) = self.schema_view.get_slot(slot_name)?
+                    && let Some(range) = &slot.range {
                         // Check if range is a class
                         if self.schema_view.get_class(range)?.is_some() {
                             dependencies.insert(range.clone());
                         }
                     }
-                }
             }
 
             graph.insert(class_name, dependencies);

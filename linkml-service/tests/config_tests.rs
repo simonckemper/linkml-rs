@@ -12,6 +12,7 @@ use std::path::Path;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::time::{Duration, sleep};
 
+
 #[test]
 fn test_load_default_config() {
     let config = load_default_config().expect("should load default config");
@@ -29,8 +30,10 @@ fn test_load_default_config() {
 #[test]
 fn test_load_production_config() {
     // Set environment variables
-    env::set_var("TYPEDB_SERVER", "typedb.test.com:1730");
-    env::set_var("TYPEDB_DATABASE", "linkml_test");
+    unsafe {
+        env::set_var("TYPEDB_SERVER", "typedb.test.com:1730");
+        env::set_var("TYPEDB_DATABASE", "linkml_test");
+    }
 
     let config = load_production_config().expect("should load production config");
 
@@ -42,29 +45,39 @@ fn test_load_production_config() {
     assert_eq!(config.cache.max_entries, 100000); // Larger cache in production
 
     // Clean up env vars
-    env::remove_var("TYPEDB_SERVER");
-    env::remove_var("TYPEDB_DATABASE");
+    unsafe {
+        env::remove_var("TYPEDB_SERVER");
+        env::remove_var("TYPEDB_DATABASE");
+    }
 }
 
 #[test]
 fn test_environment_based_loading() {
     // Test default environment
-    env::remove_var("LINKML_ENV");
+    unsafe {
+        env::remove_var("LINKML_ENV");
+    }
     let config = load_environment_config().expect("should load default for unset env");
     assert_eq!(config.typedb.batch_size, 1000); // Default value
 
     // Test production environment
-    env::set_var("LINKML_ENV", "production");
+    unsafe {
+        env::set_var("LINKML_ENV", "production");
+    }
     let config = load_environment_config().expect("should load production config");
     assert_eq!(config.typedb.batch_size, 5000); // Production value
 
     // Test explicit prod
-    env::set_var("LINKML_ENV", "prod");
+    unsafe {
+        env::set_var("LINKML_ENV", "prod");
+    }
     let config = load_environment_config().expect("should load production config for 'prod'");
     assert_eq!(config.typedb.batch_size, 5000); // Production value
 
     // Clean up
-    env::remove_var("LINKML_ENV");
+    unsafe {
+        env::remove_var("LINKML_ENV");
+    }
 }
 
 #[test]
@@ -81,9 +94,11 @@ test:
     fs::write(temp_file.path(), test_config).expect("should write test config");
 
     // Test with env vars set
-    env::set_var("TEST_SERVER", "custom.server.com");
-    env::set_var("TEST_PORT", "8888");
-    env::set_var("TEST_NAME", "test-name");
+    unsafe {
+        env::set_var("TEST_SERVER", "custom.server.com");
+        env::set_var("TEST_PORT", "8888");
+        env::set_var("TEST_NAME", "test-name");
+    }
 
     #[derive(serde::Deserialize, Debug, PartialEq)]
     struct TestConfig {
@@ -103,9 +118,11 @@ test:
     assert_eq!(config.test.name, "test-name");
 
     // Test with env vars unset (defaults)
-    env::remove_var("TEST_SERVER");
-    env::remove_var("TEST_PORT");
-    env::remove_var("TEST_NAME");
+    unsafe {
+        env::remove_var("TEST_SERVER");
+        env::remove_var("TEST_PORT");
+        env::remove_var("TEST_NAME");
+    }
 
     let config: TestConfig =
         load_config(temp_file.path()).expect("should load test config with defaults");

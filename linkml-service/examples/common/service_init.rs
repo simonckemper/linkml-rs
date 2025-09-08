@@ -23,8 +23,9 @@ use timestamp_service::factory::create_timestamp_service;
 pub async fn init_linkml_service_with_real_deps()
 -> Result<Arc<LinkMLServiceImpl>, Box<dyn std::error::Error>> {
     // Create all real services
-    let logger = Arc::new(create_development_logger().await?);
     let timestamp = create_timestamp_service();
+    let logger: Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>> =
+        Arc::new(create_development_logger(timestamp.clone()).await?);
     let task_manager = Arc::new(create_task_management_service()?);
     let config_service = create_configuration_service(task_manager.clone());
     let error_handler =

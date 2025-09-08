@@ -174,20 +174,18 @@ impl JsonPath {
                 self.navigate_recursive(value, segment_idx + 1, current_path, results);
             }
             PathSegment::Property(name) => {
-                if let Some(obj) = value.as_object() {
-                    if let Some(field_value) = obj.get(name) {
+                if let Some(obj) = value.as_object()
+                    && let Some(field_value) = obj.get(name) {
                         let new_path = format!("{current_path}.{name}");
                         self.navigate_recursive(field_value, segment_idx + 1, &new_path, results);
                     }
-                }
             }
             PathSegment::Index(idx) => {
-                if let Some(arr) = value.as_array() {
-                    if let Some(elem) = arr.get(*idx) {
+                if let Some(arr) = value.as_array()
+                    && let Some(elem) = arr.get(*idx) {
                         let new_path = format!("{current_path}[{idx}]");
                         self.navigate_recursive(elem, segment_idx + 1, &new_path, results);
                     }
-                }
             }
             PathSegment::Wildcard => {
                 if let Some(arr) = value.as_array() {
@@ -355,18 +353,18 @@ mod tests {
             ]
         });
 
-        let path = JsonPath::parse("$.name").map_err(|e| anyhow::anyhow!("should parse valid path: {}", e))?;
+        let path = JsonPath::parse("$.name").expect("should parse valid path: {}");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("John"));
 
-        let path = JsonPath::parse("$.items[0].name").map_err(|e| anyhow::anyhow!("should parse valid path with index: {}", e))?;
+        let path = JsonPath::parse("$.items[0].name").expect("should parse valid path with index: {}");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].0, &json!("Item 1"));
 
         let path =
-            JsonPath::parse("$.items[*].name").map_err(|e| anyhow::anyhow!("should parse valid path with wildcard: {}", e))?;
+            JsonPath::parse("$.items[*].name").expect("should parse valid path with wildcard: {}");
         let results = path.navigate(&data);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].0, &json!("Item 1"));
@@ -393,13 +391,13 @@ mod tests {
         // First call parses the path
         let result1 = navigator
             .navigate(&data, "$.name")
-            .map_err(|e| anyhow::anyhow!("should navigate to name: {}", e))?;
+            .expect("should navigate to name: {}");
         assert_eq!(result1.len(), 1);
 
         // Second call uses cached path
         let result2 = navigator
             .navigate(&data, "$.name")
-            .map_err(|e| anyhow::anyhow!("Error: {}", e))?;
+            .expect("Error: {}");
         assert_eq!(result2.len(), 1);
 
         // Verify cache contains the path

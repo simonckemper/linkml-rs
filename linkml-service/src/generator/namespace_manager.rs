@@ -1,10 +1,10 @@
-//! Namespace manager generator for LinkML schemas
+//! Namespace manager generator for `LinkML` schemas
 //!
-//! This module generates namespace management utilities from LinkML schemas,
+//! This module generates namespace management utilities from `LinkML` schemas,
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition, SchemaDefinition};
 
 /// Namespace manager generator configuration
@@ -59,11 +59,11 @@ pub struct NamespaceManagerGenerator {
 
 impl NamespaceManagerGenerator {
     /// Create a new namespace manager generator
-    pub fn new(config: NamespaceManagerGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: NamespaceManagerGeneratorConfig) -> Self {
         Self { config }
     }
 
-    /// Get prefix reference from PrefixDefinition
+    /// Get prefix reference from `PrefixDefinition`
     fn get_prefix_reference(prefix_def: &PrefixDefinition) -> &str {
         match prefix_def {
             PrefixDefinition::Simple(url) => url,
@@ -74,7 +74,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate namespace manager for the configured language
-    fn generate_manager(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_manager(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         match self.config.target_language {
             TargetLanguage::Python => self.generate_python(schema),
             TargetLanguage::JavaScript => self.generate_javascript(schema),
@@ -85,7 +85,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Python namespace manager
-    fn generate_python(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_python(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let mut output = String::new();
 
         // Header
@@ -142,13 +142,12 @@ impl NamespaceManagerGenerator {
         // Default prefix
         if let Some(default_prefix) = &schema.default_prefix {
             output.push_str(&format!(
-                "        self._default_prefix = '{}'\n",
-                default_prefix
+                "        self._default_prefix = '{default_prefix}'\n"
             ));
         } else {
             output.push_str("        self._default_prefix = None\n");
         }
-        output.push_str("\n");
+        output.push('\n');
 
         // Core methods
         output.push_str(&self.generate_python_expand_method());
@@ -173,7 +172,7 @@ impl NamespaceManagerGenerator {
         } else {
             output.push_str("        return self._prefixes.copy()\n");
         }
-        output.push_str("\n");
+        output.push('\n');
 
         output.push_str("    @property\n");
         output.push_str("    def namespaces(self) -> Dict[str, str]:\n");
@@ -184,7 +183,7 @@ impl NamespaceManagerGenerator {
         } else {
             output.push_str("        return self._namespaces.copy()\n");
         }
-        output.push_str("\n");
+        output.push('\n');
 
         Ok(output)
     }
@@ -225,7 +224,7 @@ impl NamespaceManagerGenerator {
         method.push_str("            return self._prefixes[prefix] + local_name\n");
         method.push_str("        \n");
         method.push_str("        raise ValueError(f\"Unknown prefix: {prefix}\")\n");
-        method.push_str("\n");
+        method.push('\n');
 
         method
     }
@@ -266,7 +265,7 @@ impl NamespaceManagerGenerator {
         method.push_str("            return f\"{prefix}:{local_name}\"\n");
         method.push_str("        \n");
         method.push_str("        return None\n");
-        method.push_str("\n");
+        method.push('\n');
 
         method
     }
@@ -290,7 +289,7 @@ impl NamespaceManagerGenerator {
 
         method.push_str("        self._prefixes[prefix] = namespace\n");
         method.push_str("        self._namespaces[namespace] = prefix\n");
-        method.push_str("\n");
+        method.push('\n');
 
         method
     }
@@ -309,7 +308,7 @@ impl NamespaceManagerGenerator {
         methods.push_str("            r'(?:/(?:[a-zA-Z0-9._~-]|%[0-9A-Fa-f]{2})*)*)?'\n");
         methods.push_str("        )\n");
         methods.push_str("        return bool(uri_pattern.match(uri))\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         // Validate CURIE
         methods.push_str("    def is_valid_curie(self, curie: str) -> bool:\n");
@@ -318,13 +317,13 @@ impl NamespaceManagerGenerator {
         methods.push_str("            return False\n");
         methods.push_str("        prefix, local = curie.split(':', 1)\n");
         methods.push_str("        return prefix in self._prefixes\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         // Validate prefix
         methods.push_str("    def is_valid_prefix(self, prefix: str) -> bool:\n");
         methods.push_str("        \"\"\"Check if a prefix is valid\"\"\"\n");
         methods.push_str("        return bool(re.match(r'^[a-zA-Z_][a-zA-Z0-9_-]*$', prefix))\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         methods
     }
@@ -343,7 +342,7 @@ impl NamespaceManagerGenerator {
         methods.push_str(
             "        return [f\"{p}:\" for p, ns in self._prefixes.items() if ns == namespace]\n",
         );
-        methods.push_str("\n");
+        methods.push('\n');
 
         // Normalize URI
         methods.push_str("    def normalize(self, uri_or_curie: str) -> str:\n");
@@ -351,7 +350,7 @@ impl NamespaceManagerGenerator {
         methods.push_str("        if self.is_valid_curie(uri_or_curie):\n");
         methods.push_str("            return self.expand(uri_or_curie)\n");
         methods.push_str("        return uri_or_curie\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         // Export to different formats
         methods.push_str("    def export_turtle(self) -> str:\n");
@@ -364,7 +363,7 @@ impl NamespaceManagerGenerator {
         methods.push_str("        for prefix, namespace in sorted(self._prefixes.items()):\n");
         methods.push_str("            lines.append(f\"@prefix {prefix}: <{namespace}> .\")\n");
         methods.push_str("        return '\\n'.join(lines)\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         methods.push_str("    def export_sparql(self) -> str:\n");
         methods.push_str("        \"\"\"Export prefixes in SPARQL format\"\"\"\n");
@@ -376,13 +375,13 @@ impl NamespaceManagerGenerator {
         methods.push_str("        for prefix, namespace in sorted(self._prefixes.items()):\n");
         methods.push_str("            lines.append(f\"PREFIX {prefix}: <{namespace}>\")\n");
         methods.push_str("        return '\\n'.join(lines)\n");
-        methods.push_str("\n");
+        methods.push('\n');
 
         methods
     }
 
     /// Generate JavaScript namespace manager
-    fn generate_javascript(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_javascript(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -431,8 +430,7 @@ impl NamespaceManagerGenerator {
         // Default prefix
         if let Some(default_prefix) = &schema.default_prefix {
             output.push_str(&format!(
-                "    this._defaultPrefix = '{}';\n",
-                default_prefix
+                "    this._defaultPrefix = '{default_prefix}';\n"
             ));
         } else {
             output.push_str("    this._defaultPrefix = null;\n");
@@ -558,7 +556,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Rust namespace manager
-    fn generate_rust(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_rust(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let mut output = String::new();
 
         output.push_str("//! Namespace manager generated from LinkML schema\n\n");
@@ -567,7 +565,7 @@ impl NamespaceManagerGenerator {
         if self.config.thread_safe {
             output.push_str("use std::sync::{Arc, RwLock};\n");
         }
-        output.push_str("\n");
+        output.push('\n');
 
         // Struct definition
         output.push_str("#[derive(Debug, Clone)]\n");
@@ -625,8 +623,7 @@ impl NamespaceManagerGenerator {
 
         if let Some(default_prefix) = &schema.default_prefix {
             output.push_str(&format!(
-                "            default_prefix: Some(\"{}\".to_string()),\n",
-                default_prefix
+                "            default_prefix: Some(\"{default_prefix}\".to_string()),\n"
             ));
         } else {
             output.push_str("            default_prefix: None,\n");
@@ -753,7 +750,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Java namespace manager
-    fn generate_java(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_java(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -768,7 +765,7 @@ impl NamespaceManagerGenerator {
         if self.config.thread_safe {
             output.push_str("import java.util.concurrent.ConcurrentHashMap;\n");
         }
-        output.push_str("\n");
+        output.push('\n');
 
         // Class definition
         output.push_str(&format!("public class {} {{\n", self.config.class_name));
@@ -818,8 +815,7 @@ impl NamespaceManagerGenerator {
 
         if let Some(default_prefix) = &schema.default_prefix {
             output.push_str(&format!(
-                "        this.defaultPrefix = \"{}\";\n",
-                default_prefix
+                "        this.defaultPrefix = \"{default_prefix}\";\n"
             ));
         } else {
             output.push_str("        this.defaultPrefix = null;\n");
@@ -902,7 +898,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Go namespace manager
-    fn generate_go(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate_go(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         let mut output = String::new();
 
         output.push_str("// Package namespace provides namespace management for LinkML schemas\n");
@@ -944,7 +940,7 @@ impl NamespaceManagerGenerator {
             ));
         }
         if !schema.prefixes.is_empty() {
-            output.push_str("\n");
+            output.push('\n');
         }
 
         // Add common prefixes
@@ -961,7 +957,7 @@ impl NamespaceManagerGenerator {
         output.push_str("\t}\n\n");
 
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!("\tm.defaultPrefix = \"{}\"\n", default_prefix));
+            output.push_str(&format!("\tm.defaultPrefix = \"{default_prefix}\"\n"));
         }
 
         output.push_str("\treturn m\n");
@@ -1043,15 +1039,15 @@ impl NamespaceManagerGenerator {
 }
 
 impl Generator for NamespaceManagerGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "namespace_manager"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate namespace manager utilities for handling URI prefixes and namespace resolution"
     }
 
-    fn validate_schema(&self, schema: &SchemaDefinition) -> Result<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
         // Validate that the schema has required fields for namespace management
         if schema.name.is_empty() {
             return Err(LinkMLError::data_validation(
@@ -1081,13 +1077,12 @@ impl Generator for NamespaceManagerGenerator {
                         ));
                     }
                     // Validate prefix_reference if provided
-                    if let Some(ref_value) = prefix_reference {
-                        if ref_value.is_empty() {
+                    if let Some(ref_value) = prefix_reference
+                        && ref_value.is_empty() {
                             return Err(LinkMLError::data_validation(
                                 format!("Prefix '{prefix_name}' has empty reference value")
                             ));
                         }
-                    }
                 }
             }
         }
@@ -1095,7 +1090,7 @@ impl Generator for NamespaceManagerGenerator {
         Ok(())
     }
 
-    fn generate(&self, schema: &SchemaDefinition) -> Result<String> {
+    fn generate(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
         self.generate_manager(schema)
     }
 
@@ -1109,7 +1104,7 @@ impl Generator for NamespaceManagerGenerator {
         }
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "namespace_manager"
     }
 }
@@ -1120,7 +1115,7 @@ mod tests {
     use linkml_core::types::SchemaDefinition;
 
     #[test]
-    fn test_namespace_manager_generation() -> anyhow::Result<()> {
+    fn test_namespace_manager_generation() -> anyhow::Result<(), LinkMLError> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
 
@@ -1143,7 +1138,7 @@ mod tests {
         let generator = NamespaceManagerGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate namespace manager: {}", e))?;
+            .expect("should generate namespace manager: {}");
 
         assert!(result.contains("class NamespaceManager:"));
         assert!(result.contains("def expand("));

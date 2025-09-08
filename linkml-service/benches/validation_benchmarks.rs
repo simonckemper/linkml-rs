@@ -280,7 +280,7 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
     // Data with all inherited fields
     let mut data = serde_json::Map::new();
     for i in 0..10 {
-        data.insert(format!("field_level_{}", i), json!(format!("value_{}", i)));
+        data.insert(format!("field_level_{}", i), json!(format!("value_{}", i));
     }
 
     c.bench_function("deep_inheritance", |b| {

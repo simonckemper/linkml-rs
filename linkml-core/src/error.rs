@@ -1,5 +1,6 @@
 //! Error types for `LinkML` operations
 
+
 use thiserror::Error;
 
 /// Main error type for `LinkML` operations

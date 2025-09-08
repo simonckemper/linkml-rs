@@ -1,9 +1,10 @@
 //! Integration tests for boolean constraint validators
 
-use linkml_core::types::{AnonymousSlotExpression, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{AnonymousSlotExpression, Definition, SlotDefinition};
 use linkml_service::validator::ValidationOptions;
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ClassDefinition};
 #[tokio::test]
 async fn test_parse_any_of_constraint() {
     // Test that any_of constraints are properly parsed from YAML
@@ -29,8 +30,8 @@ slots:
     assert!(slot.any_of.is_some());
     let constraints = slot.any_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
-    assert_eq!(constraints[0].range, Some("string".to_string()));
-    assert_eq!(constraints[1].range, Some("integer".to_string()));
+    assert_eq!(constraints[0].range, Some("string".to_string());
+    assert_eq!(constraints[1].range, Some("integer".to_string());
 }
 
 #[tokio::test]
@@ -58,9 +59,9 @@ slots:
     assert!(slot.all_of.is_some());
     let constraints = slot.all_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
-    assert_eq!(constraints[0].minimum_value, Some(json!(0)));
-    assert_eq!(constraints[0].maximum_value, Some(json!(100)));
-    assert_eq!(constraints[1].pattern, Some("^\\d+$".to_string()));
+    assert_eq!(constraints[0].minimum_value, Some(json!(0));
+    assert_eq!(constraints[0].maximum_value, Some(json!(100));
+    assert_eq!(constraints[1].pattern, Some("^\\d+$".to_string());
 }
 
 #[tokio::test]
@@ -89,10 +90,10 @@ slots:
     assert!(slot.exactly_one_of.is_some());
     let constraints = slot.exactly_one_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
-    assert_eq!(constraints[0].range, Some("boolean".to_string()));
-    assert_eq!(constraints[1].range, Some("integer".to_string()));
-    assert_eq!(constraints[1].minimum_value, Some(json!(0)));
-    assert_eq!(constraints[1].maximum_value, Some(json!(1)));
+    assert_eq!(constraints[0].range, Some("boolean".to_string());
+    assert_eq!(constraints[1].range, Some("integer".to_string());
+    assert_eq!(constraints[1].minimum_value, Some(json!(0));
+    assert_eq!(constraints[1].maximum_value, Some(json!(1));
 }
 
 #[tokio::test]
@@ -119,8 +120,8 @@ slots:
     assert!(slot.none_of.is_some());
     let constraints = slot.none_of.as_ref().expect("Test operation failed");
     assert_eq!(constraints.len(), 2);
-    assert_eq!(constraints[0].pattern, Some("^test".to_string()));
-    assert_eq!(constraints[1].pattern, Some("^demo".to_string()));
+    assert_eq!(constraints[0].pattern, Some("^test".to_string());
+    assert_eq!(constraints[1].pattern, Some("^demo".to_string());
 }
 
 #[tokio::test]
@@ -159,8 +160,8 @@ slots:
         .as_ref()
         .expect("Test operation failed");
     assert_eq!(all_constraints_1.len(), 2);
-    assert_eq!(all_constraints_1[0].range, Some("integer".to_string()));
-    assert_eq!(all_constraints_1[1].minimum_value, Some(json!(0)));
+    assert_eq!(all_constraints_1[0].range, Some("integer".to_string());
+    assert_eq!(all_constraints_1[1].minimum_value, Some(json!(0));
 
     // Second any_of constraint has all_of
     assert!(any_constraints[1].all_of.is_some());
@@ -169,8 +170,8 @@ slots:
         .as_ref()
         .expect("Test operation failed");
     assert_eq!(all_constraints_2.len(), 2);
-    assert_eq!(all_constraints_2[0].range, Some("string".to_string()));
-    assert_eq!(all_constraints_2[1].pattern, Some("^[A-Z]".to_string()));
+    assert_eq!(all_constraints_2[0].range, Some("string".to_string());
+    assert_eq!(all_constraints_2[1].pattern, Some("^[A-Z]".to_string());
 }
 
 #[tokio::test]
@@ -270,8 +271,8 @@ slots:
 
     // Verify all constraints are present
     assert_eq!(slot.required, Some(true));
-    assert_eq!(slot.range, Some("string".to_string()));
-    assert_eq!(slot.pattern, Some("^[A-Z]".to_string()));
+    assert_eq!(slot.range, Some("string".to_string());
+    assert_eq!(slot.pattern, Some("^[A-Z]".to_string());
     assert!(slot.any_of.is_some());
     assert_eq!(
         slot.any_of.as_ref().expect("Test operation failed").len(),
@@ -316,10 +317,10 @@ slots:
     let constraints = slot.any_of.as_ref().expect("Test operation failed");
     let expr = &constraints[0];
 
-    assert_eq!(expr.range, Some("string".to_string()));
-    assert_eq!(expr.pattern, Some("^test".to_string()));
-    assert_eq!(expr.minimum_value, Some(json!(5)));
-    assert_eq!(expr.maximum_value, Some(json!(10)));
+    assert_eq!(expr.range, Some("string".to_string());
+    assert_eq!(expr.pattern, Some("^test".to_string());
+    assert_eq!(expr.minimum_value, Some(json!(5));
+    assert_eq!(expr.maximum_value, Some(json!(10));
     assert_eq!(expr.minimum_cardinality, Some(1));
     assert_eq!(expr.maximum_cardinality, Some(5));
     assert_eq!(expr.required, Some(true));

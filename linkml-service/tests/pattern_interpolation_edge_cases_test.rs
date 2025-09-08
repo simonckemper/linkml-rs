@@ -1,10 +1,11 @@
 //! Comprehensive tests for pattern interpolation edge cases and complex scenarios
 
 use linkml_core::types::{
-    ClassDefinition, PatternSyntax, SchemaDefinition, SlotDefinition, StructuredPatternDefinition,
+    ClassDefinition, PatternSyntax, Definition, SlotDefinition, StructuredPatternDefinition,
 };
 use linkml_service::validator::{ValidationContext, ValidationEngine};
 use serde_json::json;
+use linkml_core::types::SchemaDefinition;
 use std::collections::HashMap;
 
 #[tokio::test]
@@ -256,7 +257,7 @@ async fn test_context_interpolation() {
     let engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Create context with additional variables
-    let mut context = // ValidationContext removed();
+    let mut context = // ValidationContext::new();
     context.set_variable("environment", "prod");
     context.set_variable("timestamp", "20240115");
 
@@ -467,6 +468,7 @@ async fn test_interpolation_with_special_regex_chars() {
 #[tokio::test]
 async fn test_interpolation_performance_with_many_variables() {
     use std::time::Instant;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 
     let mut schema = SchemaDefinition::new("test_schema");
 
@@ -512,7 +514,7 @@ async fn test_interpolation_performance_with_many_variables() {
     // Create data
     let mut data = serde_json::Map::new();
     for i in 0..50 {
-        data.insert(format!("field_{}", i), json!(format!("value{}", i)));
+        data.insert(format!("field_{}", i), json!(format!("value{}", i));
     }
 
     // Build expected complex value

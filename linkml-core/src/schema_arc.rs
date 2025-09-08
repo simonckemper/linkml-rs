@@ -2,6 +2,7 @@
 //!  This module provides utilities and patterns for working with schemas
 //!  wrapped in Arc to minimize cloning and improve performance.
 use crate::types::SchemaDefinition;
+use crate::string_pool::intern;
 use std::ops::Deref;
 use std::sync::Arc;
 ///  Type alias for Arc-wrapped schema
@@ -168,14 +169,12 @@ impl SchemaCache {
     ///  Get schema if exists
     #[must_use]
     pub fn get(&self, key: &str) -> Option<ArcSchema> {
-        use crate::string_pool::intern;
         let key = intern(key);
         self.cache.get(&key).map(|entry| entry.clone())
     }
 
     ///  Insert schema
     pub fn insert(&self, key: &str, schema: ArcSchema) {
-        use crate::string_pool::intern;
         let key = intern(key);
         self.cache.insert(key, schema);
     }
@@ -204,10 +203,10 @@ impl SchemaDefinitionExt for SchemaDefinition {
 }
 
 /// Helper to work with multiple schemas efficiently
-/// 
-/// Note: Schema merging functionality is provided by the `SchemaMerger` 
+///
+/// Note: Schema merging functionality is provided by the `SchemaMerger`
 /// in the linkml-service crate at `linkml_service::transform::schema_merger`.
-/// This keeps the core crate focused on basic data structures while 
+/// This keeps the core crate focused on basic data structures while
 /// complex operations are handled in the service layer.
 pub struct SchemaSet {
     schemas: Vec<ArcSchema>,
@@ -248,13 +247,13 @@ impl SchemaSet {
     pub fn into_schemas(self) -> Vec<ArcSchema> {
         self.schemas
     }
-    
+
     /// Get the number of schemas in the set
     #[must_use]
     pub fn len(&self) -> usize {
         self.schemas.len()
     }
-    
+
     /// Check if the set is empty
     #[must_use]
     pub fn is_empty(&self) -> bool {
@@ -271,6 +270,7 @@ impl Default for SchemaSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::SchemaDefinition;
 
     #[test]
     fn test_schema_handle() {

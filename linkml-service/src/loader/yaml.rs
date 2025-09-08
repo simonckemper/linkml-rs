@@ -1,6 +1,6 @@
-//! YAML loader and dumper for LinkML
+//! YAML loader and dumper for `LinkML`
 //!
-//! This module provides functionality to load and dump LinkML data in YAML format.
+//! This module provides functionality to load and dump `LinkML` data in YAML format.
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
@@ -20,12 +20,12 @@ pub struct YamlLoader {
 
 impl YamlLoader {
     /// Create a new `YAML` loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self { file_path: None }
     }
 
     /// Set the input file path
-    pub fn with_file(mut self, path: &str) -> Self {
+    #[must_use] pub fn with_file(mut self, path: &str) -> Self {
         self.file_path = Some(path.to_string());
         self
     }
@@ -39,11 +39,11 @@ impl Default for YamlLoader {
 
 #[async_trait]
 impl DataLoader for YamlLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "yaml"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from YAML files"
     }
 
@@ -57,7 +57,7 @@ impl DataLoader for YamlLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(LoaderError::Io)?;
         self.load_string(&content, schema, options).await
     }
 
@@ -90,18 +90,16 @@ impl DataLoader for YamlLoader {
                         let instance = self.object_to_instance(obj.clone(), schema)?;
 
                         // Apply class filtering if specified in options
-                        if let Some(ref target_class) = options.target_class {
-                            if instance.class_name != *target_class {
+                        if let Some(ref target_class) = options.target_class
+                            && instance.class_name != *target_class {
                                 continue;
                             }
-                        }
 
                         // Apply limit if specified
-                        if let Some(limit) = options.limit {
-                            if instances.len() >= limit {
+                        if let Some(limit) = options.limit
+                            && instances.len() >= limit {
                                 break;
                             }
-                        }
 
                         instances.push(instance);
                     } else if !options.skip_invalid {
@@ -117,11 +115,10 @@ impl DataLoader for YamlLoader {
                 let instance = self.object_to_instance(obj, schema)?;
 
                 // Apply class filtering if specified in options
-                if let Some(ref target_class) = options.target_class {
-                    if instance.class_name != *target_class {
+                if let Some(ref target_class) = options.target_class
+                    && instance.class_name != *target_class {
                         return Ok(vec![]);
                     }
-                }
 
                 vec![instance]
             }
@@ -156,7 +153,7 @@ impl DataLoader for YamlLoader {
 }
 
 impl YamlLoader {
-    /// Convert object to DataInstance
+    /// Convert object to `DataInstance`
     fn object_to_instance(
         &self,
         obj: Map<String, Value>,
@@ -217,14 +214,14 @@ pub struct YamlDumper {
 
 impl YamlDumper {
     /// Create a new `YAML` dumper
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             include_markers: true,
         }
     }
 
     /// Set whether to include document markers
-    pub fn with_markers(mut self, include: bool) -> Self {
+    #[must_use] pub fn with_markers(mut self, include: bool) -> Self {
         self.include_markers = include;
         self
     }
@@ -238,11 +235,11 @@ impl Default for YamlDumper {
 
 #[async_trait]
 impl DataDumper for YamlDumper {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "yaml"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to YAML format"
     }
 
@@ -258,7 +255,7 @@ impl DataDumper for YamlDumper {
         options: &DumpOptions,
     ) -> DumperResult<()> {
         let content = self.dump_string(instances, schema, options).await?;
-        std::fs::write(path, content).map_err(|e| DumperError::Io(e))?;
+        std::fs::write(path, content).map_err(DumperError::Io)?;
         Ok(())
     }
 
@@ -280,7 +277,7 @@ impl DataDumper for YamlDumper {
                 }
 
                 // Convert to YAML value
-                let json_obj = Value::Object(serde_json::Map::from_iter(obj.into_iter()));
+                let json_obj = Value::Object(serde_json::Map::from_iter(obj));
                 let json_str =
                     serde_json::to_string(&json_obj).map_err(|e| DumperError::Serialization(format!("JSON serialization failed: {e}")))?;
                 serde_yaml::from_str(&json_str).map_err(|e| DumperError::Serialization(format!("YAML parsing failed: {e}")))

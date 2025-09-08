@@ -1,10 +1,10 @@
-//! Unique key validators for LinkML
+//! Unique key validators for `LinkML`
 //!
 //! This module implements validators for unique key constraints including
 //! single-field uniqueness, composite keys, and scoped uniqueness.
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use serde_json::Value;
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
@@ -21,7 +21,7 @@ pub struct UniqueValueTracker {
 
 impl UniqueValueTracker {
     /// Create a new unique value tracker
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::default()
     }
 
@@ -57,9 +57,15 @@ pub struct UniqueKeyValidator {
     tracker: Mutex<UniqueValueTracker>,
 }
 
+impl Default for UniqueKeyValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UniqueKeyValidator {
     /// Create a new unique key validator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             tracker: Mutex::new(UniqueValueTracker::new()),
         }
@@ -86,7 +92,7 @@ impl UniqueKeyValidator {
                 Some(Value::Null) | None => {
                     if consider_nulls_inequal {
                         // Each null is considered unique
-                        key_parts.push(format!("__null_{}__", uuid::Uuid::new_v4()));
+                        key_parts.push(format!("__null_{}__", uuid::Uuid::new_v4());
                     } else {
                         // Null values make the entire key null (not unique)
                         return None;
@@ -110,6 +116,10 @@ impl UniqueKeyValidator {
     }
 
     /// Validate unique keys for a class instance
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_class(
         &self,
         instance: &Value,
@@ -121,7 +131,7 @@ impl UniqueKeyValidator {
         let mut tracker = self
             .tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?;
+            .expect("tracker mutex should not be poisoned: {}");
 
         // Check identifier slot (if present)
         if let Some(identifier_slot) = class_def.slots.iter().find(|slot_name| {
@@ -130,17 +140,16 @@ impl UniqueKeyValidator {
                 .get(*slot_name)
                 .and_then(|s| s.identifier)
                 .unwrap_or(false)
-        }) {
-            if let Some(value) = Self::get_slot_value(instance, identifier_slot) {
-                if !matches!(value, Value::Null) {
+        })
+            && let Some(value) = Self::get_slot_value(instance, identifier_slot)
+                && !matches!(value, Value::Null) {
                     let key = serde_json::to_string(value).unwrap_or_else(|_| value.to_string());
 
                     if tracker.check_and_record(&class_def.name, "__identifier__", key.clone()) {
                         issues.push(
                             ValidationIssue::error(
                                 format!(
-                                    "Duplicate identifier value '{}' for slot '{}'",
-                                    key, identifier_slot
+                                    "Duplicate identifier value '{key}' for slot '{identifier_slot}'"
                                 ),
                                 instance_path,
                                 "UniqueKeyValidator",
@@ -151,8 +160,6 @@ impl UniqueKeyValidator {
                         );
                     }
                 }
-            }
-        }
 
         // Check unique_keys constraints
         for (key_name, unique_key_def) in &class_def.unique_keys {
@@ -166,8 +173,8 @@ impl UniqueKeyValidator {
                 instance,
                 &unique_key_def.unique_key_slots,
                 consider_nulls_inequal,
-            ) {
-                if tracker.check_and_record(&class_def.name, key_name, composite_key.clone()) {
+            )
+                && tracker.check_and_record(&class_def.name, key_name, composite_key.clone()) {
                     let slot_values: HashMap<String, Value> = unique_key_def
                         .unique_key_slots
                         .iter()
@@ -195,22 +202,29 @@ impl UniqueKeyValidator {
                         .with_context("duplicate_values", serde_json::json!(slot_values)),
                     );
                 }
-            }
         }
 
         Ok(issues)
     }
 
     /// Reset the validator's state (clear all tracked values)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn reset(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.tracker
             .lock()
-            .map_err(|e| anyhow::anyhow!("tracker mutex should not be poisoned: {}", e))?
+            .expect("tracker mutex should not be poisoned: {}")
             .clear();
         Ok(())
     }
 
     /// Reset tracking for a specific class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn reset_class(&mut self, class_name: &str) -> Result<(), Box<dyn std::error::Error>> {
         self.tracker
             .lock()
@@ -231,8 +245,8 @@ impl UniqueKeyValidator {
         match self.validate_class(instance, class_def, schema, &context.path()) {
             Ok(issues) => issues,
             Err(e) => vec![ValidationIssue::error(
-                &context.path(),
-                &format!("Unique key validation error: {e}"),
+                context.path(),
+                format!("Unique key validation error: {e}"),
                 "UniqueKeyValidator",
             )],
         }
@@ -254,7 +268,7 @@ impl Validator for UniqueKeyValidator {
         )]
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "UniqueKeyValidator"
     }
 }
@@ -263,26 +277,26 @@ impl Validator for UniqueKeyValidator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-    use linkml_core::types::{SchemaDefinition, UniqueKeyDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_unique_value_tracker() {
         let mut tracker = UniqueValueTracker::new();
 
         // First value should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "ssn", "123-45-6789".to_string()));
+        assert!(!tracker.check_and_record("Person", "ssn", "123-45-6789".to_string());
 
         // Same value should be a duplicate
-        assert!(tracker.check_and_record("Person", "ssn", "123-45-6789".to_string()));
+        assert!(tracker.check_and_record("Person", "ssn", "123-45-6789".to_string());
 
         // Different value should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "ssn", "987-65-4321".to_string()));
+        assert!(!tracker.check_and_record("Person", "ssn", "987-65-4321".to_string());
 
         // Same value in different class should not be a duplicate
-        assert!(!tracker.check_and_record("Employee", "ssn", "123-45-6789".to_string()));
+        assert!(!tracker.check_and_record("Employee", "ssn", "123-45-6789".to_string());
 
         // Same value for different key should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "email", "123-45-6789".to_string()));
+        assert!(!tracker.check_and_record("Person", "email", "123-45-6789".to_string());
     }
 
     #[test]
@@ -310,7 +324,7 @@ mod tests {
         });
 
         let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues1.is_empty());
 
         // Duplicate ID
@@ -319,7 +333,7 @@ mod tests {
         });
 
         let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert_eq!(issues2.len(), 1);
         assert!(issues2[0].message.contains("Duplicate identifier"));
         assert_eq!(issues2[0].code.as_deref(), Some("DUPLICATE_IDENTIFIER"));
@@ -364,7 +378,7 @@ mod tests {
         });
 
         let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues1.is_empty());
 
         // Different person with same first name
@@ -375,7 +389,7 @@ mod tests {
         });
 
         let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues2.is_empty());
 
         // Duplicate person
@@ -386,7 +400,7 @@ mod tests {
         });
 
         let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert_eq!(issues3.len(), 1);
         assert!(
             issues3[0]
@@ -430,11 +444,11 @@ mod tests {
         });
 
         let issues1 = validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues1.is_empty());
 
         let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(
             issues2.is_empty(),
             "Null values should be considered unique when consider_nulls_inequal is true"
@@ -483,14 +497,14 @@ mod tests {
         });
 
         validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
 
         let issues = validator.validate_class(&instance4, &class_def, &schema, "$.persons[3]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert_eq!(
             issues.len(),
             1,
@@ -534,7 +548,7 @@ mod tests {
         });
 
         validator.validate_class(&instance1, &class_def, &schema, "$.persons[0]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
 
         // Different SSN but same email - should fail
         let instance2 = serde_json::json!({
@@ -543,7 +557,7 @@ mod tests {
         });
 
         let issues2 = validator.validate_class(&instance2, &class_def, &schema, "$.persons[1]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert_eq!(issues2.len(), 1);
         assert!(issues2[0].message.contains("email"));
 
@@ -554,7 +568,7 @@ mod tests {
         });
 
         let issues3 = validator.validate_class(&instance3, &class_def, &schema, "$.persons[2]")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert_eq!(issues3.len(), 1);
         assert!(issues3[0].message.contains("ssn"));
         Ok(())
@@ -587,18 +601,18 @@ mod tests {
 
         // First time should pass
         let issues1 = validator.validate_class(&instance, &class_def, &schema, "$")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues1.is_empty());
 
         // Second time should fail
         let issues2 = validator.validate_class(&instance, &class_def, &schema, "$")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(!issues2.is_empty());
 
         // After reset, should pass again
         validator.reset();
         let issues3 = validator.validate_class(&instance, &class_def, &schema, "$")
-            .map_err(|e| anyhow::anyhow!("validation failed: {}", e))?;
+            .expect("validation failed: {}");
         assert!(issues3.is_empty());
         Ok(())
     }

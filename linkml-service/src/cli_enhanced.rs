@@ -1,8 +1,8 @@
 
-#! [doc = " Enhanced CLI commands for LinkML"]
+#! [doc = " Enhanced CLI commands for `LinkML`"]
 #! [doc = ""]
-#! [doc = " This module provides the complete set of LinkML command-line tools"]
-#! [doc = " matching Python LinkML functionality."]
+#! [doc = " This module provides the complete set of `LinkML` command-line tools"]
+#! [doc = " matching Python `LinkML` functionality."]
 use clap ::  {
 Parser ,
      Subcommand ,
@@ -61,8 +61,13 @@ DumpOptions ,
 }
 ;
 
-#[cfg(feature = "database")]
-use crate::loader::{DatabaseDumper, DatabaseLoader, DatabaseOptions};
+#[cfg (feature = "database")]
+use crate ::  loader ::   {
+DatabaseDumper ,
+     DatabaseLoader ,
+     DatabaseOptions
+}
+;
 use crate ::  schema ::   {
 diff ::   {
 DiffOptions ,
@@ -85,7 +90,7 @@ MergeOptions ,
 ;
 use crate ::  validator ::  ValidationEngine ;
 
-#[doc = " LinkML command-line interface"]
+#[doc = " `LinkML` command-line interface"]
 #[derive (Parser ,
      Debug)]
 #[command (name = "linkml" ,
@@ -134,7 +139,7 @@ enum OutputFormat  {
 
 }
 
-#[doc = " LinkML subcommands"]
+#[doc = " `LinkML` subcommands"]
 #[derive (Subcommand ,
      Debug)]
 pub
@@ -389,7 +394,7 @@ where possible"]
 #[arg (short ,
      long)] schema : PathBuf ,
 
-#[doc = " Input data file (LinkML format)"]
+#[doc = " Input data file (`LinkML` format)"]
 #[arg (short ,
      long)] input : PathBuf ,
 
@@ -411,7 +416,7 @@ where possible"]
 }
 ,
 
-#[doc = " Interactive LinkML shell"] Shell  {
+#[doc = " Interactive `LinkML` shell"] Shell  {
 
 #[doc = " Initial schema to load"]
 #[arg (short ,
@@ -518,7 +523,7 @@ enum LintFormat  {
 
 #[doc = " GitHub Actions format"] Github ,
 
-#[doc = " JUnit XML format"] Junit ,
+#[doc = " `JUnit` XML format"] Junit ,
 
 }
 
@@ -564,7 +569,7 @@ enum LoadFormat  {
 
 #[doc = " REST API"] Api ,
 
-#[doc = " TypeDB"] TypeDb ,
+#[doc = " `TypeDB`"] TypeDb ,
 
 }
 
@@ -592,7 +597,7 @@ enum DumpFormat  {
 
 #[doc = " REST API"] Api ,
 
-#[doc = " TypeDB"] TypeDb ,
+#[doc = " `TypeDB`"] TypeDb ,
 
 }
 
@@ -603,10 +608,16 @@ cli : LinkMLCli ,
      generator_registry : GeneratorRegistry ,
 
 }
+impl Default for LinkMLApp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LinkMLApp  {
 
-#[doc = " Create new LinkML CLI application"]
-pub
+#[doc = " Create new `LinkML` CLI application"]
+#[must_use] pub
 fn new () -> Self  {
 Self  {
 cli : LinkMLCli ::  parse () ,
@@ -989,15 +1000,9 @@ for error in & all_errors  {
 println ! ("  Error types:") ;
 for (error_type ,
      count) in error_types  {
-println ! ("     {
-
-}
-:  {
-
-}
-" ,
-     error_type ,
-     count) ;
+println ! ("     {error_type}
+:  {count}
+") ;
 
 }
 
@@ -1034,11 +1039,8 @@ println ! ("Schema:  {
 }
 " ,
      schema . name) ;
-println ! ("Generator:  {
-
-}
-" ,
-     generator_name) ;
+println ! ("Generator:  {generator_name}
+") ;
 let mut gen_options = GeneratorOptions ::  default () ;
 for opt in options  {
 if
@@ -1061,11 +1063,8 @@ let _ = gen_options . set_custom ("include_imports" ,
      "true") ;
 
 }
-let generator = self . generator_registry . get (generator_name) . await . ok_or_else (| | LinkMLError ::  other (format ! ("Unknown generator:  {
-
-}
-" ,
-     generator_name))) ? ;
+let generator = self . generator_registry . get (generator_name) . await . ok_or_else (| | LinkMLError ::  other (format ! ("Unknown generator:  {generator_name}
+"))) ? ;
 println ! ("Generating...") ;
 let pb = ProgressBar ::  new_spinner () ;
 pb . set_style (ProgressStyle ::  default_spinner () . template (" {
@@ -1124,15 +1123,11 @@ Some ("json") => SchemaFormat ::  Json ,
 
 }
 ;
-println ! ("Converting:  {
-:?
+println ! ("Converting:  {input_format:?
 }
-->  {
-:?
+->  {to_format:?
 }
-" ,
-     input_format ,
-     to_format) ;
+") ;
 let schema = self . load_schema_file (input) . await ? ;
 if validate  {
 println ! ("Validating schema...") ;
@@ -1197,16 +1192,12 @@ println ! ("Merging  {
 }
 schemas" ,
      schemas . len ()) ;
-println ! ("Strategy:  {
-:?
+println ! ("Strategy:  {strategy:?
 }
-" ,
-     strategy) ;
-println ! ("Conflict resolution:  {
-:?
+") ;
+println ! ("Conflict resolution:  {conflict:?
 }
-" ,
-     conflict) ;
+") ;
 let mut loaded_schemas = Vec ::  new () ;
 for schema_path in schemas  {
 println ! ("Loading:  {
@@ -1329,11 +1320,8 @@ println ! ("✓ Diff written to:  {
 
 }
 else  {
-println ! ("\n {
-
-}
-" ,
-     formatted_diff) ;
+println ! ("\n {formatted_diff}
+") ;
 
 }
 println ! ("\n {
@@ -1378,11 +1366,8 @@ println ! ("\n {
 Breaking changes detected:" ,
      "⚠️ " . yellow ()) ;
 for change in & diff_result . breaking_changes  {
-println ! ("  -  {
-
-}
-" ,
-     change) ;
+println ! ("  -  {change}
+") ;
 
 }
 
@@ -1452,11 +1437,8 @@ if fix && ! lint_result . fixable_issues . is_empty ()  {
 println ! ("\nApplying automatic fixes...") ;
 let fixed_count = linter . fix (& mut schema ,
      & mut lint_result) ? ;
-println ! ("✓ Fixed  {
-
-}
-issues" ,
-     fixed_count) ;
+println ! ("✓ Fixed  {fixed_count}
+issues") ;
 let fixed_content = serde_yaml ::  to_string (& schema) ? ;
 std ::  fs ::  write (schema_path ,
      fixed_content) ? ;
@@ -1474,11 +1456,8 @@ self . print_lint_results (& lint_result) ;
 }
 LintFormat ::  Json =>  {
 let json = serde_json ::  to_string_pretty (& lint_result) ? ;
-println ! (" {
-
-}
-" ,
-     json) ;
+println ! (" {json}
+") ;
 
 }
 LintFormat ::  Github =>  {
@@ -1512,11 +1491,8 @@ println ! ("::  {
 }
 LintFormat ::  Junit =>  {
 let junit = lint_result . to_junit_xml (schema_path . to_str () . unwrap_or ("schema")) ;
-println ! (" {
-
-}
-" ,
-     junit) ;
+println ! (" {junit}
+") ;
 
 }
 
@@ -1561,15 +1537,9 @@ return Err (linkml_core ::  error ::  LinkMLError ::  service ("Both cert and ke
 
 }
 println ! ("\nServer configuration:") ;
-println ! ("  Address:  {
-
-}
-: {
-
-}
-" ,
-     host ,
-     port) ;
+println ! ("  Address:  {host}
+: {port}
+") ;
 println ! ("  CORS:  {
 
 }
@@ -1615,11 +1585,8 @@ println ! ("    Key:  {
      key_path . display ()) ;
 
 }
-println ! ("  API docs:  {
-
-}
-" ,
-     docs_path) ;
+println ! ("  API docs:  {docs_path}
+") ;
 println ! ("\n {
 
 }
@@ -1810,16 +1777,10 @@ invalid_count += 1 ;
 }
 
 }
-println ! ("  Valid:  {
-
-}
-" ,
-     valid_count) ;
-println ! ("  Invalid:  {
-
-}
-" ,
-     invalid_count) ;
+println ! ("  Valid:  {valid_count}
+") ;
+println ! ("  Invalid:  {invalid_count}
+") ;
 
 }
 let output_data = serde_json ::  to_string_pretty (& instances) ? ;
@@ -2112,11 +2073,8 @@ break ;
 
 }
 Err (err) =>  {
-eprintln ! ("Error:  {
-
-}
-" ,
-     err) ;
+eprintln ! ("Error:  {err}
+") ;
 break ;
 
 }
@@ -2335,7 +2293,7 @@ fn execute_shell_command (& self ,
      command : & str ,
      current_schema : & mut Option < SchemaDefinition > ,
     ) -> Result < () >  {
-let parts : Vec < & str > = command . trim () . split_whitespace () . collect () ;
+let parts : Vec < & str > = command . split_whitespace () . collect () ;
 if parts . is_empty ()  {
 return Ok (()) ;
 
@@ -2369,11 +2327,8 @@ println ! ("✓ Loaded schema:  {
 * current_schema = Some (schema) ;
 
 }
-Err (e) => println ! ("Failed to load schema:  {
-
-}
-" ,
-     e) ,
+Err (e) => println ! ("Failed to load schema:  {e}
+") ,
 
 }
 
@@ -2390,20 +2345,14 @@ println ! ("Schema:  {
      schema . name) ;
 if
     let Some (version) = & schema . version  {
-println ! ("Version:  {
-
-}
-" ,
-     version) ;
+println ! ("Version:  {version}
+") ;
 
 }
 if
     let Some (description) = & schema . description  {
-println ! ("Description:  {
-
-}
-" ,
-     description) ;
+println ! ("Description:  {description}
+") ;
 
 }
 println ! ("Classes:  {
@@ -2440,11 +2389,8 @@ println ! ("   {
      name ,
      if
     let Some (desc) = & class . description  {
-format ! ("-  {
-
-}
-" ,
-     desc)
+format ! ("-  {desc}
+")
 }
 else  {
 String ::  new ()
@@ -2480,11 +2426,8 @@ println ! ("   {
      slot . range . as_deref () . unwrap_or ("string") ,
      if
     let Some (desc) = & slot . description  {
-format ! ("-  {
-
-}
-" ,
-     desc)
+format ! ("-  {desc}
+")
 }
 else  {
 String ::  new ()
@@ -2520,7 +2463,7 @@ Ok (())
 
 }
 
-#[doc = " Run the LinkML CLI application"]
+#[doc = " Run the `LinkML` CLI application"]
 pub async
 fn run () -> Result < () >  {
 let mut app = LinkMLApp ::  new () ;

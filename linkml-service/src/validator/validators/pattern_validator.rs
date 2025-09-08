@@ -108,14 +108,14 @@ impl Validator for PatternValidator {
                     }
                 }
             } else {
-                issues.extend(validate_string(value, &context.path()));
+                issues.extend(validate_string(value, &context.path());
             }
         }
 
         // Also check if the slot's range has a pattern (for custom types)
-        if let Some(range) = &slot.range {
-            if let Some(type_def) = context.schema.types.get(range) {
-                if let Some(pattern) = &type_def.pattern {
+        if let Some(range) = &slot.range
+            && let Some(type_def) = context.schema.types.get(range)
+                && let Some(pattern) = &type_def.pattern {
                     let validate_string = |v: &Value, path: &str| -> Vec<ValidationIssue> {
                         if let Some(s) = v.as_str() {
                             self.validate_pattern(s, pattern, path)
@@ -140,11 +140,9 @@ impl Validator for PatternValidator {
                             }
                         }
                     } else {
-                        issues.extend(validate_string(value, &context.path()));
+                        issues.extend(validate_string(value, &context.path());
                     }
                 }
-            }
-        }
 
         issues
     }

@@ -42,6 +42,10 @@ impl StringInterner {
     /// Intern a string, returning a shared reference
     ///
     /// Returns an error if the string is too large or the cache is full
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > self.max_string_length {
@@ -160,17 +164,19 @@ impl Default for StringInternerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::string_pool::intern;
 
     #[test]
-    fn test_basic_interning() {
+    fn test_basic_interning() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let interner = StringInterner::with_defaults();
 
-        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
-        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern same string: {}", e))?;
+        let s1 = interner.intern("hello").expect("should intern string: {}");
+        let s2 = interner.intern("hello").expect("should intern same string: {}");
 
         // Same string should return same Arc
         assert!(Arc::ptr_eq(&s1, &s2));
         assert_eq!(interner.len(), 1);
+        Ok(())
     }
 
     #[test]
@@ -188,11 +194,11 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_full() {
+    fn test_cache_full() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let interner = StringInterner::new(2, 100);
 
-        interner.intern("a").map_err(|e| anyhow::anyhow!("should intern first string: {}", e))?;
-        interner.intern("b").map_err(|e| anyhow::anyhow!("should intern second string: {}", e))?;
+        interner.intern("a").expect("should intern first string: {}");
+        interner.intern("b").expect("should intern second string: {}");
 
         match interner.intern("c") {
             Err(InternError::CacheFull { current, max }) => {
@@ -201,6 +207,7 @@ mod tests {
             }
             _ => panic!("Expected CacheFull error"),
         }
+        Ok(())
     }
 
     #[test]

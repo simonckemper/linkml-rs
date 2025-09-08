@@ -9,17 +9,16 @@
 //! - Audit logging
 
 use dashmap::DashMap;
-use linkml_core::error::{LinkMLError, Result};
-use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use linkml_core::error::LinkMLError;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 // Pre-compile regex patterns at startup to avoid runtime compilation
-static SENSITIVE_DATA_PATTERNS: Lazy<Vec<Result<Regex>>> = Lazy::new(|| {
+static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Result<Regex>>> = std::sync::LazyLock::new(|| {
     vec![
         Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+"),
         Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+"),
@@ -139,7 +138,7 @@ impl InputSanitizer {
     /// # Errors
     ///
     /// Returns an error if any of the blocked patterns are invalid regex.
-    pub fn new(config: SecurityConfig) -> Result<Self> {
+    pub fn new(config: SecurityConfig) -> linkml_core::error::Result<Self> {
         let patterns = config
             .blocked_patterns
             .iter()
@@ -147,7 +146,7 @@ impl InputSanitizer {
                 regex::Regex::new(p)
                     .map_err(|e| LinkMLError::service(format!("Invalid regex pattern: {e}")))
             })
-            .collect::<Result<Vec<_>>>()?;
+            .collect::<linkml_core::error::Result<Vec<_>>>()?;
 
         Ok(Self {
             config: Arc::new(RwLock::new(config)),
@@ -160,7 +159,7 @@ impl InputSanitizer {
     /// # Errors
     ///
     /// Returns an error if the input contains blocked patterns or exceeds size limits.
-    pub fn sanitize_string(&self, input: &str) -> Result<String> {
+    pub fn sanitize_string(&self, input: &str) -> linkml_core::error::Result<String> {
         let config = self.config.read();
 
         if !config.sanitize_input {
@@ -173,7 +172,7 @@ impl InputSanitizer {
                 "Input size {} exceeds maximum {}",
                 input.len(),
                 config.max_input_size
-            )));
+            ));
         }
 
         // Check for blocked patterns
@@ -201,7 +200,7 @@ impl InputSanitizer {
     /// # Errors
     ///
     /// Returns an error if any string in the `JSON` contains blocked patterns or exceeds size limits.
-    pub fn sanitize_json(&self, value: &mut serde_json::Value) -> Result<()> {
+    pub fn sanitize_json(&self, value: &mut serde_json::Value) -> linkml_core::error::Result<()> {
         match value {
             serde_json::Value::String(s) => {
                 *s = self.sanitize_string(s)?;
@@ -242,7 +241,7 @@ impl PathValidator {
     ///
     /// Returns an error if the path is absolute, contains path traversal attempts,
     /// or violates other security constraints.
-    pub fn validate_path(&self, path: &Path) -> Result<()> {
+    pub fn validate_path(&self, path: &Path) -> linkml_core::error::Result<()> {
         let config = self.config.read();
 
         // Check if path is absolute - reject for security
@@ -268,7 +267,7 @@ impl PathValidator {
                 "Path depth {} exceeds maximum {}",
                 components.len(),
                 config.max_path_depth
-            )));
+            ));
         }
 
         // Check extension
@@ -277,7 +276,7 @@ impl PathValidator {
             if !config.allowed_extensions.contains(&ext_str) {
                 return Err(LinkMLError::service(format!(
                     "File extension '{ext_str}' not allowed"
-                )));
+                ));
             }
         }
 
@@ -300,7 +299,7 @@ impl PathValidator {
     /// # Panics
     ///
     /// This function will panic if the underlying path operations panic.
-    pub fn safe_canonicalize(&self, base: &Path, path: &Path) -> Result<PathBuf> {
+    pub fn safe_canonicalize(&self, base: &Path, path: &Path) -> linkml_core::error::Result<PathBuf> {
         self.validate_path(path)?;
 
         let joined = base.join(path);
@@ -332,7 +331,7 @@ impl InjectionPrevention {
     /// # Panics
     ///
     /// Panics if regex creation fails (should not happen with valid patterns).
-    pub fn validate_sql_like(&self, query: &str) -> Result<String> {
+    pub fn validate_sql_like(&self, query: &str) -> linkml_core::error::Result<String> {
         // Basic SQL injection patterns
         let dangerous_patterns = [
             r"(?i)(union\s+select)",
@@ -368,7 +367,7 @@ impl InjectionPrevention {
     /// # Errors
     ///
     /// Returns an error if the `JSONPath` contains potentially dangerous patterns.
-    pub fn validate_jsonpath(&self, path: &str) -> Result<()> {
+    pub fn validate_jsonpath(&self, path: &str) -> linkml_core::error::Result<()> {
         // Check for script injection in JSONPath
         if path.contains("..") && !path.contains("..") {
             return Err(LinkMLError::service(
@@ -382,7 +381,7 @@ impl InjectionPrevention {
             if path.contains(func) {
                 return Err(LinkMLError::service(format!(
                     "JSONPath contains potentially dangerous function: {func}"
-                )));
+                ));
             }
         }
 
@@ -394,7 +393,7 @@ impl InjectionPrevention {
     /// # Errors
     ///
     /// Returns an error if the query contains introspection queries or exceeds depth limits.
-    pub fn validate_graphql(&self, query: &str) -> Result<()> {
+    pub fn validate_graphql(&self, query: &str) -> linkml_core::error::Result<()> {
         // Check for introspection queries if not allowed
         if query.contains("__schema") || query.contains("__type") {
             return Err(LinkMLError::service(
@@ -407,7 +406,7 @@ impl InjectionPrevention {
         if depth > 10 {
             return Err(LinkMLError::service(format!(
                 "GraphQL query depth {depth} exceeds maximum 10"
-            )));
+            ));
         }
 
         Ok(())
@@ -449,7 +448,7 @@ impl SensitiveDataHandler {
     /// # Errors
     ///
     /// Returns an error if regex patterns fail to compile
-    pub fn new(config: SecurityConfig) -> Result<Self> {
+    pub fn new(config: SecurityConfig) -> linkml_core::error::Result<Self> {
         // Validate that all patterns compiled successfully
         let mut patterns = Vec::new();
         for pattern_result in SENSITIVE_DATA_PATTERNS.iter() {
@@ -690,7 +689,7 @@ impl SecurityRateLimiter {
     /// # Panics
     ///
     /// Panics if `Instant::now()` produces an invalid time (should not happen).
-    pub fn check_limit(&self, client_id: &str) -> Result<()> {
+    pub fn check_limit(&self, client_id: &str) -> linkml_core::error::Result<()> {
         let config = self.config.read();
 
         if !config.rate_limit_enabled {
@@ -718,7 +717,7 @@ impl SecurityRateLimiter {
             return Err(LinkMLError::service(format!(
                 "Rate limit exceeded: {} requests in {:?}",
                 entry.limit, entry.window
-            )));
+            ));
         }
 
         entry.requests.push(now);
@@ -742,7 +741,7 @@ impl SecurityManager {
     /// # Errors
     ///
     /// Returns an error if input sanitizer creation fails due to invalid regex patterns.
-    pub fn new(config: SecurityConfig) -> Result<Self> {
+    pub fn new(config: SecurityConfig) -> linkml_core::error::Result<Self> {
         Ok(Self {
             sanitizer: InputSanitizer::new(config.clone())?,
             path_validator: PathValidator::new(config.clone()),
@@ -795,7 +794,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_input_sanitizer() -> anyhow::Result<()> {
+    fn test_input_sanitizer() -> anyhow::Result<(), LinkMLError> {
         let config = SecurityConfig::default();
         let sanitizer = InputSanitizer::new(config)?;
 

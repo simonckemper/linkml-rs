@@ -374,7 +374,7 @@ async fn create_performance_service() -> Arc<dyn LinkMLService> {
         ..Default::default()
     };
 
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

@@ -57,7 +57,7 @@ slots:
     // Load and resolve
     let loader = SchemaLoader::new();
     let schema = loader
-        .load_file(base_path.join("main.yaml"))
+        .load(base_path.join("main.yaml"))
         .await
         .expect("Test operation failed");
 
@@ -69,7 +69,7 @@ slots:
 
     // Verify inheritance
     let person = &schema.classes["Person"];
-    assert_eq!(person.is_a, Some("BaseClass".to_string()));
+    assert_eq!(person.is_a, Some("BaseClass".to_string());
 }
 
 #[tokio::test]
@@ -120,7 +120,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
@@ -213,7 +213,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
@@ -305,7 +305,7 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
@@ -392,7 +392,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
@@ -474,7 +474,7 @@ imports:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     // Test relative resolution
@@ -575,7 +575,7 @@ classes:
 
     let loader = SchemaLoader::new();
     let schema = loader
-        .load_file(base_path.join("main.yaml"))
+        .load(base_path.join("main.yaml"))
         .await
         .expect("Test operation failed");
 
@@ -630,7 +630,7 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(&format!(
+        .parse(&format!(
             r#"
 id: https://example.org/schema14
 name: schema14
@@ -728,7 +728,7 @@ imports:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(main_schema)
+        .parse(main_schema)
         .expect("Test operation failed");
 
     let mut settings = ImportSettings::default();
@@ -807,7 +807,7 @@ imports:
 
     let loader = SchemaLoader::new();
     let schema = loader
-        .load_file(base_path.join("main.yaml"))
+        .load(base_path.join("main.yaml"))
         .await
         .expect("Test operation failed");
 

@@ -14,19 +14,16 @@ use logger_core::LoggerService;
 
 // Import the complete mock implementations from the mock_services module
 mod mock_services;
-use crate::factory::create_logger_service;
 use mock_services::*;
 
 #[tokio::test]
 async fn test_logger_service_integration() {
     // Create all required service dependencies
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
-    let dbms_service = Arc::new(MockDBMSService);
-    let timeout_service = Arc::new(MockTimeoutService);
     let dbms_service = Arc::new(MockDBMSService);
     let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
@@ -48,7 +45,6 @@ async fn test_logger_service_integration() {
     .expect("Test operation failed");
 
     // Test schema loading with logging
-    use logger_core::LoggerService;
     logger
         .info("Loading test schema")
         .await
@@ -136,8 +132,8 @@ slots:
     println!("Number of logs: {}", logs.len());
     assert!(logs.len() >= 3);
     // Find the relevant logs - they might not be in exact positions
-    assert!(logs.iter().any(|l| l.contains("Loading test schema")));
-    assert!(logs.iter().any(|l| l.contains("Schema loaded: TestSchema")));
+    assert!(logs.iter().any(|l| l.contains("Loading test schema"));
+    assert!(logs.iter().any(|l| l.contains("Schema loaded: TestSchema"));
     // Check if validation passed or failed
     assert!(
         logs.iter()
@@ -153,7 +149,7 @@ async fn test_timestamp_service_integration() {
     // 3. Test the integration
 
     // Create all required service dependencies
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -266,7 +262,7 @@ slots:
 #[tokio::test]
 async fn test_configuration_service_integration() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -358,7 +354,7 @@ async fn test_cache_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -455,7 +451,7 @@ async fn test_monitoring_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -586,7 +582,7 @@ async fn test_health_check_service_integration() {
     let health_service = Arc::new(MockHealthCheckService::new());
 
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -690,7 +686,7 @@ async fn test_error_handling_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -827,7 +823,7 @@ async fn test_task_management_service_integration() {
     // 3. Test the integration
 
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -924,7 +920,7 @@ slots:
 #[tokio::test]
 async fn test_end_to_end_workflow() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp_svc = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -1185,7 +1181,7 @@ enums:
 
     // Verify workflow success
     let logs = logger_ref.get_logs().await;
-    assert!(logs.iter().any(|l| l.contains("Workflow complete")));
+    assert!(logs.iter().any(|l| l.contains("Workflow complete"));
     assert!(report.valid);
     assert_eq!(valid_count, batch_size);
 }

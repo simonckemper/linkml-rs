@@ -1,6 +1,6 @@
-//! Go code generator for LinkML schemas
+//! Go code generator for `LinkML` schemas
 //!
-//! This generator creates Go structs, interfaces, and validation code from LinkML schemas.
+//! This generator creates Go structs, interfaces, and validation code from `LinkML` schemas.
 
 use super::traits::{Generator, GeneratorError};
 use crate::generator::GeneratorResult;
@@ -22,9 +22,9 @@ pub struct GoGenerator {
 }
 
 impl GoGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new Go generator
@@ -81,7 +81,7 @@ impl GoGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(description) = &schema.description {
-            writeln!(&mut output, "// {}", description)
+            writeln!(&mut output, "// {description}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -116,7 +116,7 @@ impl GoGenerator {
         if !imports.is_empty() {
             writeln!(&mut output, "import (").map_err(Self::fmt_error_to_generator_error)?;
             for import in imports {
-                writeln!(&mut output, "\t\"{}\"", import)
+                writeln!(&mut output, "\t\"{import}\"")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(&mut output, ")").map_err(Self::fmt_error_to_generator_error)?;
@@ -142,16 +142,15 @@ impl GoGenerator {
                 type_def.description.as_deref().unwrap_or(type_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "type {} {}", go_name, base_type)
+            writeln!(&mut output, "type {go_name} {base_type}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             // Generate validation if pattern exists
-            if let Some(pattern) = &type_def.pattern {
-                if self.generate_validation {
+            if let Some(pattern) = &type_def.pattern
+                && self.generate_validation {
                     self.generate_type_validation(&mut output, &go_name, pattern)?;
                 }
-            }
         }
 
         Ok(output)
@@ -171,7 +170,7 @@ impl GoGenerator {
                 enum_def.description.as_deref().unwrap_or(enum_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "type {} string", go_name)
+            writeln!(&mut output, "type {go_name} string")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -188,11 +187,11 @@ impl GoGenerator {
                 let const_name = format!("{}{}", go_name, self.to_go_const_name(value));
 
                 if let Some(desc) = description {
-                    writeln!(&mut output, "\t// {} - {}", const_name, desc)
+                    writeln!(&mut output, "\t// {const_name} - {desc}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
-                writeln!(&mut output, "\t{} {} = \"{}\"", const_name, go_name, value)
+                writeln!(&mut output, "\t{const_name} {go_name} = \"{value}\"")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 if i < enum_def.permissible_values.len() - 1 {
@@ -226,11 +225,10 @@ impl GoGenerator {
 
                 writeln!(
                     &mut output,
-                    "// {} defines the interface for {}",
-                    interface_name, class_name
+                    "// {interface_name} defines the interface for {class_name}"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "type {} interface {{", interface_name)
+                writeln!(&mut output, "type {interface_name} interface {{")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 // Add getter methods for all slots
@@ -238,7 +236,7 @@ impl GoGenerator {
                 for (slot_name, slot_def) in slots {
                     let method_name = format!("Get{}", self.to_go_type_name(&slot_name));
                     let return_type = self.get_go_type(&slot_def, schema);
-                    writeln!(&mut output, "\t{}() {}", method_name, return_type)
+                    writeln!(&mut output, "\t{method_name}() {return_type}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
@@ -268,19 +266,18 @@ impl GoGenerator {
 
             // Generate struct comment
             if let Some(description) = &class_def.description {
-                writeln!(&mut output, "// {} represents {}", struct_name, description)
+                writeln!(&mut output, "// {struct_name} represents {description}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             } else {
                 writeln!(
                     &mut output,
-                    "// {} represents a {} entity",
-                    struct_name, class_name
+                    "// {struct_name} represents a {class_name} entity"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
 
             // Generate struct
-            writeln!(&mut output, "type {} struct {{", struct_name)
+            writeln!(&mut output, "type {struct_name} struct {{")
                 .map_err(Self::fmt_error_to_generator_error)?;
 
             // Collect all slots (inherited and direct)
@@ -290,24 +287,24 @@ impl GoGenerator {
                 let field_name = self.to_go_field_name(&slot_name);
                 let field_type = self.get_go_type(&slot_def, schema);
 
-                write!(&mut output, "\t{} {}", field_name, field_type)
+                write!(&mut output, "\t{field_name} {field_type}")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 // Add JSON tag if enabled
                 if self.generate_json_tags {
                     let json_name = slot_name.to_case(Case::Camel);
-                    let omitempty = if !slot_def.required.unwrap_or(false) {
-                        ",omitempty"
-                    } else {
+                    let omitempty = if slot_def.required.unwrap_or(false) {
                         ""
+                    } else {
+                        ",omitempty"
                     };
-                    write!(&mut output, " `json:\"{}{}\"`", json_name, omitempty)
+                    write!(&mut output, " `json:\"{json_name}{omitempty}\"`")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 // Add comment
                 if let Some(description) = &slot_def.description {
-                    write!(&mut output, " // {}", description)
+                    write!(&mut output, " // {description}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
@@ -329,10 +326,10 @@ impl GoGenerator {
             }
 
             // Generate interface methods if needed
-            if self.generate_interfaces {
-                if let Some(parent) = &class_def.is_a {
-                    if let Some(parent_class) = schema.classes.get(parent) {
-                        if parent_class.abstract_.unwrap_or(false) {
+            if self.generate_interfaces
+                && let Some(parent) = &class_def.is_a
+                    && let Some(parent_class) = schema.classes.get(parent)
+                        && parent_class.abstract_.unwrap_or(false) {
                             self.generate_interface_methods(
                                 &mut output,
                                 &struct_name,
@@ -341,9 +338,6 @@ impl GoGenerator {
                                 schema,
                             )?;
                         }
-                    }
-                }
-            }
         }
 
         Ok(output)
@@ -367,11 +361,10 @@ impl GoGenerator {
 
         writeln!(
             output,
-            "// Validate checks if the {} value is valid",
-            type_name
+            "// Validate checks if the {type_name} value is valid"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "func (t {}) Validate() error {{", type_name)
+        writeln!(output, "func (t {type_name}) Validate() error {{")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
@@ -381,8 +374,7 @@ impl GoGenerator {
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "\t\treturn fmt.Errorf(\"invalid {}: %s\", t)",
-            type_name
+            "\t\treturn fmt.Errorf(\"invalid {type_name}: %s\", t)"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -401,11 +393,10 @@ impl GoGenerator {
     ) -> GeneratorResult<()> {
         writeln!(
             output,
-            "// Validate checks if the {} value is valid",
-            enum_name
+            "// Validate checks if the {enum_name} value is valid"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "func (e {}) Validate() error {{", enum_name)
+        writeln!(output, "func (e {enum_name}) Validate() error {{")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "\tswitch e {{").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -415,7 +406,7 @@ impl GoGenerator {
                 linkml_core::types::PermissibleValue::Complex { text, .. } => text.as_str(),
             };
             let const_name = format!("{}{}", enum_name, self.to_go_const_name(value));
-            writeln!(output, "\tcase {}:", const_name)
+            writeln!(output, "\tcase {const_name}:")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -423,8 +414,7 @@ impl GoGenerator {
         writeln!(output, "\tdefault:").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "\t\treturn fmt.Errorf(\"invalid {}: %s\", e)",
-            enum_name
+            "\t\treturn fmt.Errorf(\"invalid {enum_name}: %s\", e)"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -442,9 +432,9 @@ impl GoGenerator {
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        writeln!(output, "// Validate checks if the {} is valid", struct_name)
+        writeln!(output, "// Validate checks if the {struct_name} is valid")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "func (s *{}) Validate() error {{", struct_name)
+        writeln!(output, "func (s *{struct_name}) Validate() error {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         let slots = self.collect_class_slots(class_name, class_def, schema);
@@ -456,12 +446,11 @@ impl GoGenerator {
             if slot_def.required.unwrap_or(false) {
                 match slot_def.range.as_deref() {
                     Some("string") => {
-                        writeln!(output, "\tif s.{} == \"\" {{", field_name)
+                        writeln!(output, "\tif s.{field_name} == \"\" {{")
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             output,
-                            "\t\treturn fmt.Errorf(\"{} is required\")",
-                            slot_name
+                            "\t\treturn fmt.Errorf(\"{slot_name} is required\")"
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -476,20 +465,18 @@ impl GoGenerator {
 
             // Pattern validation
             if let Some(pattern) = &slot_def.pattern {
-                writeln!(output, "\tif s.{} != \"\" {{", field_name)
+                writeln!(output, "\tif s.{field_name} != \"\" {{")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
-                    "\t\tmatched, _ := regexp.MatchString(`{}`, s.{})",
-                    pattern, field_name
+                    "\t\tmatched, _ := regexp.MatchString(`{pattern}`, s.{field_name})"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t\tif !matched {{")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
-                    "\t\t\treturn fmt.Errorf(\"{} does not match pattern\")",
-                    slot_name
+                    "\t\t\treturn fmt.Errorf(\"{slot_name} does not match pattern\")"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -498,24 +485,22 @@ impl GoGenerator {
 
             // Range validation for numbers
             if let Some(min) = &slot_def.minimum_value {
-                writeln!(output, "\tif s.{} < {} {{", field_name, min)
+                writeln!(output, "\tif s.{field_name} < {min} {{")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
-                    "\t\treturn fmt.Errorf(\"{} must be >= {}\")",
-                    slot_name, min
+                    "\t\treturn fmt.Errorf(\"{slot_name} must be >= {min}\")"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
             }
 
             if let Some(max) = &slot_def.maximum_value {
-                writeln!(output, "\tif s.{} > {} {{", field_name, max)
+                writeln!(output, "\tif s.{field_name} > {max} {{")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
-                    "\t\treturn fmt.Errorf(\"{} must be <= {}\")",
-                    slot_name, max
+                    "\t\treturn fmt.Errorf(\"{slot_name} must be <= {max}\")"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -525,14 +510,12 @@ impl GoGenerator {
             if let Some(_enum_name) = self.get_enum_type(&slot_def, schema) {
                 writeln!(
                     output,
-                    "\tif err := s.{}.Validate(); err != nil {{",
-                    field_name
+                    "\tif err := s.{field_name}.Validate(); err != nil {{"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(
                     output,
-                    "\t\treturn fmt.Errorf(\"{} validation failed: %w\", err)",
-                    slot_name
+                    "\t\treturn fmt.Errorf(\"{slot_name} validation failed: %w\", err)"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(output, "\t}}").map_err(Self::fmt_error_to_generator_error)?;
@@ -561,15 +544,14 @@ impl GoGenerator {
             let field_name = self.to_go_field_name(&slot_name);
             let return_type = self.get_go_type(&slot_def, schema);
 
-            writeln!(output, "// {} returns the {} value", method_name, slot_name)
+            writeln!(output, "// {method_name} returns the {slot_name} value")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
                 output,
-                "func (s *{}) {}() {} {{",
-                struct_name, method_name, return_type
+                "func (s *{struct_name}) {method_name}() {return_type} {{"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(output, "\treturn s.{}", field_name)
+            writeln!(output, "\treturn s.{field_name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -577,17 +559,17 @@ impl GoGenerator {
         Ok(())
     }
 
-    /// Convert to Go type name (PascalCase)
+    /// Convert to Go type name (`PascalCase`)
     fn to_go_type_name(&self, name: &str) -> String {
         name.to_case(Case::Pascal)
     }
 
-    /// Convert to Go field name (PascalCase for exported fields)
+    /// Convert to Go field name (`PascalCase` for exported fields)
     fn to_go_field_name(&self, name: &str) -> String {
         name.to_case(Case::Pascal)
     }
 
-    /// Convert to Go constant name (PascalCase for Go enum constants)
+    /// Convert to Go constant name (`PascalCase` for Go enum constants)
     fn to_go_const_name(&self, name: &str) -> String {
         // For enum values that are already uppercase (like "ACTIVE"), keep them as-is
         // For other cases, convert to PascalCase (Go convention for exported constants)
@@ -639,11 +621,10 @@ impl GoGenerator {
 
     /// Check if a slot references an enum
     fn get_enum_type(&self, slot: &SlotDefinition, schema: &SchemaDefinition) -> Option<String> {
-        if let Some(range) = &slot.range {
-            if schema.enums.contains_key(range) {
+        if let Some(range) = &slot.range
+            && schema.enums.contains_key(range) {
                 return Some(self.to_go_type_name(range));
             }
-        }
         None
     }
 
@@ -657,14 +638,13 @@ impl GoGenerator {
         let mut slots = BTreeMap::new();
 
         // Get inherited slots
-        if let Some(parent) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_class_slots(parent, parent_class, schema);
                 for (name, slot) in parent_slots {
                     slots.insert(name, slot);
                 }
             }
-        }
 
         // Add direct slots
         for slot_name in &class_def.slots {
@@ -701,7 +681,7 @@ impl Default for GoGenerator {
 }
 
 impl Generator for GoGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "golang"
     }
 
@@ -721,17 +701,15 @@ impl Generator for GoGenerator {
         // Validate Go-specific requirements
         for (class_name, _class_def) in &schema.classes {
             // Go identifiers must start with a letter
-            if let Some(first) = class_name.chars().next() {
-                if !first.is_ascii_alphabetic() {
+            if let Some(first) = class_name.chars().next()
+                && !first.is_ascii_alphabetic() {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Class name '{}' is not valid for Go: must start with a letter",
-                            class_name
+                            "Class name '{class_name}' is not valid for Go: must start with a letter"
                         ),
                         element: Some(format!("class.{class_name}")),
                     });
                 }
-            }
 
             // Check for Go reserved words
             if matches!(
@@ -751,17 +729,15 @@ impl Generator for GoGenerator {
 
         // Validate slot names for Go compatibility
         for (slot_name, _slot_def) in &schema.slots {
-            if let Some(first) = slot_name.chars().next() {
-                if !first.is_ascii_alphabetic() && first != '_' {
+            if let Some(first) = slot_name.chars().next()
+                && !first.is_ascii_alphabetic() && first != '_' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Slot name '{}' is not valid for Go: must start with letter or underscore",
-                            slot_name
+                            "Slot name '{slot_name}' is not valid for Go: must start with letter or underscore"
                         ),
                         element: Some(format!("slot.{slot_name}")),
                     });
                 }
-            }
         }
 
         Ok(())
@@ -805,11 +781,11 @@ impl Generator for GoGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "go"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -817,6 +793,7 @@ impl Generator for GoGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -863,7 +840,7 @@ mod tests {
 
         let content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate Go code: {}", e))?;
+            .expect("should generate Go code: {}");
 
         // Check content
         assert!(content.contains("package linkml"));

@@ -1,12 +1,12 @@
 //! Integration tests for custom validators
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
 use linkml_service::validator::{
     ValidationEngine,
     validators::{CustomValidatorBuilder, helpers},
 };
 use serde_json::{Value, json};
-
+use linkml_core::types::SchemaDefinition;
 #[tokio::test]
 async fn test_custom_validator_registration() {
     // Create a simple schema

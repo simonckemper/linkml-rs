@@ -1,9 +1,8 @@
-//! Schema patch functionality for LinkML
+//! Schema patch functionality for `LinkML`
 //!
 //! This module provides tools to apply patches to schemas, enabling
 //! controlled schema evolution and migration.
 
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -131,11 +130,15 @@ pub struct SchemaPatcher {
 
 impl SchemaPatcher {
     /// Create a new schema patcher
-    pub fn new(options: PatchOptions) -> Self {
+    #[must_use] pub fn new(options: PatchOptions) -> Self {
         Self { options }
     }
 
     /// Apply a patch to a schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn apply_patch(
         &self,
         mut schema: SchemaDefinition,
@@ -162,8 +165,8 @@ impl SchemaPatcher {
                     result.applied_operations.push(operation.clone());
 
                     // Validate if requested
-                    if self.options.validate_after_each {
-                        if let Err(e) = self.validate_schema(&schema) {
+                    if self.options.validate_after_each
+                        && let Err(e) = self.validate_schema(&schema) {
                             result
                                 .warnings
                                 .push(format!("Schema validation warning after operation: {e}"));
@@ -171,7 +174,6 @@ impl SchemaPatcher {
                                 return Err(e);
                             }
                         }
-                    }
                 }
                 Err(e) => {
                     if self.options.strict {
@@ -179,7 +181,7 @@ impl SchemaPatcher {
                     }
                     result
                         .skipped_operations
-                        .push((operation.clone(), e.to_string()));
+                        .push((operation.clone(), e.to_string());
                 }
             }
         }
@@ -212,41 +214,39 @@ impl SchemaPatcher {
             ["classes", class_name] => {
                 let class_def: ClassDefinition = serde_json::from_value(value.clone())
                     .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {e}")))?;
-                schema.classes.insert(class_name.to_string(), class_def);
+                schema.classes.insert((*class_name).to_string(), class_def);
                 Ok(())
             }
             ["classes", class_name, "slots", slot_name] => {
                 if let Some(class) = schema.classes.get_mut(*class_name) {
-                    class.slots.push(slot_name.to_string());
+                    class.slots.push((*slot_name).to_string());
                     Ok(())
                 } else {
                     Err(LinkMLError::service(format!(
-                        "Class '{}' not found",
-                        class_name
+                        "Class '{class_name}' not found"
                     )))
                 }
             }
             ["slots", slot_name] => {
                 let slot_def: SlotDefinition = serde_json::from_value(value.clone())
                     .map_err(|e| LinkMLError::parse(format!("Invalid slot definition: {e}")))?;
-                schema.slots.insert(slot_name.to_string(), slot_def);
+                schema.slots.insert((*slot_name).to_string(), slot_def);
                 Ok(())
             }
             ["types", type_name] => {
                 let type_def: TypeDefinition = serde_json::from_value(value.clone())
                     .map_err(|e| LinkMLError::parse(format!("Invalid type definition: {e}")))?;
-                schema.types.insert(type_name.to_string(), type_def);
+                schema.types.insert((*type_name).to_string(), type_def);
                 Ok(())
             }
             ["enums", enum_name] => {
                 let enum_def: EnumDefinition = serde_json::from_value(value.clone())
                     .map_err(|e| LinkMLError::parse(format!("Invalid enum definition: {e}")))?;
-                schema.enums.insert(enum_name.to_string(), enum_def);
+                schema.enums.insert((*enum_name).to_string(), enum_def);
                 Ok(())
             }
             _ => Err(LinkMLError::service(format!(
-                "Unsupported path for add: {}",
-                path
+                "Unsupported path for add: {path}"
             ))),
         }
     }
@@ -268,8 +268,7 @@ impl SchemaPatcher {
                     Ok(())
                 } else {
                     Err(LinkMLError::service(format!(
-                        "Class '{}' not found",
-                        class_name
+                        "Class '{class_name}' not found"
                     )))
                 }
             }
@@ -292,8 +291,7 @@ impl SchemaPatcher {
                 Ok(())
             }
             _ => Err(LinkMLError::service(format!(
-                "Unsupported path for remove: {}",
-                path
+                "Unsupported path for remove: {path}"
             ))),
         }
     }
@@ -311,17 +309,16 @@ impl SchemaPatcher {
             ["classes", class_name] => {
                 let class_def: ClassDefinition = serde_json::from_value(value.clone())
                     .map_err(|e| LinkMLError::parse(format!("Invalid class definition: {e}")))?;
-                schema.classes.insert(class_name.to_string(), class_def);
+                schema.classes.insert((*class_name).to_string(), class_def);
                 Ok(())
             }
             ["classes", class_name, "description"] => {
                 if let Some(class) = schema.classes.get_mut(*class_name) {
-                    class.description = value.as_str().map(|s| s.to_string());
+                    class.description = value.as_str().map(std::string::ToString::to_string);
                     Ok(())
                 } else {
                     Err(LinkMLError::service(format!(
-                        "Class '{}' not found",
-                        class_name
+                        "Class '{class_name}' not found"
                     )))
                 }
             }
@@ -331,14 +328,12 @@ impl SchemaPatcher {
                     Ok(())
                 } else {
                     Err(LinkMLError::service(format!(
-                        "Slot '{}' not found",
-                        slot_name
+                        "Slot '{slot_name}' not found"
                     )))
                 }
             }
             _ => Err(LinkMLError::service(format!(
-                "Unsupported path for replace: {}",
-                path
+                "Unsupported path for replace: {path}"
             ))),
         }
     }
@@ -372,13 +367,12 @@ impl SchemaPatcher {
     fn apply_test(&self, schema: &SchemaDefinition, path: &str, expected: &Value) -> Result<()> {
         let actual = self.extract_value(schema, path)?;
 
-        if actual != *expected {
-            Err(LinkMLError::service(format!(
-                "Test failed at path '{}': expected {:?}, got {:?}",
-                path, expected, actual
-            )))
-        } else {
+        if actual == *expected {
             Ok(())
+        } else {
+            Err(LinkMLError::service(format!(
+                "Test failed at path '{path}': expected {expected:?}, got {actual:?}"
+            )))
         }
     }
 
@@ -392,13 +386,13 @@ impl SchemaPatcher {
                 .get(*class_name)
                 .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found")))
                 .and_then(|c| serde_json::to_value(c)
-                    .map_err(|e| LinkMLError::service(format!("Failed to serialize class '{}': {}", class_name, e)))),
+                    .map_err(|e| LinkMLError::service(format!("Failed to serialize class '{class_name}': {e}")))),
             ["slots", slot_name] => schema
                 .slots
                 .get(*slot_name)
                 .ok_or_else(|| LinkMLError::service(format!("Slot '{slot_name}' not found")))
                 .and_then(|s| serde_json::to_value(s)
-                    .map_err(|e| LinkMLError::service(format!("Failed to serialize slot '{}': {}", slot_name, e)))),
+                    .map_err(|e| LinkMLError::service(format!("Failed to serialize slot '{slot_name}': {e}")))),
             _ => Err(LinkMLError::service(format!("Unsupported path: {path}"))),
         }
     }
@@ -414,7 +408,7 @@ impl SchemaPatcher {
 }
 
 /// Create a patch from a diff result
-pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
+#[must_use] pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
     let mut operations = Vec::new();
 
     // Add operations for new classes
@@ -486,6 +480,7 @@ pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_add_class() {

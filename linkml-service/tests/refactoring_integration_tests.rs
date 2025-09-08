@@ -17,13 +17,14 @@ use linkml_service::schema_view::SchemaView;
 use linkml_service::validator::Validator;
 
 use std::path::Path;
+use std::error::Error as StdError;
 use std::sync::Arc;
 use tempfile::TempDir;
 use tokio::time::{Duration, sleep};
 
 /// Test that configuration loads correctly without panics
 #[tokio::test]
-async fn test_configuration_loading_no_panics() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_configuration_loading_no_panics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create test configuration
     let temp_dir = TempDir::new()?;
     let config_path = temp_dir.path().join("test_config.yaml");
@@ -68,11 +69,15 @@ performance:
 
     Ok(())
 }
+    Ok(())
+}
 
 /// Test configuration hot-reload functionality
 #[tokio::test]
-async fn test_configuration_hot_reload() -> Result<(), Box<dyn std::error::Error>> {
-    use linkml_service::config::{ConfigManager, LinkMLConfig};
+async fn test_configuration_hot_reload() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    use linkml_service::config::{ConfigManager, LinkMLConfig}
+    Ok(())
+};
     use notify::{RecursiveMode, Watcher};
     use std::sync::mpsc::channel;
 
@@ -130,7 +135,7 @@ validation:
 
 /// Test File System Service integration
 #[tokio::test]
-async fn test_file_system_service_integration() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_file_system_service_integration() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
     let fs_adapter = FileSystemAdapter::new();
 
@@ -178,10 +183,12 @@ classes:
 
     Ok(())
 }
+    Ok(())
+}
 
 /// Test that parser works without unwrap() panics
 #[tokio::test]
-async fn test_parser_no_unwrap_panics() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_parser_no_unwrap_panics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
     let fs_adapter = Arc::new(FileSystemAdapter::new());
 
@@ -224,10 +231,12 @@ classes:
 
     Ok(())
 }
+    Ok(())
+}
 
 /// Test generator operations without unwrap() panics
 #[tokio::test]
-async fn test_generators_no_unwrap_panics() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_generators_no_unwrap_panics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
     let fs_adapter = Arc::new(FileSystemAdapter::new());
 
@@ -277,10 +286,12 @@ classes:
 
     Ok(())
 }
+    Ok(())
+}
 
 /// Test expression engine without unwrap() panics
 #[tokio::test]
-async fn test_expression_engine_no_panics() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_expression_engine_no_panics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use linkml_core::SchemaDefinition;
     use serde_json::json;
 
@@ -295,6 +306,8 @@ async fn test_expression_engine_no_panics() -> Result<(), Box<dyn std::error::Er
                 equals_expression: Some("base_value * 2 + 10".to_string()),
                 ..Default::default()
             }
+    Ok(())
+}
         },
         ..Default::default()
     };
@@ -326,9 +339,8 @@ async fn test_expression_engine_no_panics() -> Result<(), Box<dyn std::error::Er
 
 /// Test memory optimization with string interning
 #[tokio::test]
-async fn test_memory_optimization() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_memory_optimization() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use linkml_core::string_pool::get_pool_stats;
-    use linkml_core::types_v2::SchemaDefinitionV2;
 
     // Create schema with repeated strings
     let schema_yaml = r#"
@@ -397,13 +409,15 @@ slots:
     for name in &class_names {
         assert_eq!(name.as_ref(), "NamedThing");
     }
+    Ok(())
+}
 
     Ok(())
 }
 
 /// Test SchemaView API completeness
 #[tokio::test]
-async fn test_schema_view_api() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_schema_view_api() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let schema_yaml = r#"
 id: https://example.org/schemaview_test
 name: SchemaViewTest
@@ -442,10 +456,10 @@ slots:
 
     // Test class hierarchy
     let parents = view.class_parents("Person", true)?;
-    assert!(parents.contains(&"NamedThing".to_string()));
+    assert!(parents.contains(&"NamedThing".to_string());
 
     let children = view.class_children("NamedThing", false)?;
-    assert!(children.contains(&"Person".to_string()));
+    assert!(children.contains(&"Person".to_string());
 
     // Test URI resolution
     let uri = view.get_uri("Person", false)?;
@@ -453,9 +467,9 @@ slots:
 
     // Test slot methods
     let person_slots = view.class_slots("Person", true)?;
-    assert!(person_slots.contains(&"id".to_string()));
-    assert!(person_slots.contains(&"name".to_string()));
-    assert!(person_slots.contains(&"age".to_string()));
+    assert!(person_slots.contains(&"id".to_string());
+    assert!(person_slots.contains(&"name".to_string());
+    assert!(person_slots.contains(&"age".to_string());
 
     // Test annotation methods
     let person_class = view.get_class("Person")?;
@@ -464,10 +478,12 @@ slots:
 
     Ok(())
 }
+    Ok(())
+}
 
 /// Test full LinkML service integration
 #[tokio::test]
-async fn test_full_service_integration() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_full_service_integration() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
 
     // Create configuration
@@ -558,7 +574,9 @@ size: -100
     // Test parallel validation with multiple files
     let mut data_files = vec![];
     for i in 0..10 {
-        let path = temp_dir.path().join(format!("data_{}.yaml", i));
+        let path = temp_dir.path().join(format!("data_{}
+    Ok(())
+}.yaml", i));
         std::fs::write(
             &path,
             format!(
@@ -585,7 +603,7 @@ tags: [tag1, tag2]
 
 /// Test error handling and recovery
 #[tokio::test]
-async fn test_error_handling_no_panics() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_error_handling_no_panics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let temp_dir = TempDir::new()?;
     let fs_adapter = Arc::new(FileSystemAdapter::new());
 
@@ -599,6 +617,8 @@ async fn test_error_handling_no_panics() -> Result<(), Box<dyn std::error::Error
         Err(e) => assert!(e.to_string().contains("No such file")),
         Ok(_) => panic!("Should have failed"),
     }
+    Ok(())
+}
 
     // Test with malformed YAML
     let malformed_path = temp_dir.path().join("malformed.yaml");
@@ -650,6 +670,7 @@ imports:
 #[test]
 fn test_configuration_validation() {
     use linkml_service::config::LinkMLConfig;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     // Test with invalid values
     let invalid_yaml = r#"

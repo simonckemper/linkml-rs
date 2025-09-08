@@ -1,12 +1,13 @@
 //! Tests for JSON Schema generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
     TypeDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, JsonSchemaGenerator};
 use serde_json::{Value, json};
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_json_schema_generation() {
     let mut schema = SchemaDefinition::new("person_schema");
@@ -136,10 +137,10 @@ async fn test_enum_json_schema() {
     let enum_values = order_status["enum"]
         .as_array()
         .expect("Test operation failed");
-    assert!(enum_values.contains(&json!("pending")));
-    assert!(enum_values.contains(&json!("processing")));
-    assert!(enum_values.contains(&json!("shipped")));
-    assert!(enum_values.contains(&json!("delivered")));
+    assert!(enum_values.contains(&json!("pending"));
+    assert!(enum_values.contains(&json!("processing"));
+    assert!(enum_values.contains(&json!("shipped"));
+    assert!(enum_values.contains(&json!("delivered"));
 
     // Check that class references the enum
     let order_def = &parsed["definitions"]["Order"];

@@ -145,8 +145,8 @@ impl EnhancedPatternValidator {
         let (issues, captures) = self.validate_pattern_with_captures(value, pattern, path);
 
         // If we have captures and the slot name, store them
-        if let Some(capture_map) = captures {
-            if !capture_map.is_empty() {
+        if let Some(capture_map) = captures
+            && !capture_map.is_empty() {
                 self.store_captures(context, &slot.name, capture_map.clone());
 
                 // Check if there are any group constraints (future enhancement)
@@ -156,7 +156,6 @@ impl EnhancedPatternValidator {
                     capture_map.len()
                 ));
             }
-        }
 
         issues
     }
@@ -265,7 +264,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_named_capture_groups() {
+    fn test_named_capture_groups() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let validator = EnhancedPatternValidator::new();
         let pattern = r"^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})$";
 

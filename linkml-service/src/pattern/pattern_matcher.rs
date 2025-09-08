@@ -1,6 +1,6 @@
-//! Pattern matching implementation for LinkML
+//! Pattern matching implementation for `LinkML`
 //!
-//! This module provides pattern matching functionality for LinkML schemas,
+//! This module provides pattern matching functionality for `LinkML` schemas,
 //! supporting regular expressions, structured patterns, and interpolation.
 
 use regex::Regex;
@@ -75,7 +75,7 @@ pub struct PatternMatcher {
 
 impl PatternMatcher {
     /// Create a new pattern matcher
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             patterns: HashMap::new(),
             default_metadata: PatternMetadata::default(),
@@ -83,7 +83,7 @@ impl PatternMatcher {
     }
 
     /// Create with default metadata
-    pub fn with_defaults(metadata: PatternMetadata) -> Self {
+    #[must_use] pub fn with_defaults(metadata: PatternMetadata) -> Self {
         Self {
             patterns: HashMap::new(),
             default_metadata: metadata,
@@ -111,7 +111,7 @@ impl PatternMatcher {
         let capture_groups: Vec<String> = regex
             .capture_names()
             .flatten()
-            .map(|s| s.to_string())
+            .map(std::string::ToString::to_string)
             .collect();
 
         let compiled = CompiledPattern {
@@ -274,13 +274,13 @@ impl PatternMatcher {
     }
 
     /// Get a compiled pattern
-    pub fn get_pattern(&self, name: &str) -> Option<&CompiledPattern> {
+    #[must_use] pub fn get_pattern(&self, name: &str) -> Option<&CompiledPattern> {
         self.patterns.get(name)
     }
 
     /// List all pattern names
-    pub fn pattern_names(&self) -> Vec<&str> {
-        self.patterns.keys().map(|s| s.as_str()).collect()
+    #[must_use] pub fn pattern_names(&self) -> Vec<&str> {
+        self.patterns.keys().map(std::string::String::as_str).collect()
     }
 
     /// Clear pattern cache
@@ -321,9 +321,15 @@ pub struct PatternMatcherBuilder {
     default_metadata: PatternMetadata,
 }
 
+impl Default for PatternMatcherBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PatternMatcherBuilder {
     /// Create a new builder
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             patterns: Vec::new(),
             default_metadata: PatternMetadata::default(),
@@ -331,7 +337,7 @@ impl PatternMatcherBuilder {
     }
 
     /// Set default metadata
-    pub fn default_metadata(mut self, metadata: PatternMetadata) -> Self {
+    #[must_use] pub fn default_metadata(mut self, metadata: PatternMetadata) -> Self {
         self.default_metadata = metadata;
         self
     }
@@ -339,7 +345,7 @@ impl PatternMatcherBuilder {
     /// Add a pattern
     pub fn add_pattern(mut self, name: impl Into<String>, pattern: impl Into<String>) -> Self {
         self.patterns
-            .push((name.into(), pattern.into(), self.default_metadata.clone()));
+            .push((name.into(), pattern.into(), self.default_metadata.clone());
         self
     }
 
@@ -375,6 +381,7 @@ impl Default for PatternMatcher {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use linkml_core::error::Result;
 
     #[test]
     fn test_basic_pattern_matching() -> Result<(), Box<dyn std::error::Error>> {
@@ -382,17 +389,17 @@ mod tests {
 
         matcher
             .compile("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+", None)
-            .map_err(|e| anyhow::anyhow!("should compile email pattern: {}", e))?;
+            .expect("should compile email pattern: {}");
 
         assert!(
             matcher
                 .matches("email", "test@example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         assert!(
             !matcher
                 .matches("email", "not-an-email")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         Ok(())
     }
@@ -407,11 +414,11 @@ mod tests {
                 r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)",
                 None,
             )
-            .map_err(|e| anyhow::anyhow!("should compile version pattern: {}", e))?;
+            .expect("should compile version pattern: {}");
 
         let capture = matcher
             .capture("version", "v1.2.3")
-            .map_err(|e| anyhow::anyhow!("capture should succeed: {}", e))?
+            .expect("capture should succeed: {}")
             .ok_or_else(|| anyhow::anyhow!("should find match"))?;
 
         assert_eq!(capture.captures.get("major"), Some(&"1"));
@@ -430,17 +437,17 @@ mod tests {
 
         matcher
             .compile_structured("custom", r"{prefix}_\w+_{suffix}", &vars, None)
-            .map_err(|e| anyhow::anyhow!("should compile structured pattern: {}", e))?;
+            .expect("should compile structured pattern: {}");
 
         assert!(
             matcher
                 .matches("custom", "test_hello_example")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         assert!(
             !matcher
                 .matches("custom", "prod_hello_example")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         Ok(())
     }
@@ -456,17 +463,17 @@ mod tests {
 
         matcher
             .compile("word", r"hello", Some(metadata))
-            .map_err(|e| anyhow::anyhow!("should compile pattern: {}", e))?;
+            .expect("should compile pattern: {}");
 
         assert!(
             matcher
                 .matches("word", "HELLO")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         assert!(
             matcher
                 .matches("word", "Hello")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         Ok(())
     }
@@ -477,17 +484,17 @@ mod tests {
             .add_pattern("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+")
             .add_pattern("url", r"https?://[\w.-]+(?:\.[\w.-]+)+[\w/]")
             .build()
-            .map_err(|e| anyhow::anyhow!("builder should succeed: {}", e))?;
+            .expect("builder should succeed: {}");
 
         assert!(
             matcher
                 .matches("email", "test@example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         assert!(
             matcher
                 .matches("url", "https://example.com")
-                .map_err(|e| anyhow::anyhow!("matching should succeed: {}", e))?
+                .expect("matching should succeed: {}")
         );
         Ok(())
     }

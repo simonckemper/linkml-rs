@@ -21,14 +21,14 @@ impl RustGenerator {
 
         // Documentation
         if options.include_docs {
-            writeln!(output, "/// Builder for {}", struct_name)
+            writeln!(output, "/// Builder for {struct_name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Builder struct definition
         writeln!(output, "#[derive(Debug, Default)]")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "pub struct {} {{", builder_name)
+        writeln!(output, "pub struct {builder_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate builder fields (all optional)
@@ -70,7 +70,7 @@ impl RustGenerator {
         options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "impl {} {{", builder_name)
+        writeln!(output, "impl {builder_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate new() method
@@ -152,7 +152,7 @@ impl RustGenerator {
         Ok(())
     }
 
-    /// Generate build() method
+    /// Generate `build()` method
     fn generate_build_method(
         &self,
         output: &mut String,

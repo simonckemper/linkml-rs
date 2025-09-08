@@ -134,7 +134,7 @@ pub enum CaptureValue {
 
 impl CaptureExtractor {
     /// Create a new capture extractor
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             definitions: HashMap::new(),
             converters: HashMap::new(),
@@ -180,7 +180,7 @@ impl CaptureExtractor {
                 }
                 None => {
                     if definition.required {
-                        return Err(CaptureError::CaptureNotFound(name.clone()));
+                        return Err(CaptureError::CaptureNotFound(name.clone());
                     } else if let Some(default) = &definition.default {
                         self.process_capture(default, definition)?
                     } else {
@@ -240,7 +240,7 @@ impl CaptureExtractor {
                 } else {
                     Err(CaptureError::ValidationError {
                         name: definition.name.clone(),
-                        reason: format!("Value '{}' not in allowed values: {:?}", text, values),
+                        reason: format!("Value '{text}' not in allowed values: {values:?}"),
                     })
                 }
             }
@@ -282,25 +282,23 @@ impl CaptureExtractor {
                 }
 
                 CaptureValidator::MinValue(min) => {
-                    if let Ok(value) = f64::from_str(text) {
-                        if value < *min {
+                    if let Ok(value) = f64::from_str(text)
+                        && value < *min {
                             return Err(CaptureError::ValidationError {
                                 name: definition.name.clone(),
-                                reason: format!("Value {} is less than minimum {}", value, min),
+                                reason: format!("Value {value} is less than minimum {min}"),
                             });
                         }
-                    }
                 }
 
                 CaptureValidator::MaxValue(max) => {
-                    if let Ok(value) = f64::from_str(text) {
-                        if value > *max {
+                    if let Ok(value) = f64::from_str(text)
+                        && value > *max {
                             return Err(CaptureError::ValidationError {
                                 name: definition.name.clone(),
-                                reason: format!("Value {} exceeds maximum {}", value, max),
+                                reason: format!("Value {value} exceeds maximum {max}"),
                             });
                         }
-                    }
                 }
 
                 CaptureValidator::Pattern(pattern) => {
@@ -310,7 +308,7 @@ impl CaptureExtractor {
                     if !regex.is_match(text) {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Value '{}' doesn't match pattern '{}'", text, pattern),
+                            reason: format!("Value '{text}' doesn't match pattern '{pattern}'"),
                         });
                     }
                 }
@@ -354,7 +352,7 @@ impl CaptureDefinitionBuilder {
     }
 
     /// Set whether the capture is required
-    pub fn required(mut self, required: bool) -> Self {
+    #[must_use] pub fn required(mut self, required: bool) -> Self {
         self.required = required;
         self
     }
@@ -366,13 +364,13 @@ impl CaptureDefinitionBuilder {
     }
 
     /// Add a validator
-    pub fn validator(mut self, validator: CaptureValidator) -> Self {
+    #[must_use] pub fn validator(mut self, validator: CaptureValidator) -> Self {
         self.validators.push(validator);
         self
     }
 
     /// Build the definition
-    pub fn build(self) -> CaptureDefinition {
+    #[must_use] pub fn build(self) -> CaptureDefinition {
         CaptureDefinition {
             name: self.name,
             capture_type: self.capture_type,
@@ -385,7 +383,7 @@ impl CaptureDefinitionBuilder {
 
 impl CaptureValue {
     /// Try to get as string
-    pub fn as_string(&self) -> Option<&str> {
+    #[must_use] pub fn as_string(&self) -> Option<&str> {
         match self {
             CaptureValue::String(s) => Some(s),
             _ => None,
@@ -393,7 +391,7 @@ impl CaptureValue {
     }
 
     /// Try to get as integer
-    pub fn as_integer(&self) -> Option<i64> {
+    #[must_use] pub fn as_integer(&self) -> Option<i64> {
         match self {
             CaptureValue::Integer(i) => Some(*i),
             _ => None,
@@ -401,7 +399,7 @@ impl CaptureValue {
     }
 
     /// Try to get as float
-    pub fn as_float(&self) -> Option<f64> {
+    #[must_use] pub fn as_float(&self) -> Option<f64> {
         match self {
             CaptureValue::Float(f) => Some(*f),
             CaptureValue::Integer(i) => Some(*i as f64),
@@ -410,7 +408,7 @@ impl CaptureValue {
     }
 
     /// Try to get as boolean
-    pub fn as_boolean(&self) -> Option<bool> {
+    #[must_use] pub fn as_boolean(&self) -> Option<bool> {
         match self {
             CaptureValue::Boolean(b) => Some(*b),
             _ => None,
@@ -418,7 +416,7 @@ impl CaptureValue {
     }
 
     /// Check if null
-    pub fn is_null(&self) -> bool {
+    #[must_use] pub fn is_null(&self) -> bool {
         matches!(self, CaptureValue::Null)
     }
 }
@@ -434,9 +432,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_extraction() {
+    fn test_basic_extraction() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let pattern =
-            Regex::new(r"(?P<name>\w+) v(?P<version>\d+\.\d+)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
+            Regex::new(r"(?P<name>\w+) v(?P<version>\d+\.\d+)").expect("pattern should compile: {}");
 
         let mut extractor = CaptureExtractor::new();
 
@@ -452,11 +450,11 @@ mod tests {
                 .build(),
         );
 
-        let captures = pattern.captures("project v1.0").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
+        let captures = pattern.captures("project v1.0").expect("should match: {}");
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
+            .expect("extraction should succeed: {}");
 
         assert_eq!(
             extracted.get("name"),
@@ -466,12 +464,13 @@ mod tests {
             extracted.get("version"),
             Some(&CaptureValue::String("1.0".to_string()))
         );
+        Ok(())
     }
 
     #[test]
-    fn test_type_conversion() {
+    fn test_type_conversion() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let pattern =
-            Regex::new(r"(?P<count>\d+) (?P<enabled>true|false)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
+            Regex::new(r"(?P<count>\d+) (?P<enabled>true|false)").expect("pattern should compile: {}");
 
         let mut extractor = CaptureExtractor::new();
 
@@ -484,19 +483,20 @@ mod tests {
         extractor
             .add_definition(CaptureDefinitionBuilder::new("enabled", CaptureType::Boolean).build());
 
-        let captures = pattern.captures("42 true").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
+        let captures = pattern.captures("42 true").expect("should match: {}");
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
+            .expect("extraction should succeed: {}");
 
-        assert_eq!(extracted.get("count"), Some(&CaptureValue::Integer(42)));
-        assert_eq!(extracted.get("enabled"), Some(&CaptureValue::Boolean(true)));
+        assert_eq!(extracted.get("count"), Some(&CaptureValue::Integer(42));
+        assert_eq!(extracted.get("enabled"), Some(&CaptureValue::Boolean(true));
+        Ok(())
     }
 
     #[test]
-    fn test_enum_validation() {
-        let pattern = Regex::new(r"(?P<level>\w+)").map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
+    fn test_enum_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let pattern = Regex::new(r"(?P<level>\w+)").expect("pattern should compile: {}");
 
         let mut extractor = CaptureExtractor::new();
 
@@ -513,11 +513,11 @@ mod tests {
             .build(),
         );
 
-        let captures = pattern.captures("info").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
+        let captures = pattern.captures("info").expect("should match: {}");
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
+            .expect("extraction should succeed: {}");
 
         assert_eq!(
             extracted.get("level"),
@@ -525,15 +525,16 @@ mod tests {
         );
 
         // Test invalid enum value
-        let invalid_captures = pattern.captures("critical").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
+        let invalid_captures = pattern.captures("critical").expect("should match: {}");
 
         assert!(extractor.extract(&invalid_captures).is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_optional_with_default() {
+    fn test_optional_with_default() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let pattern = Regex::new(r"name=(?P<name>\w+)(?:\s+port=(?P<port>\d+))?")
-            .map_err(|e| anyhow::anyhow!("pattern should compile: {}", e))?;
+            .expect("pattern should compile: {}");
 
         let mut extractor = CaptureExtractor::new();
 
@@ -547,16 +548,17 @@ mod tests {
                 .build(),
         );
 
-        let captures = pattern.captures("name=server").map_err(|e| anyhow::anyhow!("should match: {}", e))?;
+        let captures = pattern.captures("name=server").expect("should match: {}");
 
         let extracted = extractor
             .extract(&captures)
-            .map_err(|e| anyhow::anyhow!("extraction should succeed: {}", e))?;
+            .expect("extraction should succeed: {}");
 
         assert_eq!(
             extracted.get("name"),
             Some(&CaptureValue::String("server".to_string()))
         );
-        assert_eq!(extracted.get("port"), Some(&CaptureValue::Integer(8080)));
+        assert_eq!(extracted.get("port"), Some(&CaptureValue::Integer(8080));
+        Ok(())
     }
 }

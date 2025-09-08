@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use tracing::info;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::fmt::init();
 
@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("==========================\n");
 
     // Create sample instances
-    let instances = create_sample_instances();
+    let instances = create_sample_instances()?;
 
     let mut dump_options = DatabaseOptions {
         connection_string: "sqlite://./output.db".to_string(),
@@ -313,11 +313,11 @@ fn create_ecommerce_schema() -> SchemaDefinition {
 }
 
 /// Create sample instances for dumping
-fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance> {
+fn create_sample_instances() -> std::result::Result<Vec<linkml_service::loader::traits::DataInstance>, serde_json::Error> {
     use linkml_service::loader::traits::DataInstance;
     use serde_json::json;
 
-    vec![
+    Ok(vec![
         DataInstance {
             class_name: "User".to_string(),
             data: serde_json::from_value(json!({
@@ -358,5 +358,5 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "stock_quantity": 200
             }))?,
         },
-    ]
+    ])
 }

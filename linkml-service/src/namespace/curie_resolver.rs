@@ -1,22 +1,20 @@
 //! CURIE (Compact URI) resolution and namespace management
 //!
 //! This module provides comprehensive CURIE/URI resolution matching
-//! the Kapernikov LinkML implementation's namespace handling.
+//! the Kapernikov `LinkML` implementation's namespace handling.
 
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use std::collections::HashMap;
 
 /// Regular expression for valid CURIE format
-static CURIE_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^([a-zA-Z][a-zA-Z0-9_]*):([^:]*)$")
+static CURIE_REGEX: std::sync::LazyLock<Regex> =
+    std::sync::LazyLock::new(|| Regex::new(r"^([a-zA-Z][a-zA-Z0-9_]*):([^:]*)$")
         .expect("Valid CURIE regex pattern"));
 
 /// Regular expression for valid URI format (matches absolute URIs with scheme://
 /// or well-known schemes like mailto:, urn:, etc.)
-static URI_REGEX: Lazy<Regex> = Lazy::new(|| {
+static URI_REGEX: std::sync::LazyLock<Regex> = std::sync::LazyLock::new(|| {
     Regex::new(r"^([a-zA-Z][a-zA-Z0-9+.-]*://.+|mailto:.+|urn:.+|data:.+|file:.+)")
         .expect("Valid URI regex pattern")
 });
@@ -40,9 +38,15 @@ pub struct CurieResolver {
     strict: bool,
 }
 
+impl Default for CurieResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CurieResolver {
     /// Create a new CURIE resolver
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let mut resolver = Self {
             prefixes: HashMap::new(),
             uri_to_prefix: HashMap::new(),
@@ -57,7 +61,7 @@ impl CurieResolver {
     }
 
     /// Create from a `LinkML` schema
-    pub fn from_schema(schema: &SchemaDefinition) -> Self {
+    #[must_use] pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut resolver = Self::new();
 
         // Set default prefix
@@ -69,7 +73,7 @@ impl CurieResolver {
                 PrefixDefinition::Simple(uri) => uri.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                } => prefix_reference.clone().unwrap_or_default(),
             };
             resolver.add_prefix(prefix, &uri);
         }
@@ -131,6 +135,10 @@ impl CurieResolver {
     }
 
     /// Expand a CURIE to a full URI
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn expand_curie(&self, curie: &str) -> Result<String> {
         // Check if it's already a URI
         if self.is_uri(curie) {
@@ -148,9 +156,9 @@ impl CurieResolver {
 
             // Look up the prefix
             if let Some(uri_base) = self.prefixes.get(prefix) {
-                return Ok(format!("{}{}", uri_base, local));
+                return Ok(format!("{uri_base}{local}"));
             } else if self.strict {
-                return Err(LinkMLError::service(format!("Unknown prefix: {prefix}")));
+                return Err(LinkMLError::service(format!("Unknown prefix: {prefix}"));
             }
             // In non-strict mode, return as-is
             return Ok(curie.to_string());
@@ -158,15 +166,14 @@ impl CurieResolver {
 
         // Handle default prefix
         if !curie.contains(':') {
-            if let Some(ref default) = self.default_prefix {
-                if let Some(uri_base) = self.prefixes.get(default) {
-                    return Ok(format!("{}{}", uri_base, curie));
+            if let Some(ref default) = self.default_prefix
+                && let Some(uri_base) = self.prefixes.get(default) {
+                    return Ok(format!("{uri_base}{curie}"));
                 }
-            }
 
             // Use base URI if available
             if let Some(ref base) = self.base_uri {
-                return Ok(format!("{}{}", base, curie));
+                return Ok(format!("{base}{curie}"));
             }
         }
 
@@ -175,7 +182,7 @@ impl CurieResolver {
     }
 
     /// Contract a URI to a CURIE if possible
-    pub fn contract_uri(&self, uri: &str) -> String {
+    #[must_use] pub fn contract_uri(&self, uri: &str) -> String {
         // Check if it's already a CURIE
         if self.is_curie(uri) && !self.is_uri(uri) {
             return uri.to_string();
@@ -194,7 +201,7 @@ impl CurieResolver {
 
         if let Some((prefix, uri_base)) = best_match {
             let local = &uri[uri_base.len()..];
-            return format!("{}:{}", prefix, local);
+            return format!("{prefix}:{local}");
         }
 
         // Return as-is if we can't contract
@@ -202,6 +209,10 @@ impl CurieResolver {
     }
 
     /// Resolve any identifier (name, CURIE, or URI) to a full URI
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn resolve(&self, identifier: &str) -> Result<String> {
         // First try to expand as CURIE
         let expanded = self.expand_curie(identifier)?;
@@ -211,23 +222,27 @@ impl CurieResolver {
             Ok(expanded)
         } else if let Some(ref base) = self.base_uri {
             // Otherwise, resolve against base URI
-            Ok(format!("{}/{}", base, expanded))
+            Ok(format!("{base}/{expanded}"))
         } else {
             Ok(expanded)
         }
     }
 
     /// Get all registered prefixes
-    pub fn prefixes(&self) -> &HashMap<String, String> {
+    #[must_use] pub fn prefixes(&self) -> &HashMap<String, String> {
         &self.prefixes
     }
 
     /// Get a specific prefix expansion
-    pub fn get_prefix(&self, prefix: &str) -> Option<&str> {
-        self.prefixes.get(prefix).map(|s| s.as_str())
+    #[must_use] pub fn get_prefix(&self, prefix: &str) -> Option<&str> {
+        self.prefixes.get(prefix).map(std::string::String::as_str)
     }
 
     /// Normalize an identifier to a consistent form
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn normalize(&self, identifier: &str) -> Result<String> {
         // Expand to full URI then contract back to preferred CURIE
         let uri = self.resolve(identifier)?;
@@ -235,6 +250,10 @@ impl CurieResolver {
     }
 
     /// Check if two identifiers refer to the same entity
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn same_entity(&self, id1: &str, id2: &str) -> Result<bool> {
         let uri1 = self.resolve(id1)?;
         let uri2 = self.resolve(id2)?;
@@ -257,7 +276,7 @@ pub struct NamespaceContext {
 
 impl NamespaceContext {
     /// Create a new namespace context
-    pub fn new(resolver: CurieResolver) -> Self {
+    #[must_use] pub fn new(resolver: CurieResolver) -> Self {
         Self {
             resolver,
             local_prefixes: HashMap::new(),
@@ -266,7 +285,7 @@ impl NamespaceContext {
     }
 
     /// Create a child context with additional prefixes
-    pub fn child(&self) -> Self {
+    #[must_use] pub fn child(&self) -> Self {
         Self {
             resolver: self.resolver.clone(),
             local_prefixes: self.local_prefixes.clone(),
@@ -286,6 +305,10 @@ impl NamespaceContext {
     }
 
     /// Resolve an identifier in this context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn resolve(&self, identifier: &str) -> Result<String> {
         // Check local prefixes first
         if let Some(captures) = CURIE_REGEX.captures(identifier) {
@@ -307,7 +330,7 @@ impl NamespaceContext {
 
 /// Utilities for working with CURIEs and URIs
 pub mod utils {
-    use super::*;
+    use super::{CURIE_REGEX, URI_REGEX};
 
     /// Split a CURIE into prefix and local parts
     pub fn split_curie(curie: &str) -> Option<(&str, &str)> {
@@ -325,12 +348,12 @@ pub mod utils {
     }
 
     /// Create a CURIE from prefix and local parts
-    pub fn make_curie(prefix: &str, local: &str) -> String {
+    #[must_use] pub fn make_curie(prefix: &str, local: &str) -> String {
         format!("{prefix}:{local}")
     }
 
     /// Extract the local part from a URI given a base
-    pub fn local_from_uri(uri: &str, base: &str) -> Option<String> {
+    #[must_use] pub fn local_from_uri(uri: &str, base: &str) -> Option<String> {
         if uri.starts_with(base) {
             Some(uri[base.len()..].to_string())
         } else {
@@ -344,7 +367,7 @@ pub mod utils {
     }
 
     /// Join a base URI with a relative reference
-    pub fn join_uri(base: &str, relative: &str) -> String {
+    #[must_use] pub fn join_uri(base: &str, relative: &str) -> String {
         if is_absolute_uri(relative) {
             relative.to_string()
         } else {
@@ -357,7 +380,6 @@ pub mod utils {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_curie_expansion() {

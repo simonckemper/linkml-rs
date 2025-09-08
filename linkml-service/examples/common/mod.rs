@@ -11,7 +11,7 @@ pub mod service_init;
 
 pub use service_init::init_linkml_service_with_real_deps;
 
-use linkml_core::error::Result;
+// Removed linkml_core::error::Result import
 use linkml_service::LinkMLServiceImpl;
 use std::sync::Arc;
 

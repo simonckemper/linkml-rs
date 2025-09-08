@@ -16,7 +16,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Code Generation from LinkML Schemas ===\n");
     
     // ========================================================================
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let schema: SchemaDefinition = serde_yaml::from_str(&schema_content)?;
     
     println!("✓ Loaded country schema");
-    println!("  - Schema name: {}", schema.name.as_ref().unwrap_or(&"unnamed".to_string()));
+    println!("  - Schema name: {}", schema.name.as_ref().unwrap_or(&"unnamed".to_string());
     if let Some(desc) = &schema.description {
         println!("  - Description: {}", desc);
     }

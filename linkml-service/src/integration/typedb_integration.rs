@@ -6,14 +6,16 @@
 //! - Query generation and execution
 //! - Schema validation and synchronization
 
+use linkml_core::error::LinkMLError;
+
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::sync::Arc;
 
 use dbms_core::{DBMSService, DatabaseConfig};
 #[cfg(test)]
 use dbms_core::{HealthState, HealthStatus, SchemaValidation, SchemaVersion};
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
-use linkml_core::error::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -117,11 +119,11 @@ where
     /// Returns an error if:
     /// - Schema conversion fails
     /// - Invalid class or slot definitions are encountered
-    pub fn linkml_to_typedb(&self, schema: &SchemaDefinition) -> Result<TypeDBSchema> {
+    pub fn linkml_to_typedb(&self, schema: &SchemaDefinition) -> crate::Result<TypeDBSchema> {
         let mut typeql = String::new();
-        let mut entity_mappings = HashMap::new();
-        let mut attribute_mappings = HashMap::new();
-        let mut relation_mappings = HashMap::new();
+        let mut entity_mappings: HashMap<String, String> = HashMap::new();
+        let mut attribute_mappings: HashMap<String, String> = HashMap::new();
+        let mut relation_mappings: HashMap<String, RelationMapping> = HashMap::new();
 
         // Add schema header
         typeql.push_str("define\n\n");
@@ -130,15 +132,14 @@ where
         for (slot_name, slot_def) in &schema.slots {
             let attribute_type = self.map_slot_to_attribute(slot_name, slot_def);
             use std::fmt::Write;
-            let _ = write!(typeql, "{attribute_type}\n");
+            let _ = writeln!(typeql, "{attribute_type}");
             attribute_mappings.insert(slot_name.clone(), Self::sanitize_name(slot_name));
         }
 
         // Convert LinkML classes to TypeDB entities
         for (class_name, class_def) in &schema.classes {
             let entity_type = self.map_class_to_entity(class_name, class_def, schema)?;
-            use std::fmt::Write;
-            let _ = write!(typeql, "\n{entity_type}\n");
+            typeql.push_str(&format!("\n{entity_type}\n"));
             entity_mappings.insert(class_name.clone(), Self::sanitize_name(class_name));
 
             // Check for relationships
@@ -151,10 +152,9 @@ where
 
         // Add relations to TypeQL
         for relation in relation_mappings.values() {
-            use std::fmt::Write;
-            let _ = write!(typeql, "\n{} sub relation,\n", relation.relation_type);
+            typeql.push_str(&format!("\n{} sub relation,\n", relation.relation_type));
             for role in &relation.roles {
-                let _ = write!(typeql, "  relates {role},\n");
+                let _ = writeln!(typeql, "  relates {role},");
             }
             typeql.push_str(";\n");
         }
@@ -190,7 +190,7 @@ where
         class_name: &str,
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> Result<String> {
+    ) -> crate::Result<String> {
         let sanitized_name = Self::sanitize_name(class_name);
         let mut entity = String::new();
 
@@ -201,18 +201,17 @@ where
             "entity".to_string()
         };
 
-        use std::fmt::Write;
-        let _ = write!(entity, "{sanitized_name} sub {parent},\n");
+        let _ = writeln!(entity, "{sanitized_name} sub {parent},");
 
         // Add attributes
         for slot_name in &class_def.slots {
             if schema.slots.contains_key(slot_name) {
                 let attr_name = Self::sanitize_name(slot_name);
-                let _ = write!(entity, "  owns {attr_name},\n");
+                let _ = writeln!(entity, "  owns {attr_name},");
 
                 // Add key constraint for identifiers
                 if let Some(slot_def) = schema.slots.get(slot_name) && slot_def.identifier.unwrap_or(false) {
-                    let _ = write!(entity, "  key {attr_name},\n");
+                    let _ = writeln!(entity, "  key {attr_name},");
                 }
             }
         }
@@ -222,8 +221,7 @@ where
             for relation in relations {
                 for (slot, role) in &relation.role_mappings {
                     if class_def.slots.contains(slot) {
-                        use std::fmt::Write;
-                        let _ = write!(entity, "  plays {}:{role},\n", relation.relation_type);
+                        let _ = writeln!(entity, "  plays {}:{role},", relation.relation_type);
                     }
                 }
             }
@@ -244,22 +242,21 @@ where
         for slot_name in &class_def.slots {
             if let Some(slot_def) = schema.slots.get(slot_name) {
                 // Check if slot references another class (indicating a relation)
-                if let Some(ref range) = slot_def.range {
-                    if schema.classes.contains_key(range) {
+                if let Some(ref range) = slot_def.range
+                    && schema.classes.contains_key(range) {
                         // This is a relation
                         let relation_type = format!("has_{}", Self::sanitize_name(slot_name));
                         let mut role_mappings = HashMap::new();
 
                         role_mappings.insert(slot_name.clone(), "target".to_string());
                         role_mappings.insert(format!("{slot_name}_owner"), "owner".to_string());
-                        
+
                         relations.push(RelationMapping {
                             relation_type,
                             roles: vec!["owner".to_string(), "target".to_string()],
                             role_mappings,
                         });
                     }
-                }
             }
         }
 
@@ -286,19 +283,19 @@ where
     fn sanitize_name(name: &str) -> String {
         // TypeDB names must start with letter and contain only alphanumeric and underscore
         let mut sanitized = String::new();
-        
+
         for (i, c) in name.chars().enumerate() {
             if i == 0 && !c.is_alphabetic() {
                 sanitized.push('_');
             }
-            
+
             if c.is_alphanumeric() || c == '_' {
                 sanitized.push(c.to_lowercase().next().unwrap_or(c));
             } else {
                 sanitized.push('_');
             }
         }
-        
+
         sanitized
     }
 
@@ -310,28 +307,28 @@ where
     /// - Schema conversion fails
     /// - Database creation fails
     /// - Schema deployment fails
-    pub async fn deploy_schema(&mut self, schema: &SchemaDefinition) -> Result<()> {
+    pub async fn deploy_schema(&mut self, schema: &SchemaDefinition) -> crate::Result<()> {
         // Convert schema to TypeDB format
         let typedb_schema = self.linkml_to_typedb(schema)?;
-        
+
         // Cache the schema
         self.schema_cache.insert(schema.name.clone(), typedb_schema.clone());
-        
+
         // Create database if it doesn't exist
         let db_config = DatabaseConfig::default();
         let db_info = self.dbms_service
             .create_database(&self.config.database_name, db_config)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to create database: {e}")))?;
-        
+
         println!("✓ Created/connected to database: {}", db_info.name);
-        
+
         // Deploy the schema
         self.dbms_service
             .deploy_schema(&self.config.database_name, &typedb_schema.typeql)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to deploy schema: {e}")))?;
-        
+
         println!("✓ Deployed TypeDB schema for '{}'", schema.name);
         Ok(())
     }
@@ -349,38 +346,37 @@ where
         schema_name: &str,
         class_name: &str,
         data: &Value,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
             .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
-        
+
         // Get entity mapping
         let entity_type = typedb_schema.entity_mappings
             .get(class_name)
             .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found in schema")))?;
-        
+
         // Build insert query
         let mut query = format!("insert $x isa {entity_type};");
-        
+
         // Add attributes from data
         if let Value::Object(map) = data {
             for (field, value) in map {
                 if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
                     let value_str = self.format_value_for_typedb(value)?;
-                    use std::fmt::Write;
-                    let _ = write!(query, " $x has {attr_name} {value_str};");
+                    query.push_str(&format!(" $x has {attr_name} {value_str};"));
                 }
             }
         }
-        
+
         // Execute the insert query
         let _result = self.dbms_service
             .execute_string_query(&self.config.database_name, &query)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to insert data: {e}")))?;
 
-        println!("✓ Inserted data for entity type '{}'", entity_type);
+        println!("✓ Inserted data for entity type '{entity_type}'");
         Ok(())
     }
 
@@ -397,37 +393,36 @@ where
         schema_name: &str,
         class_name: &str,
         filters: HashMap<String, String>,
-    ) -> Result<Vec<Value>> {
+    ) -> crate::Result<Vec<Value>> {
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
             .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
-        
+
         // Get entity mapping
         let entity_type = typedb_schema.entity_mappings
             .get(class_name)
             .ok_or_else(|| LinkMLError::service(format!("Class '{class_name}' not found in schema")))?;
-        
+
         // Build match query
         let mut query = format!("match $x isa {entity_type};");
-        
+
         // Add filters
         for (field, value) in &filters {
             if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
-                use std::fmt::Write;
-                let _ = write!(query, " $x has {attr_name} {value};");
+                query.push_str(&format!(" $x has {attr_name} {value};"));
             }
         }
-        
+
         // Add fetch clause to get all attributes
         query.push_str(" get $x;");
-        
+
         // Execute the query
         let result_data = self.dbms_service
             .execute_string_query(&self.config.database_name, &query)
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to query data: {e}")))?;
-        
+
         // Parse the result data
         let parsed_results: Vec<HashMap<String, Value>> = serde_json::from_str(&result_data)
             .unwrap_or_else(|_| vec![]);
@@ -436,7 +431,7 @@ where
         let mut json_results = Vec::new();
         for row in parsed_results {
             let mut obj = serde_json::Map::new();
-            
+
             // Convert TypeDB results back to LinkML format
             for (key, value) in row {
                 // Reverse map attribute names
@@ -447,16 +442,16 @@ where
                     }
                 }
             }
-            
+
             json_results.push(Value::Object(obj));
         }
-        
+
         println!("✓ Retrieved {} records for entity type '{}'", json_results.len(), entity_type);
         Ok(json_results)
     }
 
     /// Format value for `TypeDB` query
-    fn format_value_for_typedb(&self, value: &Value) -> Result<String> {
+    fn format_value_for_typedb(&self, value: &Value) -> crate::Result<String> {
         match value {
             Value::String(s) => Ok(format!("\"{}\"", s.replace('"', "\\\""))),
             Value::Number(n) => Ok(n.to_string()),
@@ -478,20 +473,20 @@ where
         schema_name: &str,
         class_name: &str,
         data: &Value,
-    ) -> Result<Vec<String>> {
+    ) -> crate::Result<Vec<String>> {
         let mut errors = Vec::new();
-        
+
         // Get cached schema
         let typedb_schema = self.schema_cache
             .get(schema_name)
             .ok_or_else(|| LinkMLError::service(format!("Schema '{schema_name}' not found in cache")))?;
-        
+
         // Check if class exists
         if !typedb_schema.entity_mappings.contains_key(class_name) {
             errors.push(format!("Class '{class_name}' not found in TypeDB schema"));
             return Ok(errors);
         }
-        
+
         // Validate data structure
         if let Value::Object(map) = data {
             // Check for unknown fields
@@ -500,7 +495,7 @@ where
                     errors.push(format!("Field '{field}' is not mapped to any TypeDB attribute"));
                 }
             }
-            
+
             // Additional validation could be added here
             // - Check data types
             // - Validate against regex patterns
@@ -508,7 +503,7 @@ where
         } else {
             errors.push("Data must be an object".to_string());
         }
-        
+
         Ok(errors)
     }
 
@@ -520,40 +515,40 @@ where
     /// - Migration command generation fails
     /// - Migration execution fails
     /// - Schema caching fails
-    pub async fn sync_schema(&mut self, old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> Result<()> {
+    pub async fn sync_schema(&mut self, old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> crate::Result<()> {
         println!("Synchronizing schema '{}' with TypeDB...", new_schema.name);
-        
+
         // Generate migration commands
         let migration_commands = self.generate_migration_commands(old_schema, new_schema)?;
-        
+
         if migration_commands.is_empty() {
             println!("✓ No schema changes detected");
             return Ok(());
         }
-        
+
         println!("Found {} migration commands to execute", migration_commands.len());
-        
+
         // Execute migration commands
         for command in migration_commands {
-            println!("  Executing: {}", command);
+            println!("  Executing: {command}");
             self.dbms_service
                 .execute_string_query(&self.config.database_name, &command)
                 .await
                 .map_err(|e| LinkMLError::service(format!("Failed to execute migration: {e}")))?;
         }
-        
+
         // Update cached schema
         let typedb_schema = self.linkml_to_typedb(new_schema)?;
         self.schema_cache.insert(new_schema.name.clone(), typedb_schema);
-        
+
         println!("✓ Schema synchronized successfully");
         Ok(())
     }
 
     /// Generate migration commands for schema changes
-    fn generate_migration_commands(&self, old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> Result<Vec<String>> {
+    fn generate_migration_commands(&self, old_schema: &SchemaDefinition, new_schema: &SchemaDefinition) -> crate::Result<Vec<String>> {
         let mut commands = Vec::new();
-        
+
         // Check for new classes
         for (class_name, class_def) in &new_schema.classes {
             if !old_schema.classes.contains_key(class_name) {
@@ -562,7 +557,7 @@ where
                 commands.push(format!("define {entity_type}"));
             }
         }
-        
+
         // Check for new slots (attributes)
         for (slot_name, slot_def) in &new_schema.slots {
             if !old_schema.slots.contains_key(slot_name) {
@@ -571,7 +566,7 @@ where
                 commands.push(format!("define {attribute_type}"));
             }
         }
-        
+
         // Check for deleted classes
         for class_name in old_schema.classes.keys() {
             if !new_schema.classes.contains_key(class_name) {
@@ -579,7 +574,7 @@ where
                 commands.push(format!("undefine {sanitized_name} sub entity;"));
             }
         }
-        
+
         // Check for deleted slots
         for slot_name in old_schema.slots.keys() {
             if !new_schema.slots.contains_key(slot_name) {
@@ -587,12 +582,12 @@ where
                 commands.push(format!("undefine {sanitized_name} sub attribute;"));
             }
         }
-        
+
         Ok(commands)
     }
 }
 
-/// Create a TypeDB integration service
+/// Create a `TypeDB` integration service
 pub fn create_typedb_integration<D>(
     dbms_service: Arc<D>,
     config: Option<TypeDBIntegrationConfig>,
@@ -620,7 +615,7 @@ mod tests {
             Arc::new(MockDBMSService),
             config,
         );
-        
+
         assert_eq!(integration.sanitize_name("ValidName"), "validname");
         assert_eq!(integration.sanitize_name("name-with-dashes"), "name_with_dashes");
         assert_eq!(integration.sanitize_name("123_starts_with_number"), "_123_starts_with_number");
@@ -634,7 +629,7 @@ mod tests {
             Arc::new(MockDBMSService),
             config,
         );
-        
+
         assert_eq!(integration.map_range_to_typedb_type("string"), "string");
         assert_eq!(integration.map_range_to_typedb_type("integer"), "long");
         assert_eq!(integration.map_range_to_typedb_type("float"), "double");
@@ -743,11 +738,11 @@ mod tests {
 
     // Mock DBMS service for testing
     struct MockDBMSService;
-    
+
     #[async_trait]
     impl DBMSService for MockDBMSService {
         type Error = std::io::Error;
-        
+
         async fn create_database(&self, name: &str, _config: DatabaseConfig) -> DBMSResult<DatabaseInfo> {
             Ok(DatabaseInfo {
                 id: uuid::Uuid::new_v4(),
@@ -767,21 +762,21 @@ mod tests {
                 metadata: std::collections::HashMap::new(),
             })
         }
-        
+
         async fn delete_database(&self, _name: &str) -> DBMSResult<()> {
             // Mock implementation - simulate successful deletion
             Ok(())
         }
-        
+
         async fn list_databases(&self) -> DBMSResult<Vec<DatabaseInfo>> {
             // Mock implementation - return empty list for testing
             Ok(Vec::new())
         }
-        
+
         async fn deploy_schema(&self, _database: &str, _schema: &str) -> DBMSResult<()> {
             Ok(())
         }
-        
+
         async fn execute_string_query(&self, _database: &str, _query: &str) -> DBMSResult<String> {
             Ok("[]".to_string())
         }

@@ -1,6 +1,6 @@
 //! YAML loader and dumper v2 with file system adapter support
 //!
-//! This module provides YAML loading/dumping that uses FileSystemOperations
+//! This module provides YAML loading/dumping that uses `FileSystemOperations`
 //! instead of direct file system access.
 
 use async_trait::async_trait;
@@ -24,7 +24,7 @@ pub struct YamlLoaderV2 {
 
 impl YamlLoaderV2 {
     /// Create a new `YAML` loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             validate: true,
             strict: false,
@@ -32,13 +32,13 @@ impl YamlLoaderV2 {
     }
 
     /// Set validation enabled
-    pub fn with_validation(mut self, validate: bool) -> Self {
+    #[must_use] pub fn with_validation(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
     }
 
     /// Set strict mode
-    pub fn with_strict(mut self, strict: bool) -> Self {
+    #[must_use] pub fn with_strict(mut self, strict: bool) -> Self {
         self.strict = strict;
         self
     }
@@ -51,14 +51,12 @@ impl YamlLoaderV2 {
             .or_else(|| obj.get("_type"))
             .or_else(|| obj.get("class"))
             .or_else(|| obj.get("class_name"))
-        {
-            if let Some(type_str) = type_val.as_str() {
+            && let Some(type_str) = type_val.as_str() {
                 return type_str.to_string();
             }
-        }
 
         // Infer from field patterns
-        let fields: Vec<_> = obj.keys().map(|k| k.as_str()).collect();
+        let fields: Vec<_> = obj.keys().map(std::string::String::as_str).collect();
 
         // Common patterns for different types
         if fields.contains(&"name") && fields.contains(&"slots") {
@@ -99,8 +97,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
         fs: Arc<F>,
     ) -> LoaderResult<Vec<DataInstance>> {
         let content = fs.read_to_string(path).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            LoaderError::Io(std::io::Error::other(
                 e.to_string(),
             ))
         })?;
@@ -136,7 +133,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
                             let id = obj.get("id")
                                 .or_else(|| obj.get("@id"))
                                 .and_then(|v| v.as_str())
-                                .map(|s| s.to_string());
+                                .map(std::string::ToString::to_string);
 
                             Some(DataInstance {
                                 class_name,
@@ -158,7 +155,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
                 let id = obj.get("id")
                     .or_else(|| obj.get("@id"))
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
+                    .map(std::string::ToString::to_string);
 
                 vec![DataInstance {
                     class_name,
@@ -195,12 +192,12 @@ pub struct YamlDumperV2 {
 
 impl YamlDumperV2 {
     /// Create a new `YAML` dumper
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self { pretty: true }
     }
 
     /// Set pretty printing
-    pub fn with_pretty(mut self, pretty: bool) -> Self {
+    #[must_use] pub fn with_pretty(mut self, pretty: bool) -> Self {
         self.pretty = pretty;
         self
     }
@@ -218,8 +215,7 @@ impl DataDumperV2 for YamlDumperV2 {
         let content = self.dump_str(instances, schema).await?;
 
         fs.write(path, &content).await.map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 e.to_string(),
             ))
         })?;
@@ -278,6 +274,7 @@ mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
     use tempfile::TempDir;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[tokio::test]
     async fn test_yaml_loader_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -103,7 +103,7 @@ async fn create_test_service() -> Arc<
         MockTimeoutService,
     >,
 > {
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -136,7 +136,7 @@ async fn test_biomedical_research_workflow() {
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(BIOMEDICAL_SCHEMA, "yaml").unwrap();
+    let schema = parser.parse(BIOMEDICAL_SCHEMA, "yaml").unwrap();
     println!("✓ Schema parsed in {:?}", start.elapsed());
 
     // Create sample data
@@ -226,7 +226,7 @@ classes:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse(schema_yaml, "yaml").unwrap();
 
     // Valid data
     let valid_data = json!({
@@ -254,5 +254,5 @@ classes:
         .unwrap();
 
     assert!(!report.valid);
-    assert!(report.issues.iter().any(|i| i.message.contains("name")));
+    assert!(report.issues.iter().any(|i| i.message.contains("name"));
 }

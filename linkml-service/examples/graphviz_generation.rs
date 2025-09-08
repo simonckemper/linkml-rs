@@ -8,7 +8,7 @@ use linkml_service::generator::graphviz::{GraphvizLayout, GraphvizOptions, Graph
 use linkml_service::generator::{Generator, GeneratorOptions, GraphvizGenerator};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create a sample schema representing a simple e-commerce model
     let mut schema = SchemaDefinition::default();
     schema.name = Some("ECommerceSchema".to_string());

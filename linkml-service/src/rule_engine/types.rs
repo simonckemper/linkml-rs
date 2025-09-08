@@ -3,9 +3,9 @@
 //! This module defines internal representations and compiled forms of rules
 //! for efficient evaluation.
 
-use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{CompositeConditions, Rule, RuleConditions, SlotCondition};
 use serde_json::Value;
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{CompositeConditions, Rule, RuleConditions, SlotCondition};
 use std::collections::HashMap;
 
 use crate::expression::ast::Expression;
@@ -32,7 +32,11 @@ pub struct CompiledRule {
 
 impl CompiledRule {
     /// Compile a rule from its definition
-    pub fn compile(rule: Rule, source_class: String) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn compile(rule: Rule, source_class: String) -> linkml_core::error::Result<Self> {
         let priority = rule.priority.unwrap_or(0);
         let deactivated = rule.deactivated.unwrap_or(false);
 
@@ -88,17 +92,19 @@ pub enum CompiledCondition {
 
 impl CompiledCondition {
     /// Compile conditions from their definition
-    pub fn compile(conditions: &RuleConditions) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn compile(conditions: &RuleConditions) -> linkml_core::error::Result<Self> {
         let has_slots = conditions
             .slot_conditions
             .as_ref()
-            .map(|sc| !sc.is_empty())
-            .unwrap_or(false);
+            .is_some_and(|sc| !sc.is_empty());
         let has_exprs = conditions
             .expression_conditions
             .as_ref()
-            .map(|ec| !ec.is_empty())
-            .unwrap_or(false);
+            .is_some_and(|ec| !ec.is_empty());
         let has_composite = conditions.composite_conditions.is_some();
 
         match (has_slots, has_exprs, has_composite) {
@@ -127,8 +133,7 @@ impl CompiledCondition {
                             .parse(expr_str)
                             .map_err(|e| LinkMLError::ParseError {
                                 message: format!(
-                                    "Failed to parse expression '{}': {}",
-                                    expr_str, e
+                                    "Failed to parse expression '{expr_str}': {e}"
                                 ),
                                 location: None,
                             })?,
@@ -175,8 +180,7 @@ impl CompiledCondition {
                         compiled.push(parser.parse(expr_str).map_err(|e| {
                             LinkMLError::ParseError {
                                 message: format!(
-                                    "Failed to parse expression '{}': {}",
-                                    expr_str, e
+                                    "Failed to parse expression '{expr_str}': {e}"
                                 ),
                                 location: None,
                             }
@@ -213,20 +217,24 @@ impl CompiledCondition {
 pub struct CompiledSlotCondition {
     /// Original slot condition
     pub original: SlotCondition,
-    /// Compiled expression for equals_expression
+    /// Compiled expression for `equals_expression`
     pub equals_expression_ast: Option<Expression>,
 }
 
 impl CompiledSlotCondition {
     /// Compile a slot condition
-    pub fn compile(condition: &SlotCondition) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn compile(condition: &SlotCondition) -> linkml_core::error::Result<Self> {
         let equals_expression_ast = if let Some(ref expr_str) = condition.equals_expression {
             let parser = crate::expression::parser::Parser::new();
             Some(
                 parser
                     .parse(expr_str)
                     .map_err(|e| LinkMLError::ParseError {
-                        message: format!("Failed to parse expression '{}': {}", expr_str, e),
+                        message: format!("Failed to parse expression '{expr_str}': {e}"),
                         location: None,
                     })?,
             )
@@ -256,7 +264,11 @@ pub enum CompiledCompositeCondition {
 
 impl CompiledCompositeCondition {
     /// Compile composite conditions
-    pub fn compile(conditions: &CompositeConditions) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn compile(conditions: &CompositeConditions) -> linkml_core::error::Result<Self> {
         if let Some(ref any_of) = conditions.any_of {
             let mut compiled = Vec::new();
             for condition in any_of {
@@ -325,7 +337,7 @@ impl<'a> RuleExecutionContext<'a> {
     }
 
     /// Get expression evaluation context
-    pub fn get_expression_context(&self) -> HashMap<String, Value> {
+    #[must_use] pub fn get_expression_context(&self) -> HashMap<String, Value> {
         let mut context = HashMap::new();
 
         // First, add all slots for the class with null defaults
@@ -345,7 +357,7 @@ impl<'a> RuleExecutionContext<'a> {
 
         // Add special variables
         context.insert("_instance".to_string(), self.instance.clone());
-        context.insert("_class".to_string(), Value::String(self.class_name.clone()));
+        context.insert("_class".to_string(), Value::String(self.class_name.clone());
 
         // Add parent/root from validation context
         if let Some(parent) = self.validation_context.parent() {
@@ -384,7 +396,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_compiled_rule_creation() {
+    fn test_compiled_rule_creation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let rule = Rule {
             description: Some("Test rule".to_string()),
             priority: Some(10),
@@ -395,6 +407,7 @@ mod tests {
         assert_eq!(compiled.priority, 10);
         assert_eq!(compiled.source_class, "TestClass");
         assert!(!compiled.deactivated);
+        Ok(())
     }
 
     #[test]
@@ -412,8 +425,8 @@ mod tests {
         );
 
         let expr_ctx = ctx.get_expression_context();
-        assert_eq!(expr_ctx.get("name"), Some(&serde_json::json!("test")));
-        assert_eq!(expr_ctx.get("value"), Some(&serde_json::json!(42)));
+        assert_eq!(expr_ctx.get("name"), Some(&serde_json::json!("test"));
+        assert_eq!(expr_ctx.get("value"), Some(&serde_json::json!(42));
         assert_eq!(
             expr_ctx.get("_class"),
             Some(&serde_json::json!("TestClass"))

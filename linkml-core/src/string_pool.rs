@@ -132,6 +132,7 @@ impl Internable for Arc<str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::string_pool::{intern, intern_option, intern_vec};
 
     #[test]
     fn test_string_interning() {

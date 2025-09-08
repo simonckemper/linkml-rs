@@ -3,8 +3,8 @@
 //! This module provides automatic configuration reloading when files change.
 
 use super::{LinkMLConfig, load_config, validation::validate_values};
-use linkml_core::error::{LinkMLError, Result};
 use notify::{Event, EventKind, RecursiveMode, Watcher};
+use linkml_core::error::LinkMLError;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use tokio::sync::watch;
@@ -26,7 +26,11 @@ pub struct ConfigHotReloader {
 
 impl ConfigHotReloader {
     /// Create a new hot-reload manager
-    pub fn new(config_path: impl AsRef<Path>) -> Result<Self> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn new(config_path: impl AsRef<Path>) -> linkml_core::error::Result<Self> {
         let config_path = config_path.as_ref().to_path_buf();
 
         // Load initial configuration
@@ -46,9 +50,13 @@ impl ConfigHotReloader {
     }
 
     /// Start watching for configuration changes
-    pub async fn start_watching(&mut self) -> Result<()> {
-        let config_path = self.config_path.clone();
-        let tx = self.tx.clone();
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub async fn start_watching(&mut self) -> linkml_core::error::Result<()> {
+        let config_path = Arc::clone(&self.config_path);
+        let tx = Arc::clone(&self.tx);
         let config = Arc::clone(&self.config);
 
         // Create watcher
@@ -100,7 +108,7 @@ impl ConfigHotReloader {
     fn reload_config(
         path: &Path,
         current_config: &Arc<RwLock<LinkMLConfig>>,
-    ) -> Result<Arc<LinkMLConfig>> {
+    ) -> linkml_core::error::Result<Arc<LinkMLConfig>> {
         // Load new configuration
         let new_config: LinkMLConfig = load_config(path)?;
 
@@ -116,7 +124,7 @@ impl ConfigHotReloader {
     }
 
     /// Get current configuration
-    pub fn get_config(&self) -> Arc<LinkMLConfig> {
+    #[must_use] pub fn get_config(&self) -> Arc<LinkMLConfig> {
         if let Ok(config_guard) = self.config.read() {
             Arc::new(config_guard.clone())
         } else {
@@ -126,12 +134,16 @@ impl ConfigHotReloader {
     }
 
     /// Subscribe to configuration updates
-    pub fn subscribe(&self) -> watch::Receiver<Arc<LinkMLConfig>> {
+    #[must_use] pub fn subscribe(&self) -> watch::Receiver<Arc<LinkMLConfig>> {
         self.rx.clone()
     }
 
     /// Wait for next configuration update
-    pub async fn wait_for_update(&mut self) -> Result<Arc<LinkMLConfig>> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub async fn wait_for_update(&mut self) -> linkml_core::error::Result<Arc<LinkMLConfig>> {
         self.rx.changed().await.map_err(|_| {
             LinkMLError::ConfigError("Configuration update channel closed".to_string())
         })?;
@@ -144,7 +156,11 @@ static HOT_RELOADER: std::sync::OnceLock<Arc<tokio::sync::Mutex<ConfigHotReloade
     std::sync::OnceLock::new();
 
 /// Initialize global hot-reload configuration
-pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> Result<()> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> linkml_core::error::Result<()> {
     let mut reloader = ConfigHotReloader::new(config_path)?;
     reloader.start_watching().await?;
 
@@ -156,7 +172,11 @@ pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> Result<()> {
 }
 
 /// Get hot-reloaded configuration
-pub async fn get_hot_config() -> Result<Arc<LinkMLConfig>> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub async fn get_hot_config() -> linkml_core::error::Result<Arc<LinkMLConfig>> {
     let reloader = HOT_RELOADER
         .get()
         .ok_or_else(|| LinkMLError::ConfigError("Hot-reloader not initialized".to_string()))?;
@@ -166,7 +186,11 @@ pub async fn get_hot_config() -> Result<Arc<LinkMLConfig>> {
 }
 
 /// Subscribe to configuration updates
-pub async fn subscribe_to_updates() -> Result<watch::Receiver<Arc<LinkMLConfig>>> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub async fn subscribe_to_updates() -> linkml_core::error::Result<watch::Receiver<Arc<LinkMLConfig>>> {
     let reloader = HOT_RELOADER
         .get()
         .ok_or_else(|| LinkMLError::ConfigError("Hot-reloader not initialized".to_string()))?;
@@ -224,7 +248,7 @@ mod tests {
         // Modify config file
         let mut modified_content = config_content.clone();
         modified_content = modified_content.replace("batch_size: 1000", "batch_size: 2000");
-        fs::write(temp_file.path(), modified_content).map_err(|e| anyhow::anyhow!("should write modified config: {}", e))?;
+        fs::write(temp_file.path(), modified_content).expect("should write modified config: {}");
 
         // Wait a bit for file system events and check for update
         tokio::select! {

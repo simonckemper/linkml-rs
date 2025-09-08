@@ -1,6 +1,6 @@
-//! CSV data loader and dumper for LinkML
+//! CSV data loader and dumper for `LinkML`
 //!
-//! This module provides functionality to load CSV/TSV files into LinkML
+//! This module provides functionality to load CSV/TSV files into `LinkML`
 //! data instances and dump instances back to CSV/TSV format.
 
 use async_trait::async_trait;
@@ -122,7 +122,7 @@ impl CsvLoader {
                         "Record has more fields than headers: {} > {}",
                         record.len(),
                         headers.len()
-                    )));
+                    ));
                 }
                 continue;
             }
@@ -136,11 +136,10 @@ impl CsvLoader {
             }
 
             // Check if this is an identifier field
-            if let Some(slot_def) = schema.slots.get(field_name) {
-                if slot_def.identifier == Some(true) {
+            if let Some(slot_def) = schema.slots.get(field_name)
+                && slot_def.identifier == Some(true) {
                     id = Some(value.to_string());
                 }
-            }
 
             // Convert value based on slot type
             let json_value = self.convert_value(value, field_name, schema)?;
@@ -163,11 +162,10 @@ impl CsvLoader {
         schema: &SchemaDefinition,
     ) -> LoaderResult<JsonValue> {
         // Get slot definition to determine type
-        if let Some(slot_def) = schema.slots.get(field_name) {
-            if let Some(range) = &slot_def.range {
+        if let Some(slot_def) = schema.slots.get(field_name)
+            && let Some(range) = &slot_def.range {
                 return self.convert_typed_value(value, range, slot_def);
             }
-        }
 
         // Default to string
         Ok(JsonValue::String(value.to_string()))
@@ -190,11 +188,11 @@ impl CsvLoader {
         if slot_def.multivalued == Some(true) {
             // Split by common delimiters
             let values: Vec<&str> = if trimmed.contains(';') {
-                trimmed.split(';').map(|s| s.trim()).collect()
+                trimmed.split(';').map(str::trim).collect()
             } else if trimmed.contains('|') {
-                trimmed.split('|').map(|s| s.trim()).collect()
+                trimmed.split('|').map(str::trim).collect()
             } else if trimmed.contains(',') && !trimmed.contains('"') {
-                trimmed.split(',').map(|s| s.trim()).collect()
+                trimmed.split(',').map(str::trim).collect()
             } else {
                 vec![trimmed]
             };
@@ -237,8 +235,7 @@ impl CsvLoader {
                 "true" | "yes" | "y" | "1" => Ok(JsonValue::Bool(true)),
                 "false" | "no" | "n" | "0" => Ok(JsonValue::Bool(false)),
                 _ => Err(LoaderError::TypeConversion(format!(
-                    "Cannot parse '{}' as boolean",
-                    value
+                    "Cannot parse '{value}' as boolean"
                 ))),
             },
 
@@ -297,12 +294,11 @@ impl CsvLoader {
         let mut all_slots = Vec::new();
 
         // Add inherited slots
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 all_slots.extend(parent_slots);
             }
-        }
 
         // Add direct slots
         all_slots.extend(class_def.slots.clone());
@@ -330,7 +326,7 @@ impl DataLoader for CsvLoader {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Loads data from CSV/TSV files"
     }
 
@@ -374,7 +370,7 @@ impl DataLoader for CsvLoader {
                 .headers()
                 .map_err(|e| LoaderError::Parse(format!("Failed to read headers: {e}")))?
                 .iter()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect()
         } else {
             return Err(LoaderError::Configuration(
@@ -399,11 +395,10 @@ impl DataLoader for CsvLoader {
 
         for (i, result) in reader.records().enumerate() {
             // Check limit
-            if let Some(limit) = options.limit {
-                if instances.len() >= limit {
+            if let Some(limit) = options.limit
+                && instances.len() >= limit {
                     break;
                 }
-            }
 
             match result {
                 Ok(record) => {
@@ -434,14 +429,14 @@ impl DataLoader for CsvLoader {
                             "Failed to read record {}: {}",
                             i + 1,
                             e
-                        )));
+                        ));
                     }
                 }
             }
         }
 
         if error_count > 0 {
-            eprintln!("Total errors skipped: {}", error_count);
+            eprintln!("Total errors skipped: {error_count}");
         }
 
         Ok(instances)
@@ -556,12 +551,11 @@ impl CsvDumper {
         let mut all_slots = Vec::new();
 
         // Add inherited slots
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 all_slots.extend(parent_slots);
             }
-        }
 
         // Add direct slots
         all_slots.extend(class_def.slots.clone());
@@ -589,7 +583,7 @@ impl DataDumper for CsvDumper {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dumps data to CSV/TSV format"
     }
 
@@ -677,8 +671,7 @@ impl DataDumper for CsvDumper {
 
         // Write headers
         wtr.write_record(&headers).map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 format!("Failed to write headers: {e}"),
             ))
         })?;
@@ -705,8 +698,7 @@ impl DataDumper for CsvDumper {
             }
 
             wtr.write_record(&record).map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                DumperError::Io(std::io::Error::other(
                     format!("Failed to write record: {e}"),
                 ))
             })?;
@@ -714,8 +706,7 @@ impl DataDumper for CsvDumper {
 
         // Get the written data
         let data = wtr.into_inner().map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 format!("Failed to finish writing: {e}"),
             ))
         })?;
@@ -743,6 +734,7 @@ impl DataDumper for CsvDumper {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -808,12 +800,12 @@ p2,Bob,25,bob@example.com,tag3
         let instances = loader
             .load_string(csv_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load CSV: {}", e))?;
+            .expect("should load CSV: {}");
         assert_eq!(instances.len(), 2);
 
         // Check first instance
         assert_eq!(instances[0].class_name, "Person");
-        assert_eq!(instances[0].id, Some("p1".to_string()));
+        assert_eq!(instances[0].id, Some("p1".to_string());
         assert_eq!(
             instances[0].data.get("name"),
             Some(&JsonValue::String("Alice".to_string()))
@@ -837,7 +829,7 @@ p2,Bob,25,bob@example.com,tag3
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump to CSV: {}", e))?;
+            .expect("should dump to CSV: {}");
 
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -862,7 +854,7 @@ p2,Bob,25,bob@example.com,tag3
         let instances = loader
             .load_string(tsv_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load TSV: {}", e))?;
+            .expect("should load TSV: {}");
         assert_eq!(instances.len(), 1);
         assert_eq!(
             instances[0].data.get("name"),
@@ -901,7 +893,7 @@ p2,Bob,not_a_number,bob@example.com,
         let instances = loader
             .load_string(csv_content, &schema, &options_skip)
             .await
-            .map_err(|e| anyhow::anyhow!("should load with skip_invalid: {}", e))?;
+            .expect("should load with skip_invalid: {}");
         assert_eq!(instances.len(), 1); // Only valid record
         Ok(())
     }

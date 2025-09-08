@@ -85,11 +85,10 @@ impl InstanceValidator {
         }
 
         // Check if we have instance data for this slot in context
-        if let Some(instance_data) = context.instance_data.as_ref() {
-            if let Some(values) = instance_data.get(slot_name) {
+        if let Some(instance_data) = context.instance_data.as_ref()
+            && let Some(values) = instance_data.get(slot_name) {
                 return values.contains(&value.to_string());
             }
-        }
 
         // If we have configuration but no data loaded yet, this is a validation failure
         // (data should have been loaded in the validate method)
@@ -176,8 +175,8 @@ impl Validator for InstanceValidator {
                     match load_result {
                         Ok(loaded_values) => {
                             // Validate the value against loaded data
-                            if let Some(val_str) = value.as_str() {
-                                if !loaded_values.contains(&val_str.to_string()) {
+                            if let Some(val_str) = value.as_str()
+                                && !loaded_values.contains(&val_str.to_string()) {
                                     let preview: Vec<_> = loaded_values.iter().take(5).cloned().collect();
                                     let available = if loaded_values.len() > 5 {
                                         format!("{:?} (and {} more)", preview, loaded_values.len() - 5)
@@ -186,12 +185,11 @@ impl Validator for InstanceValidator {
                                     };
 
                                     issues.push(ValidationIssue::error(
-                                        format!("Value '{}' not in loaded instance values. Available: {}", val_str, available),
-                                        &context.path(),
+                                        format!("Value '{val_str}' not in loaded instance values. Available: {available}"),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
-                            }
                             // Store in context for future use
                             if let Some(instance_data) = context.instance_data.as_mut() {
                                 if let Some(data) = Arc::get_mut(instance_data) {
@@ -205,8 +203,8 @@ impl Validator for InstanceValidator {
                         }
                         Err(e) => {
                             issues.push(ValidationIssue::warning(
-                                format!("Failed to load instance data from {}: {}", file_path, e),
-                                &context.path(),
+                                format!("Failed to load instance data from {file_path}: {e}"),
+                                context.path(),
                                 &self.name,
                             ));
                         }
@@ -222,20 +220,19 @@ impl Validator for InstanceValidator {
 
                         match load_result {
                             Ok(loaded_values) => {
-                                if let Some(val_str) = value.as_str() {
-                                    if !loaded_values.contains(&val_str.to_string()) {
+                                if let Some(val_str) = value.as_str()
+                                    && !loaded_values.contains(&val_str.to_string()) {
                                         issues.push(ValidationIssue::error(
                                             format!("Value '{val_str}' not in loaded instance values"),
-                                            &context.path(),
+                                            context.path(),
                                             &self.name,
                                         ));
                                     }
-                                }
                             }
                             Err(e) => {
                                 issues.push(ValidationIssue::warning(
                                     format!("Failed to load instance data: {e}"),
-                                    &context.path(),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
@@ -287,7 +284,6 @@ impl Validator for InstanceValidator {
 mod tests {
     use super::*;
     use serde_json::json;
-    use std::sync::Arc;
 
     #[test]
     fn test_instance_validation() {

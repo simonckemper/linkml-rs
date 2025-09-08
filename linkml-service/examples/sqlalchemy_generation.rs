@@ -4,7 +4,7 @@ use linkml_service::generator::{SQLAlchemyGenerator, SQLAlchemyGeneratorConfig};
 use linkml_service::parser::SchemaParser;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example LinkML schema for a blog application
     let schema_yaml = r#"
 id: https://example.com/blog-schema

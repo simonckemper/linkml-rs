@@ -64,7 +64,7 @@ pub struct ExpressionCache {
 
 impl ExpressionCache {
     /// Create a new expression cache with given capacity
-    pub fn new(capacity: usize) -> Self {
+    #[must_use] pub fn new(capacity: usize) -> Self {
         // Ensure capacity is at least 1
         let capacity = NonZeroUsize::new(capacity.max(1)).expect("capacity.max(1) is always >= 1");
         Self {
@@ -76,7 +76,7 @@ impl ExpressionCache {
     }
 
     /// Create expression cache from `LinkML` service configuration
-    pub fn from_service_config(
+    #[must_use] pub fn from_service_config(
         config: &linkml_core::configuration_v2::ExpressionCacheConfig,
     ) -> Self {
         // Ensure capacity is at least 1
@@ -90,21 +90,21 @@ impl ExpressionCache {
     }
 
     /// Set maximum age for cache entries
-    pub fn with_max_age(mut self, max_age: Duration) -> Self {
+    #[must_use] pub fn with_max_age(mut self, max_age: Duration) -> Self {
         self.max_age = max_age;
         self
     }
 
     /// Set whether to cache compiled bytecode
-    pub fn with_compiled_caching(mut self, enabled: bool) -> Self {
+    #[must_use] pub fn with_compiled_caching(mut self, enabled: bool) -> Self {
         self.cache_compiled = enabled;
         self
     }
 
     /// Get an expression from the cache
-    pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+    #[must_use] pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         if let Some(entry) = cache.get_mut(key) {
             // Check if entry is too old
@@ -137,8 +137,8 @@ impl ExpressionCache {
         ast: Expression,
         compiled: Option<Arc<CompiledExpression>>,
     ) {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         let entry = CachedExpression {
             ast,
@@ -158,8 +158,8 @@ impl ExpressionCache {
 
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         cache.clear();
         stats.entries = 0;
@@ -167,18 +167,18 @@ impl ExpressionCache {
     }
 
     /// Get cache statistics
-    pub fn stats(&self) -> CacheStats {
+    #[must_use] pub fn stats(&self) -> CacheStats {
         // If lock is poisoned, return default stats rather than panic
         self.stats.read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
     /// Get cache hit rate (0.0 to 1.0)
-    pub fn hit_rate(&self) -> f64 {
+    #[must_use] pub fn hit_rate(&self) -> f64 {
         // If lock is poisoned, return 0.0 rather than panic
         let stats = self.stats.read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let total = stats.hits + stats.misses;
         if total == 0 {
             0.0
@@ -189,8 +189,8 @@ impl ExpressionCache {
 
     /// Prune old entries from the cache
     pub fn prune_old_entries(&self) {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         let now = Instant::now();
         let mut to_remove = Vec::new();
@@ -225,7 +225,7 @@ pub struct GlobalExpressionCache {
 
 impl GlobalExpressionCache {
     /// Create a new global cache
-    pub fn new(parse_capacity: usize, hot_capacity: usize) -> Self {
+    #[must_use] pub fn new(parse_capacity: usize, hot_capacity: usize) -> Self {
         Self {
             parse_cache: ExpressionCache::new(parse_capacity),
             hot_cache: ExpressionCache::new(hot_capacity).with_max_age(Duration::from_secs(7200)), // 2 hours for hot
@@ -234,13 +234,13 @@ impl GlobalExpressionCache {
     }
 
     /// Set the threshold for promoting expressions to hot cache
-    pub fn with_hot_threshold(mut self, threshold: u64) -> Self {
+    #[must_use] pub fn with_hot_threshold(mut self, threshold: u64) -> Self {
         self.hot_threshold = threshold;
         self
     }
 
     /// Get an expression, checking hot cache first
-    pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
+    #[must_use] pub fn get(&self, key: &ExpressionKey) -> Option<CachedExpression> {
         // Check hot cache first
         if let Some(entry) = self.hot_cache.get(key) {
             return Some(entry);
@@ -270,7 +270,7 @@ impl GlobalExpressionCache {
     }
 
     /// Get combined statistics from both caches
-    pub fn stats(&self) -> GlobalCacheStats {
+    #[must_use] pub fn stats(&self) -> GlobalCacheStats {
         let parse_stats = self.parse_cache.stats();
         let hot_stats = self.hot_cache.stats();
 
@@ -285,7 +285,7 @@ impl GlobalExpressionCache {
     }
 
     /// Get overall hit rate
-    pub fn overall_hit_rate(&self) -> f64 {
+    #[must_use] pub fn overall_hit_rate(&self) -> f64 {
         let parse_stats = self.parse_cache.stats();
         let hot_stats = self.hot_cache.stats();
 

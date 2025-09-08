@@ -9,7 +9,7 @@ use linkml_service::generator::{
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create a sample schema for a library management system
     let mut schema = SchemaDefinition::default();
     schema.name = Some("LibrarySchema".to_string());

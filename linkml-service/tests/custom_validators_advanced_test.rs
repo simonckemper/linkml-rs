@@ -1,10 +1,11 @@
 //! Advanced tests for custom validators with AppliesTo and complex scenarios
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
 use linkml_service::validator::{
     AppliesTo, CustomValidator, CustomValidatorBuilder, ValidationEngine, ValidationError,
 };
 use serde_json::json;
+use linkml_core::types::SchemaDefinition;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -238,7 +239,7 @@ async fn test_custom_validator_with_state() {
     let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Stateful validator that tracks daily limits per user
-    let daily_limits: Arc<Mutex<HashMap<String, f64>>> = Arc::new(Mutex::new(HashMap::new()));
+    let daily_limits: Arc<Mutex<HashMap<String, f64>>> = Arc::new(Mutex::new(HashMap::new());
     let daily_limits_clone = Arc::clone(&daily_limits);
 
     let limit_validator = CustomValidatorBuilder::new()
@@ -259,7 +260,7 @@ async fn test_custom_validator_with_state() {
                     errors.push(ValidationError::new(format!(
                         "Daily transaction limit exceeded for user {}. Total: ${:.2}",
                         user_id, daily_total
-                    )));
+                    ));
                 }
             }
 
@@ -386,7 +387,7 @@ async fn test_custom_validator_with_async_validation() {
         .await
         .expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.message.contains("revoked")));
+    assert!(report.errors().any(|e| e.message.contains("revoked"));
 }
 
 #[tokio::test]
@@ -405,7 +406,7 @@ async fn test_custom_validator_priority_and_ordering() {
 
     let mut engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
-    let execution_order = Arc::new(Mutex::new(Vec::new()));
+    let execution_order = Arc::new(Mutex::new(Vec::new());
 
     // Validator 1 - runs first
     let order_clone1 = Arc::clone(&execution_order);
@@ -533,6 +534,7 @@ async fn test_custom_validator_error_recovery() {
 async fn test_custom_validator_performance() {
     use std::time::Instant;
 
+
     let mut schema = SchemaDefinition::new("test_schema");
 
     let mut record_class = ClassDefinition::new("Record");
@@ -576,7 +578,7 @@ async fn test_custom_validator_performance() {
     // Create test data
     let mut data = serde_json::Map::new();
     for i in 0..100 {
-        data.insert(format!("field_{}", i), json!(format!("value_{}", i)));
+        data.insert(format!("field_{}", i), json!(format!("value_{}", i));
     }
     let data = serde_json::Value::Object(data);
 

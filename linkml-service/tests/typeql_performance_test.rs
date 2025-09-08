@@ -4,6 +4,7 @@ use linkml_core::prelude::*;
 use linkml_service::generator::{Generator, typeql_generator_enhanced::EnhancedTypeQLGenerator};
 use std::time::Instant;
 use tokio;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 /// Create a schema with the specified number of classes
 fn create_test_schema(num_classes: usize) -> SchemaDefinition {

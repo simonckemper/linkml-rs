@@ -2,8 +2,9 @@
 //!
 //! This module provides various strategies for discovering plugins in the filesystem.
 
-use super::*;
+use super::{Serialize, Deserialize, LinkMLError, PluginInfo, HashMap};
 use glob::glob;
+use linkml_core::error::Result;
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -29,9 +30,15 @@ pub enum DiscoveryStrategy {
     System,
 }
 
+impl Default for PluginDiscovery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginDiscovery {
     /// Create a new plugin discovery service
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             patterns: vec![
                 "linkml-plugin-*.toml".to_string(),
@@ -59,6 +66,10 @@ impl PluginDiscovery {
     }
 
     /// Discover plugins using the specified strategy
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn discover(&self, path: &Path, strategy: DiscoveryStrategy) -> Result<Vec<PathBuf>> {
         match strategy {
             DiscoveryStrategy::Shallow => self.discover_shallow(path),
@@ -76,7 +87,7 @@ impl PluginDiscovery {
             return Err(LinkMLError::IoError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!("Path is not a directory: {path:?}"),
-            )));
+            ));
         }
 
         for entry in fs::read_dir(path)? {
@@ -101,8 +112,7 @@ impl PluginDiscovery {
             .filter_entry(|e| !self.should_exclude(e.path()))
         {
             let entry = entry.map_err(|e| {
-                LinkMLError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LinkMLError::IoError(std::io::Error::other(
                     format!("Failed to read directory entry: {e}"),
                 ))
             })?;
@@ -131,8 +141,7 @@ impl PluginDiscovery {
                 ))
             })? {
                 let path = entry.map_err(|e| {
-                    LinkMLError::IoError(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LinkMLError::IoError(std::io::Error::other(
                         format!("Failed to read glob entry: {e}"),
                     ))
                 })?;
@@ -231,7 +240,7 @@ impl PluginDiscovery {
             self.patterns.iter().any(|pattern| {
                 if pattern.contains('*') {
                     // Simple glob matching
-                    let regex_pattern = pattern.replace("*", ".*");
+                    let regex_pattern = pattern.replace('*', ".*");
                     if let Ok(re) = regex::Regex::new(&format!("^{regex_pattern}$")) {
                         re.is_match(&name_str)
                     } else {
@@ -320,11 +329,10 @@ pub struct Requirements {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tempfile::TempDir;
 
     #[test]
-    fn test_plugin_discovery_shallow() -> Result<()> {
+    fn test_plugin_discovery_shallow() -> Result<(), LinkMLError> {
         let temp_dir = TempDir::new().map_err(|e| LinkMLError::IoError(e))?;
         let plugin_file = temp_dir.path().join("plugin.toml");
         fs::write(&plugin_file, "# Plugin manifest").map_err(|e| LinkMLError::IoError(e))?;

@@ -4,7 +4,6 @@
 //! in real-world scenarios, including complex schemas, validation, code generation,
 //! expression language, rules engine, and performance characteristics.
 
-use linkml_core::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_service::{
     expression::{Evaluator, Parser as ExpressionParser},
     generator::{
@@ -37,6 +36,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::time::Instant;
 use tempfile::TempDir;
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ValidationReport};
+
 
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"
@@ -391,7 +393,7 @@ async fn test_biomedical_research_workflow() {
     // Load the complex biomedical schema
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(BIOMEDICAL_SCHEMA)
+        .parse(BIOMEDICAL_SCHEMA)
         .expect("Test operation failed");
     println!("Schema loaded in {:?}", start.elapsed());
 
@@ -502,7 +504,7 @@ async fn test_biomedical_research_workflow() {
     let lab_result = &complete_study["lab_results"][0];
     let expr_parser = ExpressionParser::new();
     let expr_ast = expr_parser
-        .parse_str("value < 50 ? \"Low\" : value > 100 ? \"High\" : \"Normal\"")
+        .parse("value < 50 ? \"Low\" : value > 100 ? \"High\" : \"Normal\"")
         .expect("Test operation failed");
     let evaluator = Evaluator::new();
     let mut context = EvaluationContext::new();
@@ -574,7 +576,7 @@ async fn test_multi_tenant_config_validation() {
     // Load configuration schema
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(CONFIG_SCHEMA)
+        .parse(CONFIG_SCHEMA)
         .expect("Test operation failed");
 
     // Test valid tenant configuration
@@ -654,7 +656,7 @@ async fn test_schema_view_introspection() {
     // Load biomedical schema
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(BIOMEDICAL_SCHEMA)
+        .parse(BIOMEDICAL_SCHEMA)
         .expect("Test operation failed");
 
     // Create SchemaView for introspection
@@ -662,7 +664,7 @@ async fn test_schema_view_introspection() {
 
     // Test class hierarchy
     let patient_ancestors = view.class_ancestors("Patient");
-    assert!(patient_ancestors.contains(&"NamedEntity".to_string()));
+    assert!(patient_ancestors.contains(&"NamedEntity".to_string());
     println!(
         "✓ Class hierarchy: Patient inherits from {:?}",
         patient_ancestors
@@ -733,10 +735,10 @@ classes:
 
     let parser = YamlParser::new();
     let base_schema = parser
-        .parse_str(base_schema_str)
+        .parse(base_schema_str)
         .expect("Test operation failed");
     let ext_schema = parser
-        .parse_str(extension_schema_str)
+        .parse(extension_schema_str)
         .expect("Test operation failed");
 
     // Merge schemas
@@ -798,7 +800,7 @@ classes:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_str).expect("Test operation failed");
+    let schema = parser.parse(schema_str).expect("Test operation failed");
     let engine = ValidationEngine::new(schema);
     let options = ValidationOptions::default();
 
@@ -854,7 +856,7 @@ async fn test_code_generation_all_targets() {
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(CONFIG_SCHEMA)
+        .parse(CONFIG_SCHEMA)
         .expect("Test operation failed");
     let temp_dir = TempDir::new().expect("Test operation failed");
 
@@ -968,7 +970,7 @@ enums:
 "#;
 
     let parser = YamlParser::new();
-    let mut schema = parser.parse_str(schema_str).expect("Test operation failed");
+    let mut schema = parser.parse(schema_str).expect("Test operation failed");
 
     // Resolve inheritance
     let resolver = InheritanceResolver::new();
@@ -1035,7 +1037,7 @@ async fn test_rule_engine_with_expressions() {
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(BIOMEDICAL_SCHEMA)
+        .parse(BIOMEDICAL_SCHEMA)
         .expect("Test operation failed");
 
     // Create rule engine
@@ -1144,7 +1146,7 @@ enums:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(api_schema_str)
+        .parse(api_schema_str)
         .expect("Test operation failed");
     let temp_dir = TempDir::new().expect("Test operation failed");
 

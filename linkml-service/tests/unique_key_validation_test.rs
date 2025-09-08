@@ -1,9 +1,9 @@
 //! Integration tests for unique key validation
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition, UniqueKeyDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition, UniqueKeyDefinition};
 use linkml_service::validator::{ValidationEngine, ValidationOptions};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 /// Create a test schema with unique key constraints
 fn create_test_schema() -> SchemaDefinition {
     let mut schema = SchemaDefinition::new("test_unique_keys");

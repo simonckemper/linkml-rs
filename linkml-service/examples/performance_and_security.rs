@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Performance and Security Example\n");
 
     // 1. Enable performance profiling

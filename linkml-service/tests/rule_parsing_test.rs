@@ -48,7 +48,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Failed to parse schema");
 
     // Verify schema basics
@@ -80,7 +80,7 @@ slots:
         .expect("Test operation failed");
 
     let age_condition = slot_conditions.get("age").expect("age condition not found");
-    assert_eq!(age_condition.maximum_value, Some(serde_json::json!(17)));
+    assert_eq!(age_condition.maximum_value, Some(serde_json::json!(17));
 
     // Check postconditions
     assert!(rule.postconditions.is_some());
@@ -173,7 +173,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Failed to parse complex schema");
 
     let order_class = schema.classes.get("Order").expect("Order class not found");
@@ -263,7 +263,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Failed to parse conditional requirements");
 
     let address_class = schema
@@ -292,6 +292,6 @@ slots:
         .as_ref()
         .expect("Test operation failed");
     assert_eq!(then_required.len(), 2);
-    assert!(then_required.contains(&"state".to_string()));
-    assert!(then_required.contains(&"postal_code".to_string()));
+    assert!(then_required.contains(&"state".to_string());
+    assert!(then_required.contains(&"postal_code".to_string());
 }

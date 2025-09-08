@@ -163,6 +163,10 @@ impl ExpressionTranslator {
     }
 
     /// Translate a ``LinkML`` expression to `TypeQL` patterns
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn translate(
         &self,
         expr: &Expression,
@@ -303,7 +307,7 @@ impl ExpressionTranslator {
             "Add" | "Subtract" | "Multiply" | "Divide" | "Modulo" => {
                 return Err(TranslationError::ComplexExpression(format!(
                     "Arithmetic operation {op} requires computed attribute"
-                )));
+                ));
             }
 
             // Logical operators
@@ -320,7 +324,7 @@ impl ExpressionTranslator {
             _ => {
                 return Err(TranslationError::UnsupportedExpression(format!(
                     "Unknown operator: {op}"
-                )));
+                ));
             }
         }
 
@@ -399,6 +403,10 @@ impl ExpressionTranslator {
     }
 
     /// Generate a simple equality rule
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn generate_equality_rule(
         &self,
         entity_type: &str,
@@ -433,25 +441,25 @@ impl ExpressionTranslator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expression::ast::Expression;
 
     #[test]
-    fn test_simple_variable_translation() {
+    fn test_simple_variable_translation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let translator = ExpressionTranslator::new();
         let mut ctx = TranslationContext::new("$p".to_string());
 
         let expr = Expression::Variable("age".to_string());
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate simple variable: {}", e))?;
+            .expect("should translate simple variable: {}");
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$p has age $v1"));
         assert_eq!(result.result, "$v1");
+        Ok(())
     }
 
     #[test]
-    fn test_comparison_translation() {
+    fn test_comparison_translation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let translator = ExpressionTranslator::new();
         let mut ctx = TranslationContext::new("$p".to_string());
 
@@ -462,14 +470,15 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate comparison: {}", e))?;
+            .expect("should translate comparison: {}");
 
-        assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1")));
-        assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18")));
+        assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1"));
+        assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18"));
+        Ok(())
     }
 
     #[test]
-    fn test_contains_function() {
+    fn test_contains_function() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let translator = ExpressionTranslator::new();
         let mut ctx = TranslationContext::new("$doc".to_string());
 
@@ -483,9 +492,10 @@ mod tests {
 
         let result = translator
             .translate(&expr, &mut ctx)
-            .map_err(|e| anyhow::anyhow!("should translate contains function: {}", e))?;
+            .expect("should translate contains function: {}");
 
         assert_eq!(result.patterns.len(), 1);
         assert!(result.patterns[0].contains("$doc has tags \"important\""));
+        Ok(())
     }
 }

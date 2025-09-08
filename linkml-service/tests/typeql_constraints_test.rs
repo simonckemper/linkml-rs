@@ -3,6 +3,7 @@
 use linkml_core::Value;
 use linkml_core::prelude::*;
 use linkml_service::generator::typeql_constraints::TypeQLConstraintTranslator;
+use linkml_core::types::{SlotDefinition, UniqueKeyDefinition};
 
 #[test]
 fn test_key_constraint_generation() {
@@ -13,7 +14,7 @@ fn test_key_constraint_generation() {
     slot.identifier = Some(true);
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.contains(&"@key".to_string()));
+    assert!(constraints.contains(&"@key".to_string());
     assert!(!constraints.contains(&"@unique".to_string())); // key implies unique
 }
 
@@ -27,7 +28,7 @@ fn test_unique_constraint_detection() {
     slot.identifier = Some(false);
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.contains(&"@unique".to_string()));
+    assert!(constraints.contains(&"@unique".to_string());
 
     // Test unique detection by description
     let mut slot = SlotDefinition::default();
@@ -35,7 +36,7 @@ fn test_unique_constraint_detection() {
     slot.description = Some("Unique email address for the user".to_string());
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.contains(&"@unique".to_string()));
+    assert!(constraints.contains(&"@unique".to_string());
 }
 
 #[test]
@@ -48,7 +49,7 @@ fn test_cardinality_constraints() {
     slot.multivalued = Some(false);
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(!constraints.iter().any(|c| c.starts_with("@card")));
+    assert!(!constraints.iter().any(|c| c.starts_with("@card"));
 
     // Test multi-valued optional
     let mut slot = SlotDefinition::default();
@@ -56,7 +57,7 @@ fn test_cardinality_constraints() {
     slot.multivalued = Some(true);
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.contains(&"@card(0..)".to_string()));
+    assert!(constraints.contains(&"@card(0..)".to_string());
 
     // Test multi-valued required (unbounded since maximum_cardinality not available)
     let mut slot = SlotDefinition::default();
@@ -64,7 +65,7 @@ fn test_cardinality_constraints() {
     slot.multivalued = Some(true);
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.contains(&"@card(1..)".to_string()));
+    assert!(constraints.contains(&"@card(1..)".to_string());
 }
 
 #[test]
@@ -76,7 +77,7 @@ fn test_regex_pattern_constraints() {
     slot.pattern = Some(r"^\w+@\w+\.\w+$".to_string());
 
     let constraints = translator.translate_slot_constraints(&slot);
-    assert!(constraints.iter().any(|c| c.starts_with("regex")));
+    assert!(constraints.iter().any(|c| c.starts_with("regex"));
 
     // Test pattern with quotes that need escaping
     let mut slot = SlotDefinition::default();
@@ -96,11 +97,11 @@ fn test_range_constraints() {
 
     // Test integer range
     let mut slot = SlotDefinition::default();
-    slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
-    slot.maximum_value = Some(Value::Number(serde_json::Number::from(100)));
+    slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
+    slot.maximum_value = Some(Value::Number(serde_json::Number::from(100));
 
     let constraints = translator.translate_range_constraints(&slot);
-    assert!(constraints.contains(&"range [0..100]".to_string()));
+    assert!(constraints.contains(&"range [0..100]".to_string());
 
     // Test float range with only minimum
     let mut slot = SlotDefinition::default();
@@ -109,14 +110,14 @@ fn test_range_constraints() {
     ));
 
     let constraints = translator.translate_range_constraints(&slot);
-    assert!(constraints.contains(&"range [0..)".to_string()));
+    assert!(constraints.contains(&"range [0..)".to_string());
 
     // Test range with only maximum
     let mut slot = SlotDefinition::default();
-    slot.maximum_value = Some(Value::Number(serde_json::Number::from(999)));
+    slot.maximum_value = Some(Value::Number(serde_json::Number::from(999));
 
     let constraints = translator.translate_range_constraints(&slot);
-    assert!(constraints.contains(&"range (..999]".to_string()));
+    assert!(constraints.contains(&"range (..999]".to_string());
 }
 
 #[test]
@@ -157,13 +158,13 @@ fn test_complex_constraint_combinations() {
     let constraints = translator.translate_slot_constraints(&slot);
 
     // Should have @key
-    assert!(constraints.contains(&"@key".to_string()));
+    assert!(constraints.contains(&"@key".to_string());
 
     // Should have regex
-    assert!(constraints.iter().any(|c| c.starts_with("regex")));
+    assert!(constraints.iter().any(|c| c.starts_with("regex"));
 
     // Should not have cardinality (1..1 is default for required single-valued)
-    assert!(!constraints.iter().any(|c| c.starts_with("@card")));
+    assert!(!constraints.iter().any(|c| c.starts_with("@card"));
 }
 
 #[test]

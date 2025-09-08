@@ -46,7 +46,7 @@ impl Default for CacheConfig {
 
 impl CacheConfig {
     /// Create cache config from `LinkML` service configuration
-    pub fn from_service_config(config: &linkml_core::configuration_v2::RuleCacheConfig) -> Self {
+    #[must_use] pub fn from_service_config(config: &linkml_core::configuration_v2::RuleCacheConfig) -> Self {
         Self {
             max_entries: config.max_entries,
             ttl: Duration::from_secs(config.ttl_seconds),
@@ -78,14 +78,20 @@ pub struct CacheStats {
     pub entries: usize,
 }
 
+impl Default for RuleCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RuleCache {
     /// Create a new rule cache with default configuration
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::with_config(CacheConfig::default())
     }
 
     /// Create a new rule cache with custom configuration
-    pub fn with_config(config: CacheConfig) -> Self {
+    #[must_use] pub fn with_config(config: CacheConfig) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             config,
@@ -94,7 +100,7 @@ impl RuleCache {
     }
 
     /// Get compiled rules from the cache
-    pub fn get(&self, class_name: &str) -> Option<Vec<CompiledRule>> {
+    #[must_use] pub fn get(&self, class_name: &str) -> Option<Vec<CompiledRule>> {
         let mut cache = self.cache.write();
         let mut stats = self.stats.write();
 
@@ -152,7 +158,7 @@ impl RuleCache {
     }
 
     /// Get cache statistics
-    pub fn stats(&self) -> CacheStats {
+    #[must_use] pub fn stats(&self) -> CacheStats {
         self.stats.read().clone()
     }
 
@@ -206,18 +212,18 @@ impl RuleCache {
 pub type SharedRuleCache = Arc<RuleCache>;
 
 /// Create a new shared rule cache
-pub fn create_shared_cache() -> SharedRuleCache {
+#[must_use] pub fn create_shared_cache() -> SharedRuleCache {
     Arc::new(RuleCache::new())
 }
 
 /// Create a new shared rule cache with configuration
-pub fn create_shared_cache_with_config(config: CacheConfig) -> SharedRuleCache {
+#[must_use] pub fn create_shared_cache_with_config(config: CacheConfig) -> SharedRuleCache {
     Arc::new(RuleCache::with_config(config))
 }
 
 impl CacheStats {
     /// Calculate the cache hit rate
-    pub fn hit_rate(&self) -> f64 {
+    #[must_use] pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
         if total == 0 {
             0.0

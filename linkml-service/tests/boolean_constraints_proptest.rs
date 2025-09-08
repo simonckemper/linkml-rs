@@ -3,7 +3,7 @@
 //! This module tests the boolean constraint validators with randomly generated data
 //! to ensure they handle edge cases correctly and maintain their invariants.
 
-use linkml_core::types::{AnonymousSlotExpression, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{AnonymousSlotExpression, Definition, SlotDefinition};
 use linkml_service::validator::{
     context::ValidationContext,
     validators::{
@@ -15,6 +15,7 @@ use linkml_service::validator::{
 };
 use proptest::prelude::*;
 use serde_json::{Value, json};
+use linkml_core::types::SchemaDefinition;
 use std::sync::Arc;
 
 /// Generate a random JSON value
@@ -83,7 +84,7 @@ proptest! {
     ) {
         let validator = AnyOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         let slot = SlotDefinition {
             name: "test".to_string(),
@@ -100,7 +101,7 @@ proptest! {
     fn test_all_of_contradictory_constraints(value in arb_json_value()) {
         let validator = AllOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         // Create contradictory constraints
         let slot = SlotDefinition {
@@ -131,7 +132,7 @@ proptest! {
     ) {
         let validator = ExactlyOneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         let slot = SlotDefinition {
             name: "test".to_string(),
@@ -152,7 +153,7 @@ proptest! {
     fn test_none_of_all_types_rejection() {
         let validator = NoneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         let all_types = vec!["string", "integer", "float", "boolean", "null"];
         let constraints: Vec<_> = all_types.iter()
@@ -197,7 +198,7 @@ proptest! {
     ) {
         let validator = AllOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         // Ensure min <= max
         let (min, max) = if min <= max { (min, max) } else { (max, min) };
@@ -230,7 +231,7 @@ proptest! {
     ) {
         let validator = AnyOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         let constraints = if use_pattern {
             vec![
@@ -272,7 +273,7 @@ proptest! {
         // Test with sequential evaluation (high threshold)
         let sequential_validator = AllOfValidator::with_parallel_threshold(100);
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context1 = // ValidationContext removed(schema.clone());
+        let mut context1 = // ValidationContext::new());
 
         let slot = SlotDefinition {
             name: "test".to_string(),
@@ -284,7 +285,7 @@ proptest! {
 
         // Test with parallel evaluation (low threshold)
         let parallel_validator = AllOfValidator::with_parallel_threshold(1);
-        let mut context2 = // ValidationContext removed(schema);
+        let mut context2 = // ValidationContext::new();
 
         let parallel_issues = parallel_validator.validate(&value, &slot, &mut context2);
 
@@ -301,7 +302,7 @@ proptest! {
     ) {
         let validator = NoneOfValidator::new();
         let schema = Arc::new(SchemaDefinition::default());
-        let mut context = // ValidationContext removed(schema);
+        let mut context = // ValidationContext::new();
 
         // Create constraints where one will be satisfied
         let satisfied_idx = satisfied_index % num_constraints;
@@ -344,6 +345,6 @@ proptest! {
         // Should always have issues (constraint is satisfied)
         assert!(!issues.is_empty());
         // Should detect the satisfied constraint
-        assert!(issues[0].message.contains(&satisfied_idx.to_string()));
+        assert!(issues[0].message.contains(&satisfied_idx.to_string());
     }
 }

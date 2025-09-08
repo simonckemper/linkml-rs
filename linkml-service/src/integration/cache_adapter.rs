@@ -1,6 +1,7 @@
 //! Cache adapter for `RootReal` `CacheService` integration
 
 use async_trait::async_trait;
+use cache_core::CacheKey;
 use std::sync::Arc;
 
 /// Adapter to convert `RootReal`'s `CacheService` to our internal trait
@@ -56,7 +57,6 @@ impl crate::validator::cache::CacheService for CacheServiceAdapter {
     }
 
     async fn delete(&self, key: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        use cache_core::CacheKey;
 
         let cache_key = CacheKey::new(format!("linkml:{key}"))?;
 

@@ -1,8 +1,7 @@
-//! Schema linting functionality for LinkML
+//! Schema linting functionality for `LinkML`
 //!
 //! This module provides tools to check schema quality and compliance.
 
-use linkml_core::error::Result;
 use linkml_core::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -94,12 +93,12 @@ impl Default for LintOptions {
     fn default() -> Self {
         Self {
             rules: vec![
-                Box::new(NamingConventionRule::default()),
-                Box::new(MissingDocumentationRule::default()),
-                Box::new(UnusedDefinitionsRule::default()),
-                Box::new(SlotConsistencyRule::default()),
-                Box::new(TypeSafetyRule::default()),
-                Box::new(SchemaMetadataRule::default()),
+                Box::new(NamingConventionRule),
+                Box::new(MissingDocumentationRule),
+                Box::new(UnusedDefinitionsRule),
+                Box::new(SlotConsistencyRule),
+                Box::new(TypeSafetyRule),
+                Box::new(SchemaMetadataRule),
             ],
             rule_config: HashMap::new(),
             ignore_patterns: Vec::new(),
@@ -128,7 +127,7 @@ impl LintOptions {
     /// Filter rules by name
     pub fn filter_rules(&mut self, rule_names: &[String]) {
         self.rules
-            .retain(|rule| rule_names.contains(&rule.name().to_string()));
+            .retain(|rule| rule_names.contains(&rule.name().to_string());
     }
 }
 
@@ -144,7 +143,7 @@ pub struct LintResult {
 
 impl LintResult {
     /// Count errors
-    pub fn error_count(&self) -> usize {
+    #[must_use] pub fn error_count(&self) -> usize {
         self.issues
             .iter()
             .filter(|i| i.severity == Severity::Error)
@@ -152,7 +151,7 @@ impl LintResult {
     }
 
     /// Count warnings
-    pub fn warning_count(&self) -> usize {
+    #[must_use] pub fn warning_count(&self) -> usize {
         self.issues
             .iter()
             .filter(|i| i.severity == Severity::Warning)
@@ -160,24 +159,24 @@ impl LintResult {
     }
 
     /// Count info messages
-    pub fn info_count(&self) -> usize {
+    #[must_use] pub fn info_count(&self) -> usize {
         self.issues
             .iter()
             .filter(|i| i.severity == Severity::Info)
             .count()
     }
 
-    /// Convert to JUnit `XML` format
-    pub fn to_junit_xml(&self, test_name: &str) -> String {
+    /// Convert to `JUnit` `XML` format
+    #[must_use] pub fn to_junit_xml(&self, test_name: &str) -> String {
         let mut xml = String::new();
 
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.push_str("<testsuite name=\"LinkML Lint\" tests=\"1\"");
-        xml.push_str(&format!(" errors=\"{}\"", self.error_count()));
-        xml.push_str(&format!(" failures=\"{}\"", self.warning_count()));
+        xml.push_str(&format!(" errors=\"{}\"", self.error_count());
+        xml.push_str(&format!(" failures=\"{}\"", self.warning_count());
         xml.push_str(">\n");
 
-        xml.push_str(&format!("  <testcase name=\"{}\">\n", test_name));
+        xml.push_str(&format!("  <testcase name=\"{test_name}\">\n"));
 
         for issue in &self.issues {
             match issue.severity {
@@ -207,11 +206,15 @@ pub struct SchemaLinter {
 
 impl SchemaLinter {
     /// Create new linter
-    pub fn new(options: LintOptions) -> Self {
+    #[must_use] pub fn new(options: LintOptions) -> Self {
         Self { options }
     }
 
     /// Lint a schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn lint(&self, schema: &SchemaDefinition) -> Result<LintResult> {
         let mut all_issues = Vec::new();
         let mut fixable_issues = Vec::new();
@@ -235,6 +238,10 @@ impl SchemaLinter {
     }
 
     /// Fix issues in schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn fix(&self, schema: &mut SchemaDefinition, result: &mut LintResult) -> Result<usize> {
         let mut total_fixed = 0;
 
@@ -269,11 +276,11 @@ impl SchemaLinter {
 struct NamingConventionRule;
 
 impl LintRule for NamingConventionRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "naming-convention"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check naming conventions for classes, slots, and types"
     }
 
@@ -334,11 +341,11 @@ impl LintRule for NamingConventionRule {
 struct MissingDocumentationRule;
 
 impl LintRule for MissingDocumentationRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "missing-documentation"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check for missing descriptions on classes, slots, and types"
     }
 
@@ -412,11 +419,11 @@ impl LintRule for MissingDocumentationRule {
 struct UnusedDefinitionsRule;
 
 impl LintRule for UnusedDefinitionsRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "unused-definitions"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check for unused slots, types, and enums"
     }
 
@@ -513,11 +520,11 @@ impl LintRule for UnusedDefinitionsRule {
 struct SlotConsistencyRule;
 
 impl LintRule for SlotConsistencyRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "slot-consistency"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check for slot definition consistency"
     }
 
@@ -536,16 +543,14 @@ impl LintRule for SlotConsistencyRule {
                         rule: self.name().to_string(),
                         severity: self.severity(),
                         message: format!(
-                            "Class '{}' references undefined slot '{}'",
-                            class_name, slot_name
+                            "Class '{class_name}' references undefined slot '{slot_name}'"
                         ),
                         element_type: Some("class".to_string()),
                         element_name: Some(class_name.clone()),
                         line: None,
                         column: None,
                         suggestion: Some(format!(
-                            "Define slot '{}' or remove the reference",
-                            slot_name
+                            "Define slot '{slot_name}' or remove the reference"
                         )),
                         fixable: false,
                     });
@@ -567,11 +572,11 @@ impl LintRule for SlotConsistencyRule {
 struct TypeSafetyRule;
 
 impl LintRule for TypeSafetyRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "type-safety"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check type safety and range consistency"
     }
 
@@ -608,7 +613,7 @@ impl LintRule for TypeSafetyRule {
                     issues.push(LintIssue {
                         rule: self.name().to_string(),
                         severity: self.severity(),
-                        message: format!("Slot '{}' has invalid range '{}'", slot_name, range),
+                        message: format!("Slot '{slot_name}' has invalid range '{range}'"),
                         element_type: Some("slot".to_string()),
                         element_name: Some(slot_name.clone()),
                         line: None,
@@ -636,11 +641,11 @@ impl LintRule for TypeSafetyRule {
 struct SchemaMetadataRule;
 
 impl LintRule for SchemaMetadataRule {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "schema-metadata"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Check for required schema metadata"
     }
 
@@ -741,6 +746,7 @@ fn to_snake_case(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_naming_convention_rule() {

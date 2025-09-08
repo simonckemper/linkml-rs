@@ -1,6 +1,6 @@
-//! JSON-LD generator for LinkML schemas
+//! JSON-LD generator for `LinkML` schemas
 //!
-//! This module generates JSON-LD (JSON for Linked Data) contexts and schemas from LinkML schemas.
+//! This module generates JSON-LD (JSON for Linked Data) contexts and schemas from `LinkML` schemas.
 //! JSON-LD is a W3C standard for representing linked data in JSON format.
 
 use linkml_core::{
@@ -40,10 +40,13 @@ impl JsonLdGenerator {
             .options
             .custom
             .get("compact")
-            .map_or(false, |v| v == "true");
+            .is_some_and(|v| v == "true");
 
-        if !use_compact {
-            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
+        if use_compact {
+            // Compact output - only required prefixes
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id));
+        } else {
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id));
             context.insert(
                 "xsd".to_string(),
                 json!("http://www.w3.org/2001/XMLSchema#"),
@@ -62,14 +65,11 @@ impl JsonLdGenerator {
                 json!("http://www.w3.org/2004/02/skos/core#"),
             );
             context.insert("dcterms".to_string(), json!("http://purl.org/dc/terms/"));
-        } else {
-            // Compact output - only required prefixes
-            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
         }
 
         // Add schema name as prefix
         let schema_prefix = self.to_snake_case(&schema.name);
-        context.insert(schema_prefix.clone(), json!(format!("{}#", schema.id)));
+        context.insert(schema_prefix.clone(), json!(format!("{}#", schema.id));
 
         // Add classes
         for (class_name, _) in &schema.classes {
@@ -87,7 +87,7 @@ impl JsonLdGenerator {
                 .options
                 .custom
                 .get("exclude_internal")
-                .map_or(false, |v| v == "true");
+                .is_some_and(|v| v == "true");
             if exclude_internal && slot_name.starts_with('_') {
                 continue;
             }
@@ -396,7 +396,7 @@ impl JsonLdGenerator {
         );
 
         // Add type
-        instance.insert("@type".to_string(), json!(self.to_pascal_case(class_name)));
+        instance.insert("@type".to_string(), json!(self.to_pascal_case(class_name));
 
         // Add ID
         instance.insert(
@@ -413,13 +413,12 @@ impl JsonLdGenerator {
 
         // Add example values for required slots
         for slot_name in &all_slots {
-            if let Some(slot) = schema.slots.get(slot_name) {
-                if slot.required == Some(true) {
+            if let Some(slot) = schema.slots.get(slot_name)
+                && slot.required == Some(true) {
                     let property_id = self.to_snake_case(slot_name);
                     let example_value = self.get_example_value(slot, schema)?;
                     instance.insert(property_id, example_value);
                 }
-            }
         }
 
         Ok(json!(instance))
@@ -474,18 +473,17 @@ impl JsonLdGenerator {
         let mut all_slots = Vec::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 all_slots.extend(self.collect_all_slots(parent_class, schema));
             }
-        }
 
         // Then add direct slots
         all_slots.extend(class.slots.clone());
 
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        all_slots.retain(|slot| seen.insert(slot.clone()));
+        all_slots.retain(|slot| seen.insert(slot.clone());
 
         all_slots
     }
@@ -493,11 +491,10 @@ impl JsonLdGenerator {
     /// Get `JSON`-LD type for `LinkML` range
     fn get_json_ld_type(&self, range: &str, schema: &SchemaDefinition) -> Option<String> {
         // Check if it's a custom type first
-        if let Some(type_def) = schema.types.get(range) {
-            if let Some(base_type) = &type_def.base_type {
+        if let Some(type_def) = schema.types.get(range)
+            && let Some(base_type) = &type_def.base_type {
                 return self.get_json_ld_type(base_type, schema);
             }
-        }
 
         match range {
             "string" | "str" => Some("xsd:string".to_string()),
@@ -529,7 +526,7 @@ impl JsonLdGenerator {
         }
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -549,9 +546,9 @@ impl JsonLdGenerator {
         result
     }
 
-    /// Convert to PascalCase
+    /// Convert to `PascalCase`
     fn to_pascal_case(&self, s: &str) -> String {
-        s.split(|c| c == '_' || c == '-')
+        s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
@@ -570,11 +567,11 @@ impl Default for JsonLdGenerator {
 }
 
 impl Generator for JsonLdGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "json-ld"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates JSON-LD context and schema documents from LinkML schemas"
     }
 
@@ -606,7 +603,7 @@ impl Generator for JsonLdGenerator {
             .options
             .custom
             .get("full_schema")
-            .map_or(false, |v| v == "true");
+            .is_some_and(|v| v == "true");
 
         let mut doc = if generate_full {
             // Use the comprehensive schema document generator
@@ -636,14 +633,13 @@ impl Generator for JsonLdGenerator {
             );
 
             // Include documentation if enabled in options
-            if self.options.include_docs {
-                if let Some(desc) = &schema.description {
+            if self.options.include_docs
+                && let Some(desc) = &schema.description {
                     doc.insert(
                         "description".to_string(),
                         serde_json::Value::String(desc.clone()),
                     );
                 }
-            }
 
             // Add classes
             if !schema.classes.is_empty() {
@@ -686,7 +682,7 @@ impl Generator for JsonLdGenerator {
         }
 
         // Generate example instances if requested
-        if self.options.get_custom("include_examples").map_or(false, |v| v == "true") {
+        if self.options.get_custom("include_examples").is_some_and(|v| v == "true") {
             // Generate frame documents for each class
             let mut frames_map = serde_json::Map::new();
             for (class_name, class_def) in &schema.classes {
@@ -716,7 +712,7 @@ impl Generator for JsonLdGenerator {
             .options
             .custom
             .get("compact")
-            .map_or(false, |v| v == "true");
+            .is_some_and(|v| v == "true");
         let result = if use_compact {
             serde_json::to_string(&doc)
                 .map_err(|e| LinkMLError::service(format!("JSON formatting error: {e}")))?
@@ -728,11 +724,11 @@ impl Generator for JsonLdGenerator {
         Ok(result)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "jsonld"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }

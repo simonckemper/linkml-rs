@@ -482,6 +482,7 @@ impl Default for RuleCacheConfig {
 impl Default for PerformanceConfig {
     fn default() -> Self {
         use PerformanceFeature::{BackgroundTasks, Monitoring, StringInterning};
+
         Self {
             features: PerformanceFeatures {
                 enabled_features: vec![Monitoring, StringInterning, BackgroundTasks],

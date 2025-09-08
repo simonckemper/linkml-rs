@@ -1,11 +1,10 @@
-//! Built-in plugins for LinkML service
+//! Built-in plugins for `LinkML` service
 //!
-//! Since dynamic plugin loading is forbidden by RootReal's safety requirements,
+//! Since dynamic plugin loading is forbidden by `RootReal`'s safety requirements,
 //! all plugins must be compiled into the application at build time.
 
-use super::*;
+use super::{Plugin, PluginInfo, PluginStatus, PluginType, PluginCapability, PluginContext, Result};
 use async_trait::async_trait;
-use linkml_core::error::Result;
 use semver::{Version, VersionReq};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -15,9 +14,15 @@ pub struct BuiltinPluginRegistry {
     plugins: HashMap<String, Box<dyn Plugin>>,
 }
 
+impl Default for BuiltinPluginRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BuiltinPluginRegistry {
     /// Create a new registry with all built-in plugins
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let mut registry = Self {
             plugins: HashMap::new(),
         };
@@ -55,7 +60,7 @@ impl BuiltinPluginRegistry {
     }
 
     /// Get a plugin by name
-    pub fn get_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
+    #[must_use] pub fn get_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
         self.plugins.get(name)
     }
 
@@ -65,7 +70,7 @@ impl BuiltinPluginRegistry {
     }
 
     /// List all available plugins
-    pub fn list_plugins(&self) -> Vec<String> {
+    #[must_use] pub fn list_plugins(&self) -> Vec<String> {
         self.plugins.keys().cloned().collect()
     }
 }
@@ -176,7 +181,7 @@ impl Plugin for SqlGeneratorPlugin {
     }
 }
 
-/// TypeQL generator plugin
+/// `TypeQL` generator plugin
 struct TypeQLGeneratorPlugin {
     info: PluginInfo,
     status: PluginStatus,

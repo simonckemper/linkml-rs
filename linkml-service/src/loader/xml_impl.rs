@@ -1,7 +1,7 @@
-//! Real XML loader implementation for LinkML
+//! Real XML loader implementation for `LinkML`
 //!
 //! This module provides comprehensive XML loading functionality
-//! for LinkML schemas and data instances.
+//! for `LinkML` schemas and data instances.
 
 use async_trait::async_trait;
 use quick_xml::Reader;
@@ -42,16 +42,22 @@ impl Default for XmlConfig {
     }
 }
 
+impl Default for XmlLoader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl XmlLoader {
     /// Create a new `XML` loader with default configuration
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             config: XmlConfig::default(),
         }
     }
 
     /// Create `XML` loader with custom configuration
-    pub fn with_config(config: XmlConfig) -> Self {
+    #[must_use] pub fn with_config(config: XmlConfig) -> Self {
         Self { config }
     }
 
@@ -89,11 +95,10 @@ impl XmlLoader {
                         })?
                         .to_string();
 
-                    if !text.trim().is_empty() {
-                        if let Some(current) = stack.last_mut() {
+                    if !text.trim().is_empty()
+                        && let Some(current) = stack.last_mut() {
                             current.text = Some(text);
                         }
-                    }
                 }
                 Ok(Event::Empty(e)) => {
                     let element = self.parse_element(&e)?;
@@ -147,7 +152,7 @@ impl XmlLoader {
         let mut obj = Map::new();
 
         // Add element name as type hint
-        obj.insert("_type".to_string(), Value::String(element.name.clone()));
+        obj.insert("_type".to_string(), Value::String(element.name.clone());
 
         // Add attributes
         if self.config.attributes_as_properties && !element.attributes.is_empty() {
@@ -168,39 +173,36 @@ impl XmlLoader {
 
         // Add children
         for child in element.children {
-            match child {
-                Value::Object(child_obj) => {
-                    if let Some(Value::String(child_type)) = child_obj.get("_type") {
-                        let child_name = child_type.clone();
+            if let Value::Object(child_obj) = child {
+                if let Some(Value::String(child_type)) = child_obj.get("_type") {
+                    let child_name = child_type.clone();
 
-                        // Group children by element name
-                        let entry = obj
-                            .entry(child_name.clone())
-                            .or_insert_with(|| Value::Array(Vec::new()));
-                        if let Value::Array(arr) = entry {
-                            // Clean up child object (remove _type)
-                            let mut clean_child = child_obj.clone();
-                            clean_child.remove("_type");
+                    // Group children by element name
+                    let entry = obj
+                        .entry(child_name.clone())
+                        .or_insert_with(|| Value::Array(Vec::new());
+                    if let Value::Array(arr) = entry {
+                        // Clean up child object (remove _type)
+                        let mut clean_child = child_obj.clone();
+                        clean_child.remove("_type");
 
-                            if clean_child.len() == 1 && clean_child.contains_key("_text") {
-                                // Simple text element
-                                if let Some(text_val) = clean_child.get("_text") {
-                                    arr.push(text_val.clone());
-                                }
-                            } else {
-                                arr.push(Value::Object(clean_child));
+                        if clean_child.len() == 1 && clean_child.contains_key("_text") {
+                            // Simple text element
+                            if let Some(text_val) = clean_child.get("_text") {
+                                arr.push(text_val.clone());
                             }
+                        } else {
+                            arr.push(Value::Object(clean_child));
                         }
                     }
                 }
-                _ => {
-                    // Simple value child
-                    let children_entry = obj
-                        .entry("children".to_string())
-                        .or_insert_with(|| Value::Array(Vec::new()));
-                    if let Value::Array(arr) = children_entry {
-                        arr.push(child);
-                    }
+            } else {
+                // Simple value child
+                let children_entry = obj
+                    .entry("children".to_string())
+                    .or_insert_with(|| Value::Array(Vec::new());
+                if let Value::Array(arr) = children_entry {
+                    arr.push(child);
                 }
             }
         }
@@ -211,16 +213,13 @@ impl XmlLoader {
     /// Convert `JSON` value to `LinkML` data instance
     fn value_to_instance(&self, value: Value, target_class: &str) -> DataInstance {
         // Convert Value to HashMap<String, JsonValue>
-        let data = match value {
-            Value::Object(obj) => {
-                // Convert serde_json::Map to HashMap
-                obj.into_iter().collect()
-            }
-            _ => {
-                let mut map = HashMap::new();
-                map.insert("value".to_string(), value);
-                map
-            }
+        let data = if let Value::Object(obj) = value {
+            // Convert serde_json::Map to HashMap
+            obj.into_iter().collect()
+        } else {
+            let mut map = HashMap::new();
+            map.insert("value".to_string(), value);
+            map
         };
 
         DataInstance {
@@ -248,11 +247,11 @@ impl XmlElement {
 
 #[async_trait]
 impl DataLoader for XmlLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "XmlLoader"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Loads data from XML files"
     }
 
@@ -266,7 +265,7 @@ impl DataLoader for XmlLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(LoaderError::Io)?;
 
         self.load_string(&content, schema, options).await
     }
@@ -284,7 +283,7 @@ impl DataLoader for XmlLoader {
         let target_class = options
             .target_class
             .as_deref()
-            .or_else(|| schema.classes.keys().next().map(|s| s.as_str()))
+            .or_else(|| schema.classes.keys().next().map(std::string::String::as_str))
             .unwrap_or("Entity");
 
         // Convert to data instance
@@ -329,8 +328,8 @@ mod tests {
 
         assert!(value.is_object());
         if let Value::Object(obj) = value {
-            assert_eq!(obj.get("_type"), Some(&Value::String("person".to_string())));
-            assert_eq!(obj.get("@id"), Some(&Value::String("123".to_string())));
+            assert_eq!(obj.get("_type"), Some(&Value::String("person".to_string()));
+            assert_eq!(obj.get("@id"), Some(&Value::String("123".to_string()));
         }
     }
 

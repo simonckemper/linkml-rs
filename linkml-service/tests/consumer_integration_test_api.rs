@@ -231,7 +231,7 @@ fn _production_test_pattern() {
 #[tokio::test]
 async fn test_real_integration() {{
     // 1. Initialize all services using proper test patterns
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let linkml = create_linkml_service(...).await.unwrap();
     let typedb = Arc::new(MockTypeDBService::new());
 

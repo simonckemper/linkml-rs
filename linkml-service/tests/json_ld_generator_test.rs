@@ -1,12 +1,13 @@
 //! Tests for JSON-LD generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
     TypeDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, JsonLdGenerator};
 use serde_json::{Value, json};
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_json_ld_context() {
     let mut schema = SchemaDefinition::new("person_schema");

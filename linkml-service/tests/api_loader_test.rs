@@ -8,6 +8,7 @@ use linkml_service::loader::{
 use reqwest::Method;
 use serde_json::json;
 use std::collections::HashMap;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 /// Create a test schema
 fn create_test_schema() -> SchemaDefinition {
@@ -229,10 +230,10 @@ fn test_field_mapping() {
 
     assert_eq!(options.field_mapping.len(), 1);
     let mapping = &options.field_mapping["User"];
-    assert_eq!(mapping.get("userId"), Some(&"id".to_string()));
-    assert_eq!(mapping.get("userName"), Some(&"name".to_string()));
-    assert_eq!(mapping.get("emailAddress"), Some(&"email".to_string()));
-    assert_eq!(mapping.get("isActive"), Some(&"active".to_string()));
+    assert_eq!(mapping.get("userId"), Some(&"id".to_string());
+    assert_eq!(mapping.get("userName"), Some(&"name".to_string());
+    assert_eq!(mapping.get("emailAddress"), Some(&"email".to_string());
+    assert_eq!(mapping.get("isActive"), Some(&"active".to_string());
 }
 
 #[test]
@@ -282,7 +283,7 @@ fn test_complete_configuration() {
     );
 
     assert_eq!(options.base_url, "https://api.example.com");
-    assert!(matches!(options.auth, Some(AuthConfig::Bearer(_))));
+    assert!(matches!(options.auth, Some(AuthConfig::Bearer(_)));
     assert_eq!(options.timeout_seconds, 60);
     assert!(!options.follow_redirects);
     assert_eq!(options.rate_limit, Some(5.0));
@@ -378,10 +379,10 @@ fn test_data_instance_conversion() {
         .expect("Test operation failed");
 
     assert_eq!(instance.class_name, "User");
-    assert_eq!(instance.data.get("id"), Some(&json!("123")));
-    assert_eq!(instance.data.get("name"), Some(&json!("Test User")));
-    assert_eq!(instance.data.get("email"), Some(&json!("test@example.com")));
-    assert_eq!(instance.data.get("active"), Some(&json!(true)));
+    assert_eq!(instance.data.get("id"), Some(&json!("123"));
+    assert_eq!(instance.data.get("name"), Some(&json!("Test User"));
+    assert_eq!(instance.data.get("email"), Some(&json!("test@example.com"));
+    assert_eq!(instance.data.get("active"), Some(&json!(true));
 }
 
 #[test]
@@ -419,11 +420,11 @@ fn test_instance_with_field_mapping() {
         .expect("Test operation failed");
 
     // Check mapped fields
-    assert_eq!(instance.data.get("id"), Some(&json!("456")));
-    assert_eq!(instance.data.get("name"), Some(&json!("John Doe")));
+    assert_eq!(instance.data.get("id"), Some(&json!("456"));
+    assert_eq!(instance.data.get("name"), Some(&json!("John Doe"));
 
     // Check unmapped fields are preserved
-    assert_eq!(instance.data.get("email"), Some(&json!("john@example.com")));
+    assert_eq!(instance.data.get("email"), Some(&json!("john@example.com"));
     assert_eq!(
         instance.data.get("extra_field"),
         Some(&json!("extra_value"))

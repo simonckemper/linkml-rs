@@ -3,7 +3,7 @@
 //! This test demonstrates that all claimed features are actually integrated
 //! and working, not just defined in isolation.
 
-use linkml_core::types::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 use linkml_service::{
     inheritance::resolver::InheritanceResolver,
     loader::{
@@ -39,7 +39,7 @@ async fn test_full_integration_pipeline() {
     let person_view = schema_view
         .class_view("Person")
         .expect("Test operation failed");
-    assert!(person_view.slot_names().contains(&"email".to_string()));
+    assert!(person_view.slot_names().contains(&"email".to_string());
     let inherited = person_view.inherited_slots();
     assert!(inherited.iter().any(|&s| s == "id"));
 
@@ -47,7 +47,7 @@ async fn test_full_integration_pipeline() {
     let email_view = schema_view
         .slot_view("email")
         .expect("Test operation failed");
-    assert_eq!(email_view.range(), Some("string".as_ref()));
+    assert_eq!(email_view.range(), Some("string".as_ref());
     assert!(email_view.pattern().is_some());
 
     // Step 3: Test InheritanceResolver integration
@@ -57,11 +57,11 @@ async fn test_full_integration_pipeline() {
         .expect("Test operation failed");
 
     // Should have slots from Entity (id), Person (name, email), and Employee (employee_id, department)
-    assert!(resolved_employee.slots.contains(&"id".to_string()));
-    assert!(resolved_employee.slots.contains(&"name".to_string()));
-    assert!(resolved_employee.slots.contains(&"email".to_string()));
-    assert!(resolved_employee.slots.contains(&"employee_id".to_string()));
-    assert!(resolved_employee.slots.contains(&"department".to_string()));
+    assert!(resolved_employee.slots.contains(&"id".to_string());
+    assert!(resolved_employee.slots.contains(&"name".to_string());
+    assert!(resolved_employee.slots.contains(&"email".to_string());
+    assert!(resolved_employee.slots.contains(&"employee_id".to_string());
+    assert!(resolved_employee.slots.contains(&"department".to_string());
 
     // Step 4: Test CURIE/URI resolution
     let curie_resolver = CurieResolver::from_schema(&schema);
@@ -351,7 +351,7 @@ fn create_comprehensive_schema() -> SchemaDefinition {
     let mut email_slot = SlotDefinition::default();
     email_slot.name = "email".to_string();
     email_slot.pattern = Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".to_string());
-    email_slot.ifabsent = Some(IfAbsentAction::String("default@example.com".to_string()));
+    email_slot.ifabsent = Some(IfAbsentAction::String("default@example.com".to_string());
     schema.slots.insert("email".to_string(), email_slot);
 
     let mut age_slot = SlotDefinition::default();

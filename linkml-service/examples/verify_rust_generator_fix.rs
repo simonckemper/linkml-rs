@@ -7,7 +7,7 @@ use linkml_service::generator::{GeneratorRegistry, GeneratorOptions};
 use linkml_service::parser::YamlParser;
 use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> std::result::Result<(), Box<dyn Error>> {
     println!("=== Verifying RustGenerator Fix ===\n");
     
     // Simple test schema with a class and slots

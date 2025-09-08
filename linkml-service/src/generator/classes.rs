@@ -19,7 +19,7 @@ impl RustGenerator {
         let mut output = String::new();
 
         // Check if we should generate traits for polymorphism
-        let generate_traits = options.get_custom("generate_traits").map(|s| s.as_str()) == Some("true");
+        let generate_traits = options.get_custom("generate_traits").map(std::string::String::as_str) == Some("true");
 
         // Generate trait first if this class has children or is abstract
         if generate_traits
@@ -32,7 +32,7 @@ impl RustGenerator {
         }
 
         // Skip struct generation for abstract classes unless explicitly requested
-        if class.abstract_.unwrap_or(false) && options.get_custom("skip_abstract_structs").map(|s| s.as_str()) == Some("true") {
+        if class.abstract_.unwrap_or(false) && options.get_custom("skip_abstract_structs").map(std::string::String::as_str) == Some("true") {
             return Ok(output);
         }
 
@@ -40,10 +40,10 @@ impl RustGenerator {
 
         // Documentation
         if options.include_docs {
-            writeln!(&mut output, "/// {}", class_name)
+            writeln!(&mut output, "/// {class_name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             if let Some(desc) = &class.description {
-                writeln!(&mut output, "/// {}", desc)
+                writeln!(&mut output, "/// {desc}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
@@ -54,11 +54,11 @@ impl RustGenerator {
 
         // Add serde rename if class name differs from struct name
         if class_name != struct_name.to_lowercase() {
-            writeln!(&mut output, "#[serde(rename = \"{}\")]", class_name)
+            writeln!(&mut output, "#[serde(rename = \"{class_name}\")]")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(&mut output, "pub struct {} {{", struct_name)
+        writeln!(&mut output, "pub struct {struct_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate fields
@@ -72,7 +72,7 @@ impl RustGenerator {
         self.generate_impl(&mut output, &struct_name, class, schema, options, indent)?;
 
         // Generate builder if requested
-        if options.get_custom("generate_builder").map(|s| s.as_str()) == Some("true") {
+        if options.get_custom("generate_builder").map(std::string::String::as_str) == Some("true") {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_builder(&mut output, &struct_name, class, schema, options, indent)?;
         }
@@ -114,7 +114,7 @@ impl RustGenerator {
         options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        writeln!(output, "impl {} {{", struct_name)
+        writeln!(output, "impl {struct_name} {{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate new() method
@@ -134,7 +134,7 @@ impl RustGenerator {
         Ok(())
     }
 
-    /// Generate new() constructor method
+    /// Generate `new()` constructor method
     fn generate_new_method(
         &self,
         output: &mut String,

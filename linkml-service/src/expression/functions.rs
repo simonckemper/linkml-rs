@@ -1,4 +1,4 @@
-//! Built-in functions for the LinkML expression language
+//! Built-in functions for the `LinkML` expression language
 
 #![allow(missing_docs)]
 
@@ -27,11 +27,10 @@ impl FunctionError {
         }
     }
 
-    pub fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
+    #[must_use] pub fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
         Self {
             message: format!(
-                "Function '{}' expects {} arguments, got {}",
-                name, expected, actual
+                "Function '{name}' expects {expected} arguments, got {actual}"
             ),
         }
     }
@@ -57,7 +56,7 @@ impl FunctionError {
     }
 }
 
-/// Convert f64 to serde_json::Number, returning error for non-finite values
+/// Convert f64 to `serde_json::Number`, returning error for non-finite values
 fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
     serde_json::Number::from_f64(val).ok_or_else(|| {
         FunctionError::invalid_result(
@@ -89,6 +88,10 @@ pub struct CustomFunction {
 
 impl CustomFunction {
     /// Create a new custom function
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn new(
         name: impl Into<String>,
         min_args: usize,
@@ -117,15 +120,14 @@ impl BuiltinFunction for CustomFunction {
                 args.len(),
             ));
         }
-        if let Some(max) = self.max_args {
-            if args.len() > max {
+        if let Some(max) = self.max_args
+            && args.len() > max {
                 return Err(FunctionError::wrong_arity(
                     &self.name,
                     &format!("at most {max}"),
                     args.len(),
                 ));
             }
-        }
         Ok(())
     }
 
@@ -143,7 +145,7 @@ pub struct FunctionRegistry {
 
 impl FunctionRegistry {
     /// Create a new function registry with all built-in functions
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let mut registry = Self {
             functions: HashMap::new(),
             locked: false,
@@ -240,7 +242,7 @@ impl FunctionRegistry {
     }
 
     /// Create a registry with security restrictions (no custom functions allowed)
-    pub fn new_restricted() -> Self {
+    #[must_use] pub fn new_restricted() -> Self {
         let mut registry = Self::new();
         registry.locked = true;
         registry
@@ -252,7 +254,7 @@ impl FunctionRegistry {
     }
 
     /// Check if the registry is locked
-    pub fn is_locked(&self) -> bool {
+    #[must_use] pub fn is_locked(&self) -> bool {
         self.locked
     }
 
@@ -293,6 +295,10 @@ impl FunctionRegistry {
     /// let result = registry.call("uppercase", vec![json!("hello")]).expect("should call custom function");
     /// assert_eq!(result, json!("HELLO"));
     /// ```
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn register_custom(&mut self, function: CustomFunction) -> Result<(), FunctionError> {
         if self.locked {
             return Err(FunctionError::new("Function registry is locked"));
@@ -302,6 +308,10 @@ impl FunctionRegistry {
     }
 
     /// Call a function by name
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn call(&self, name: &str, args: Vec<Value>) -> Result<Value, FunctionError> {
         match self.functions.get(name) {
             Some(function) => {
@@ -313,13 +323,13 @@ impl FunctionRegistry {
     }
 
     /// Check if a function exists
-    pub fn has_function(&self, name: &str) -> bool {
+    #[must_use] pub fn has_function(&self, name: &str) -> bool {
         self.functions.contains_key(name)
     }
 
     /// Get list of registered function names
-    pub fn function_names(&self) -> Vec<&str> {
-        self.functions.keys().map(|s| s.as_str()).collect()
+    #[must_use] pub fn function_names(&self) -> Vec<&str> {
+        self.functions.keys().map(std::string::String::as_str).collect()
     }
 }
 
@@ -331,17 +341,17 @@ impl Default for FunctionRegistry {
 
 // Built-in function implementations
 
-/// len() - Returns the length of a string, array, or object
+/// `len()` - Returns the length of a string, array, or object
 struct LenFunction;
 
 impl BuiltinFunction for LenFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "len"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -364,11 +374,11 @@ impl BuiltinFunction for LenFunction {
     }
 }
 
-/// max() - Returns the maximum value from arguments
+/// `max()` - Returns the maximum value from arguments
 struct MaxFunction;
 
 impl BuiltinFunction for MaxFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "max"
     }
 
@@ -390,7 +400,7 @@ impl BuiltinFunction for MaxFunction {
             match arg {
                 Value::Number(n) => {
                     let val = n.as_f64().unwrap_or(0.0);
-                    max_val = Some(max_val.map_or(val, |m| m.max(val)));
+                    max_val = Some(max_val.map_or(val, |m| m.max(val));
                 }
                 _ => {
                     return Err(FunctionError::invalid_argument(
@@ -408,11 +418,11 @@ impl BuiltinFunction for MaxFunction {
     }
 }
 
-/// min() - Returns the minimum value from arguments
+/// `min()` - Returns the minimum value from arguments
 struct MinFunction;
 
 impl BuiltinFunction for MinFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "min"
     }
 
@@ -434,7 +444,7 @@ impl BuiltinFunction for MinFunction {
             match arg {
                 Value::Number(n) => {
                     let val = n.as_f64().unwrap_or(0.0);
-                    min_val = Some(min_val.map_or(val, |m| m.min(val)));
+                    min_val = Some(min_val.map_or(val, |m| m.min(val));
                 }
                 _ => {
                     return Err(FunctionError::invalid_argument(
@@ -452,12 +462,12 @@ impl BuiltinFunction for MinFunction {
     }
 }
 
-/// case() - Multi-way conditional (like a switch statement)
+/// `case()` - Multi-way conditional (like a switch statement)
 /// case(condition1, value1, condition2, value2, ..., default)
 struct CaseFunction;
 
 impl BuiltinFunction for CaseFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "case"
     }
 
@@ -485,17 +495,17 @@ impl BuiltinFunction for CaseFunction {
     }
 }
 
-/// matches() - Test if a string matches a regex pattern
+/// `matches()` - Test if a string matches a regex pattern
 struct MatchesFunction;
 
 impl BuiltinFunction for MatchesFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "matches"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -527,17 +537,17 @@ impl BuiltinFunction for MatchesFunction {
     }
 }
 
-/// contains() - Test if a value contains another value
+/// `contains()` - Test if a value contains another value
 struct ContainsFunction;
 
 impl BuiltinFunction for ContainsFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "contains"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -595,7 +605,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!("hello")])
-                .map_err(|e| anyhow::anyhow!("should calculate string length: {}", e))?,
+                .expect("should calculate string length: {}"),
             json!(5)
         );
 
@@ -603,7 +613,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!([1, 2, 3])])
-                .map_err(|e| anyhow::anyhow!("should calculate array length: {}", e))?,
+                .expect("should calculate array length: {}"),
             json!(3)
         );
 
@@ -611,7 +621,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!({"a": 1, "b": 2})])
-                .map_err(|e| anyhow::anyhow!("should calculate object length: {}", e))?,
+                .expect("should calculate object length: {}"),
             json!(2)
         );
 
@@ -619,9 +629,10 @@ mod tests {
         assert_eq!(
             registry
                 .call("len", vec![json!(null)])
-                .map_err(|e| anyhow::anyhow!("should handle null length: {}", e))?,
+                .expect("should handle null length: {}"),
             json!(0)
         );
+        Ok(())
     }
 
     #[test]
@@ -632,7 +643,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("max", vec![json!(1), json!(5), json!(3)])
-                .map_err(|e| anyhow::anyhow!("should find maximum value: {}", e))?,
+                .expect("should find maximum value: {}"),
             json!(5.0)
         );
 
@@ -640,7 +651,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("min", vec![json!(1), json!(5), json!(3)])
-                .map_err(|e| anyhow::anyhow!("should find minimum value: {}", e))?,
+                .expect("should find minimum value: {}"),
             json!(1.0)
         );
 
@@ -648,9 +659,10 @@ mod tests {
         assert_eq!(
             registry
                 .call("max", vec![json!(42)])
-                .map_err(|e| anyhow::anyhow!("should handle single value max: {}", e))?,
+                .expect("should handle single value max: {}"),
             json!(42.0)
         );
+        Ok(())
     }
 
     #[test]
@@ -670,7 +682,7 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with first condition true: {}", e))?,
+                .expect("should evaluate case with first condition true: {}"),
             json!("first")
         );
 
@@ -687,7 +699,7 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with second condition true: {}", e))?,
+                .expect("should evaluate case with second condition true: {}"),
             json!("second")
         );
 
@@ -704,9 +716,10 @@ mod tests {
                         json!("default")
                     ]
                 )
-                .map_err(|e| anyhow::anyhow!("should evaluate case with default: {}", e))?,
+                .expect("should evaluate case with default: {}"),
             json!("default")
         );
+        Ok(())
     }
 
     #[test]
@@ -717,7 +730,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!("hello world"), json!("world")])
-                .map_err(|e| anyhow::anyhow!("should check string contains: {}", e))?,
+                .expect("should check string contains: {}"),
             json!(true)
         );
 
@@ -725,7 +738,7 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!([1, 2, 3]), json!(2)])
-                .map_err(|e| anyhow::anyhow!("should check array contains: {}", e))?,
+                .expect("should check array contains: {}"),
             json!(true)
         );
 
@@ -733,13 +746,14 @@ mod tests {
         assert_eq!(
             registry
                 .call("contains", vec![json!({"a": 1, "b": 2}), json!("a")])
-                .map_err(|e| anyhow::anyhow!("should check object contains key: {}", e))?,
+                .expect("should check object contains key: {}"),
             json!(true)
         );
+        Ok(())
     }
 
     #[test]
-    fn test_function_errors() {
+    fn test_function_errors() -> Result<(), Box<dyn std::error::Error>> {
         let registry = FunctionRegistry::new();
 
         // Wrong arity
@@ -751,5 +765,6 @@ mod tests {
 
         // Invalid argument type
         assert!(registry.call("max", vec![json!("not a number")]).is_err());
+        Ok(())
     }
 }

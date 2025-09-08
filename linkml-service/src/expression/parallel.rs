@@ -1,4 +1,4 @@
-//! Parallel evaluation support for LinkML expressions
+//! Parallel evaluation support for `LinkML` expressions
 //!
 //! This module provides functionality to evaluate multiple expressions
 //! concurrently for improved performance.
@@ -126,7 +126,9 @@ impl ParallelEvaluator for ExpressionEngine {
         }
 
         // Wait for all tasks or fail fast
-        let results = if options.fail_fast {
+        
+
+        if options.fail_fast {
             // For fail-fast, check results as they complete
             let mut successful = HashMap::new();
             let mut failed = HashMap::new();
@@ -190,9 +192,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     duration.as_millis() as u64
                 },
             }
-        };
-
-        results
+        }
     }
 
     async fn evaluate_ast_parallel(
@@ -352,7 +352,7 @@ pub struct BatchEvaluator {
 
 impl BatchEvaluator {
     /// Create a new batch evaluator
-    pub fn new(engine: ExpressionEngine) -> Self {
+    #[must_use] pub fn new(engine: ExpressionEngine) -> Self {
         Self {
             engine: Arc::new(engine),
             options: ParallelOptions::default(),
@@ -360,7 +360,7 @@ impl BatchEvaluator {
     }
 
     /// Set parallel options
-    pub fn with_options(mut self, options: ParallelOptions) -> Self {
+    #[must_use] pub fn with_options(mut self, options: ParallelOptions) -> Self {
         self.options = options;
         self
     }
@@ -413,6 +413,10 @@ impl BatchEvaluator {
     ///
     /// Map phase: evaluate expression for each item
     /// Reduce phase: aggregate results with reducer expression
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn map_reduce(
         &self,
         map_expression: &str,
@@ -426,7 +430,7 @@ impl BatchEvaluator {
             .await;
 
         // Collect successful results
-        let values: Vec<Value> = map_results.into_iter().filter_map(|r| r.ok()).collect();
+        let values: Vec<Value> = map_results.into_iter().filter_map(std::result::Result::ok).collect();
 
         // Reduce phase
         let mut reduce_context = base_context.clone();
@@ -461,9 +465,9 @@ mod tests {
             .await;
 
         assert_eq!(result.successful.len(), 3);
-        assert_eq!(result.successful.get("sum"), Some(&json!(15.0)));
-        assert_eq!(result.successful.get("diff"), Some(&json!(5.0)));
-        assert_eq!(result.successful.get("product"), Some(&json!(50.0)));
+        assert_eq!(result.successful.get("sum"), Some(&json!(15.0));
+        assert_eq!(result.successful.get("diff"), Some(&json!(5.0));
+        assert_eq!(result.successful.get("product"), Some(&json!(50.0));
         assert_eq!(result.failed.len(), 0);
         Ok(())
     }

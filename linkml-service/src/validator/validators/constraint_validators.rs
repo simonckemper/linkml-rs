@@ -2,11 +2,11 @@
 
 use super::utils::value_type;
 use super::{ValidationContext, ValidationIssue, Validator};
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use linkml_core::annotations::AnnotationValue;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use linkml_core::types::{SlotDefinition, SchemaDefinition, ClassDefinition};
 
 /// Validator for required fields
 pub struct RequiredValidator {
@@ -161,8 +161,8 @@ impl Validator for PermissibleValueValidator {
         let mut issues = Vec::new();
 
         // Check if the slot range is an enum
-        if let Some(range) = &slot.range {
-            if let Some(enum_values) = self.get_enum_values(range) {
+        if let Some(range) = &slot.range
+            && let Some(enum_values) = self.get_enum_values(range) {
                 let check_value = |v: &Value, path: &str| -> Option<ValidationIssue> {
                     if let Some(s) = v.as_str() {
                         if enum_values.contains(s) {
@@ -203,7 +203,6 @@ impl Validator for PermissibleValueValidator {
                     issues.push(issue);
                 }
             }
-        }
 
         issues
     }
@@ -255,14 +254,13 @@ impl CrossReferenceValidator {
         for instance in instances {
             if let Some(type_name) = instance.get("@type")
                 .or_else(|| instance.get("type"))
-                .and_then(|t| t.as_str()) {
+                .and_then(|t| t.as_str())
 
-                if let Some(id) = instance.get("id").and_then(|id| id.as_str()) {
+                && let Some(id) = instance.get("id").and_then(|id| id.as_str()) {
                     type_refs.entry(type_name.to_string())
                         .or_insert_with(HashSet::new)
                         .insert(id.to_string());
                 }
-            }
         }
 
         type_refs
@@ -279,8 +277,8 @@ impl CrossReferenceValidator {
         let mut issues = Vec::new();
 
         // Check if this slot references another class
-        if let Some(ref range) = slot.range {
-            if schema.classes.contains_key(range) {
+        if let Some(ref range) = slot.range
+            && schema.classes.contains_key(range) {
                 // This is a reference to another class
                 if let Some(ref_id) = value.as_str() {
                     // First check cache for performance
@@ -292,18 +290,18 @@ impl CrossReferenceValidator {
                         let type_refs = self.build_reference_cache(all_instances);
 
                         // Cache all discovered references for future use
-                        for (ref_type, refs) in type_refs.iter() {
+                        for (ref_type, refs) in &type_refs {
                             self.cache_references(ref_type.clone(), refs.clone());
                         }
 
                         // Check if reference exists in newly built cache
                         type_refs.get(range)
-                            .map_or(false, |refs| refs.contains(ref_id))
+                            .is_some_and(|refs| refs.contains(ref_id))
                     } else {
                         // No cache and no instances - can't validate
                         issues.push(ValidationIssue::warning(
-                            format!("Cannot validate cross-reference to {} with id '{}' - no instance context provided", range, ref_id),
-                            &context.path(),
+                            format!("Cannot validate cross-reference to {range} with id '{ref_id}' - no instance context provided"),
+                            context.path(),
                             &self.name,
                         ));
                         return issues;
@@ -311,27 +309,24 @@ impl CrossReferenceValidator {
 
                     if !referenced_exists {
                         issues.push(ValidationIssue::error(
-                            format!("Cross-reference validation failed: Referenced {} with id '{}' not found", range, ref_id),
-                            &context.path(),
+                            format!("Cross-reference validation failed: Referenced {range} with id '{ref_id}' not found"),
+                            context.path(),
                             &self.name,
                         ));
                     }
                 }
             }
-        }
 
         // Check for circular references
-        if let Some(ref current_id) = context.current_instance_id {
-            if let Some(ref_id) = value.as_str() {
-                if current_id == ref_id {
+        if let Some(ref current_id) = context.current_instance_id
+            && let Some(ref_id) = value.as_str()
+                && current_id == ref_id {
                     issues.push(ValidationIssue::error(
                         format!("Circular reference detected: object references itself with id '{ref_id}'"),
-                        &context.path(),
+                        context.path(),
                         &self.name,
                     ));
                 }
-            }
-        }
 
         issues
     }
@@ -347,8 +342,8 @@ impl CrossReferenceValidator {
         let mut issues = Vec::new();
 
         // Check for semantic consistency based on slot relationships
-        if let Some(slot_usage) = context.current_class() {
-            if let Some(class_def) = schema.classes.get(slot_usage) {
+        if let Some(slot_usage) = context.current_class()
+            && let Some(class_def) = schema.classes.get(slot_usage) {
                 // Check if this slot has any semantic rules defined
                 self.validate_slot_dependencies(value, slot, class_def, context, &mut issues);
                 self.validate_conditional_constraints(value, slot, class_def, context, &mut issues);
@@ -359,20 +354,18 @@ impl CrossReferenceValidator {
                         if let Some(ref preconditions) = rule.preconditions {
                             // This is a simplified semantic validation
                             // In a full implementation, this would use an expression engine
-                            if let Some(ref slot_conditions) = preconditions.slot_conditions {
-                                if slot_conditions.contains_key(&slot.name) {
+                            if let Some(ref slot_conditions) = preconditions.slot_conditions
+                                && slot_conditions.contains_key(&slot.name) {
                                     issues.push(ValidationIssue::info(
                                         format!("Semantic rule '{}' applies to field '{}'", rule.title.as_ref().unwrap_or(&"unnamed".to_string()), slot.name),
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
-                            }
                         }
                     }
                 }
             }
-        }
 
         issues
     }
@@ -387,8 +380,8 @@ impl CrossReferenceValidator {
         issues: &mut Vec<ValidationIssue>,
     ) {
         // Check slot-level dependencies from annotations
-        if let Some(annotations) = &slot.annotations {
-            if let Some(dependency_info) = annotations.get("depends_on") {
+        if let Some(annotations) = &slot.annotations
+            && let Some(dependency_info) = annotations.get("depends_on") {
                 let dependency_str = match dependency_info {
                     AnnotationValue::String(s) => s.as_str(),
                     AnnotationValue::Bool(b) => if *b { "true" } else { "false" },
@@ -399,41 +392,36 @@ impl CrossReferenceValidator {
                 };
                 self.check_dependency_constraint(value, dependency_str, context, issues);
             }
-        }
 
         // CRITICAL: Also check class-level dependency rules
         if let Some(class_annotations) = &class_def.annotations {
             // Check for class-wide slot dependency rules
-            if let Some(class_deps) = class_annotations.get("slot_dependencies") {
-                if let AnnotationValue::Object(deps_map) = class_deps {
+            if let Some(class_deps) = class_annotations.get("slot_dependencies")
+                && let AnnotationValue::Object(deps_map) = class_deps {
                     // If this slot is mentioned in class dependencies
-                    if let Some(slot_dep) = deps_map.get(&slot.name) {
-                        if let AnnotationValue::String(dep_rule) = slot_dep {
+                    if let Some(slot_dep) = deps_map.get(&slot.name)
+                        && let AnnotationValue::String(dep_rule) = slot_dep {
                             self.check_dependency_constraint(value, dep_rule, context, issues);
                         }
-                    }
                 }
-            }
         }
 
         // Check if this slot appears in any class rules
         for rule in &class_def.rules {
-            if let Some(ref preconditions) = rule.preconditions {
-                if let Some(ref slot_conditions) = preconditions.slot_conditions {
-                    if slot_conditions.contains_key(&slot.name) {
+            if let Some(ref preconditions) = rule.preconditions
+                && let Some(ref slot_conditions) = preconditions.slot_conditions
+                    && slot_conditions.contains_key(&slot.name) {
                         // Validate this slot's value against the rule
                         if value.is_null() && rule.deactivated != Some(true) {
                             issues.push(ValidationIssue::error(
                                 format!("Class rule '{}' requires slot '{}' to have a value",
                                        rule.title.as_ref().unwrap_or(&"unnamed".to_string()),
                                        slot.name),
-                                &context.path(),
+                                context.path(),
                                 &self.name,
                             ));
                         }
                     }
-                }
-            }
         }
     }
 
@@ -449,43 +437,37 @@ impl CrossReferenceValidator {
         // Use the slot parameter for slot-specific validation rules
         if let Some(slot_annotations) = &slot.annotations {
             // Check for conditional validation rules in slot annotations
-            if let Some(condition) = slot_annotations.get("validate_if") {
-                if let AnnotationValue::String(condition_str) = condition {
+            if let Some(condition) = slot_annotations.get("validate_if")
+                && let AnnotationValue::String(condition_str) = condition {
                     // Parse and apply conditional validation
-                    if condition_str.contains("required_when") {
-                        if value.is_null() {
+                    if condition_str.contains("required_when")
+                        && value.is_null() {
                             issues.push(ValidationIssue::error(
                                 format!("Slot '{}' is conditionally required based on: {}",
                                        slot.name, condition_str),
-                                &context.path(),
+                                context.path(),
                                 &self.name,
                             ));
                         }
-                    }
                 }
-            }
         }
 
         // Use class_def to check class-level conditional constraints
-        if let Some(class_annotations) = &class_def.annotations {
-            if let Some(constraints) = class_annotations.get("conditional_constraints") {
-                if let AnnotationValue::Object(constraints_map) = constraints {
-                    if let Some(slot_constraint) = constraints_map.get(&slot.name) {
-                        if let AnnotationValue::String(constraint_expr) = slot_constraint {
+        if let Some(class_annotations) = &class_def.annotations
+            && let Some(constraints) = class_annotations.get("conditional_constraints")
+                && let AnnotationValue::Object(constraints_map) = constraints
+                    && let Some(slot_constraint) = constraints_map.get(&slot.name)
+                        && let AnnotationValue::String(constraint_expr) = slot_constraint {
                             // Apply class-level conditional constraint for this slot
                             if constraint_expr.contains("non_empty") && value.is_null() {
                                 issues.push(ValidationIssue::error(
                                     format!("Class '{}' requires slot '{}' to be non-empty per constraint: {}",
                                            class_def.name, slot.name, constraint_expr),
-                                    &context.path(),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
                         }
-                    }
-                }
-            }
-        }
 
         // Specific validation based on slot name and value
         match slot.name.as_str() {
@@ -494,24 +476,22 @@ impl CrossReferenceValidator {
                 if !context.has_sibling_field("publication_date") {
                     issues.push(ValidationIssue::error(
                         "When status is 'published', publication_date must be set",
-                        &context.path(),
+                        context.path(),
                         &self.name,
                     ));
                 }
             }
             "end_date" if !value.is_null() => {
                 // If end_date is set, it should be after start_date
-                if let Some(start_date_value) = context.get_sibling_field("start_date") {
-                    if let (Some(start), Some(end)) = (start_date_value.as_str(), value.as_str()) {
-                        if end < start {
+                if let Some(start_date_value) = context.get_sibling_field("start_date")
+                    && let (Some(start), Some(end)) = (start_date_value.as_str(), value.as_str())
+                        && end < start {
                             issues.push(ValidationIssue::error(
                                 "End date must be after start date",
-                                &context.path(),
+                                context.path(),
                                 &self.name,
                             ));
                         }
-                    }
-                }
             }
             _ => {
                 // Check slot's range constraints if defined
@@ -524,7 +504,7 @@ impl CrossReferenceValidator {
                                 if !val_str.contains('-') && !val_str.contains('/') {
                                     issues.push(ValidationIssue::warning(
                                         format!("Slot '{}' expects date format but got: {}", slot.name, val_str),
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
@@ -548,21 +528,20 @@ impl CrossReferenceValidator {
         issues: &mut Vec<ValidationIssue>,
     ) {
         // First validate value against slot-specific business rules
-        if let Some(slot_annotations) = &slot.annotations {
-            if let Some(business_rule) = slot_annotations.get("business_rule") {
-                if let AnnotationValue::String(rule_expr) = business_rule {
+        if let Some(slot_annotations) = &slot.annotations
+            && let Some(business_rule) = slot_annotations.get("business_rule")
+                && let AnnotationValue::String(rule_expr) = business_rule {
                     // Apply business rule to the value
                     match rule_expr.as_str() {
                         "non_negative" => {
-                            if let Some(num) = value.as_i64() {
-                                if num < 0 {
+                            if let Some(num) = value.as_i64()
+                                && num < 0 {
                                     issues.push(ValidationIssue::error(
                                         format!("Business rule violation: {} must be non-negative", slot.name),
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
-                            }
                         }
                         "future_date" => {
                             if let Some(date_str) = value.as_str() {
@@ -570,7 +549,7 @@ impl CrossReferenceValidator {
                                 if date_str < "2025" {
                                     issues.push(ValidationIssue::warning(
                                         format!("Business rule: {} should be a future date", slot.name),
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
@@ -579,13 +558,11 @@ impl CrossReferenceValidator {
                         _ => {}
                     }
                 }
-            }
-        }
 
         // Check schema-wide business rules that might apply
-        if let Some(schema_annotations) = &schema.annotations {
-            if let Some(global_rules) = schema_annotations.get("business_rules") {
-                if let AnnotationValue::Array(rules) = global_rules {
+        if let Some(schema_annotations) = &schema.annotations
+            && let Some(global_rules) = schema_annotations.get("business_rules")
+                && let AnnotationValue::Array(rules) = global_rules {
                     for rule in rules {
                         if let AnnotationValue::String(rule_str) = rule {
                             // Apply schema-wide business rule
@@ -593,7 +570,7 @@ impl CrossReferenceValidator {
                                 issues.push(ValidationIssue::info(
                                     format!("Schema business rule '{}' applies to {}.{}",
                                            rule_str, class_def.name, slot.name),
-                                    &context.path(),
+                                    context.path(),
                                     &self.name,
                                 ));
 
@@ -601,7 +578,7 @@ impl CrossReferenceValidator {
                                 if rule_str.contains("required") && value.is_null() {
                                     issues.push(ValidationIssue::error(
                                         format!("Schema business rule violation: {} is required", slot.name),
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
@@ -609,8 +586,6 @@ impl CrossReferenceValidator {
                         }
                     }
                 }
-            }
-        }
 
         // Class-specific business rules that use the actual value
         match class_def.name.as_str() {
@@ -619,14 +594,12 @@ impl CrossReferenceValidator {
             "Event" => self.validate_event_rules(value, slot, context, issues),
             _ => {
                 // For other classes, check if they have specific validation annotations
-                if let Some(class_annotations) = &class_def.annotations {
-                    if let Some(validation_type) = class_annotations.get("validation_type") {
-                        if let AnnotationValue::String(vtype) = validation_type {
+                if let Some(class_annotations) = &class_def.annotations
+                    && let Some(validation_type) = class_annotations.get("validation_type")
+                        && let AnnotationValue::String(vtype) = validation_type {
                             // Apply class-specific validation based on type
                             self.apply_custom_validation(value, slot, vtype.as_str(), context, issues);
                         }
-                    }
-                }
             }
         }
     }
@@ -645,7 +618,7 @@ impl CrossReferenceValidator {
                 if value.is_null() && slot.required != Some(false) {
                     issues.push(ValidationIssue::error(
                         format!("Strict validation: {} cannot be null", slot.name),
-                        &context.path(),
+                        context.path(),
                         &self.name,
                     ));
                 }
@@ -655,7 +628,7 @@ impl CrossReferenceValidator {
                 if value.is_null() {
                     issues.push(ValidationIssue::warning(
                         format!("Lenient validation: {} is null", slot.name),
-                        &context.path(),
+                        context.path(),
                         &self.name,
                     ));
                 }
@@ -678,20 +651,17 @@ impl CrossReferenceValidator {
         }
 
         // Parse dependency info (format: "field_name:required_value")
-        if let Some((field_name, required_value)) = dependency_info.split_once(':') {
-            if let Some(dependent_value) = context.get_sibling_field(field_name) {
-                if dependent_value.as_str() != Some(required_value) {
+        if let Some((field_name, required_value)) = dependency_info.split_once(':')
+            && let Some(dependent_value) = context.get_sibling_field(field_name)
+                && dependent_value.as_str() != Some(required_value) {
                     issues.push(ValidationIssue::error(
-                        &format!(
-                            "Field dependency not satisfied: {} must be '{}' when this field has value '{}'",
-                            field_name, required_value, value
+                        format!(
+                            "Field dependency not satisfied: {field_name} must be '{required_value}' when this field has value '{value}'"
                         ),
-                        &context.path(),
+                        context.path(),
                         &self.name,
                     ));
                 }
-            }
-        }
     }
 
     /// Validate Person-specific business rules
@@ -710,22 +680,20 @@ impl CrossReferenceValidator {
                     if age > 150 {
                         issues.push(ValidationIssue::warning(
                             "Age over 150 seems unrealistic",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Additional validation using slot metadata
-                    if let Some(max_val) = &slot.maximum_value {
-                        if let Some(max_num) = max_val.as_u64() {
-                            if age > max_num {
+                    if let Some(max_val) = &slot.maximum_value
+                        && let Some(max_num) = max_val.as_u64()
+                            && age > max_num {
                                 issues.push(ValidationIssue::error(
-                                    format!("Age {} exceeds maximum allowed value {}", age, max_num),
-                                    &context.path(),
+                                    format!("Age {age} exceeds maximum allowed value {max_num}"),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
-                        }
-                    }
                 }
             }
             "email" => {
@@ -733,43 +701,39 @@ impl CrossReferenceValidator {
                     if !email.contains('@') || !email.contains('.') {
                         issues.push(ValidationIssue::error(
                             "Invalid email format",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Check slot pattern if defined
                     if let Some(pattern) = &slot.pattern {
                         let regex = regex::Regex::new(pattern);
-                        if let Ok(re) = regex {
-                            if !re.is_match(email) {
+                        if let Ok(re) = regex
+                            && !re.is_match(email) {
                                 issues.push(ValidationIssue::error(
                                     format!("Email does not match required pattern: {pattern}"),
-                                    &context.path(),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
-                        }
                     }
                 }
             }
             "birth_date" => {
                 // Validate birth date using slot metadata
-                if let Some(date_str) = value.as_str() {
-                    if let Some(annotations) = &slot.annotations {
-                        if let Some(date_format) = annotations.get("date_format") {
-                            if let AnnotationValue::String(format) = date_format {
+                if let Some(date_str) = value.as_str()
+                    && let Some(annotations) = &slot.annotations
+                        && let Some(date_format) = annotations.get("date_format")
+                            && let AnnotationValue::String(format) = date_format {
                                 // Validate date matches expected format
                                 if !self.validate_date_format(date_str, format.as_str()) {
                                     issues.push(ValidationIssue::error(
-                                        format!("Birth date '{}' does not match format '{}'", date_str, format),
-                                        &context.path(),
+                                        format!("Birth date '{date_str}' does not match format '{format}'"),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
                             }
-                        }
-                    }
-                }
             }
             _ => {}
         }
@@ -808,22 +772,20 @@ impl CrossReferenceValidator {
                     if count == 0 {
                         issues.push(ValidationIssue::warning(
                             "Organization with 0 employees is unusual",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Use slot metadata for additional validation
-                    if let Some(min_val) = &slot.minimum_value {
-                        if let Some(min_num) = min_val.as_f64() {
-                            if (count as f64) < min_num {
+                    if let Some(min_val) = &slot.minimum_value
+                        && let Some(min_num) = min_val.as_f64()
+                            && (count as f64) < min_num {
                                 issues.push(ValidationIssue::error(
-                                    format!("Employee count {} is below minimum {}", count, min_num),
-                                    &context.path(),
+                                    format!("Employee count {count} is below minimum {min_num}"),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
-                        }
-                    }
                 }
             }
             "founded_year" => {
@@ -832,26 +794,22 @@ impl CrossReferenceValidator {
                     if year > current_year {
                         issues.push(ValidationIssue::error(
                             format!("Founded year {year} cannot be in the future"),
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Check slot annotations for additional rules
-                    if let Some(annotations) = &slot.annotations {
-                        if let Some(min_year) = annotations.get("minimum_year") {
-                            if let AnnotationValue::Number(min) = min_year {
-                                if let Some(min_val) = min.as_f64() {
-                                    if (year as f64) < min_val {
+                    if let Some(annotations) = &slot.annotations
+                        && let Some(min_year) = annotations.get("minimum_year")
+                            && let AnnotationValue::Number(min) = min_year
+                                && let Some(min_val) = min.as_f64()
+                                    && (year as f64) < min_val {
                                         issues.push(ValidationIssue::warning(
                                             format!("Founded year {year} seems unusually early"),
-                                            &context.path(),
+                                            context.path(),
                                             &self.name,
                                         ));
                                     }
-                                }
-                            }
-                        }
-                    }
                 }
             }
             "website" => {
@@ -860,7 +818,7 @@ impl CrossReferenceValidator {
                     if !url.starts_with("http://") && !url.starts_with("https://") {
                         issues.push(ValidationIssue::warning(
                             "Website URL should start with http:// or https://",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
@@ -885,27 +843,25 @@ impl CrossReferenceValidator {
                     if capacity > 1_000_000 {
                         issues.push(ValidationIssue::warning(
                             "Event capacity over 1 million seems unusually large",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Use slot metadata for validation
-                    if let Some(max_val) = &slot.maximum_value {
-                        if let Some(max_num) = max_val.as_u64() {
-                            if capacity > max_num {
+                    if let Some(max_val) = &slot.maximum_value
+                        && let Some(max_num) = max_val.as_u64()
+                            && capacity > max_num {
                                 issues.push(ValidationIssue::error(
-                                    format!("Capacity {} exceeds venue maximum {}", capacity, max_num),
-                                    &context.path(),
+                                    format!("Capacity {capacity} exceeds venue maximum {max_num}"),
+                                    context.path(),
                                     &self.name,
                                 ));
                             }
-                        }
-                    }
                     // Check minimum capacity
                     if capacity == 0 {
                         issues.push(ValidationIssue::error(
                             "Event capacity cannot be zero",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
@@ -914,19 +870,16 @@ impl CrossReferenceValidator {
             "event_date" => {
                 if let Some(date_str) = value.as_str() {
                     // Validate using slot annotations
-                    if let Some(annotations) = &slot.annotations {
-                        if let Some(date_constraint) = annotations.get("date_constraint") {
-                            if let AnnotationValue::String(constraint) = date_constraint {
-                                if constraint == "future_only" && date_str < "2025-02-01" {
+                    if let Some(annotations) = &slot.annotations
+                        && let Some(date_constraint) = annotations.get("date_constraint")
+                            && let AnnotationValue::String(constraint) = date_constraint
+                                && constraint == "future_only" && date_str < "2025-02-01" {
                                     issues.push(ValidationIssue::error(
                                         "Event date must be in the future",
-                                        &context.path(),
+                                        context.path(),
                                         &self.name,
                                     ));
                                 }
-                            }
-                        }
-                    }
                 }
             }
             "ticket_price" => {
@@ -934,20 +887,19 @@ impl CrossReferenceValidator {
                     if price < 0.0 {
                         issues.push(ValidationIssue::error(
                             "Ticket price cannot be negative",
-                            &context.path(),
+                            context.path(),
                             &self.name,
                         ));
                     }
                     // Check slot range for currency validation
-                    if let Some(ref range) = slot.range {
-                        if range == "currency" && price > 10000.0 {
+                    if let Some(ref range) = slot.range
+                        && range == "currency" && price > 10000.0 {
                             issues.push(ValidationIssue::warning(
                                 format!("Ticket price ${price} seems unusually high"),
-                                &context.path(),
+                                context.path(),
                                 &self.name,
                             ));
                         }
-                    }
                 }
             }
             _ => {}

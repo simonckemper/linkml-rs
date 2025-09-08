@@ -28,12 +28,12 @@ impl RustGenerator {
     }
 
     /// Get the generator name
-    pub fn name(&self) -> &str {
+    #[must_use] pub fn name(&self) -> &str {
         &self.name
     }
 
     /// Get the generator description
-    pub fn description(&self) -> &str {
+    #[must_use] pub fn description(&self) -> &str {
         &self.description
     }
 
@@ -60,7 +60,7 @@ impl RustGenerator {
         BaseCodeFormatter::to_snake_case(name)
     }
 
-    /// Convert error from fmt::Error to GeneratorError
+    /// Convert error from `fmt::Error` to `GeneratorError`
     pub(super) fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
         GeneratorError::Generation(format!("Format error: {err}"))
     }
@@ -87,13 +87,13 @@ impl RustGenerator {
         
         // Add documentation if available
         if let Some(ref desc) = enum_def.description {
-            writeln!(&mut output, "\n/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "\n/// {desc}").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, "\n/// {} enum", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "\n/// {enum_name} enum").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         writeln!(&mut output, "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "pub enum {} {{", enum_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "pub enum {enum_name} {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Generate enum variants
         for pv in &enum_def.permissible_values {
@@ -101,16 +101,16 @@ impl RustGenerator {
                 PermissibleValue::Simple(value) => {
                     // Convert to PascalCase for Rust enum variant
                     let variant_name = BaseCodeFormatter::to_pascal_case(value);
-                    writeln!(&mut output, "    #[serde(rename = \"{}\")]", value).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    #[serde(rename = \"{value}\")]").map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    {variant_name},").map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, description, .. } => {
                     if let Some(desc) = description {
-                        writeln!(&mut output, "    /// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                        writeln!(&mut output, "    /// {desc}").map_err(Self::fmt_error_to_generator_error)?;
                     }
                     let variant_name = BaseCodeFormatter::to_pascal_case(text);
-                    writeln!(&mut output, "    #[serde(rename = \"{}\")]", text).map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "    {},", variant_name).map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    #[serde(rename = \"{text}\")]").map_err(Self::fmt_error_to_generator_error)?;
+                    writeln!(&mut output, "    {variant_name},").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
         }
@@ -125,14 +125,14 @@ impl RustGenerator {
         
         // Add documentation
         if let Some(ref desc) = class_def.description {
-            writeln!(&mut output, "\n/// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "\n/// {desc}").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, "\n/// {}", class_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "\n/// {class_name}").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add derive macros
         writeln!(&mut output, "#[derive(Debug, Clone, Serialize, Deserialize)]").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "pub struct {} {{", class_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "pub struct {class_name} {{").map_err(Self::fmt_error_to_generator_error)?;
         
         // Collect all slots for this class
         let slots = self.collect_class_slots(class_def, schema);
@@ -156,13 +156,13 @@ impl RustGenerator {
     pub(super) fn generate_field(&self, output: &mut String, slot_name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<()> {
         // Add field documentation
         if let Some(ref desc) = slot_def.description {
-            writeln!(output, "    /// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "    /// {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Add serde rename if needed (to preserve original casing)
         let rust_field_name = self.convert_field_name(slot_name);
         if rust_field_name != slot_name {
-            writeln!(output, "    #[serde(rename = \"{}\")]", slot_name).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "    #[serde(rename = \"{slot_name}\")]").map_err(Self::fmt_error_to_generator_error)?;
         }
         
         // Determine field type
@@ -198,7 +198,7 @@ impl RustGenerator {
         };
         
         // Write the field
-        writeln!(output, "    pub {}: {},", rust_field_name, final_type).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "    pub {rust_field_name}: {final_type},").map_err(Self::fmt_error_to_generator_error)?;
         
         Ok(())
     }
@@ -208,18 +208,17 @@ impl RustGenerator {
         let mut slots = Vec::new();
         
         // Add inherited slots if there's a parent class
-        if let Some(ref parent) = class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(ref parent) = class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 slots.extend(self.collect_class_slots(parent_class, schema));
             }
-        }
         
         // Add this class's slots
         slots.extend_from_slice(&class_def.slots);
         
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        slots.retain(|slot| seen.insert(slot.clone()));
+        slots.retain(|slot| seen.insert(slot.clone());
         
         slots
     }
@@ -282,11 +281,11 @@ impl Default for RustGenerator {
 }
 
 impl Generator for RustGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "rust"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate Rust structs and enums from LinkML schemas"
     }
 
@@ -323,11 +322,11 @@ impl Generator for RustGenerator {
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "rs"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }

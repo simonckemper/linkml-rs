@@ -1,6 +1,6 @@
-//! CSV/TSV generator for LinkML schemas
+//! CSV/TSV generator for `LinkML` schemas
 //!
-//! This generator creates CSV or TSV files from LinkML schemas,
+//! This generator creates CSV or TSV files from `LinkML` schemas,
 //! flattening the class hierarchy into tabular format.
 
 use super::traits::{Generator, GeneratorResult};
@@ -78,7 +78,7 @@ impl CsvGenerator {
                 .iter()
                 .map(|(name, _)| self.escape_field(name))
                 .collect();
-            output.push_str(&header.join(&self.delimiter.to_string()));
+            output.push_str(&header.join(&self.delimiter.to_string());
             output.push('\n');
         }
 
@@ -90,7 +90,7 @@ impl CsvGenerator {
                 self.escape_field(&format!("<{range}>"))
             })
             .collect();
-        output.push_str(&type_row.join(&self.delimiter.to_string()));
+        output.push_str(&type_row.join(&self.delimiter.to_string());
         output.push('\n');
 
         // Generate example row with constraints
@@ -122,7 +122,7 @@ impl CsvGenerator {
                 }
             })
             .collect();
-        output.push_str(&constraint_row.join(&self.delimiter.to_string()));
+        output.push_str(&constraint_row.join(&self.delimiter.to_string());
         output.push('\n');
 
         // Generate sample data rows
@@ -141,14 +141,13 @@ impl CsvGenerator {
         let mut slots = BTreeMap::new();
 
         // Get inherited slots
-        if let Some(parent) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_class_slots(parent, parent_class, schema)?;
                 for (name, slot) in parent_slots {
                     slots.insert(name, slot);
                 }
             }
-        }
 
         // Get mixin slots
         for mixin in &class_def.mixins {
@@ -386,6 +385,7 @@ impl Generator for CsvGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -426,7 +426,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::new();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate CSV: {}", e))?;
+        let result = generator.generate(&schema).expect("should generate CSV: {}");
 
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
@@ -443,7 +443,7 @@ mod tests {
         let schema = create_test_schema();
         let generator = CsvGenerator::tsv();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate TSV: {}", e))?;
+        let result = generator.generate(&schema).expect("should generate TSV: {}");
 
         assert!(result.contains("=== Person ==="));
         // Slots are in alphabetical order due to BTreeMap

@@ -2,6 +2,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{Generator, GeneratorOptions, TypeQLGenerator};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 #[tokio::test]
 #[ignore] // Run with --ignored when TypeDB is available

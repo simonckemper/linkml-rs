@@ -1,6 +1,6 @@
-//! Java code generator for LinkML schemas
+//! Java code generator for `LinkML` schemas
 //!
-//! This module generates Java classes from LinkML schemas with full
+//! This module generates Java classes from `LinkML` schemas with full
 //! validation support and builder patterns.
 
 use linkml_core::{
@@ -21,9 +21,9 @@ pub struct JavaGenerator {
 }
 
 impl JavaGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new Java generator
@@ -69,7 +69,7 @@ impl JavaGenerator {
 
         // Package declaration
         let package_name = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "package com.example.{};", package_name)
+        writeln!(&mut output, "package com.example.{package_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -102,12 +102,12 @@ impl JavaGenerator {
         writeln!(&mut output, " * Schema ID: {}", schema.id)
             .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, " * Version: {}", version)
+            writeln!(&mut output, " * Version: {version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
             writeln!(&mut output, " * ").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " * {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -122,9 +122,9 @@ impl JavaGenerator {
         // Javadoc
         writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(desc) = &enum_def.description {
-            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " * {desc}").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, " * Enumeration: {}", name)
+            writeln!(&mut output, " * Enumeration: {name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
@@ -144,14 +144,14 @@ impl JavaGenerator {
 
             if let Some(desc) = description {
                 writeln!(&mut output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "     * {}", desc)
+                writeln!(&mut output, "     * {desc}")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, "     */").map_err(Self::fmt_error_to_generator_error)?;
             }
 
             let enum_name = self.to_screaming_snake_case(text);
             let comma = if index < values_count - 1 { "," } else { ";" };
-            writeln!(&mut output, "    {}{}", enum_name, comma)
+            writeln!(&mut output, "    {enum_name}{comma}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -173,9 +173,9 @@ impl JavaGenerator {
         // Javadoc
         writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(desc) = &class_def.description {
-            writeln!(&mut output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, " * {desc}").map_err(Self::fmt_error_to_generator_error)?;
         } else {
-            writeln!(&mut output, " * Class: {}", name)
+            writeln!(&mut output, " * Class: {name}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
@@ -223,8 +223,7 @@ impl JavaGenerator {
                 let field_name = self.to_camel_case(slot_name);
                 writeln!(
                     &mut output,
-                    "        this.{} = new ArrayList<>();",
-                    field_name
+                    "        this.{field_name} = new ArrayList<>();"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -241,7 +240,7 @@ impl JavaGenerator {
         }
 
         // Generate builder if requested in options
-        if options.get_custom("generate_builder").map(|s| s.as_str()) == Some("true") {
+        if options.get_custom("generate_builder").map(std::string::String::as_str) == Some("true") {
             self.write_builder(&mut output, name, &slots, schema)?;
         }
 
@@ -261,7 +260,7 @@ impl JavaGenerator {
         // Javadoc
         if let Some(desc) = &slot.description {
             writeln!(output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(output, "     * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "     * {desc}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(output, "     */").map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -271,29 +270,27 @@ impl JavaGenerator {
         }
 
         if let Some(pattern) = &slot.pattern {
-            writeln!(output, "    @Pattern(regexp = \"{}\")", pattern)
+            writeln!(output, "    @Pattern(regexp = \"{pattern}\")")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        if let Some(min) = &slot.minimum_value {
-            if let Some(num) = min.as_f64() {
+        if let Some(min) = &slot.minimum_value
+            && let Some(num) = min.as_f64() {
                 writeln!(output, "    @Min({})", num as i64)
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
-        if let Some(max) = &slot.maximum_value {
-            if let Some(num) = max.as_f64() {
+        if let Some(max) = &slot.maximum_value
+            && let Some(num) = max.as_f64() {
                 writeln!(output, "    @Max({})", num as i64)
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         // Field declaration
         let java_type =
             self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
         let field_name = self.to_camel_case(slot_name);
-        writeln!(output, "    private {} {};", java_type, field_name)
+        writeln!(output, "    private {java_type} {field_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
@@ -312,9 +309,9 @@ impl JavaGenerator {
         let field_name = self.to_camel_case(slot_name);
         let method_name = format!("get{}", self.to_pascal_case(slot_name));
 
-        writeln!(output, "    public {} {}() {{", java_type, method_name)
+        writeln!(output, "    public {java_type} {method_name}() {{")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        return {};", field_name)
+        writeln!(output, "        return {field_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -336,11 +333,10 @@ impl JavaGenerator {
 
         writeln!(
             output,
-            "    public void {}({} {}) {{",
-            method_name, java_type, field_name
+            "    public void {method_name}({java_type} {field_name}) {{"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        this.{} = {};", field_name, field_name)
+        writeln!(output, "        this.{field_name} = {field_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -358,15 +354,14 @@ impl JavaGenerator {
         let class_pascal = self.to_pascal_case(class_name);
 
         writeln!(output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "     * Builder for {}", class_pascal)
+        writeln!(output, "     * Builder for {class_pascal}")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "     */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    public static class Builder {{")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "        private final {} instance = new {}();",
-            class_pascal, class_pascal
+            "        private final {class_pascal} instance = new {class_pascal}();"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -380,8 +375,7 @@ impl JavaGenerator {
 
             writeln!(
                 output,
-                "        public Builder {}({} {}) {{",
-                method_name, java_type, field_name
+                "        public Builder {method_name}({java_type} {field_name}) {{"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
@@ -398,7 +392,7 @@ impl JavaGenerator {
         }
 
         // Build method
-        writeln!(output, "        public {} build() {{", class_pascal)
+        writeln!(output, "        public {class_pascal} build() {{")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "            // Validation is handled by the schema validator")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -447,7 +441,7 @@ impl JavaGenerator {
         }
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -496,9 +490,9 @@ impl JavaGenerator {
         result
     }
 
-    /// Convert to PascalCase
+    /// Convert to `PascalCase`
     fn to_pascal_case(&self, s: &str) -> String {
-        s.split(|c| c == '_' || c == '-')
+        s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
@@ -509,7 +503,7 @@ impl JavaGenerator {
             .collect()
     }
 
-    /// Convert to SCREAMING_SNAKE_CASE
+    /// Convert to `SCREAMING_SNAKE_CASE`
     fn to_screaming_snake_case(&self, s: &str) -> String {
         self.to_snake_case(s).to_uppercase()
     }
@@ -522,11 +516,11 @@ impl Default for JavaGenerator {
 }
 
 impl Generator for JavaGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "java"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates Java classes with validation annotations from LinkML schemas"
     }
 
@@ -542,17 +536,15 @@ impl Generator for JavaGenerator {
         // Validate Java identifier requirements
         for (class_name, _class_def) in &schema.classes {
             // Java identifiers must start with letter, $ or _
-            if let Some(first) = class_name.chars().next() {
-                if !first.is_ascii_alphabetic() && first != '_' && first != '$' {
+            if let Some(first) = class_name.chars().next()
+                && !first.is_ascii_alphabetic() && first != '_' && first != '$' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Class name '{}' is not valid for Java: must start with letter, underscore, or $",
-                            class_name
+                            "Class name '{class_name}' is not valid for Java: must start with letter, underscore, or $"
                         ),
                         element: Some(format!("class.{class_name}")),
                     });
                 }
-            }
 
             // Check for Java reserved keywords
             if matches!(
@@ -574,17 +566,15 @@ impl Generator for JavaGenerator {
 
         // Validate field names
         for (slot_name, _slot_def) in &schema.slots {
-            if let Some(first) = slot_name.chars().next() {
-                if !first.is_ascii_alphabetic() && first != '_' && first != '$' {
+            if let Some(first) = slot_name.chars().next()
+                && !first.is_ascii_alphabetic() && first != '_' && first != '$' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Slot name '{}' is not valid for Java fields",
-                            slot_name
+                            "Slot name '{slot_name}' is not valid for Java fields"
                         ),
                         element: Some(format!("slot.{slot_name}")),
                     });
                 }
-            }
         }
 
         Ok(())
@@ -605,7 +595,7 @@ impl Generator for JavaGenerator {
         // Generate enums
         for (name, enum_def) in &schema.enums {
             let enum_code = self.generate_enum(name, enum_def).map_err(|e| {
-                LinkMLError::service(format!("Failed to generate enum {}: {}", name, e))
+                LinkMLError::service(format!("Failed to generate enum {name}: {e}"))
             })?;
             output.push_str(&enum_code);
             output.push_str("\n\n");
@@ -616,7 +606,7 @@ impl Generator for JavaGenerator {
             let class_code = self
                 .generate_class(name, class_def, schema, &GeneratorOptions::default())
                 .map_err(|e| {
-                    LinkMLError::service(format!("Failed to generate class {}: {}", name, e))
+                    LinkMLError::service(format!("Failed to generate class {name}: {e}"))
                 })?;
             output.push_str(&class_code);
             output.push_str("\n\n");
@@ -625,11 +615,11 @@ impl Generator for JavaGenerator {
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "java"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -637,6 +627,7 @@ impl Generator for JavaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_case_conversion() {

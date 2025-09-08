@@ -249,12 +249,12 @@ impl SchemaDiffer {
         if old_class.is_a != new_class.is_a {
             if let Some(old_parent) = &old_class.is_a {
                 if new_class.is_a.is_none() || new_class.is_a.as_ref() != Some(old_parent) {
-                    changes.push(DetailedChange::RemovedInheritance(old_parent.clone()));
+                    changes.push(DetailedChange::RemovedInheritance(old_parent.clone());
                 }
             }
             if let Some(new_parent) = &new_class.is_a {
                 if old_class.is_a.is_none() || old_class.is_a.as_ref() != Some(new_parent) {
-                    changes.push(DetailedChange::AddedInheritance(new_parent.clone()));
+                    changes.push(DetailedChange::AddedInheritance(new_parent.clone());
                 }
             }
         }
@@ -272,11 +272,11 @@ impl SchemaDiffer {
         let new_mixins: HashSet<_> = new_class.mixins.iter().collect();
 
         for mixin in new_mixins.difference(&old_mixins) {
-            changes.push(DetailedChange::AddedMixin((*mixin).clone()));
+            changes.push(DetailedChange::AddedMixin((*mixin).clone());
         }
 
         for mixin in old_mixins.difference(&new_mixins) {
-            changes.push(DetailedChange::RemovedMixin((*mixin).clone()));
+            changes.push(DetailedChange::RemovedMixin((*mixin).clone());
         }
 
         // Check slot changes (just added/removed, details handled separately)
@@ -284,11 +284,11 @@ impl SchemaDiffer {
         let new_slots: HashSet<_> = new_class.slots.iter().collect();
 
         for slot in new_slots.difference(&old_slots) {
-            changes.push(DetailedChange::AddedSlot((*slot).clone()));
+            changes.push(DetailedChange::AddedSlot((*slot).clone());
         }
 
         for slot in old_slots.difference(&new_slots) {
-            changes.push(DetailedChange::RemovedSlot((*slot).clone()));
+            changes.push(DetailedChange::RemovedSlot((*slot).clone());
         }
 
         changes
@@ -352,14 +352,14 @@ impl SchemaDiffer {
         // Check range/type
         if old_slot.range != new_slot.range {
             if let (Some(old_range), Some(new_range)) = (&old_slot.range, &new_slot.range) {
-                change.range_changed = Some((old_range.clone(), new_range.clone()));
+                change.range_changed = Some((old_range.clone(), new_range.clone());
                 has_changes = true;
             }
         }
 
         // Check pattern
         if old_slot.pattern != new_slot.pattern {
-            change.pattern_changed = Some((old_slot.pattern.clone(), new_slot.pattern.clone()));
+            change.pattern_changed = Some((old_slot.pattern.clone(), new_slot.pattern.clone());
             has_changes = true;
         }
 
@@ -423,17 +423,19 @@ impl SchemaDiffer {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_empty_diff() {
+    fn test_empty_diff() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = SchemaDefinition::default();
-        let diff = SchemaDiffer::compare(&schema, &schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let diff = SchemaDiffer::compare(&schema, &schema).expect("should compare schemas: {}");
         assert!(diff.is_empty());
         assert_eq!(diff.change_count(), 0);
+        Ok(())
     }
 
     #[test]
-    fn test_added_class() {
+    fn test_added_class() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
 
@@ -441,13 +443,14 @@ mod tests {
         person_class.description = Some("A person".to_string());
         new_schema.classes.insert("Person".to_string(), person_class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas: {}");
         assert_eq!(diff.added_types.len(), 1);
         assert_eq!(diff.added_types[0].name, "Person");
+        Ok(())
     }
 
     #[test]
-    fn test_removed_class() {
+    fn test_removed_class() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
 
@@ -455,13 +458,14 @@ mod tests {
         person_class.description = Some("A person".to_string());
         old_schema.classes.insert("Person".to_string(), person_class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas: {}");
         assert_eq!(diff.removed_types.len(), 1);
         assert_eq!(diff.removed_types[0].name, "Person");
+        Ok(())
     }
 
     #[test]
-    fn test_modified_class() {
+    fn test_modified_class() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
 
@@ -473,12 +477,13 @@ mod tests {
         new_class.abstract_ = Some(true);
         new_schema.classes.insert("Person".to_string(), new_class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas: {}");
         assert_eq!(diff.modified_types.len(), 1);
         assert_eq!(diff.modified_types[0].name, "Person");
         assert!(matches!(
             &diff.modified_types[0].changes[0],
             DetailedChange::AbstractChanged(false, true)
         ));
+        Ok(())
     }
 }

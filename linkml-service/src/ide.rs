@@ -10,11 +10,10 @@
 //! - Hover information
 //! - Code actions and quick fixes
 
-use linkml_core::error::Result;
-use linkml_core::types::SchemaDefinition;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use linkml_core::types::SchemaDefinition;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -668,7 +667,11 @@ where
     }
 
     /// Validate document
-    pub async fn validate(&self, content: &str) -> Result<Vec<Diagnostic>> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub async fn validate(&self, content: &str) -> linkml_core::error::Result<Vec<Diagnostic>> {
         let mut diagnostics = Vec::new();
 
         // Try to parse as YAML

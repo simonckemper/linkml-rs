@@ -8,6 +8,7 @@ use linkml_service::parser::{ImportResolverV2, SchemaParser, YamlParser};
 use std::collections::HashMap;
 use tempfile::TempDir;
 use tokio::fs;
+use linkml_core::types::SchemaDefinition;
 
 #[tokio::test]
 async fn test_import_aliases_and_mappings() {
@@ -76,7 +77,7 @@ classes:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -172,7 +173,7 @@ classes:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("schema_a.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -251,7 +252,7 @@ classes:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("selective.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -336,7 +337,7 @@ classes:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -351,7 +352,7 @@ classes:
     // Last import wins strategy - schema2's Person should override
     let person = schema.classes.get("Person").expect("Test operation failed");
     assert_eq!(person.description.as_deref(), Some("Person from schema2"));
-    assert!(person.slots.contains(&"full_name".to_string()));
+    assert!(person.slots.contains(&"full_name".to_string());
 }
 
 #[tokio::test]
@@ -403,7 +404,7 @@ classes:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -456,7 +457,7 @@ settings:
 
         let parser = YamlParser::new();
         let schema = parser
-            .parse_str(
+            .parse(
                 &tokio::fs::read_to_string(base_path.join(&filename))
                     .await
                     .expect("Test operation failed"),
@@ -492,7 +493,7 @@ imports:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("bad.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -576,7 +577,7 @@ imports:
 
     let parser = YamlParser::new();
     let mut schema = parser
-        .parse_str(
+        .parse(
             &tokio::fs::read_to_string(base_path.join("main.yaml"))
                 .await
                 .expect("Test operation failed"),
@@ -593,5 +594,5 @@ imports:
     // Should have v2 Base class
     let base_class = schema.classes.get("Base").expect("Test operation failed");
     assert_eq!(base_class.description.as_deref(), Some("Base class v2"));
-    assert!(base_class.slots.contains(&"identifier".to_string()));
+    assert!(base_class.slots.contains(&"identifier".to_string());
 }

@@ -13,27 +13,27 @@ use std::path::PathBuf;
 use std::fs;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Testing LinkML Instance-Based Validation ===\n");
 
     // Create the service
     let service = create_linkml_service()?;
-    
+
     // Schema paths
     let schema_base = PathBuf::from("/home/kempersc/apps/rootreal/domain/schema");
-    
+
     // Test 1: Load and validate country instances
     println!("Test 1: Loading ISO3166Entity instances");
     println!("-" .repeat(40));
-    
+
     let country_schema_path = schema_base.join("place/polity/country/schema.yaml");
     let country_instances_path = schema_base.join("place/polity/country/ISO3166Entity.yaml");
-    
+
     // Load schema
     match service.load_schema(&country_schema_path).await {
         Ok(schema) => {
             println!("✓ Loaded country schema successfully");
-            
+
             // Check if schema contains ISO3166Entity class
             if schema.classes.contains_key("ISO3166Entity") {
                 println!("✓ Schema contains ISO3166Entity class");
@@ -45,14 +45,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✗ Failed to load country schema: {}", e);
         }
     }
-    
+
     // Load instances manually since load_instances doesn't exist
     let instances_content = fs::read_to_string(&country_instances_path)?;
     let instances: serde_json::Value = serde_yaml::from_str(&instances_content)?;
-    
+
     let count = instances.as_array().map_or(0, |a| a.len());
     println!("✓ Loaded {} country instances", count);
-    
+
     // Show a few examples
     if let Some(arr) = instances.as_array() {
         println!("\nExample instances:");
@@ -65,24 +65,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    
+
     println!();
-    
+
     // Test 2: Validate identifier against permissible values
     println!("Test 2: Validating CountryCodeAlpha2Identifier");
     println!("-" .repeat(40));
-    
+
     let identifier_schema_path = schema_base.join("meta/identifier/identifier/schema.yaml");
-    
+
     // Load identifier schema
     match service.load_schema(&identifier_schema_path).await {
         Ok(schema) => {
             println!("✓ Loaded identifier schema");
-            
+
             // Check for CountryCodeAlpha2Identifier class
             if let Some(class_def) = schema.classes.get("CountryCodeAlpha2Identifier") {
                 println!("✓ Found CountryCodeAlpha2Identifier class");
-                
+
                 // Check slot usage for identifier
                 if let Some(slot_usage) = class_def.slot_usage.get("identifier") {
                     if let Some(range) = &slot_usage.range {
@@ -93,10 +93,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            
+
             // Test validation with actual values
             println!("\nValidating test values:");
-            
+
             let test_values = vec![
                 ("US", true, "United States"),
                 ("GB", true, "United Kingdom"),
@@ -104,12 +104,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ("XX", false, "Invalid code"),
                 ("12", false, "Numeric not allowed"),
             ];
-            
+
             for (code, should_be_valid, description) in test_values {
                 let test_data = json!({
                     "identifier": code
                 });
-                
+
                 match service.validate(
                     &test_data,
                     &schema,
@@ -118,10 +118,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Ok(report) => {
                         // Check if validation result matches expectation
                         let is_valid = report.valid;
-                        
+
                         if is_valid == should_be_valid {
-                            println!("  ✓ {}: {} ({})", 
-                                code, 
+                            println!("  ✓ {}: {} ({})",
+                                code,
                                 if is_valid { "Valid" } else { "Invalid" },
                                 description
                             );
@@ -132,7 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 if is_valid { "Valid" } else { "Invalid" },
                                 description
                             );
-                            
+
                             // Show errors if any
                             for error in &report.errors {
                                 println!("      Error: {}", error.message);
@@ -149,13 +149,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✗ Failed to load identifier schema: {}", e);
         }
     }
-    
+
     println!();
-    
+
     // Test 3: Check pattern validation
     println!("Test 3: Pattern Validation");
     println!("-" .repeat(40));
-    
+
     // The pattern should validate format independent of permissible values
     let pattern_tests = vec![
         ("US", true, "Valid format"),
@@ -163,16 +163,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("USA", false, "Three characters not allowed"),
         ("1", false, "Too short"),
     ];
-    
+
     println!("Testing pattern: (?P<CountryCodeAlpha2Identifier>[A-Z]{2})");
-    
+
     for (value, should_match, description) in pattern_tests {
         // Just test the regex pattern
         let pattern = regex::Regex::new(r"^[A-Z]{2}$").unwrap();
         let matches = pattern.is_match(value);
-        
+
         if matches == should_match {
-            println!("  ✓ '{}': {} ({})", 
+            println!("  ✓ '{}': {} ({})",
                 value,
                 if matches { "Matches" } else { "No match" },
                 description
@@ -181,10 +181,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  ✗ '{}': Pattern test failed", value);
         }
     }
-    
+
     println!();
     println!("=== Test Complete ===");
-    
+
     // Summary
     println!("\nSummary:");
     println!("This test verifies that the LinkML service can:");
@@ -193,6 +193,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Validate identifiers against both patterns and permissible values");
     println!("\nThe key insight: When a slot has range: ISO3166Entity,");
     println!("values must be from the 'id' field of ISO3166Entity instances.");
-    
+
     Ok(())
 }

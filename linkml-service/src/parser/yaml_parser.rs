@@ -20,9 +20,13 @@ impl YamlParser {
         Self
     }
 
-    /// Parse `YAML` content (alias for parse_str)
+    /// Parse `YAML` content (alias for `parse_str`)
     ///
     /// This method provides compatibility with code expecting a `parse` method.
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn parse(&self, content: &str) -> Result<SchemaDefinition> {
         self.parse_str(content)
     }

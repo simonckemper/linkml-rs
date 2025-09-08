@@ -5,6 +5,8 @@ use linkml_core::{
     types::{SchemaDefinition, SlotDefinition},
 };
 use linkml_service::parser::{SchemaParser, YamlParser};
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SlotDefinition};
 
 #[test]
 fn test_schema_metadata() {
@@ -39,12 +41,12 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Test operation failed");
 
     // Check basic metadata
-    assert_eq!(schema.title, Some("Test Schema".to_string()));
-    assert_eq!(schema.status, Some("release".to_string()));
+    assert_eq!(schema.title, Some("Test Schema".to_string());
+    assert_eq!(schema.status, Some("release".to_string());
     assert_eq!(schema.keywords.len(), 2);
     assert_eq!(schema.categories.len(), 1);
     assert_eq!(schema.see_also.len(), 1);
@@ -53,10 +55,10 @@ classes:
     assert_eq!(schema.contributors.len(), 2);
     let jane = &schema.contributors[0];
     assert_eq!(jane.name, "Jane Smith");
-    assert_eq!(jane.email, Some("jane@example.com".to_string()));
-    assert_eq!(jane.github, Some("janesmith".to_string()));
-    assert_eq!(jane.orcid, Some("0000-0000-0000-0001".to_string()));
-    assert_eq!(jane.role, Some("lead".to_string()));
+    assert_eq!(jane.email, Some("jane@example.com".to_string());
+    assert_eq!(jane.github, Some("janesmith".to_string());
+    assert_eq!(jane.orcid, Some("0000-0000-0000-0001".to_string());
+    assert_eq!(jane.role, Some("lead".to_string());
 }
 
 #[test]
@@ -90,7 +92,7 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Test operation failed");
 
     let dataset_class = schema
@@ -157,7 +159,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Test operation failed");
 
     let email_slot = schema.slots.get("email").expect("Test operation failed");
@@ -207,7 +209,7 @@ fn test_metadata_inheritance() {
     assert_eq!(merged.aliases.len(), 2); // Both aliases preserved
     assert_eq!(merged.see_also.len(), 2); // Both references preserved
     assert_eq!(merged.notes.len(), 2); // Both notes preserved
-    assert_eq!(merged.deprecated, Some("Use new_slot instead".to_string()));
+    assert_eq!(merged.deprecated, Some("Use new_slot instead".to_string());
     assert_eq!(merged.rank, Some(2)); // Override wins
 }
 

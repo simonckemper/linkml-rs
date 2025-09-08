@@ -8,7 +8,7 @@
 //! - Recovery suggestions
 
 use dashmap::DashMap;
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::{LinkMLError, Result};
 use parking_lot::RwLock;
 use smallvec::SmallVec;
 use std::sync::Arc;
@@ -249,8 +249,8 @@ impl ErrorRecoveryManager {
         let mut context = self.analyze_error(error);
 
         // Check circuit breaker
-        if self.config.read().circuit_breaker_enabled {
-            if let Some(breaker) = self.circuit_breakers.get(service_name) {
+        if self.config.read().circuit_breaker_enabled
+            && let Some(breaker) = self.circuit_breakers.get(service_name) {
                 let mut breaker = breaker.write();
                 if breaker.state == CircuitState::Open {
                     // Check if we should transition to half-open
@@ -266,12 +266,11 @@ impl ErrorRecoveryManager {
                     }
                 }
             }
-        }
 
         // Try recovery strategies
-        if context.is_recoverable() && self.config.read().retry_enabled {
-            if let Some(error_type) = &context.error_type {
-                if let Some(strategy) = self.recovery_strategies.get(error_type) {
+        if context.is_recoverable() && self.config.read().retry_enabled
+            && let Some(error_type) = &context.error_type
+                && let Some(strategy) = self.recovery_strategies.get(error_type) {
                     match strategy.recover(&context)? {
                         RecoveryAction::Retry { delay } => {
                             // Implement retry with backoff
@@ -324,8 +323,6 @@ impl ErrorRecoveryManager {
                         }
                     }
                 }
-            }
-        }
 
         // Record failure and return error
         self.record_failure(service_name);
@@ -530,6 +527,10 @@ where
     T: Send + 'static,
 {
     /// Create new recoverable validation
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn new(
         operation: impl Fn() -> Result<T> + Send + Sync + 'static,
         recovery_manager: Arc<ErrorRecoveryManager>,
@@ -548,14 +549,14 @@ where
     ///
     /// Returns an error if operation and recovery attempts fail.
     pub async fn execute(self) -> Result<T> {
-        let op = self.operation.clone();
+        let op = Arc::clone(&self.operation);
         match op() {
             Ok(result) => {
                 self.recovery_manager.record_success(&self.service_name);
                 Ok(result)
             }
             Err(error) => {
-                let op_clone = self.operation.clone();
+                let op_clone = Arc::clone(&self.operation);
                 self.recovery_manager
                     .handle_error(&self.service_name, error, move || op_clone())
                     .await

@@ -3,8 +3,8 @@
 //! This module handles determining whether a rule's preconditions are satisfied
 //! for a given instance.
 
-use linkml_core::error::{LinkMLError, Result};
 use serde_json::Value;
+use linkml_core::error::LinkMLError;
 use std::collections::HashMap;
 
 use crate::expression::ExpressionEngine;
@@ -22,16 +22,20 @@ pub struct RuleMatcher {
 
 impl RuleMatcher {
     /// Create a new rule matcher
-    pub fn new(expression_engine: ExpressionEngine) -> Self {
+    #[must_use] pub fn new(expression_engine: ExpressionEngine) -> Self {
         Self { expression_engine }
     }
 
     /// Check if a rule's preconditions match
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn matches(
         &self,
         condition: &CompiledCondition,
         context: &RuleExecutionContext,
-    ) -> Result<bool> {
+    ) -> linkml_core::error::Result<bool> {
         match condition {
             CompiledCondition::SlotConditions(slot_conditions) => {
                 self.match_slot_conditions(slot_conditions, context)
@@ -48,23 +52,20 @@ impl RuleMatcher {
                 composite_conditions,
             } => {
                 // All components must match (AND logic)
-                if let Some(slots) = slot_conditions {
-                    if !self.match_slot_conditions(slots, context)? {
+                if let Some(slots) = slot_conditions
+                    && !self.match_slot_conditions(slots, context)? {
                         return Ok(false);
                     }
-                }
 
-                if let Some(exprs) = expression_conditions {
-                    if !self.match_expression_conditions(exprs, context)? {
+                if let Some(exprs) = expression_conditions
+                    && !self.match_expression_conditions(exprs, context)? {
                         return Ok(false);
                     }
-                }
 
-                if let Some(composite) = composite_conditions {
-                    if !self.match_composite_condition(composite, context)? {
+                if let Some(composite) = composite_conditions
+                    && !self.match_composite_condition(composite, context)? {
                         return Ok(false);
                     }
-                }
 
                 Ok(true)
             }
@@ -76,7 +77,7 @@ impl RuleMatcher {
         &self,
         conditions: &HashMap<String, CompiledSlotCondition>,
         context: &RuleExecutionContext,
-    ) -> Result<bool> {
+    ) -> linkml_core::error::Result<bool> {
         let instance_obj = match &context.instance {
             Value::Object(map) => map,
             _ => return Ok(false), // Non-object instances can't match slot conditions
@@ -99,15 +100,14 @@ impl RuleMatcher {
         value: &Value,
         condition: &CompiledSlotCondition,
         context: &RuleExecutionContext,
-    ) -> Result<bool> {
+    ) -> linkml_core::error::Result<bool> {
         let original = &condition.original;
 
         // Check required
-        if let Some(required) = original.required {
-            if required && value.is_null() {
+        if let Some(required) = original.required
+            && required && value.is_null() {
                 return Ok(false);
             }
-        }
 
         // Skip further checks if value is null
         if value.is_null() {
@@ -115,11 +115,10 @@ impl RuleMatcher {
         }
 
         // Check range/type
-        if let Some(ref range) = original.range {
-            if !self.check_range(value, range)? {
+        if let Some(ref range) = original.range
+            && !self.check_range(value, range)? {
                 return Ok(false);
             }
-        }
 
         // Check pattern
         if let Some(ref pattern) = original.pattern {
@@ -178,17 +177,15 @@ impl RuleMatcher {
         }
 
         // Check min/max values
-        if let Some(ref min) = original.minimum_value {
-            if !self.compare_values(value, min, |a, b| a >= b)? {
+        if let Some(ref min) = original.minimum_value
+            && !self.compare_values(value, min, |a, b| a >= b)? {
                 return Ok(false);
             }
-        }
 
-        if let Some(ref max) = original.maximum_value {
-            if !self.compare_values(value, max, |a, b| a <= b)? {
+        if let Some(ref max) = original.maximum_value
+            && !self.compare_values(value, max, |a, b| a <= b)? {
                 return Ok(false);
             }
-        }
 
         // TODO: Implement any_of, all_of, exactly_one_of, none_of checks
 
@@ -200,7 +197,7 @@ impl RuleMatcher {
         &self,
         expressions: &[crate::expression::ast::Expression],
         context: &RuleExecutionContext,
-    ) -> Result<bool> {
+    ) -> linkml_core::error::Result<bool> {
         let expr_context = context.get_expression_context();
 
         for expr in expressions {
@@ -225,7 +222,7 @@ impl RuleMatcher {
         &self,
         composite: &CompiledCompositeCondition,
         context: &RuleExecutionContext,
-    ) -> Result<bool> {
+    ) -> linkml_core::error::Result<bool> {
         match composite {
             CompiledCompositeCondition::AnyOf(conditions) => {
                 for condition in conditions {
@@ -267,7 +264,7 @@ impl RuleMatcher {
     }
 
     /// Check if a value matches a range/type constraint
-    fn check_range(&self, value: &Value, range: &str) -> Result<bool> {
+    fn check_range(&self, value: &Value, range: &str) -> linkml_core::error::Result<bool> {
         // Use RangeValidator for consistency
         let validator = RangeValidator::new();
         let slot_def = linkml_core::types::SlotDefinition {
@@ -281,7 +278,7 @@ impl RuleMatcher {
     }
 
     /// Compare values using a comparison function
-    fn compare_values<F>(&self, a: &Value, b: &Value, cmp: F) -> Result<bool>
+    fn compare_values<F>(&self, a: &Value, b: &Value, cmp: F) -> linkml_core::error::Result<bool>
     where
         F: Fn(f64, f64) -> bool,
     {
@@ -309,7 +306,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_slot_condition_matching() {
+    fn test_slot_condition_matching() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let matcher = RuleMatcher::new(ExpressionEngine::new());
 
         // Create a condition that checks age >= 18
@@ -331,24 +328,25 @@ mod tests {
         assert!(
             matcher
                 .match_slot_condition(&json!(20), &condition, &context)
-                .map_err(|e| anyhow::anyhow!("should match age >= 18: {}", e))?
+                .expect("should match age >= 18: {}")
         );
         assert!(
             !matcher
                 .match_slot_condition(&json!(16), &condition, &context)
-                .map_err(|e| anyhow::anyhow!("should not match age < 18: {}", e))?
+                .expect("should not match age < 18: {}")
         );
+        Ok(())
     }
 
     #[test]
-    fn test_expression_condition_matching() {
+    fn test_expression_condition_matching() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let matcher = RuleMatcher::new(ExpressionEngine::new());
 
         // Parse expression
         let parser = crate::expression::parser::Parser::new();
         let expr = parser
             .parse("{age} >= 18 and {status} == \"active\"")
-            .map_err(|e| anyhow::anyhow!("should parse expression: {}", e))?;
+            .expect("should parse expression: {}");
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(
@@ -360,7 +358,7 @@ mod tests {
         assert!(
             matcher
                 .match_expression_conditions(&[expr.clone()], &context)
-                .map_err(|e| anyhow::anyhow!("should match expression: {}", e))?
+                .expect("should match expression: {}")
         );
 
         let mut validation_ctx2 = ValidationContext::new(Default::default());
@@ -373,7 +371,8 @@ mod tests {
         assert!(
             !matcher
                 .match_expression_conditions(&[expr], &context2)
-                .map_err(|e| anyhow::anyhow!("should not match expression: {}", e))?
+                .expect("should not match expression: {}")
         );
+        Ok(())
     }
 }

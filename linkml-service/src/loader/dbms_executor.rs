@@ -1,13 +1,13 @@
-//! DBMS service executor for TypeDB integration
+//! DBMS service executor for `TypeDB` integration
 //!
-//! This module provides a TypeDB query executor that uses the DBMS service,
-//! allowing LinkML to integrate with TypeDB without circular dependencies.
+//! This module provides a `TypeDB` query executor that uses the DBMS service,
+//! allowing `LinkML` to integrate with `TypeDB` without circular dependencies.
 
 use super::typedb_integration::TypeDBQueryExecutor;
 use async_trait::async_trait;
 use std::sync::Arc;
 
-/// DBMS service executor that integrates with RootReal's DBMS service
+/// DBMS service executor that integrates with `RootReal`'s DBMS service
 pub struct DBMSServiceExecutor<S: dbms_core::DBMSService> {
     /// The DBMS service instance
     service: Arc<S>,

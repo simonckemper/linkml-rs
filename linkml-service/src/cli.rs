@@ -17,7 +17,6 @@ pub use stress_test::{StressTestConfig, StressTestExecutor, StressTestResults};
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use linkml_core::error::Result;
 use linkml_core::traits::LinkMLService;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -284,7 +283,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     /// # Errors
     ///
     /// Returns an error if any of the subcommands fail.
-    pub async fn run(&self) -> Result<()> {
+    pub async fn run(&self) -> linkml_core::error::Result<()> {
         if self.cli.verbose {
             tracing_subscriber::fmt()
                 .with_env_filter("linkml=debug")
@@ -388,7 +387,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         strict: bool,
         max_errors: usize,
         show_stats: bool,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "LinkML Validation".bold().blue());
         println!("{}", "=================".blue());
 
@@ -470,7 +469,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         duration: std::time::Duration,
         show_stats: bool,
         strict: bool,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         match self.cli.format {
             OutputFormat::Pretty => {
                 if report.valid {
@@ -575,7 +574,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         schema_path: &Path,
         check_imports: bool,
         check_unused: bool,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Schema Check".bold().blue());
         println!("{}", "============".blue());
 
@@ -620,7 +619,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         output: &Path,
         format: ConvertFormat,
         pretty: bool,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Schema Conversion".bold().blue());
         println!("{}", "=================".blue());
 
@@ -672,7 +671,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         output_dir: &Path,
         generator: GeneratorType,
         options: &[String],
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Code Generation".bold().blue());
         println!("{}", "===============".blue());
 
@@ -752,7 +751,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         iterations: usize,
         memory: bool,
         output: Option<&Path>,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Performance Profiling".bold().blue());
         println!("{}", "====================".blue());
 
@@ -838,7 +837,9 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 .filter_map(|usage| usage.get("rss").copied())
                 .collect();
 
-            if !rss_values.is_empty() {
+            if rss_values.is_empty() {
+                println!("\n{}", "Memory Usage: No data collected".bold());
+            } else {
                 let total_memory: u64 = rss_values.iter().sum();
                 let avg_memory = total_memory / rss_values.len() as u64;
                 let max_memory = *rss_values.iter().max().unwrap_or(&0);
@@ -853,8 +854,6 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     min_memory, min_memory as f64 / 1_048_576.0);
                 println!("  Total sampled: {} bytes ({:.2} MB)",
                     total_memory, total_memory as f64 / 1_048_576.0);
-            } else {
-                println!("\n{}", "Memory Usage: No data collected".bold());
             }
         }
 
@@ -891,7 +890,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         inheritance: bool,
         slots: bool,
         filter: Option<&str>,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Schema Debugging".bold().blue());
         println!("{}", "================".blue());
 
@@ -924,24 +923,21 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         // Print schema in tree format, respecting any output format settings
         let format = &self.cli.format;
 
-        match format {
-            OutputFormat::Json => {
-                let tree_data = serde_json::json!({
-                    "schema": schema.name,
-                    "classes": schema.classes.keys().filter(|name| {
-                        filter.map_or(true, |f| name.contains(f))
-                    }).collect::<Vec<_>>()
-                });
-                println!("{}", serde_json::to_string_pretty(&tree_data).unwrap_or_default());
-            }
-            _ => {
-                println!("  Schema: {}", schema.name);
-                for (name, class_def) in &schema.classes {
-                    if filter.map_or(true, |f| name.contains(f)) {
-                        println!("    └─ Class: {name}");
-                        if let Some(desc) = &class_def.description {
-                            println!("      Description: {}", desc);
-                        }
+        if let OutputFormat::Json = format {
+            let tree_data = serde_json::json!({
+                "schema": schema.name,
+                "classes": schema.classes.keys().filter(|name| {
+                    filter.is_none_or(|f| name.contains(f))
+                }).collect::<Vec<_>>()
+            });
+            println!("{}", serde_json::to_string_pretty(&tree_data).unwrap_or_default());
+        } else {
+            println!("  Schema: {}", schema.name);
+            for (name, class_def) in &schema.classes {
+                if filter.is_none_or(|f| name.contains(f)) {
+                    println!("    └─ Class: {name}");
+                    if let Some(desc) = &class_def.description {
+                        println!("      Description: {desc}");
                     }
                 }
             }
@@ -957,30 +953,26 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         // Print inheritance hierarchy, respecting output format settings
         let format = &self.cli.format;
 
-        match format {
-            OutputFormat::Json => {
-                let inheritance_data: Vec<_> = schema.classes.iter()
-                    .filter(|(name, _)| filter.map_or(true, |f| name.contains(f)))
-                    .filter_map(|(name, class)| {
-                        class.is_a.as_ref().map(|parent| {
-                            serde_json::json!({
-                                "child": name,
-                                "parent": parent
-                            })
+        if let OutputFormat::Json = format {
+            let inheritance_data: Vec<_> = schema.classes.iter()
+                .filter(|(name, _)| filter.is_none_or(|f| name.contains(f)))
+                .filter_map(|(name, class)| {
+                    class.is_a.as_ref().map(|parent| {
+                        serde_json::json!({
+                            "child": name,
+                            "parent": parent
                         })
                     })
-                    .collect();
-                println!("{}", serde_json::to_string_pretty(&inheritance_data).unwrap_or_default());
-            }
-            _ => {
-                println!("Inheritance relationships:");
-                for (name, class) in &schema.classes {
-                    if filter.map_or(true, |f| name.contains(f)) {
-                        if let Some(parent) = &class.is_a {
-                            println!("  {parent} → {name}");
-                        }
+                })
+                .collect();
+            println!("{}", serde_json::to_string_pretty(&inheritance_data).unwrap_or_default());
+        } else {
+            println!("Inheritance relationships:");
+            for (name, class) in &schema.classes {
+                if filter.is_none_or(|f| name.contains(f))
+                    && let Some(parent) = &class.is_a {
+                        println!("  {parent} → {name}");
                     }
-                }
             }
         }
     }
@@ -994,39 +986,36 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         // Print slot usage information, respecting output format settings
         let format = &self.cli.format;
 
-        match format {
-            OutputFormat::Json => {
-                let slot_usage: Vec<_> = schema.slots.iter()
-                    .filter(|(name, _)| filter.map_or(true, |f| name.contains(f)))
-                    .map(|(name, slot)| {
-                        serde_json::json!({
-                            "name": name,
-                            "range": slot.range.as_deref().unwrap_or("string"),
-                            "description": slot.description.as_deref().unwrap_or("")
-                        })
+        if let OutputFormat::Json = format {
+            let slot_usage: Vec<_> = schema.slots.iter()
+                .filter(|(name, _)| filter.is_none_or(|f| name.contains(f)))
+                .map(|(name, slot)| {
+                    serde_json::json!({
+                        "name": name,
+                        "range": slot.range.as_deref().unwrap_or("string"),
+                        "description": slot.description.as_deref().unwrap_or("")
                     })
-                    .collect();
-                println!("{}", serde_json::to_string_pretty(&slot_usage).unwrap_or_default());
-            }
-            _ => {
-                println!("Slot usage:");
-                for (slot_name, slot_def) in &schema.slots {
-                    if filter.map_or(true, |f| slot_name.contains(f)) {
-                        let range = slot_def.range.as_deref().unwrap_or("string");
-                        println!("  Slot: {} ({})", slot_name, range);
-                        if let Some(desc) = &slot_def.description {
-                            println!("    Description: {}", desc);
-                        }
-                        // Show which classes use this slot
-                        let using_classes: Vec<&String> = schema.classes.iter()
-                            .filter(|(_, class)| {
-                                class.slots.contains(&slot_name.to_string())
-                            })
-                            .map(|(name, _)| name)
-                            .collect();
-                        if !using_classes.is_empty() {
-                            println!("    Used by: {}", using_classes.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "));
-                        }
+                })
+                .collect();
+            println!("{}", serde_json::to_string_pretty(&slot_usage).unwrap_or_default());
+        } else {
+            println!("Slot usage:");
+            for (slot_name, slot_def) in &schema.slots {
+                if filter.is_none_or(|f| slot_name.contains(f)) {
+                    let range = slot_def.range.as_deref().unwrap_or("string");
+                    println!("  Slot: {slot_name} ({range})");
+                    if let Some(desc) = &slot_def.description {
+                        println!("    Description: {desc}");
+                    }
+                    // Show which classes use this slot
+                    let using_classes: Vec<&String> = schema.classes.iter()
+                        .filter(|(_, class)| {
+                            class.slots.contains(&slot_name.to_string())
+                        })
+                        .map(|(name, _)| name)
+                        .collect();
+                    if !using_classes.is_empty() {
+                        println!("    Used by: {}", using_classes.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "));
                     }
                 }
             }
@@ -1040,16 +1029,14 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         println!("Type 'help' for commands, 'quit' to exit\n");
 
         // Create the REPL editor with history support
-        let history_path = history_file.map(|p| p.to_path_buf())
+        let history_path = history_file.map(std::path::Path::to_path_buf)
             .unwrap_or_else(|| {
-                dirs::home_dir()
-                    .map(|d| d.join(".linkml_history"))
-                    .unwrap_or_else(|| PathBuf::from(".linkml_history"))
+                dirs::home_dir().map_or_else(|| PathBuf::from(".linkml_history"), |d| d.join(".linkml_history"))
             });
 
         let mut editor = rustyline::DefaultEditor::new()
             .unwrap_or_else(|e| {
-                eprintln!("Failed to initialize editor: {}", e);
+                eprintln!("Failed to initialize editor: {e}");
                 std::process::exit(1);
             });
 
@@ -1073,10 +1060,10 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                             current_schema = Some(schema);
                             current_schema_path = Some(schema_path.to_path_buf());
                         }
-                        Err(e) => eprintln!("Failed to parse schema: {}", e),
+                        Err(e) => eprintln!("Failed to parse schema: {e}"),
                     }
                 }
-                Err(e) => eprintln!("Failed to read schema file: {}", e),
+                Err(e) => eprintln!("Failed to read schema file: {e}"),
             }
         }
 
@@ -1123,7 +1110,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                                 eprintln!("Usage: validate <data-file> [class-name]");
                                 continue;
                             }
-                            let class_name = parts.get(2).map(|s| s.to_string());
+                            let class_name = parts.get(2).map(|s| (*s).to_string());
                             self.handle_validate(&current_schema, parts[1], class_name);
                         }
                         "show" => {
@@ -1149,7 +1136,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                                 eprintln!("Usage: generate <python|rust|sql|typeql|json-schema> [output-file]");
                                 continue;
                             }
-                            let output = parts.get(2).map(|s| PathBuf::from(s));
+                            let output = parts.get(2).map(PathBuf::from);
                             self.handle_generate(&current_schema, parts[1], output.as_deref());
                         }
                         "check" => {
@@ -1177,7 +1164,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                                 // Show cache status
                                 println!("Cache entries: {}", validation_cache.len());
                                 for key in validation_cache.keys() {
-                                    println!("  - {}", key);
+                                    println!("  - {key}");
                                 }
                             } else if parts[1] == "clear" {
                                 validation_cache.clear();
@@ -1214,7 +1201,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     break;
                 }
                 Err(err) => {
-                    eprintln!("Error: {:?}", err);
+                    eprintln!("Error: {err:?}");
                     break;
                 }
             }
@@ -1271,17 +1258,17 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                             println!("  Name: {}", schema.name);
                         }
                         if let Some(desc) = &schema.description {
-                            println!("  Description: {}", desc);
+                            println!("  Description: {desc}");
                         }
                         println!("  Classes: {}", schema.classes.len());
                         println!("  Slots: {}", schema.slots.len());
                         *current_schema = Some(schema);
                         *current_schema_path = Some(schema_path);
                     }
-                    Err(e) => eprintln!("Failed to parse schema: {}", e),
+                    Err(e) => eprintln!("Failed to parse schema: {e}"),
                 }
             }
-            Err(e) => eprintln!("Failed to read schema file: {}", e),
+            Err(e) => eprintln!("Failed to read schema file: {e}"),
         }
     }
 
@@ -1302,7 +1289,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         let content = match std::fs::read_to_string(&data_path) {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("Failed to read data file: {}", e);
+                eprintln!("Failed to read data file: {e}");
                 return;
             }
         };
@@ -1313,7 +1300,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_json::from_str(&content) {
                     Ok(d) => d,
                     Err(e) => {
-                        eprintln!("Failed to parse JSON: {}", e);
+                        eprintln!("Failed to parse JSON: {e}");
                         return;
                     }
                 }
@@ -1322,7 +1309,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_yaml::from_str(&content) {
                     Ok(d) => d,
                     Err(e) => {
-                        eprintln!("Failed to parse YAML: {}", e);
+                        eprintln!("Failed to parse YAML: {e}");
                         return;
                     }
                 }
@@ -1338,19 +1325,17 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         
         // Basic validation logic
         if let Some(class_def) = schema.classes.get(target_class) {
-            println!("Validating against class: {}", target_class);
+            println!("Validating against class: {target_class}");
             
             let mut errors = Vec::new();
             
             // Check required slots
             for slot_name in &class_def.slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if slot_def.required.unwrap_or(false) {
-                        if !data.get(slot_name).is_some() {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && slot_def.required.unwrap_or(false)
+                        && data.get(slot_name).is_none() {
                             errors.push(format!("Missing required field: {slot_name}"));
                         }
-                    }
-                }
             }
 
             if errors.is_empty() {
@@ -1358,11 +1343,11 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             } else {
                 println!("✗ Validation failed with {} error(s):", errors.len());
                 for error in errors {
-                    println!("  - {}", error);
+                    println!("  - {error}");
                 }
             }
         } else {
-            eprintln!("Class '{}' not found in schema", target_class);
+            eprintln!("Class '{target_class}' not found in schema");
         }
     }
 
@@ -1382,7 +1367,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             "classes" => {
                 println!("{}", "Classes:".bold().cyan());
                 for (name, class) in &schema.classes {
-                    if filter.map_or(true, |f| name.contains(f)) {
+                    if filter.is_none_or(|f| name.contains(f)) {
                         println!("  {} - {}", 
                             name.green(),
                             class.description.as_deref().unwrap_or("No description")
@@ -1393,7 +1378,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             "slots" => {
                 println!("{}", "Slots:".bold().cyan());
                 for (name, slot) in &schema.slots {
-                    if filter.map_or(true, |f| name.contains(f)) {
+                    if filter.is_none_or(|f| name.contains(f)) {
                         let range = slot.range.as_deref().unwrap_or("string");
                         println!("  {} ({}) - {}", 
                             name.green(),
@@ -1406,7 +1391,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             "types" => {
                 println!("{}", "Types:".bold().cyan());
                 for (name, type_def) in &schema.types {
-                    if filter.map_or(true, |f| name.contains(f)) {
+                    if filter.is_none_or(|f| name.contains(f)) {
                         println!("  {} - {}", 
                             name.green(),
                             type_def.description.as_deref().unwrap_or("No description")
@@ -1417,7 +1402,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             "enums" => {
                 println!("{}", "Enums:".bold().cyan());
                 for (name, enum_def) in &schema.enums {
-                    if filter.map_or(true, |f| name.contains(f)) {
+                    if filter.is_none_or(|f| name.contains(f)) {
                         let count = enum_def.permissible_values.len();
                         println!("  {} ({} values) - {}", 
                             name.green(),
@@ -1436,10 +1421,10 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     println!("  ID: {}", schema.id);
                 }
                 if let Some(desc) = &schema.description {
-                    println!("  Description: {}", desc);
+                    println!("  Description: {desc}");
                 }
                 if let Some(version) = &schema.version {
-                    println!("  Version: {}", version);
+                    println!("  Version: {version}");
                 }
                 println!("  Classes: {}", schema.classes.len());
                 println!("  Slots: {}", schema.slots.len());
@@ -1447,7 +1432,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 println!("  Enums: {}", schema.enums.len());
             }
             _ => {
-                eprintln!("Unknown item type: '{}'. Use: classes, slots, types, enums, or schema", item_type);
+                eprintln!("Unknown item type: '{item_type}'. Use: classes, slots, types, enums, or schema");
             }
         }
     }
@@ -1469,10 +1454,10 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if let Some(class) = schema.classes.get(name) {
                     println!("{}", format!("Class: {name}").bold().cyan());
                     if let Some(desc) = &class.description {
-                        println!("  Description: {}", desc);
+                        println!("  Description: {desc}");
                     }
                     if let Some(parent) = &class.is_a {
-                        println!("  Parent: {}", parent);
+                        println!("  Parent: {parent}");
                     }
                     if !class.mixins.is_empty() {
                         println!("  Mixins: {}", class.mixins.join(", "));
@@ -1483,78 +1468,78 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                             if let Some(slot_def) = schema.slots.get(slot) {
                                 let req = if slot_def.required.unwrap_or(false) { " (required)" } else { "" };
                                 let range = slot_def.range.as_deref().unwrap_or("string");
-                                println!("    - {}: {}{}", slot, range, req);
+                                println!("    - {slot}: {range}{req}");
                             }
                         }
                     }
                 } else {
-                    eprintln!("Class '{}' not found", name);
+                    eprintln!("Class '{name}' not found");
                 }
             }
             "slot" => {
                 if let Some(slot) = schema.slots.get(name) {
                     println!("{}", format!("Slot: {name}").bold().cyan());
                     if let Some(desc) = &slot.description {
-                        println!("  Description: {}", desc);
+                        println!("  Description: {desc}");
                     }
                     if let Some(range) = &slot.range {
-                        println!("  Range: {}", range);
+                        println!("  Range: {range}");
                     }
                     println!("  Required: {}", slot.required.unwrap_or(false));
                     println!("  Multivalued: {}", slot.multivalued.unwrap_or(false));
                     if let Some(pattern) = &slot.pattern {
-                        println!("  Pattern: {}", pattern);
+                        println!("  Pattern: {pattern}");
                     }
                     if let Some(min) = &slot.minimum_value {
-                        println!("  Minimum: {}", min);
+                        println!("  Minimum: {min}");
                     }
                     if let Some(max) = &slot.maximum_value {
-                        println!("  Maximum: {}", max);
+                        println!("  Maximum: {max}");
                     }
                 } else {
-                    eprintln!("Slot '{}' not found", name);
+                    eprintln!("Slot '{name}' not found");
                 }
             }
             "type" => {
                 if let Some(type_def) = schema.types.get(name) {
                     println!("{}", format!("Type: {name}").bold().cyan());
                     if let Some(desc) = &type_def.description {
-                        println!("  Description: {}", desc);
+                        println!("  Description: {desc}");
                     }
                     if let Some(base) = &type_def.base_type {
-                        println!("  Base: {}", base);
+                        println!("  Base: {base}");
                     }
                     if let Some(pattern) = &type_def.pattern {
-                        println!("  Pattern: {}", pattern);
+                        println!("  Pattern: {pattern}");
                     }
                 } else {
-                    eprintln!("Type '{}' not found", name);
+                    eprintln!("Type '{name}' not found");
                 }
             }
             "enum" => {
                 if let Some(enum_def) = schema.enums.get(name) {
                     println!("{}", format!("Enum: {name}").bold().cyan());
                     if let Some(desc) = &enum_def.description {
-                        println!("  Description: {}", desc);
+                        println!("  Description: {desc}");
                     }
                     println!("  Values ({}):", enum_def.permissible_values.len());
                     for value_def in &enum_def.permissible_values {
                         match value_def {
                             linkml_core::types::PermissibleValue::Simple(text) => {
-                                println!("    - {}", text);
+                                println!("    - {text}");
                             }
                             linkml_core::types::PermissibleValue::Complex { text, description, .. } => {
                                 let desc = description.as_deref().unwrap_or("");
-                                println!("    - {}: {}", text, desc);
+                                println!("    - {text}: {desc}");
                             }
                         }
                     }
                 } else {
-                    eprintln!("Enum '{}' not found", name);
+                    eprintln!("Enum '{name}' not found");
                 }
             }
             _ => {
-                eprintln!("Unknown item type: '{}'. Use: class, slot, type, or enum", item_type);
+                eprintln!("Unknown item type: '{item_type}'. Use: class, slot, type, or enum");
             }
         }
     }
@@ -1599,7 +1584,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 Generator::generate(&generator, schema)
             }
             _ => {
-                eprintln!("Unsupported language: '{}'", language);
+                eprintln!("Unsupported language: '{language}'");
                 return;
             }
         };
@@ -1608,14 +1593,14 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             Ok(output) => {
                 if let Some(path) = output_path {
                     match std::fs::write(path, &output) {
-                        Ok(_) => println!("✓ Generated {} code to {}", language, path.display()),
-                        Err(e) => eprintln!("Failed to write output: {}", e),
+                        Ok(()) => println!("✓ Generated {} code to {}", language, path.display()),
+                        Err(e) => eprintln!("Failed to write output: {e}"),
                     }
                 } else {
-                    println!("{}", output);
+                    println!("{output}");
                 }
             }
-            Err(e) => eprintln!("Generation failed: {}", e),
+            Err(e) => eprintln!("Generation failed: {e}"),
         }
     }
 
@@ -1649,25 +1634,24 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         for (class_name, class) in &schema.classes {
             for slot_name in &class.slots {
                 if !schema.slots.contains_key(slot_name) {
-                    errors.push(format!("Class '{}' references undefined slot '{}'", class_name, slot_name));
+                    errors.push(format!("Class '{class_name}' references undefined slot '{slot_name}'"));
                 }
             }
         }
 
         // Check for undefined parent classes
         for (class_name, class) in &schema.classes {
-            if let Some(parent) = &class.is_a {
-                if !schema.classes.contains_key(parent) {
-                    errors.push(format!("Class '{}' has undefined parent '{}'", class_name, parent));
+            if let Some(parent) = &class.is_a
+                && !schema.classes.contains_key(parent) {
+                    errors.push(format!("Class '{class_name}' has undefined parent '{parent}'"));
                 }
-            }
         }
 
         // Check for undefined mixins
         for (class_name, class) in &schema.classes {
             for mixin in &class.mixins {
                 if !schema.classes.contains_key(mixin) {
-                    errors.push(format!("Class '{}' references undefined mixin '{}'", class_name, mixin));
+                    errors.push(format!("Class '{class_name}' references undefined mixin '{mixin}'"));
                 }
             }
         }
@@ -1679,13 +1663,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             if !errors.is_empty() {
                 println!("{}", format!("Errors ({})", errors.len()).red().bold());
                 for error in &errors {
-                    println!("  ✗ {}", error);
+                    println!("  ✗ {error}");
                 }
             }
             if !warnings.is_empty() {
                 println!("{}", format!("Warnings ({})", warnings.len()).yellow().bold());
                 for warning in &warnings {
-                    println!("  ⚠ {}", warning);
+                    println!("  ⚠ {warning}");
                 }
             }
         }
@@ -1704,7 +1688,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_json::to_string_pretty(schema) {
                     Ok(c) => c,
                     Err(e) => {
-                        eprintln!("Failed to serialize to JSON: {}", e);
+                        eprintln!("Failed to serialize to JSON: {e}");
                         return;
                     }
                 }
@@ -1713,7 +1697,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_yaml::to_string(schema) {
                     Ok(c) => c,
                     Err(e) => {
-                        eprintln!("Failed to serialize to YAML: {}", e);
+                        eprintln!("Failed to serialize to YAML: {e}");
                         return;
                     }
                 }
@@ -1721,8 +1705,8 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         };
 
         match std::fs::write(&path, content) {
-            Ok(_) => println!("✓ Exported schema to {}", path.display()),
-            Err(e) => eprintln!("Failed to write file: {}", e),
+            Ok(()) => println!("✓ Exported schema to {}", path.display()),
+            Err(e) => eprintln!("Failed to write file: {e}"),
         }
     }
 
@@ -1732,7 +1716,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         let content = match std::fs::read_to_string(&path) {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("Failed to read import file: {}", e);
+                eprintln!("Failed to read import file: {e}");
                 return;
             }
         };
@@ -1742,7 +1726,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_json::from_str(&content) {
                     Ok(s) => s,
                     Err(e) => {
-                        eprintln!("Failed to parse JSON: {}", e);
+                        eprintln!("Failed to parse JSON: {e}");
                         return;
                     }
                 }
@@ -1751,7 +1735,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 match serde_yaml::from_str(&content) {
                     Ok(s) => s,
                     Err(e) => {
-                        eprintln!("Failed to parse YAML: {}", e);
+                        eprintln!("Failed to parse YAML: {e}");
                         return;
                     }
                 }
@@ -1763,40 +1747,40 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             // Merge classes
             for (name, class) in import_schema.classes {
                 if schema.classes.contains_key(&name) {
-                    println!("  Skipping existing class: {}", name);
+                    println!("  Skipping existing class: {name}");
                 } else {
                     schema.classes.insert(name.clone(), class);
-                    println!("  Added class: {}", name);
+                    println!("  Added class: {name}");
                 }
             }
 
             // Merge slots
             for (name, slot) in import_schema.slots {
                 if schema.slots.contains_key(&name) {
-                    println!("  Skipping existing slot: {}", name);
+                    println!("  Skipping existing slot: {name}");
                 } else {
                     schema.slots.insert(name.clone(), slot);
-                    println!("  Added slot: {}", name);
+                    println!("  Added slot: {name}");
                 }
             }
 
             // Merge types
             for (name, type_def) in import_schema.types {
                 if schema.types.contains_key(&name) {
-                    println!("  Skipping existing type: {}", name);
+                    println!("  Skipping existing type: {name}");
                 } else {
                     schema.types.insert(name.clone(), type_def);
-                    println!("  Added type: {}", name);
+                    println!("  Added type: {name}");
                 }
             }
 
             // Merge enums
             for (name, enum_def) in import_schema.enums {
                 if schema.enums.contains_key(&name) {
-                    println!("  Skipping existing enum: {}", name);
+                    println!("  Skipping existing enum: {name}");
                 } else {
                     schema.enums.insert(name.clone(), enum_def);
-                    println!("  Added enum: {}", name);
+                    println!("  Added enum: {name}");
                 }
             }
 
@@ -1845,16 +1829,16 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             }
         }
         
-        let avg_slots = if !schema.classes.is_empty() {
-            total_slots as f64 / schema.classes.len() as f64
-        } else {
+        let avg_slots = if schema.classes.is_empty() {
             0.0
+        } else {
+            total_slots as f64 / schema.classes.len() as f64
         };
         
         println!("\n{}", "Complexity Metrics:".bold());
-        println!("  Max slots per class: {}", max_slots);
-        println!("  Avg slots per class: {:.2}", avg_slots);
-        println!("  Max inheritance depth: {}", max_inheritance_depth);
+        println!("  Max slots per class: {max_slots}");
+        println!("  Avg slots per class: {avg_slots:.2}");
+        println!("  Max inheritance depth: {max_inheritance_depth}");
         
         // Enum statistics
         if !schema.enums.is_empty() {
@@ -1864,8 +1848,8 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             let avg_values = total_values as f64 / schema.enums.len() as f64;
             
             println!("\n{}", "Enum Statistics:".bold());
-            println!("  Total enum values: {}", total_values);
-            println!("  Avg values per enum: {:.2}", avg_values);
+            println!("  Total enum values: {total_values}");
+            println!("  Avg values per enum: {avg_values:.2}");
         }
     }
 
@@ -1901,7 +1885,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         operations: usize,
         chaos: bool,
         output: Option<&Path>,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         println!("{}", "Stress Testing".bold().blue());
         println!("{}", "==============".blue());
 
@@ -1962,7 +1946,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
     async fn migrate_command(
         &self,
         command: &crate::migration::cli::MigrationCommands,
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         use crate::migration::cli::MigrationCommands;
 
         match command {
@@ -1973,7 +1957,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             } => {
                 println!("{}", "Schema Change Analysis".bold().blue());
                 println!("{}", "=====================".blue());
-                println!("Analyzing changes from {} to {}...", from, to);
+                println!("Analyzing changes from {from} to {to}...");
 
                 // Load schemas
                 let from_path = std::path::Path::new(from);
@@ -1989,7 +1973,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if !analysis.breaking_changes.is_empty() {
                     println!("\n{}", "Breaking Changes:".red().bold());
                     for change in &analysis.breaking_changes {
-                        println!("  - {:?}", change);
+                        println!("  - {change:?}");
                     }
                 }
 
@@ -1997,7 +1981,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if !analysis.non_breaking_changes.is_empty() {
                     println!("\n{}", "Non-Breaking Changes:".green());
                     for change in &analysis.non_breaking_changes {
-                        println!("  - {:?}", change);
+                        println!("  - {change:?}");
                     }
                 }
 
@@ -2130,7 +2114,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 /// # Errors
 ///
 /// Returns an error if the CLI service cannot be created or initialized.
-pub fn run() -> Result<()> {
+pub fn run() -> linkml_core::error::Result<()> {
     // Would create actual service here
     // let service = create_linkml_service().await?;
     // let app = CliApp::new(service);
@@ -2142,6 +2126,7 @@ pub fn run() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_cli_parsing() {

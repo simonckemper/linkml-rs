@@ -18,7 +18,7 @@ fn test_expression_cache_hit() {
 
     // Create a complex expression that takes some time to evaluate
     let expr = parser
-        .parse_str("len(name) + max(10, 20) + min(5, 15)")
+        .parse("len(name) + max(10, 20) + min(5, 15)")
         .expect("Test operation failed");
 
     let mut context = HashMap::new();
@@ -64,7 +64,7 @@ fn test_expression_cache_miss_on_different_context() {
     let parser = Parser::new();
 
     let expr = parser
-        .parse_str("len(name)")
+        .parse("len(name)")
         .expect("Test operation failed");
 
     // First context
@@ -102,7 +102,7 @@ fn test_expression_cache_disabled() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("1 + 1").expect("Test operation failed");
+    let expr = parser.parse("1 + 1").expect("Test operation failed");
     let context = HashMap::new();
 
     // Multiple evaluations should all compute (no caching)
@@ -131,7 +131,7 @@ fn test_expression_cache_clear() {
     let evaluator = Evaluator::with_config(config);
     let parser = Parser::new();
 
-    let expr = parser.parse_str("2 + 3").expect("Test operation failed");
+    let expr = parser.parse("2 + 3").expect("Test operation failed");
     let context = HashMap::new();
 
     // Evaluate to populate cache
@@ -168,7 +168,7 @@ fn test_expression_cache_lru_eviction() {
     // Evaluate 4 different expressions (more than cache size)
     for i in 0..4 {
         let expr = parser
-            .parse_str(&format!("{} + 1", i))
+            .parse(&format!("{} + 1", i))
             .expect("Test operation failed");
         let result = evaluator
             .evaluate(&expr, &HashMap::new())
@@ -196,7 +196,7 @@ fn test_expression_cache_with_functions() {
 
     // Expression with function calls
     let expr = parser
-        .parse_str("max(len(str1), len(str2))")
+        .parse("max(len(str1), len(str2))")
         .expect("Test operation failed");
 
     let mut context = HashMap::new();
@@ -236,7 +236,7 @@ fn test_expression_cache_complex_context() {
     let parser = Parser::new();
 
     let expr = parser
-        .parse_str("data.count * data.price")
+        .parse("data.count * data.price")
         .expect("Test operation failed");
 
     // Complex nested context

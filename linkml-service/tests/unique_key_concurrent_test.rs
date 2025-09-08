@@ -1,12 +1,12 @@
 //! Tests for unique key validation with concurrent access and edge cases
 
 use indexmap::IndexMap;
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition, UniqueKeyDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition, UniqueKeyDefinition};
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::task;
-
+use linkml_core::types::SchemaDefinition;
 #[tokio::test]
 async fn test_concurrent_unique_validation() {
     let mut schema = SchemaDefinition::new("test_schema");

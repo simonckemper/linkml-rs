@@ -5,7 +5,7 @@
 
 use linkml_core::annotations::standard_annotations;
 use linkml_core::types::{
-    ClassDefinition, IfAbsentAction, RecursionOptions, SchemaDefinition, SlotDefinition,
+    ClassDefinition, IfAbsentAction, RecursionOptions, Definition, SlotDefinition,
     UniqueKeyDefinition,
 };
 use linkml_service::{
@@ -77,7 +77,7 @@ async fn test_patch_application() {
         .classes
         .get("Person")
         .expect("Test operation failed");
-    assert!(person.slots.contains(&"email".to_string()));
+    assert!(person.slots.contains(&"email".to_string());
 }
 
 #[tokio::test]
@@ -531,7 +531,8 @@ async fn test_unique_key_validation() {
 #[tokio::test]
 async fn test_conditional_validation() {
     use linkml_service::validator::{Condition, Requirement};
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
     let mut validator = ConditionalValidator::new();
 
     // Rule: if payment_method is "credit_card", then card_number is required
@@ -623,8 +624,8 @@ async fn test_complete_inheritance() {
 
     // Test inheritance resolution
     let chain = get_inheritance_chain("Document", &schema).expect("Test operation failed");
-    assert!(chain.contains(&"Entity".to_string()));
-    assert!(chain.contains(&"Timestamped".to_string()));
+    assert!(chain.contains(&"Entity".to_string());
+    assert!(chain.contains(&"Timestamped".to_string());
 
     // Test that all slots are inherited
     let mut resolver = InheritanceResolver::new(&schema);

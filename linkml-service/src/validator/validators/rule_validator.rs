@@ -3,8 +3,8 @@
 //! This validator integrates the rule engine with the validation framework
 //! to enable if-then-else validation logic at the class level.
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition};
 use serde_json::Value;
+use linkml_core::types::{ClassDefinition, SchemaDefinition};
 use std::sync::Arc;
 
 use crate::rule_engine::{RuleEngine, RuleExecutionStrategy};
@@ -18,14 +18,14 @@ pub struct RuleValidator {
 
 impl RuleValidator {
     /// Create a new rule validator
-    pub fn new(schema: Arc<SchemaDefinition>) -> Self {
+    #[must_use] pub fn new(schema: Arc<SchemaDefinition>) -> Self {
         Self {
             rule_engine: Arc::new(RuleEngine::new(schema)),
         }
     }
 
     /// Create a rule validator with custom execution strategy
-    pub fn with_strategy(schema: Arc<SchemaDefinition>, _strategy: RuleExecutionStrategy) -> Self {
+    #[must_use] pub fn with_strategy(schema: Arc<SchemaDefinition>, _strategy: RuleExecutionStrategy) -> Self {
         Self {
             rule_engine: Arc::new(RuleEngine::new(schema)),
         }
@@ -42,7 +42,7 @@ impl RuleValidator {
     }
 
     /// Get the rule engine for advanced usage
-    pub fn rule_engine(&self) -> &Arc<RuleEngine> {
+    #[must_use] pub fn rule_engine(&self) -> &Arc<RuleEngine> {
         &self.rule_engine
     }
 }
@@ -223,8 +223,8 @@ mod tests {
 
         // Should have 2 issues - missing guardian_name and guardian_phone
         assert_eq!(issues.len(), 2);
-        assert!(issues.iter().any(|i| i.message.contains("guardian_name")));
-        assert!(issues.iter().any(|i| i.message.contains("guardian_phone")));
+        assert!(issues.iter().any(|i| i.message.contains("guardian_name"));
+        assert!(issues.iter().any(|i| i.message.contains("guardian_phone"));
     }
 
     #[test]

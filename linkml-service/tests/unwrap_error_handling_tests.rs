@@ -35,7 +35,7 @@ use linkml_service::{
 };
 use linkml_core::{
     error::LinkMLError,
-    types::{Schema, ClassDefinition, SlotDefinition},
+    types::{SchemaDefinition, ClassDefinition, SlotDefinition},
 };
 use std::path::Path;
 use tempfile::TempDir;
@@ -51,12 +51,12 @@ classes:
 ";
 
     let parser = YamlParser::new();
-    let result = parser.parse_str(invalid_yaml);
+    let result = parser.parse(invalid_yaml);
 
     // Should return error, not panic
     assert!(result.is_err());
     match result {
-        Err(LinkMLError::ParseError(msg)) => {
+        Err(LinkMLError::Parse(msg)) => {
             assert!(msg.contains("yaml") || msg.contains("parse"));
         }
         _ => panic!("Expected ParseError"),
@@ -74,7 +74,7 @@ fn test_parser_handles_invalid_json() {
 }"#;
 
     let parser = JsonParser::new();
-    let result = parser.parse_str(invalid_json);
+    let result = parser.parse(invalid_json);
 
     // Should return error, not panic
     assert!(result.is_err());
@@ -97,11 +97,12 @@ fn test_validator_handles_invalid_pattern() {
     schema.classes.insert("Person".to_string(), class);
 
     let engine = ValidationEngine::new();
-    let context = // ValidationContext removed(&schema);
+    // ValidationContext::new();
+    let context = ValidationContext::new();
     let options = ValidationOptions::default();
 
     // Should handle regex compilation error gracefully
-    let result = engine.validate_schema(&schema, &context, &options);
+    let result = engine.validate(&schema, &context, &options);
     // May succeed with warnings or fail - both are OK as long as no panic
     match result {
         Ok(report) => {
@@ -180,14 +181,14 @@ fn test_loader_handles_missing_files() {
     let csv_loader = CsvLoader::new();
 
     // Non-existent files
-    let result = yaml_loader.load_file(Path::new("/non/existent/file.yaml"));
+    let result = yaml_loader.load(Path::new("/non/existent/file.yaml"));
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::Io(_)));
+    assert!(matches!(result.unwrap_err(), LinkMLError::IO(_));
 
-    let result = json_loader.load_file(Path::new("/non/existent/file.json"));
+    let result = json_loader.load(Path::new("/non/existent/file.json"));
     assert!(result.is_err());
 
-    let result = csv_loader.load_file(Path::new("/non/existent/file.csv"));
+    let result = csv_loader.load(Path::new("/non/existent/file.csv"));
     assert!(result.is_err());
 }
 
@@ -219,11 +220,11 @@ fn test_generator_registry_duplicate_registration() {
     let mut registry = GeneratorRegistry::new();
 
     // First registration should succeed
-    let result = registry.register("test", Box::new(TypeQLGenerator::new()));
+    let result = registry.register("test", Box::new(TypeQLGenerator::new());
     assert!(result.is_ok());
 
     // Second registration with same name should fail gracefully
-    let result = registry.register("test", Box::new(SQLGenerator::new()));
+    let result = registry.register("test", Box::new(SQLGenerator::new());
     assert!(result.is_err());
 }
 
@@ -282,13 +283,14 @@ slots:
 
     // Validate schema
     let engine = ValidationEngine::new();
-    let context = // ValidationContext removed(&schema);
+    // ValidationContext::new();
+    let context = ValidationContext::new();
     let options = ValidationOptions {
         strict: false,
         ..Default::default()
     };
 
-    match engine.validate_schema(&schema, &context, &options) {
+    match engine.validate(&schema, &context, &options) {
         Ok(report) => {
             // Should have warnings/errors but not panic
             assert!(!report.warnings.is_empty() || !report.errors.is_empty());
@@ -318,6 +320,9 @@ slots:
 #[tokio::test]
 async fn test_concurrent_operations_no_panic() {
     use tokio::task::JoinSet;
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
+use linkml_core::error::LinkMLError;
 
     let mut schema = SchemaDefinition::default();
     schema.name = Some("concurrent_test".to_string());
@@ -338,9 +343,10 @@ async fn test_concurrent_operations_no_panic() {
                 0 => {
                     // Validation
                     let engine = ValidationEngine::new();
-                    let context = // ValidationContext removed(&schema_clone);
+                    // ValidationContext::new();
+                    let context = ValidationContext::new();
                     let options = ValidationOptions::default();
-                    let _ = engine.validate_schema(&schema_clone, &context, &options);
+                    let _ = engine.validate(&schema_clone, &context, &options);
                 }
                 1 => {
                     // Generation

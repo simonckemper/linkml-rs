@@ -277,12 +277,12 @@ mod tests {
         let result = generator
             .generate(schema, GeneratorOptions::default())
             .await
-            .map_err(|e| anyhow::anyhow!("should generate successfully: {}", e))?;
+            .expect("should generate successfully: {}");
 
         assert!(
             result
                 .content
-                .map_err(|e| anyhow::anyhow!("should have content: {}", e))?
+                .expect("should have content: {}")
                 .contains("TestSchema")
         );
     }

@@ -18,14 +18,16 @@ mod mock_services;
 use crate::factory::create_logger_service;
 use mock_services::*;
 
+
 /// Helper to get test data directory
 fn test_data_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/schemas")
+    Ok(())
 }
 
 /// Helper to create test service
 async fn create_test_service() -> Arc<dyn LinkMLService> {
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

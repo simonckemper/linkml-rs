@@ -1,4 +1,4 @@
-//! Abstract Syntax Tree for LinkML expressions
+//! Abstract Syntax Tree for `LinkML` expressions
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -124,17 +124,17 @@ impl Expression {
     }
 
     /// Create a new number literal
-    pub fn number(value: f64) -> Self {
+    #[must_use] pub fn number(value: f64) -> Self {
         Expression::Number(value)
     }
 
     /// Create a new boolean literal
-    pub fn boolean(value: bool) -> Self {
+    #[must_use] pub fn boolean(value: bool) -> Self {
         Expression::Boolean(value)
     }
 
     /// Get the depth of the expression tree
-    pub fn depth(&self) -> usize {
+    #[must_use] pub fn depth(&self) -> usize {
         match self {
             Expression::Null
             | Expression::Boolean(_)
@@ -159,7 +159,7 @@ impl Expression {
             | Expression::Or(left, right) => 1 + left.depth().max(right.depth()),
 
             Expression::FunctionCall { args, .. } => {
-                1 + args.iter().map(|arg| arg.depth()).max().unwrap_or(0)
+                1 + args.iter().map(Expression::depth).max().unwrap_or(0)
             }
 
             Expression::Conditional {
@@ -176,7 +176,7 @@ impl Expression {
     }
 
     /// Count the total number of nodes in the expression tree
-    pub fn node_count(&self) -> usize {
+    #[must_use] pub fn node_count(&self) -> usize {
         match self {
             Expression::Null
             | Expression::Boolean(_)
@@ -201,7 +201,7 @@ impl Expression {
             | Expression::Or(left, right) => 1 + left.node_count() + right.node_count(),
 
             Expression::FunctionCall { args, .. } => {
-                1 + args.iter().map(|arg| arg.node_count()).sum::<usize>()
+                1 + args.iter().map(Expression::node_count).sum::<usize>()
             }
 
             Expression::Conditional {
@@ -217,37 +217,37 @@ impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Expression::Null => write!(f, "null"),
-            Expression::Boolean(b) => write!(f, "{}", b),
-            Expression::Number(n) => write!(f, "{}", n),
-            Expression::String(s) => write!(f, "\"{}\"", s),
-            Expression::Variable(name) => write!(f, "{{{}}}", name),
+            Expression::Boolean(b) => write!(f, "{b}"),
+            Expression::Number(n) => write!(f, "{n}"),
+            Expression::String(s) => write!(f, "\"{s}\""),
+            Expression::Variable(name) => write!(f, "{{{name}}}"),
 
-            Expression::Add(left, right) => write!(f, "({} + {})", left, right),
-            Expression::Subtract(left, right) => write!(f, "({} - {})", left, right),
-            Expression::Multiply(left, right) => write!(f, "({} * {})", left, right),
-            Expression::Divide(left, right) => write!(f, "({} / {})", left, right),
-            Expression::Modulo(left, right) => write!(f, "({} % {})", left, right),
+            Expression::Add(left, right) => write!(f, "({left} + {right})"),
+            Expression::Subtract(left, right) => write!(f, "({left} - {right})"),
+            Expression::Multiply(left, right) => write!(f, "({left} * {right})"),
+            Expression::Divide(left, right) => write!(f, "({left} / {right})"),
+            Expression::Modulo(left, right) => write!(f, "({left} % {right})"),
 
-            Expression::Negate(expr) => write!(f, "-{}", expr),
+            Expression::Negate(expr) => write!(f, "-{expr}"),
 
-            Expression::Equal(left, right) => write!(f, "({} == {})", left, right),
-            Expression::NotEqual(left, right) => write!(f, "({} != {})", left, right),
-            Expression::Less(left, right) => write!(f, "({} < {})", left, right),
-            Expression::Greater(left, right) => write!(f, "({} > {})", left, right),
-            Expression::LessOrEqual(left, right) => write!(f, "({} <= {})", left, right),
-            Expression::GreaterOrEqual(left, right) => write!(f, "({} >= {})", left, right),
+            Expression::Equal(left, right) => write!(f, "({left} == {right})"),
+            Expression::NotEqual(left, right) => write!(f, "({left} != {right})"),
+            Expression::Less(left, right) => write!(f, "({left} < {right})"),
+            Expression::Greater(left, right) => write!(f, "({left} > {right})"),
+            Expression::LessOrEqual(left, right) => write!(f, "({left} <= {right})"),
+            Expression::GreaterOrEqual(left, right) => write!(f, "({left} >= {right})"),
 
-            Expression::And(left, right) => write!(f, "({} and {})", left, right),
-            Expression::Or(left, right) => write!(f, "({} or {})", left, right),
-            Expression::Not(expr) => write!(f, "not {}", expr),
+            Expression::And(left, right) => write!(f, "({left} and {right})"),
+            Expression::Or(left, right) => write!(f, "({left} or {right})"),
+            Expression::Not(expr) => write!(f, "not {expr}"),
 
             Expression::FunctionCall { name, args } => {
-                write!(f, "{}(", name)?;
+                write!(f, "{name}(")?;
                 for (i, arg) in args.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", arg)?;
+                    write!(f, "{arg}")?;
                 }
                 write!(f, ")")
             }
@@ -256,7 +256,7 @@ impl fmt::Display for Expression {
                 condition,
                 then_expr,
                 else_expr,
-            } => write!(f, "({} if {} else {})", then_expr, condition, else_expr),
+            } => write!(f, "({then_expr} if {condition} else {else_expr})"),
         }
     }
 }
@@ -268,13 +268,13 @@ mod tests {
     #[test]
     fn test_expression_builders() {
         let var = Expression::var("x");
-        assert_eq!(var, Expression::Variable("x".to_string()));
+        assert_eq!(var, Expression::Variable("x".to_string());
 
         let num = Expression::number(42.0);
         assert_eq!(num, Expression::Number(42.0));
 
         let string = Expression::string("hello");
-        assert_eq!(string, Expression::String("hello".to_string()));
+        assert_eq!(string, Expression::String("hello".to_string());
 
         let boolean = Expression::boolean(true);
         assert_eq!(boolean, Expression::Boolean(true));

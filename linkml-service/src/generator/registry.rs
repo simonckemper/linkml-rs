@@ -153,7 +153,7 @@ impl GeneratorRegistry {
 
         for generator in generators {
             if let Err(e) = registry.register(generator).await {
-                eprintln!("Failed to register generator: {}", e);
+                eprintln!("Failed to register generator: {e}");
             }
         }
 
@@ -169,7 +169,7 @@ impl GeneratorRegistry {
         if generators.contains_key(&name) {
             return Err(GeneratorError::Configuration(format!(
                 "Generator '{name}' is already registered"
-            )));
+            ));
         }
 
         generators.insert(name, generator);
@@ -183,7 +183,7 @@ impl GeneratorRegistry {
         if generators.remove(name).is_none() {
             return Err(GeneratorError::Configuration(format!(
                 "Generator '{name}' not found"
-            )));
+            ));
         }
 
         Ok(())
@@ -271,7 +271,7 @@ impl GeneratorRegistry {
         if plugin_generators.contains_key(&name) {
             return Err(GeneratorError::Configuration(format!(
                 "Plugin generator '{name}' is already registered"
-            )));
+            ));
         }
 
         plugin_generators.insert(name, generator);
@@ -323,9 +323,8 @@ pub struct GeneratorInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
+
     use linkml_core::LinkMLError;
-    use linkml_core::prelude::SchemaDefinition;
 
     struct TestGenerator {
         name: String,
@@ -344,7 +343,7 @@ mod tests {
             vec![".test"]
         }
 
-        fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        fn generate(&self, _schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
             Ok(String::new())
         }
 
@@ -373,7 +372,7 @@ mod tests {
         registry
             .register(generator.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should register generator: {}", e))?;
+            .expect("should register generator: {}");
 
         // Should be able to retrieve it
         let retrieved = registry
@@ -384,7 +383,7 @@ mod tests {
 
         // List should include it
         let names = registry.list_generators().await;
-        assert!(names.contains(&"test".to_string()));
+        assert!(names.contains(&"test".to_string());
 
         // Get info
         let info = registry
@@ -398,7 +397,7 @@ mod tests {
         registry
             .unregister("test")
             .await
-            .map_err(|e| anyhow::anyhow!("should unregister generator: {}", e))?;
+            .expect("should unregister generator: {}");
         assert!(registry.get("test").await.is_none());
         Ok(())
     }
@@ -417,7 +416,7 @@ mod tests {
         registry
             .register(gen1)
             .await
-            .map_err(|e| anyhow::anyhow!("should register first generator: {}", e))?;
+            .expect("should register first generator: {}");
 
         // Second registration should fail
         let result = registry.register(gen2).await;

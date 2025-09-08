@@ -748,16 +748,14 @@ impl DBMSService for MockDBMSService {
         config: DatabaseConfig,
     ) -> DBMSResult<DatabaseInfo> {
         use uuid::Uuid;
+        use std::collections::HashSet;
         // Convert config::DatabaseConfig to types::DatabaseConfig
         let types_config = TypesConfig {
+            enabled_features: HashSet::new(), // Default to no features enabled
             max_connections: config.connection_limits.max_connections,
             connection_timeout_secs: config.connection_limits.connection_timeout_secs,
             query_timeout_secs: config.query_limits.max_execution_time_secs,
             transaction_timeout_secs: 600, // Default transaction timeout
-            enable_query_logging: config.security_settings.enable_audit_logging,
-            enable_monitoring: true,        // Default to enabled
-            enable_schema_validation: true, // Default to enabled
-            enable_auto_backup: false,      // Default to disabled
             backup_interval_hours: 24,      // Default backup interval
             max_backup_files: 7,            // Default backup file retention
             database_settings: config.custom_settings,
@@ -1021,6 +1019,7 @@ impl DBMSService for MockDBMSService {
 
 // Mock Timeout Service
 use std::time::Duration;
+// Removed linkml_core::error::Result to use proper error types
 
 pub struct MockTimeoutService;
 

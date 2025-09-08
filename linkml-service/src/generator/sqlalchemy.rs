@@ -1,6 +1,6 @@
-//! SQLAlchemy ORM model generator for LinkML schemas
+//! `SQLAlchemy` ORM model generator for `LinkML` schemas
 //!
-//! This module generates Python SQLAlchemy ORM models from LinkML schemas,
+//! This module generates Python `SQLAlchemy` ORM models from `LinkML` schemas,
 //! enabling database persistence with full ORM capabilities.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
@@ -61,7 +61,7 @@ pub struct SQLAlchemyGenerator {
 
 impl SQLAlchemyGenerator {
     /// Create a new `SQL`Alchemy generator
-    pub fn new(config: SQLAlchemyGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: SQLAlchemyGeneratorConfig) -> Self {
         Self { config }
     }
 
@@ -101,14 +101,13 @@ impl SQLAlchemyGenerator {
         format!("{} = declarative_base()", self.config.base_class)
     }
 
-    /// Map `LinkML` type to SQLAlchemy column type
+    /// Map `LinkML` type to `SQLAlchemy` column type
     fn map_type_to_column(&self, type_name: &str, type_def: Option<&TypeDefinition>) -> String {
         // Check if we have a type definition with a base
-        if let Some(td) = type_def {
-            if let Some(base) = &td.base_type {
+        if let Some(td) = type_def
+            && let Some(base) = &td.base_type {
                 return self.map_type_to_column(base, None);
             }
-        }
 
         // Map based on type name
         match type_name {
@@ -205,11 +204,11 @@ impl SQLAlchemyGenerator {
             self.config.base_class.clone()
         };
 
-        lines.push(format!("class {}({}):", name, parent));
+        lines.push(format!("class {name}({parent}):"));
 
         // Docstring
         if let Some(desc) = &class_def.description {
-            lines.push(format!("    \"\"\"{}\"\"\"", desc));
+            lines.push(format!("    \"\"\"{desc}\"\"\""));
         }
 
         // Table name
@@ -323,7 +322,7 @@ impl SQLAlchemyGenerator {
 
         // Add column arguments
         if let Some(desc) = &slot.description {
-            column_args.push(format!("comment='{}'", desc.replace("'", "\\'")));
+            column_args.push(format!("comment='{}'", desc.replace('\'', "\\'"));
         }
 
         if slot.required == Some(true) {
@@ -343,8 +342,7 @@ impl SQLAlchemyGenerator {
                 format!(", {}", column_args.join(", "))
             };
             format!(
-                "{}: Mapped[{}] = mapped_column({}{})",
-                column_name, type_annotation, column_type, args
+                "{column_name}: Mapped[{type_annotation}] = mapped_column({column_type}{args})"
             )
         } else {
             let args = if column_args.is_empty() {
@@ -352,7 +350,7 @@ impl SQLAlchemyGenerator {
             } else {
                 format!(", {}", column_args.join(", "))
             };
-            format!("{} = Column({}{})", column_name, column_type, args)
+            format!("{column_name} = Column({column_type}{args})")
         }
     }
 
@@ -378,13 +376,11 @@ impl SQLAlchemyGenerator {
 
         if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations {
             format!(
-                "{}: Mapped[Optional[int]] = mapped_column(ForeignKey('{}.id'), nullable={})",
-                column_name, target_table, nullable
+                "{column_name}: Mapped[Optional[int]] = mapped_column(ForeignKey('{target_table}.id'), nullable={nullable})"
             )
         } else {
             format!(
-                "{} = Column(Integer, ForeignKey('{}.id'), nullable={})",
-                column_name, target_table, nullable
+                "{column_name} = Column(Integer, ForeignKey('{target_table}.id'), nullable={nullable})"
             )
         }
     }
@@ -399,14 +395,12 @@ impl SQLAlchemyGenerator {
 
         if !class_def.slots.is_empty() {
             for slot_name in &class_def.slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot_def.range {
-                        if schema.classes.contains_key(range) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot_def.range
+                        && schema.classes.contains_key(range) {
                             let rel = self.generate_relationship(slot_name, slot_def, range);
                             relationships.push(rel);
                         }
-                    }
-                }
             }
         }
 
@@ -432,26 +426,22 @@ impl SQLAlchemyGenerator {
             if self.config.sqlalchemy_version.starts_with("2.") && self.config.use_type_annotations
             {
                 format!(
-                    "{}: Mapped[List['{}']] = relationship(back_populates='{}')",
-                    relationship_name, target_class, back_populates
+                    "{relationship_name}: Mapped[List['{target_class}']] = relationship(back_populates='{back_populates}')"
                 )
             } else {
                 format!(
-                    "{} = relationship('{}', back_populates='{}')",
-                    relationship_name, target_class, back_populates
+                    "{relationship_name} = relationship('{target_class}', back_populates='{back_populates}')"
                 )
             }
         } else if self.config.sqlalchemy_version.starts_with("2.")
             && self.config.use_type_annotations
         {
             format!(
-                "{}: Mapped[Optional['{}']] = relationship(back_populates='{}')",
-                relationship_name, target_class, back_populates
+                "{relationship_name}: Mapped[Optional['{target_class}']] = relationship(back_populates='{back_populates}')"
             )
         } else {
             format!(
-                "{} = relationship('{}', back_populates='{}')",
-                relationship_name, target_class, back_populates
+                "{relationship_name} = relationship('{target_class}', back_populates='{back_populates}')"
             )
         }
     }
@@ -560,7 +550,7 @@ impl SQLAlchemyGenerator {
         .to_string()
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, name: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -582,11 +572,11 @@ impl SQLAlchemyGenerator {
 }
 
 impl Generator for SQLAlchemyGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sqlalchemy"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate SQLAlchemy ORM models from LinkML schemas"
     }
 
@@ -634,12 +624,12 @@ impl Generator for SQLAlchemyGenerator {
             for (class_name, class_def) in &schema.classes {
                 if !class_def.slots.is_empty() {
                     for slot_name in &class_def.slots {
-                        if let Some(slot_def) = schema.slots.get(slot_name) {
-                            if slot_def.multivalued == Some(true) {
-                                if let Some(range) = &slot_def.range {
-                                    if schema.classes.contains_key(range) {
+                        if let Some(slot_def) = schema.slots.get(slot_name)
+                            && slot_def.multivalued == Some(true)
+                                && let Some(range) = &slot_def.range
+                                    && schema.classes.contains_key(range) {
                                         let table_key =
-                                            format!("{}-{}-{}", class_name, slot_name, range);
+                                            format!("{class_name}-{slot_name}-{range}");
                                         if !association_tables.contains(&table_key) {
                                             association_tables.insert(table_key);
                                             output.push(self.generate_association_table(
@@ -648,9 +638,6 @@ impl Generator for SQLAlchemyGenerator {
                                             output.push(String::new());
                                         }
                                     }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -675,11 +662,11 @@ impl Generator for SQLAlchemyGenerator {
         Ok(output.join("\n"))
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "py"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "models"
     }
 }
@@ -749,9 +736,10 @@ impl SQLAlchemyGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_sqlalchemy_generation() {
+    fn test_sqlalchemy_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
 
@@ -784,7 +772,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate SQLAlchemy models: {}", e))?;
+            .expect("should generate SQLAlchemy models: {}");
 
         // Verify key elements
         assert!(result.contains("from sqlalchemy"));
@@ -793,5 +781,6 @@ mod tests {
         assert!(result.contains("__tablename__ = 'person'"));
         assert!(result.contains("name"));
         assert!(result.contains("age"));
+        Ok(())
     }
 }

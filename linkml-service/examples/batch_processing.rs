@@ -16,7 +16,7 @@ use tokio::sync::Semaphore;
 mod common;
 use common::initialize_example_service;
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Batch Processing Example");
     println!("==============================\n");
     let schema_yaml = r#"

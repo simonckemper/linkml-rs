@@ -1,4 +1,4 @@
-//! Enhanced import resolution for LinkML schemas
+//! Enhanced import resolution for `LinkML` schemas
 //!
 //! This module provides advanced import resolution capabilities including:
 //! - URL-based imports
@@ -59,6 +59,12 @@ pub struct ImportResolverV2 {
     visited_stack: Arc<RwLock<Vec<String>>>,
 }
 
+impl Default for ImportResolverV2 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImportResolverV2 {
     /// Create a new import resolver with default settings
     #[must_use]
@@ -88,12 +94,16 @@ impl ImportResolverV2 {
     }
 
     /// Resolve all imports in a schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn resolve_imports(&self, schema: &SchemaDefinition) -> Result<SchemaDefinition> {
         let mut resolved = schema.clone();
 
         // Apply settings from schema if available, merging with existing settings
-        if let Some(schema_settings) = &schema.settings {
-            if let Some(import_settings) = &schema_settings.imports {
+        if let Some(schema_settings) = &schema.settings
+            && let Some(import_settings) = &schema_settings.imports {
                 let mut merged_settings = self.settings.read().clone();
 
                 // Merge aliases
@@ -127,7 +137,6 @@ impl ImportResolverV2 {
 
                 self.set_settings(merged_settings);
             }
-        }
 
         // Check if imports should be followed
         let settings = self.settings.read();
@@ -325,7 +334,7 @@ impl ImportResolverV2 {
             }
             ImportResolutionStrategy::Absolute => {
                 // Only use search paths
-                let paths: Vec<PathBuf> = search_paths.iter().map(|s| PathBuf::from(s)).collect();
+                let paths: Vec<PathBuf> = search_paths.iter().map(PathBuf::from).collect();
                 self.find_in_paths(import, &paths, &extensions)
             }
             ImportResolutionStrategy::Mixed => {
@@ -333,7 +342,7 @@ impl ImportResolverV2 {
                 self.find_in_paths(import, &[PathBuf::from(".")], &extensions)
                     .or_else(|_| {
                         let paths: Vec<PathBuf> =
-                            search_paths.iter().map(|s| PathBuf::from(s)).collect();
+                            search_paths.iter().map(PathBuf::from).collect();
                         self.find_in_paths(import, &paths, &extensions)
                     })
             }
@@ -356,7 +365,7 @@ impl ImportResolverV2 {
 
             // Try with extensions
             for ext in extensions {
-                let path = base_path.join(format!("{}.{}", import, ext));
+                let path = base_path.join(format!("{import}.{ext}"));
                 if path.exists() {
                     return Ok(path);
                 }
@@ -419,7 +428,7 @@ impl ImportResolverV2 {
 
         // Merge classes with conflict detection
         for (name, class) in source.classes {
-            let qualified_name = self.get_qualified_name(&name, &spec, &source.name);
+            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
             if target.classes.contains_key(&name) {
                 // Conflict - use qualified name
                 target.classes.insert(qualified_name, class);
@@ -430,7 +439,7 @@ impl ImportResolverV2 {
 
         // Merge slots
         for (name, slot) in source.slots {
-            let qualified_name = self.get_qualified_name(&name, &spec, &source.name);
+            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
             if target.slots.contains_key(&name) {
                 target.slots.insert(qualified_name, slot);
             } else {
@@ -440,7 +449,7 @@ impl ImportResolverV2 {
 
         // Merge types
         for (name, type_def) in source.types {
-            let qualified_name = self.get_qualified_name(&name, &spec, &source.name);
+            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
             if target.types.contains_key(&name) {
                 target.types.insert(qualified_name, type_def);
             } else {
@@ -450,7 +459,7 @@ impl ImportResolverV2 {
 
         // Merge enums
         for (name, enum_def) in source.enums {
-            let qualified_name = self.get_qualified_name(&name, &spec, &source.name);
+            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
             if target.enums.contains_key(&name) {
                 target.enums.insert(qualified_name, enum_def);
             } else {
@@ -467,7 +476,7 @@ impl ImportResolverV2 {
         let classes: Vec<(String, ClassDefinition)> = schema
             .classes
             .drain(..)
-            .map(|(name, class)| (format!("{}_{}", prefix, name), class))
+            .map(|(name, class)| (format!("{prefix}_{name}"), class))
             .collect();
         schema.classes.extend(classes);
 
@@ -475,24 +484,24 @@ impl ImportResolverV2 {
         let slots: Vec<(String, SlotDefinition)> = schema
             .slots
             .drain(..)
-            .map(|(name, slot)| (format!("{}_{}", prefix, name), slot))
+            .map(|(name, slot)| (format!("{prefix}_{name}"), slot))
             .collect();
         schema.slots.extend(slots);
 
         // Update references in classes
         for class in schema.classes.values_mut() {
             if let Some(is_a) = &mut class.is_a {
-                *is_a = format!("{}_{}", prefix, is_a);
+                *is_a = format!("{prefix}_{is_a}");
             }
             class.mixins = class
                 .mixins
                 .iter()
-                .map(|m| format!("{}_{}", prefix, m))
+                .map(|m| format!("{prefix}_{m}"))
                 .collect();
             class.slots = class
                 .slots
                 .iter()
-                .map(|s| format!("{}_{}", prefix, s))
+                .map(|s| format!("{prefix}_{s}"))
                 .collect();
         }
     }
@@ -521,9 +530,9 @@ impl ImportResolverV2 {
     /// Get qualified name for an element
     fn get_qualified_name(&self, name: &str, spec: &ImportSpec, schema_name: &str) -> String {
         if let Some(alias) = &spec.alias {
-            format!("{}_{}", alias, name)
+            format!("{alias}_{name}")
         } else {
-            format!("{}_{}", schema_name, name)
+            format!("{schema_name}_{name}")
         }
     }
 
@@ -541,7 +550,7 @@ mod tests {
     #[tokio::test]
     async fn test_enhanced_import_resolver() -> std::result::Result<(), anyhow::Error> {
         // Create test schemas
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let base_path = temp_dir.path();
 
         // Base schema
@@ -564,7 +573,7 @@ slots:
 
         tokio::fs::write(base_path.join("base.yaml"), base_schema)
             .await
-            .map_err(|e| anyhow::anyhow!("should write base schema: {}", e))?;
+            .expect("should write base schema: {}");
 
         // Another schema with conflicts
         let other_schema = r"
@@ -581,7 +590,7 @@ classes:
 
         tokio::fs::write(base_path.join("other.yaml"), other_schema)
             .await
-            .map_err(|e| anyhow::anyhow!("should write other schema: {}", e))?;
+            .expect("should write other schema: {}");
 
         // Main schema with imports
         let main_schema = r#"
@@ -607,7 +616,7 @@ classes:
         let parser = YamlParser::new();
         let mut schema = parser
             .parse_str(main_schema)
-            .map_err(|e| anyhow::anyhow!("should parse main schema: {}", e))?;
+            .expect("should parse main schema: {}");
 
         // Set base path for resolver
         if let Some(settings) = &mut schema.settings {
@@ -625,7 +634,7 @@ classes:
         let resolved = import_resolver
             .resolve_imports(&schema)
             .await
-            .map_err(|e| anyhow::anyhow!("should resolve imports: {}", e))?;
+            .expect("should resolve imports: {}");
 
         // Check that all elements were imported
         assert!(resolved.classes.contains_key("BaseClass"));
@@ -642,7 +651,7 @@ classes:
 
     #[tokio::test]
     async fn test_circular_import_detection() -> std::result::Result<(), anyhow::Error> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let base_path = temp_dir.path();
 
         // Schema A imports B
@@ -663,15 +672,14 @@ imports:
 
         tokio::fs::write(base_path.join("a.yaml"), schema_a)
             .await
-            .map_err(|e| anyhow::anyhow!("should write schema a: {}", e))?;
+            .expect("should write schema a: {}");
         tokio::fs::write(base_path.join("b.yaml"), schema_b)
             .await
-            .map_err(|e| anyhow::anyhow!("should write schema b: {}", e))?;
+            .expect("should write schema b: {}");
 
         // Try to resolve - should fail
-        use crate::parser::{SchemaParser, YamlParser};
         let parser = YamlParser::new();
-        let schema = parser.parse_str(schema_a).map_err(|e| anyhow::anyhow!("should parse schema a: {}", e))?;
+        let schema = parser.parse_str(schema_a).expect("should parse schema a: {}");
 
         let mut settings = ImportSettings::default();
         settings.search_paths = vec![base_path.to_str().ok_or_else(|| anyhow::anyhow!("Failed to convert path to string"))?.to_string()];

@@ -1,7 +1,7 @@
-//! Inheritance resolution for LinkML schemas
+//! Inheritance resolution for `LinkML` schemas
 //!
 //! This module provides functionality to resolve inheritance relationships
-//! in LinkML schemas, including mixin composition and attribute inheritance.
+//! in `LinkML` schemas, including mixin composition and attribute inheritance.
 
 use indexmap::IndexMap;
 use linkml_core::prelude::*;
@@ -56,7 +56,7 @@ pub struct InheritanceResolver {
 
 impl InheritanceResolver {
     /// Create a new inheritance resolver
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             resolved_cache: HashMap::new(),
             max_depth: 100,
@@ -64,7 +64,7 @@ impl InheritanceResolver {
     }
 
     /// Create with custom depth limit
-    pub fn with_max_depth(max_depth: usize) -> Self {
+    #[must_use] pub fn with_max_depth(max_depth: usize) -> Self {
         Self {
             resolved_cache: HashMap::new(),
             max_depth,
@@ -125,7 +125,7 @@ impl InheritanceResolver {
 
         // Cache the result
         self.resolved_cache
-            .insert(class.name.clone(), Arc::new(resolved.clone()));
+            .insert(class.name.clone(), Arc::new(resolved.clone());
 
         Ok(resolved)
     }
@@ -140,9 +140,8 @@ impl InheritanceResolver {
     ) -> InheritanceResult<()> {
         if !visited.insert(parent_name.to_string()) {
             return Err(InheritanceError::CircularInheritance(format!(
-                "Circular inheritance involving {}",
-                parent_name
-            )));
+                "Circular inheritance involving {parent_name}"
+            ));
         }
 
         // Check depth limit
@@ -150,7 +149,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum inheritance depth {} exceeded",
                 self.max_depth
-            )));
+            ));
         }
 
         let parent = schema
@@ -177,9 +176,8 @@ impl InheritanceResolver {
     ) -> InheritanceResult<()> {
         if !visited.insert(format!("mixin:{mixin_name}")) {
             return Err(InheritanceError::CircularInheritance(format!(
-                "Circular mixin reference involving {}",
-                mixin_name
-            )));
+                "Circular mixin reference involving {mixin_name}"
+            ));
         }
 
         // Check depth limit for mixins
@@ -187,7 +185,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum mixin depth {} exceeded",
                 self.max_depth
-            )));
+            ));
         }
 
         let mixin = schema
@@ -197,9 +195,8 @@ impl InheritanceResolver {
 
         if !mixin.mixin.unwrap_or(false) {
             return Err(InheritanceError::InvalidInheritance(format!(
-                "{} is not marked as a mixin",
-                mixin_name
-            )));
+                "{mixin_name} is not marked as a mixin"
+            ));
         }
 
         // Recursively resolve mixin first
@@ -303,9 +300,8 @@ impl InheritanceResolver {
                 .ok_or_else(|| InheritanceError::InvalidPath("Class not found in path".to_string()))?;
             let cycle = path[pos..].to_vec().join(" -> ");
             return Err(InheritanceError::CircularInheritance(format!(
-                "{} -> {}",
-                cycle, class_name
-            )));
+                "{cycle} -> {class_name}"
+            ));
         }
 
         // Check depth limit
@@ -313,7 +309,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum inheritance depth {} exceeded at class {}",
                 self.max_depth, class_name
-            )));
+            ));
         }
 
         if visited.contains(class_name) {
@@ -323,11 +319,10 @@ impl InheritanceResolver {
         path.push(class_name.to_string());
 
         // Check parent
-        if let Some(parent_name) = &class.is_a {
-            if let Some(parent) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class.is_a
+            && let Some(parent) = schema.classes.get(parent_name) {
                 self.check_circular_class(parent_name, parent, schema, visited, path)?;
             }
-        }
 
         // Check mixins
         for mixin_name in &class.mixins {
@@ -353,13 +348,13 @@ impl InheritanceResolver {
         // Build dependency graph
         for (class_name, class_def) in &schema.classes {
             in_degree.entry(class_name.clone()).or_insert(0);
-            graph.entry(class_name.clone()).or_insert_with(Vec::new);
+            graph.entry(class_name.clone()).or_default();
 
             // Add parent dependency
             if let Some(parent) = &class_def.is_a {
                 graph
                     .entry(parent.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(class_name.clone());
                 *in_degree.entry(class_name.clone()).or_insert(0) += 1;
             }
@@ -368,7 +363,7 @@ impl InheritanceResolver {
             for mixin in &class_def.mixins {
                 graph
                     .entry(mixin.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(class_name.clone());
                 *in_degree.entry(class_name.clone()).or_insert(0) += 1;
             }
@@ -416,11 +411,10 @@ impl InheritanceResolver {
         for slot_name in slots_to_resolve {
             if let Some(mut slot) = schema.slots.get(&slot_name).cloned() {
                 // Resolve slot inheritance
-                if let Some(parent_name) = &slot.is_a {
-                    if let Some(parent_slot) = schema.slots.get(parent_name) {
+                if let Some(parent_name) = &slot.is_a
+                    && let Some(parent_slot) = schema.slots.get(parent_name) {
                         self.merge_slot_attributes(&mut slot, parent_slot);
                     }
-                }
 
                 // Apply mixins
                 for mixin_name in &slot.mixins.clone() {
@@ -525,6 +519,7 @@ impl Default for InheritanceResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition {
@@ -656,7 +651,7 @@ mod tests {
 
         assert!(result.is_err());
         if let Err(e) = result {
-            assert!(matches!(e, InheritanceError::CircularInheritance(_)));
+            assert!(matches!(e, InheritanceError::CircularInheritance(_));
         }
     }
 
@@ -679,7 +674,7 @@ mod tests {
 
         assert!(result.is_err());
         if let Err(e) = result {
-            assert!(matches!(e, InheritanceError::InvalidInheritance(_)));
+            assert!(matches!(e, InheritanceError::InvalidInheritance(_));
         }
     }
 }

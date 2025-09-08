@@ -240,13 +240,12 @@ impl CompiledValidatorCache {
                     || stats.memory_bytes + validator_memory > self.max_memory_bytes)
             {
                 // Remove oldest entry (simple LRU strategy)
-                if let Some(first_key) = cache.keys().next().cloned() {
-                    if let Some(removed) = cache.remove(&first_key) {
+                if let Some(first_key) = cache.keys().next().cloned()
+                    && let Some(removed) = cache.remove(&first_key) {
                         let removed_memory = Self::estimate_validator_memory(&removed);
                         stats.memory_bytes = stats.memory_bytes.saturating_sub(removed_memory);
                         stats.evictions += 1;
                     }
-                }
             }
 
             cache.insert(key.clone(), Arc::clone(&validator_arc));
@@ -342,7 +341,7 @@ impl CompiledValidatorCache {
     }
 }
 
-/// Cache service trait for RootReal integration
+/// Cache service trait for `RootReal` integration
 #[async_trait::async_trait]
 pub trait CacheService: Send + Sync {
     /// Get a value from cache
@@ -401,12 +400,12 @@ mod tests {
 
         // Compile and cache
         let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, &options)
-            .map_err(|e| anyhow::anyhow!("should compile validator: {}", e))?;
+            .expect("should compile validator: {}");
 
         cache
             .put(key.clone(), validator)
             .await
-            .map_err(|e| anyhow::anyhow!("should cache validator: {}", e))?;
+            .expect("should cache validator: {}");
 
         // Cache hit
         assert!(cache.get(&key).await.is_some());
@@ -432,12 +431,12 @@ mod tests {
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator =
                 CompiledValidator::compile_class(&schema, &class.name, &class, &options)
-                    .map_err(|e| anyhow::anyhow!("should compile validator: {}", e))?;
+                    .expect("should compile validator: {}");
 
             cache
                 .put(key, validator)
                 .await
-                .map_err(|e| anyhow::anyhow!("should cache validator: {}", e))?;
+                .expect("should cache validator: {}");
         }
 
         assert_eq!(cache.stats().cached_validators, 2);

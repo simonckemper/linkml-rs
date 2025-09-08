@@ -104,6 +104,10 @@ impl InputValidator {
     }
 
     /// Validate a general string input
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_string(&self, s: &str) -> Result<(), ValidationError> {
         if s.len() > self.limits.max_string_length {
             return Err(ValidationError::StringTooLarge {
@@ -115,6 +119,10 @@ impl InputValidator {
     }
 
     /// Validate an identifier (name, key, etc.)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_identifier(&self, id: &str) -> Result<(), ValidationError> {
         if id.len() > self.limits.max_identifier_length {
             return Err(ValidationError::IdentifierTooLong {
@@ -134,6 +142,10 @@ impl InputValidator {
     }
 
     /// Validate expression depth
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_expression_depth(&self, depth: usize) -> Result<(), ValidationError> {
         if depth > self.limits.max_expression_depth {
             return Err(ValidationError::ExpressionTooDeep {
@@ -145,6 +157,10 @@ impl InputValidator {
     }
 
     /// Validate constraint count
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_constraint_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_constraint_count {
             return Err(ValidationError::TooManyConstraints {
@@ -156,6 +172,10 @@ impl InputValidator {
     }
 
     /// Validate function argument count
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_function_args(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_function_args {
             return Err(ValidationError::TooManyFunctionArgs {
@@ -167,6 +187,10 @@ impl InputValidator {
     }
 
     /// Validate `JSON` payload size
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size {
             return Err(ValidationError::JsonTooLarge {
@@ -178,6 +202,10 @@ impl InputValidator {
     }
 
     /// Validate number of slots in a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_slot_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_slots_per_class {
             return Err(ValidationError::TooManySlots {
@@ -189,6 +217,10 @@ impl InputValidator {
     }
 
     /// Validate number of classes in a schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_class_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_classes_per_schema {
             return Err(ValidationError::TooManyClasses {
@@ -200,6 +232,10 @@ impl InputValidator {
     }
 
     /// Validate a regex pattern for ReDoS vulnerabilities
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_pattern(&self, pattern: &str) -> Result<(), ValidationError> {
         // Check for common ReDoS patterns
         if pattern.contains(".*.*") ||
@@ -216,6 +252,10 @@ impl InputValidator {
     }
 
     /// Validate a file path for traversal attempts
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_path(&self, path: &str) -> Result<(), ValidationError> {
         if path.contains("..") || path.contains("~") || path.starts_with('/') {
             return Err(ValidationError::PathTraversal {

@@ -78,7 +78,7 @@ fn convert_parsed_to_instances(
             }
         }
     } else {
-        return Err(LoaderError::Parser("Expected structured XML content".to_string()));
+        return Err(LoaderError::Parser("Expected structured XML content".to_string());
     }
 
     Ok(instances)
@@ -99,14 +99,14 @@ fn convert_element_to_instance(
 
     // Add attributes as properties
     for (key, value) in &element.attributes {
-        data.insert(key.clone(), Value::String(value.clone()));
+        data.insert(key.clone(), Value::String(value.clone());
     }
 
     // Process element content based on type
     match &element.content {
         parse_core::ElementContent::Text(text) => {
             // If element has text content, add it as "value" property
-            data.insert("value".to_string(), Value::String(text.clone()));
+            data.insert("value".to_string(), Value::String(text.clone());
         }
         parse_core::ElementContent::Mixed(mixed) => {
             // Process mixed content (text and child elements)
@@ -164,7 +164,7 @@ fn process_mixed_content(
     for (name, mut values) in elements_by_name {
         if values.len() == 1 {
             // Safe to use expect here because we just checked length is 1
-            data.insert(name, values.into_iter().next().map_err(|e| anyhow::anyhow!("values should have exactly one element: {}", e))?);
+            data.insert(name, values.into_iter().next().expect("values should have exactly one element: {}"));
         } else {
             data.insert(name, Value::Array(values));
         }

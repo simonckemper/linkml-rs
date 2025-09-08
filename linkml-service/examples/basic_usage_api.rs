@@ -12,7 +12,7 @@
 use linkml_core::prelude::*;
 use serde_json::json;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Basic Usage API Demonstration");
     println!("===================================\n");
 
@@ -95,7 +95,7 @@ slots:
     println!("- Constraints: Add validation rules");
 }
 
-fn demonstrate_validation_basics() -> Result<(), Box<dyn std::error::Error>> {
+fn demonstrate_validation_basics() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Basic Validation Examples:\n");
 
     // Valid data
@@ -147,7 +147,7 @@ fn demonstrate_validation_basics() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn demonstrate_validation_reports() -> Result<(), Box<dyn std::error::Error>> {
+fn demonstrate_validation_reports() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n3. Understanding Validation Reports:\n");
 
     println!("A ValidationReport contains:");
@@ -186,7 +186,7 @@ fn demonstrate_validation_reports() -> Result<(), Box<dyn std::error::Error>> {
 
     for (i, error) in example_report.errors.iter().enumerate() {
         println!("\nError {}:", i + 1);
-        println!("  Path: {}", error.path.as_ref()?);
+        println!("  Path: {}", error.path.as_ref().unwrap_or(&"<unknown>".to_string());
         println!("  Severity: {:?}", error.severity);
         println!("  Message: {}", error.message);
         if let Some(expected) = &error.expected {
@@ -267,7 +267,7 @@ fn _production_usage_example() {
 async fn validate_person_data(
     linkml: &LinkMLService,
     person_data: &Value,
-) -> Result<(), ValidationError> {{
+) -> std::result::Result<(), ValidationError> {{
     // Load schema (typically cached)
     let schema = linkml.load_schema_str(SCHEMA_YAML, SchemaFormat::Yaml).await?;
 

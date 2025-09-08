@@ -8,7 +8,7 @@ use linkml_service::generator::{Generator, GeneratorOptions, RustGenerator};
 use serde_json::json;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create a sample schema
     let mut schema = SchemaDefinition {
         id: "https://example.org/schemas/library".to_string(),
@@ -211,7 +211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 // Using the generated code:
 use library_schema::{{Author, Book, Status}};
 
-fn example() -> Result<(), Vec<ValidationError>> {{
+fn example() -> std::result::Result<(), Vec<ValidationError>> {{
     // Create an author
     let author = Author::new("AU123456", "Jane Doe");
     author.validate()?;

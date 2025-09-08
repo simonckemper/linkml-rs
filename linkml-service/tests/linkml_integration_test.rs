@@ -25,6 +25,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tempfile::TempDir;
 
+
 /// Test data representing a biomedical research schema with complex validation rules
 const BIOMEDICAL_SCHEMA: &str = r#"
 id: https://example.org/biomedical
@@ -511,7 +512,7 @@ enums:
 // TODO: Fix mock service implementations - need proper trait implementations
 // /// Helper function to create a test service with all dependencies
 // async fn create_test_service() -> Arc<dyn LinkMLService> {
-//     let logger = Arc::new(Mockcreate_logger_service());
+//     let logger = Arc::new(MockMockLoggerService::new());
 //     let timestamp = Arc::new(MockTimestampService);
 //     let task_manager = Arc::new(MockTaskManagementService);
 //     let error_handler = Arc::new(MockErrorHandlerService);
@@ -900,7 +901,7 @@ async fn test_schema_view_introspection() {
 
     // Test class hierarchy
     let patient_ancestors = view.class_ancestors("Patient").expect("Test operation failed");
-    assert!(patient_ancestors.contains(&"NamedEntity".to_string()));
+    assert!(patient_ancestors.contains(&"NamedEntity".to_string());
     println!(
         "✓ Class hierarchy: Patient inherits from {:?}",
         patient_ancestors
@@ -1657,7 +1658,7 @@ async fn test_configuration_management_system() {
         ..Default::default()
     };
 
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockMockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);

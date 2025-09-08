@@ -1,7 +1,7 @@
 //! Memory profiling and monitoring utilities
 //!
 //! This module provides tools to track and optimize memory usage
-//! in the LinkML validation engine.
+//! in the `LinkML` validation engine.
 
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 const MAX_CATEGORIES: usize = 1000;
 
 thread_local! {
-    static THREAD_MEMORY: std::cell::RefCell<u64> = std::cell::RefCell::new(0);
+    static THREAD_MEMORY: std::cell::RefCell<u64> = const { std::cell::RefCell::new(0) };
 }
 
 /// Global memory statistics
@@ -82,7 +82,7 @@ pub struct MemoryProfiler {
 
 impl MemoryProfiler {
     /// Create a new memory profiler
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             stats: Arc::new(MemoryStats::default()),
             categories: Arc::new(Mutex::new(HashMap::new())),
@@ -93,7 +93,7 @@ impl MemoryProfiler {
     /// Enable or disable memory profiling
     pub fn set_enabled(&self, enabled: bool) {
         self.enabled
-            .store(if enabled { 1 } else { 0 }, Ordering::Relaxed);
+            .store(u64::from(enabled), Ordering::Relaxed);
     }
 
     /// Check if profiling is enabled
@@ -188,11 +188,11 @@ impl Default for MemoryProfiler {
 }
 
 /// Global memory profiler instance
-static GLOBAL_MEMORY_PROFILER: once_cell::sync::Lazy<MemoryProfiler> =
-    once_cell::sync::Lazy::new(MemoryProfiler::new);
+static GLOBAL_MEMORY_PROFILER: std::sync::LazyLock<MemoryProfiler> =
+    std::sync::LazyLock::new(MemoryProfiler::new);
 
 /// Get the global memory profiler
-pub fn global_memory_profiler() -> &'static MemoryProfiler {
+#[must_use] pub fn global_memory_profiler() -> &'static MemoryProfiler {
     &GLOBAL_MEMORY_PROFILER
 }
 
@@ -231,7 +231,7 @@ impl MemorySize for serde_json::Value {
         match self {
             serde_json::Value::String(s) => s.heap_size(),
             serde_json::Value::Array(arr) => {
-                arr.heap_size() + arr.iter().map(|v| v.heap_size()).sum::<usize>()
+                arr.heap_size() + arr.iter().map(MemorySize::heap_size).sum::<usize>()
             }
             serde_json::Value::Object(map) => {
                 // Estimate overhead based on number of entries

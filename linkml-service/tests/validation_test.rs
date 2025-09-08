@@ -43,7 +43,7 @@ slots:
     // Parse schema
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Valid data
@@ -119,7 +119,7 @@ slots:
 
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Test wrong types
@@ -165,7 +165,7 @@ slots:
 
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Valid patterns
@@ -221,7 +221,7 @@ slots:
 
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Out of range values
@@ -276,7 +276,7 @@ slots:
 
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Valid enum value
@@ -337,7 +337,7 @@ slots:
 "#;
 
     let parser = linkml_service::parser::Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").expect("Test operation failed");
+    let schema = parser.parse(schema_yaml, "yaml").expect("Test operation failed");
 
     // Test cardinality
     let too_many = json!({
@@ -347,7 +347,7 @@ slots:
 
     let report = validate(&schema, &too_many, None).await.expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.message.contains("maximum cardinality")));
+    assert!(report.errors().any(|e| e.message.contains("maximum cardinality"));
 
     // Test uniqueness
     let duplicates = json!({
@@ -357,7 +357,7 @@ slots:
 
     let report = validate(&schema, &duplicates, None).await.expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.message.contains("Duplicate")));
+    assert!(report.errors().any(|e| e.message.contains("Duplicate"));
 }
 */
 
@@ -399,7 +399,7 @@ slots:
 
     let parser = linkml_service::parser::Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Person should inherit id and name slots
@@ -416,6 +416,6 @@ slots:
     assert!(!report.valid);
 
     // Should have errors for missing id and name
-    assert!(report.errors().any(|e| e.path.contains("id")));
-    assert!(report.errors().any(|e| e.path.contains("name")));
+    assert!(report.errors().any(|e| e.path.contains("id"));
+    assert!(report.errors().any(|e| e.path.contains("name"));
 }

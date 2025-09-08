@@ -7,7 +7,7 @@ use linkml_core::prelude::*;
 use std::fmt::Write;
 
 impl RustGenerator {
-    /// Generate validate() method
+    /// Generate `validate()` method
     pub(super) fn generate_validate_method(
         &self,
         output: &mut String,
@@ -170,13 +170,11 @@ impl RustGenerator {
         }
 
         // Range validation for numeric types
-        if let Some(range) = &slot.range {
-            if matches!(range.as_str(), "integer" | "int" | "float" | "double") {
-                if let (Some(min_val), Some(max_val)) = (&slot.minimum_value, &slot.maximum_value) {
+        if let Some(range) = &slot.range
+            && matches!(range.as_str(), "integer" | "int" | "float" | "double")
+                && let (Some(min_val), Some(max_val)) = (&slot.minimum_value, &slot.maximum_value) {
                     self.generate_range_validation(output, slot_name, &field_name, min_val, max_val, slot, indent)?;
                 }
-            }
-        }
 
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
         Ok(())
@@ -200,28 +198,22 @@ impl RustGenerator {
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "{}    ValidationError::InvalidValue {{ field: \"{}\", message: \"Invalid regex pattern\".to_string() }}",
-            indent_str,
-            slot_name
+            "{indent_str}    ValidationError::InvalidValue {{ field: \"{slot_name}\", message: \"Invalid regex pattern\".to_string() }}"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "{}}})?;", indent_str)
+        writeln!(output, "{indent_str}}})?;")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "{}if !regex.is_match({}) {{",
-            indent_str,
-            value_expr
+            "{indent_str}if !regex.is_match({value_expr}) {{"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "{}    errors.push(ValidationError::PatternValidation {{ field: \"{}\" }});",
-            indent_str,
-            slot_name
+            "{indent_str}    errors.push(ValidationError::PatternValidation {{ field: \"{slot_name}\" }});"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "{}}}", indent_str)
+        writeln!(output, "{indent_str}}}")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         Ok(())
@@ -241,7 +233,7 @@ impl RustGenerator {
         let check_expr = if slot.required.unwrap_or(false) {
             format!("self.{field_name}")
         } else {
-            format!("*value")
+            "*value".to_string()
         };
 
         let validation_code = format!(
@@ -263,7 +255,7 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         }
 
-        writeln!(output, "{}", validation_code)
+        writeln!(output, "{validation_code}")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,

@@ -1,11 +1,13 @@
 //! Comprehensive tests for schema merging functionality
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
     TypeDefinition,
 };
 use linkml_service::transform::SchemaMerger;
+use linkml_core::types::SchemaDefinition;
 use std::collections::HashMap;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 #[test]
 fn test_basic_schema_merging() {
@@ -72,7 +74,7 @@ fn test_conflicting_class_definitions() {
         .expect("Test operation failed");
     let person = merged.classes.get("Person").expect("Test operation failed");
     assert_eq!(person.description.as_deref(), Some("Person from schema2"));
-    assert!(person.slots.contains(&"full_name".to_string()));
+    assert!(person.slots.contains(&"full_name".to_string());
 
     // Union strategy for slots
     let merger_union = SchemaMerger::new().with_merge_slots(true);
@@ -84,8 +86,8 @@ fn test_conflicting_class_definitions() {
         .get("Person")
         .expect("Test operation failed");
     assert_eq!(person_union.slots.len(), 4); // Combined slots
-    assert!(person_union.slots.contains(&"name".to_string()));
-    assert!(person_union.slots.contains(&"full_name".to_string()));
+    assert!(person_union.slots.contains(&"name".to_string());
+    assert!(person_union.slots.contains(&"full_name".to_string());
 }
 
 #[test]
@@ -134,8 +136,8 @@ fn test_type_and_enum_merging() {
     let mut status_enum = EnumDefinition::default();
     enum_def.name = "Status".to_string();
     status_enum.permissible_values = vec![
-        PermissibleValue::new("active"),
-        PermissibleValue::new("inactive"),
+        PermissibleValue { text: "active"),
+        PermissibleValue { text: "inactive"),
     ];
     schema1.enums.insert("Status".to_string(), status_enum);
 
@@ -145,9 +147,9 @@ fn test_type_and_enum_merging() {
     let mut status_enum2 = EnumDefinition::default();
     enum_def.name = "Status".to_string();
     status_enum2.permissible_values = vec![
-        PermissibleValue::new("active"),
-        PermissibleValue::new("pending"),
-        PermissibleValue::new("suspended"),
+        PermissibleValue { text: "active"),
+        PermissibleValue { text: "pending"),
+        PermissibleValue { text: "suspended"),
     ];
     schema2.enums.insert("Status".to_string(), status_enum2);
 
@@ -250,8 +252,8 @@ fn test_subset_merging() {
         .get("clinical")
         .expect("Test operation failed");
     assert_eq!(clinical.len(), 3); // Combined values
-    assert!(clinical.contains(&"Patient".to_string()));
-    assert!(clinical.contains(&"Treatment".to_string()));
+    assert!(clinical.contains(&"Patient".to_string());
+    assert!(clinical.contains(&"Treatment".to_string());
 }
 
 #[test]

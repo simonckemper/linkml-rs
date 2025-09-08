@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
 use std::time::Duration;
 
 /// Main configuration for `LinkML` services
@@ -283,6 +284,7 @@ pub struct GenerationOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Result;
 
     #[test]
     fn test_default_config() {
@@ -294,7 +296,7 @@ mod tests {
     }
 
     #[test]
-    fn test_config_serialization() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_config_serialization() -> crate::Result<()> {
         let config = LinkMLConfig::default();
         let yaml = serde_yaml::to_string(&config)?;
         assert!(yaml.contains("enable_cache"));

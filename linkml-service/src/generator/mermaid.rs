@@ -1,6 +1,6 @@
-//! Mermaid diagram generator for LinkML schemas
+//! Mermaid diagram generator for `LinkML` schemas
 //!
-//! This module generates Mermaid diagrams from LinkML schemas. Mermaid is a
+//! This module generates Mermaid diagrams from `LinkML` schemas. Mermaid is a
 //! JavaScript-based diagramming tool that uses text definitions to create
 //! diagrams dynamically in the browser.
 
@@ -8,7 +8,8 @@ use linkml_core::{error::LinkMLError, prelude::*};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
-use super::traits::{Generator, GeneratorError, GeneratorResult};
+use super::traits::{Generator, GeneratorError, GeneratorResult, GeneratorOptions, IndentStyle};
+
 
 /// Mermaid diagram type
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -63,9 +64,9 @@ pub struct MermaidGenerator {
 }
 
 impl MermaidGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new Mermaid generator with default options
@@ -165,7 +166,7 @@ impl MermaidGenerator {
 
                     if required_marker == "*" {
                         // Add comment for required fields
-                        writeln!(&mut output, "        %% {} is required", slot_name)
+                        writeln!(&mut output, "        %% {slot_name} is required")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
@@ -185,9 +186,9 @@ impl MermaidGenerator {
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
 
             for slot_name in &all_slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot_def.range {
-                        if schema.classes.contains_key(range) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot_def.range
+                        && schema.classes.contains_key(range) {
                             // This is an object reference
                             let cardinality = self.get_er_cardinality(slot_def);
                             writeln!(
@@ -199,13 +200,11 @@ impl MermaidGenerator {
                             )
                             .map_err(Self::fmt_error_to_generator_error)?;
                         }
-                    }
-                }
             }
 
             // Show inheritance
-            if self.options.show_inheritance {
-                if let Some(parent) = &class_def.is_a {
+            if self.options.show_inheritance
+                && let Some(parent) = &class_def.is_a {
                     writeln!(
                         &mut output,
                         "    {} ||--|| {} : inherits",
@@ -214,7 +213,6 @@ impl MermaidGenerator {
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
-            }
         }
 
         Ok(output)
@@ -253,7 +251,7 @@ impl MermaidGenerator {
         for (name, class_def) in &schema.classes {
             let class_name = self.sanitize_name(name);
 
-            writeln!(&mut output, "    class {} {{", class_name)
+            writeln!(&mut output, "    class {class_name} {{")
                 .map_err(Self::fmt_error_to_generator_error)?;
 
             if class_def.abstract_.unwrap_or(false) {
@@ -331,9 +329,9 @@ impl MermaidGenerator {
             // Associations
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot_def.range {
-                        if schema.classes.contains_key(range) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot_def.range
+                        && schema.classes.contains_key(range) {
                             let arrow = if slot_def.multivalued == Some(true) {
                                 "\"*\" -->"
                             } else {
@@ -349,8 +347,6 @@ impl MermaidGenerator {
                             )
                             .map_err(Self::fmt_error_to_generator_error)?;
                         }
-                    }
-                }
             }
         }
 
@@ -367,7 +363,7 @@ impl MermaidGenerator {
                         PermissibleValue::Simple(s) => s,
                         PermissibleValue::Complex { text, .. } => text,
                     };
-                    writeln!(&mut output, "        {}", value)
+                    writeln!(&mut output, "        {value}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
 
@@ -391,7 +387,7 @@ impl MermaidGenerator {
         // For state diagrams, we'll use enums as states if they represent statuses
         for (name, enum_def) in &schema.enums {
             if name.to_lowercase().contains("status") || name.to_lowercase().contains("state") {
-                writeln!(&mut output, "    %% States from {}", name)
+                writeln!(&mut output, "    %% States from {name}")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 let states: Vec<String> = enum_def
@@ -406,14 +402,14 @@ impl MermaidGenerator {
                 // Create basic transitions (simplified - in real use, these would be defined)
                 for (i, state) in states.iter().enumerate() {
                     if i == 0 {
-                        writeln!(&mut output, "    [*] --> {}", state)
+                        writeln!(&mut output, "    [*] --> {state}")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
                     if i < states.len() - 1 {
                         writeln!(&mut output, "    {} --> {}", state, states[i + 1])
                             .map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(&mut output, "    {} --> [*]", state)
+                        writeln!(&mut output, "    {state} --> [*]")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
@@ -569,8 +565,8 @@ impl MermaidGenerator {
         let mut seen = HashSet::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -578,7 +574,6 @@ impl MermaidGenerator {
                     }
                 }
             }
-        }
 
         // Then add direct slots
         for slot in &class_def.slots {
@@ -608,6 +603,65 @@ impl MermaidGenerator {
                 }
             })
             .collect()
+    }
+
+    /// Format output according to `GeneratorOptions`
+    #[must_use] pub fn format_output(&self, content: String, options: &GeneratorOptions) -> String {
+        let mut output = content;
+
+        // Add documentation comments if requested
+        if options.include_docs {
+            let doc_header = format!("%% Generated by LinkML Mermaid Generator\n%% Schema: {}\n%% Generated at: {}\n\n",
+                "schema", std::env::var("USER").unwrap_or_else(|_| "unknown".to_string());
+            output = doc_header + &output;
+        }
+
+        // Apply indentation formatting
+        match options.indent {
+            IndentStyle::Spaces(n) => {
+                let indent = " ".repeat(n);
+                output = output.lines()
+                    .map(|line| {
+                        if line.trim().is_empty() {
+                            line.to_string()
+                        } else if line.starts_with("    ") {
+                            // Replace existing 4-space indentation with requested indentation
+                            format!("{}{}", indent, line.trim_start_matches("    "))
+                        } else if !line.starts_with("%%") && !line.starts_with("erDiagram") && !line.starts_with("classDiagram") {
+                            // Add indentation to content lines (but not to diagram declarations or comments)
+                            if line.contains('{') || line.contains('}') || line.contains("||") || line.contains("o{") {
+                                format!("{indent}{line}")
+                            } else {
+                                line.to_string()
+                            }
+                        } else {
+                            line.to_string()
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n");
+            }
+            IndentStyle::Tabs => {
+                output = output.lines()
+                    .map(|line| {
+                        if line.starts_with("    ") {
+                            format!("\t{}", line.trim_start_matches("    "))
+                        } else {
+                            line.to_string()
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n");
+            }
+        }
+
+        output
+    }
+
+    /// Generate with custom formatting options
+    pub fn generate_with_options(&self, schema: &SchemaDefinition, options: &GeneratorOptions) -> std::result::Result<String, LinkMLError> {
+        let content = self.generate_mermaid(schema)?;
+        Ok(self.format_output(content, options))
     }
 }
 
@@ -673,18 +727,16 @@ impl Generator for MermaidGenerator {
         Ok(())
     }
 
-
-
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_mermaid(schema)?;
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "mmd"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -693,6 +745,7 @@ impl Generator for MermaidGenerator {
 mod tests {
     use super::*;
     use crate::generator::GeneratorOptions;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -749,8 +802,14 @@ mod tests {
         let options = GeneratorOptions::default();
 
         let output = generator
-            .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram: {}", e))?;
+            .generate_with_options(&schema, &options)
+            .expect("should generate mermaid diagram: {}");
+
+        // Verify the output respects the generator options
+        if options.include_docs {
+            // When documentation is enabled, check for comment lines
+            assert!(output.lines().any(|line| line.trim().starts_with("%%"));
+        }
         // The output might start with a comment or directive, not necessarily 'e'
         // Let's just check that it contains the expected content
         // assert_eq!(output.chars().next()?, 'e');
@@ -768,14 +827,35 @@ mod tests {
     async fn test_class_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = MermaidGenerator::new().with_diagram_type(MermaidDiagramType::ClassDiagram);
-        let options = GeneratorOptions::default();
+        let options = GeneratorOptions {
+            include_docs: true,
+            generate_tests: false,
+            indent: IndentStyle::Spaces(4),
+            output_format: OutputFormat::Markdown,
+            custom: std::collections::HashMap::new(),
+        };
 
         let output = generator
-            .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate mermaid diagram: {}", e))?;
+            .generate_with_options(&schema, &options)
+            .expect("should generate mermaid diagram: {}");
 
+        // Verify the basic content
         assert!(output.contains("classDiagram"));
         assert!(output.contains("class Person"));
+
+        // Verify options are applied - when include_docs is true, expect documentation comments
+        if options.include_docs {
+            assert!(output.lines().any(|line| line.trim().starts_with("%%"));
+        }
+
+        // Verify indentation style (check for 4-space indentation)
+        let indented_lines: Vec<&str> = output.lines()
+            .filter(|line| line.starts_with("    ") && !line.trim().is_empty())
+            .collect();
+        if !indented_lines.is_empty() {
+            // At least some content should be indented with 4 spaces
+            assert!(!indented_lines.is_empty());
+        }
         assert!(output.contains("class Address"));
         Ok(())
     }

@@ -16,6 +16,7 @@ use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
 use timestamp_core::TimestampService;
 
+
 /// Create a new `LinkML` service instance with all dependencies
 ///
 /// Generic parameters for non-dyn-compatible services:
@@ -29,6 +30,9 @@ use timestamp_core::TimestampService;
 ///
 /// Returns an error if service initialization fails
 #[allow(clippy::too_many_arguments)]
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
 pub async fn create_linkml_service<T, E, C, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,

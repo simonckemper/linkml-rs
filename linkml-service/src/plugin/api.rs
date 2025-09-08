@@ -3,7 +3,7 @@
 //! This module defines the API contracts that plugins must implement
 //! and provides helper utilities for plugin development.
 
-use super::*;
+use super::{Serialize, Deserialize, async_trait, HashMap, Result, SchemaDefinition, PluginInfo, Version, PluginType, VersionReq};
 use std::any::Any;
 
 /// Plugin `API` version
@@ -180,17 +180,17 @@ pub struct PluginSDK;
 
 impl PluginSDK {
     /// Create a new plugin builder
-    pub fn builder() -> PluginBuilder {
+    #[must_use] pub fn builder() -> PluginBuilder {
         PluginBuilder::new()
     }
 
     /// Get current `API` version
-    pub fn api_version() -> u32 {
+    #[must_use] pub fn api_version() -> u32 {
         PLUGIN_API_VERSION
     }
 
     /// Create plugin metadata
-    pub fn metadata() -> PluginMetadata {
+    #[must_use] pub fn metadata() -> PluginMetadata {
         PluginMetadata {
             api_version: PLUGIN_API_VERSION,
             sdk_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -208,9 +208,15 @@ pub struct PluginBuilder {
     config_schema: Option<ConfigSchema>,
 }
 
+impl Default for PluginBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginBuilder {
     /// Create a new plugin builder
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             info: PluginInfo {
                 id: String::new(),
@@ -249,31 +255,31 @@ impl PluginBuilder {
     }
 
     /// Set plugin version
-    pub fn version(mut self, major: u64, minor: u64, patch: u64) -> Self {
+    #[must_use] pub fn version(mut self, major: u64, minor: u64, patch: u64) -> Self {
         self.info.version = Version::new(major, minor, patch);
         self
     }
 
     /// Set plugin type
-    pub fn plugin_type(mut self, plugin_type: PluginType) -> Self {
+    #[must_use] pub fn plugin_type(mut self, plugin_type: PluginType) -> Self {
         self.info.plugin_type = plugin_type;
         self
     }
 
     /// Add a capability
-    pub fn capability(mut self, capability: PluginCapability) -> Self {
+    #[must_use] pub fn capability(mut self, capability: PluginCapability) -> Self {
         self.capabilities.push(capability);
         self
     }
 
     /// Set configuration schema
-    pub fn config_schema(mut self, schema: ConfigSchema) -> Self {
+    #[must_use] pub fn config_schema(mut self, schema: ConfigSchema) -> Self {
         self.config_schema = Some(schema);
         self
     }
 
     /// Build plugin info
-    pub fn build(mut self) -> PluginInfo {
+    #[must_use] pub fn build(mut self) -> PluginInfo {
         self.info.capabilities = self.capabilities;
         self.info
     }
@@ -298,7 +304,6 @@ macro_rules! export_plugin {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_plugin_builder() {

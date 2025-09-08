@@ -11,7 +11,7 @@ use linkml_service::prelude::*;
 use serde_json::json;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Expression Language Example");
     println!("=================================\n");
 
@@ -284,7 +284,7 @@ enums:
     Ok(())
 }
 
-async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
+async fn create_example_linkml_service() -> std::result::Result<LinkMLService, Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
     // For this example, we'll use a simplified initialization
     initialize_example_service().await

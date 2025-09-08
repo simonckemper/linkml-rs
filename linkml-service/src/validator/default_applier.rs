@@ -1,18 +1,17 @@
-//! Default value application for LinkML slots
+//! Default value application for `LinkML` slots
 //!
 //! This module handles the ifabsent logic for applying default values
 //! to slots when values are missing.
 
 use chrono::{Local, Utc};
-use linkml_core::types::{IfAbsentAction, SchemaDefinition};
-use once_cell::sync::Lazy;
+use linkml_core::types::{SchemaDefinition, IfAbsentAction};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 
 // Compile regex pattern once at startup
 // Using Result type to handle regex compilation errors properly
-static VARIABLE_PATTERN: Lazy<Result<Regex, regex::Error>> = Lazy::new(|| {
+static VARIABLE_PATTERN: std::sync::LazyLock<Result<Regex, regex::Error>> = std::sync::LazyLock::new(|| {
     Regex::new(r"\{([^}]+)\}")
 });
 
@@ -23,16 +22,20 @@ pub struct DefaultApplier<'a> {
 
 impl<'a> DefaultApplier<'a> {
     /// Create a new default applier
-    pub fn new(schema: &'a SchemaDefinition) -> Self {
+    #[must_use] pub fn new(schema: &'a SchemaDefinition) -> Self {
         Self { schema }
     }
 
     /// Create from schema (alias for new)
-    pub fn from_schema(schema: &'a SchemaDefinition) -> Self {
+    #[must_use] pub fn from_schema(schema: &'a SchemaDefinition) -> Self {
         Self::new(schema)
     }
 
     /// Apply defaults to a `JSON` value
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn apply_defaults(
         &self,
         data: &mut Value,
@@ -55,6 +58,10 @@ impl<'a> DefaultApplier<'a> {
     }
 
     /// Apply defaults to an object map
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn apply_defaults_to_object(
         &self,
         data: &mut serde_json::Map<String, Value>,
@@ -107,7 +114,7 @@ impl<'a> DefaultApplier<'a> {
         Ok(())
     }
 
-    /// Compute the default value based on IfAbsentAction
+    /// Compute the default value based on `IfAbsentAction`
     fn compute_default_value(
         &self,
         action: &IfAbsentAction,
@@ -128,7 +135,7 @@ impl<'a> DefaultApplier<'a> {
 
             IfAbsentAction::ClassSlotCurie => {
                 // Create a CURIE from class and slot names
-                let curie = format!("{}:{}", class_name, slot_name);
+                let curie = format!("{class_name}:{slot_name}");
                 Ok(Some(Value::String(curie)))
             }
 
@@ -192,13 +199,11 @@ impl<'a> DefaultApplier<'a> {
             // Handle regex compilation error gracefully
             if let Ok(ref pattern) = *VARIABLE_PATTERN {
                 for cap in pattern.captures_iter(expression) {
-                    if let Some(var_name) = cap.get(1) {
-                        if let Some(value) = data.get(var_name.as_str()) {
-                            if let Some(str_val) = value.as_str() {
+                    if let Some(var_name) = cap.get(1)
+                        && let Some(value) = data.get(var_name.as_str())
+                            && let Some(str_val) = value.as_str() {
                                 result = result.replace(&format!("{{{}}}", var_name.as_str()), str_val);
                             }
-                        }
-                    }
                 }
             }
 
@@ -211,6 +216,10 @@ impl<'a> DefaultApplier<'a> {
 }
 
 /// Integration with the validation context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn apply_defaults_to_instance(
     schema: &SchemaDefinition,
     instance: &mut Value,
@@ -228,7 +237,6 @@ pub fn apply_defaults_to_instance(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::types::{ClassDefinition, IfAbsentAction, SchemaDefinition, SlotDefinition};
 
     #[test]
     fn test_slot_name_default() {

@@ -259,7 +259,7 @@ impl Validator for TypeValidator {
                         Ok(type_issues) => issues.extend(type_issues),
                         Err(e) => issues.push(ValidationIssue::error(
                             &element_path,
-                            &format!("Type validation error: {e}"),
+                            format!("Type validation error: {e}"),
                             "TypeValidator",
                         )),
                     }
@@ -279,8 +279,8 @@ impl Validator for TypeValidator {
             match self.validate_type(value, type_name, &context.path()) {
                 Ok(type_issues) => issues.extend(type_issues),
                 Err(e) => issues.push(ValidationIssue::error(
-                    &context.path(),
-                    &format!("Type validation error: {e}"),
+                    context.path(),
+                    format!("Type validation error: {e}"),
                     "TypeValidator",
                 )),
             }

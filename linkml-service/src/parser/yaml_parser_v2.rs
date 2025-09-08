@@ -1,7 +1,7 @@
 //! YAML parser v2 using file system adapter
 //!
-//! This version uses the FileSystemOperations trait instead of direct std::fs access,
-//! following RootReal's architectural patterns.
+//! This version uses the `FileSystemOperations` trait instead of direct `std::fs` access,
+//! following `RootReal`'s architectural patterns.
 
 use linkml_core::{
     error::{LinkMLError, Result},
@@ -54,7 +54,7 @@ impl<F: FileSystemOperations> SchemaParser for YamlParserV2<F> {
     }
 }
 
-/// Async version of the SchemaParser trait
+/// Async version of the `SchemaParser` trait
 #[async_trait::async_trait]
 pub trait AsyncSchemaParser: Send + Sync {
     /// Parse schema from string content

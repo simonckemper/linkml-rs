@@ -1,7 +1,7 @@
-//! RDF data loader and dumper for LinkML
+//! RDF data loader and dumper for `LinkML`
 //!
 //! This module provides functionality to load RDF data (Turtle, N-Triples, RDF/XML)
-//! into LinkML data instances and dump instances back to RDF format.
+//! into `LinkML` data instances and dump instances back to RDF format.
 
 use async_trait::async_trait;
 use linkml_core::prelude::*;
@@ -29,12 +29,12 @@ pub enum RdfSerializationFormat {
     RdfXml,
     /// N-Quads format (.nq)
     NQuads,
-    /// TriG format (.trig)
+    /// `TriG` format (.trig)
     TriG,
 }
 
 impl RdfSerializationFormat {
-    /// Convert to oxigraph RdfFormat
+    /// Convert to oxigraph `RdfFormat`
     fn to_oxigraph_format(&self) -> RdfFormat {
         match self {
             Self::Turtle => RdfFormat::Turtle,
@@ -173,8 +173,7 @@ impl RdfLoader {
     /// Parse RDF data into a store
     fn parse_rdf(&self, data: &[u8]) -> LoaderResult<Store> {
         let store = Store::new().map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            LoaderError::Io(std::io::Error::other(
                 format!("Failed to create store: {e}"),
             ))
         })?;
@@ -198,8 +197,7 @@ impl RdfLoader {
 
         for quad in quads {
             store.insert(&quad).map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LoaderError::Io(std::io::Error::other(
                     format!("Failed to insert quad: {e}"),
                 ))
             })?;
@@ -225,7 +223,7 @@ impl RdfLoader {
         // Get all typed subjects
         let typed_subjects: Vec<NamedOrBlankNode> = store
             .quads_for_pattern(None, Some((&type_predicate).into()), None, None)
-            .filter_map(|quad| quad.ok())
+            .filter_map(std::result::Result::ok)
             .filter_map(|quad| match quad.subject {
                 Subject::NamedNode(node) => Some(NamedOrBlankNode::NamedNode(node)),
                 Subject::BlankNode(node) => Some(NamedOrBlankNode::BlankNode(node)),
@@ -250,7 +248,7 @@ impl RdfLoader {
                     None,
                     None,
                 )
-                .filter_map(|quad| quad.ok())
+                .filter_map(std::result::Result::ok)
                 .filter_map(|quad| match &quad.object {
                     Term::NamedNode(n) => Some(n.as_str().to_string()),
                     _ => None,
@@ -308,7 +306,7 @@ impl RdfLoader {
 
         // Also handle subjects without explicit types if requested
         if options.infer_types {
-            for quad_result in store.iter() {
+            for quad_result in store {
                 let quad = quad_result
                     .map_err(|e| LoaderError::Parse(format!("Failed to read quad: {e}")))?;
 
@@ -392,7 +390,7 @@ impl RdfLoader {
             SkolemnizationOptions::Uuid { base_uri } => {
                 // Generate UUID-based URI
                 let uuid = uuid::Uuid::new_v4();
-                format!("{}/skolem/{}", base_uri, uuid)
+                format!("{base_uri}/skolem/{uuid}")
             }
             SkolemnizationOptions::Hash {
                 base_uri,
@@ -407,7 +405,7 @@ impl RdfLoader {
                         format!("{:x}", hasher.finalize())
                     }
                 };
-                format!("{}/skolem/{}", base_uri, hash)
+                format!("{base_uri}/skolem/{hash}")
             }
         }
     }
@@ -434,12 +432,12 @@ impl RdfLoader {
         for (prefix, namespace) in &self.options.prefixes {
             if uri.starts_with(namespace) {
                 let local = &uri[namespace.len()..];
-                return format!("{}:{}", prefix, local);
+                return format!("{prefix}:{local}");
             }
         }
 
         // Otherwise use local name
-        if let Some(pos) = uri.rfind(|c| c == '#' || c == '/') {
+        if let Some(pos) = uri.rfind(['#', '/']) {
             uri[pos + 1..].to_string()
         } else {
             uri.to_string()
@@ -461,8 +459,7 @@ impl RdfLoader {
                         .map(|n| JsonValue::Number(n.into()))
                         .map_err(|_| {
                             LoaderError::TypeConversion(format!(
-                                "Cannot parse '{}' as integer",
-                                value
+                                "Cannot parse '{value}' as integer"
                             ))
                         }),
                     "http://www.w3.org/2001/XMLSchema#decimal"
@@ -476,16 +473,14 @@ impl RdfLoader {
                         })
                         .map_err(|_| {
                             LoaderError::TypeConversion(format!(
-                                "Cannot parse '{}' as float",
-                                value
+                                "Cannot parse '{value}' as float"
                             ))
                         }),
                     "http://www.w3.org/2001/XMLSchema#boolean" => match value {
                         "true" | "1" => Ok(JsonValue::Bool(true)),
                         "false" | "0" => Ok(JsonValue::Bool(false)),
                         _ => Err(LoaderError::TypeConversion(format!(
-                            "Cannot parse '{}' as boolean",
-                            value
+                            "Cannot parse '{value}' as boolean"
                         ))),
                     },
                     _ => Ok(JsonValue::String(value.to_string())),
@@ -508,7 +503,7 @@ impl RdfLoader {
         // Try to find a matching class
         for rdf_type in types {
             // Extract local name
-            let local_name = if let Some(pos) = rdf_type.rfind(|c| c == '#' || c == '/') {
+            let local_name = if let Some(pos) = rdf_type.rfind(['#', '/']) {
                 &rdf_type[pos + 1..]
             } else {
                 rdf_type
@@ -521,8 +516,7 @@ impl RdfLoader {
         }
 
         Err(LoaderError::SchemaValidation(format!(
-            "Could not find LinkML class for RDF types: {:?}",
-            types
+            "Could not find LinkML class for RDF types: {types:?}"
         )))
     }
 
@@ -536,7 +530,7 @@ impl RdfLoader {
         // Get all properties
         let property_list: Vec<String> = store
             .quads_for_pattern(Some(subject.into()), None, None, None)
-            .filter_map(|quad| quad.ok())
+            .filter_map(std::result::Result::ok)
             .map(|quad| self.predicate_to_property(&quad.predicate))
             .collect();
 
@@ -573,12 +567,11 @@ impl RdfLoader {
         let mut all_slots = Vec::new();
 
         // Add inherited slots
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 all_slots.extend(parent_slots);
             }
-        }
 
         // Add direct slots
         all_slots.extend(class_def.slots.clone());
@@ -608,7 +601,7 @@ impl DataLoader for RdfLoader {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Loads data from RDF files"
     }
 
@@ -695,8 +688,7 @@ impl RdfDumper {
         schema: &SchemaDefinition,
     ) -> DumperResult<Store> {
         let store = Store::new().map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 format!("Failed to create store: {e}"),
             ))
         })?;
@@ -746,8 +738,7 @@ impl RdfDumper {
             };
 
             store.insert(&type_quad).map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                DumperError::Io(std::io::Error::other(
                     format!("Failed to insert type quad: {e}"),
                 ))
             })?;
@@ -760,26 +751,9 @@ impl RdfDumper {
 
                 let predicate = self.property_to_predicate(property, schema)?;
 
-                match value {
-                    JsonValue::Array(arr) => {
-                        for item in arr {
-                            let object = self.json_to_term(item, property, schema)?;
-                            let quad = Quad {
-                                subject: subject.clone().into(),
-                                predicate: predicate.clone(),
-                                object,
-                                graph_name: GraphName::DefaultGraph,
-                            };
-                            store.insert(&quad).map_err(|e| {
-                                DumperError::Io(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
-                                    format!("Failed to insert quad: {e}"),
-                                ))
-                            })?;
-                        }
-                    }
-                    _ => {
-                        let object = self.json_to_term(value, property, schema)?;
+                if let JsonValue::Array(arr) = value {
+                    for item in arr {
+                        let object = self.json_to_term(item, property, schema)?;
                         let quad = Quad {
                             subject: subject.clone().into(),
                             predicate: predicate.clone(),
@@ -787,12 +761,24 @@ impl RdfDumper {
                             graph_name: GraphName::DefaultGraph,
                         };
                         store.insert(&quad).map_err(|e| {
-                            DumperError::Io(std::io::Error::new(
-                                std::io::ErrorKind::Other,
+                            DumperError::Io(std::io::Error::other(
                                 format!("Failed to insert quad: {e}"),
                             ))
                         })?;
                     }
+                } else {
+                    let object = self.json_to_term(value, property, schema)?;
+                    let quad = Quad {
+                        subject: subject.clone().into(),
+                        predicate: predicate.clone(),
+                        object,
+                        graph_name: GraphName::DefaultGraph,
+                    };
+                    store.insert(&quad).map_err(|e| {
+                        DumperError::Io(std::io::Error::other(
+                            format!("Failed to insert quad: {e}"),
+                        ))
+                    })?;
                 }
             }
         }
@@ -812,7 +798,7 @@ impl RdfDumper {
             let local = &property[colon_pos + 1..];
 
             if let Some(namespace) = self.options.prefixes.get(prefix) {
-                let uri = format!("{}{}", namespace, local);
+                let uri = format!("{namespace}{local}");
                 return NamedNode::new(&uri).map_err(|e| {
                     DumperError::Serialization(format!("Invalid predicate URI: {e}"))
                 });
@@ -839,9 +825,9 @@ impl RdfDumper {
 
             JsonValue::Bool(b) => {
                 let literal = Literal::new_typed_literal(
-                    &b.to_string(),
+                    b.to_string(),
                     NamedNode::new("http://www.w3.org/2001/XMLSchema#boolean")
-                        .map_err(|e| anyhow::anyhow!("hardcoded XSD boolean datatype URI is valid: {}", e))?,
+                        .expect("hardcoded XSD boolean datatype URI is valid: {}"),
                 );
                 Ok(Term::Literal(literal))
             }
@@ -849,16 +835,16 @@ impl RdfDumper {
             JsonValue::Number(n) => {
                 if n.is_i64() || n.is_u64() {
                     let literal = Literal::new_typed_literal(
-                        &n.to_string(),
+                        n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#integer")
-                            .map_err(|e| anyhow::anyhow!("hardcoded XSD integer datatype URI is valid: {}", e))?,
+                            .expect("hardcoded XSD integer datatype URI is valid: {}"),
                     );
                     Ok(Term::Literal(literal))
                 } else {
                     let literal = Literal::new_typed_literal(
-                        &n.to_string(),
+                        n.to_string(),
                         NamedNode::new("http://www.w3.org/2001/XMLSchema#decimal")
-                            .map_err(|e| anyhow::anyhow!("hardcoded XSD decimal datatype URI is valid: {}", e))?,
+                            .expect("hardcoded XSD decimal datatype URI is valid: {}"),
                     );
                     Ok(Term::Literal(literal))
                 }
@@ -868,16 +854,15 @@ impl RdfDumper {
                 // Check if it's a URI reference
                 if s.starts_with("http://") || s.starts_with("https://") {
                     // Check if this property expects a URI
-                    if let Some(slot) = schema.slots.get(property) {
-                        if slot.range.as_deref() == Some("uri")
-                            || slot.range.as_deref() == Some("uriorcurie")
+                    if let Some(slot) = schema.slots.get(property)
+                        && (slot.range.as_deref() == Some("uri")
+                            || slot.range.as_deref() == Some("uriorcurie"))
                         {
                             let node = NamedNode::new(s).map_err(|e| {
                                 DumperError::Serialization(format!("Invalid URI: {e}"))
                             })?;
                             return Ok(Term::NamedNode(node));
                         }
-                    }
                 }
 
                 // Check if it's a blank node reference
@@ -911,23 +896,20 @@ impl RdfDumper {
 
         // Serialize all quads
         let mut writer = serializer.for_writer(&mut buffer);
-        for quad_result in store.iter() {
+        for quad_result in store {
             let quad = quad_result.map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                DumperError::Io(std::io::Error::other(
                     format!("Failed to read quad from store: {e}"),
                 ))
             })?;
             writer.serialize_quad(&quad).map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                DumperError::Io(std::io::Error::other(
                     format!("Failed to serialize quad: {e}"),
                 ))
             })?;
         }
         writer.finish().map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 format!("Failed to finish RDF serialization: {e}"),
             ))
         })?;
@@ -954,7 +936,7 @@ impl DataDumper for RdfDumper {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dumps data to RDF format"
     }
 
@@ -1019,6 +1001,7 @@ impl DataDumper for RdfDumper {
 mod tests {
     use super::*;
     use serde_json::json;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -1074,7 +1057,7 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(turtle_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load valid Turtle content: {}", e))?;
+            .expect("should load valid Turtle content: {}");
         assert_eq!(instances.len(), 2);
 
         // Find Alice
@@ -1083,7 +1066,7 @@ ex:bob rdf:type ex:Person ;
             .find(|i| i.id.as_deref() == Some("http://example.org/alice"))
             .ok_or_else(|| anyhow::anyhow!("should find alice instance"))?;
         assert_eq!(alice.class_name, "Person");
-        assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
+        assert_eq!(alice.data.get("name"), Some(&json!("Alice"));
         assert_eq!(
             alice.data.get("knows"),
             Some(&json!("http://example.org/bob"))
@@ -1094,7 +1077,7 @@ ex:bob rdf:type ex:Person ;
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to Turtle: {}", e))?;
+            .expect("should dump instances to Turtle: {}");
 
         // Should contain the same data
         assert!(dumped.contains("Alice"));
@@ -1116,16 +1099,16 @@ ex:bob rdf:type ex:Person ;
         let instances = loader
             .load_string(ntriples_content, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should load valid N-Triples content: {}", e))?;
+            .expect("should load valid N-Triples content: {}");
         assert_eq!(instances.len(), 1);
-        assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie")));
+        assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie"));
 
         // Dump to N-Triples
         let dump_options = DumpOptions::default();
         let dumped = dumper
             .dump_string(&instances, &schema, &dump_options)
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to N-Triples: {}", e))?;
+            .expect("should dump instances to N-Triples: {}");
 
         // N-Triples should have one triple per line
         let lines: Vec<&str> = dumped.trim().lines().collect();

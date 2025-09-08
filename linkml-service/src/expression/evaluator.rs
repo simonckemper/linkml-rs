@@ -1,4 +1,4 @@
-//! Expression evaluator for LinkML expressions
+//! Expression evaluator for `LinkML` expressions
 
 #![allow(missing_docs)]
 
@@ -67,7 +67,6 @@ impl CacheKey {
 
 /// Hash an expression securely without string formatting
 fn hash_expression(expr: &Expression) -> u64 {
-    use std::hash::{Hash, Hasher};
 
     let mut hasher = DefaultHasher::new();
 
@@ -187,7 +186,6 @@ fn hash_expression(expr: &Expression) -> u64 {
 
 /// Hash a context securely without string formatting
 fn hash_context(context: &HashMap<String, Value>) -> u64 {
-    use std::hash::{Hash, Hasher};
 
     let mut hasher = DefaultHasher::new();
 
@@ -256,7 +254,7 @@ pub struct Evaluator {
 
 impl Evaluator {
     /// Create a new evaluator with default configuration
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         let config = EvaluatorConfig::default();
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
@@ -275,7 +273,7 @@ impl Evaluator {
     }
 
     /// Create a new evaluator with custom function registry
-    pub fn with_functions(function_registry: FunctionRegistry) -> Self {
+    #[must_use] pub fn with_functions(function_registry: FunctionRegistry) -> Self {
         let config = EvaluatorConfig::default();
         let cache = if config.enable_cache {
             let cache_size = NonZeroUsize::new(config.cache_size)
@@ -300,20 +298,18 @@ impl Evaluator {
 
     /// Clear the expression cache
     pub fn clear_cache(&self) {
-        if let Some(cache) = &self.cache {
-            if let Ok(mut cache) = cache.lock() {
+        if let Some(cache) = &self.cache
+            && let Ok(mut cache) = cache.lock() {
                 cache.clear();
             }
-        }
     }
 
     /// Get cache statistics
-    pub fn cache_stats(&self) -> Option<(usize, usize)> {
-        if let Some(cache) = &self.cache {
-            if let Ok(cache) = cache.lock() {
-                return Some((cache.len(), cache.cap().into()));
+    #[must_use] pub fn cache_stats(&self) -> Option<(usize, usize)> {
+        if let Some(cache) = &self.cache
+            && let Ok(cache) = cache.lock() {
+                return Some((cache.len(), cache.cap().into());
             }
-        }
         None
     }
 
@@ -337,6 +333,10 @@ impl Evaluator {
     }
 
     /// Evaluate an expression with the given variable context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn evaluate(
         &self,
         expr: &Expression,
@@ -347,11 +347,10 @@ impl Evaluator {
             let cache_key = CacheKey::new(expr, context);
 
             // Try to get from cache
-            if let Ok(mut cache) = cache.lock() {
-                if let Some(cached_value) = cache.get(&cache_key) {
+            if let Ok(mut cache) = cache.lock()
+                && let Some(cached_value) = cache.get(&cache_key) {
                     return Ok(cached_value.clone());
                 }
-            }
 
             // Evaluate the expression
             let mut eval_context = EvalContext {
@@ -406,7 +405,7 @@ struct EvalContext<'a> {
     functions: &'a FunctionRegistry,
 }
 
-impl<'a> EvalContext<'a> {
+impl EvalContext<'_> {
     fn check_limits(&mut self) -> Result<(), EvaluationError> {
         // Check iteration limit
         self.iterations += 1;
@@ -470,15 +469,14 @@ impl<'a> EvalContext<'a> {
                             Value::Object(map) => {
                                 current = map.get(*part).ok_or_else(|| {
                                     EvaluationError::UndefinedVariable {
-                                        name: format!("{} (in {})", part, name),
+                                        name: format!("{part} (in {name})"),
                                     }
                                 })?;
                             }
                             _ => {
                                 return Err(EvaluationError::TypeError {
                                     message: format!(
-                                        "Cannot access property '{}' on non-object",
-                                        part
+                                        "Cannot access property '{part}' on non-object"
                                     ),
                                 });
                             }
@@ -549,7 +547,7 @@ impl<'a> EvalContext<'a> {
                 ))
             }
             (Value::String(l), Value::String(r)) => {
-                let result = format!("{}{}", l, r);
+                let result = format!("{l}{r}");
                 self.memory_used += result.len();
                 Ok(Value::String(result))
             }
@@ -961,25 +959,25 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Null, &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate null: {}", e))?,
+                .expect("Should evaluate null: {}"),
             Value::Null
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Boolean(true), &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate boolean: {}", e))?,
+                .expect("Should evaluate boolean: {}"),
             Value::Bool(true)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Number(42.0), &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate number: {}", e))?,
+                .expect("Should evaluate number: {}"),
             json!(42.0)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::String("hello".to_string()), &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate string: {}", e))?,
+                .expect("Should evaluate string: {}"),
             json!("hello")
         );
     }
@@ -994,13 +992,13 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Variable("x".to_string()), &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate variable x: {}", e))?,
+                .expect("Should evaluate variable x: {}"),
             json!(10)
         );
         assert_eq!(
             evaluator
                 .evaluate(&Expression::Variable("name".to_string()), &context)
-                .map_err(|e| anyhow::anyhow!("Should evaluate variable name: {}", e))?,
+                .expect("Should evaluate variable name: {}"),
             json!("Alice")
         );
 
@@ -1024,7 +1022,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(5.0)
         );
 
@@ -1036,7 +1034,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(6.0)
         );
 
@@ -1048,7 +1046,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(12.0)
         );
 
@@ -1060,7 +1058,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(5.0)
         );
 
@@ -1088,7 +1086,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(true)
         );
 
@@ -1100,7 +1098,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(false)
         );
 
@@ -1112,7 +1110,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(true)
         );
     }
@@ -1130,7 +1128,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(false)
         );
 
@@ -1142,16 +1140,16 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(true)
         );
 
         // not true = false
-        let expr = Expression::Not(Box::new(Expression::Boolean(true)));
+        let expr = Expression::Not(Box::new(Expression::Boolean(true));
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!(false)
         );
     }
@@ -1175,7 +1173,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!("big")
         );
 
@@ -1184,7 +1182,7 @@ mod tests {
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)
-                .map_err(|e| anyhow::anyhow!("Test evaluation should succeed: {}", e))?,
+                .expect("Test evaluation should succeed: {}"),
             json!("small")
         );
     }

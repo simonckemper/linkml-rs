@@ -23,7 +23,6 @@ pub mod engine_v2;
 pub mod parallel;
 pub mod vm;
 
-use linkml_core::error::Result;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -47,7 +46,7 @@ pub struct ExpressionEngine {
 
 impl ExpressionEngine {
     /// Create a new expression engine with default settings
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             parser: Parser::new(),
             evaluator: Arc::new(Evaluator::new()),
@@ -81,14 +80,22 @@ impl ExpressionEngine {
     }
 
     /// Parse an expression string into an AST
-    pub fn parse(&self, expression: &str) -> Result<Expression> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn parse(&self, expression: &str) -> linkml_core::error::Result<Expression> {
         self.parser.parse(expression).map_err(|e| {
             linkml_core::error::LinkMLError::other(format!("Expression parse error: {e}"))
         })
     }
 
     /// Evaluate an expression with the given variable context
-    pub fn evaluate(&self, expression: &str, context: &HashMap<String, Value>) -> Result<Value> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+    pub fn evaluate(&self, expression: &str, context: &HashMap<String, Value>) -> linkml_core::error::Result<Value> {
         let ast = self.parse(expression)?;
         self.evaluator.evaluate(&ast, context).map_err(|e| {
             linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {e}"))
@@ -96,11 +103,15 @@ impl ExpressionEngine {
     }
 
     /// Evaluate a pre-parsed expression
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn evaluate_ast(
         &self,
         ast: &Expression,
         context: &HashMap<String, Value>,
-    ) -> Result<Value> {
+    ) -> linkml_core::error::Result<Value> {
         self.evaluator.evaluate(ast, context).map_err(|e| {
             linkml_core::error::LinkMLError::other(format!("Expression evaluation error: {e}"))
         })
@@ -121,6 +132,7 @@ impl Default for ExpressionEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::error::LinkMLError;
 
     #[test]
     fn test_expression_engine_creation() -> std::result::Result<(), anyhow::Error> {
@@ -128,10 +140,10 @@ mod tests {
         // Test that engine can parse and evaluate
         let expr = engine
             .parse("1 + 2")
-            .map_err(|e| anyhow::anyhow!("should parse simple expression: {}", e))?;
+            .expect("should parse simple expression: {}");
         let result = engine
             .evaluate_ast(&expr, &HashMap::new())
-            .map_err(|e| anyhow::anyhow!("should evaluate simple expression: {}", e))?;
+            .expect("should evaluate simple expression: {}");
         assert_eq!(result, serde_json::json!(3.0));
         Ok(())
     }

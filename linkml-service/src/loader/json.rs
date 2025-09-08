@@ -1,6 +1,6 @@
-//! JSON loader and dumper for LinkML
+//! JSON loader and dumper for `LinkML`
 //!
-//! This module provides functionality to load and dump LinkML data in JSON format.
+//! This module provides functionality to load and dump `LinkML` data in JSON format.
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
@@ -19,12 +19,12 @@ pub struct JsonLoader {
 
 impl JsonLoader {
     /// Create a new `JSON` loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self { file_path: None }
     }
 
     /// Set the input file path
-    pub fn with_file(mut self, path: &str) -> Self {
+    #[must_use] pub fn with_file(mut self, path: &str) -> Self {
         self.file_path = Some(path.to_string());
         self
     }
@@ -38,11 +38,11 @@ impl Default for JsonLoader {
 
 #[async_trait]
 impl DataLoader for JsonLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "json"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from JSON files"
     }
 
@@ -56,7 +56,7 @@ impl DataLoader for JsonLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
+        let content = std::fs::read_to_string(path).map_err(LoaderError::Io)?;
         self.load_string(&content, schema, options).await
     }
 
@@ -83,18 +83,16 @@ impl DataLoader for JsonLoader {
                         let instance = self.object_to_instance(obj.clone(), schema)?;
 
                         // Apply class filtering if specified in options
-                        if let Some(ref target_class) = options.target_class {
-                            if instance.class_name != *target_class {
+                        if let Some(ref target_class) = options.target_class
+                            && instance.class_name != *target_class {
                                 continue;
                             }
-                        }
 
                         // Apply limit if specified
-                        if let Some(limit) = options.limit {
-                            if instances.len() >= limit {
+                        if let Some(limit) = options.limit
+                            && instances.len() >= limit {
                                 break;
                             }
-                        }
 
                         instances.push(instance);
                     } else if !options.skip_invalid {
@@ -110,11 +108,10 @@ impl DataLoader for JsonLoader {
                 let instance = self.object_to_instance(obj, schema)?;
 
                 // Apply class filtering if specified in options
-                if let Some(ref target_class) = options.target_class {
-                    if instance.class_name != *target_class {
+                if let Some(ref target_class) = options.target_class
+                    && instance.class_name != *target_class {
                         return Ok(vec![]);
                     }
-                }
 
                 vec![instance]
             }
@@ -149,7 +146,7 @@ impl DataLoader for JsonLoader {
 }
 
 impl JsonLoader {
-    /// Convert `JSON` object to DataInstance
+    /// Convert `JSON` object to `DataInstance`
     fn object_to_instance(
         &self,
         obj: Map<String, Value>,
@@ -208,7 +205,7 @@ pub struct JsonDumper {
 
 impl JsonDumper {
     /// Create a new `JSON` dumper
-    pub fn new(pretty: bool) -> Self {
+    #[must_use] pub fn new(pretty: bool) -> Self {
         Self { pretty }
     }
 }
@@ -221,11 +218,11 @@ impl Default for JsonDumper {
 
 #[async_trait]
 impl DataDumper for JsonDumper {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "json"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to JSON format"
     }
 
@@ -241,7 +238,7 @@ impl DataDumper for JsonDumper {
         options: &DumpOptions,
     ) -> DumperResult<()> {
         let content = self.dump_string(instances, schema, options).await?;
-        std::fs::write(path, content).map_err(|e| DumperError::Io(e))?;
+        std::fs::write(path, content).map_err(DumperError::Io)?;
         Ok(())
     }
 
@@ -333,14 +330,14 @@ mod tests {
     #[tokio::test]
     async fn test_json_dumper() -> std::result::Result<(), anyhow::Error> {
         let mut alice_data = HashMap::new();
-        alice_data.insert("name".to_string(), Value::String("Alice".to_string()));
+        alice_data.insert("name".to_string(), Value::String("Alice".to_string());
         alice_data.insert(
             "age".to_string(),
             Value::Number(serde_json::Number::from(25)),
         );
 
         let mut bob_data = HashMap::new();
-        bob_data.insert("name".to_string(), Value::String("Bob".to_string()));
+        bob_data.insert("name".to_string(), Value::String("Bob".to_string());
         bob_data.insert(
             "age".to_string(),
             Value::Number(serde_json::Number::from(30)),

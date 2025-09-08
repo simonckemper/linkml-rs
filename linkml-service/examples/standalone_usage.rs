@@ -14,7 +14,7 @@ use linkml_service::{
 use serde_json::json;
 use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> std::result::Result<(), Box<dyn Error>> {
     println!("LinkML Standalone Usage Example\n");
 
     // Define a schema

@@ -13,9 +13,9 @@ pub struct GraphQLGenerator {
 }
 
 impl GraphQLGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
-        super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        super::traits::GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new GraphQL generator
@@ -38,12 +38,11 @@ impl GraphQLGenerator {
         let mut output = String::new();
 
         // Documentation
-        if options.include_docs {
-            if let Some(desc) = &class.description {
+        if options.include_docs
+            && let Some(desc) = &class.description {
                 writeln!(&mut output, "\"\"\"{desc}\n\"\"\"")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         // Type definition
         let type_name = self.convert_identifier(class_name);
@@ -83,7 +82,7 @@ impl GraphQLGenerator {
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         // Add ID field if this is a root type
-        if class.tree_root == Some(true) || options.get_custom("add_id_field").map(|s| s.as_str()) == Some("true") {
+        if class.tree_root == Some(true) || options.get_custom("add_id_field").map(std::string::String::as_str) == Some("true") {
             writeln!(output, "{}id: ID!", indent.single())
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -94,12 +93,11 @@ impl GraphQLGenerator {
         for slot_name in &slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 // Documentation
-                if options.include_docs {
-                    if let Some(desc) = &slot.description {
+                if options.include_docs
+                    && let Some(desc) = &slot.description {
                         writeln!(output, "{}\"\"\"{}\"\"\"", indent.single(), desc)
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
-                }
 
                 // Field definition
                 let field_name = self.convert_field_name(slot_name);
@@ -132,12 +130,11 @@ impl GraphQLGenerator {
         let mut output = String::new();
 
         // Documentation
-        if options.include_docs {
-            if let Some(desc) = &enum_def.description {
+        if options.include_docs
+            && let Some(desc) = &enum_def.description {
                 writeln!(&mut output, "\"\"\"{desc}\n\"\"\"")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         // Enum definition
         let enum_type_name = self.convert_identifier(enum_name);
@@ -156,12 +153,11 @@ impl GraphQLGenerator {
                     PermissibleValue::Complex {
                         text, description, ..
                     } => {
-                        if options.include_docs {
-                            if let Some(desc) = description {
+                        if options.include_docs
+                            && let Some(desc) = description {
                                 writeln!(&mut output, "{}\"\"\"{}\"\"\"", indent.single(), desc)
                                     .map_err(Self::fmt_error_to_generator_error)?;
                             }
-                        }
                         let value_name = self.convert_enum_value(text);
                         writeln!(&mut output, "{}{}", indent.single(), value_name)
                             .map_err(Self::fmt_error_to_generator_error)?;
@@ -543,21 +539,18 @@ impl GraphQLGenerator {
         let mut interfaces = Vec::new();
 
         // Add parent if it's abstract
-        if let Some(parent) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
-                if parent_class.abstract_ == Some(true) {
+        if let Some(parent) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent)
+                && parent_class.abstract_ == Some(true) {
                     interfaces.push(self.convert_identifier(parent));
                 }
-            }
-        }
 
         // Add mixins that are abstract
         for mixin in &class.mixins {
-            if let Some(mixin_class) = schema.classes.get(mixin) {
-                if mixin_class.abstract_ == Some(true) {
+            if let Some(mixin_class) = schema.classes.get(mixin)
+                && mixin_class.abstract_ == Some(true) {
                     interfaces.push(self.convert_identifier(mixin));
                 }
-            }
         }
 
         Ok(interfaces)
@@ -580,8 +573,8 @@ impl GraphQLGenerator {
         }
 
         // Add inherited slots
-        if let Some(parent) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_all_slots(parent_class, schema)?;
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -589,7 +582,6 @@ impl GraphQLGenerator {
                     }
                 }
             }
-        }
 
         Ok(all_slots)
     }
@@ -690,25 +682,22 @@ impl Generator for GraphQLGenerator {
         // Validate GraphQL naming requirements
         for (class_name, _class_def) in &schema.classes {
             // GraphQL names must match [_A-Za-z][_0-9A-Za-z]*
-            if let Some(first) = class_name.chars().next() {
-                if !first.is_ascii_alphabetic() && first != '_' {
+            if let Some(first) = class_name.chars().next()
+                && !first.is_ascii_alphabetic() && first != '_' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Class name '{}' is not valid for GraphQL: must start with letter or underscore",
-                            class_name
+                            "Class name '{class_name}' is not valid for GraphQL: must start with letter or underscore"
                         ),
                         element: Some(format!("class.{class_name}")),
                     });
                 }
-            }
 
             // Check rest of characters
             for ch in class_name.chars() {
                 if !ch.is_ascii_alphanumeric() && ch != '_' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Class name '{}' contains invalid characters for GraphQL",
-                            class_name
+                            "Class name '{class_name}' contains invalid characters for GraphQL"
                         ),
                         element: Some(format!("class.{class_name}")),
                     });
@@ -731,24 +720,21 @@ impl Generator for GraphQLGenerator {
         // Validate field names
         for (slot_name, _slot_def) in &schema.slots {
             // GraphQL field names follow same rules as type names
-            if let Some(first) = slot_name.chars().next() {
-                if !first.is_ascii_alphabetic() && first != '_' {
+            if let Some(first) = slot_name.chars().next()
+                && !first.is_ascii_alphabetic() && first != '_' {
                     return Err(LinkMLError::SchemaValidationError {
                         message: format!(
-                            "Slot name '{}' is not valid for GraphQL fields",
-                            slot_name
+                            "Slot name '{slot_name}' is not valid for GraphQL fields"
                         ),
                         element: Some(format!("slot.{slot_name}")),
                     });
                 }
-            }
 
             // GraphQL introspection fields start with __
             if slot_name.starts_with("__") {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!(
-                        "Slot name '{}' conflicts with GraphQL introspection naming",
-                        slot_name
+                        "Slot name '{slot_name}' conflicts with GraphQL introspection naming"
                     ),
                     element: Some(format!("slot.{slot_name}")),
                 });
@@ -782,7 +768,7 @@ impl Generator for GraphQLGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate scalar types if needed
-        if options.get_custom("include_scalars").map(|s| s.as_str()) == Some("true") {
+        if options.get_custom("include_scalars").map(std::string::String::as_str) == Some("true") {
             writeln!(&mut output, "# Custom Scalar Types")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "scalar DateTime").map_err(Self::fmt_error_to_generator_error)?;
@@ -828,25 +814,25 @@ impl Generator for GraphQLGenerator {
         }
 
         // Generate input types if requested
-        if options.get_custom("generate_inputs").map(|s| s.as_str()) != Some("false") {
+        if options.get_custom("generate_inputs").map(std::string::String::as_str) != Some("false") {
             let input_types = self.generate_input_types(schema, &options, indent)?;
             output.push_str(&input_types);
         }
 
         // Generate connection types if requested
-        if options.get_custom("generate_connections").map(|s| s.as_str()) != Some("false") {
+        if options.get_custom("generate_connections").map(std::string::String::as_str) != Some("false") {
             let connection_types = self.generate_connection_types(schema, indent)?;
             output.push_str(&connection_types);
         }
 
         // Generate filter types if requested
-        if options.get_custom("generate_filters").map(|s| s.as_str()) != Some("false") {
+        if options.get_custom("generate_filters").map(std::string::String::as_str) != Some("false") {
             let filter_types = self.generate_filter_types(schema, indent)?;
             output.push_str(&filter_types);
         }
 
         // Generate root types if requested
-        if options.get_custom("generate_root_types").map(|s| s.as_str()) != Some("false") {
+        if options.get_custom("generate_root_types").map(std::string::String::as_str) != Some("false") {
             let query_type = self.generate_query_type(schema, indent)?;
             output.push_str(&query_type);
 
@@ -857,21 +843,21 @@ impl Generator for GraphQLGenerator {
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "graphql"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
 
 impl CodeFormatter for GraphQLGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "graphql"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for graphql output with proper indentation and syntax"
     }
 
@@ -976,6 +962,7 @@ impl GraphQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_graphql_generation() -> anyhow::Result<()> {
@@ -1002,7 +989,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate GraphQL output: {}", e))?;
+            .expect("should generate GraphQL output: {}");
 
         assert!(output.contains("type Person"));
         assert!(output.contains("name: String!"));

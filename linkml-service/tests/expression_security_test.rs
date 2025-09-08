@@ -97,10 +97,10 @@ fn test_code_injection_javascript_syntax() {
     let parser = Parser::new();
 
     // JavaScript function syntax should fail
-    assert!(parser.parse_str("function() { return 42; }").is_err());
-    assert!(parser.parse_str("(() => 42)()").is_err());
-    assert!(parser.parse_str("eval('malicious')").is_err());
-    assert!(parser.parse_str("new Function('return 42')").is_err());
+    assert!(parser.parse("function() { return 42; }").is_err());
+    assert!(parser.parse("(() => 42)()").is_err());
+    assert!(parser.parse("eval('malicious')").is_err());
+    assert!(parser.parse("new Function('return 42')").is_err());
 }
 
 #[test]
@@ -109,10 +109,10 @@ fn test_code_injection_python_syntax() {
     let parser = Parser::new();
 
     // Python syntax should fail
-    assert!(parser.parse_str("__import__('os').system('ls')").is_err());
-    assert!(parser.parse_str("exec('print(42)')").is_err());
-    assert!(parser.parse_str("lambda x: x * 2").is_err());
-    assert!(parser.parse_str("import os").is_err());
+    assert!(parser.parse("__import__('os').system('ls')").is_err());
+    assert!(parser.parse("exec('print(42)')").is_err());
+    assert!(parser.parse("lambda x: x * 2").is_err());
+    assert!(parser.parse("import os").is_err());
 }
 
 #[test]
@@ -121,10 +121,10 @@ fn test_code_injection_shell_commands() {
     let parser = Parser::new();
 
     // Shell syntax should fail
-    assert!(parser.parse_str("$(ls -la)").is_err());
-    assert!(parser.parse_str("`cat /etc/passwd`").is_err());
-    assert!(parser.parse_str("system('rm -rf /')").is_err());
-    assert!(parser.parse_str("; rm -rf /").is_err());
+    assert!(parser.parse("$(ls -la)").is_err());
+    assert!(parser.parse("`cat /etc/passwd`").is_err());
+    assert!(parser.parse("system('rm -rf /')").is_err());
+    assert!(parser.parse("; rm -rf /").is_err());
 }
 
 // ==================== Stack Overflow Tests ====================
@@ -185,7 +185,7 @@ fn test_resource_exhaustion_large_string_concat() {
     // Attack: Try to exhaust memory with string concatenation
     let engine = create_secure_engine();
     let mut context = HashMap::new();
-    context.insert("s".to_string(), json!("x".repeat(1000)));
+    context.insert("s".to_string(), json!("x".repeat(1000));
 
     // Try to create very large string through repetition
     // Create a chain of concatenations that would exceed memory
@@ -368,10 +368,10 @@ fn test_path_traversal_in_variable_names() {
     let parser = Parser::new();
 
     // These should all fail to parse
-    assert!(parser.parse_str("{../../../etc/passwd}").is_err());
-    assert!(parser.parse_str("{..\\..\\windows\\system32}").is_err());
-    assert!(parser.parse_str("{/etc/passwd}").is_err());
-    assert!(parser.parse_str("{C:\\Windows\\System32}").is_err());
+    assert!(parser.parse("{../../../etc/passwd}").is_err());
+    assert!(parser.parse("{..\\..\\windows\\system32}").is_err());
+    assert!(parser.parse("{/etc/passwd}").is_err());
+    assert!(parser.parse("{C:\\Windows\\System32}").is_err());
 }
 
 #[test]
@@ -379,8 +379,8 @@ fn test_path_traversal_url_encoding() {
     // Attack: Try URL-encoded path traversal
     let parser = Parser::new();
 
-    assert!(parser.parse_str("{%2e%2e%2f%2e%2e%2f}").is_err());
-    assert!(parser.parse_str("{%2fetc%2fpasswd}").is_err());
+    assert!(parser.parse("{%2e%2e%2f%2e%2e%2f}").is_err());
+    assert!(parser.parse("{%2fetc%2fpasswd}").is_err());
 }
 
 // ==================== SQL-like Injection Tests ====================
@@ -391,10 +391,10 @@ fn test_sql_injection_patterns() {
     let parser = Parser::new();
 
     // SQL keywords and syntax should fail
-    assert!(parser.parse_str("SELECT * FROM users").is_err());
-    assert!(parser.parse_str("'; DROP TABLE users; --").is_err());
-    assert!(parser.parse_str("1' OR '1'='1").is_err());
-    assert!(parser.parse_str("UNION SELECT NULL").is_err());
+    assert!(parser.parse("SELECT * FROM users").is_err());
+    assert!(parser.parse("'; DROP TABLE users; --").is_err());
+    assert!(parser.parse("1' OR '1'='1").is_err());
+    assert!(parser.parse("UNION SELECT NULL").is_err());
 }
 
 #[test]
@@ -448,20 +448,20 @@ fn test_parser_unclosed_constructs() {
     let parser = Parser::new();
 
     // Unclosed strings
-    assert!(parser.parse_str("\"unclosed string").is_err());
-    assert!(parser.parse_str("'unclosed single").is_err());
+    assert!(parser.parse("\"unclosed string").is_err());
+    assert!(parser.parse("'unclosed single").is_err());
 
     // Unclosed parentheses
-    assert!(parser.parse_str("(1 + 2").is_err());
-    assert!(parser.parse_str("((1 + 2)").is_err());
+    assert!(parser.parse("(1 + 2").is_err());
+    assert!(parser.parse("((1 + 2)").is_err());
 
     // Unclosed function calls
-    assert!(parser.parse_str("max(1, 2").is_err());
-    assert!(parser.parse_str("max(1, 2,").is_err());
+    assert!(parser.parse("max(1, 2").is_err());
+    assert!(parser.parse("max(1, 2,").is_err());
 
     // Unclosed variables
-    assert!(parser.parse_str("{unclosed").is_err());
-    assert!(parser.parse_str("{unclosed{").is_err());
+    assert!(parser.parse("{unclosed").is_err());
+    assert!(parser.parse("{unclosed{").is_err());
 }
 
 #[test]
@@ -470,13 +470,13 @@ fn test_parser_invalid_characters() {
     let parser = Parser::new();
 
     // Control characters
-    assert!(parser.parse_str("\x00").is_err());
-    assert!(parser.parse_str("\x1F").is_err());
+    assert!(parser.parse("\x00").is_err());
+    assert!(parser.parse("\x1F").is_err());
 
     // Invalid in identifiers
-    assert!(parser.parse_str("{var!able}").is_err());
-    assert!(parser.parse_str("{var@name}").is_err());
-    assert!(parser.parse_str("{var#tag}").is_err());
+    assert!(parser.parse("{var!able}").is_err());
+    assert!(parser.parse("{var@name}").is_err());
+    assert!(parser.parse("{var#tag}").is_err());
 }
 
 #[test]
@@ -486,11 +486,11 @@ fn test_parser_extremely_long_input() {
 
     // Very long variable name
     let long_var = format!("{{{}}}", "a".repeat(10000));
-    assert!(parser.parse_str(&long_var).is_err());
+    assert!(parser.parse(&long_var).is_err());
 
     // Very long string literal
     let long_string = format!("\"{}\"", "x".repeat(100000));
-    let result = parser.parse_str(&long_string);
+    let result = parser.parse(&long_string);
     // Parser might accept it, but evaluator should fail on memory
     assert!(result.is_ok() || result.is_err());
 }
@@ -670,7 +670,7 @@ fn test_command_injection_keywords() {
     for keyword in dangerous_keywords {
         // These should not be valid function names
         let expr = format!("{}()", keyword);
-        let result = parser.parse_str(&expr);
+        let result = parser.parse(&expr);
 
         // Either parsing fails or the function doesn't exist
         if result.is_ok() {

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::fs;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create a sample schema
     let mut schema = SchemaDefinition::default();
     schema.name = Some("PersonSchema".to_string());

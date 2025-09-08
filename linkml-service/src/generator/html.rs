@@ -12,9 +12,9 @@ pub struct HtmlGenerator {
 }
 
 impl HtmlGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
-        super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        super::traits::GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new HTML generator
@@ -795,8 +795,7 @@ impl Generator for HtmlGenerator {
                class_name.contains("script") || class_name.contains("javascript:") {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!(
-                        "Class name '{}' contains potentially unsafe HTML characters",
-                        class_name
+                        "Class name '{class_name}' contains potentially unsafe HTML characters"
                     ),
                     element: Some(format!("class.{class_name}")),
                 });
@@ -845,21 +844,21 @@ impl Generator for HtmlGenerator {
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "html"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
 
 impl CodeFormatter for HtmlGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "html"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for html output with proper indentation and syntax"
     }
 
@@ -930,6 +929,7 @@ impl CodeFormatter for HtmlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 
     #[tokio::test]
@@ -950,7 +950,7 @@ mod tests {
 
         let html = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate HTML output: {}", e))?;
+            .expect("should generate HTML output: {}");
 
         // Check basic structure
         assert!(html.contains("<!DOCTYPE html>"));

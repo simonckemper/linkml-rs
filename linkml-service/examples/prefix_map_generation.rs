@@ -4,7 +4,7 @@ use linkml_service::generator::{PrefixMapFormat, PrefixMapGenerator, PrefixMapGe
 use linkml_service::parser::SchemaParser;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example LinkML schema with multiple namespace prefixes
     let schema_yaml = r#"
 id: https://w3id.org/example/multi-namespace-schema

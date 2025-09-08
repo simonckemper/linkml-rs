@@ -3,7 +3,7 @@
 //! This module handles loading plugins from various sources including
 //! native libraries, Python modules, JavaScript, and WebAssembly.
 
-use super::*;
+use super::{Result, Plugin, PluginManifest, LinkMLError, EntryPoint};
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
@@ -42,9 +42,15 @@ pub struct DynamicLoader {
     wasm_loader: WasmLoader,
 }
 
+impl Default for DynamicLoader {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DynamicLoader {
     /// Create a new dynamic loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             builtin_registry: super::BuiltinPluginRegistry::new(),
             native_loader: NativeLoader::new(),
@@ -55,16 +61,20 @@ impl DynamicLoader {
     }
 
     /// Get a built-in plugin by name
-    pub fn get_builtin_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
+    #[must_use] pub fn get_builtin_plugin(&self, name: &str) -> Option<&Box<dyn Plugin>> {
         self.builtin_registry.get_plugin(name)
     }
 
     /// List all available built-in plugins
-    pub fn list_builtin_plugins(&self) -> Vec<String> {
+    #[must_use] pub fn list_builtin_plugins(&self) -> Vec<String> {
         self.builtin_registry.list_plugins()
     }
 
     /// Load plugin metadata from a manifest file
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn load_metadata(&self, path: &Path) -> Result<PluginManifest> {
         let content = fs::read_to_string(path)?;
         let manifest: PluginManifest =
@@ -77,6 +87,10 @@ impl DynamicLoader {
     }
 
     /// Load a plugin based on its entry point type
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_plugin(
         &self,
         path: &Path,
@@ -138,7 +152,7 @@ impl NativeLoader {
     }
 }
 
-/// Python plugin loader using PyO3
+/// Python plugin loader using `PyO3`
 struct PythonLoader;
 
 impl PythonLoader {
@@ -214,7 +228,7 @@ pub struct PluginSandbox {
 
 impl PluginSandbox {
     /// Create a new plugin sandbox with default limits
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             limits: ResourceLimits::default(),
             capabilities: Vec::new(),
@@ -222,7 +236,7 @@ impl PluginSandbox {
     }
 
     /// Create a sandbox with custom resource limits
-    pub fn with_limits(limits: ResourceLimits) -> Self {
+    #[must_use] pub fn with_limits(limits: ResourceLimits) -> Self {
         Self {
             limits,
             capabilities: Vec::new(),
@@ -235,7 +249,7 @@ impl PluginSandbox {
     }
 
     /// Check if a capability is allowed
-    pub fn has_capability(&self, capability: &str) -> bool {
+    #[must_use] pub fn has_capability(&self, capability: &str) -> bool {
         self.capabilities.iter().any(|c| c == capability)
     }
 }
@@ -332,8 +346,12 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
 
     /// Execute with resource limits using the timeout service
     ///
-    /// This implementation uses RootReal's timeout service for proper timeout management
+    /// This implementation uses `RootReal`'s timeout service for proper timeout management
     /// with adaptive algorithms, jitter support, and monitoring integration.
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn execute_sandboxed<F, R>(&self, f: F) -> Result<R>
     where
         F: FnOnce(&dyn Plugin) -> Result<R> + Send + 'static,
@@ -384,30 +402,27 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             .record_duration(&operation_name, actual_duration, success, Some(&context))
             .await;
 
-        match result {
-            Ok(value) => value,
-            Err(_) => {
-                // Log the timeout for analysis
-                let _ = self
-                    .timeout_service
-                    .record_duration(
-                        &operation_name,
-                        timeout_value.duration,
-                        false,
-                        Some(&context),
-                    )
-                    .await;
+        if let Ok(value) = result { value } else {
+            // Log the timeout for analysis
+            let _ = self
+                .timeout_service
+                .record_duration(
+                    &operation_name,
+                    timeout_value.duration,
+                    false,
+                    Some(&context),
+                )
+                .await;
 
-                Err(LinkMLError::other(format!(
-                    "Plugin execution timed out after {:?} (algorithm: {:?}, confidence: {:.2})",
-                    timeout_value.duration, timeout_value.algorithm, timeout_value.confidence
-                )))
-            }
+            Err(LinkMLError::other(format!(
+                "Plugin execution timed out after {:?} (algorithm: {:?}, confidence: {:.2})",
+                timeout_value.duration, timeout_value.algorithm, timeout_value.confidence
+            )))
         }
     }
 
     /// Check if a plugin operation is allowed based on sandbox configuration
-    pub fn is_allowed(&self, operation: PluginOperation) -> bool {
+    #[must_use] pub fn is_allowed(&self, operation: PluginOperation) -> bool {
         match operation {
             PluginOperation::FileRead(path) => self.check_file_access(&path, false),
             PluginOperation::FileWrite(path) => self.check_file_access(&path, true),
@@ -423,11 +438,10 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             FsAccessMode::ReadOnly => !write,
             FsAccessMode::TempOnly => {
                 // Check if path is in temp directory
-                if let Ok(temp_dir) = std::env::temp_dir().canonicalize() {
-                    if let Ok(canonical_path) = path.canonicalize() {
+                if let Ok(temp_dir) = std::env::temp_dir().canonicalize()
+                    && let Ok(canonical_path) = path.canonicalize() {
                         return canonical_path.starts_with(&temp_dir);
                     }
-                }
                 false
             }
             FsAccessMode::Full => true,
@@ -450,7 +464,6 @@ pub enum PluginOperation {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_resource_limits_default() {

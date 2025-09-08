@@ -70,7 +70,7 @@ where
 #[async_trait]
 impl<S> LinkMLServiceExt for LinkMLClient<S>
 where
-    S: LinkMLServiceExt + Send + Sync,
+    S: LinkMLServiceExt + Send + Sync + 'static,
 {
     async fn validate_typed<T>(
         &self,

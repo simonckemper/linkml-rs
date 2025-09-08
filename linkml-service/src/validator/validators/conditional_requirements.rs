@@ -1,20 +1,26 @@
-//! Conditional requirement validators for LinkML
+//! Conditional requirement validators for `LinkML`
 //!
-//! This module implements validators for if_required/then_required conditional logic.
+//! This module implements validators for `if_required/then_required` conditional logic.
 
-use linkml_core::types::{ClassDefinition, ConditionalRequirement, SlotDefinition};
 use serde_json::Value;
 
 use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 use super::Validator;
+use linkml_core::types::{ClassDefinition, ConditionalRequirement, SlotDefinition};
 
-/// Validator for conditional requirements (if_required/then_required)
+/// Validator for conditional requirements (`if_required/then_required`)
 pub struct ConditionalRequirementValidator;
+
+impl Default for ConditionalRequirementValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ConditionalRequirementValidator {
     /// Create a new conditional requirement validator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self
     }
 
@@ -81,7 +87,7 @@ impl ConditionalRequirementValidator {
                     }
                     Err(e) => {
                         return Err(ValidationIssue::error(
-                            format!("Invalid regex pattern '{}': {}", pattern, e),
+                            format!("Invalid regex pattern '{pattern}': {e}"),
                             context.path(),
                             self.name(),
                         )
@@ -98,20 +104,16 @@ impl ConditionalRequirementValidator {
             match slot_value {
                 Some(Value::Number(n)) => {
                     if let Some(value) = n.as_f64() {
-                        if let Some(ref min) = slot_condition.minimum_value {
-                            if let Some(min_val) = min.as_f64() {
-                                if value < min_val {
+                        if let Some(ref min) = slot_condition.minimum_value
+                            && let Some(min_val) = min.as_f64()
+                                && value < min_val {
                                     return Ok(false);
                                 }
-                            }
-                        }
-                        if let Some(ref max) = slot_condition.maximum_value {
-                            if let Some(max_val) = max.as_f64() {
-                                if value > max_val {
+                        if let Some(ref max) = slot_condition.maximum_value
+                            && let Some(max_val) = max.as_f64()
+                                && value > max_val {
                                     return Ok(false);
                                 }
-                            }
-                        }
                     }
                 }
                 _ => return Ok(false),
@@ -138,7 +140,7 @@ impl ConditionalRequirementValidator {
 
         // For each conditional requirement
         for (condition_slot, requirement) in if_required {
-            context.push_path(&format!("if_required[{condition_slot}]"));
+            context.push_path(format!("if_required[{condition_slot}]"));
 
             match self.check_condition(instance, condition_slot, requirement, context) {
                 Ok(condition_met) => {
@@ -146,7 +148,7 @@ impl ConditionalRequirementValidator {
                         // Condition is satisfied, check then_required slots
                         if let Some(then_slots) = &requirement.then_required {
                             for required_slot in then_slots {
-                                context.push_path(&format!("then_required[{required_slot}]"));
+                                context.push_path(format!("then_required[{required_slot}]"));
 
                                 // Get the value of the required slot
                                 let slot_value = match instance {
@@ -158,8 +160,7 @@ impl ConditionalRequirementValidator {
                                 if slot_value.is_none() || matches!(slot_value, Some(Value::Null)) {
                                     let mut issue = ValidationIssue::error(
                                         format!(
-                                            "Field '{}' is required when '{}' satisfies condition",
-                                            required_slot, condition_slot
+                                            "Field '{required_slot}' is required when '{condition_slot}' satisfies condition"
                                         ),
                                         context.path(),
                                         "ConditionalRequirementValidator",
@@ -210,7 +211,7 @@ impl Validator for ConditionalRequirementValidator {
         )]
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ConditionalRequirementValidator"
     }
 }
@@ -219,7 +220,6 @@ impl Validator for ConditionalRequirementValidator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-    use linkml_core::types::{SchemaDefinition, SlotCondition};
     use std::sync::Arc;
 
     #[test]
@@ -495,7 +495,7 @@ mod tests {
             })
             .collect();
 
-        assert!(error_fields.contains(&"state".to_string()));
-        assert!(error_fields.contains(&"student_id".to_string()));
+        assert!(error_fields.contains(&"state".to_string());
+        assert!(error_fields.contains(&"student_id".to_string());
     }
 }

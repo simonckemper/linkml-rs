@@ -11,14 +11,17 @@ use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{
     PluginContext, PluginManager, PluginType,
 };
+use logger_service::factory::create_development_logger;
+use timestamp_service::factory::create_timestamp_service;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize logger service
-    let logger = Arc::new(SimpleLogger);
+    let timestamp = create_timestamp_service();
+    let logger = Arc::new(create_development_logger(timestamp).await?);
 
     // Create plugin manager
     let mut plugin_manager = PluginManager::new(logger.clone());
@@ -222,13 +225,4 @@ system = ["cargo", "rustc"]
     println!("{}", manifest_example);
 
     Ok(())
-}
-
-// Simple logger implementation for the example
-struct SimpleLogger;
-
-impl SimpleLogger {
-    fn log(&self, level: &str, message: &str) {
-        println!("[{}] {}", level, message);
-    }
 }

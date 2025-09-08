@@ -1,7 +1,7 @@
-//! ShEx (Shape Expressions) generator for LinkML schemas
+//! `ShEx` (Shape Expressions) generator for `LinkML` schemas
 //!
-//! This module generates Shape Expressions from LinkML schemas for RDF validation.
-//! ShEx is a language for describing RDF graph structures as sets of constraints.
+//! This module generates Shape Expressions from `LinkML` schemas for RDF validation.
+//! `ShEx` is a language for describing RDF graph structures as sets of constraints.
 
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -10,18 +10,18 @@ use std::fmt::Write;
 use super::traits::{Generator, GeneratorError, GeneratorResult};
 use linkml_core::error::LinkMLError;
 
-/// ShEx generation style
+/// `ShEx` generation style
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShExStyle {
-    /// Compact syntax (ShExC)
+    /// Compact syntax (`ShExC`)
     Compact,
-    /// `JSON` representation (ShExJ)
+    /// `JSON` representation (`ShExJ`)
     Json,
-    /// RDF representation (ShExR)
+    /// RDF representation (`ShExR`)
     Rdf,
 }
 
-/// Options for ShEx generation
+/// Options for `ShEx` generation
 #[derive(Debug, Clone)]
 pub struct ShExOptions {
     /// Output style
@@ -54,7 +54,7 @@ impl Default for ShExOptions {
     }
 }
 
-/// ShEx generator for RDF validation
+/// `ShEx` generator for RDF validation
 pub struct ShExGenerator {
     /// Generation options
     options: ShExOptions,
@@ -63,12 +63,12 @@ pub struct ShExGenerator {
 }
 
 impl ShExGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
-    /// Create a new ShEx generator
+    /// Create a new `ShEx` generator
     #[must_use]
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
@@ -109,7 +109,7 @@ impl ShExGenerator {
         self
     }
 
-    /// Generate ShEx from schema
+    /// Generate `ShEx` from schema
     fn generate_shex(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         match self.options.style {
             ShExStyle::Compact => self.generate_shexc(schema),
@@ -118,7 +118,7 @@ impl ShExGenerator {
         }
     }
 
-    /// Generate ShEx Compact syntax
+    /// Generate `ShEx` Compact syntax
     fn generate_shexc(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -135,13 +135,13 @@ impl ShExGenerator {
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             if let Some(desc) = &schema.description {
-                writeln!(&mut output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Create a local copy of prefixes for this generation
-        let mut prefixes = self.prefixes.clone();
+        let mut prefixes = Arc::clone(&self.prefixes);
 
         // Add schema prefix
         let schema_prefix = self.to_snake_case(&schema.name);
@@ -186,13 +186,12 @@ impl ShExGenerator {
         let shape_id = format!("{}:{}", schema_prefix, self.to_pascal_case(class_name));
 
         // Shape header
-        if self.options.include_comments {
-            if let Some(desc) = &class_def.description {
-                writeln!(output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        if self.options.include_comments
+            && let Some(desc) = &class_def.description {
+                writeln!(output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
-        write!(output, "{}", shape_id).map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "{shape_id}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Add label if enabled
         if self.options.include_labels {
@@ -239,8 +238,8 @@ impl ShExGenerator {
         writeln!(output, "}}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate inheritance constraints if not expanded
-        if !self.options.expand_inheritance && class_def.is_a.is_some() {
-            if let Some(parent) = &class_def.is_a {
+        if !self.options.expand_inheritance && class_def.is_a.is_some()
+            && let Some(parent) = &class_def.is_a {
                 writeln!(
                     output,
                     "  AND @{}:{}",
@@ -249,7 +248,6 @@ impl ShExGenerator {
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         Ok(())
     }
@@ -265,7 +263,7 @@ impl ShExGenerator {
         let schema_prefix = self.to_snake_case(&schema.name);
         let property_uri = format!("{}:{}", schema_prefix, self.to_snake_case(slot_name));
 
-        write!(output, "  {}", property_uri).map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "  {property_uri}").map_err(Self::fmt_error_to_generator_error)?;
 
         // Value constraint
         write!(output, " ").map_err(Self::fmt_error_to_generator_error)?;
@@ -314,13 +312,13 @@ impl ShExGenerator {
             // Otherwise it's a datatype
             else {
                 let datatype = self.get_xsd_datatype(range);
-                write!(output, "{}", datatype).map_err(Self::fmt_error_to_generator_error)?;
+                write!(output, "{datatype}").map_err(Self::fmt_error_to_generator_error)?;
 
                 // Add facets (constraints)
                 let mut facets = Vec::new();
 
                 if let Some(pattern) = &slot_def.pattern {
-                    facets.push(format!(r#"PATTERN "{}""#, pattern));
+                    facets.push(format!(r#"PATTERN "{pattern}""#));
                 }
 
                 if let Some(min_val) = &slot_def.minimum_value {
@@ -332,17 +330,15 @@ impl ShExGenerator {
                 }
 
                 // TODO: min_length and max_length not available, using minimum_value/maximum_value as approximation
-                if let Some(min_val) = &slot_def.minimum_value {
-                    if range == "string" {
+                if let Some(min_val) = &slot_def.minimum_value
+                    && range == "string" {
                         facets.push(format!("MINLENGTH {min_val}"));
                     }
-                }
 
-                if let Some(max_val) = &slot_def.maximum_value {
-                    if range == "string" {
+                if let Some(max_val) = &slot_def.maximum_value
+                    && range == "string" {
                         facets.push(format!("MAXLENGTH {max_val}"));
                     }
-                }
 
                 if !facets.is_empty() {
                     write!(output, " {}", facets.join(" "))
@@ -387,13 +383,13 @@ impl ShExGenerator {
             (0, None) => write!(output, "*").map_err(Self::fmt_error_to_generator_error)?,
             (1, None) => write!(output, "+").map_err(Self::fmt_error_to_generator_error)?,
             (min, Some(max)) if min == max && self.options.strict_cardinality => {
-                write!(output, "{{{}}}", min).map_err(Self::fmt_error_to_generator_error)?;
+                write!(output, "{{{min}}}").map_err(Self::fmt_error_to_generator_error)?;
             }
             (min, Some(max)) => {
-                write!(output, "{{{},{}}}", min, max).map_err(Self::fmt_error_to_generator_error)?
+                write!(output, "{{{min},{max}}}").map_err(Self::fmt_error_to_generator_error)?;
             }
             (min, None) => {
-                write!(output, "{{{};}}", min).map_err(Self::fmt_error_to_generator_error)?
+                write!(output, "{{{min};}}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -407,16 +403,15 @@ impl ShExGenerator {
         enum_name: &str,
         enum_def: &EnumDefinition,
     ) -> GeneratorResult<()> {
-        let schema_prefix = self.to_snake_case(&enum_name);
+        let schema_prefix = self.to_snake_case(enum_name);
         let shape_id = format!("{}:{}", schema_prefix, self.to_pascal_case(enum_name));
 
-        if self.options.include_comments {
-            if let Some(desc) = &enum_def.description {
-                writeln!(output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        if self.options.include_comments
+            && let Some(desc) = &enum_def.description {
+                writeln!(output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
-        write!(output, "{} [", shape_id).map_err(Self::fmt_error_to_generator_error)?;
+        write!(output, "{shape_id} [").map_err(Self::fmt_error_to_generator_error)?;
 
         // List all permissible values
         let values: Vec<String> = enum_def
@@ -427,7 +422,7 @@ impl ShExGenerator {
                     PermissibleValue::Simple(s) => s,
                     PermissibleValue::Complex { text, .. } => text,
                 };
-                format!("\"{}\"", value)
+                format!("\"{value}\"")
             })
             .collect();
 
@@ -436,7 +431,7 @@ impl ShExGenerator {
         Ok(())
     }
 
-    /// Generate ShExJ (`JSON` format)
+    /// Generate `ShExJ` (`JSON` format)
     fn generate_shexj(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified JSON representation
         let mut shex_json = serde_json::json!({
@@ -489,7 +484,7 @@ impl ShExGenerator {
         Ok(shape)
     }
 
-    /// Generate ShExR (RDF format)
+    /// Generate `ShExR` (RDF format)
     fn generate_shexr(&self, _schema: &SchemaDefinition) -> GeneratorResult<String> {
         // Simplified RDF representation in Turtle
         let output = r"@prefix shex: <http://www.w3.org/ns/shex#> .
@@ -515,7 +510,7 @@ ex:MyShape a shex:Shape ;
         prefixes: &HashMap<String, String>,
     ) -> GeneratorResult<()> {
         for (prefix, uri) in prefixes {
-            writeln!(output, "PREFIX {}: <{}>", prefix, uri)
+            writeln!(output, "PREFIX {prefix}: <{uri}>")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         Ok(())
@@ -550,8 +545,8 @@ ex:MyShape a shex:Shape ;
         let mut seen = HashSet::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -559,7 +554,6 @@ ex:MyShape a shex:Shape ;
                     }
                 }
             }
-        }
 
         // Then add direct slots
         for slot in &class_def.slots {
@@ -578,7 +572,7 @@ ex:MyShape a shex:Shape ;
         all_slots
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -598,9 +592,9 @@ ex:MyShape a shex:Shape ;
         result
     }
 
-    /// Convert to PascalCase
+    /// Convert to `PascalCase`
     fn to_pascal_case(&self, s: &str) -> String {
-        s.split(|c| c == '_' || c == '-')
+        s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
@@ -627,7 +621,7 @@ impl Generator for ShExGenerator {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates Shape Expressions (ShEx) for RDF validation from LinkML schemas"
     }
 
@@ -663,7 +657,7 @@ impl Generator for ShExGenerator {
         }
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "shapes"
     }
 }
@@ -671,6 +665,7 @@ impl Generator for ShExGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -712,40 +707,43 @@ mod tests {
     }
 
     #[test]
-    fn test_shex_compact_generation() {
+    fn test_shex_compact_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
+        let output = generator.generate(&schema).expect("should generate ShEx: {}");
 
         // Check content
         assert!(output.contains("PREFIX"));
         assert!(output.contains("test_schema:Person"));
         assert!(output.contains("PATTERN"));
         assert!(output.contains("MININCLUSIVE"));
+        Ok(())
     }
 
     #[test]
-    fn test_cardinality_generation() {
+    fn test_cardinality_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let generator = ShExGenerator::new();
 
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
+        let output = generator.generate(&schema).expect("should generate ShEx: {}");
 
         // Check cardinality markers
         assert!(output.contains("?")); // optional age
         assert!(output.contains("*")); // multiple friends
+        Ok(())
     }
 
     #[test]
-    fn test_closed_shapes() {
+    fn test_closed_shapes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let mut options = ShExOptions::default();
         options.closed_shapes = true;
 
         let generator = ShExGenerator::with_options(options);
-        let output = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate ShEx: {}", e))?;
+        let output = generator.generate(&schema).expect("should generate ShEx: {}");
 
         assert!(output.contains("CLOSED"));
+        Ok(())
     }
 }

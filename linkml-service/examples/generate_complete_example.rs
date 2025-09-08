@@ -19,7 +19,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let schema: SchemaDefinition = serde_yaml::from_str(&schema_content)?;
     
     println!("Loaded schema: {}", schema.name);
-    println!("  Title: {}", schema.title.as_ref().unwrap_or(&"".to_string()));
+    println!("  Title: {}", schema.title.as_ref().unwrap_or(&"".to_string());
     println!("  Classes: {}", schema.classes.len());
     println!("  Slots: {}", schema.slots.len());
     println!("  Enums: {}", schema.enums.len());

@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::hash::{BuildHasher, Hash};
 
 use crate::error::{LinkMLError, Result};
-use crate::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use crate::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
 /// Check if a given name is a built-in type (no clone)
 #[must_use]

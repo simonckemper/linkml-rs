@@ -1,11 +1,12 @@
 //! Integration tests for conditional requirements validation
 
 use linkml_core::types::{
-    ClassDefinition, ConditionalRequirement, SchemaDefinition, SlotCondition, SlotDefinition,
+    ClassDefinition, ConditionalRequirement, Definition, SlotCondition, SlotDefinition,
 };
 use linkml_service::validator::{ValidationEngine, ValidationOptions};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 #[tokio::test]
 async fn test_conditional_requirements_basic() {
     // Create schema with conditional requirements
@@ -93,8 +94,8 @@ async fn test_conditional_requirements_basic() {
         2,
         "Should have 2 errors for missing email and phone"
     );
-    assert!(errors1.iter().any(|e| e.message.contains("email")));
-    assert!(errors1.iter().any(|e| e.message.contains("phone")));
+    assert!(errors1.iter().any(|e| e.message.contains("email"));
+    assert!(errors1.iter().any(|e| e.message.contains("phone"));
 
     // Test case 2: Active status with required fields
     let data2 = json!({
@@ -535,8 +536,8 @@ async fn test_multiple_conditional_requirements() {
     // Verify all expected fields are reported
     let error_messages: Vec<String> = report.errors().map(|e| e.message.clone()).collect();
 
-    assert!(error_messages.iter().any(|m| m.contains("state")));
-    assert!(error_messages.iter().any(|m| m.contains("zip_code")));
-    assert!(error_messages.iter().any(|m| m.contains("tax_id")));
-    assert!(error_messages.iter().any(|m| m.contains("business_name")));
+    assert!(error_messages.iter().any(|m| m.contains("state"));
+    assert!(error_messages.iter().any(|m| m.contains("zip_code"));
+    assert!(error_messages.iter().any(|m| m.contains("tax_id"));
+    assert!(error_messages.iter().any(|m| m.contains("business_name"));
 }

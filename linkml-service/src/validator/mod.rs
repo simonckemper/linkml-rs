@@ -10,6 +10,7 @@
 //! - Compiled validators for performance
 //! - Parallel validation support
 
+use linkml_core::types::SchemaDefinition;
 pub mod buffer_pool;
 pub mod cache;
 pub mod cache_key_optimizer;
@@ -53,9 +54,8 @@ pub use pattern_validator::{PatternTransformer, PatternValidator, validate_patte
 pub use recursion_checker::{RecursionTracker, check_recursion};
 pub use report::{Severity, ValidationIssue, ValidationReport};
 pub use unique_key_validator::{UniqueKeyIndex, UniqueKeyValidator, UniqueKeyViolation};
+pub use validators::Validator;
 
-use linkml_core::error::Result;
-use linkml_core::types::SchemaDefinition;
 use serde_json::Value;
 
 /// Main validation function - validates `JSON` data against a schema
@@ -67,7 +67,7 @@ pub async fn validate(
     schema: &SchemaDefinition,
     data: &Value,
     options: Option<ValidationOptions>,
-) -> Result<ValidationReport> {
+) -> linkml_core::error::Result<ValidationReport> {
     let engine = ValidationEngine::new(schema)?;
     engine.validate(data, options).await
 }
@@ -82,7 +82,7 @@ pub async fn validate_as_class(
     data: &Value,
     class_name: &str,
     options: Option<ValidationOptions>,
-) -> Result<ValidationReport> {
+) -> linkml_core::error::Result<ValidationReport> {
     let engine = ValidationEngine::new(schema)?;
     engine.validate_as_class(data, class_name, options).await
 }
@@ -97,7 +97,7 @@ pub async fn validate_collection(
     instances: &[Value],
     class_name: &str,
     options: Option<ValidationOptions>,
-) -> Result<ValidationReport> {
+) -> linkml_core::error::Result<ValidationReport> {
     let mut engine = ValidationEngine::new(schema)?;
     engine
         .validate_collection(instances, class_name, options)

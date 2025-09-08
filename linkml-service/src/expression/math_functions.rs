@@ -1,11 +1,11 @@
-//! Mathematical functions for LinkML expressions
+//! Mathematical functions for `LinkML` expressions
 //!
 //! This module provides mathematical functions like trigonometric, logarithmic, and arithmetic operations.
 
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
 
-/// Convert f64 to serde_json::Number, returning error for non-finite values
+/// Convert f64 to `serde_json::Number`, returning error for non-finite values
 fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
     serde_json::Number::from_f64(val).ok_or_else(|| {
         FunctionError::invalid_result(
@@ -15,17 +15,17 @@ fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, Fu
     })
 }
 
-/// abs() - Absolute value
+/// `abs()` - Absolute value
 pub struct AbsFunction;
 
 impl BuiltinFunction for AbsFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "abs"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -44,17 +44,17 @@ impl BuiltinFunction for AbsFunction {
     }
 }
 
-/// sqrt() - Square root
+/// `sqrt()` - Square root
 pub struct SqrtFunction;
 
 impl BuiltinFunction for SqrtFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sqrt"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -79,17 +79,17 @@ impl BuiltinFunction for SqrtFunction {
     }
 }
 
-/// pow() - Power function
+/// `pow()` - Power function
 pub struct PowFunction;
 
 impl BuiltinFunction for PowFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "pow"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -122,17 +122,17 @@ impl BuiltinFunction for PowFunction {
     }
 }
 
-/// sin() - Sine function (radians)
+/// `sin()` - Sine function (radians)
 pub struct SinFunction;
 
 impl BuiltinFunction for SinFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sin"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -151,17 +151,17 @@ impl BuiltinFunction for SinFunction {
     }
 }
 
-/// cos() - Cosine function (radians)
+/// `cos()` - Cosine function (radians)
 pub struct CosFunction;
 
 impl BuiltinFunction for CosFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "cos"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -180,17 +180,17 @@ impl BuiltinFunction for CosFunction {
     }
 }
 
-/// tan() - Tangent function (radians)
+/// `tan()` - Tangent function (radians)
 pub struct TanFunction;
 
 impl BuiltinFunction for TanFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "tan"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -209,11 +209,11 @@ impl BuiltinFunction for TanFunction {
     }
 }
 
-/// log() - Natural logarithm
+/// `log()` - Natural logarithm
 pub struct LogFunction;
 
 impl BuiltinFunction for LogFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "log"
     }
 
@@ -275,17 +275,17 @@ impl BuiltinFunction for LogFunction {
     }
 }
 
-/// exp() - Exponential function (e^x)
+/// `exp()` - Exponential function (e^x)
 pub struct ExpFunction;
 
 impl BuiltinFunction for ExpFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "exp"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -304,17 +304,17 @@ impl BuiltinFunction for ExpFunction {
     }
 }
 
-/// floor() - Round down to nearest integer
+/// `floor()` - Round down to nearest integer
 pub struct FloorFunction;
 
 impl BuiltinFunction for FloorFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "floor"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -333,17 +333,17 @@ impl BuiltinFunction for FloorFunction {
     }
 }
 
-/// ceil() - Round up to nearest integer
+/// `ceil()` - Round up to nearest integer
 pub struct CeilFunction;
 
 impl BuiltinFunction for CeilFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ceil"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -362,11 +362,11 @@ impl BuiltinFunction for CeilFunction {
     }
 }
 
-/// round() - Round to nearest integer or decimal places
+/// `round()` - Round to nearest integer or decimal places
 pub struct RoundFunction;
 
 impl BuiltinFunction for RoundFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "round"
     }
 
@@ -415,17 +415,17 @@ impl BuiltinFunction for RoundFunction {
     }
 }
 
-/// mod() - Modulo operation
+/// `mod()` - Modulo operation
 pub struct ModFunction;
 
 impl BuiltinFunction for ModFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "mod"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }

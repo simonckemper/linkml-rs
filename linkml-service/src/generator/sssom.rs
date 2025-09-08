@@ -1,13 +1,13 @@
-//! SSSOM (Simple Standard for Sharing Ontological Mappings) generator for LinkML schemas
+//! SSSOM (Simple Standard for Sharing Ontological Mappings) generator for `LinkML` schemas
 //!
-//! This module generates SSSOM-compliant mapping files from LinkML schemas,
+//! This module generates SSSOM-compliant mapping files from `LinkML` schemas,
 //! enabling interoperability between different ontologies and vocabularies.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
 use chrono::Local;
 use linkml_core::error::LinkMLError;
-use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use linkml_core::annotations::AnnotationValue;
+use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 
 /// SSSOM generator configuration
 #[derive(Debug, Clone)]
@@ -75,7 +75,7 @@ struct SssomMapping {
 
 impl SssomGenerator {
     /// Create a new SSSOM generator
-    pub fn new(config: SssomGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: SssomGeneratorConfig) -> Self {
         Self { config }
     }
 
@@ -250,7 +250,7 @@ impl SssomGenerator {
     ) -> SssomMapping {
         SssomMapping {
             subject_id: subject.to_string(),
-            subject_label: description.map(|s| s.to_string()),
+            subject_label: description.map(std::string::ToString::to_string),
             predicate_id: predicate.to_string(),
             object_id: object.to_string(),
             object_label: None, // Would need external lookup
@@ -332,20 +332,19 @@ impl SssomGenerator {
         id_prefixes: &Option<Vec<String>>,
         schema: &SchemaDefinition,
     ) -> String {
-        if let Some(prefixes) = id_prefixes {
-            if let Some(prefix) = prefixes.first() {
+        if let Some(prefixes) = id_prefixes
+            && let Some(prefix) = prefixes.first() {
                 if let Some(expansion) = schema.prefixes.get(prefix) {
                     let reference = match expansion {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                        } => prefix_reference.clone().unwrap_or_default(),
                     };
-                    return format!("{}{}", reference, name);
+                    return format!("{reference}{name}");
                 }
-                return format!("{}:{}", prefix, name);
+                return format!("{prefix}:{name}");
             }
-        }
 
         // Use default prefix if available
         if let Some(default_prefix) = &schema.default_prefix {
@@ -354,11 +353,11 @@ impl SssomGenerator {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                    } => prefix_reference.clone().unwrap_or_default(),
                 };
-                return format!("{}{}", reference, name);
+                return format!("{reference}{name}");
             }
-            return format!("{}:{}", default_prefix, name);
+            return format!("{default_prefix}:{name}");
         }
 
         name.to_string()
@@ -400,8 +399,7 @@ impl SssomGenerator {
 
             if let Some(description) = &schema.description {
                 output.push_str(&format!(
-                    "# comment: Generated from LinkML schema - {}\n",
-                    description
+                    "# comment: Generated from LinkML schema - {description}\n"
                 ));
             }
 
@@ -413,9 +411,9 @@ impl SssomGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                        } => prefix_reference.clone().unwrap_or_default(),
                     };
-                    output.push_str(&format!("#   {}: {}\n", prefix, reference));
+                    output.push_str(&format!("#   {prefix}: {reference}\n"));
                 }
             }
             // Add standard prefixes used in SSSOM
@@ -507,7 +505,7 @@ impl SssomGenerator {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                    } => prefix_reference.clone().unwrap_or_default(),
                 };
                 curie_map.insert(prefix.clone(), json!(reference));
             }
@@ -571,11 +569,11 @@ impl SssomGenerator {
 }
 
 impl Generator for SssomGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sssom"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate SSSOM mapping files from LinkML schemas"
     }
 
@@ -600,7 +598,7 @@ impl Generator for SssomGenerator {
         }
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "mappings"
     }
 }
@@ -609,9 +607,10 @@ impl Generator for SssomGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_sssom_generation() {
+    fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
         schema.id = "https://example.com/test-schema".to_string();
@@ -621,8 +620,8 @@ mod tests {
         person_class.description = Some("A person".to_string());
         // Add mapping annotations (temporary until mapping fields are available)
         let mut annotations = indexmap::IndexMap::new();
-        annotations.insert("exact_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("foaf:Person, schema:Person".to_string()));
-        annotations.insert("close_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("dbo:Person".to_string()));
+        annotations.insert("exact_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("foaf:Person, schema:Person".to_string());
+        annotations.insert("close_mappings".to_string(), linkml_core::annotations::AnnotationValue::String("dbo:Person".to_string());
         person_class.annotations = Some(annotations);
 
         let mut classes = indexmap::IndexMap::new();
@@ -632,12 +631,13 @@ mod tests {
         // Test TSV generation
         let config = SssomGeneratorConfig::default();
         let generator = SssomGenerator::new(config);
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate SSSOM: {}", e))?;
+        let result = generator.generate(&schema).expect("should generate SSSOM: {}");
 
         // Should contain header
         assert!(result.contains("subject_id\tsubject_label\tpredicate_id"));
         // Should now contain actual mappings from annotations
         assert!(result.contains("skos:exactMatch") || result.contains("skos:closeMatch"));
         assert!(result.lines().count() > 10); // Should have metadata header and mappings
+        Ok(())
     }
 }

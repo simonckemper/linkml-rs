@@ -42,11 +42,11 @@ invalid: yaml: syntax:
 ";
 
     let yaml_parser = YamlParser::new();
-    let result = yaml_parser.parse_str(invalid_yaml);
+    let result = yaml_parser.parse(invalid_yaml);
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LinkMLError::ParseError {
+        LinkMLError::Parse {
             message: _,
             location: _
         }
@@ -56,11 +56,11 @@ invalid: yaml: syntax:
     let invalid_json = r#"{"invalid": "json", "missing": }"#;
 
     let json_parser = JsonParser::new();
-    let result = json_parser.parse_str(invalid_json);
+    let result = json_parser.parse(invalid_json);
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        LinkMLError::ParseError {
+        LinkMLError::Parse {
             message: _,
             location: _
         }
@@ -86,7 +86,7 @@ fn test_validator_error_propagation() {
     schema.classes.insert("TestClass".to_string(), class);
 
     let validator = ValidationEngine::new(&schema);
-    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone());
     let options = ValidationOptions::default();
 
     // This should return error, not panic
@@ -284,7 +284,7 @@ fn test_file_operation_error_propagation() {
     let yaml_parser = YamlParser::new();
     let result = yaml_parser.parse_file(Path::new("/non/existent/file.yaml"));
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), LinkMLError::Io(_)));
+    assert!(matches!(result.unwrap_err(), LinkMLError::IO(_));
 
     // Test writing to read-only location
     let json_parser = JsonParser::new();
@@ -299,6 +299,9 @@ fn test_file_operation_error_propagation() {
 #[tokio::test]
 async fn test_concurrent_error_handling() {
     use tokio::task::JoinSet;
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
+use linkml_core::error::LinkMLError;
 
     let mut tasks = JoinSet::new();
 
@@ -312,7 +315,7 @@ async fn test_concurrent_error_handling() {
             } else {
                 "invalid: yaml: syntax:"
             };
-            parser.parse_str(yaml)
+            parser.parse(yaml)
         });
     }
 
@@ -343,7 +346,7 @@ classes:
       - slot_with_error: {invalid: syntax}
 "#;
 
-    let result = yaml_parser.parse_str(yaml_with_error);
+    let result = yaml_parser.parse(yaml_with_error);
     if let Err(e) = result {
         // Error message should contain useful context
         let error_msg = e.to_string();
@@ -365,7 +368,7 @@ fn test_error_recovery() {
     schema.classes.insert("".to_string(), invalid_class);
 
     let options = ValidationOptions::default();
-    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone());
     let result1 = validator.validate(&schema, &context, &options);
     assert!(result1.is_err());
 
@@ -377,7 +380,7 @@ fn test_error_recovery() {
     };
     schema.classes.insert("ValidClass".to_string(), valid_class);
 
-    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone());
     let result2 = validator.validate(&schema, &context, &options);
     // Should recover and validate successfully
     assert!(result2.is_ok() || result2.is_err()); // Depends on other validation rules
@@ -445,7 +448,7 @@ slots:
     if let Ok(schema) = schema_result {
         // Validate - should report errors without panicking
         let validator = ValidationEngine::new();
-        let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
+        let context = ValidationContext::new(std::sync::Arc::new(schema.clone());
         let options = ValidationOptions::default();
         let _ = validator.validate(&schema, &context, &options);
 

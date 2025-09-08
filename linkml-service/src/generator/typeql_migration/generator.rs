@@ -501,13 +501,14 @@ impl Default for MigrationGenerator {
 mod tests {
     use super::*;
     use crate::generator::typeql_migration::{
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
         diff::SchemaDiffer,
         analyzer::MigrationAnalyzer,
     };
 
 
     #[test]
-    fn test_simple_migration_generation() {
+    fn test_simple_migration_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = SchemaDefinition::default();
         let mut new_schema = SchemaDefinition::default();
 
@@ -521,21 +522,22 @@ mod tests {
         name_slot.range = Some("string".to_string());
         new_schema.slots.insert("name".to_string(), name_slot);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas: {}");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact: {}");
 
         let generator = MigrationGenerator::new();
-        let migration = generator.generate(&diff, &impact, "1.0.0", "1.1.0").map_err(|e| anyhow::anyhow!("should generate migration: {}", e))?;
+        let migration = generator.generate(&diff, &impact, "1.0.0", "1.1.0").expect("should generate migration: {}");
 
-        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script: {}", e))?;
+        let forward = migration.forward_script().expect("should generate forward script: {}");
         assert!(forward.contains("define"));
         assert!(forward.contains("name sub attribute"));
         assert!(forward.contains("person sub entity"));
         assert!(forward.contains("owns name"));
+        Ok(())
     }
 
     #[test]
-    fn test_breaking_migration_generation() {
+    fn test_breaking_migration_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut old_schema = SchemaDefinition::default();
         let new_schema = SchemaDefinition::default();
 
@@ -543,20 +545,21 @@ mod tests {
         let removed_class = ClassDefinition::default();
         old_schema.classes.insert("OldClass".to_string(), removed_class);
 
-        let diff = SchemaDiffer::compare(&old_schema, &new_schema).map_err(|e| anyhow::anyhow!("should compare schemas: {}", e))?;
-        let impact = MigrationAnalyzer::analyze_impact(&diff).map_err(|e| anyhow::anyhow!("should analyze impact: {}", e))?;
+        let diff = SchemaDiffer::compare(&old_schema, &new_schema).expect("should compare schemas: {}");
+        let impact = MigrationAnalyzer::analyze_impact(&diff).expect("should analyze impact: {}");
 
         let generator = MigrationGenerator::new();
-        let migration = generator.generate(&diff, &impact, "1.0.0", "2.0.0").map_err(|e| anyhow::anyhow!("should generate migration: {}", e))?;
+        let migration = generator.generate(&diff, &impact, "1.0.0", "2.0.0").expect("should generate migration: {}");
 
         assert!(migration.metadata.is_breaking);
 
-        let forward = migration.forward_script().map_err(|e| anyhow::anyhow!("should generate forward script: {}", e))?;
+        let forward = migration.forward_script().expect("should generate forward script: {}");
         assert!(forward.contains("undefine"));
         assert!(forward.contains("old-class sub thing"));
 
-        let rollback = migration.rollback_script().map_err(|e| anyhow::anyhow!("should generate rollback script: {}", e))?;
+        let rollback = migration.rollback_script().expect("should generate rollback script: {}");
         assert!(rollback.contains("define"));
         assert!(rollback.contains("old-class sub entity"));
+        Ok(())
     }
 }

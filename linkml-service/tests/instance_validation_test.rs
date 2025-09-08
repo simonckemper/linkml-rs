@@ -72,7 +72,7 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Create engine with instance validation
@@ -161,7 +161,7 @@ slots:
 
     let parser = Parser::new();
     let _schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Load CSV data
@@ -232,7 +232,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse_str(schema_yaml, "yaml")
+        .parse(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Load instance data

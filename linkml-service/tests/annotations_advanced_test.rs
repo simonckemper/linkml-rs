@@ -87,7 +87,7 @@ fn test_complex_annotation_values() {
         "host".to_string(),
         AnnotationValue::String("localhost".to_string()),
     );
-    nested_map.insert("port".to_string(), AnnotationValue::Number(5432.into()));
+    nested_map.insert("port".to_string(), AnnotationValue::Number(5432.into());
     nested_map.insert("ssl".to_string(), AnnotationValue::Bool(true));
 
     let object_value = AnnotationValue::Object(nested_map);
@@ -111,13 +111,13 @@ fn test_complex_annotation_values() {
     // Verify complex values
     if let Some(AnnotationValue::Array(arr)) = schema.get_annotation("allowed_values") {
         assert_eq!(arr.len(), 3);
-        assert_eq!(arr[0], AnnotationValue::String("option1".to_string()));
+        assert_eq!(arr[0], AnnotationValue::String("option1".to_string());
     } else {
         panic!("Expected array annotation");
     }
 
     if let Some(AnnotationValue::Object(obj)) = schema.get_annotation("database") {
-        assert_eq!(obj.get("port"), Some(&AnnotationValue::Number(5432.into())));
+        assert_eq!(obj.get("port"), Some(&AnnotationValue::Number(5432.into()));
     } else {
         panic!("Expected object annotation");
     }
@@ -225,7 +225,7 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(yaml).expect("Test operation failed");
+    let schema = parser.parse(yaml).expect("Test operation failed");
 
     // Check schema annotations
     assert_eq!(
@@ -284,7 +284,7 @@ fn test_annotation_null_and_empty_values() {
     }
 
     // Test empty object
-    schema.set_annotation("empty_object", AnnotationValue::Object(IndexMap::new()));
+    schema.set_annotation("empty_object", AnnotationValue::Object(IndexMap::new());
     if let Some(AnnotationValue::Object(obj)) = schema.get_annotation("empty_object") {
         assert_eq!(obj.len(), 0);
     }
@@ -293,6 +293,7 @@ fn test_annotation_null_and_empty_values() {
 #[test]
 fn test_annotation_serialization_edge_cases() {
     use serde_json;
+use linkml_core::types::SchemaDefinition;
 
     let mut annotations = Annotations::new();
 
@@ -333,14 +334,14 @@ fn test_annotation_serialization_edge_cases() {
 #[test]
 fn test_annotation_merging_conflicts() {
     let mut base = Annotations::new();
-    base.insert("priority".to_string(), AnnotationValue::Number(1.into()));
+    base.insert("priority".to_string(), AnnotationValue::Number(1.into());
     base.insert(
         "status".to_string(),
         AnnotationValue::String("draft".to_string()),
     );
 
     let mut override_annotations = Annotations::new();
-    override_annotations.insert("priority".to_string(), AnnotationValue::Number(2.into()));
+    override_annotations.insert("priority".to_string(), AnnotationValue::Number(2.into());
     override_annotations.insert("reviewed".to_string(), AnnotationValue::Bool(true));
 
     // Merge annotations (override should win)
@@ -351,10 +352,10 @@ fn test_annotation_merging_conflicts() {
 
     // Check merged result
     let priority = merged.get("priority").expect("Test operation failed");
-    assert_eq!(*priority, AnnotationValue::Number(2.into()));
+    assert_eq!(*priority, AnnotationValue::Number(2.into());
 
     let status = merged.get("status").expect("Test operation failed");
-    assert_eq!(*status, AnnotationValue::String("draft".to_string()));
+    assert_eq!(*status, AnnotationValue::String("draft".to_string());
 
     let reviewed = merged.get("reviewed").expect("Test operation failed");
     assert_eq!(*reviewed, AnnotationValue::Bool(true));
@@ -363,6 +364,7 @@ fn test_annotation_merging_conflicts() {
 #[test]
 fn test_annotation_performance_with_many_annotations() {
     use std::time::Instant;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     let mut schema = SchemaDefinition::new("test_schema");
     schema.annotations = Some(Annotations::new());
@@ -378,7 +380,7 @@ fn test_annotation_performance_with_many_annotations() {
     let start = Instant::now();
     for i in 0..1000 {
         let value = schema.get_annotation(&format!("annotation_{}", i));
-        assert_eq!(value, Some(&AnnotationValue::Number(i.into())));
+        assert_eq!(value, Some(&AnnotationValue::Number(i.into()));
     }
     let lookup_time = start.elapsed();
 

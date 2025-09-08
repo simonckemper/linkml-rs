@@ -83,13 +83,13 @@ fn create_test_schema() -> SchemaDefinition {
     status_enum.description = Some("Person status".to_string());
     status_enum
         .permissible_values
-        .push(PermissibleValue::Simple("ACTIVE".to_string()));
+        .push(PermissibleValue::Simple("ACTIVE".to_string());
     status_enum
         .permissible_values
-        .push(PermissibleValue::Simple("INACTIVE".to_string()));
+        .push(PermissibleValue::Simple("INACTIVE".to_string());
     status_enum
         .permissible_values
-        .push(PermissibleValue::Simple("PENDING".to_string()));
+        .push(PermissibleValue::Simple("PENDING".to_string());
     schema.enums.insert("PersonStatus".to_string(), status_enum);
 
     schema
@@ -208,3 +208,4 @@ async fn test_graphviz_with_options() {
 
 // Need to use the graphviz module from the generator
 use linkml_service::generator::graphviz;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};

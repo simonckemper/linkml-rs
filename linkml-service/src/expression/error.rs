@@ -136,16 +136,16 @@ pub enum EvaluationError {
 
 impl EvaluationError {
     /// Create a type error for binary operations
-    pub fn binary_type_error(op: &str, left: &str, right: &str) -> Self {
+    #[must_use] pub fn binary_type_error(op: &str, left: &str, right: &str) -> Self {
         Self::TypeError {
-            message: format!("Cannot {} values of type {} and {}", op, left, right),
+            message: format!("Cannot {op} values of type {left} and {right}"),
         }
     }
 
     /// Create a type error for unary operations
-    pub fn unary_type_error(op: &str, value: &str) -> Self {
+    #[must_use] pub fn unary_type_error(op: &str, value: &str) -> Self {
         Self::TypeError {
-            message: format!("Cannot {} value of type {}", op, value),
+            message: format!("Cannot {op} value of type {value}"),
         }
     }
 }

@@ -51,7 +51,7 @@ impl Default for TtlConfig {
 
 impl TtlConfig {
     /// Create TTL config from `LinkML` service configuration
-    pub fn from_service_config(config: &linkml_core::configuration_v2::PerformanceConfig) -> Self {
+    #[must_use] pub fn from_service_config(config: &linkml_core::configuration_v2::PerformanceConfig) -> Self {
         Self {
             l1_base_ttl: Duration::from_secs(config.cache_ttl_levels.l1_seconds),
             l2_base_ttl: Duration::from_secs(config.cache_ttl_levels.l2_seconds),
@@ -484,8 +484,6 @@ mod tests {
 
     #[test]
     fn test_ttl_rules() {
-        use std::sync::Arc;
-        use timestamp_core::{TimestampService, TimestampError};
 
         // Create a mock timestamp service
         struct MockTimestampService;

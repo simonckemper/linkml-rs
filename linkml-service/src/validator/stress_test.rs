@@ -9,11 +9,11 @@
 //! - Chaos testing capabilities
 
 use super::ValidationContext;
-use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
+use linkml_core::{LinkMLError, Result};
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -281,9 +281,9 @@ impl StressTestRunner {
                 .map_err(|_| LinkMLError::service("Failed to acquire semaphore"))?;
 
             let operation = self.select_operation(i);
-            let results = self.results.clone();
+            let results = Arc::clone(&self.results);
             let config = config.clone();
-            let chaos = self.chaos_engine.clone();
+            let chaos = Arc::clone(&self.chaos_engine);
 
             // Pre-compute values that need RNG outside the async block
             let should_fail = config.error_injection && rand::random::<f64>() < config.error_rate;
@@ -652,7 +652,7 @@ impl StressOperation for ValidationStressOperation {
 
             if let Some(slot) = slot_info {
                 // This performs real validation work
-                let _path = validation_context.push_path(key.clone());
+                validation_context.push_path(key.clone());
 
                 // Check required constraint
                 if slot.required.unwrap_or(false) && value.is_null() {

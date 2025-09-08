@@ -1,10 +1,9 @@
-//! Complete inheritance resolution for LinkML schemas
+//! Complete inheritance resolution for `LinkML` schemas
 //!
 //! This module handles full multiple inheritance including mixins,
 //! slot overrides, and diamond inheritance patterns.
 
 use linkml_core::annotations::Annotations;
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -19,7 +18,7 @@ pub struct InheritanceResolver<'a> {
 
 impl<'a> InheritanceResolver<'a> {
     /// Create a new inheritance resolver
-    pub fn new(schema: &'a SchemaDefinition) -> Self {
+    #[must_use] pub fn new(schema: &'a SchemaDefinition) -> Self {
         Self {
             schema,
             resolved_cache: HashMap::new(),
@@ -27,7 +26,11 @@ impl<'a> InheritanceResolver<'a> {
         }
     }
 
-    /// Resolve all inheritance for a class (is_a + mixins)
+    /// Resolve all inheritance for a class (`is_a` + mixins)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn resolve_class(&mut self, class_name: &str) -> Result<ClassDefinition> {
         // Check cache
         if let Some(resolved) = self.resolved_cache.get(class_name) {
@@ -37,9 +40,8 @@ impl<'a> InheritanceResolver<'a> {
         // Check for cycles
         if self.visited.contains(class_name) {
             return Err(LinkMLError::service(format!(
-                "Circular inheritance detected for class '{}'",
-                class_name
-            )));
+                "Circular inheritance detected for class '{class_name}'"
+            ));
         }
 
         // Get base class
@@ -63,11 +65,10 @@ impl<'a> InheritanceResolver<'a> {
 
         // Merge each ancestor into the resolved class
         for ancestor_name in mro.iter().rev() {
-            if ancestor_name != class_name {
-                if let Some(ancestor) = self.schema.classes.get(ancestor_name) {
+            if ancestor_name != class_name
+                && let Some(ancestor) = self.schema.classes.get(ancestor_name) {
                     self.merge_class(&mut resolved, ancestor);
                 }
-            }
         }
 
         // Apply own attributes last (they override inherited)
@@ -80,7 +81,7 @@ impl<'a> InheritanceResolver<'a> {
         Ok(resolved)
     }
 
-    /// Get all ancestors of a class (is_a + mixins, recursively)
+    /// Get all ancestors of a class (`is_a` + mixins, recursively)
     fn get_all_ancestors(&self, class: &ClassDefinition) -> Result<Vec<Vec<String>>> {
         let mut ancestors = Vec::new();
 
@@ -234,15 +235,15 @@ impl<'a> InheritanceResolver<'a> {
             let mut resolved_slot = slot_def.clone();
 
             // If this slot_usage has is_a, resolve it
-            if let Some(parent_slot_name) = &slot_def.is_a {
-                if let Some(parent_slot) = self.schema.slots.get(parent_slot_name) {
+            if let Some(parent_slot_name) = &slot_def.is_a
+                && let Some(parent_slot) = self.schema.slots.get(parent_slot_name) {
                     // Start with parent slot's annotations
                     if resolved_slot.annotations.is_none() {
                         resolved_slot.annotations = parent_slot.annotations.clone();
                     } else if let Some(parent_annotations) = &parent_slot.annotations {
                         // Merge parent annotations (as defaults)
                         if let Some(ref mut slot_annotations) = resolved_slot.annotations {
-                            for (key, value) in parent_annotations.iter() {
+                            for (key, value) in parent_annotations {
                                 slot_annotations.entry(key.clone()).or_insert(value.clone());
                             }
                         }
@@ -265,7 +266,6 @@ impl<'a> InheritanceResolver<'a> {
                         resolved_slot.pattern = parent_slot.pattern.clone();
                     }
                 }
-            }
 
             target.slot_usage.insert(slot_name.clone(), resolved_slot);
         }
@@ -279,6 +279,10 @@ impl<'a> InheritanceResolver<'a> {
     }
 
     /// Resolve all slots for a class (including inherited and overridden)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn resolve_class_slots(
         &mut self,
         class_name: &str,
@@ -315,12 +319,11 @@ impl<'a> InheritanceResolver<'a> {
     /// Apply slot override/usage to a slot definition
     fn apply_slot_override(&self, target: &mut SlotDefinition, override_def: &SlotDefinition) {
         // Handle slot inheritance through is_a
-        if let Some(parent_slot_name) = &override_def.is_a {
-            if let Some(parent_slot) = self.schema.slots.get(parent_slot_name) {
+        if let Some(parent_slot_name) = &override_def.is_a
+            && let Some(parent_slot) = self.schema.slots.get(parent_slot_name) {
                 // First apply parent slot properties as defaults
                 self.apply_slot_override(target, parent_slot);
             }
-        }
 
         // Merge annotations (parent annotations as defaults, override annotations win)
         if let Some(override_annotations) = &override_def.annotations {
@@ -329,7 +332,7 @@ impl<'a> InheritanceResolver<'a> {
             }
             if let Some(target_annotations) = &mut target.annotations {
                 // Add override annotations (they win over inherited)
-                for (key, value) in override_annotations.iter() {
+                for (key, value) in override_annotations {
                     target_annotations.insert(key.clone(), value.clone());
                 }
             }
@@ -364,6 +367,10 @@ impl<'a> InheritanceResolver<'a> {
 }
 
 /// Get the complete inheritance chain for a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn get_inheritance_chain(class_name: &str, schema: &SchemaDefinition) -> Result<Vec<String>> {
     let mut resolver = InheritanceResolver::new(schema);
     let _resolved = resolver.resolve_class(class_name)?;
@@ -379,6 +386,10 @@ pub fn get_inheritance_chain(class_name: &str, schema: &SchemaDefinition) -> Res
 }
 
 /// Check if a class is a subclass of another (considering mixins)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
 pub fn is_subclass_of(child: &str, parent: &str, schema: &SchemaDefinition) -> Result<bool> {
     if child == parent {
         return Ok(true);
@@ -391,9 +402,10 @@ pub fn is_subclass_of(child: &str, parent: &str, schema: &SchemaDefinition) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_simple_inheritance() {
+    fn test_simple_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
 
         // Create parent class
@@ -414,12 +426,13 @@ mod tests {
         let resolved = resolver.resolve_class("Dog")?;
 
         // Check that slots are inherited
-        assert!(resolved.slots.contains(&"name".to_string()));
-        assert!(resolved.slots.contains(&"breed".to_string()));
+        assert!(resolved.slots.contains(&"name".to_string());
+        assert!(resolved.slots.contains(&"breed".to_string());
+        Ok(())
     }
 
     #[test]
-    fn test_multiple_inheritance_with_mixins() {
+    fn test_multiple_inheritance_with_mixins() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
 
         // Create base classes
@@ -457,10 +470,11 @@ mod tests {
         assert!(resolved.slots.contains(&"name".to_string())); // From Named mixin
         assert!(resolved.slots.contains(&"age".to_string())); // From Aged mixin
         assert!(resolved.slots.contains(&"email".to_string())); // Own slot
+        Ok(())
     }
 
     #[test]
-    fn test_diamond_inheritance() {
+    fn test_diamond_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
 
         // Create diamond hierarchy
@@ -499,13 +513,14 @@ mod tests {
         let resolved = resolver.resolve_class("D")?;
 
         // Check that all slots are inherited (A's slot should appear only once)
-        assert!(resolved.slots.contains(&"a_slot".to_string()));
-        assert!(resolved.slots.contains(&"b_slot".to_string()));
-        assert!(resolved.slots.contains(&"c_slot".to_string()));
-        assert!(resolved.slots.contains(&"d_slot".to_string()));
+        assert!(resolved.slots.contains(&"a_slot".to_string());
+        assert!(resolved.slots.contains(&"b_slot".to_string());
+        assert!(resolved.slots.contains(&"c_slot".to_string());
+        assert!(resolved.slots.contains(&"d_slot".to_string());
 
         // Check that A's slot appears only once
         let a_count = resolved.slots.iter().filter(|s| *s == "a_slot").count();
         assert_eq!(a_count, 1, "Diamond inheritance should not duplicate slots");
+        Ok(())
     }
 }

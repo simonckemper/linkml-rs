@@ -1,11 +1,11 @@
 //! Tests for SchemaView caching behavior and performance
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
 use linkml_service::schema_view::SchemaView;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::task;
-
+use linkml_core::types::SchemaDefinition;
 #[tokio::test]
 async fn test_schema_view_basic_caching() {
     let schema = create_test_schema();
@@ -81,7 +81,7 @@ async fn test_concurrent_cache_access() {
 
     // Spawn multiple tasks accessing the same SchemaView
     for i in 0..10 {
-        let view_clone = Arc::clone(&view);
+        let view_clone: Arc<SchemaView> = Arc::clone(&view);
         let handle = task::spawn(async move {
             let mut results = vec![];
 
@@ -96,7 +96,7 @@ async fn test_concurrent_cache_access() {
                 let slots = view_clone
                     .class_slots(class_name)
                     .expect("Test operation failed");
-                results.push((class_name, slots.len()));
+                results.push((class_name, slots.len());
             }
 
             results

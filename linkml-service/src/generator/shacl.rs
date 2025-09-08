@@ -1,6 +1,6 @@
-//! SHACL (Shapes Constraint Language) generator for LinkML schemas
+//! SHACL (Shapes Constraint Language) generator for `LinkML` schemas
 //!
-//! This module generates SHACL shapes from LinkML schemas for RDF validation.
+//! This module generates SHACL shapes from `LinkML` schemas for RDF validation.
 //! SHACL is a W3C standard for validating RDF graphs against a set of conditions.
 
 use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
@@ -19,9 +19,9 @@ pub struct ShaclGenerator {
 }
 
 impl ShaclGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new SHACL generator
@@ -68,7 +68,7 @@ impl ShaclGenerator {
 
         // Standard prefixes
         for (prefix, uri) in &self.prefixes {
-            writeln!(&mut output, "@prefix {}: <{}> .", prefix, uri)
+            writeln!(&mut output, "@prefix {prefix}: <{uri}> .")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -94,11 +94,11 @@ impl ShaclGenerator {
         writeln!(&mut output, "# Schema ID: {}", schema.id)
             .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "# Version: {}", version)
+            writeln!(&mut output, "# Version: {version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         if let Some(desc) = &schema.description {
-            writeln!(&mut output, "# Description: {}", desc)
+            writeln!(&mut output, "# Description: {desc}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -118,7 +118,7 @@ impl ShaclGenerator {
         let shape_name = format!("{}:{}Shape", schema_prefix, self.to_pascal_case(name));
 
         // Shape declaration
-        writeln!(&mut output, "{}", shape_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{shape_name}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "    a sh:NodeShape ;")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
@@ -131,7 +131,7 @@ impl ShaclGenerator {
 
         // Description
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "    rdfs:comment \"{}\" ;", desc)
+            writeln!(&mut output, "    rdfs:comment \"{desc}\" ;")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -148,7 +148,9 @@ impl ShaclGenerator {
         }
 
         // Add property references
-        if !property_shapes.is_empty() {
+        if property_shapes.is_empty() {
+            writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
             write!(&mut output, "    sh:property").map_err(Self::fmt_error_to_generator_error)?;
             for (i, _) in property_shapes.iter().enumerate() {
                 if i == 0 {
@@ -177,8 +179,6 @@ impl ShaclGenerator {
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-        } else {
-            writeln!(&mut output, "    .").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -192,7 +192,7 @@ impl ShaclGenerator {
                 self.to_snake_case(slot_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
-            write!(&mut output, "{}", prop_shape).map_err(Self::fmt_error_to_generator_error)?;
+            write!(&mut output, "{prop_shape}").map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -221,14 +221,14 @@ impl ShaclGenerator {
 
         // Description
         if let Some(desc) = &slot.description {
-            writeln!(&mut output, "    sh:description \"{}\" ;", desc)
+            writeln!(&mut output, "    sh:description \"{desc}\" ;")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Datatype or class reference
         if let Some(range) = &slot.range {
             if let Some(datatype) = self.get_xsd_datatype(range) {
-                writeln!(&mut output, "    sh:datatype {} ;", datatype)
+                writeln!(&mut output, "    sh:datatype {datatype} ;")
                     .map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.classes.contains_key(range) {
                 writeln!(
@@ -249,10 +249,10 @@ impl ShaclGenerator {
                             PermissibleValue::Complex { text, .. } => text,
                         };
                         if i < enum_def.permissible_values.len() - 1 {
-                            write!(&mut output, "\"{}\" ", value)
+                            write!(&mut output, "\"{value}\" ")
                                 .map_err(Self::fmt_error_to_generator_error)?;
                         } else {
-                            write!(&mut output, "\"{}\"", value)
+                            write!(&mut output, "\"{value}\"")
                                 .map_err(Self::fmt_error_to_generator_error)?;
                         }
                     }
@@ -295,24 +295,22 @@ impl ShaclGenerator {
 
         // Pattern constraint
         if let Some(pattern) = &slot.pattern {
-            writeln!(&mut output, "    sh:pattern \"{}\" ;", pattern)
+            writeln!(&mut output, "    sh:pattern \"{pattern}\" ;")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Value constraints
-        if let Some(min) = &slot.minimum_value {
-            if let Some(num) = min.as_f64() {
-                writeln!(&mut output, "    sh:minInclusive {} ;", num)
+        if let Some(min) = &slot.minimum_value
+            && let Some(num) = min.as_f64() {
+                writeln!(&mut output, "    sh:minInclusive {num} ;")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
-        if let Some(max) = &slot.maximum_value {
-            if let Some(num) = max.as_f64() {
-                writeln!(&mut output, "    sh:maxInclusive {} ;", num)
+        if let Some(max) = &slot.maximum_value
+            && let Some(num) = max.as_f64() {
+                writeln!(&mut output, "    sh:maxInclusive {num} ;")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         // Remove trailing semicolon and add period
         if output.ends_with(" ;\n") {
@@ -328,18 +326,17 @@ impl ShaclGenerator {
         let mut all_slots = Vec::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 all_slots.extend(self.collect_all_slots(parent_class, schema));
             }
-        }
 
         // Then add direct slots
         all_slots.extend(class.slots.clone());
 
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        all_slots.retain(|slot| seen.insert(slot.clone()));
+        all_slots.retain(|slot| seen.insert(slot.clone());
 
         all_slots
     }
@@ -360,7 +357,7 @@ impl ShaclGenerator {
         }
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -380,9 +377,9 @@ impl ShaclGenerator {
         result
     }
 
-    /// Convert to PascalCase
+    /// Convert to `PascalCase`
     fn to_pascal_case(&self, s: &str) -> String {
-        s.split(|c| c == '_' || c == '-')
+        s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
                 match chars.next() {
@@ -401,11 +398,11 @@ impl Default for ShaclGenerator {
 }
 
 impl Generator for ShaclGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "shacl"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates SHACL shapes for RDF validation from LinkML schemas"
     }
 
@@ -436,7 +433,7 @@ impl Generator for ShaclGenerator {
         for (name, class) in &schema.classes {
             let shape = self
                 .generate_class_shape(name, class, schema)
-                .map_err(|e| GeneratorError::Generation(format!("class {}: {}", name, e)))?;
+                .map_err(|e| GeneratorError::Generation(format!("class {name}: {e}")))?;
             output.push_str(&shape);
         }
 
@@ -444,11 +441,11 @@ impl Generator for ShaclGenerator {
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "ttl"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "shapes"
     }
 }
@@ -456,6 +453,7 @@ impl Generator for ShaclGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_xsd_datatype_mapping() {

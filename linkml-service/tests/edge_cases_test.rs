@@ -1,7 +1,9 @@
+use std::error::Error as StdError;
 use linkml_service::parser::Parser;
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use tokio;
+
 
 /// Test edge cases and complex scenarios
 #[tokio::test]
@@ -12,12 +14,14 @@ name: EmptySchema
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(empty_schema, "yaml")?;
+    let schema = parser.parse(empty_schema, "yaml")?;
     
     assert_eq!(schema.name, "EmptySchema");
     assert!(schema.classes.is_empty());
     assert!(schema.slots.is_empty());
 
+    Ok(())
+}
     Ok(())
 }
 
@@ -47,14 +51,16 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
     
     let test_data = json!({
         "name_with_spaces": "José María García",
         "email_address": "josé@example.com"
-    });
+    }
+    Ok(())
+});
 
     let result = validation_engine
         .validate_as_class(&test_data, "PersonWithUnicode", None)
@@ -115,7 +121,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
     
@@ -125,7 +131,9 @@ slots:
         "name": "John Doe",
         "email": "john@company.com",
         "employee_id": "EMP001"
-    });
+    }
+    Ok(())
+});
 
     let result = validation_engine
         .validate_as_class(&employee_data, "Employee", None)
@@ -167,7 +175,9 @@ slots:
   phone_number:
     name: phone_number
     range: string
-    pattern: '^\+?[1-9]\d{1,14}$'
+    pattern: '^\+?[1-9]\d{1,14}
+    Ok(())
+}$'
   credit_card:
     name: credit_card
     range: string
@@ -179,7 +189,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
     
@@ -236,7 +246,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
     
@@ -246,7 +256,9 @@ slots:
     let large_data = json!({
         "id": "large-001",
         "data": large_string
-    });
+    }
+    Ok(())
+});
 
     let result = validation_engine
         .validate_as_class(&large_data, "LargeRecord", None)
@@ -281,7 +293,7 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = std::sync::Arc::new(ValidationEngine::new(&schema)?);
     
@@ -292,7 +304,9 @@ slots:
         let engine = validation_engine.clone();
         let handle = tokio::spawn(async move {
             let test_data = json!({
-                "id": format!("stress-{}", i),
+                "id": format!("stress-{}
+    Ok(())
+}", i),
                 "value": i
             });
             
@@ -334,13 +348,15 @@ slots:
 ";
 
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml")?;
+    let schema = parser.parse(schema_yaml, "yaml")?;
     
     let validation_engine = ValidationEngine::new(&schema)?;
     
     // Test with various JSON edge cases
     let test_cases = vec![
-        json!({"data": null}),
+        json!({"data": null}
+    Ok(())
+}),
         json!({"data": ""}),
         json!({"data": "string with \"quotes\" and \\backslashes"}),
         json!({"data": "unicode: 🚀 ñáéíóú"}),

@@ -3,6 +3,7 @@
 //! This module implements if-then-else validation logic for LinkML classes,
 //! enabling complex cross-field validation scenarios.
 
+use linkml_core::types::SchemaDefinition;
 pub mod cache;
 pub mod evaluator;
 pub mod executor;
@@ -10,8 +11,6 @@ pub mod inheritance;
 pub mod matcher;
 pub mod types;
 
-use linkml_core::error::Result;
-use linkml_core::types::SchemaDefinition;
 use parking_lot::RwLock;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -35,7 +34,7 @@ pub struct RuleEngine {
 
 impl RuleEngine {
     /// Create a new rule engine
-    pub fn new(schema: Arc<SchemaDefinition>) -> Self {
+    #[must_use] pub fn new(schema: Arc<SchemaDefinition>) -> Self {
         Self {
             schema,
             expression_engine: Arc::new(ExpressionEngine::new()),
@@ -44,7 +43,7 @@ impl RuleEngine {
     }
 
     /// Create a rule engine with a custom expression engine
-    pub fn with_expression_engine(
+    #[must_use] pub fn with_expression_engine(
         schema: Arc<SchemaDefinition>,
         expression_engine: Arc<ExpressionEngine>,
     ) -> Self {
@@ -69,7 +68,7 @@ impl RuleEngine {
             Ok(rules) => rules,
             Err(e) => {
                 issues.push(ValidationIssue::error(
-                    &format!("Failed to get rules for class {}: {}", class_name, e),
+                    format!("Failed to get rules for class {class_name}: {e}"),
                     context.path(),
                     "RuleEngine",
                 ));
@@ -89,7 +88,7 @@ impl RuleEngine {
             Ok(rule_issues) => issues.extend(rule_issues),
             Err(e) => {
                 issues.push(ValidationIssue::error(
-                    &format!("Rule execution failed: {e}"),
+                    format!("Rule execution failed: {e}"),
                     context.path(),
                     "RuleEngine",
                 ));
@@ -100,7 +99,7 @@ impl RuleEngine {
     }
 
     /// Get all applicable rules for a class (including inherited)
-    fn get_applicable_rules(&self, class_name: &str) -> Result<Vec<CompiledRule>> {
+    fn get_applicable_rules(&self, class_name: &str) -> linkml_core::error::Result<Vec<CompiledRule>> {
         // Check cache first
         {
             let cache = self.rule_cache.read();
@@ -122,7 +121,7 @@ impl RuleEngine {
     }
 
     /// Compile all rules for a class (including inherited)
-    fn compile_class_rules(&self, class_name: &str) -> Result<Vec<CompiledRule>> {
+    fn compile_class_rules(&self, class_name: &str) -> linkml_core::error::Result<Vec<CompiledRule>> {
         let mut inheritance_resolver = inheritance::RuleInheritanceResolver::new(&self.schema);
         let rules = inheritance_resolver.get_all_rules(class_name)?;
 
@@ -132,7 +131,7 @@ impl RuleEngine {
                 Ok(compiled) => compiled_rules.push(compiled),
                 Err(e) => {
                     // Log warning but continue with other rules
-                    eprintln!("Warning: Failed to compile rule: {}", e);
+                    eprintln!("Warning: Failed to compile rule: {e}");
                 }
             }
         }
@@ -162,7 +161,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rule_compilation() {
+    fn test_rule_compilation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         let mut class_def = ClassDefinition {
             name: "TestClass".to_string(),
@@ -183,5 +182,6 @@ mod tests {
         let rules = engine.get_applicable_rules("TestClass")?;
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].priority, 10);
+        Ok(())
     }
 }

@@ -48,17 +48,17 @@ impl StringInterner {
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > MAX_STRING_LENGTH {
-            return Err(InternError::StringTooLarge(s.len()));
+            return Err(InternError::StringTooLarge(s.len());
         }
 
         // Check if already interned
         if let Some(interned) = self.cache.get(s) {
-            return Ok(Arc::clone(interned.value()));
+            return Ok(Arc::clone(interned.value());
         }
 
         // Check cache size before inserting
         if self.cache.len() >= MAX_CACHE_SIZE {
-            return Err(InternError::CacheFull(self.cache.len()));
+            return Err(InternError::CacheFull(self.cache.len());
         }
 
         // Intern the string
@@ -206,14 +206,15 @@ pub fn str_eq_fast(a: &Arc<str>, b: &Arc<str>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::string_pool::intern;
 
     #[test]
     fn test_string_interning() -> Result<(), Box<dyn std::error::Error>> {
         let interner = StringInterner::new();
 
-        let s1 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
-        let s2 = interner.intern("hello").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
-        let s3 = interner.intern("world").map_err(|e| anyhow::anyhow!("should intern string: {}", e))?;
+        let s1 = interner.intern("hello").expect("should intern string: {}");
+        let s2 = interner.intern("hello").expect("should intern string: {}");
+        let s3 = interner.intern("world").expect("should intern string: {}");
 
         // Same strings should have same Arc
         assert!(Arc::ptr_eq(&s1, &s2));

@@ -1,7 +1,7 @@
-//! TypeDB loader and dumper for LinkML
+//! `TypeDB` loader and dumper for `LinkML`
 //!
-//! This module provides TypeDB integration for LinkML using the DBMS service.
-//! All TypeDB operations must go through the DBMS service as the single source of truth.
+//! This module provides `TypeDB` integration for `LinkML` using the DBMS service.
+//! All `TypeDB` operations must go through the DBMS service as the single source of truth.
 
 use super::dbms_executor::DBMSServiceExecutor;
 use super::traits::{
@@ -15,22 +15,22 @@ use linkml_core::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Options for TypeDB loading and dumping
+/// Options for `TypeDB` loading and dumping
 #[derive(Debug, Clone)]
 pub struct TypeDBOptions {
     /// Database name
     pub database_name: String,
 
-    /// TypeQL type to `LinkML` class mapping
+    /// `TypeQL` type to `LinkML` class mapping
     pub type_mapping: HashMap<String, String>,
 
-    /// TypeQL attribute to `LinkML` slot mapping (per type)
+    /// `TypeQL` attribute to `LinkML` slot mapping (per type)
     pub attribute_mapping: HashMap<String, HashMap<String, String>>,
 
     /// Batch size for loading/dumping
     pub batch_size: usize,
 
-    /// Whether to infer types from TypeDB schema
+    /// Whether to infer types from `TypeDB` schema
     pub infer_types: bool,
 
     /// Whether to create types if they don't exist
@@ -57,9 +57,9 @@ impl Default for TypeDBOptions {
     }
 }
 
-/// TypeDB loader for `LinkML` data
+/// `TypeDB` loader for `LinkML` data
 ///
-/// This loader requires a DBMS service instance to perform all TypeDB operations.
+/// This loader requires a DBMS service instance to perform all `TypeDB` operations.
 pub struct TypeDBLoader<S: dbms_core::DBMSService + 'static> {
     inner: TypeDBIntegrationLoader<DBMSServiceExecutor<S>>,
 }
@@ -69,7 +69,7 @@ where
     S: dbms_core::DBMSService + Send + Sync + 'static,
     S::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    /// Create a new TypeDB loader with a DBMS service
+    /// Create a new `TypeDB` loader with a DBMS service
     pub fn new(options: TypeDBOptions, dbms_service: Arc<S>) -> Self {
         // Convert options to integration options
         let integration_options = TypeDBIntegrationOptions {
@@ -97,11 +97,11 @@ where
     S: dbms_core::DBMSService + Send + Sync + 'static,
     S::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typedb"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from TypeDB using DBMS service"
     }
 
@@ -141,9 +141,9 @@ where
     }
 }
 
-/// TypeDB dumper for `LinkML` data
+/// `TypeDB` dumper for `LinkML` data
 ///
-/// This dumper requires a DBMS service instance to perform all TypeDB operations.
+/// This dumper requires a DBMS service instance to perform all `TypeDB` operations.
 pub struct TypeDBDumper<S: dbms_core::DBMSService + 'static> {
     inner: TypeDBIntegrationDumper<DBMSServiceExecutor<S>>,
 }
@@ -153,7 +153,7 @@ where
     S: dbms_core::DBMSService + Send + Sync + 'static,
     S::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    /// Create a new TypeDB dumper with a DBMS service
+    /// Create a new `TypeDB` dumper with a DBMS service
     pub fn new(options: TypeDBOptions, dbms_service: Arc<S>) -> Self {
         // Convert options to integration options
         let integration_options = TypeDBIntegrationOptions {
@@ -181,11 +181,11 @@ where
     S: dbms_core::DBMSService + Send + Sync + 'static,
     S::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
 {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typedb"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to TypeDB using DBMS service"
     }
 

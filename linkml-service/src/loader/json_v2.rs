@@ -1,6 +1,6 @@
 //! JSON loader and dumper v2 with file system adapter support
 //!
-//! This module provides JSON loading/dumping that uses FileSystemOperations
+//! This module provides JSON loading/dumping that uses `FileSystemOperations`
 //! instead of direct file system access.
 
 use async_trait::async_trait;
@@ -24,7 +24,7 @@ pub struct JsonLoaderV2 {
 
 impl JsonLoaderV2 {
     /// Create a new `JSON` loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             validate: true,
             strict: false,
@@ -32,13 +32,13 @@ impl JsonLoaderV2 {
     }
 
     /// Set validation enabled
-    pub fn with_validation(mut self, validate: bool) -> Self {
+    #[must_use] pub fn with_validation(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
     }
 
     /// Set strict mode
-    pub fn with_strict(mut self, strict: bool) -> Self {
+    #[must_use] pub fn with_strict(mut self, strict: bool) -> Self {
         self.strict = strict;
         self
     }
@@ -46,13 +46,11 @@ impl JsonLoaderV2 {
     /// Infer class name from object structure by matching against schema classes
     fn infer_class_name(&self, obj: &serde_json::Map<String, serde_json::Value>, schema: &SchemaDefinition) -> String {
         // Check if object has an explicit type field
-        if let Some(type_value) = obj.get("@type").or_else(|| obj.get("type")) {
-            if let Some(type_str) = type_value.as_str() {
-                if schema.classes.contains_key(type_str) {
+        if let Some(type_value) = obj.get("@type").or_else(|| obj.get("type"))
+            && let Some(type_str) = type_value.as_str()
+                && schema.classes.contains_key(type_str) {
                     return type_str.to_string();
                 }
-            }
-        }
 
         // Try to infer from object keys by finding the best matching class
         let obj_keys: std::collections::HashSet<_> = obj.keys().collect();
@@ -82,8 +80,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
         fs: Arc<F>,
     ) -> LoaderResult<Vec<DataInstance>> {
         let content = fs.read_to_string(path).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            LoaderError::Io(std::io::Error::other(
                 e.to_string(),
             ))
         })?;
@@ -156,7 +153,7 @@ pub struct JsonDumperV2 {
 
 impl JsonDumperV2 {
     /// Create a new `JSON` dumper
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             pretty: true,
             jsonl: false,
@@ -164,13 +161,13 @@ impl JsonDumperV2 {
     }
 
     /// Set pretty printing
-    pub fn with_pretty(mut self, pretty: bool) -> Self {
+    #[must_use] pub fn with_pretty(mut self, pretty: bool) -> Self {
         self.pretty = pretty;
         self
     }
 
     /// Set `JSON` Lines format
-    pub fn with_jsonl(mut self, jsonl: bool) -> Self {
+    #[must_use] pub fn with_jsonl(mut self, jsonl: bool) -> Self {
         self.jsonl = jsonl;
         self
     }
@@ -188,8 +185,7 @@ impl DataDumperV2 for JsonDumperV2 {
         let content = self.dump_str(instances, schema).await?;
 
         fs.write(path, &content).await.map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 e.to_string(),
             ))
         })?;
@@ -280,7 +276,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_loader_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -293,14 +289,14 @@ mod tests {
         let file_path = Path::new("data.json");
         fs.write(file_path, json_content)
             .await
-            .map_err(|e| anyhow::anyhow!("should write JSON file: {}", e))?;
+            .expect("should write JSON file: {}");
 
         let mut loader = JsonLoaderV2::new();
         let schema = SchemaDefinition::default();
         let instances = loader
             .load_file(&file_path, &schema, fs)
             .await
-            .map_err(|e| anyhow::anyhow!("should load JSON file: {}", e))?;
+            .expect("should load JSON file: {}");
 
         assert_eq!(instances.len(), 2);
         assert_eq!(instances[0].data["name"], "Alice");
@@ -309,7 +305,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_json_dumper_v2() {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let fs = Arc::new(TokioFileSystemAdapter::sandboxed(
             temp_dir.path().to_path_buf(),
         ));
@@ -343,12 +339,12 @@ mod tests {
         dumper
             .dump_file(instances.clone(), file_path, &schema, fs.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSON: {}", e))?;
+            .expect("should dump instances to JSON: {}");
 
         let content = fs
             .read_to_string(file_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read JSON file: {}", e))?;
+            .expect("should read JSON file: {}");
         assert!(content.contains("Alice"));
         assert!(content.contains("Bob"));
 
@@ -359,12 +355,12 @@ mod tests {
         jsonl_dumper
             .dump_file(instances, jsonl_path, &schema, fs.clone())
             .await
-            .map_err(|e| anyhow::anyhow!("should dump instances to JSONL: {}", e))?;
+            .expect("should dump instances to JSONL: {}");
 
         let jsonl_content = fs
             .read_to_string(jsonl_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read JSONL file: {}", e))?;
+            .expect("should read JSONL file: {}");
         let lines: Vec<&str> = jsonl_content.trim().split('\n').collect();
         assert_eq!(lines.len(), 2);
     }

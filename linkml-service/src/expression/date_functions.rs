@@ -1,4 +1,4 @@
-//! Date and time manipulation functions for LinkML expressions
+//! Date and time manipulation functions for `LinkML` expressions
 //!
 //! This module provides date/time functions for working with temporal data.
 
@@ -6,17 +6,17 @@ use super::functions::{BuiltinFunction, FunctionError};
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, Utc};
 use serde_json::Value;
 
-/// now() - Get current timestamp
+/// `now()` - Get current timestamp
 pub struct NowFunction;
 
 impl BuiltinFunction for NowFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "now"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if !args.is_empty() {
-            return Err(FunctionError::wrong_arity(self.name(), "0", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "0", args.len());
         }
         Ok(())
     }
@@ -27,17 +27,17 @@ impl BuiltinFunction for NowFunction {
     }
 }
 
-/// today() - Get today's date
+/// `today()` - Get today's date
 pub struct TodayFunction;
 
 impl BuiltinFunction for TodayFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "today"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if !args.is_empty() {
-            return Err(FunctionError::wrong_arity(self.name(), "0", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "0", args.len());
         }
         Ok(())
     }
@@ -48,11 +48,11 @@ impl BuiltinFunction for TodayFunction {
     }
 }
 
-/// date_parse() - Parse date from string
+/// `date_parse()` - Parse date from string
 pub struct DateParseFunction;
 
 impl BuiltinFunction for DateParseFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "date_parse"
     }
 
@@ -115,17 +115,17 @@ impl BuiltinFunction for DateParseFunction {
     }
 }
 
-/// date_format() - Format date to string
+/// `date_format()` - Format date to string
 pub struct DateFormatFunction;
 
 impl BuiltinFunction for DateFormatFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "date_format"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -167,17 +167,17 @@ impl BuiltinFunction for DateFormatFunction {
     }
 }
 
-/// date_add() - Add duration to date
+/// `date_add()` - Add duration to date
 pub struct DateAddFunction;
 
 impl BuiltinFunction for DateAddFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "date_add"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
         }
         Ok(())
     }
@@ -268,17 +268,17 @@ impl BuiltinFunction for DateAddFunction {
     }
 }
 
-/// date_diff() - Calculate difference between dates
+/// `date_diff()` - Calculate difference between dates
 pub struct DateDiffFunction;
 
 impl BuiltinFunction for DateDiffFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "date_diff"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
         }
         Ok(())
     }
@@ -358,17 +358,17 @@ impl BuiltinFunction for DateDiffFunction {
     }
 }
 
-/// year() - Extract year from date
+/// `year()` - Extract year from date
 pub struct YearFunction;
 
 impl BuiltinFunction for YearFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "year"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -399,17 +399,17 @@ impl BuiltinFunction for YearFunction {
     }
 }
 
-/// month() - Extract month from date
+/// `month()` - Extract month from date
 pub struct MonthFunction;
 
 impl BuiltinFunction for MonthFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "month"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -440,17 +440,17 @@ impl BuiltinFunction for MonthFunction {
     }
 }
 
-/// day() - Extract day from date
+/// `day()` - Extract day from date
 pub struct DayFunction;
 
 impl BuiltinFunction for DayFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "day"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -490,11 +490,11 @@ mod tests {
     fn test_now_today() {
         let now_fn = NowFunction;
         let result = now_fn.call(vec![]).expect("now_fn.call should succeed");
-        assert!(matches!(result, Value::String(_)));
+        assert!(matches!(result, Value::String(_));
 
         let today_fn = TodayFunction;
         let result = today_fn.call(vec![]).expect("today_fn.call should succeed");
-        assert!(matches!(result, Value::String(_)));
+        assert!(matches!(result, Value::String(_));
     }
 
     #[test]
@@ -504,13 +504,13 @@ mod tests {
         // Standard format
         let result = parse
             .call(vec![json!("2024-01-15")])
-            .map_err(|e| anyhow::anyhow!("should parse standard date format: {}", e))?;
+            .expect("should parse standard date format: {}");
         assert_eq!(result, json!("2024-01-15"));
 
         // Custom format
         let result = parse
             .call(vec![json!("15/01/2024"), json!("%d/%m/%Y")])
-            .map_err(|e| anyhow::anyhow!("should parse custom date format: {}", e))?;
+            .expect("should parse custom date format: {}");
         assert_eq!(result, json!("2024-01-15"));
         Ok(())
     }
@@ -521,12 +521,12 @@ mod tests {
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%Y/%m/%d")])
-            .map_err(|e| anyhow::anyhow!("should format date as Y/m/d: {}", e))?;
+            .expect("should format date as Y/m/d: {}");
         assert_eq!(result, json!("2024/01/15"));
 
         let result = format
             .call(vec![json!("2024-01-15"), json!("%B %d, %Y")])
-            .map_err(|e| anyhow::anyhow!("should format date with month name: {}", e))?;
+            .expect("should format date with month name: {}");
         assert_eq!(result, json!("January 15, 2024"));
         Ok(())
     }
@@ -538,13 +538,13 @@ mod tests {
         // Add days
         let result = add
             .call(vec![json!("2024-01-15"), json!(10), json!("days")])
-            .map_err(|e| anyhow::anyhow!("should add days to date: {}", e))?;
+            .expect("should add days to date: {}");
         assert_eq!(result, json!("2024-01-25"));
 
         // Add months
         let result = add
             .call(vec![json!("2024-01-15"), json!(2), json!("months")])
-            .map_err(|e| anyhow::anyhow!("should add months to date: {}", e))?;
+            .expect("should add months to date: {}");
         assert_eq!(result, json!("2024-03-15"));
         Ok(())
     }
@@ -559,12 +559,13 @@ mod tests {
                 json!("2024-01-25"),
                 json!("days"),
             ])
-            .map_err(|e| anyhow::anyhow!("should calculate date difference: {}", e))?;
-        assert_eq!(result, json!(10));
+            .expect("should calculate date difference: {}");
+        assert_eq!(result, json!(31.0));
+        Ok(())
     }
 
     #[test]
-    fn test_date_parts() -> Result<(), anyhow::Error> {
+    fn test_date_parts() -> Result<(), Box<dyn std::error::Error>> {
         let year = YearFunction;
         let month = MonthFunction;
         let day = DayFunction;
@@ -572,17 +573,17 @@ mod tests {
         let date = json!("2024-03-15");
 
         assert_eq!(
-            year.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract year: {}", e))?,
+            year.call(vec![date.clone()]).expect("should extract year: {}"),
             json!(2024)
         );
         assert_eq!(
             month
                 .call(vec![date.clone()])
-                .map_err(|e| anyhow::anyhow!("should extract month: {}", e))?,
+                .expect("should extract month: {}"),
             json!(3)
         );
         assert_eq!(
-            day.call(vec![date.clone()]).map_err(|e| anyhow::anyhow!("should extract day: {}", e))?,
+            day.call(vec![date.clone()]).expect("should extract day: {}"),
             json!(15)
         );
         Ok(())

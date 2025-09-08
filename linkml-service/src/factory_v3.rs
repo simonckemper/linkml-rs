@@ -27,7 +27,7 @@ use timestamp_core::TimestampService;
 /// Create `LinkML` service with DBMS integration
 ///
 /// This factory creates a `LinkML` service that fully integrates with
-/// RootReal's DBMS service for TypeDB schema management and data operations.
+/// `RootReal`'s DBMS service for `TypeDB` schema management and data operations.
 ///
 /// # Arguments
 ///
@@ -38,7 +38,7 @@ use timestamp_core::TimestampService;
 /// * `configuration_service` - Configuration service for hot-reload support
 /// * `task_manager` - Task management service for async operations
 /// * `error_handler` - Error handling service for comprehensive error tracking
-/// * `dbms_service` - DBMS service for TypeDB integration
+/// * `dbms_service` - DBMS service for `TypeDB` integration
 /// * `timeout_service` - Timeout service for operation timeouts
 ///
 /// # Errors
@@ -121,7 +121,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `config` - Custom LinkML configuration
+/// * `config` - Custom `LinkML` configuration
 /// * Other arguments same as `create_linkml_service_with_dbms`
 ///
 /// # Errors

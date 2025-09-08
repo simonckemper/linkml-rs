@@ -5,6 +5,7 @@ use linkml_core::Value;
 use linkml_core::prelude::*;
 use linkml_service::generator::CodeFormatter;
 use linkml_service::generator::{EnhancedTypeQLGenerator, Generator};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 /// Helper to create a test schema
 fn create_test_schema() -> SchemaDefinition {
@@ -38,8 +39,8 @@ async fn test_basic_entity_generation() {
     let mut age_slot = SlotDefinition::default();
     age_slot.name = "age".to_string();
     age_slot.range = Some("integer".to_string());
-    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
-    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
+    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
+    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150));
     schema.slots.insert("age".to_string(), age_slot);
 
     let mut person_class = ClassDefinition::default();

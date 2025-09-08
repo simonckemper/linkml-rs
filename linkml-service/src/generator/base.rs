@@ -9,7 +9,7 @@ pub struct TypeMapper;
 
 impl TypeMapper {
     /// Map `LinkML` type to Python type
-    pub fn to_python(linkml_type: &str) -> &'static str {
+    #[must_use] pub fn to_python(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" => "str",
             "integer" | "int" => "int",
@@ -25,7 +25,7 @@ impl TypeMapper {
     }
 
     /// Map `LinkML` type to TypeScript type
-    pub fn to_typescript(linkml_type: &str) -> &'static str {
+    #[must_use] pub fn to_typescript(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             "integer" | "int" => "number",
@@ -36,8 +36,8 @@ impl TypeMapper {
         }
     }
 
-    /// Map `LinkML` type to JavaScript JSDoc type
-    pub fn to_javascript(linkml_type: &str) -> &'static str {
+    /// Map `LinkML` type to JavaScript `JSDoc` type
+    #[must_use] pub fn to_javascript(linkml_type: &str) -> &'static str {
         match linkml_type {
             "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             "integer" | "int" | "float" | "double" | "decimal" => "number",
@@ -59,7 +59,7 @@ pub struct ImportManager {
 
 impl ImportManager {
     /// Create a new import manager
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::default()
     }
 
@@ -77,7 +77,7 @@ impl ImportManager {
     }
 
     /// Generate Python import statements
-    pub fn python_imports(&self) -> String {
+    #[must_use] pub fn python_imports(&self) -> String {
         let mut imports = Vec::new();
 
         // Standard library imports first
@@ -116,7 +116,7 @@ impl ImportManager {
     }
 
     /// Generate TypeScript import statements
-    pub fn typescript_imports(&self) -> String {
+    #[must_use] pub fn typescript_imports(&self) -> String {
         let mut imports = Vec::new();
 
         for (module, items) in &self.imports {
@@ -139,7 +139,7 @@ pub struct BaseCodeFormatter;
 
 impl BaseCodeFormatter {
     /// Escape a string for Python
-    pub fn escape_python_string(s: &str) -> String {
+    #[must_use] pub fn escape_python_string(s: &str) -> String {
         s.replace('\\', "\\\\")
             .replace('"', "\\\"")
             .replace('\n', "\\n")
@@ -148,7 +148,7 @@ impl BaseCodeFormatter {
     }
 
     /// Escape a string for JavaScript/TypeScript
-    pub fn escape_js_string(s: &str) -> String {
+    #[must_use] pub fn escape_js_string(s: &str) -> String {
         s.replace('\\', "\\\\")
             .replace('"', "\\\"")
             .replace('\n', "\\n")
@@ -157,8 +157,8 @@ impl BaseCodeFormatter {
             .replace('\0', "\\0")
     }
 
-    /// Convert snake_case to PascalCase
-    pub fn to_pascal_case(s: &str) -> String {
+    /// Convert `snake_case` to `PascalCase`
+    #[must_use] pub fn to_pascal_case(s: &str) -> String {
         s.split('_')
             .map(|part| {
                 let mut chars = part.chars();
@@ -170,8 +170,8 @@ impl BaseCodeFormatter {
             .collect()
     }
 
-    /// Convert snake_case to camelCase
-    pub fn to_camel_case(s: &str) -> String {
+    /// Convert `snake_case` to camelCase
+    #[must_use] pub fn to_camel_case(s: &str) -> String {
         let mut parts = s.split('_');
         match parts.next() {
             None => String::new(),
@@ -185,17 +185,17 @@ impl BaseCodeFormatter {
                         }
                     })
                     .collect();
-                format!("{}{}", first, rest)
+                format!("{first}{rest}")
             }
         }
     }
 
-    /// Convert PascalCase or camelCase to snake_case
-    pub fn to_snake_case(s: &str) -> String {
+    /// Convert `PascalCase` or camelCase to `snake_case`
+    #[must_use] pub fn to_snake_case(s: &str) -> String {
         let mut result = String::new();
-        let mut chars = s.chars().peekable();
+        let chars = s.chars().peekable();
 
-        while let Some(ch) = chars.next() {
+        for ch in chars {
             if ch.is_uppercase() && !result.is_empty() {
                 result.push('_');
             }
@@ -206,7 +206,7 @@ impl BaseCodeFormatter {
     }
 
     /// Wrap text to a specific line width
-    pub fn wrap_text(text: &str, width: usize, indent: &str) -> String {
+    #[must_use] pub fn wrap_text(text: &str, width: usize, indent: &str) -> String {
         let words: Vec<&str> = text.split_whitespace().collect();
         let mut lines = Vec::new();
         let mut current_line = String::new();
@@ -234,7 +234,7 @@ impl BaseCodeFormatter {
                 if i == 0 {
                     line.clone()
                 } else {
-                    format!("{}{}", indent, line)
+                    format!("{indent}{line}")
                 }
             })
             .collect::<Vec<_>>()
@@ -282,18 +282,18 @@ pub fn collect_all_slots(
 
     // Remove duplicates while preserving order
     let mut seen = HashSet::new();
-    slots.retain(|slot| seen.insert(slot.clone()));
+    slots.retain(|slot| seen.insert(slot.clone());
 
     Ok(slots)
 }
 
 /// Check if a type is optional (not required)
-pub fn is_optional_slot(slot: &SlotDefinition) -> bool {
+#[must_use] pub fn is_optional_slot(slot: &SlotDefinition) -> bool {
     !slot.required.unwrap_or(false)
 }
 
 /// Get the default value for a slot as a string
-pub fn get_default_value_str(slot: &SlotDefinition, language: &str) -> Option<String> {
+#[must_use] pub fn get_default_value_str(slot: &SlotDefinition, language: &str) -> Option<String> {
     // Check if multivalued - these default to empty collections
     if slot.multivalued.unwrap_or(false) {
         return match language {
@@ -322,6 +322,7 @@ pub fn get_default_value_str(slot: &SlotDefinition, language: &str) -> Option<St
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_type_mapping() {

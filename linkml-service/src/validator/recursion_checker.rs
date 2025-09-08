@@ -1,7 +1,7 @@
-//! Recursion detection and validation for LinkML schemas
+//! Recursion detection and validation for `LinkML` schemas
 //!
 //! This module handles validation of recursive data structures,
-//! respecting RecursionOptions settings for classes.
+//! respecting `RecursionOptions` settings for classes.
 
 use linkml_core::prelude::*;
 use linkml_core::types::RecursionOptions;
@@ -25,7 +25,7 @@ pub struct RecursionTracker {
 
 impl RecursionTracker {
     /// Create a new recursion tracker
-    pub fn new(schema: &SchemaDefinition) -> Self {
+    #[must_use] pub fn new(schema: &SchemaDefinition) -> Self {
         // Collect classes with recursion options
         let mut recursive_classes = HashMap::new();
 
@@ -62,15 +62,15 @@ impl RecursionTracker {
     ) -> bool {
         // Check direct self-reference
         for slot_name in &class_def.slots {
-            if let Some(slot) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot.range {
+            if let Some(slot) = schema.slots.get(slot_name)
+                && let Some(range) = &slot.range {
                     if range == class_name {
                         return true;
                     }
 
                     // Check for indirect recursion through the range class
-                    if let Some(range_class) = schema.classes.get(range) {
-                        if Self::references_class(
+                    if let Some(range_class) = schema.classes.get(range)
+                        && Self::references_class(
                             range_class,
                             class_name,
                             schema,
@@ -78,9 +78,7 @@ impl RecursionTracker {
                         ) {
                             return true;
                         }
-                    }
                 }
-            }
         }
 
         false
@@ -100,20 +98,18 @@ impl RecursionTracker {
         visited.insert(class_def.name.clone());
 
         for slot_name in &class_def.slots {
-            if let Some(slot) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot.range {
+            if let Some(slot) = schema.slots.get(slot_name)
+                && let Some(range) = &slot.range {
                     if range == target {
                         return true;
                     }
 
                     // Recursively check
-                    if let Some(range_class) = schema.classes.get(range) {
-                        if Self::references_class(range_class, target, schema, visited) {
+                    if let Some(range_class) = schema.classes.get(range)
+                        && Self::references_class(range_class, target, schema, visited) {
                             return true;
                         }
-                    }
                 }
-            }
         }
 
         false
@@ -131,8 +127,7 @@ impl RecursionTracker {
             let max = options.max_depth.unwrap_or(self.max_depth);
             if self.current_depth >= max {
                 return Err(format!(
-                    "Maximum recursion depth {} exceeded for class '{}'",
-                    max, class_name
+                    "Maximum recursion depth {max} exceeded for class '{class_name}'"
                 ));
             }
 
@@ -140,9 +135,8 @@ impl RecursionTracker {
             if self.visited_stack.contains(&object_id.to_string()) {
                 if !options.use_box {
                     return Err(format!(
-                        "Circular reference detected for object '{}' of class '{}'. \
-                        Consider setting recursion_options.use_box = true",
-                        object_id, class_name
+                        "Circular reference detected for object '{object_id}' of class '{class_name}'. \
+                        Consider setting recursion_options.use_box = true"
                     ));
                 }
                 // If use_box is true, we allow the circular reference
@@ -153,8 +147,7 @@ impl RecursionTracker {
             // Non-recursive class shouldn't have circular references
             if self.visited_stack.contains(&object_id.to_string()) {
                 return Err(format!(
-                    "Unexpected circular reference in non-recursive class '{}'",
-                    class_name
+                    "Unexpected circular reference in non-recursive class '{class_name}'"
                 ));
             }
         }
@@ -202,12 +195,12 @@ pub fn check_recursion(
     tracker.enter_object(object_id, class_name)?;
 
     // Check nested objects
-    if let Value::Object(map) = data {
-        if let Some(class_def) = schema.classes.get(class_name) {
+    if let Value::Object(map) = data
+        && let Some(class_def) = schema.classes.get(class_name) {
             for slot_name in &class_def.slots {
-                if let Some(slot_value) = map.get(slot_name) {
-                    if let Some(slot) = schema.slots.get(slot_name) {
-                        if let Some(range) = &slot.range {
+                if let Some(slot_value) = map.get(slot_name)
+                    && let Some(slot) = schema.slots.get(slot_name)
+                        && let Some(range) = &slot.range {
                             // Check if this is a class reference
                             if schema.classes.contains_key(range) {
                                 // Recursively check the nested object
@@ -224,11 +217,8 @@ pub fn check_recursion(
                                 }
                             }
                         }
-                    }
-                }
             }
         }
-    }
 
     // Exit this object
     tracker.exit_object(object_id);
@@ -239,6 +229,7 @@ pub fn check_recursion(
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_direct_recursion_detection() {

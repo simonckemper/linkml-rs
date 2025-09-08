@@ -128,6 +128,10 @@ impl ValidationEngineV2 {
     }
 
     /// Validate data against a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn validate_with_class(
         &self,
         data: &Value,
@@ -218,6 +222,10 @@ impl ValidationEngineFactory {
     }
 
     /// Create engine from schema name (uses cache)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn create_from_name(&self, schema_name: &str) -> Result<ValidationEngineV2> {
         let schema = self.schema_cache.get_or_insert(schema_name, || {
             // In real implementation, load from file/network
@@ -288,7 +296,7 @@ mod tests {
             "value": 42
         });
 
-        let result = engine.validate_with_class(&data, "TestClass").await.map_err(|e| anyhow::anyhow!("should validate: {}", e))?;
+        let result = engine.validate_with_class(&data, "TestClass").await.expect("should validate: {}");
         assert!(result.valid || !result.valid); // Just check it runs
     }
 

@@ -35,7 +35,7 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse_str(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse(schema_yaml, "yaml").unwrap();
 
     // Check parsed patterns
     eprintln!("\n=== Parsed Schema Slots ===");

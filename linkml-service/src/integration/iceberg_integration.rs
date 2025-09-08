@@ -7,11 +7,11 @@
 //! - ACID transactions and snapshot isolation
 //! - Format migration between `DuckLake` and Iceberg
 
+use linkml_core::error::LinkMLError;
+use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
-use linkml_core::error::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -112,7 +112,7 @@ impl IcebergIntegration {
     /// Returns an error if:
     /// - Class is not found in schema
     /// - Slot mapping fails
-    pub fn linkml_to_iceberg(&mut self, schema: &SchemaDefinition, class_name: &str) -> Result<IcebergTableSchema> {
+    pub fn linkml_to_iceberg(&mut self, schema: &SchemaDefinition, class_name: &str) -> linkml_core::error::Result<IcebergTableSchema> {
         // Get the class definition
         let class_def = schema.classes.get(class_name)
             .ok_or_else(|| LinkMLError::schema_validation(format!("Class '{class_name}' not found in schema")))?;
@@ -249,33 +249,33 @@ impl IcebergIntegration {
     ///
     /// Returns an error if:
     /// - `JSON` serialization fails
-    fn generate_iceberg_schema(&self, field_mappings: &HashMap<String, IcebergField>) -> Result<String> {
+    fn generate_iceberg_schema(&self, field_mappings: &HashMap<String, IcebergField>) -> linkml_core::error::Result<String> {
         // Use configuration for schema generation
         let mut fields = Vec::new();
 
         for field in field_mappings.values() {
             let mut field_json = serde_json::Map::new();
-            field_json.insert("id".to_string(), Value::Number(serde_json::Number::from(fields.len() + 1)));
-            field_json.insert("name".to_string(), Value::String(field.name.clone()));
+            field_json.insert("id".to_string(), Value::Number(serde_json::Number::from(fields.len() + 1));
+            field_json.insert("name".to_string(), Value::String(field.name.clone());
             field_json.insert("required".to_string(), Value::Bool(!field.nullable));
-            field_json.insert("type".to_string(), Value::String(field.data_type.clone()));
+            field_json.insert("type".to_string(), Value::String(field.data_type.clone());
             
             // Add compression info from config if available
             if !self.config.compression.is_empty() {
-                field_json.insert("compression".to_string(), Value::String(self.config.compression.clone()));
+                field_json.insert("compression".to_string(), Value::String(self.config.compression.clone());
             }
             
             fields.push(Value::Object(field_json));
         }
 
         let mut schema_map = serde_json::Map::new();
-        schema_map.insert("type".to_string(), Value::String("struct".to_string()));
+        schema_map.insert("type".to_string(), Value::String("struct".to_string());
         schema_map.insert("fields".to_string(), Value::Array(fields));
         
         // Add table-level properties from config
         let mut properties = serde_json::Map::new();
-        properties.insert("format".to_string(), Value::String(self.config.file_format.clone()));
-        properties.insert("compression".to_string(), Value::String(self.config.compression.clone()));
+        properties.insert("format".to_string(), Value::String(self.config.file_format.clone());
+        properties.insert("compression".to_string(), Value::String(self.config.compression.clone());
         schema_map.insert("properties".to_string(), Value::Object(properties));
 
         let schema = Value::Object(schema_map);
@@ -315,7 +315,7 @@ impl IcebergIntegration {
     /// Returns an error if:
     /// - Schema conversion fails
     /// - Table creation fails
-    pub fn create_table(&mut self, schema: &SchemaDefinition, class_name: &str) -> Result<()> {
+    pub fn create_table(&mut self, schema: &SchemaDefinition, class_name: &str) -> linkml_core::error::Result<()> {
         let iceberg_schema = self.linkml_to_iceberg(schema, class_name)?;
 
         println!("✓ Created Iceberg table '{}' from LinkML class '{}'",
@@ -336,7 +336,7 @@ impl IcebergIntegration {
         schema_name: &str,
         class_name: &str,
         data: &[Value],
-    ) -> Result<()> {
+    ) -> linkml_core::error::Result<()> {
         let cache_key = format!("{schema_name}.{class_name}");
         let _iceberg_schema = self.schema_cache
             .get(&cache_key)
@@ -360,7 +360,7 @@ impl IcebergIntegration {
         schema_name: &str,
         class_name: &str,
         filters: Option<&str>,
-    ) -> Result<Vec<Value>> {
+    ) -> linkml_core::error::Result<Vec<Value>> {
         let cache_key = format!("{schema_name}.{class_name}");
         let _iceberg_schema = self.schema_cache
             .get(&cache_key)

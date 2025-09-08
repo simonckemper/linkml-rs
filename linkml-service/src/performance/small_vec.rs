@@ -23,25 +23,25 @@ pub type PathVec<T> = SmallVec<[T; 4]>;
 
 /// Create an empty issue vector
 #[inline]
-pub fn issue_vec<T>() -> IssueVec<T> {
+#[must_use] pub fn issue_vec<T>() -> IssueVec<T> {
     SmallVec::new()
 }
 
 /// Create an empty slot vector
 #[inline]
-pub fn slot_vec<T>() -> SlotVec<T> {
+#[must_use] pub fn slot_vec<T>() -> SlotVec<T> {
     SmallVec::new()
 }
 
 /// Create an empty validator vector
 #[inline]
-pub fn validator_vec<T>() -> ValidatorVec<T> {
+#[must_use] pub fn validator_vec<T>() -> ValidatorVec<T> {
     SmallVec::new()
 }
 
 /// Create an empty path vector
 #[inline]
-pub fn path_vec<T>() -> PathVec<T> {
+#[must_use] pub fn path_vec<T>() -> PathVec<T> {
     SmallVec::new()
 }
 

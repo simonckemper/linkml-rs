@@ -1,15 +1,19 @@
-//! Configuration validation using LinkML schema
+//! Configuration validation using `LinkML` schema
 //!
-//! This module validates configuration files against the LinkML configuration schema.
+//! This module validates configuration files against the `LinkML` configuration schema.
 
 use super::{LinkMLConfig, load_config};
 use crate::parser::{SchemaParser, YamlParser};
 use crate::validator::{ValidationEngine, ValidationOptions};
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::LinkMLError;
 use std::path::Path;
 
 /// Validate configuration against schema
-pub async fn validate_config(config: &LinkMLConfig) -> Result<()> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Result<()> {
     // Load the configuration schema
     let schema_path = Path::new("config/schema/linkml-config-schema.yaml");
     let parser = YamlParser::new();
@@ -37,21 +41,29 @@ pub async fn validate_config(config: &LinkMLConfig) -> Result<()> {
         return Err(LinkMLError::ConfigError(format!(
             "Configuration validation failed:\n{}",
             errors.join("\n")
-        )));
+        ));
     }
 
     Ok(())
 }
 
 /// Load and validate configuration from file
-pub async fn load_and_validate_config(path: &Path) -> Result<LinkMLConfig> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub async fn load_and_validate_config(path: &Path) -> linkml_core::error::Result<LinkMLConfig> {
     let config: LinkMLConfig = load_config(path)?;
     validate_config(&config).await?;
     Ok(config)
 }
 
 /// Validate specific configuration values
-pub fn validate_values(config: &LinkMLConfig) -> Result<()> {
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
+pub fn validate_values(config: &LinkMLConfig) -> linkml_core::error::Result<()> {
     // Additional runtime validations beyond schema
 
     // Ensure L1 < L2 < L3 cache TTLs
@@ -116,18 +128,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_default_config() -> std::result::Result<(), anyhow::Error> {
-        let config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
+        let config = crate::config::load_default_config().expect("should load default config: {}");
 
-        validate_values(&config).map_err(|e| anyhow::anyhow!("default config should be valid: {}", e))?;
+        validate_values(&config).expect("default config should be valid: {}");
 
         // Schema validation would require the validator to be fully initialized
-        // validate_config(&config).await.map_err(|e| anyhow::anyhow!("default config should validate against schema: {}", e))?;
+        // validate_config(&config).await.expect("default config should validate against schema: {}");
         Ok(())
     }
 
     #[test]
     fn test_validate_ttl_ordering() -> std::result::Result<(), anyhow::Error> {
-        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
+        let mut config = crate::config::load_default_config().expect("should load default config: {}");
 
         // Break TTL ordering
         config.performance.cache_ttl_levels.l1_seconds = 7200;
@@ -141,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_validate_memory_limits() -> std::result::Result<(), anyhow::Error> {
-        let mut config = crate::config::load_default_config().map_err(|e| anyhow::anyhow!("should load default config: {}", e))?;
+        let mut config = crate::config::load_default_config().expect("should load default config: {}");
 
         // Set memory pool larger than total limit
         config.performance.memory_limit_bytes = 1_000_000_000; // 1GB

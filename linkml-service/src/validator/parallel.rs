@@ -155,7 +155,7 @@ impl ParallelValidationEngine {
         let engine = Arc::clone(&self.engine);
         let class_name = class_name.to_string();
         let options = options.unwrap_or_default();
-        let results = Arc::new(Mutex::new(StreamValidationResult::new()));
+        let results = Arc::new(Mutex::new(StreamValidationResult::new());
 
         // Process in chunks for better parallelism
         let chunks: Vec<Vec<Value>> = values
@@ -345,8 +345,8 @@ impl StreamValidationResult {
             0.0
         } else {
             // Precision loss acceptable here
-            let result = (self.items_processed as f64 * 1000.0) / self.duration_ms as f64;
-            result
+            
+            (self.items_processed as f64 * 1000.0) / self.duration_ms as f64
         }
     }
 }
@@ -395,9 +395,9 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine: {}", e))?;
+        let engine = ValidationEngine::new(&schema).expect("should create validation engine: {}");
         let parallel_engine =
-            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine: {}", e))?;
+            ParallelValidationEngine::new(engine).expect("should create parallel engine: {}");
 
         let values = vec![
             json!({"name": "test1"}),
@@ -421,9 +421,9 @@ mod tests {
             ..Default::default()
         };
 
-        let engine = ValidationEngine::new(&schema).map_err(|e| anyhow::anyhow!("should create validation engine: {}", e))?;
+        let engine = ValidationEngine::new(&schema).expect("should create validation engine: {}");
         let parallel_engine =
-            ParallelValidationEngine::new(engine).map_err(|e| anyhow::anyhow!("should create parallel engine: {}", e))?;
+            ParallelValidationEngine::new(engine).expect("should create parallel engine: {}");
 
         let values = vec![
             ("id1".to_string(), json!({"name": "test1"})),

@@ -281,16 +281,77 @@ impl DatabaseLoader {
         Ok(tables)
     }
 
-    /// Get table names from the database (original implementation - commented out)
+    /// Get table names from the database (original implementation - now restored)
     async fn _get_table_names_original(&self) -> LoaderResult<Vec<String>> {
-        // TODO: Implement database-specific table name retrieval
-        // This requires fixing the DatabasePool executor issues
-        Ok(Vec::new())
+        let pool = self.get_pool()?;
+
+        let query = match self.get_database_type()? {
+            DatabaseType::PostgreSQL => {
+                if let Some(schema) = &self.options.schema_name {
+                    format!(
+                        "SELECT table_name FROM information_schema.tables
+                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
+                        schema
+                    )
+                } else {
+                    "SELECT table_name FROM information_schema.tables
+                     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+                        .to_string()
+                }
+            }
+            DatabaseType::MySQL => {
+                if let Some(schema) = &self.options.schema_name {
+                    format!(
+                        "SELECT table_name FROM information_schema.tables
+                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
+                        schema
+                    )
+                } else {
+                    "SELECT table_name FROM information_schema.tables
+                     WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'"
+                        .to_string()
+                }
+            }
+            DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table'
+                 AND name NOT LIKE 'sqlite_%'"
+                .to_string(),
+            _ => {
+                return Err(LoaderError::Configuration(
+                    "Unsupported database type".to_string(),
+                ));
+            }
+        };
+
+        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
+            LoaderError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to query tables: {e}"),
+            ))
+        })?;
+
+        let mut tables = Vec::new();
+        for row in rows {
+            if let Ok(table_name) = row.try_get::<String, _>(0) {
+                // Apply filtering
+                if self.options.exclude_tables.contains(&table_name) {
+                    continue;
+                }
+
+                if let Some(include) = &self.options.include_tables {
+                    if !include.contains(&table_name) {
+                        continue;
+                    }
+                }
+
+                tables.push(table_name);
+            }
+        }
+
+        Ok(tables)
     }
 
-    /// Get table names from the database (complex implementation - commented out)
+    /// Get table names from the database (complex implementation - now restored)
     async fn _get_table_names_complex(&self) -> LoaderResult<Vec<String>> {
-        /*
         let pool = self.get_pool()?;
 
         // This query works for PostgreSQL, MySQL, and SQLite
@@ -357,8 +418,6 @@ impl DatabaseLoader {
         }
 
         Ok(tables)
-        */
-        Ok(Vec::new())
     }
 
     /// Get database type from connection string
@@ -466,7 +525,6 @@ impl DatabaseLoader {
 
     /// Get column information for a table (original implementation - commented out)
     async fn _get_columns_original(&self, table_name: &str) -> LoaderResult<Vec<ColumnInfo>> {
-        /*
         let pool = self.get_pool()?;
 
         let query = match self.get_database_type()? {
@@ -544,8 +602,6 @@ impl DatabaseLoader {
         }
 
         Ok(columns)
-        */
-        Ok(Vec::new())
     }
 
     /// Update primary key information for columns
@@ -627,7 +683,6 @@ impl DatabaseLoader {
         columns: &mut [ColumnInfo],
         table_name: &str,
     ) -> LoaderResult<()> {
-        /*
         let pool = self.get_pool()?;
 
         let query = match self.get_database_type()? {
@@ -684,8 +739,6 @@ impl DatabaseLoader {
             }
         }
 
-        Ok(())
-        */
         Ok(())
     }
 
@@ -830,7 +883,6 @@ impl DatabaseLoader {
         columns: &[ColumnInfo],
         schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
-        /*
         let pool = self.get_pool()?;
         let mut instances = Vec::new();
 
@@ -884,8 +936,6 @@ impl DatabaseLoader {
         }
 
         Ok(instances)
-        */
-        Ok(Vec::new())
     }
 
     /// Convert a database row to a DataInstance (simplified version)
@@ -1378,7 +1428,7 @@ impl DatabaseDumper {
         sql.push_str(&columns.join(",\n  "));
 
         if !primary_keys.is_empty() && has_id_slot {
-            sql.push_str(&format!(",\n  PRIMARY KEY ({})", primary_keys.join(", ")));
+            sql.push_str(&format!(",\n  PRIMARY KEY ({})", primary_keys.join(", "));
         }
 
         sql.push_str("\n)");
@@ -1426,7 +1476,6 @@ impl DatabaseDumper {
         class_def: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> DumperResult<()> {
-        /*
         if !self.options.create_if_not_exists {
             return Ok(());
         }
@@ -1526,8 +1575,6 @@ impl DatabaseDumper {
         };
 
         Ok(db_type.to_string())
-        */
-        Ok(())
     }
 
     /// Insert instances for a class
@@ -1678,7 +1725,7 @@ impl DatabaseDumper {
                 })?;
             }
             None => {
-                return Err(DumperError::Configuration("No database connection available".to_string()));
+                return Err(DumperError::Configuration("No database connection available".to_string());
             }
         }
         Ok(())
@@ -1731,7 +1778,7 @@ impl DatabaseDumper {
                 }
             }
             None => {
-                return Err(DumperError::Configuration("No database connection available".to_string()));
+                return Err(DumperError::Configuration("No database connection available".to_string());
             }
         }
         Ok(())
@@ -1755,7 +1802,6 @@ impl DatabaseDumper {
         instances: &[DataInstance],
         schema: &SchemaDefinition,
     ) -> DumperResult<()> {
-        /*
         let pool = self.get_pool()?;
 
         // Get table name
@@ -1848,8 +1894,6 @@ impl DatabaseDumper {
             })?;
         }
 
-        Ok(())
-        */
         Ok(())
     }
 

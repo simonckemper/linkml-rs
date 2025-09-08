@@ -4,6 +4,7 @@
 //! various LinkML schema elements. This includes authorship information,
 //! mappings to external ontologies, and documentation fields.
 
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -229,6 +230,7 @@ fn merge_vec<T: Clone + PartialEq>(base: &[T], override_vec: &[T]) -> Vec<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Result;
 
     #[test]
     fn test_element_metadata() {
@@ -274,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    fn test_contributor() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_contributor() -> crate::Result<()> {
         let contributor = Contributor {
             name: "Jane Doe".to_string(),
             email: Some("jane@example.com".to_string()),

@@ -1,11 +1,12 @@
 //! Tests for Java code generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
     TypeDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, JavaGenerator};
-
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_java_generation() {
     let mut schema = SchemaDefinition::new("person_schema");
@@ -250,7 +251,6 @@ async fn test_custom_types() {
 
 #[tokio::test]
 async fn test_builder_pattern() {
-    let mut schema = SchemaDefinition::new("user_schema");
 
     // Add slots
     let mut username_slot = SlotDefinition::new("username");

@@ -4,7 +4,6 @@
 //! (sequential, parallel, fail-fast, etc.) and manages the overall rule
 //! evaluation process.
 
-use linkml_core::error::Result;
 use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
@@ -22,7 +21,7 @@ pub struct RuleExecutor {
 
 impl RuleExecutor {
     /// Create a new rule executor
-    pub fn new(expression_engine: Arc<ExpressionEngine>) -> Self {
+    #[must_use] pub fn new(expression_engine: Arc<ExpressionEngine>) -> Self {
         let matcher = RuleMatcher::new((*expression_engine).clone());
         let evaluator = RuleEvaluator::new((*expression_engine).clone());
 
@@ -30,12 +29,16 @@ impl RuleExecutor {
     }
 
     /// Execute a set of rules with the specified strategy
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn execute_rules(
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
         strategy: RuleExecutionStrategy,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         match strategy {
             RuleExecutionStrategy::Sequential => self.execute_sequential(rules, context),
             RuleExecutionStrategy::Parallel => self.execute_parallel(rules, context),
@@ -49,7 +52,7 @@ impl RuleExecutor {
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut all_issues = Vec::new();
 
         for rule in rules {
@@ -69,7 +72,7 @@ impl RuleExecutor {
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         // For now, fall back to sequential execution
         // TODO: Implement true parallel execution using rayon or tokio
         self.execute_sequential(rules, context)
@@ -80,7 +83,7 @@ impl RuleExecutor {
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         for rule in rules {
             if rule.deactivated {
                 continue;
@@ -100,7 +103,7 @@ impl RuleExecutor {
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         // This is the same as sequential for now
         self.execute_sequential(rules, context)
     }
@@ -110,7 +113,7 @@ impl RuleExecutor {
         &self,
         rule: &CompiledRule,
         context: &mut RuleExecutionContext,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
 
         // Set current rule for recursion detection
@@ -191,12 +194,16 @@ pub struct RuleExecutionStats {
 
 impl RuleExecutor {
     /// Execute rules with statistics collection
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn execute_with_stats(
         &self,
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
         strategy: RuleExecutionStrategy,
-    ) -> Result<(Vec<ValidationIssue>, RuleExecutionStats)> {
+    ) -> linkml_core::error::Result<(Vec<ValidationIssue>, RuleExecutionStats)> {
         let start = std::time::Instant::now();
         let mut stats = RuleExecutionStats {
             total_rules: rules.len(),
@@ -265,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_rule_execution() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
+        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new());
         let rule = create_test_rule()?;
 
         // Test with adult without ID
@@ -281,7 +288,7 @@ mod tests {
 
         let issues = executor
             .execute_single_rule(&rule, &mut context)
-            .map_err(|e| anyhow::anyhow!("should execute rule: {}", e))?;
+            .expect("should execute rule: {}");
         assert_eq!(issues.len(), 1);
         assert!(issues[0].message.contains("required"));
 
@@ -299,7 +306,7 @@ mod tests {
 
         let issues2 = executor
             .execute_single_rule(&rule, &mut context2)
-            .map_err(|e| anyhow::anyhow!("should execute rule for adult with ID: {}", e))?;
+            .expect("should execute rule for adult with ID: {}");
         assert!(issues2.is_empty());
 
         // Test with minor (rule shouldn't apply)
@@ -315,14 +322,14 @@ mod tests {
 
         let issues3 = executor
             .execute_single_rule(&rule, &mut context3)
-            .map_err(|e| anyhow::anyhow!("should execute rule for minor: {}", e))?;
+            .expect("should execute rule for minor: {}");
         assert!(issues3.is_empty());
         Ok(())
     }
 
     #[test]
     fn test_execution_strategies() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
+        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new());
         let rules = vec![create_test_rule()?];
 
         let mut validation_ctx = ValidationContext::new(Default::default());
@@ -338,7 +345,7 @@ mod tests {
         // Test different strategies
         let sequential_issues = executor
             .execute_rules(&rules, &mut context, RuleExecutionStrategy::Sequential)
-            .map_err(|e| anyhow::anyhow!("should execute rules sequentially: {}", e))?;
+            .expect("should execute rules sequentially: {}");
         assert_eq!(sequential_issues.len(), 1);
 
         let mut validation_ctx2 = ValidationContext::new(Default::default());
@@ -352,7 +359,7 @@ mod tests {
         );
         let fail_fast_issues = executor
             .execute_rules(&rules, &mut context2, RuleExecutionStrategy::FailFast)
-            .map_err(|e| anyhow::anyhow!("should execute rules with fail-fast: {}", e))?;
+            .expect("should execute rules with fail-fast: {}");
         assert_eq!(fail_fast_issues.len(), 1);
         Ok(())
     }

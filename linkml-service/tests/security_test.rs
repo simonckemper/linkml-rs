@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
+use linkml_core::string_pool::intern;
 
 #[test]
 fn test_string_interning_limits() {
@@ -45,12 +46,12 @@ fn test_memory_profiler_category_limits() {
 
     // Add allocations to different categories
     for i in 0..100 {
-        profiler.record_alloc(1000, Some(&format!("category_{}", i)));
+        profiler.record_alloc(1000, Some(&format!("category_{}", i));
     }
 
     // Try to add more categories (should be silently ignored after limit)
     for i in 100..1100 {
-        profiler.record_alloc(1000, Some(&format!("category_{}", i)));
+        profiler.record_alloc(1000, Some(&format!("category_{}", i));
     }
 
     // The report should only contain up to MAX_CATEGORIES
@@ -279,7 +280,7 @@ fn test_secure_cache_key_generation() {
     // Evaluate multiple times with different large values
     for i in 0..10 {
         let key = format!("key_{}", i);
-        context.insert(key.clone(), json!(format!("{}{}", large_value, i)));
+        context.insert(key.clone(), json!(format!("{}{}", large_value, i));
 
         let expr = parse_expression(&format!("len({})", key)).expect("Test operation failed");
 

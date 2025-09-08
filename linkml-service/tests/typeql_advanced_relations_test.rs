@@ -3,6 +3,7 @@
 use linkml_core::prelude::*;
 use linkml_service::generator::typeql_relation_analyzer::RelationAnalyzer;
 use linkml_service::generator::{EnhancedTypeQLGenerator, Generator, GeneratorOptions};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
 /// Helper to create a test schema with advanced relations
 fn create_advanced_schema() -> SchemaDefinition {
@@ -242,15 +243,15 @@ fn test_relation_analyzer_directly() {
 
     // Check roles
     let role_names: Vec<String> = info.roles.iter().map(|r| r.name.clone()).collect();
-    assert!(role_names.contains(&"student".to_string()));
-    assert!(role_names.contains(&"course".to_string()));
-    assert!(role_names.contains(&"instructor".to_string()));
-    assert!(role_names.contains(&"semester".to_string()));
+    assert!(role_names.contains(&"student".to_string());
+    assert!(role_names.contains(&"course".to_string());
+    assert!(role_names.contains(&"instructor".to_string());
+    assert!(role_names.contains(&"semester".to_string());
 
     // Check attributes
     assert_eq!(info.attributes.len(), 2);
-    assert!(info.attributes.contains(&"grade".to_string()));
-    assert!(info.attributes.contains(&"enrollment_date".to_string()));
+    assert!(info.attributes.contains(&"grade".to_string());
+    assert!(info.attributes.contains(&"enrollment_date".to_string());
 }
 
 #[test]
@@ -300,9 +301,9 @@ fn test_polymorphic_role_detection() {
     let attendee_players = polymorphic.get("Meeting:attendee");
     assert!(attendee_players.is_some());
     let players = attendee_players.expect("Test operation failed");
-    assert!(players.contains(&"Person".to_string()));
-    assert!(players.contains(&"Student".to_string()));
-    assert!(players.contains(&"Teacher".to_string()));
+    assert!(players.contains(&"Person".to_string());
+    assert!(players.contains(&"Student".to_string());
+    assert!(players.contains(&"Teacher".to_string());
 }
 
 #[test]

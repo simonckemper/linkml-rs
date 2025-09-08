@@ -73,7 +73,7 @@ impl CustomValidator {
     }
 
     /// Set which slots this validator applies to
-    pub fn with_applies_to(mut self, applies_to: AppliesTo) -> Self {
+    #[must_use] pub fn with_applies_to(mut self, applies_to: AppliesTo) -> Self {
         self.applies_to = applies_to;
         self
     }
@@ -140,13 +140,13 @@ impl CustomValidatorBuilder {
     }
 
     /// Apply to specific slot names
-    pub fn for_slots(mut self, slot_names: Vec<String>) -> Self {
+    #[must_use] pub fn for_slots(mut self, slot_names: Vec<String>) -> Self {
         self.applies_to = AppliesTo::SlotNames(slot_names);
         self
     }
 
     /// Apply to specific slot ranges
-    pub fn for_ranges(mut self, ranges: Vec<String>) -> Self {
+    #[must_use] pub fn for_ranges(mut self, ranges: Vec<String>) -> Self {
         self.applies_to = AppliesTo::SlotRanges(ranges);
         self
     }
@@ -193,9 +193,13 @@ impl CustomValidatorBuilder {
 
 /// Helper functions for creating common custom validators
 pub mod helpers {
-    use super::*;
+    use super::{Result, CustomValidator, CustomValidatorBuilder, Value, ValidationIssue, SlotDefinition, ValidationContext};
 
     /// Create a validator that checks if a string matches a custom format
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn format_validator(
         name: impl Into<String>,
         format_name: impl Into<String>,
@@ -216,7 +220,7 @@ pub mod helpers {
                     Value::String(s) => {
                         if !check_fn(s) {
                             let mut issue = ValidationIssue::error(
-                                format!("Value '{}' is not a valid {}", s, format_clone),
+                                format!("Value '{s}' is not a valid {format_clone}"),
                                 context.path(),
                                 &name_clone,
                             );
@@ -244,6 +248,10 @@ pub mod helpers {
     }
 
     /// Create a validator that ensures a value is within a custom set
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn custom_enum_validator(
         name: impl Into<String>,
         allowed_values: Vec<String>,
@@ -256,25 +264,22 @@ pub mod helpers {
             .validate_with(move |value, _slot, context| {
                 let mut issues = Vec::new();
 
-                match value {
-                    Value::String(s) => {
-                        if !allowed_values.contains(s) {
-                            let mut issue = ValidationIssue::error(
-                                format!(
-                                    "Value '{}' is not in allowed set: [{}]",
-                                    s,
-                                    allowed_values.join(", ")
-                                ),
-                                context.path(),
-                                &name_clone,
-                            );
-                            issue.code = Some("CUSTOM_ENUM_VIOLATION".to_string());
-                            issues.push(issue);
-                        }
+                if let Value::String(s) = value {
+                    if !allowed_values.contains(s) {
+                        let mut issue = ValidationIssue::error(
+                            format!(
+                                "Value '{}' is not in allowed set: [{}]",
+                                s,
+                                allowed_values.join(", ")
+                            ),
+                            context.path(),
+                            &name_clone,
+                        );
+                        issue.code = Some("CUSTOM_ENUM_VIOLATION".to_string());
+                        issues.push(issue);
                     }
-                    _ => {
-                        // Only validate strings
-                    }
+                } else {
+                    // Only validate strings
                 }
 
                 issues
@@ -283,6 +288,10 @@ pub mod helpers {
     }
 
     /// Create a cross-field validator
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn cross_field_validator(
         name: impl Into<String>,
         check_fn: impl Fn(&Value, &SlotDefinition, &ValidationContext) -> Option<String>
@@ -312,7 +321,6 @@ pub mod helpers {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use linkml_core::types::SchemaDefinition;
 
     #[test]
@@ -335,7 +343,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
+            .expect("should build custom validator: {}");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -373,7 +381,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
+            .expect("should build custom validator: {}");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -397,7 +405,7 @@ mod tests {
             // Simple phone validation
             s.chars().filter(|c| c.is_numeric()).count() >= 10
         })
-        .map_err(|e| anyhow::anyhow!("should build format validator: {}", e))?;
+        .expect("should build format validator: {}");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -421,7 +429,7 @@ mod tests {
             "priority_validator",
             vec!["low".to_string(), "medium".to_string(), "high".to_string()],
         )
-        .map_err(|e| anyhow::anyhow!("should build custom enum validator: {}", e))?;
+        .expect("should build custom enum validator: {}");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);
@@ -459,7 +467,7 @@ mod tests {
                 issues
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("should build custom validator: {}", e))?;
+            .expect("should build custom validator: {}");
 
         let schema = Arc::new(SchemaDefinition::default());
         let mut context = ValidationContext::new(schema);

@@ -4,7 +4,6 @@
 //! with custom generators, validators, loaders, and other components.
 
 use async_trait::async_trait;
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use logger_core::{LoggerError, LoggerService};
 use semver::{Version, VersionReq};
@@ -308,6 +307,10 @@ impl PluginManager {
     }
 
     /// Discover and load plugins from a directory
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn discover_plugins(&mut self, path: &Path) -> Result<Vec<PluginInfo>> {
         let plugin_paths = self
             .discovery
@@ -320,8 +323,7 @@ impl PluginManager {
                 Err(e) => {
                     self.logger
                         .warn(&format!(
-                            "Failed to load plugin from {:?}: {}",
-                            plugin_path, e
+                            "Failed to load plugin from {plugin_path:?}: {e}"
                         ))
                         .await
                         .map_err(|le| LinkMLError::other(le.to_string()))?;
@@ -333,6 +335,10 @@ impl PluginManager {
     }
 
     /// Load a specific plugin
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_plugin(&mut self, path: &Path) -> Result<PluginInfo> {
         // Load plugin metadata
         let metadata = self.loader.load_metadata(path)?;
@@ -351,21 +357,29 @@ impl PluginManager {
     }
 
     /// Get a plugin by ID
-    pub fn get_plugin(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
+    #[must_use] pub fn get_plugin(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get(id)
     }
 
     /// Get all plugins of a specific type
-    pub fn get_plugins_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
+    #[must_use] pub fn get_plugins_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         self.registry.get_by_type(plugin_type)
     }
 
     /// Initialize all plugins
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn initialize_all(&mut self, context: PluginContext) -> Result<()> {
         self.registry.initialize_all(context).await
     }
 
     /// Shutdown all plugins
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn shutdown_all(&mut self) -> Result<()> {
         self.registry.shutdown_all().await
     }
@@ -391,9 +405,9 @@ mod tests {
             capabilities: vec![],
         };
 
-        let json = serde_json::to_string(&info).map_err(|e| anyhow::anyhow!("should serialize PluginInfo: {}", e))?;
+        let json = serde_json::to_string(&info).expect("should serialize PluginInfo: {}");
         let deserialized: PluginInfo =
-            serde_json::from_str(&json).map_err(|e| anyhow::anyhow!("should deserialize PluginInfo: {}", e))?;
+            serde_json::from_str(&json).expect("should deserialize PluginInfo: {}");
 
         assert_eq!(info.id, deserialized.id);
         assert_eq!(info.version, deserialized.version);

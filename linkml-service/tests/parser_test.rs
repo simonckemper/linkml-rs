@@ -195,7 +195,7 @@ name: direct_parse_test
 
     let parser = Parser::new();
     let schema = parser
-        .parse_str(yaml, "yaml")
+        .parse(yaml, "yaml")
         .expect("Test operation failed");
 
     assert_eq!(schema.name, "direct_parse_test");

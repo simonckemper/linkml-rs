@@ -1,7 +1,7 @@
-//! Graphviz generator for LinkML schemas
+//! Graphviz generator for `LinkML` schemas
 //!
 //! This module generates DOT format files that can be rendered by Graphviz
-//! to visualize LinkML schemas as directed graphs. The generator supports
+//! to visualize `LinkML` schemas as directed graphs. The generator supports
 //! multiple diagram styles and customization options.
 
 use linkml_core::prelude::*;
@@ -95,9 +95,9 @@ impl GraphvizGenerator {
         }
     }
 
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create with custom options
@@ -255,7 +255,7 @@ impl GraphvizGenerator {
 
         match self.options.style {
             GraphvizStyle::Simple => {
-                write!(output, "    {} [label=\"{}\"]", node_id, name)
+                write!(output, "    {node_id} [label=\"{name}\"]")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 if self.options.use_colors && class_def.abstract_.unwrap_or(false) {
@@ -266,15 +266,15 @@ impl GraphvizGenerator {
                 writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
             }
             GraphvizStyle::Uml => {
-                write!(output, "    {} [label=\"{{", node_id)
+                write!(output, "    {node_id} [label=\"{{")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 // Class name compartment
                 if class_def.abstract_.unwrap_or(false) {
-                    write!(output, "\\<\\<abstract\\>\\>\\n{}", name)
+                    write!(output, "\\<\\<abstract\\>\\>\\n{name}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(output, "{}", name).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(output, "{name}").map_err(Self::fmt_error_to_generator_error)?;
                 }
 
                 if self.options.include_slots {
@@ -303,7 +303,7 @@ impl GraphvizGenerator {
 
                             if self.options.show_cardinality {
                                 let cardinality = self.get_cardinality(slot_def);
-                                write!(output, " [{}]", cardinality)
+                                write!(output, " [{cardinality}]")
                                     .map_err(Self::fmt_error_to_generator_error)?;
                             }
                         }
@@ -325,7 +325,7 @@ impl GraphvizGenerator {
             }
             _ => {
                 // EntityRelationship and Hierarchical styles
-                write!(output, "    {} [label=\"{}\"", node_id, name)
+                write!(output, "    {node_id} [label=\"{name}\"")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 if self.options.use_colors && class_def.abstract_.unwrap_or(false) {
@@ -349,57 +349,53 @@ impl GraphvizGenerator {
     ) -> GeneratorResult<String> {
         let node_id = self.sanitize_id(name);
 
-        match self.options.style {
-            GraphvizStyle::Uml => {
-                write!(
-                    output,
-                    "    {} [label=\"{{\\<\\<enumeration\\>\\>\\n{}|",
-                    node_id, name
-                )
-                .map_err(Self::fmt_error_to_generator_error)?;
+        if self.options.style == GraphvizStyle::Uml {
+            write!(
+                output,
+                "    {node_id} [label=\"{{\\<\\<enumeration\\>\\>\\n{name}|"
+            )
+            .map_err(Self::fmt_error_to_generator_error)?;
 
-                // List enum values
-                let mut first = true;
-                for pv in &enum_def.permissible_values {
-                    if !first {
-                        write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
-                    }
-                    first = false;
-
-                    let value = match pv {
-                        PermissibleValue::Simple(s) => s,
-                        PermissibleValue::Complex { text, .. } => text,
-                    };
-                    write!(output, "{}", value).map_err(Self::fmt_error_to_generator_error)?;
-                }
-
-                if !enum_def.permissible_values.is_empty() {
+            // List enum values
+            let mut first = true;
+            for pv in &enum_def.permissible_values {
+                if !first {
                     write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
                 }
+                first = false;
 
-                write!(output, "}}\"").map_err(Self::fmt_error_to_generator_error)?;
-
-                if self.options.use_colors {
-                    write!(output, ", fillcolor=lightyellow, style=filled")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-
-                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
+                let value = match pv {
+                    PermissibleValue::Simple(s) => s,
+                    PermissibleValue::Complex { text, .. } => text,
+                };
+                write!(output, "{value}").map_err(Self::fmt_error_to_generator_error)?;
             }
-            _ => {
-                write!(output, "    {} [label=\"{} (enum)\"", node_id, name)
-                    .map_err(Self::fmt_error_to_generator_error)?;
 
-                if self.options.use_colors {
-                    write!(
-                        output,
-                        ", shape=diamond, fillcolor=lightyellow, style=filled"
-                    )
-                    .map_err(Self::fmt_error_to_generator_error)?;
-                }
-
-                writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
+            if !enum_def.permissible_values.is_empty() {
+                write!(output, "\\l").map_err(Self::fmt_error_to_generator_error)?;
             }
+
+            write!(output, "}}\"").map_err(Self::fmt_error_to_generator_error)?;
+
+            if self.options.use_colors {
+                write!(output, ", fillcolor=lightyellow, style=filled")
+                    .map_err(Self::fmt_error_to_generator_error)?;
+            }
+
+            writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
+            write!(output, "    {node_id} [label=\"{name} (enum)\"")
+                .map_err(Self::fmt_error_to_generator_error)?;
+
+            if self.options.use_colors {
+                write!(
+                    output,
+                    ", shape=diamond, fillcolor=lightyellow, style=filled"
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
+            }
+
+            writeln!(output, "];").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         Ok(String::new())
@@ -414,11 +410,11 @@ impl GraphvizGenerator {
     ) -> GeneratorResult<String> {
         let node_id = self.sanitize_id(name);
 
-        write!(output, "    {} [label=\"{}", node_id, name)
+        write!(output, "    {node_id} [label=\"{name}")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(base) = &type_def.base_type {
-            write!(output, "\\n({})", base).map_err(Self::fmt_error_to_generator_error)?;
+            write!(output, "\\n({base})").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         write!(output, "\"").map_err(Self::fmt_error_to_generator_error)?;
@@ -479,9 +475,9 @@ impl GraphvizGenerator {
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
 
             for slot_name in &all_slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot_def.range {
-                        if schema.classes.contains_key(range) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot_def.range
+                        && schema.classes.contains_key(range) {
                             // This is an object reference
                             let label = if self.options.show_cardinality {
                                 format!("{} [{}]", slot_name, self.get_cardinality(slot_def))
@@ -498,8 +494,6 @@ impl GraphvizGenerator {
                             )
                             .map_err(Self::fmt_error_to_generator_error)?;
                         }
-                    }
-                }
             }
         }
 
@@ -517,8 +511,8 @@ impl GraphvizGenerator {
         let mut seen = HashSet::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -526,7 +520,6 @@ impl GraphvizGenerator {
                     }
                 }
             }
-        }
 
         // Then add direct slots
         for slot in &class_def.slots {
@@ -547,7 +540,7 @@ impl GraphvizGenerator {
 
     /// Get cardinality notation for a slot
     fn get_cardinality(&self, slot: &SlotDefinition) -> String {
-        let min = if slot.required.unwrap_or(false) { 1 } else { 0 };
+        let min = i32::from(slot.required.unwrap_or(false));
         let max = if slot.multivalued.unwrap_or(false) {
             "*"
         } else {
@@ -563,7 +556,7 @@ impl GraphvizGenerator {
         } else if min == 1 && max == "*" {
             "1..*".to_string()
         } else {
-            format!("{}..{}", min, max)
+            format!("{min}..{max}")
         }
     }
 
@@ -583,7 +576,7 @@ impl Default for GraphvizGenerator {
 }
 
 impl Generator for GraphvizGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "graphviz"
     }
 
@@ -608,8 +601,7 @@ impl Generator for GraphvizGenerator {
                class_name.contains('>') {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!(
-                        "Class name '{}' contains characters that need escaping in DOT format",
-                        class_name
+                        "Class name '{class_name}' contains characters that need escaping in DOT format"
                     ),
                     element: Some(format!("class.{class_name}")),
                 });
@@ -621,8 +613,7 @@ impl Generator for GraphvizGenerator {
             if slot_name.contains('"') || slot_name.contains('{') || slot_name.contains('}') {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!(
-                        "Slot name '{}' contains characters that need escaping in DOT format",
-                        slot_name
+                        "Slot name '{slot_name}' contains characters that need escaping in DOT format"
                     ),
                     element: Some(format!("slot.{slot_name}")),
                 });
@@ -639,11 +630,11 @@ impl Generator for GraphvizGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "dot"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -651,6 +642,7 @@ impl Generator for GraphvizGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -688,7 +680,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate Graphviz output: {}", e))?;
+            .expect("should generate Graphviz output: {}");
 
         // Check content includes basic structure
         assert!(result.contains("digraph LinkMLSchema"));

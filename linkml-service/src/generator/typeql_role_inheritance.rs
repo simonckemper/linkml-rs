@@ -1,7 +1,7 @@
-//! Role inheritance resolution for TypeQL generation
+//! Role inheritance resolution for `TypeQL` generation
 //!
 //! This module handles role inheritance, specialization, and abstract roles
-//! in TypeQL relations, supporting TypeDB's advanced role hierarchy features.
+//! in `TypeQL` relations, supporting `TypeDB`'s advanced role hierarchy features.
 
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -28,11 +28,11 @@ pub struct RoleHierarchy {
     pub parent: HashMap<String, String>,
     /// Abstract roles
     pub abstract_roles: HashSet<String>,
-    /// Role specializations (relation:role -> base_role)
+    /// Role specializations (relation:role -> `base_role`)
     pub specializations: HashMap<String, String>,
 }
 
-/// Resolves role inheritance in TypeQL schemas
+/// Resolves role inheritance in `TypeQL` schemas
 pub struct RoleInheritanceResolver {
     /// Role hierarchies by relation
     pub hierarchies: HashMap<String, RoleHierarchy>,
@@ -54,6 +54,12 @@ struct RoleDefinition {
     _base_role: Option<String>,
     /// Allowed player types
     allowed_players: Vec<String>,
+}
+
+impl Default for RoleInheritanceResolver {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RoleInheritanceResolver {
@@ -81,8 +87,8 @@ impl RoleInheritanceResolver {
         };
 
         // Check if relation inherits from another
-        if let Some(parent_name) = &relation_class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &relation_class.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 // Analyze parent relation first
                 if let Some(parent_hierarchy) =
                     self.analyze_relation_inheritance(parent_name, parent_class, schema)
@@ -101,7 +107,6 @@ impl RoleInheritanceResolver {
                     &mut hierarchy,
                 );
             }
-        }
 
         // Check for abstract relation
         if relation_class.abstract_.unwrap_or(false) {
@@ -141,7 +146,7 @@ impl RoleInheritanceResolver {
                 self.find_matching_parent_role(child_role, child_type, &parent_roles, schema)
             {
                 // This is a specialization
-                let spec_key = format!("{}:{}", child_relation, child_role);
+                let spec_key = format!("{child_relation}:{child_role}");
                 hierarchy
                     .specializations
                     .insert(spec_key, parent_role.clone());
@@ -153,7 +158,7 @@ impl RoleInheritanceResolver {
                 hierarchy
                     .children
                     .entry(parent_role.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(child_role.clone());
             }
         }
@@ -171,7 +176,7 @@ impl RoleInheritanceResolver {
         if let Some(parent_type) = parent_roles.get(child_role) {
             // Check if child type is subtype of parent type
             if self.is_subtype_of(child_type, parent_type, schema) {
-                return Some((child_role.to_string(), parent_type.clone()));
+                return Some((child_role.to_string(), parent_type.clone());
             }
         }
 
@@ -181,7 +186,7 @@ impl RoleInheritanceResolver {
                 || self.is_semantic_specialization(child_role, parent_role))
                 && self.is_subtype_of(child_type, parent_type, schema)
             {
-                return Some((parent_role.clone(), parent_type.clone()));
+                return Some((parent_role.clone(), parent_type.clone());
             }
         }
 
@@ -194,15 +199,14 @@ impl RoleInheritanceResolver {
             return true;
         }
 
-        if let Some(child_class) = schema.classes.get(child) {
-            if let Some(parent_name) = &child_class.is_a {
+        if let Some(child_class) = schema.classes.get(child)
+            && let Some(parent_name) = &child_class.is_a {
                 if parent_name == parent {
                     return true;
                 }
                 // Recursive check
                 return self.is_subtype_of(parent_name, parent, schema);
             }
-        }
 
         false
     }
@@ -243,13 +247,10 @@ impl RoleInheritanceResolver {
                 .slots
                 .get(slot_name)
                 .or_else(|| class.slot_usage.get(slot_name))
-            {
-                if let Some(range) = &slot.range {
-                    if schema.classes.contains_key(range) {
+                && let Some(range) = &slot.range
+                    && schema.classes.contains_key(range) {
                         roles.insert(slot_name.clone(), range.clone());
                     }
-                }
-            }
         }
 
         roles
@@ -257,11 +258,10 @@ impl RoleInheritanceResolver {
 
     /// Check if a slot represents a role
     fn is_role_slot(&self, slot_name: &str, schema: &SchemaDefinition) -> bool {
-        if let Some(slot) = schema.slots.get(slot_name) {
-            if let Some(range) = &slot.range {
+        if let Some(slot) = schema.slots.get(slot_name)
+            && let Some(range) = &slot.range {
                 return schema.classes.contains_key(range);
             }
-        }
         false
     }
 
@@ -272,7 +272,7 @@ impl RoleInheritanceResolver {
             child
                 .children
                 .entry(role)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .extend(children);
         }
 
@@ -288,21 +288,21 @@ impl RoleInheritanceResolver {
         child
     }
 
-    /// Generate TypeQL for role inheritance
-    pub fn generate_role_inheritance_typeql(
+    /// Generate `TypeQL` for role inheritance
+    #[must_use] pub fn generate_role_inheritance_typeql(
         &self,
         _relation_name: &str,
         role_name: &str,
         base_role: &str,
     ) -> String {
-        format!("    relates {} as {}", role_name, base_role)
+        format!("    relates {role_name} as {base_role}")
     }
 
     /// Get all abstract roles in the schema
-    pub fn get_abstract_roles(&self) -> Vec<String> {
+    #[must_use] pub fn get_abstract_roles(&self) -> Vec<String> {
         let mut abstract_roles = Vec::new();
 
-        for (_, hierarchy) in &self.hierarchies {
+        for hierarchy in self.hierarchies.values() {
             abstract_roles.extend(hierarchy.abstract_roles.iter().cloned());
         }
 
@@ -312,8 +312,8 @@ impl RoleInheritanceResolver {
     }
 
     /// Check if a role can be played by multiple types (polymorphic)
-    pub fn is_polymorphic_role(&self, relation: &str, role: &str) -> bool {
-        let role_key = format!("{}:{}", relation, role);
+    #[must_use] pub fn is_polymorphic_role(&self, relation: &str, role: &str) -> bool {
+        let role_key = format!("{relation}:{role}");
 
         if let Some(role_def) = self.global_roles.get(&role_key) {
             // Polymorphic if multiple types can play it or if base type has subtypes

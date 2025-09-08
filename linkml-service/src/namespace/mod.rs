@@ -13,7 +13,7 @@ pub use curie_resolver::{
 use linkml_core::prelude::*;
 
 /// Create a CURIE resolver from a schema with all imports resolved
-pub fn create_resolver_with_imports(
+#[must_use] pub fn create_resolver_with_imports(
     schema: &SchemaDefinition,
     imported_schemas: &[SchemaDefinition],
 ) -> CurieResolver {
@@ -26,7 +26,7 @@ pub fn create_resolver_with_imports(
                 PrefixDefinition::Simple(uri) => uri.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.as_ref().cloned().unwrap_or_default(),
+                } => prefix_reference.clone().unwrap_or_default(),
             };
 
             // Don't override existing prefixes

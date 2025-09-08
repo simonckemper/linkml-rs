@@ -776,7 +776,7 @@ mod tests {
         let compiled = compiler.compile(&expr, "2 + 3 * 4")?;
         let result = vm.execute(&compiled, &HashMap::new())?;
 
-        assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(14.0)));
+        assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(14.0));
         Ok(())
     }
 
@@ -795,7 +795,7 @@ mod tests {
         let compiled = compiler.compile(&expr, "x + y")?;
         let result = vm.execute(&compiled, &context)?;
 
-        assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(30.0)));
+        assert!(matches!(result, Value::Number(n) if n.as_f64() == Some(30.0));
         Ok(())
     }
 
@@ -811,12 +811,12 @@ mod tests {
         // let parser = Parser::new();
         //
         // let mut context = HashMap::new();
-        // context.insert("text".to_string(), Value::String("hello".to_string()));
+        // context.insert("text".to_string(), Value::String("hello".to_string());
         //
         // let expr = parser.parse("upper(text)")?;
         // let compiled = compiler.compile(&expr, "upper(text)")?;
         // let result = vm.execute(&compiled, &context)?;
         //
-        // assert_eq!(result, Value::String("HELLO".to_string()));
+        // assert_eq!(result, Value::String("HELLO".to_string());
     }
 }

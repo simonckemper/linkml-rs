@@ -3,7 +3,6 @@
 //! This module handles evaluating postconditions and else conditions
 //! after a rule's preconditions have been matched.
 
-use linkml_core::error::Result;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -23,7 +22,7 @@ pub struct RuleEvaluator {
 
 impl RuleEvaluator {
     /// Create a new rule evaluator
-    pub fn new(expression_engine: ExpressionEngine) -> Self {
+    #[must_use] pub fn new(expression_engine: ExpressionEngine) -> Self {
         let matcher = RuleMatcher::new(expression_engine.clone());
         Self {
             expression_engine,
@@ -32,12 +31,16 @@ impl RuleEvaluator {
     }
 
     /// Evaluate postconditions and generate validation issues
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn evaluate_postconditions(
         &self,
         condition: &CompiledCondition,
         context: &RuleExecutionContext,
         rule_description: Option<&str>,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
 
         // Check if postconditions are satisfied
@@ -108,14 +111,14 @@ impl RuleEvaluator {
         conditions: &HashMap<String, CompiledSlotCondition>,
         context: &RuleExecutionContext,
         rule_description: Option<&str>,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
 
         let Value::Object(instance_obj) = &context.instance else {
             issues.push(
                 ValidationIssue::error(
                     "Instance must be an object for slot condition evaluation",
-                    &context.validation_context.path(),
+                    context.validation_context.path(),
                     "RuleEvaluator",
                 )
                 .with_code("INVALID_INSTANCE_TYPE"),
@@ -147,17 +150,17 @@ impl RuleEvaluator {
         path: &str,
         context: &RuleExecutionContext,
         rule_description: Option<&str>,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
         let original = &condition.original;
 
         // Check required
-        if let Some(true) = original.required {
-            if value.is_null() {
+        if let Some(true) = original.required
+            && value.is_null() {
                 // Extract field name from path (e.g., "person.guardian_name" -> "guardian_name")
-                let field_name = path.split('.').last().unwrap_or(path);
+                let field_name = path.split('.').next_back().unwrap_or(path);
                 let msg = if let Some(desc) = rule_description {
-                    format!("Field '{}' is required by rule: {}", field_name, desc)
+                    format!("Field '{field_name}' is required by rule: {desc}")
                 } else {
                     format!("Field '{field_name}' is required by rule")
                 };
@@ -168,7 +171,6 @@ impl RuleEvaluator {
                 );
                 return Ok(issues);
             }
-        }
 
         // Skip further checks if value is null
         if value.is_null() {
@@ -176,9 +178,9 @@ impl RuleEvaluator {
         }
 
         // Check equals_string
-        if let Some(ref expected) = original.equals_string {
-            if let Value::String(actual) = value {
-                if actual != expected {
+        if let Some(ref expected) = original.equals_string
+            && let Value::String(actual) = value
+                && actual != expected {
                     let msg = format!(
                         "Value must equal '{}', got '{}'{}",
                         expected,
@@ -195,8 +197,6 @@ impl RuleEvaluator {
                             .with_context("actual", actual.clone().into()),
                     );
                 }
-            }
-        }
 
         // Check equals_expression
         if let Some(ref expr_ast) = condition.equals_expression_ast {
@@ -243,7 +243,7 @@ impl RuleEvaluator {
         expressions: &[crate::expression::ast::Expression],
         context: &RuleExecutionContext,
         rule_description: Option<&str>,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
         let expr_context = context.get_expression_context();
 
@@ -261,7 +261,7 @@ impl RuleEvaluator {
                     issues.push(
                         ValidationIssue::error(
                             &msg,
-                            &context.validation_context.path(),
+                            context.validation_context.path(),
                             "RuleEvaluator",
                         )
                         .with_code("RULE_EXPRESSION_FAILED")
@@ -273,7 +273,7 @@ impl RuleEvaluator {
                     issues.push(
                         ValidationIssue::error(
                             format!("Expression {} must evaluate to boolean", i + 1),
-                            &context.validation_context.path(),
+                            context.validation_context.path(),
                             "RuleEvaluator",
                         )
                         .with_code("RULE_EXPRESSION_TYPE_ERROR"),
@@ -283,7 +283,7 @@ impl RuleEvaluator {
                     issues.push(
                         ValidationIssue::error(
                             format!("Failed to evaluate expression {}: {}", i + 1, e),
-                            &context.validation_context.path(),
+                            context.validation_context.path(),
                             "RuleEvaluator",
                         )
                         .with_code("RULE_EXPRESSION_ERROR"),
@@ -301,7 +301,7 @@ impl RuleEvaluator {
         composite: &CompiledCompositeCondition,
         context: &RuleExecutionContext,
         rule_description: Option<&str>,
-    ) -> Result<Vec<ValidationIssue>> {
+    ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
         let mut issues = Vec::new();
 
         match composite {
@@ -331,7 +331,7 @@ impl RuleEvaluator {
                     issues.push(
                         ValidationIssue::error(
                             &msg,
-                            &context.validation_context.path(),
+                            context.validation_context.path(),
                             "RuleEvaluator",
                         )
                         .with_code("RULE_ANY_OF_FAILED"),
@@ -380,7 +380,7 @@ impl RuleEvaluator {
                     issues.push(
                         ValidationIssue::error(
                             &msg,
-                            &context.validation_context.path(),
+                            context.validation_context.path(),
                             "RuleEvaluator",
                         )
                         .with_code("RULE_EXACTLY_ONE_OF_FAILED")
@@ -406,7 +406,7 @@ impl RuleEvaluator {
                         issues.push(
                             ValidationIssue::error(
                                 &msg,
-                                &context.validation_context.path(),
+                                context.validation_context.path(),
                                 "RuleEvaluator",
                             )
                             .with_code("RULE_NONE_OF_FAILED")
@@ -459,7 +459,7 @@ mod tests {
             ?;
 
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_REQUIRED_FIELD".to_string()));
+        assert_eq!(issues[0].code, Some("RULE_REQUIRED_FIELD".to_string());
         assert!(issues[0].message.contains("ID required for persons"));
     }
 
@@ -483,6 +483,6 @@ mod tests {
             ?;
 
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_EXPRESSION_FAILED".to_string()));
+        assert_eq!(issues[0].code, Some("RULE_EXPRESSION_FAILED".to_string());
     }
 }

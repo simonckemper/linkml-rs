@@ -20,7 +20,7 @@ use linkml_service::generator::{
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Code Generation Showcase");
     println!("==============================\n");
 
@@ -289,7 +289,7 @@ fn truncate(s: &str, max_len: usize) -> String {
     }
 }
 
-async fn create_example_linkml_service() -> Result<LinkMLService, Box<dyn std::error::Error>> {
+async fn create_example_linkml_service() -> std::result::Result<LinkMLService, Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
     initialize_example_service().await
 }

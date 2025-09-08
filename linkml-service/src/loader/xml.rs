@@ -1,6 +1,6 @@
-//! XML loader and dumper for LinkML
+//! XML loader and dumper for `LinkML`
 //!
-//! This module provides functionality to load and dump LinkML data in XML format.
+//! This module provides functionality to load and dump `LinkML` data in XML format.
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
@@ -20,7 +20,7 @@ pub struct XmlLoader {
 
 impl XmlLoader {
     /// Create a new `XML` loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             file_path: None,
             root_element: "data".to_string(),
@@ -28,13 +28,13 @@ impl XmlLoader {
     }
 
     /// Set the input file path
-    pub fn with_file(mut self, path: &str) -> Self {
+    #[must_use] pub fn with_file(mut self, path: &str) -> Self {
         self.file_path = Some(path.to_string());
         self
     }
 
     /// Set the root element name
-    pub fn with_root_element(mut self, root: &str) -> Self {
+    #[must_use] pub fn with_root_element(mut self, root: &str) -> Self {
         self.root_element = root.to_string();
         self
     }
@@ -48,11 +48,11 @@ impl Default for XmlLoader {
 
 #[async_trait]
 impl DataLoader for XmlLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "xml"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from XML files"
     }
 
@@ -66,7 +66,7 @@ impl DataLoader for XmlLoader {
         _schema: &SchemaDefinition,
         _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let _content = std::fs::read_to_string(path).map_err(|e| LoaderError::Io(e))?;
+        let _content = std::fs::read_to_string(path).map_err(LoaderError::Io)?;
 
         // Basic XML parsing implementation
         // This is a simplified implementation that can be enhanced with full XML schema support
@@ -119,15 +119,14 @@ impl DataLoader for XmlLoader {
                 }
                 Ok(Event::End(ref e)) => {
                     let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
-                    if let Some(ref mut instance) = current_instance {
-                        if instance.class_name == name {
+                    if let Some(ref mut instance) = current_instance
+                        && instance.class_name == name {
                             // End of instance
                             instance.data = current_values.clone();
                             instances.push(instance.clone());
                             current_instance = None;
                             current_values.clear();
                         }
-                    }
                     current_element.clear();
                 }
                 Ok(Event::Eof) => break,
@@ -167,7 +166,7 @@ pub struct XmlDumper {
 
 impl XmlDumper {
     /// Create a new `XML` dumper
-    pub fn new(pretty: bool) -> Self {
+    #[must_use] pub fn new(pretty: bool) -> Self {
         Self {
             pretty,
             root_element: "data".to_string(),
@@ -176,13 +175,13 @@ impl XmlDumper {
     }
 
     /// Set the root element name
-    pub fn with_root_element(mut self, root: &str) -> Self {
+    #[must_use] pub fn with_root_element(mut self, root: &str) -> Self {
         self.root_element = root.to_string();
         self
     }
 
     /// Set the `XML` namespace
-    pub fn with_namespace(mut self, ns: &str) -> Self {
+    #[must_use] pub fn with_namespace(mut self, ns: &str) -> Self {
         self.namespace = Some(ns.to_string());
         self
     }
@@ -196,11 +195,11 @@ impl Default for XmlDumper {
 
 #[async_trait]
 impl DataDumper for XmlDumper {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "xml"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to XML format"
     }
 
@@ -216,7 +215,7 @@ impl DataDumper for XmlDumper {
         options: &DumpOptions,
     ) -> DumperResult<()> {
         let content = self.dump_string(instances, schema, options).await?;
-        std::fs::write(path, content).map_err(|e| DumperError::Io(e))?;
+        std::fs::write(path, content).map_err(DumperError::Io)?;
         Ok(())
     }
 
@@ -247,11 +246,10 @@ impl DataDumper for XmlDumper {
 
             // Add simple attributes
             for (key, value) in &instance.data {
-                if let Value::String(s) = value {
-                    if !s.contains('\n') && s.len() < 50 {
-                        xml.push_str(&format!(" {}=\"{}\"", key, escape_xml(s)));
+                if let Value::String(s) = value
+                    && !s.contains('\n') && s.len() < 50 {
+                        xml.push_str(&format!(" {}=\"{}\"", key, escape_xml(s));
                     }
-                }
             }
 
             xml.push_str(">\n");
@@ -269,13 +267,13 @@ impl DataDumper for XmlDumper {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        xml.push_str(&format!("<{}>{}</{}>\n", key, n, key));
+                        xml.push_str(&format!("<{key}>{n}</{key}>\n"));
                     }
                     Value::Bool(b) => {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        xml.push_str(&format!("<{}>{}</{}>\n", key, b, key));
+                        xml.push_str(&format!("<{key}>{b}</{key}>\n"));
                     }
                     Value::Array(arr) => {
                         for item in arr {

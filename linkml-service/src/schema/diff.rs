@@ -1,9 +1,8 @@
-//! Schema diff functionality for LinkML
+//! Schema diff functionality for `LinkML`
 //!
 //! This module provides tools to compare schemas and identify differences.
 
 use linkml_core::annotations::{Annotatable, standard_annotations};
-use linkml_core::error::Result;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -143,11 +142,15 @@ pub struct SchemaDiff {
 
 impl SchemaDiff {
     /// Create new schema diff engine
-    pub fn new(options: DiffOptions) -> Self {
+    #[must_use] pub fn new(options: DiffOptions) -> Self {
         Self { options }
     }
 
     /// Compare two schemas
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn diff(
         &self,
         schema1: &SchemaDefinition,
@@ -326,17 +329,16 @@ impl SchemaDiff {
 
         // Added slots
         for slot_name in slots2.difference(&slots1) {
-            if let Some(slot) = schema2.slots.get(slot_name) {
-                if should_compare_slot(slot) {
+            if let Some(slot) = schema2.slots.get(slot_name)
+                && should_compare_slot(slot) {
                     result.added_slots.push(slot_name.clone());
                 }
-            }
         }
 
         // Removed slots
         for slot_name in slots1.difference(&slots2) {
-            if let Some(slot) = schema1.slots.get(slot_name) {
-                if should_compare_slot(slot) {
+            if let Some(slot) = schema1.slots.get(slot_name)
+                && should_compare_slot(slot) {
                     result.removed_slots.push(slot_name.clone());
                     // Check if this is marked as a breaking change
                     if slot.has_annotation(standard_annotations::BREAKING_IF_CHANGED) {
@@ -345,7 +347,6 @@ impl SchemaDiff {
                             .push(format!("Breaking: Slot '{slot_name}' was removed"));
                     }
                 }
-            }
         }
 
         // Modified slots
@@ -581,13 +582,13 @@ impl SchemaDiff {
 
 impl DiffResult {
     /// Convert to unified diff format
-    pub fn to_unified_diff(&self) -> String {
+    #[must_use] pub fn to_unified_diff(&self) -> String {
         let mut output = String::new();
 
         // Header
         output.push_str("--- Schema 1\n");
         output.push_str("+++ Schema 2\n");
-        output.push_str("\n");
+        output.push('\n');
 
         // Classes
         if !self.added_classes.is_empty()
@@ -616,7 +617,7 @@ impl DiffResult {
                 }
             }
 
-            output.push_str("\n");
+            output.push('\n');
         }
 
         // Slots
@@ -645,14 +646,14 @@ impl DiffResult {
                 }
             }
 
-            output.push_str("\n");
+            output.push('\n');
         }
 
         output
     }
 
     /// Convert to side-by-side diff format
-    pub fn to_side_by_side(&self) -> String {
+    #[must_use] pub fn to_side_by_side(&self) -> String {
         let mut output = String::new();
 
         output.push_str(&format!("{:<40} | {:<40}\n", "Schema 1", "Schema 2"));
@@ -671,6 +672,10 @@ impl DiffResult {
     }
 
     /// Convert to `JSON` patch format
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn to_json_patch(&self) -> Result<String> {
         let mut patches = Vec::new();
 
@@ -695,7 +700,7 @@ impl DiffResult {
     }
 
     /// Convert to HTML diff
-    pub fn to_html(&self) -> String {
+    #[must_use] pub fn to_html(&self) -> String {
         let mut html = String::new();
 
         html.push_str("<!DOCTYPE html>\n<html>\n<head>\n");
@@ -750,7 +755,7 @@ impl DiffResult {
     }
 
     /// Convert to Markdown diff
-    pub fn to_markdown(&self) -> String {
+    #[must_use] pub fn to_markdown(&self) -> String {
         let mut md = String::new();
 
         md.push_str("# Schema Diff\n\n");
@@ -779,7 +784,7 @@ impl DiffResult {
             for change in &self.breaking_changes {
                 md.push_str(&format!("- {change}\n"));
             }
-            md.push_str("\n");
+            md.push('\n');
         }
 
         // Added classes
@@ -788,7 +793,7 @@ impl DiffResult {
             for class in &self.added_classes {
                 md.push_str(&format!("- ✅ `{class}`\n"));
             }
-            md.push_str("\n");
+            md.push('\n');
         }
 
         // Removed classes
@@ -797,7 +802,7 @@ impl DiffResult {
             for class in &self.removed_classes {
                 md.push_str(&format!("- ❌ `{class}`\n"));
             }
-            md.push_str("\n");
+            md.push('\n');
         }
 
         // Modified classes
@@ -811,7 +816,7 @@ impl DiffResult {
                     for slot in &class_diff.added_slots {
                         md.push_str(&format!("- ✅ `{slot}`\n"));
                     }
-                    md.push_str("\n");
+                    md.push('\n');
                 }
 
                 if !class_diff.removed_slots.is_empty() {
@@ -819,7 +824,7 @@ impl DiffResult {
                     for slot in &class_diff.removed_slots {
                         md.push_str(&format!("- ❌ `{slot}`\n"));
                     }
-                    md.push_str("\n");
+                    md.push('\n');
                 }
             }
         }
@@ -831,9 +836,10 @@ impl DiffResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_schema_diff_basic() {
+    fn test_schema_diff_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema1 = SchemaDefinition::default();
         schema1.name = "TestSchema".to_string();
 
@@ -859,12 +865,13 @@ mod tests {
         let differ = SchemaDiff::new(DiffOptions::default());
         let result = differ
             .diff(&schema1, &schema2)
-            .map_err(|e| anyhow::anyhow!("should diff schemas: {}", e))?;
+            .expect("should diff schemas: {}");
 
         assert_eq!(result.added_classes, vec!["Car"]);
         assert!(result.removed_classes.is_empty());
         assert_eq!(result.modified_classes.len(), 1);
         assert_eq!(result.modified_classes[0].name, "Person");
         assert_eq!(result.modified_classes[0].added_slots, vec!["email"]);
+        Ok(())
     }
 }

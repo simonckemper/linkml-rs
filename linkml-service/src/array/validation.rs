@@ -1,11 +1,11 @@
-//! Array validation for LinkML arrays
+//! Array validation for `LinkML` arrays
 //!
 //! This module provides comprehensive validation for array data
 //! including shape, type, uniqueness, and custom constraints.
 
 use super::{ArrayData, ArrayDimension};
-use linkml_core::types::{SlotDefinition, TypeDefinition};
 use serde_json::Value;
+use linkml_core::types::{SlotDefinition, TypeDefinition};
 use std::collections::HashSet;
 
 /// Type alias for custom validator functions
@@ -79,7 +79,7 @@ pub struct ArrayValidatorV2;
 
 impl ArrayValidatorV2 {
     /// Validate array data with full context
-    pub fn validate_with_context(
+    #[must_use] pub fn validate_with_context(
         data: &ArrayData,
         context: &ArrayValidationContext,
     ) -> ArrayValidationResult {
@@ -126,15 +126,14 @@ impl ArrayValidatorV2 {
                     Value::Number(n) => &n.to_string(),
                     _ => "",
                 };
-                if !min_str.is_empty() {
-                    if let Err(e) = Self::validate_minimum(value, min_str) {
+                if !min_str.is_empty()
+                    && let Err(e) = Self::validate_minimum(value, min_str) {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
                             error_type: ArrayValidationErrorType::RangeError,
                         });
                     }
-                }
             }
 
             if let Some(max_value) = context.slot.maximum_value.as_ref() {
@@ -143,29 +142,26 @@ impl ArrayValidatorV2 {
                     Value::Number(n) => &n.to_string(),
                     _ => "",
                 };
-                if !max_str.is_empty() {
-                    if let Err(e) = Self::validate_maximum(value, max_str) {
+                if !max_str.is_empty()
+                    && let Err(e) = Self::validate_maximum(value, max_str) {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
                             error_type: ArrayValidationErrorType::RangeError,
                         });
                     }
-                }
             }
 
             // Pattern validation
-            if let Some(pattern) = &context.slot.pattern {
-                if let Value::String(s) = value {
-                    if let Err(e) = Self::validate_pattern(s, pattern) {
+            if let Some(pattern) = &context.slot.pattern
+                && let Value::String(s) = value
+                    && let Err(e) = Self::validate_pattern(s, pattern) {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
                             error_type: ArrayValidationErrorType::PatternError,
                         });
                     }
-                }
-            }
 
             // Custom validators
             for validator in &context.custom_validators {
@@ -180,8 +176,8 @@ impl ArrayValidatorV2 {
         }
 
         // Uniqueness check
-        if context.check_unique {
-            if let Some(duplicate_indices) = Self::find_duplicates(data) {
+        if context.check_unique
+            && let Some(duplicate_indices) = Self::find_duplicates(data) {
                 for indices in duplicate_indices {
                     errors.push(ArrayValidationError {
                         location: Some(indices),
@@ -190,15 +186,13 @@ impl ArrayValidatorV2 {
                     });
                 }
             }
-        }
 
         // Dimension-specific validation
         for (i, dim) in data.spec.dimensions.iter().enumerate() {
-            if let Some(actual_size) = data.shape.get(i) {
-                if let Err(e) = dim.validate_size(*actual_size) {
+            if let Some(actual_size) = data.shape.get(i)
+                && let Err(e) = dim.validate_size(*actual_size) {
                     warnings.push(format!("Dimension {} ({}): {}", i, dim.name, e));
                 }
-            }
         }
 
         ArrayValidationResult {
@@ -228,11 +222,10 @@ impl ArrayValidatorV2 {
             "uri" | "uriorcurie" => value.is_string(),
             _ => {
                 // Check custom types
-                if let Some(type_def) = type_defs.get(expected_type) {
-                    if let Some(base_type) = &type_def.base_type {
+                if let Some(type_def) = type_defs.get(expected_type)
+                    && let Some(base_type) = &type_def.base_type {
                         return Self::validate_element_type(value, base_type, type_defs);
                     }
-                }
                 true // Unknown types pass by default
             }
         };
@@ -257,27 +250,25 @@ impl ArrayValidatorV2 {
 
     /// Validate minimum value
     fn validate_minimum(value: &Value, minimum: &str) -> Result<(), String> {
-        if let Value::Number(n) = value {
-            if let Ok(min_val) = minimum.parse::<f64>() {
+        if let Value::Number(n) = value
+            && let Ok(min_val) = minimum.parse::<f64>() {
                 let val = n.as_f64().unwrap_or(f64::NAN);
                 if !val.is_nan() && val < min_val {
-                    return Err(format!("Value {} is less than minimum {}", val, min_val));
+                    return Err(format!("Value {val} is less than minimum {min_val}"));
                 }
             }
-        }
         Ok(())
     }
 
     /// Validate maximum value
     fn validate_maximum(value: &Value, maximum: &str) -> Result<(), String> {
-        if let Value::Number(n) = value {
-            if let Ok(max_val) = maximum.parse::<f64>() {
+        if let Value::Number(n) = value
+            && let Ok(max_val) = maximum.parse::<f64>() {
                 let val = n.as_f64().unwrap_or(f64::NAN);
                 if !val.is_nan() && val > max_val {
-                    return Err(format!("Value {} exceeds maximum {}", val, max_val));
+                    return Err(format!("Value {val} exceeds maximum {max_val}"));
                 }
             }
-        }
         Ok(())
     }
 
@@ -289,8 +280,7 @@ impl ArrayValidatorV2 {
             let pattern_content = &pattern[1..pattern.len() - 1];
             if !value.contains(pattern_content) {
                 return Err(format!(
-                    "Value '{}' doesn't match pattern '{}'",
-                    value, pattern
+                    "Value '{value}' doesn't match pattern '{pattern}'"
                 ));
             }
         }
@@ -325,7 +315,7 @@ pub struct DimensionValidator;
 
 impl DimensionValidator {
     /// Validate array dimensions against constraints
-    pub fn validate_dimensions(dimensions: &[ArrayDimension], shape: &[usize]) -> Vec<String> {
+    #[must_use] pub fn validate_dimensions(dimensions: &[ArrayDimension], shape: &[usize]) -> Vec<String> {
         let mut errors = Vec::new();
 
         if dimensions.len() != shape.len() {
@@ -339,34 +329,31 @@ impl DimensionValidator {
 
         for (i, (dim, &size)) in dimensions.iter().zip(shape.iter()).enumerate() {
             // Check fixed size
-            if let Some(expected) = dim.size {
-                if size != expected {
+            if let Some(expected) = dim.size
+                && size != expected {
                     errors.push(format!(
                         "Dimension {} ({}): expected size {}, got {}",
                         i, dim.name, expected, size
                     ));
                 }
-            }
 
             // Check minimum
-            if let Some(min) = dim.min_size {
-                if size < min {
+            if let Some(min) = dim.min_size
+                && size < min {
                     errors.push(format!(
                         "Dimension {} ({}): size {} is less than minimum {}",
                         i, dim.name, size, min
                     ));
                 }
-            }
 
             // Check maximum
-            if let Some(max) = dim.max_size {
-                if size > max {
+            if let Some(max) = dim.max_size
+                && size > max {
                     errors.push(format!(
                         "Dimension {} ({}): size {} exceeds maximum {}",
                         i, dim.name, size, max
                     ));
                 }
-            }
         }
 
         errors
@@ -382,9 +369,15 @@ pub struct ArrayValidationContextBuilder<'a> {
     custom_validators: Vec<Box<dyn Fn(&Value) -> Result<(), String> + 'a>>,
 }
 
+impl Default for ArrayValidationContextBuilder<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> ArrayValidationContextBuilder<'a> {
     /// Create a new builder
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             slot: None,
             types: None,
@@ -395,25 +388,25 @@ impl<'a> ArrayValidationContextBuilder<'a> {
     }
 
     /// Set the slot definition
-    pub fn slot(mut self, slot: &'a SlotDefinition) -> Self {
+    #[must_use] pub fn slot(mut self, slot: &'a SlotDefinition) -> Self {
         self.slot = Some(slot);
         self
     }
 
     /// Set type definitions
-    pub fn types(mut self, types: &'a std::collections::HashMap<String, TypeDefinition>) -> Self {
+    #[must_use] pub fn types(mut self, types: &'a std::collections::HashMap<String, TypeDefinition>) -> Self {
         self.types = Some(types);
         self
     }
 
     /// Allow missing values
-    pub fn allow_missing(mut self, allow: bool) -> Self {
+    #[must_use] pub fn allow_missing(mut self, allow: bool) -> Self {
         self.allow_missing = allow;
         self
     }
 
     /// Enable uniqueness checking
-    pub fn check_unique(mut self, check: bool) -> Self {
+    #[must_use] pub fn check_unique(mut self, check: bool) -> Self {
         self.check_unique = check;
         self
     }
@@ -428,6 +421,10 @@ impl<'a> ArrayValidationContextBuilder<'a> {
     }
 
     /// Build the validation context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn build(self) -> Result<ArrayValidationContext<'a>, &'static str> {
         let slot = self.slot.ok_or("Slot definition is required")?;
         let types = self.types.ok_or("Type definitions are required")?;
@@ -477,7 +474,7 @@ mod tests {
 
         let data = vec![json!(1.0), json!(2.0), json!(3.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - basic validation: {}", e))?;
+            .expect("test data should create valid array - basic validation: {}");
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -486,7 +483,7 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - basic: {}", e))?;
+            .expect("validation context should build with valid inputs - basic: {}");
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(result.valid);
@@ -500,7 +497,7 @@ mod tests {
 
         let data = vec![json!(50.0), json!(150.0), json!(-10.0)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - range validation: {}", e))?;
+            .expect("test data should create valid array - range validation: {}");
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -509,7 +506,7 @@ mod tests {
             .slot(&slot)
             .types(&types)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - range: {}", e))?;
+            .expect("validation context should build with valid inputs - range: {}");
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
@@ -523,7 +520,7 @@ mod tests {
 
         let data = vec![json!(1), json!(2), json!(2), json!(3)];
         let array = ArrayData::new(spec, vec![4], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - uniqueness: {}", e))?;
+            .expect("test data should create valid array - uniqueness: {}");
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -533,7 +530,7 @@ mod tests {
             .types(&types)
             .check_unique(true)
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - unique: {}", e))?;
+            .expect("validation context should build with valid inputs - unique: {}");
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);
@@ -552,7 +549,7 @@ mod tests {
 
         let data = vec![json!(2), json!(4), json!(5)];
         let array = ArrayData::new(spec, vec![3], data)
-            .map_err(|e| anyhow::anyhow!("test data should create valid array - custom validator: {}", e))?;
+            .expect("test data should create valid array - custom validator: {}");
 
         let slot = create_test_slot();
         let types = create_test_types();
@@ -573,7 +570,7 @@ mod tests {
                 }
             })
             .build()
-            .map_err(|e| anyhow::anyhow!("validation context should build with valid inputs - custom: {}", e))?;
+            .expect("validation context should build with valid inputs - custom: {}");
 
         let result = ArrayValidatorV2::validate_with_context(&array, &context);
         assert!(!result.valid);

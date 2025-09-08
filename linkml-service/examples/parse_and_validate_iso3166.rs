@@ -59,7 +59,7 @@ impl CountryCodeValidator {
     }
     
     /// Parse the ISO3166Entity.yaml file
-    fn parse_instances(&mut self, file_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    fn parse_instances(&mut self, file_path: &PathBuf) -> std::result::Result<(), Box<dyn std::error::Error>> {
         println!("Parsing ISO3166Entity instances from: {}", file_path.display());
         
         // Read and parse the YAML file
@@ -155,7 +155,7 @@ impl CountryCodeValidator {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Parse and Validate ISO 3166 Country Codes ===\n");
     
     // Initialize the validator

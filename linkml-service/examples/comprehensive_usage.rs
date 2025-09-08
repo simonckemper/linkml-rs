@@ -20,7 +20,7 @@ use std::sync::Arc;
 use tokio;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("🚀 LinkML Service Comprehensive Usage Examples");
     println!("==============================================\n");
 
@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example 1: Basic Schema Parsing and Validation
-async fn basic_schema_example() -> Result<(), Box<dyn std::error::Error>> {
+async fn basic_schema_example() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("📋 Example 1: Basic Schema Parsing and Validation");
     println!("--------------------------------------------------");
 
@@ -150,7 +150,7 @@ types:
 }
 
 /// Example 2: Advanced Validation Features
-async fn advanced_validation_example() -> Result<(), Box<dyn std::error::Error>> {
+async fn advanced_validation_example() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("🔍 Example 2: Advanced Validation Features");
     println!("-------------------------------------------");
 
@@ -223,7 +223,7 @@ types:
     });
 
     // Create validation context with cross-references
-    let mut context = ValidationContext::new(Arc::new(engine.schema().as_ref().clone()));
+    let mut context = ValidationContext::new(Arc::new(engine.schema().as_ref().clone());
     context.set_all_instances(vec![author.clone(), publication.clone()]);
 
     let author_result = engine.validate_instance(&author, "Author").await?;
@@ -254,7 +254,7 @@ types:
 }
 
 /// Example 3: Code Generation
-async fn code_generation_example() -> Result<(), Box<dyn std::error::Error>> {
+async fn code_generation_example() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("🏗️  Example 3: Code Generation");
     println!("------------------------------");
 
@@ -337,7 +337,7 @@ types:
 }
 
 /// Example 4: Real-world Integration
-async fn real_world_integration_example() -> Result<(), Box<dyn std::error::Error>> {
+async fn performance_optimization_example() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("🌍 Example 4: Real-world Integration");
     println!("------------------------------------");
 
@@ -410,7 +410,7 @@ types:
 }
 
 /// Example 5: Performance Optimization
-async fn performance_optimization_example() -> Result<(), Box<dyn std::error::Error>> {
+async fn typedb_integration_example() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("⚡ Example 5: Performance Optimization");
     println!("--------------------------------------");
 

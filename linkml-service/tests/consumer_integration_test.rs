@@ -91,7 +91,7 @@ mod mock_consumers {
                     // Simulate CSV parsing with proper handling of quoted fields and JSON
                     let lines: Vec<&str> = data.lines().collect();
                     if lines.len() < 2 {
-                        return Err(LinkMLError::ServiceError("No data rows".to_string()));
+                        return Err(LinkMLError::ServiceError("No data rows".to_string());
                     }
 
                     let headers: Vec<&str> = lines[0].split(',').collect();
@@ -193,7 +193,7 @@ mod mock_consumers {
                 return Err(LinkMLError::ServiceError(format!(
                     "Class {} not found in schema",
                     class_name
-                )));
+                ));
             }
 
             // Create empty table
@@ -318,8 +318,6 @@ impl LinkMLServiceExt for MockLinkMLService {
 
 // Mock implementations for testing
 mod test_mocks {
-    use super::*;
-    use async_trait::async_trait;
 
     // Mock logger for testing
     pub struct MockLogger;
@@ -953,6 +951,9 @@ slots:
 
     // Generate GraphQL schema
     use linkml_service::generator::{Generator, GeneratorOptions, GraphQLGenerator};
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ValidationReport};
+use linkml_core::error::{LinkMLError, Result};
     let graphql_gen = GraphQLGenerator::new();
     let graphql = graphql_gen
         .generate(&schema, &GeneratorOptions::default())
@@ -1406,7 +1407,7 @@ slots:
     // TODO: Rule validation is not yet implemented in the validator
     // For now, we skip this assertion until rule validation is implemented
     // assert!(!report.valid);
-    // assert!(report.errors.iter().any(|e| e.message.contains("final_price")));
+    // assert!(report.errors.iter().any(|e| e.message.contains("final_price"));
 
     // Test batch validation
     let products = vec![

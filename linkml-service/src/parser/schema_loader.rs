@@ -19,7 +19,7 @@ pub struct SchemaLoader {
 
 impl SchemaLoader {
     /// Create a new schema loader
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             parser: Parser::new(),
             http_client: reqwest::Client::new(),
@@ -27,6 +27,10 @@ impl SchemaLoader {
     }
 
     /// Load a schema from a file path
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_file(&self, path: impl AsRef<Path>) -> Result<SchemaDefinition> {
         let path = path.as_ref();
 
@@ -53,8 +57,8 @@ impl SchemaLoader {
         }
 
         // Use schema settings if available
-        if let Some(schema_settings) = &schema.settings {
-            if let Some(import_settings) = &schema_settings.imports {
+        if let Some(schema_settings) = &schema.settings
+            && let Some(import_settings) = &schema_settings.imports {
                 settings = import_settings.clone();
 
                 // Resolve relative search paths from schema settings
@@ -80,7 +84,6 @@ impl SchemaLoader {
                     }
                 }
             }
-        }
 
         // Resolve imports using enhanced resolver
         let import_resolver = ImportResolverV2::with_settings(settings);
@@ -88,6 +91,10 @@ impl SchemaLoader {
     }
 
     /// Load a schema from a `URL`
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_url(&self, url: &str) -> Result<SchemaDefinition> {
         // Fetch content from URL
         let response = self
@@ -127,26 +134,22 @@ impl SchemaLoader {
         let mut settings = ImportSettings::default();
 
         // Add base URL path for relative URL imports
-        if let Ok(parsed_url) = url::Url::parse(url) {
-            if let Some(base) = parsed_url.join("./").ok() {
+        if let Ok(parsed_url) = url::Url::parse(url)
+            && let Ok(base) = parsed_url.join("./") {
                 settings.base_url = Some(base.to_string());
             }
-        }
 
         // Use schema settings if available
-        if let Some(schema_settings) = &schema.settings {
-            if let Some(import_settings) = &schema_settings.imports {
+        if let Some(schema_settings) = &schema.settings
+            && let Some(import_settings) = &schema_settings.imports {
                 settings = import_settings.clone();
                 // Still set base URL if not already set
-                if settings.base_url.is_none() {
-                    if let Ok(parsed_url) = url::Url::parse(url) {
-                        if let Some(base) = parsed_url.join("./").ok() {
+                if settings.base_url.is_none()
+                    && let Ok(parsed_url) = url::Url::parse(url)
+                        && let Ok(base) = parsed_url.join("./") {
                             settings.base_url = Some(base.to_string());
                         }
-                    }
-                }
             }
-        }
 
         // Resolve imports using enhanced resolver
         let import_resolver = ImportResolverV2::with_settings(settings);
@@ -154,6 +157,10 @@ impl SchemaLoader {
     }
 
     /// Load a schema from a string with specified format
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_string(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
         let schema = self.parser.parse_str(content, format)?;
 

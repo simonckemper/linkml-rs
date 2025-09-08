@@ -11,7 +11,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example 1: Using default file system adapter
     example_with_default_fs().await?;
 
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example using default file system adapter (unrestricted)
-async fn example_with_default_fs() -> Result<(), Box<dyn std::error::Error>> {
+async fn example_with_default_fs() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Example 1: Default File System Adapter ===");
 
     let cli_fs = default_cli_fs();
@@ -49,7 +49,7 @@ async fn example_with_default_fs() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example using sandboxed file system adapter
-async fn example_with_sandboxed_fs() -> Result<(), Box<dyn std::error::Error>> {
+async fn example_with_sandboxed_fs() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Example 2: Sandboxed File System Adapter ===");
 
     use tempfile::TempDir;
@@ -77,7 +77,7 @@ async fn example_with_sandboxed_fs() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Example showing how to migrate existing CLI code
-async fn example_migration() -> Result<(), Box<dyn std::error::Error>> {
+async fn example_migration() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== Example 3: Migrating CLI Code ===");
 
     // OLD CODE (direct file system):
@@ -121,7 +121,7 @@ async fn generate_command_example(
     schema_path: &Path,
     output_path: &Path,
     cli_fs: &CLIFileSystemOps<impl linkml_service::file_system_adapter::FileSystemOperations>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Load schema using the adapter
     let schema_content = cli_fs.read_input(schema_path).await?;
 

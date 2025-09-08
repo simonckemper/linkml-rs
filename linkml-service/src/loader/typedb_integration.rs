@@ -1,6 +1,6 @@
-//! TypeDB integration for LinkML using DBMS service
+//! `TypeDB` integration for `LinkML` using DBMS service
 //!
-//! This module provides a proper integration with TypeDB through the DBMS service,
+//! This module provides a proper integration with `TypeDB` through the DBMS service,
 //! avoiding circular dependencies while maintaining the single source of truth principle.
 
 use super::traits::{
@@ -13,22 +13,22 @@ use serde_json::{Map, Value};
 use std::collections::HashMap;
 use tracing::{debug, info};
 
-/// TypeDB integration options
+/// `TypeDB` integration options
 #[derive(Debug, Clone)]
 pub struct TypeDBIntegrationOptions {
-    /// Database name in TypeDB
+    /// Database name in `TypeDB`
     pub database_name: String,
 
-    /// TypeQL type to `LinkML` class mapping
+    /// `TypeQL` type to `LinkML` class mapping
     pub type_mapping: HashMap<String, String>,
 
-    /// TypeQL attribute to `LinkML` slot mapping (per type)
+    /// `TypeQL` attribute to `LinkML` slot mapping (per type)
     pub attribute_mapping: HashMap<String, HashMap<String, String>>,
 
     /// Batch size for operations
     pub batch_size: usize,
 
-    /// Whether to infer `LinkML` types from TypeDB schema
+    /// Whether to infer `LinkML` types from `TypeDB` schema
     pub infer_types: bool,
 
     /// Include inferred facts in results
@@ -53,27 +53,27 @@ impl Default for TypeDBIntegrationOptions {
     }
 }
 
-/// TypeDB query executor trait
+/// `TypeDB` query executor trait
 ///
-/// This trait abstracts the execution of TypeDB queries, allowing the loader
-/// to work with either the DBMS service or a direct TypeDB connection.
+/// This trait abstracts the execution of `TypeDB` queries, allowing the loader
+/// to work with either the DBMS service or a direct `TypeDB` connection.
 #[async_trait]
 pub trait TypeDBQueryExecutor: Send + Sync {
-    /// Execute a TypeQL query and return results as `JSON`
+    /// Execute a `TypeQL` query and return results as `JSON`
     async fn execute_query(
         &self,
         query: &str,
         database: &str,
     ) -> std::result::Result<String, Box<dyn std::error::Error>>;
 
-    /// Execute a TypeQL define query (schema modification)
+    /// Execute a `TypeQL` define query (schema modification)
     async fn execute_define(
         &self,
         query: &str,
         database: &str,
     ) -> std::result::Result<(), Box<dyn std::error::Error>>;
 
-    /// Execute a TypeQL insert query
+    /// Execute a `TypeQL` insert query
     async fn execute_insert(
         &self,
         query: &str,
@@ -81,19 +81,19 @@ pub trait TypeDBQueryExecutor: Send + Sync {
     ) -> std::result::Result<(), Box<dyn std::error::Error>>;
 }
 
-/// TypeDB loader using an abstract query executor
+/// `TypeDB` loader using an abstract query executor
 pub struct TypeDBIntegrationLoader<E: TypeDBQueryExecutor> {
     options: TypeDBIntegrationOptions,
     executor: E,
 }
 
 impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
-    /// Create a new TypeDB integration loader
+    /// Create a new `TypeDB` integration loader
     pub fn new(options: TypeDBIntegrationOptions, executor: E) -> Self {
         Self { options, executor }
     }
 
-    /// Get all entity types from TypeDB
+    /// Get all entity types from `TypeDB`
     async fn get_entity_types(&self) -> LoaderResult<Vec<TypeInfo>> {
         let query = "match $x sub entity; get $x;";
         let result = self
@@ -101,8 +101,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .execute_query(query, &self.options.database_name)
             .await
             .map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LoaderError::Io(std::io::Error::other(
                     format!("Failed to query entity types: {e}"),
                 ))
             })?;
@@ -110,7 +109,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         self.parse_type_results(&result, "entity")
     }
 
-    /// Get all relation types from TypeDB
+    /// Get all relation types from `TypeDB`
     async fn get_relation_types(&self) -> LoaderResult<Vec<TypeInfo>> {
         let query = "match $x sub relation; get $x;";
         let result = self
@@ -118,8 +117,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .execute_query(query, &self.options.database_name)
             .await
             .map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LoaderError::Io(std::io::Error::other(
                     format!("Failed to query relation types: {e}"),
                 ))
             })?;
@@ -140,21 +138,18 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
         if let Value::Array(answers) = parsed {
             for answer in answers {
-                if let Value::Object(obj) = answer {
-                    if let Some(Value::Object(x)) = obj.get("x") {
-                        if let Some(Value::String(label)) = x.get("label") {
-                            if label != root_type {
+                if let Value::Object(obj) = answer
+                    && let Some(Value::Object(x)) = obj.get("x")
+                        && let Some(Value::String(label)) = x.get("label")
+                            && label != root_type {
                                 types.push(TypeInfo {
                                     name: label.clone(),
                                     abstract_: x
                                         .get("abstract")
-                                        .and_then(|v| v.as_bool())
+                                        .and_then(linkml_core::Value::as_bool)
                                         .unwrap_or(false),
                                 });
                             }
-                        }
-                    }
-                }
             }
         }
 
@@ -164,8 +159,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Get attributes owned by a type
     async fn get_type_attributes(&self, type_name: &str) -> LoaderResult<Vec<AttributeInfo>> {
         let query = format!(
-            "match $type type {}; $type owns $attr; get $attr;",
-            type_name
+            "match $type type {type_name}; $type owns $attr; get $attr;"
         );
 
         let result = self
@@ -173,9 +167,8 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .execute_query(&query, &self.options.database_name)
             .await
             .map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to query attributes for {}: {}", type_name, e),
+                LoaderError::Io(std::io::Error::other(
+                    format!("Failed to query attributes for {type_name}: {e}"),
                 ))
             })?;
 
@@ -191,9 +184,9 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
         if let Value::Array(answers) = parsed {
             for answer in answers {
-                if let Value::Object(obj) = answer {
-                    if let Some(Value::Object(attr)) = obj.get("attr") {
-                        if let Some(Value::String(label)) = attr.get("label") {
+                if let Value::Object(obj) = answer
+                    && let Some(Value::Object(attr)) = obj.get("attr")
+                        && let Some(Value::String(label)) = attr.get("label") {
                             let value_type = attr
                                 .get("value_type")
                                 .and_then(|v| v.as_str())
@@ -205,8 +198,6 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                                 _value_type: value_type,
                             });
                         }
-                    }
-                }
             }
         }
 
@@ -216,8 +207,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Get roles for a relation type
     async fn get_relation_roles(&self, relation_name: &str) -> LoaderResult<Vec<RoleInfo>> {
         let query = format!(
-            "match $rel type {}; $rel relates $role; get $role;",
-            relation_name
+            "match $rel type {relation_name}; $rel relates $role; get $role;"
         );
 
         let result = self
@@ -225,9 +215,8 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .execute_query(&query, &self.options.database_name)
             .await
             .map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to query roles for {}: {}", relation_name, e),
+                LoaderError::Io(std::io::Error::other(
+                    format!("Failed to query roles for {relation_name}: {e}"),
                 ))
             })?;
 
@@ -243,15 +232,13 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
         if let Value::Array(answers) = parsed {
             for answer in answers {
-                if let Value::Object(obj) = answer {
-                    if let Some(Value::Object(role)) = obj.get("role") {
-                        if let Some(Value::String(label)) = role.get("label") {
+                if let Value::Object(obj) = answer
+                    && let Some(Value::Object(role)) = obj.get("role")
+                        && let Some(Value::String(label)) = role.get("label") {
                             roles.push(RoleInfo {
                                 _name: label.clone(),
                             });
                         }
-                    }
-                }
             }
         }
 
@@ -298,8 +285,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
             .execute_query(&query, &self.options.database_name)
             .await
             .map_err(|e| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LoaderError::Io(std::io::Error::other(
                     format!("Failed to query instances of {}: {}", type_info.name, e),
                 ))
             })?;
@@ -326,21 +312,19 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     let mut data = Map::new();
 
                     // Extract the instance ID
-                    if let Some(Value::Object(x)) = obj.get("x") {
-                        if let Some(Value::String(iid)) = x.get("iid") {
-                            data.insert("_typedb_iid".to_string(), Value::String(iid.clone()));
+                    if let Some(Value::Object(x)) = obj.get("x")
+                        && let Some(Value::String(iid)) = x.get("iid") {
+                            data.insert("_typedb_iid".to_string(), Value::String(iid.clone());
                         }
-                    }
 
                     // Extract attribute values
                     for attr in attributes {
                         let var_name = format!("attr_{}", attr.name);
-                        if let Some(Value::Object(attr_obj)) = obj.get(&var_name) {
-                            if let Some(value) = attr_obj.get("value") {
+                        if let Some(Value::Object(attr_obj)) = obj.get(&var_name)
+                            && let Some(value) = attr_obj.get("value") {
                                 let slot_name = self.get_slot_name(type_name, &attr.name);
                                 data.insert(slot_name, value.clone());
                             }
-                        }
                     }
 
                     instances.push(DataInstance {
@@ -356,24 +340,23 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         Ok(instances)
     }
 
-    /// Get the `LinkML` slot name for a TypeDB attribute
+    /// Get the `LinkML` slot name for a `TypeDB` attribute
     fn get_slot_name(&self, type_name: &str, attr_name: &str) -> String {
-        if let Some(type_mapping) = self.options.attribute_mapping.get(type_name) {
-            if let Some(slot_name) = type_mapping.get(attr_name) {
+        if let Some(type_mapping) = self.options.attribute_mapping.get(type_name)
+            && let Some(slot_name) = type_mapping.get(attr_name) {
                 return slot_name.clone();
             }
-        }
         to_snake_case(attr_name)
     }
 }
 
 #[async_trait]
 impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typedb-integration"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from TypeDB with full integration support"
     }
 
@@ -416,7 +399,7 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 
             debug!("Loading instances of entity type: {}", type_info.name);
             let attributes = self.get_type_attributes(&type_info.name).await?;
-            let instances = self.load_type_instances(&type_info, &attributes).await?;
+            let instances = self.load_type_instances(type_info, &attributes).await?;
             info!(
                 "Loaded {} instances of type {}",
                 instances.len(),
@@ -438,7 +421,7 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 
             // For now, just load the relation instances without role players
             // Full role player loading would require more complex queries
-            let instances = self.load_type_instances(&type_info, &attributes).await?;
+            let instances = self.load_type_instances(type_info, &attributes).await?;
             info!(
                 "Loaded {} instances of relation {}",
                 instances.len(),
@@ -466,19 +449,19 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
     }
 }
 
-/// TypeDB dumper using an abstract query executor
+/// `TypeDB` dumper using an abstract query executor
 pub struct TypeDBIntegrationDumper<E: TypeDBQueryExecutor> {
     options: TypeDBIntegrationOptions,
     executor: E,
 }
 
 impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
-    /// Create a new TypeDB integration dumper
+    /// Create a new `TypeDB` integration dumper
     pub fn new(options: TypeDBIntegrationOptions, executor: E) -> Self {
         Self { options, executor }
     }
 
-    /// Create TypeDB schema for a `LinkML` class
+    /// Create `TypeDB` schema for a `LinkML` class
     async fn create_schema_if_needed(
         &self,
         class_name: &str,
@@ -489,9 +472,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .options
             .type_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         // Determine if this is a relation or entity
         let is_relation = self.is_relation_class(class_def, schema);
@@ -503,14 +484,12 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
             // Add roles based on object-valued slots
             for slot_name in &class_def.slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot_def.range {
-                        if schema.classes.contains_key(range) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot_def.range
+                        && schema.classes.contains_key(range) {
                             let role_name = to_snake_case(slot_name);
                             define_query.push_str(&format!(", relates {role_name}"));
                         }
-                    }
-                }
             }
         } else {
             define_query.push_str(&format!("define {type_name} sub entity"));
@@ -518,23 +497,20 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
         // Add attributes
         for slot_name in &class_def.slots {
-            if let Some(slot_def) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot_def.range {
-                    if !schema.classes.contains_key(range) {
+            if let Some(slot_def) = schema.slots.get(slot_name)
+                && let Some(range) = &slot_def.range
+                    && !schema.classes.contains_key(range) {
                         let attr_name = to_snake_case(slot_name);
                         let value_type = linkml_range_to_typedb_value_type(range);
 
                         // Define attribute type if needed
                         define_query.push_str(&format!(
-                            "; {} sub attribute, value {}",
-                            attr_name, value_type
+                            "; {attr_name} sub attribute, value {value_type}"
                         ));
 
                         // Type owns attribute
-                        define_query.push_str(&format!("; {} owns {}", type_name, attr_name));
+                        define_query.push_str(&format!("; {type_name} owns {attr_name}"));
                     }
-                }
-            }
         }
 
         define_query.push(';');
@@ -543,8 +519,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .execute_define(&define_query, &self.options.database_name)
             .await
             .map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                DumperError::Io(std::io::Error::other(
                     format!("Failed to define schema: {e}"),
                 ))
             })?;
@@ -559,12 +534,11 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                 .slots
                 .get(slot_name)
                 .and_then(|slot| slot.range.as_ref())
-                .map(|range| schema.classes.contains_key(range))
-                .unwrap_or(false)
+                .is_some_and(|range| schema.classes.contains_key(range))
         })
     }
 
-    /// Insert instances into TypeDB
+    /// Insert instances into `TypeDB`
     async fn insert_instances(
         &self,
         class_name: &str,
@@ -575,9 +549,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             .options
             .type_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         let class_def = schema.classes.get(class_name).ok_or_else(|| {
             DumperError::SchemaValidation(format!("Class {class_name} not found in schema"))
@@ -605,8 +577,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                     .execute_insert(&query, &self.options.database_name)
                     .await
                     .map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to insert instance: {e}"),
                         ))
                     })?;
@@ -631,17 +602,15 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             }
 
             // Skip object-valued slots
-            if let Some(slot_def) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot_def.range {
-                    if schema.classes.contains_key(range) {
+            if let Some(slot_def) = schema.slots.get(slot_name)
+                && let Some(range) = &slot_def.range
+                    && schema.classes.contains_key(range) {
                         continue;
                     }
-                }
-            }
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            query.push_str(&format!(", has {} {}", attr_name, typeql_value));
+            query.push_str(&format!(", has {attr_name} {typeql_value}"));
         }
 
         query.push(';');
@@ -660,23 +629,19 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
         // Match role players
         for (slot_name, value) in &instance.data {
-            if let Some(slot_def) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot_def.range {
-                    if schema.classes.contains_key(range) {
+            if let Some(slot_def) = schema.slots.get(slot_name)
+                && let Some(range) = &slot_def.range
+                    && schema.classes.contains_key(range) {
                         // This is a role player
-                        if let Value::Object(obj) = value {
-                            if let Some(Value::String(id)) = obj.get("id") {
+                        if let Value::Object(obj) = value
+                            && let Some(Value::String(id)) = obj.get("id") {
                                 let role_type = to_snake_case(range);
                                 match_part.push_str(&format!(
-                                    "${} isa {}, has id \"{}\"; ",
-                                    slot_name, role_type, id
+                                    "${slot_name} isa {role_type}, has id \"{id}\"; "
                                 ));
-                                role_players.push((to_snake_case(slot_name), slot_name.clone()));
+                                role_players.push((to_snake_case(slot_name), slot_name.clone());
                             }
-                        }
                     }
-                }
-            }
         }
 
         // Build insert part
@@ -684,7 +649,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             "insert $rel ({}) isa {}",
             role_players
                 .iter()
-                .map(|(role, var)| format!("{}: ${}", role, var))
+                .map(|(role, var)| format!("{role}: ${var}"))
                 .collect::<Vec<_>>()
                 .join(", "),
             type_name
@@ -697,30 +662,28 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
             }
 
             // Skip object-valued slots
-            if let Some(slot_def) = schema.slots.get(slot_name) {
-                if let Some(range) = &slot_def.range {
-                    if schema.classes.contains_key(range) {
+            if let Some(slot_def) = schema.slots.get(slot_name)
+                && let Some(range) = &slot_def.range
+                    && schema.classes.contains_key(range) {
                         continue;
                     }
-                }
-            }
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            insert_part.push_str(&format!(", has {} {}", attr_name, typeql_value));
+            insert_part.push_str(&format!(", has {attr_name} {typeql_value}"));
         }
 
-        Ok(format!("{} {}", match_part, insert_part))
+        Ok(format!("{match_part} {insert_part}"))
     }
 }
 
 #[async_trait]
 impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typedb-integration"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to TypeDB with full integration support"
     }
 
@@ -872,8 +835,7 @@ fn json_value_to_typeql(value: &Value) -> DumperResult<String> {
             "Cannot insert null values into TypeDB".to_string(),
         )),
         _ => Err(DumperError::TypeConversion(format!(
-            "Unsupported value type: {:?}",
-            value
+            "Unsupported value type: {value:?}"
         ))),
     }
 }

@@ -13,8 +13,9 @@ use tokio::time::timeout;
 
 // Import mock services
 mod mock_services;
-use crate::factory::create_logger_service;
+// use logger_service::factory::create_testing_logger;
 use mock_services::*;
+
 
 /// Helper to measure memory usage
 fn get_memory_usage() -> usize {
@@ -28,7 +29,7 @@ fn get_memory_usage() -> usize {
 #[tokio::test]
 async fn test_schema_compilation_performance() {
     // Create mock services
-    let logger = Arc::new(create_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
@@ -348,11 +349,13 @@ enums:
 #[tokio::test]
 async fn test_validation_throughput() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -363,6 +366,8 @@ async fn test_validation_throughput() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
     )
@@ -452,11 +457,13 @@ slots:
 #[tokio::test]
 async fn test_parallel_validation_scaling() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -468,6 +475,8 @@ async fn test_parallel_validation_scaling() {
             task_manager,
             error_handler,
             config_service,
+            dbms_service,
+            timeout_service,
             cache,
             monitor,
         )
@@ -558,11 +567,13 @@ slots:
 #[tokio::test]
 async fn test_memory_efficiency() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -573,6 +584,8 @@ async fn test_memory_efficiency() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
     )
@@ -648,11 +661,13 @@ slots:
 #[tokio::test]
 async fn test_cache_effectiveness() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -663,6 +678,8 @@ async fn test_cache_effectiveness() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
     )
@@ -747,11 +764,13 @@ slots:
 #[tokio::test]
 async fn test_timeout_handling() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -762,6 +781,8 @@ async fn test_timeout_handling() {
         task_manager,
         error_handler,
         config_service,
+        dbms_service,
+        timeout_service,
         cache,
         monitor,
     )
@@ -823,11 +844,13 @@ slots:
 #[tokio::test]
 async fn test_concurrent_schema_loading() {
     // Create mock services
-    let logger = Arc::new(Mockcreate_logger_service());
+    let logger = Arc::new(MockLoggerService::new());
     let timestamp = Arc::new(MockTimestampService);
     let task_manager = Arc::new(MockTaskManagementService);
     let error_handler = Arc::new(MockErrorHandlerService);
     let config_service = Arc::new(MockConfigurationService::new());
+    let dbms_service = Arc::new(MockDBMSService);
+    let timeout_service = Arc::new(MockTimeoutService);
     let cache = Arc::new(MockCacheService::new());
     let monitor = Arc::new(MockMonitoringService::new());
 
@@ -839,6 +862,8 @@ async fn test_concurrent_schema_loading() {
             task_manager,
             error_handler,
             config_service,
+            dbms_service,
+            timeout_service,
             cache,
             monitor,
         )

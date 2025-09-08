@@ -1,6 +1,6 @@
-//! Summary generator for LinkML schemas
+//! Summary generator for `LinkML` schemas
 //!
-//! This module generates summary statistics and reports from LinkML schemas,
+//! This module generates summary statistics and reports from `LinkML` schemas,
 //! providing insights into schema structure, complexity, and usage patterns.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
@@ -114,7 +114,7 @@ struct SchemaStats {
 
 impl SummaryGenerator {
     /// Create a new summary generator
-    pub fn new(config: SummaryGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: SummaryGeneratorConfig) -> Self {
         Self { config }
     }
 
@@ -325,11 +325,10 @@ impl SummaryGenerator {
 
         visited.insert(class_name.to_string());
 
-        if let Some(class_def) = classes.get(class_name) {
-            if let Some(parent) = &class_def.is_a {
+        if let Some(class_def) = classes.get(class_name)
+            && let Some(parent) = &class_def.is_a {
                 return 1 + self.calculate_inheritance_depth(parent, classes, visited);
             }
-        }
 
         0
     }
@@ -367,7 +366,7 @@ impl SummaryGenerator {
         }
 
         if stats.slot_count > 0 {
-            stats.cohesion_score = shared_slots as f64 / stats.slot_count as f64;
+            stats.cohesion_score = f64::from(shared_slots) / stats.slot_count as f64;
         }
     }
 
@@ -467,7 +466,7 @@ impl SummaryGenerator {
             slot_usage.sort_by(|a, b| b.1.cmp(a.1));
 
             for (slot, count) in slot_usage {
-                output.push_str(&format!("{}\t{}\n", slot, count));
+                output.push_str(&format!("{slot}\t{count}\n"));
             }
         }
 
@@ -587,7 +586,7 @@ impl SummaryGenerator {
             output.push_str("|------|-------------|\n");
 
             for (slot, count) in slot_usage.iter().take(10) {
-                output.push_str(&format!("| {} | {} |\n", slot, count));
+                output.push_str(&format!("| {slot} | {count} |\n"));
             }
         }
 
@@ -821,11 +820,11 @@ impl SummaryGenerator {
 }
 
 impl Generator for SummaryGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "summary"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate summary reports from LinkML schemas"
     }
 
@@ -852,7 +851,7 @@ impl Generator for SummaryGenerator {
         }
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema_summary"
     }
 }
@@ -861,9 +860,10 @@ impl Generator for SummaryGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_summary_generation() {
+    fn test_summary_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchema".to_string();
         schema.description = Some("A test schema".to_string());
@@ -901,10 +901,11 @@ mod tests {
         let generator = SummaryGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate summary: {}", e))?;
+            .expect("should generate summary: {}");
 
         assert!(result.contains("Total Classes\t2"));
         assert!(result.contains("Total Slots\t2"));
         assert!(result.contains("Abstract Classes\t1"));
+        Ok(())
     }
 }

@@ -3,7 +3,7 @@
 //! This module provides a centralized registry for all loaded plugins
 //! with support for lookup, lifecycle management, and dependency resolution.
 
-use super::*;
+use super::{PluginType, Plugin, PluginMetadata, Result, LinkMLError, PluginSDK, PluginContext, Version, PluginStatus, VersionReq};
 use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::{HashMap, HashSet};
@@ -33,9 +33,15 @@ pub struct PluginRegistration {
     pub metadata: PluginMetadata,
 }
 
+impl Default for PluginRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PluginRegistry {
     /// Create a new plugin registry
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             plugins: Arc::new(RwLock::new(HashMap::new())),
             by_type: Arc::new(RwLock::new(HashMap::new())),
@@ -45,6 +51,10 @@ impl PluginRegistry {
     }
 
     /// Register a plugin
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn register(&self, plugin: Box<dyn Plugin>) -> Result<()> {
         let info = plugin.info();
         let id = info.id.clone();
@@ -57,9 +67,8 @@ impl PluginRegistry {
             })?;
             if plugins.contains_key(&id) {
                 return Err(LinkMLError::ServiceError(format!(
-                    "Plugin error: Plugin '{}' is already registered",
-                    id
-                )));
+                    "Plugin error: Plugin '{id}' is already registered"
+                ));
             }
         }
 
@@ -83,7 +92,7 @@ impl PluginRegistry {
                     return Err(LinkMLError::ServiceError(format!(
                         "Plugin error: Required dependency '{}' not found for plugin '{}'",
                         dep.id, id
-                    )));
+                    ));
                 }
             }
 
@@ -121,6 +130,10 @@ impl PluginRegistry {
     }
 
     /// Unregister a plugin
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn unregister(&self, id: &str) -> Result<()> {
         // Remove from main registry
         let registration = {
@@ -168,13 +181,13 @@ impl PluginRegistry {
     }
 
     /// Get a plugin by ID
-    pub fn get(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
+    #[must_use] pub fn get(&self, id: &str) -> Option<Arc<Mutex<Box<dyn Plugin>>>> {
         let plugins = self.plugins.read().ok()?;
         plugins.get(id).map(|reg| Arc::clone(&reg.plugin))
     }
 
     /// Get all plugins of a specific type
-    pub fn get_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
+    #[must_use] pub fn get_by_type(&self, plugin_type: PluginType) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         let Ok(by_type) = self.by_type.read() else {
             return Vec::new();
         };
@@ -193,7 +206,7 @@ impl PluginRegistry {
     }
 
     /// Get all registered plugins
-    pub fn get_all(&self) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
+    #[must_use] pub fn get_all(&self) -> Vec<Arc<Mutex<Box<dyn Plugin>>>> {
         let Ok(plugins) = self.plugins.read() else {
             return Vec::new();
         };
@@ -204,7 +217,7 @@ impl PluginRegistry {
     }
 
     /// Get plugin registration info
-    pub fn get_registration(&self, id: &str) -> Option<PluginRegistrationInfo> {
+    #[must_use] pub fn get_registration(&self, id: &str) -> Option<PluginRegistrationInfo> {
         let plugins = self.plugins.read().ok()?;
         plugins.get(id).and_then(|reg| {
             let plugin = reg.plugin.lock().ok()?;
@@ -220,6 +233,10 @@ impl PluginRegistry {
     }
 
     /// Initialize all plugins in dependency order
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn initialize_all(&self, context: PluginContext) -> Result<()> {
         // Get initialization order
         let init_order = self.get_initialization_order()?;
@@ -268,6 +285,10 @@ impl PluginRegistry {
     }
 
     /// Shutdown all plugins in reverse dependency order
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn shutdown_all(&self) -> Result<()> {
         // Get initialization order and reverse it
         let mut shutdown_order = self.get_initialization_order()?;
@@ -349,6 +370,10 @@ impl PluginRegistry {
     }
 
     /// Check if all plugin dependencies are satisfied
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn check_dependencies(&self) -> Result<Vec<DependencyError>> {
         let mut errors = Vec::new();
         let plugins = self
@@ -372,8 +397,8 @@ impl PluginRegistry {
                         found_version: None,
                         reason: "Dependency not found".to_string(),
                     });
-                } else if let Some(dep_reg) = plugins.get(&dep.id) {
-                    if let Ok(dep_plugin) = dep_reg.plugin.lock() {
+                } else if let Some(dep_reg) = plugins.get(&dep.id)
+                    && let Ok(dep_plugin) = dep_reg.plugin.lock() {
                         let dep_version = &dep_plugin.info().version;
                         if !dep.version.matches(dep_version) {
                             errors.push(DependencyError {
@@ -385,7 +410,6 @@ impl PluginRegistry {
                             });
                         }
                     }
-                }
             }
         }
 
@@ -427,7 +451,6 @@ pub struct DependencyError {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     // Mock plugin for testing
     struct MockPlugin {
@@ -568,5 +591,4 @@ mod tests {
         Ok(())
     }
 }
-
 

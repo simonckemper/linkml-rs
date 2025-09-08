@@ -198,8 +198,8 @@ impl StringInterner {
             total_bytes,
             average_length: if total_strings > 0 {
                 // Precision loss acceptable here
-                let avg = total_bytes as f64 / total_strings as f64;
-                avg
+                
+                total_bytes as f64 / total_strings as f64
             } else {
                 0.0
             },
@@ -276,6 +276,7 @@ pub fn global_interner() -> &'static StringInterner {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::string_pool::intern;
 
     #[test]
     fn test_string_interning() {
@@ -291,8 +292,8 @@ mod tests {
         assert_ne!(s1, s3);
 
         // Can retrieve strings
-        assert_eq!(interner.get(s1), Some("hello".to_string()));
-        assert_eq!(interner.get(s3), Some("world".to_string()));
+        assert_eq!(interner.get(s1), Some("hello".to_string());
+        assert_eq!(interner.get(s3), Some("world".to_string());
     }
 
     #[test]
@@ -301,8 +302,8 @@ mod tests {
         let common = interner.common();
 
         // Common strings are pre-interned
-        assert_eq!(interner.get(common.field_name), Some("name".to_string()));
-        assert_eq!(interner.get(common.type_string), Some("string".to_string()));
+        assert_eq!(interner.get(common.field_name), Some("name".to_string());
+        assert_eq!(interner.get(common.type_string), Some("string".to_string());
         assert_eq!(
             interner.get(common.error_required),
             Some("required_field_missing".to_string())
@@ -338,6 +339,6 @@ mod tests {
 
         // Common strings still work
         let common = interner.common();
-        assert_eq!(interner.get(common.field_name), Some("name".to_string()));
+        assert_eq!(interner.get(common.field_name), Some("name".to_string());
     }
 }

@@ -64,7 +64,7 @@ impl Clone for ValidationOptions {
 
 impl ValidationOptions {
     /// Create validation options from schema settings
-    pub fn from_settings(settings: &SchemaSettings) -> Self {
+    #[must_use] pub fn from_settings(settings: &SchemaSettings) -> Self {
         let mut options = Self::default();
 
         if let Some(validation) = &settings.validation {
@@ -79,7 +79,7 @@ impl ValidationOptions {
     }
 
     /// Merge with schema settings, with options taking precedence
-    pub fn merge_with_settings(mut self, settings: &SchemaSettings) -> Self {
+    #[must_use] pub fn merge_with_settings(mut self, settings: &SchemaSettings) -> Self {
         if let Some(validation) = &settings.validation {
             // Only apply settings if not already set in options (None means not set)
             if self.fail_fast.is_none() {
@@ -102,23 +102,23 @@ impl ValidationOptions {
         self
     }
 
-    /// Get the effective fail_fast setting
-    pub fn fail_fast(&self) -> bool {
+    /// Get the effective `fail_fast` setting
+    #[must_use] pub fn fail_fast(&self) -> bool {
         self.fail_fast.unwrap_or(false)
     }
 
-    /// Get the effective check_permissibles setting
-    pub fn check_permissibles(&self) -> bool {
+    /// Get the effective `check_permissibles` setting
+    #[must_use] pub fn check_permissibles(&self) -> bool {
         self.check_permissibles.unwrap_or(true)
     }
 
-    /// Get the effective use_cache setting
-    pub fn use_cache(&self) -> bool {
+    /// Get the effective `use_cache` setting
+    #[must_use] pub fn use_cache(&self) -> bool {
         self.use_cache.unwrap_or(true)
     }
 
     /// Get the effective parallel setting
-    pub fn parallel(&self) -> bool {
+    #[must_use] pub fn parallel(&self) -> bool {
         self.parallel.unwrap_or(false)
     }
 }
@@ -411,8 +411,8 @@ impl ValidationEngine {
         // INTEGRATION 8: Unique key validation for collections
         // (This would be called at the collection level, not per-instance)
         // Try to use compiled validator if cache is enabled
-        if options.use_cache() {
-            if let Some(cache) = self.compiled_cache.as_ref() {
+        if options.use_cache()
+            && let Some(cache) = self.compiled_cache.as_ref() {
                 let compilation_options = CompilationOptions::default();
                 let cache_key =
                     ValidatorCacheKey::new(&self.schema, class_name, &compilation_options);
@@ -463,7 +463,6 @@ impl ValidationEngine {
                 context.pop_class();
                 return Ok(());
             }
-        }
         // Push class to context
         context.push_class(class_name);
 
@@ -548,10 +547,11 @@ impl ValidationEngine {
             .and_then(|v| v.allow_additional_properties)
             .unwrap_or(true); // Default to allowing additional properties
 
-        if !allow_additional {
+        if allow_additional {
+            // Still warn about unknown slots even if allowed
             for (key, _) in obj {
                 if !valid_slot_names.iter().any(|name| name == key) {
-                    report.add_issue(ValidationIssue::error(
+                    report.add_issue(ValidationIssue::warning(
                         format!("Unknown slot '{key}' in class '{class_name}'"),
                         format!("{}.{key}", context.path()),
                         "schema_validator",
@@ -559,10 +559,9 @@ impl ValidationEngine {
                 }
             }
         } else {
-            // Still warn about unknown slots even if allowed
             for (key, _) in obj {
                 if !valid_slot_names.iter().any(|name| name == key) {
-                    report.add_issue(ValidationIssue::warning(
+                    report.add_issue(ValidationIssue::error(
                         format!("Unknown slot '{key}' in class '{class_name}'"),
                         format!("{}.{key}", context.path()),
                         "schema_validator",
@@ -585,8 +584,8 @@ impl ValidationEngine {
         }
 
         // Run conditional requirement validation
-        if let Some(conditional_validator) = self.registry.conditional_requirement_validator() {
-            if let Some(class_def) = self.schema.classes.get(class_name) {
+        if let Some(conditional_validator) = self.registry.conditional_requirement_validator()
+            && let Some(class_def) = self.schema.classes.get(class_name) {
                 let conditional_issues =
                     conditional_validator.validate_class(&data, class_def, context);
                 for issue in conditional_issues {
@@ -598,7 +597,6 @@ impl ValidationEngine {
                 }
                 report.stats.validators_executed += 1;
             }
-        }
 
         context.pop_class();
         Ok(())
@@ -655,13 +653,11 @@ impl ValidationEngine {
     /// Try to infer the target class from the data
     fn infer_target_class(&self, data: &Value) -> Result<String> {
         // Simple heuristic: look for a @type field
-        if let Some(obj) = data.as_object() {
-            if let Some(type_value) = obj.get("@type") {
-                if let Some(type_str) = type_value.as_str() {
+        if let Some(obj) = data.as_object()
+            && let Some(type_value) = obj.get("@type")
+                && let Some(type_str) = type_value.as_str() {
                     return Ok(type_str.to_string());
                 }
-            }
-        }
 
         // If we can't infer, look for tree_root classes
         let tree_roots: Vec<_> = self
@@ -720,7 +716,7 @@ impl ValidationEngine {
             );
 
             // Add collection context
-            context.push_path(&format!("[{index}]"));
+            context.push_path(format!("[{index}]"));
 
             // Validate the instance
             let class_def = self.schema.classes.get(class_name).ok_or_else(|| {
@@ -737,8 +733,8 @@ impl ValidationEngine {
             .await?;
 
             // Run unique key validation after each instance
-            if let Some(unique_validator) = self.registry.unique_key_validator() {
-                if let Some(class_def) = self.schema.classes.get(class_name) {
+            if let Some(unique_validator) = self.registry.unique_key_validator()
+                && let Some(class_def) = self.schema.classes.get(class_name) {
                     let unique_issues = unique_validator.validate_instance(
                         instance,
                         class_def,
@@ -753,7 +749,6 @@ impl ValidationEngine {
                         }
                     }
                 }
-            }
 
             context.pop_path();
 

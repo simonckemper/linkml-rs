@@ -1,17 +1,17 @@
-//! Boolean constraint validators for LinkML
+//! Boolean constraint validators for `LinkML`
 //!
-//! This module implements validators for any_of, all_of, exactly_one_of, and none_of constraints.
+//! This module implements validators for `any_of`, `all_of`, `exactly_one_of`, and `none_of` constraints.
 //!
 //! ## Performance Features
 //!
-//! - Parallel evaluation for all_of constraints using Rayon
-//! - Short-circuit optimization for any_of and none_of
+//! - Parallel evaluation for `all_of` constraints using Rayon
+//! - Short-circuit optimization for `any_of` and `none_of`
 //! - Efficient expression evaluation caching
 //! - Optimized constraint checking order
 
-use linkml_core::types::{AnonymousSlotExpression, SlotDefinition};
 use rayon::prelude::*;
 use serde_json::{Value, json};
+use linkml_core::types::{AnonymousSlotExpression, SlotDefinition};
 use std::sync::Arc;
 
 use crate::validator::{
@@ -21,12 +21,18 @@ use crate::validator::{
 
 use super::{PatternValidator, RangeValidator, RequiredValidator, TypeValidator, Validator};
 
-/// Validator for any_of constraints - at least one must be satisfied
+/// Validator for `any_of` constraints - at least one must be satisfied
 pub struct AnyOfValidator;
 
+impl Default for AnyOfValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AnyOfValidator {
-    /// Create a new any_of validator
-    pub fn new() -> Self {
+    /// Create a new `any_of` validator
+    #[must_use] pub fn new() -> Self {
         Self
     }
 
@@ -96,7 +102,7 @@ impl Validator for AnyOfValidator {
 
             // Check if at least one constraint is satisfied
             for (i, constraint) in constraints.iter().enumerate() {
-                context.push_path(&format!("any_of[{i}]"));
+                context.push_path(format!("any_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -136,12 +142,12 @@ impl Validator for AnyOfValidator {
         issues
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "AnyOfValidator"
     }
 }
 
-/// Validator for all_of constraints - all must be satisfied
+/// Validator for `all_of` constraints - all must be satisfied
 ///
 /// ## Performance Optimizations
 ///
@@ -153,16 +159,22 @@ pub struct AllOfValidator {
     parallel_threshold: usize,
 }
 
+impl Default for AllOfValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AllOfValidator {
-    /// Create a new all_of validator
-    pub fn new() -> Self {
+    /// Create a new `all_of` validator
+    #[must_use] pub fn new() -> Self {
         Self {
             parallel_threshold: 3,
         }
     }
 
-    /// Create a new all_of validator with custom parallel threshold
-    pub fn with_parallel_threshold(threshold: usize) -> Self {
+    /// Create a new `all_of` validator with custom parallel threshold
+    #[must_use] pub fn with_parallel_threshold(threshold: usize) -> Self {
         Self {
             parallel_threshold: threshold,
         }
@@ -272,7 +284,7 @@ impl Validator for AllOfValidator {
                     .par_iter()
                     .enumerate()
                     .map(|(i, constraint)| {
-                        let path = format!("{}/all_of[{}]", base_path, i);
+                        let path = format!("{base_path}/all_of[{i}]");
                         let issues = self.validate_expression_parallel(
                             Arc::clone(&value_arc),
                             constraint,
@@ -303,8 +315,7 @@ impl Validator for AllOfValidator {
                         0,
                         ValidationIssue::error(
                             format!(
-                                "Value failed {} of {} constraints in all_of",
-                                failed_count, constraint_count
+                                "Value failed {failed_count} of {constraint_count} constraints in all_of"
                             ),
                             context.path(),
                             self.name(),
@@ -321,7 +332,7 @@ impl Validator for AllOfValidator {
 
                 // Check that all constraints are satisfied
                 for (i, constraint) in constraints.iter().enumerate() {
-                    context.push_path(&format!("all_of[{i}]"));
+                    context.push_path(format!("all_of[{i}]"));
                     let sub_issues = self.validate_expression(value, constraint, context);
 
                     if !sub_issues.is_empty() {
@@ -343,8 +354,7 @@ impl Validator for AllOfValidator {
                         0,
                         ValidationIssue::error(
                             format!(
-                                "Value failed {} of {} constraints in all_of",
-                                failed_count, constraint_count
+                                "Value failed {failed_count} of {constraint_count} constraints in all_of"
                             ),
                             context.path(),
                             self.name(),
@@ -361,17 +371,23 @@ impl Validator for AllOfValidator {
         issues
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "AllOfValidator"
     }
 }
 
-/// Validator for exactly_one_of constraints - exactly one must be satisfied
+/// Validator for `exactly_one_of` constraints - exactly one must be satisfied
 pub struct ExactlyOneOfValidator;
 
+impl Default for ExactlyOneOfValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExactlyOneOfValidator {
-    /// Create a new exactly_one_of validator
-    pub fn new() -> Self {
+    /// Create a new `exactly_one_of` validator
+    #[must_use] pub fn new() -> Self {
         Self
     }
 
@@ -441,7 +457,7 @@ impl Validator for ExactlyOneOfValidator {
 
             // Count how many constraints are satisfied
             for (i, constraint) in constraints.iter().enumerate() {
-                context.push_path(&format!("exactly_one_of[{i}]"));
+                context.push_path(format!("exactly_one_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -470,8 +486,7 @@ impl Validator for ExactlyOneOfValidator {
                 issues.push(
                     ValidationIssue::error(
                         format!(
-                            "Value satisfies {} constraints but exactly one is required",
-                            satisfied_count
+                            "Value satisfies {satisfied_count} constraints but exactly one is required"
                         ),
                         context.path(),
                         self.name(),
@@ -487,12 +502,12 @@ impl Validator for ExactlyOneOfValidator {
         issues
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "ExactlyOneOfValidator"
     }
 }
 
-/// Validator for none_of constraints - none can be satisfied
+/// Validator for `none_of` constraints - none can be satisfied
 ///
 /// ## Performance Optimizations
 ///
@@ -501,14 +516,20 @@ impl Validator for ExactlyOneOfValidator {
 /// - Minimal validation overhead for common cases
 pub struct NoneOfValidator;
 
+impl Default for NoneOfValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NoneOfValidator {
-    /// Create a new none_of validator
-    pub fn new() -> Self {
+    /// Create a new `none_of` validator
+    #[must_use] pub fn new() -> Self {
         Self
     }
 
     /// Check if expression is satisfied without full validation
-    /// Returns true if the expression is satisfied (which means none_of should fail)
+    /// Returns true if the expression is satisfied (which means `none_of` should fail)
     fn is_expression_satisfied(&self, value: &Value, expr: &AnonymousSlotExpression) -> bool {
         // Quick type check if range is specified
         if let Some(range) = &expr.range {
@@ -668,7 +689,7 @@ impl Validator for NoneOfValidator {
                     continue;
                 }
 
-                context.push_path(&format!("none_of[{i}]"));
+                context.push_path(format!("none_of[{i}]"));
                 let sub_issues = self.validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
@@ -713,7 +734,7 @@ impl Validator for NoneOfValidator {
         issues
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "NoneOfValidator"
     }
 }
@@ -723,7 +744,6 @@ mod tests {
     use super::*;
     use crate::validator::report::Severity;
     use linkml_core::types::AnonymousSlotExpression;
-    use std::sync::Arc;
 
     #[test]
     fn test_any_of_validator_success() {

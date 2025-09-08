@@ -148,7 +148,6 @@ pub struct VersionedSchema {
 
 impl VersionedSchema {
     /// Create a new versioned schema
-    #[must_use] pub fn new(schema: SchemaDefinition, version: SchemaVersion) -> Self {
         let mut version = version;
         version.checksum = SchemaVersion::calculate_checksum(&schema);
         Self { schema, version }
@@ -161,7 +160,6 @@ impl VersionedSchema {
     }
 
     /// Extract version from schema metadata if available
-    #[must_use] pub fn extract_version(schema: &SchemaDefinition) -> Option<String> {
         // Look for version in schema metadata
         // This could be in annotations or a special field
         schema.version.clone()
@@ -173,8 +171,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_version_parsing() {
-        let v = SchemaVersion::parse("1.2.3").map_err(|e| anyhow::anyhow!("should parse valid version: {}", e))?;
+    fn test_version_parsing() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let v = SchemaVersion::parse("1.2.3").expect("should parse valid version: {}");
         assert_eq!(v.major, 1);
         assert_eq!(v.minor, 2);
         assert_eq!(v.patch, 3);
@@ -182,6 +180,7 @@ mod tests {
         assert!(SchemaVersion::parse("1.2").is_err());
         assert!(SchemaVersion::parse("1.2.3.4").is_err());
         assert!(SchemaVersion::parse("a.b.c").is_err());
+        Ok(())
     }
 
     #[test]

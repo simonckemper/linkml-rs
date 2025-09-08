@@ -4,6 +4,7 @@
 //! LinkML schema element. They're used for metadata, tooling hints, and
 //! custom extensions.
 
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -193,6 +194,7 @@ pub fn merge_annotations(
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Result;
 
     #[test]
     fn test_annotation_value_conversions() {
@@ -214,7 +216,7 @@ mod tests {
     }
 
     #[test]
-    fn test_json_round_trip() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_json_round_trip() -> crate::Result<()> {
         let mut annotations = Annotations::new();
         annotations.insert("author".to_string(), "John Doe".into());
         annotations.insert("version".to_string(), 2.into());
@@ -228,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_annotations() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_merge_annotations() -> crate::Result<()> {
         let mut base = Annotations::new();
         base.insert("key1".to_string(), "value1".into());
         base.insert("key2".to_string(), "value2".into());
@@ -238,18 +240,18 @@ mod tests {
         override_ann.insert("key3".to_string(), "value3".into());
 
         let merged = merge_annotations(Some(&base), Some(&override_ann))
-            .ok_or("Failed to merge annotations")?;
+            .ok_or_else(|| crate::error::LinkMLError::other("Failed to merge annotations"))?;
 
         assert_eq!(
-            merged.get("key1").ok_or("key1 not found")?,
+            merged.get("key1").ok_or_else(|| crate::error::LinkMLError::other("key1 not found"))?,
             &AnnotationValue::String("value1".to_string())
         );
         assert_eq!(
-            merged.get("key2").ok_or("key2 not found")?,
+            merged.get("key2").ok_or_else(|| crate::error::LinkMLError::other("key2 not found"))?,
             &AnnotationValue::String("new_value2".to_string())
         );
         assert_eq!(
-            merged.get("key3").ok_or("key3 not found")?,
+            merged.get("key3").ok_or_else(|| crate::error::LinkMLError::other("key3 not found"))?,
             &AnnotationValue::String("value3".to_string())
         );
         Ok(())

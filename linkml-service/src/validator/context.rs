@@ -153,7 +153,7 @@ impl ValidationContext {
     }
 
     /// Get the current recursion depth
-    pub fn current_depth(&self) -> usize {
+    #[must_use] pub fn current_depth(&self) -> usize {
         self.class_stack.len()
     }
 
@@ -230,11 +230,10 @@ impl ValidationContext {
     /// Check if a value is in the permissible values from instance data
     #[must_use]
     pub fn check_instance_permissible(&self, key: &str, value: &str) -> bool {
-        if let Some(instance_data) = &self.instance_data {
-            if let Some(values) = instance_data.get(key) {
+        if let Some(instance_data) = &self.instance_data
+            && let Some(values) = instance_data.get(key) {
                 return values.contains(&value.to_string());
             }
-        }
         true // If no instance data, allow all values
     }
 
@@ -342,11 +341,10 @@ impl ValidationContext {
     #[must_use]
     pub fn has_sibling_field(&self, field_name: &str) -> bool {
         // Check if we have parent value and can find the sibling field
-        if let Some(parent) = &self.parent_value {
-            if let Some(obj) = parent.as_object() {
+        if let Some(parent) = &self.parent_value
+            && let Some(obj) = parent.as_object() {
                 return obj.contains_key(field_name);
             }
-        }
         false
     }
 
@@ -354,11 +352,10 @@ impl ValidationContext {
     #[must_use]
     pub fn get_sibling_field(&self, field_name: &str) -> Option<&serde_json::Value> {
         // Get sibling field from parent object
-        if let Some(parent) = &self.parent_value {
-            if let Some(obj) = parent.as_object() {
+        if let Some(parent) = &self.parent_value
+            && let Some(obj) = parent.as_object() {
                 return obj.get(field_name);
             }
-        }
         None
     }
 

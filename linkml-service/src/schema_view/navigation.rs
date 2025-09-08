@@ -1,4 +1,4 @@
-//! Schema navigation utilities for traversing LinkML schemas
+//! Schema navigation utilities for traversing `LinkML` schemas
 
 use linkml_core::{
     error::Result,
@@ -14,16 +14,22 @@ pub struct NavigationCache {
     /// Cached induced classes
     induced_classes: HashMap<String, ClassDefinition>,
 
-    /// Cached induced slots (key: "class_name.slot_name")
+    /// Cached induced slots (key: "`class_name.slot_name`")
     induced_slots: HashMap<String, SlotDefinition>,
 
     /// Cached inheritance chains for performance
     inheritance_chains: HashMap<String, InheritanceChain>,
 }
 
+impl Default for NavigationCache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NavigationCache {
     /// Create a new navigation cache
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             induced_classes: HashMap::new(),
             induced_slots: HashMap::new(),
@@ -32,7 +38,7 @@ impl NavigationCache {
     }
 
     /// Get a cached induced class
-    pub fn get_induced_class(&self, name: &str) -> Option<ClassDefinition> {
+    #[must_use] pub fn get_induced_class(&self, name: &str) -> Option<ClassDefinition> {
         self.induced_classes.get(name).cloned()
     }
 
@@ -42,8 +48,8 @@ impl NavigationCache {
     }
 
     /// Get a cached induced slot for a class
-    pub fn get_induced_slot(&self, class_name: &str, slot_name: &str) -> Option<SlotDefinition> {
-        let key = format!("{}.{}", class_name, slot_name);
+    #[must_use] pub fn get_induced_slot(&self, class_name: &str, slot_name: &str) -> Option<SlotDefinition> {
+        let key = format!("{class_name}.{slot_name}");
         self.induced_slots.get(&key).cloned()
     }
 
@@ -54,12 +60,12 @@ impl NavigationCache {
         slot_name: String,
         slot: SlotDefinition,
     ) {
-        let key = format!("{}.{}", class_name, slot_name);
+        let key = format!("{class_name}.{slot_name}");
         self.induced_slots.insert(key, slot);
     }
 
     /// Get a cached inheritance chain
-    pub fn get_inheritance_chain(&self, class_name: &str) -> Option<&InheritanceChain> {
+    #[must_use] pub fn get_inheritance_chain(&self, class_name: &str) -> Option<&InheritanceChain> {
         self.inheritance_chains.get(class_name)
     }
 
@@ -89,7 +95,7 @@ pub struct InheritanceChain {
 
 impl InheritanceChain {
     /// Create a new inheritance chain
-    pub fn new(start_class: String) -> Self {
+    #[must_use] pub fn new(start_class: String) -> Self {
         Self {
             start_class,
             chain: Vec::new(),
@@ -98,22 +104,22 @@ impl InheritanceChain {
     }
 
     /// Get the direct parent of a class
-    pub fn direct_parent(&self) -> Option<&String> {
+    #[must_use] pub fn direct_parent(&self) -> Option<&String> {
         self.chain.first()
     }
 
     /// Get the root ancestor
-    pub fn root_ancestor(&self) -> Option<&String> {
+    #[must_use] pub fn root_ancestor(&self) -> Option<&String> {
         self.chain.last()
     }
 
     /// Check if a class is in the inheritance chain
-    pub fn contains(&self, class_name: &str) -> bool {
+    #[must_use] pub fn contains(&self, class_name: &str) -> bool {
         self.start_class == class_name || self.chain.contains(&class_name.to_string())
     }
 
     /// Get the depth of inheritance
-    pub fn depth(&self) -> usize {
+    #[must_use] pub fn depth(&self) -> usize {
         self.chain.len()
     }
 }
@@ -125,11 +131,15 @@ pub struct SlotResolution<'a> {
 
 impl<'a> SlotResolution<'a> {
     /// Create a new slot resolution helper
-    pub fn new(schema_view: &'a SchemaView) -> Self {
+    #[must_use] pub fn new(schema_view: &'a SchemaView) -> Self {
         Self { schema_view }
     }
 
     /// Resolve a slot in the context of a specific class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn resolve_slot(&self, slot_name: &str, class_name: &str) -> Result<SlotDefinition> {
         // Get the base slot definition
         let base_slot = self
@@ -149,11 +159,10 @@ impl<'a> SlotResolution<'a> {
             // Apply inherited slot_usage from ancestors
             let ancestors = self.schema_view.class_ancestors(class_name)?;
             for ancestor_name in ancestors {
-                if let Some(ancestor) = self.schema_view.get_class(&ancestor_name)? {
-                    if let Some(usage) = ancestor.slot_usage.get(slot_name) {
+                if let Some(ancestor) = self.schema_view.get_class(&ancestor_name)?
+                    && let Some(usage) = ancestor.slot_usage.get(slot_name) {
                         self.apply_slot_usage(&mut resolved, usage);
                     }
-                }
             }
         }
 
@@ -161,6 +170,10 @@ impl<'a> SlotResolution<'a> {
     }
 
     /// Find all classes that use a specific slot
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn find_slot_users(&self, slot_name: &str) -> Result<Vec<String>> {
         let mut users = Vec::new();
 
@@ -175,18 +188,30 @@ impl<'a> SlotResolution<'a> {
     }
 
     /// Get the effective range of a slot in a class context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_effective_range(&self, slot_name: &str, class_name: &str) -> Result<Option<String>> {
         let slot = self.resolve_slot(slot_name, class_name)?;
         Ok(slot.range)
     }
 
     /// Check if a slot is required in a class context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn is_required(&self, slot_name: &str, class_name: &str) -> Result<bool> {
         let slot = self.resolve_slot(slot_name, class_name)?;
         Ok(slot.required.unwrap_or(false))
     }
 
     /// Check if a slot is multivalued in a class context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn is_multivalued(&self, slot_name: &str, class_name: &str) -> Result<bool> {
         let slot = self.resolve_slot(slot_name, class_name)?;
         Ok(slot.multivalued.unwrap_or(false))
@@ -226,11 +251,15 @@ pub struct ClassNavigator<'a> {
 
 impl<'a> ClassNavigator<'a> {
     /// Create a new class navigator
-    pub fn new(schema_view: &'a SchemaView) -> Self {
+    #[must_use] pub fn new(schema_view: &'a SchemaView) -> Self {
         Self { schema_view }
     }
 
     /// Get the full inheritance chain for a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_inheritance_chain(&self, class_name: &str) -> Result<InheritanceChain> {
         let mut chain = InheritanceChain::new(class_name.to_string());
 
@@ -253,6 +282,10 @@ impl<'a> ClassNavigator<'a> {
     }
 
     /// Find common ancestors of two classes
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn find_common_ancestors(&self, class1: &str, class2: &str) -> Result<Vec<String>> {
         let ancestors1 = self.schema_view.class_ancestors(class1)?;
         let ancestors2 = self.schema_view.class_ancestors(class2)?;
@@ -268,12 +301,20 @@ impl<'a> ClassNavigator<'a> {
     }
 
     /// Check if one class is an ancestor of another
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn is_ancestor(&self, potential_ancestor: &str, class: &str) -> Result<bool> {
         let ancestors = self.schema_view.class_ancestors(class)?;
         Ok(ancestors.contains(&potential_ancestor.to_string()))
     }
 
     /// Get all leaf classes (classes with no subclasses)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_leaf_classes(&self) -> Result<Vec<String>> {
         let all_classes = self.schema_view.all_classes()?;
         let mut leaf_classes = Vec::new();
@@ -289,6 +330,10 @@ impl<'a> ClassNavigator<'a> {
     }
 
     /// Get all root classes (classes with no superclass)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_root_classes(&self) -> Result<Vec<String>> {
         let all_classes = self.schema_view.all_classes()?;
         let mut root_classes = Vec::new();

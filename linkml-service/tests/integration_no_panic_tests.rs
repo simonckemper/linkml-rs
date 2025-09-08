@@ -215,9 +215,9 @@ slots:
 
     // Step 4: Generate code
     let mut registry = GeneratorRegistry::new();
-    registry.register("typeql", Box::new(TypeQLGenerator::new()));
-    registry.register("python", Box::new(PythonDataclassGenerator::new()));
-    registry.register("sql", Box::new(SQLGenerator::new()));
+    registry.register("typeql", Box::new(TypeQLGenerator::new());
+    registry.register("python", Box::new(PythonDataclassGenerator::new());
+    registry.register("sql", Box::new(SQLGenerator::new());
 
     let gen_options = GeneratorOptions::default();
 
@@ -349,7 +349,7 @@ fn test_expression_evaluation_no_panic() {
     ];
 
     for (expr_str, context) in test_cases {
-        match parser.parse_str(expr_str) {
+        match parser.parse(expr_str) {
             Ok(expr) => match evaluator.evaluate(&expr, &context) {
                 Ok(result) => {
                     println!("Expression '{}' = {:?}", expr_str, result);
@@ -418,7 +418,7 @@ types:
     let parser = YamlParser::new();
 
     for (i, schema_str) in test_schemas.iter().enumerate() {
-        match parser.parse_str(schema_str) {
+        match parser.parse(schema_str) {
             Ok(schema) => {
                 // Even if parsing succeeds, validation should catch issues
                 let validator = ValidationEngine::new(&schema).expect("create validator");
@@ -457,7 +457,7 @@ slots:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml).expect("parse schema");
+    let schema = parser.parse(schema_yaml).expect("parse schema");
 
     let mut tasks = JoinSet::new();
 

@@ -1,9 +1,9 @@
 //! Tests for the Python dataclass generator
 
-use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, PermissibleValue, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, GeneratorOptions, PythonDataclassGenerator};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 async fn generate_python(schema: SchemaDefinition) -> String {
     let generator = PythonDataclassGenerator::new();
     let options = GeneratorOptions::new()

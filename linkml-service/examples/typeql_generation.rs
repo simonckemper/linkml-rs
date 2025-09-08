@@ -11,7 +11,7 @@ use linkml_service::generator::{
 use linkml_service::prelude::*;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML TypeQL Generation Example");
     println!("================================\n");
 

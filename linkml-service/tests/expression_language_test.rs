@@ -445,25 +445,25 @@ fn test_parser_edge_cases() {
     let parser = Parser::new();
 
     // Empty expression
-    assert!(parser.parse_str("").is_err());
+    assert!(parser.parse("").is_err());
 
     // Just whitespace
-    assert!(parser.parse_str("   ").is_err());
+    assert!(parser.parse("   ").is_err());
 
     // Unclosed string
-    assert!(parser.parse_str("\"unclosed").is_err());
+    assert!(parser.parse("\"unclosed").is_err());
 
     // Unclosed variable
-    assert!(parser.parse_str("{unclosed").is_err());
+    assert!(parser.parse("{unclosed").is_err());
 
     // Invalid variable name
-    assert!(parser.parse_str("{123invalid}").is_err());
+    assert!(parser.parse("{123invalid}").is_err());
 
     // Missing function arguments
-    assert!(parser.parse_str("max()").is_ok()); // Empty args is valid syntax
+    assert!(parser.parse("max()").is_ok()); // Empty args is valid syntax
 
     // Trailing comma in function
-    assert!(parser.parse_str("max(1, 2,)").is_err());
+    assert!(parser.parse("max(1, 2,)").is_err());
 }
 
 #[test]
@@ -494,7 +494,7 @@ fn test_expression_security_limits() {
 
     // Large string allocation should fail with tiny memory limit
     let mut large_context = HashMap::new();
-    large_context.insert("s".to_string(), json!("x".repeat(1000)));
+    large_context.insert("s".to_string(), json!("x".repeat(1000));
     let _result = engine.evaluate("{s} + {s}", &large_context);
     // Should fail due to memory limit
 }

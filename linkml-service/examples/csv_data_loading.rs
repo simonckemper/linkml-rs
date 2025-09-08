@@ -11,7 +11,7 @@ use linkml_service::loader::{CsvDumper, CsvLoader, CsvOptions, DumpOptions, Load
 use std::collections::HashMap;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== CSV Data Loading and Dumping Example ===\n");
 
     // Create a research dataset schema

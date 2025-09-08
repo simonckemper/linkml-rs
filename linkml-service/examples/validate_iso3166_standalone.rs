@@ -11,7 +11,7 @@ use std::fs;
 use std::path::PathBuf;
 use regex::Regex;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== LinkML Instance-Based Validation (Standalone) ===\n");
     
     // Paths

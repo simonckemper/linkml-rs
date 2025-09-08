@@ -1,11 +1,11 @@
-//! Enhanced TypeQL generation implementation for TypeDB schemas
+//! Enhanced `TypeQL` generation implementation for `TypeDB` schemas
 //!
-//! This module provides comprehensive LinkML to TypeQL translation with:
+//! This module provides comprehensive `LinkML` to `TypeQL` translation with:
 //! - Advanced entity/relation detection
 //! - Full constraint support
 //! - Complex inheritance handling
 //! - Migration script generation
-//! - TypeDB 3.0 feature support
+//! - `TypeDB` 3.0 feature support
 
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
@@ -22,18 +22,18 @@ use std::fmt::Write;
 use std::sync::RwLock;
 use thiserror::Error;
 
-/// Errors specific to TypeQL generation
+/// Errors specific to `TypeQL` generation
 #[derive(Debug, Error)]
 pub enum TypeQLError {
-    /// Schema structure is invalid for TypeQL generation
+    /// Schema structure is invalid for `TypeQL` generation
     #[error("Invalid schema structure: {0}")]
     InvalidSchema(String),
 
-    /// `LinkML` feature not supported in TypeQL
+    /// `LinkML` feature not supported in `TypeQL`
     #[error("Unsupported LinkML feature: {0}")]
     UnsupportedFeature(String),
 
-    /// Error translating `LinkML` constraint to TypeQL
+    /// Error translating `LinkML` constraint to `TypeQL`
     #[error("Constraint translation error: {0}")]
     ConstraintError(String),
 
@@ -42,7 +42,7 @@ pub enum TypeQLError {
     InheritanceCycle(String),
 }
 
-/// Enhanced TypeQL schema generator for TypeDB 3.0+
+/// Enhanced `TypeQL` schema generator for `TypeDB` 3.0+
 pub struct EnhancedTypeQLGenerator {
     /// Generator name
     name: String,
@@ -58,13 +58,13 @@ pub struct EnhancedTypeQLGenerator {
     identifier_map: RwLock<HashMap<String, String>>,
 }
 
-/// Analyzes schema structure for optimal TypeQL generation
+/// Analyzes schema structure for optimal `TypeQL` generation
 struct SchemaAnalyzer {
     /// Cache for entity/relation detection results
     type_cache: HashMap<String, TypeQLType>,
 }
 
-/// Type of TypeQL schema element
+/// Type of `TypeQL` schema element
 #[derive(Debug, Clone, PartialEq)]
 
 enum TypeQLType {
@@ -76,12 +76,12 @@ enum TypeQLType {
 
 
 impl EnhancedTypeQLGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
-    /// Check if a string is a valid TypeQL identifier
+    /// Check if a string is a valid `TypeQL` identifier
     fn is_valid_identifier(&self, name: &str) -> bool {
         // TypeQL identifiers must:
         // - Start with a letter or underscore
@@ -116,7 +116,7 @@ impl EnhancedTypeQLGenerator {
         !reserved_keywords.contains(&name.to_lowercase().as_str())
     }
 
-    /// Create a new enhanced TypeQL generator
+    /// Create a new enhanced `TypeQL` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -129,7 +129,7 @@ impl EnhancedTypeQLGenerator {
         }
     }
 
-    /// Analyze schema and determine optimal TypeQL structure
+    /// Analyze schema and determine optimal `TypeQL` structure
     fn analyze_schema(&self, schema: &SchemaDefinition) -> GeneratorResult<()> {
         // First pass: identify all types using advanced relation analysis
         for (class_name, class_def) in &schema.classes {
@@ -137,12 +137,12 @@ impl EnhancedTypeQLGenerator {
             if let Some(_relation_info) = self
                 .relation_analyzer
                 .write()
-                .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
+                .expect("relation analyzer lock should not be poisoned: {}")
                 .analyze_relation(class_name, class_def, schema)
             {
                 self.analyzer
                     .write()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                    .expect("analyzer lock should not be poisoned: {}")
                     .type_cache
                     .insert(class_name.clone(), TypeQLType::Relation);
 
@@ -150,18 +150,18 @@ impl EnhancedTypeQLGenerator {
                 if let Some(_parent) = &class_def.is_a {
                     self.role_inheritance_resolver
                         .write()
-                        .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned: {}", e))?
+                        .expect("role inheritance resolver lock should not be poisoned: {}")
                         .analyze_relation_inheritance(class_name, class_def, schema);
                 }
             } else {
                 let typeql_type = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                    .expect("analyzer lock should not be poisoned: {}")
                     .determine_type(class_def, schema)?;
                 self.analyzer
                     .write()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                    .expect("analyzer lock should not be poisoned: {}")
                     .type_cache
                     .insert(class_name.clone(), typeql_type);
             }
@@ -170,13 +170,13 @@ impl EnhancedTypeQLGenerator {
         // Second pass: validate and optimize structure
         self.analyzer
             .read()
-            .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+            .expect("analyzer lock should not be poisoned: {}")
             .validate_structure(schema)?;
 
         Ok(())
     }
 
-    /// Generate complete TypeQL schema
+    /// Generate complete `TypeQL` schema
     fn generate_typeql_schema(
         &self,
         schema: &SchemaDefinition,
@@ -196,11 +196,10 @@ impl EnhancedTypeQLGenerator {
 
         // 1. Generate abstract types first
         for type_name in &ordered_types {
-            if let Some(class) = schema.classes.get(type_name) {
-                if class.abstract_.unwrap_or(false) || class.mixin.unwrap_or(false) {
+            if let Some(class) = schema.classes.get(type_name)
+                && (class.abstract_.unwrap_or(false) || class.mixin.unwrap_or(false)) {
                     self.generate_abstract_type(&mut output, type_name, class, schema, indent)?;
                 }
-            }
         }
 
         // 2. Generate attributes
@@ -208,38 +207,34 @@ impl EnhancedTypeQLGenerator {
 
         // 3. Generate concrete entities
         for type_name in &ordered_types {
-            if let Some(class) = schema.classes.get(type_name) {
-                if let Some(TypeQLType::Entity) = self
+            if let Some(class) = schema.classes.get(type_name)
+                && let Some(TypeQLType::Entity) = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                    .expect("analyzer lock should not be poisoned: {}")
                     .type_cache
                     .get(type_name)
-                {
-                    if !class.abstract_.unwrap_or(false) {
+                    && !class.abstract_.unwrap_or(false) {
                         self.generate_entity(&mut output, type_name, class, schema, indent)?;
                     }
-                }
-            }
         }
 
         // 4. Generate relations
         for type_name in &ordered_types {
-            if let Some(class) = schema.classes.get(type_name) {
-                if let Some(TypeQLType::Relation) = self
+            if let Some(class) = schema.classes.get(type_name)
+                && let Some(TypeQLType::Relation) = self
                     .analyzer
                     .read()
-                    .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                    .expect("analyzer lock should not be poisoned: {}")
                     .type_cache
                     .get(type_name)
                 {
                     self.generate_relation(&mut output, type_name, class, schema, indent)?;
                 }
-            }
         }
 
         // 5. Generate constraints and rules
-        if options.get_custom("generate_constraints").map(|s| s.as_str()) != Some("false") {
+        if options.get_custom("generate_constraints").map(std::string::String::as_str) != Some("false") {
             writeln!(&mut output, "\n# Constraints and Validation Rules\n")
                 .map_err(Self::fmt_error_to_generator_error)?;
             self.generate_constraints(&mut output, schema, indent)?;
@@ -263,12 +258,12 @@ impl EnhancedTypeQLGenerator {
         }
 
         if let Some(version) = &schema.version {
-            writeln!(output, "# Version: {}", version)
+            writeln!(output, "# Version: {version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(desc) = &schema.description {
-            writeln!(output, "# Description: {}", desc)
+            writeln!(output, "# Description: {desc}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -309,9 +304,8 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<()> {
         if visiting.contains(type_name) {
             return Err(GeneratorError::SchemaValidation(format!(
-                "Inheritance cycle detected: {}",
-                type_name
-            )));
+                "Inheritance cycle detected: {type_name}"
+            ));
         }
 
         if visited.contains(type_name) {
@@ -352,7 +346,7 @@ impl EnhancedTypeQLGenerator {
 
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Abstract: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "# Abstract: {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine base type
@@ -362,12 +356,14 @@ impl EnhancedTypeQLGenerator {
             "entity"
         };
 
-        write!(output, "{} sub {}, abstract", type_name, base_type)
+        write!(output, "{type_name} sub {base_type}, abstract")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add attributes owned by abstract type
         let attributes = self.collect_direct_attributes(class, schema);
-        if !attributes.is_empty() {
+        if attributes.is_empty() {
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
             writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             for (i, (attr_name, constraints)) in attributes.iter().enumerate() {
                 write!(output, "{}owns {}", indent.single(), attr_name)
@@ -382,8 +378,6 @@ impl EnhancedTypeQLGenerator {
                     writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-        } else {
-            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -403,18 +397,18 @@ impl EnhancedTypeQLGenerator {
 
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Entity: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "# Entity: {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Build inheritance chain
         let inheritance = self.build_inheritance_chain(class, schema)?;
 
-        write!(output, "{} sub", type_name).map_err(Self::fmt_error_to_generator_error)?;
-        if !inheritance.is_empty() {
+        write!(output, "{type_name} sub").map_err(Self::fmt_error_to_generator_error)?;
+        if inheritance.is_empty() {
+            write!(output, " entity").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
             write!(output, " {}", inheritance.join(", sub "))
                 .map_err(Self::fmt_error_to_generator_error)?;
-        } else {
-            write!(output, " entity").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Collect all attributes (including constraints)
@@ -475,7 +469,7 @@ impl EnhancedTypeQLGenerator {
         let relation_info = self
             .relation_analyzer
             .write()
-            .map_err(|e| anyhow::anyhow!("relation analyzer lock should not be poisoned: {}", e))?
+            .expect("relation analyzer lock should not be poisoned: {}")
             .analyze_relation(name, class, schema)
             .ok_or_else(|| {
                 GeneratorError::SchemaValidation(format!("{name} is not a valid relation"))
@@ -483,7 +477,7 @@ impl EnhancedTypeQLGenerator {
 
         // Add documentation
         if let Some(desc) = &class.description {
-            writeln!(output, "# Relation: {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "# Relation: {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Add multi-way relation comment if applicable
@@ -499,12 +493,12 @@ impl EnhancedTypeQLGenerator {
         // Build inheritance chain
         let inheritance = self.build_inheritance_chain(class, schema)?;
 
-        write!(output, "{} sub", type_name).map_err(Self::fmt_error_to_generator_error)?;
-        if !inheritance.is_empty() {
+        write!(output, "{type_name} sub").map_err(Self::fmt_error_to_generator_error)?;
+        if inheritance.is_empty() {
+            write!(output, " relation").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
             write!(output, " {}", inheritance.join(", sub "))
                 .map_err(Self::fmt_error_to_generator_error)?;
-        } else {
-            write!(output, " relation").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Handle abstract relations
@@ -523,7 +517,7 @@ impl EnhancedTypeQLGenerator {
             if let Some(hierarchy) = self
                 .role_inheritance_resolver
                 .read()
-                .map_err(|e| anyhow::anyhow!("role inheritance resolver lock should not be poisoned: {}", e))?
+                .expect("role inheritance resolver lock should not be poisoned: {}")
                 .hierarchies
                 .get(name)
             {
@@ -548,9 +542,9 @@ impl EnhancedTypeQLGenerator {
 
             // Add cardinality if specified
             if let Some((min, max)) = &role.cardinality {
-                write!(output, " @card({}", min).map_err(Self::fmt_error_to_generator_error)?;
+                write!(output, " @card({min}").map_err(Self::fmt_error_to_generator_error)?;
                 if let Some(max_val) = max {
-                    write!(output, "..{}", max_val).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(output, "..{max_val}").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
                     write!(output, "..").map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -564,7 +558,9 @@ impl EnhancedTypeQLGenerator {
 
         // Add attributes owned by relation
         let attributes = self.collect_direct_attributes(class, schema);
-        if !attributes.is_empty() {
+        if attributes.is_empty() {
+            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
+        } else {
             if !relation_info.roles.is_empty() {
                 writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -582,8 +578,6 @@ impl EnhancedTypeQLGenerator {
                     writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
-        } else {
-            writeln!(output, ";").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Generate role players
@@ -652,13 +646,13 @@ impl EnhancedTypeQLGenerator {
     ) -> GeneratorResult<()> {
         // Add documentation
         if let Some(desc) = &slot.description {
-            writeln!(output, "# {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, "# {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine value type
         let value_type = self.map_range_to_typeql(&slot.range, schema);
 
-        write!(output, "{} sub attribute, value {}", name, value_type)
+        write!(output, "{name} sub attribute, value {value_type}")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add inline constraints
@@ -682,11 +676,10 @@ impl EnhancedTypeQLGenerator {
 
             range_parts.push("..".to_string());
 
-            if let Some(max) = &slot.maximum_value {
-                if let Some(max_num) = self.value_to_number(max) {
+            if let Some(max) = &slot.maximum_value
+                && let Some(max_num) = self.value_to_number(max) {
                     range_parts.push(format!("{max_num}"));
                 }
-            }
 
             if range_parts.len() > 2 || !range_parts[0].is_empty() {
                 write!(output, ", range [{}]", range_parts.join(""))
@@ -735,11 +728,9 @@ impl EnhancedTypeQLGenerator {
                     .slots
                     .get(slot_name)
                     .or_else(|| class.slot_usage.get(slot_name))
-                {
-                    if slot.required == Some(true) {
+                    && slot.required == Some(true) {
                         self.generate_required_rule(output, class_name, slot_name, indent)?;
                     }
-                }
             }
 
             // Generate rules from class rules
@@ -767,7 +758,7 @@ impl EnhancedTypeQLGenerator {
         // Multi-field unique constraint requires a rule
         let rule_name = format!("{}-unique-{}", self.convert_identifier(class_name), "key");
 
-        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "rule {rule_name}:").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
 
         // Match two instances with same key values
@@ -823,7 +814,7 @@ impl EnhancedTypeQLGenerator {
             self.convert_identifier(slot_name)
         );
 
-        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "rule {rule_name}:").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
@@ -873,10 +864,10 @@ impl EnhancedTypeQLGenerator {
             "# Rule: {}",
             rule.description
                 .as_ref()
-                .unwrap_or(&rule.title.as_ref().unwrap_or(&"unnamed".to_string()))
+                .unwrap_or(rule.title.as_ref().unwrap_or(&"unnamed".to_string()))
         )
         .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "rule {}:", rule_name).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(output, "rule {rule_name}:").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "when {{").map_err(Self::fmt_error_to_generator_error)?;
 
         // Base entity match
@@ -970,15 +961,12 @@ impl EnhancedTypeQLGenerator {
                 .slots
                 .get(slot_name)
                 .or_else(|| class.slot_usage.get(slot_name))
-            {
-                if let Some(range) = &slot.range {
-                    if !schema.classes.contains_key(range) {
+                && let Some(range) = &slot.range
+                    && !schema.classes.contains_key(range) {
                         let attr_name = self.convert_identifier(slot_name);
                         let constraints = self.collect_slot_constraints(slot);
                         attributes.push((attr_name, constraints));
                     }
-                }
-            }
         }
 
         attributes
@@ -994,8 +982,8 @@ impl EnhancedTypeQLGenerator {
             .translate_slot_constraints(slot);
 
         // Add range constraints for numeric types
-        if let Some(range) = &slot.range {
-            if range == "integer" || range == "float" || range == "double" {
+        if let Some(range) = &slot.range
+            && (range == "integer" || range == "float" || range == "double") {
                 let range_constraints = self
                     .constraint_translator
                     .write()
@@ -1003,7 +991,6 @@ impl EnhancedTypeQLGenerator {
                     .translate_range_constraints(slot);
                 constraints.extend(range_constraints);
             }
-        }
 
         constraints
     }
@@ -1058,13 +1045,10 @@ impl EnhancedTypeQLGenerator {
                 .slots
                 .get(slot_name)
                 .or_else(|| class.slot_usage.get(slot_name))
-            {
-                if let Some(range) = &slot.range {
-                    if schema.classes.contains_key(range) {
+                && let Some(range) = &slot.range
+                    && schema.classes.contains_key(range) {
                         object_slots += 1;
                     }
-                }
-            }
         }
 
         // Multiple object-valued slots indicate a relation
@@ -1087,7 +1071,7 @@ impl EnhancedTypeQLGenerator {
             .any(|pattern| name_lower.contains(pattern))
     }
 
-    /// Map `LinkML` range to TypeQL value type
+    /// Map `LinkML` range to `TypeQL` value type
     fn map_range_to_typeql(
         &self,
         range: &Option<String>,
@@ -1112,7 +1096,7 @@ impl EnhancedTypeQLGenerator {
         }
     }
 
-    /// Escape regex pattern for TypeQL
+    /// Escape regex pattern for `TypeQL`
     fn _escape_regex(&self, pattern: &str) -> String {
         // TypeQL uses Java regex syntax, escape accordingly
         pattern.replace('\\', "\\\\").replace('"', "\\\"")
@@ -1358,7 +1342,7 @@ impl EnhancedTypeQLGenerator {
         Ok(())
     }
 
-    /// Get TypeQL type for a `LinkML` range
+    /// Get `TypeQL` type for a `LinkML` range
     fn get_typeql_type_for_range(&self, range: &str, schema: &SchemaDefinition) -> String {
         // Check if it's a class reference
         if schema.classes.contains_key(range) {
@@ -1379,7 +1363,7 @@ impl EnhancedTypeQLGenerator {
 
     // Removed duplicate is_valid_identifier method - using the one defined earlier at line 85
 
-    /// Format a value for TypeQL syntax
+    /// Format a value for `TypeQL` syntax
     fn format_value_for_typeql(&self, value: &str) -> String {
         // Check if it's a numeric value
         if value.parse::<f64>().is_ok() {
@@ -1392,7 +1376,7 @@ impl EnhancedTypeQLGenerator {
         }
     }
 
-    /// Translate `LinkML` expression to TypeQL predicate
+    /// Translate `LinkML` expression to `TypeQL` predicate
     fn translate_expression_to_typeql(&self, expr: &str, var: &str) -> GeneratorResult<String> {
         // Parse basic comparison expressions
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*([><=!]+)\s*(.+)")
@@ -1472,11 +1456,10 @@ impl EnhancedTypeQLGenerator {
         // Look for type hints in slot conditions
         if let Some(slot_conditions) = &condition.slot_conditions {
             for (_, slot_condition) in slot_conditions {
-                if let Some(range) = &slot_condition.range {
-                    if schema.classes.contains_key(range) {
+                if let Some(range) = &slot_condition.range
+                    && schema.classes.contains_key(range) {
                         return Ok(range.clone());
                     }
-                }
             }
         }
 
@@ -1574,15 +1557,13 @@ impl SchemaAnalyzer {
                 .slots
                 .get(slot_name)
                 .or_else(|| class.slot_usage.get(slot_name))
-            {
-                if let Some(range) = &slot.range {
+                && let Some(range) = &slot.range {
                     if schema.classes.contains_key(range) {
                         object_slots.push((slot_name, slot));
                     } else {
                         literal_slots += 1;
                     }
                 }
-            }
         }
 
         // Decision logic for entity vs relation
@@ -1618,24 +1599,20 @@ impl SchemaAnalyzer {
 
         // Validate relation roles
         for (class_name, class_type) in &self.type_cache {
-            if let TypeQLType::Relation = class_type {
-                if let Some(class) = schema.classes.get(class_name) {
-                    if !class.slots.iter().any(|slot_name| {
+            if let TypeQLType::Relation = class_type
+                && let Some(class) = schema.classes.get(class_name)
+                    && !class.slots.iter().any(|slot_name| {
                         schema
                             .slots
                             .get(slot_name)
                             .or_else(|| class.slot_usage.get(slot_name))
                             .and_then(|slot| slot.range.as_ref())
-                            .map(|range| schema.classes.contains_key(range))
-                            .unwrap_or(false)
+                            .is_some_and(|range| schema.classes.contains_key(range))
                     }) {
                         return Err(GeneratorError::SchemaValidation(format!(
-                            "Relation {} has no object-valued slots",
-                            class_name
-                        )));
+                            "Relation {class_name} has no object-valued slots"
+                        ));
                     }
-                }
-            }
         }
 
         Ok(())
@@ -1651,18 +1628,16 @@ impl SchemaAnalyzer {
     ) -> GeneratorResult<()> {
         if visited.contains(class_name) {
             return Err(GeneratorError::SchemaValidation(format!(
-                "Inheritance cycle detected: {}",
-                class_name
-            )));
+                "Inheritance cycle detected: {class_name}"
+            ));
         }
 
         visited.insert(class_name.to_string());
 
-        if let Some(parent) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 self.check_inheritance_cycle(parent, parent_class, schema, visited)?;
             }
-        }
 
         for mixin in &class.mixins {
             if let Some(mixin_class) = schema.classes.get(mixin) {
@@ -1701,9 +1676,8 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         for (class_name, _) in &schema.classes {
             if !self.is_valid_identifier(class_name) {
                 return Err(GeneratorError::Validation(format!(
-                    "Class name '{}' is not a valid TypeQL identifier",
-                    class_name
-                )));
+                    "Class name '{class_name}' is not a valid TypeQL identifier"
+                ));
             }
         }
 
@@ -1711,9 +1685,8 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         for (slot_name, _) in &schema.slots {
             if !self.is_valid_identifier(slot_name) {
                 return Err(GeneratorError::Validation(format!(
-                    "Slot name '{}' is not a valid TypeQL identifier",
-                    slot_name
-                )));
+                    "Slot name '{slot_name}' is not a valid TypeQL identifier"
+                ));
             }
         }
 
@@ -1754,7 +1727,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
         }];
 
         // Generate migration script if requested
-        if options.get_custom("generate_migration").map(|s| s.as_str()) == Some("true") {
+        if options.get_custom("generate_migration").map(std::string::String::as_str) == Some("true") {
             let migration = self.generate_migration_script(schema, options)?;
             outputs.push(GeneratedOutput {
                 filename: format!("{filename_base}-migration.tql"),
@@ -1769,11 +1742,11 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for EnhancedTypeQLGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "enhanced_typeql"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Enhanced TypeQL generator with advanced constraint support, migration capabilities, and optimizations"
     }
 
@@ -1805,21 +1778,21 @@ impl Generator for EnhancedTypeQLGenerator {
             .join("\n"))
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "txt"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "generated.txt"
     }
 }
 
 impl CodeFormatter for EnhancedTypeQLGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "enhanced_typeql_formatter"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Advanced code formatter for TypeQL with constraint formatting and proper indentation"
     }
 
@@ -1994,7 +1967,7 @@ impl EnhancedTypeQLGenerator {
 
         // Check for previous schema version from options
         if let Some(prev_version) = options.get_custom("previous_schema_version") {
-            writeln!(&mut output, "# Migrating from version: {}", prev_version)
+            writeln!(&mut output, "# Migrating from version: {prev_version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -2004,7 +1977,7 @@ impl EnhancedTypeQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(removed_classes) = options.get_custom("removed_classes") {
             for class_name in removed_classes.split(',') {
-                writeln!(&mut output, "undefine {} sub entity;", class_name)
+                writeln!(&mut output, "undefine {class_name} sub entity;")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
@@ -2045,10 +2018,10 @@ impl EnhancedTypeQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         for (class_name, _class) in &schema.classes {
             // Check if this is a new class (not in previous version)
-            if options.get_custom(&format!("{class_name}_is_new")).map(|s| s.as_str()) == Some("true") {
+            if options.get_custom(&format!("{class_name}_is_new")).map(std::string::String::as_str) == Some("true") {
                 // Note: generate_class is async but this context is not async
                 // This needs to be refactored to work properly
-                writeln!(&mut output, "# Class: {}", class_name).map_err(|e| GeneratorError::Generation(format!("writing class comment: {e}")))?;
+                writeln!(&mut output, "# Class: {class_name}").map_err(|e| GeneratorError::Generation(format!("writing class comment: {e}")))?;
             }
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -2072,15 +2045,15 @@ impl EnhancedTypeQLGenerator {
                 if let Some((old, new)) = rename.split_once(':') {
                     writeln!(&mut output, "match")
                         .map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "  $x has {}: $old_val;", old)
+                    writeln!(&mut output, "  $x has {old}: $old_val;")
                         .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(&mut output, "delete")
                         .map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "  $x has {};", old)
+                    writeln!(&mut output, "  $x has {old};")
                         .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(&mut output, "insert")
                         .map_err(Self::fmt_error_to_generator_error)?;
-                    writeln!(&mut output, "  $x has {}: $old_val;", new)
+                    writeln!(&mut output, "  $x has {new}: $old_val;")
                         .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -2092,7 +2065,7 @@ impl EnhancedTypeQLGenerator {
             writeln!(&mut output, "# Transform data formats")
                 .map_err(Self::fmt_error_to_generator_error)?;
             for transform in transforms.split(',') {
-                writeln!(&mut output, "# Apply transformation: {}", transform)
+                writeln!(&mut output, "# Apply transformation: {transform}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
@@ -2118,16 +2091,14 @@ impl EnhancedTypeQLGenerator {
             for slot_name in &class.slots {
                 if let Some(slot) = schema.slots.get(slot_name)
                     .or_else(|| class.slot_usage.get(slot_name))
-                {
-                    if slot.required.unwrap_or(false) {
-                        writeln!(&mut output, "# Validate required attribute '{}' for '{}'",
-                            slot_name, class_name)
+                    && slot.required.unwrap_or(false) {
+                        writeln!(&mut output, "# Validate required attribute '{slot_name}' for '{class_name}'")
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output, "match")
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output, "  $x isa {};", self.convert_identifier(class_name))
                             .map_err(Self::fmt_error_to_generator_error)?;
-                        writeln!(&mut output, "  not {{ $x has {}; }};", slot_name)
+                        writeln!(&mut output, "  not {{ $x has {slot_name}; }};")
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output, "get $x;")
                             .map_err(Self::fmt_error_to_generator_error)?;
@@ -2135,7 +2106,6 @@ impl EnhancedTypeQLGenerator {
                             .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                     }
-                }
             }
         }
 
@@ -2150,6 +2120,7 @@ impl EnhancedTypeQLGenerator {
 mod tests {
     use super::*;
     use serde_json::json;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[tokio::test]
     async fn test_enhanced_typeql_generation() -> anyhow::Result<()> {
@@ -2184,7 +2155,7 @@ mod tests {
         let options = GeneratorOptions::default();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate TypeQL output: {}", e))?;
+            .expect("should generate TypeQL output: {}");
 
         assert_eq!(outputs.len(), 1);
         let content = &outputs[0].content;
@@ -2249,14 +2220,14 @@ mod tests {
         // Analyze schema
         generator
             .analyze_schema(&schema)
-            .map_err(|e| anyhow::anyhow!("should analyze schema: {}", e))?;
+            .expect("should analyze schema: {}");
 
         // Check that Employment was detected as a relation
         assert_eq!(
             generator
                 .analyzer
                 .read()
-                .map_err(|e| anyhow::anyhow!("analyzer lock should not be poisoned: {}", e))?
+                .expect("analyzer lock should not be poisoned: {}")
                 .type_cache
                 .get("Employment"),
             Some(&TypeQLType::Relation)
@@ -2265,14 +2236,14 @@ mod tests {
     }
 }
 
-/// Create an enhanced TypeQL generator using the factory pattern
+/// Create an enhanced `TypeQL` generator using the factory pattern
 ///
-/// This is the preferred way to create an EnhancedTypeQLGenerator, ensuring
-/// proper initialization and following RootReal's factory pattern standards.
+/// This is the preferred way to create an `EnhancedTypeQLGenerator`, ensuring
+/// proper initialization and following `RootReal`'s factory pattern standards.
 ///
 /// # Returns
 ///
-/// Returns a configured enhanced TypeQL generator instance
-pub fn create_enhanced_typeql_generator() -> EnhancedTypeQLGenerator {
+/// Returns a configured enhanced `TypeQL` generator instance
+#[must_use] pub fn create_enhanced_typeql_generator() -> EnhancedTypeQLGenerator {
     EnhancedTypeQLGenerator::new()
 }

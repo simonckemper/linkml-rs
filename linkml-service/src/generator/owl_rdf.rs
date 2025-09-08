@@ -675,7 +675,7 @@ impl RdfGenerator {
 
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        all_slots.retain(|slot| seen.insert(slot.clone()));
+        all_slots.retain(|slot| seen.insert(slot.clone());
 
         all_slots
     }
@@ -993,6 +993,7 @@ impl RdfGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_xsd_datatype_mapping() {

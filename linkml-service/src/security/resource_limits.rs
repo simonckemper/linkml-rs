@@ -1,7 +1,7 @@
 //! Resource limiting utilities
 //!
 //! This module provides mechanisms to limit resource usage during
-//! validation and expression evaluation to prevent DoS attacks.
+//! validation and expression evaluation to prevent `DoS` attacks.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -93,7 +93,7 @@ impl Default for ResourceLimits {
 
 impl ResourceLimits {
     /// Create resource limits from `LinkML` service configuration
-    pub fn from_service_config(
+    #[must_use] pub fn from_service_config(
         config: &linkml_core::configuration_v2::SecurityLimitsConfig,
     ) -> Self {
         Self {
@@ -137,6 +137,10 @@ impl ResourceMonitor {
     }
 
     /// Initialize the start timestamp for tracking
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn initialize_timestamp(&mut self) -> Result<(), ResourceError> {
         self.start_timestamp = self.timestamp_service.system_time().await
             .map(|st| st.duration_since(std::time::UNIX_EPOCH)
@@ -149,10 +153,12 @@ impl ResourceMonitor {
     }
 
     /// Check if validation has timed out
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn check_timeout(&self) -> Result<(), ResourceError> {
-        let current_timestamp = self.timestamp_service.system_time().await
-            .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
-            .unwrap_or_else(|_| self.start_timestamp); // Use start if service fails
+        let current_timestamp = self.timestamp_service.system_time().await.map_or_else(|_| self.start_timestamp, |st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64); // Use start if service fails
 
         let elapsed_ms = (current_timestamp - self.start_timestamp) as u64;
         let elapsed = Duration::from_millis(elapsed_ms);
@@ -167,10 +173,12 @@ impl ResourceMonitor {
     }
 
     /// Check if expression evaluation has timed out
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn check_expression_timeout(&self, start_timestamp: i64) -> Result<(), ResourceError> {
-        let current_timestamp = self.timestamp_service.system_time().await
-            .map(|st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64)
-            .unwrap_or_else(|_| start_timestamp); // Use start if service fails
+        let current_timestamp = self.timestamp_service.system_time().await.map_or_else(|_| start_timestamp, |st| st.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64); // Use start if service fails
 
         let elapsed_ms = (current_timestamp - start_timestamp) as u64;
         let elapsed = Duration::from_millis(elapsed_ms);
@@ -185,6 +193,10 @@ impl ResourceMonitor {
     }
 
     /// Track memory allocation
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn allocate_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.memory_used.fetch_add(bytes, Ordering::Relaxed) + bytes;
         if new_total > self.limits.max_memory_usage {
@@ -203,6 +215,10 @@ impl ResourceMonitor {
     }
 
     /// Start a parallel operation
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn start_parallel_op(&self) -> Result<ParallelOpGuard<'_>, ResourceError> {
         let current = self.parallel_ops.fetch_add(1, Ordering::Relaxed) + 1;
         if current > self.limits.max_parallel_validators {
@@ -216,6 +232,10 @@ impl ResourceMonitor {
     }
 
     /// Track cache memory usage
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn allocate_cache_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.cache_memory.fetch_add(bytes, Ordering::Relaxed) + bytes;
         if new_total > self.limits.max_cache_memory {
@@ -260,7 +280,7 @@ pub struct ParallelOpGuard<'a> {
     monitor: &'a ResourceMonitor,
 }
 
-impl<'a> Drop for ParallelOpGuard<'a> {
+impl Drop for ParallelOpGuard<'_> {
     fn drop(&mut self) {
         self.monitor.parallel_ops.fetch_sub(1, Ordering::Relaxed);
     }
@@ -283,7 +303,7 @@ pub struct ResourceUsage {
 
 impl ResourceUsage {
     /// Format usage as a human-readable string
-    pub fn format_summary(&self) -> String {
+    #[must_use] pub fn format_summary(&self) -> String {
         format!(
             "Elapsed: {:.2}s, Memory: {:.2}MB, Parallel Ops: {}, Cache: {:.2}MB, Errors: {}",
             self.elapsed.as_secs_f64(),
@@ -348,7 +368,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parallel_ops() {
+    fn test_parallel_ops() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let limits = ResourceLimits {
             max_parallel_validators: 2,
             ..Default::default()
@@ -371,5 +391,6 @@ mod tests {
 
         // Now we can start another
         let _guard3 = monitor.start_parallel_op()?;
+        Ok(())
     }
 }

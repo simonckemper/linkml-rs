@@ -3,7 +3,6 @@
 //! This module provides tools to merge multiple schemas into one.
 
 use crate::cli_enhanced::{ConflictResolution, MergeStrategy};
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 
@@ -128,7 +127,7 @@ impl SchemaMerge {
             return Err(LinkMLError::schema_validation(format!(
                 "{} conflicts found during merge",
                 conflicts.len()
-            )));
+            ));
         }
 
         Ok(merged)
@@ -228,7 +227,7 @@ impl SchemaMerge {
         }
 
         // Merge enums
-        for schema in schemas.iter() {
+        for schema in schemas {
             for (name, enum_def) in &schema.enums {
                 if let Some(existing) = merged.enums.get(name) {
                     // Conflict detected - merge enum values
@@ -495,6 +494,7 @@ impl SchemaMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_merge_union() -> Result<()> {
@@ -521,7 +521,7 @@ mod tests {
         let schema_merger = SchemaMerge::new(options);
         let merged = schema_merger
             .merge(&[schema1, schema2])
-            .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
+            .expect("should merge schemas: {}");
 
         assert_eq!(merged.classes.len(), 2);
         assert!(merged.classes.contains_key("Person"));
@@ -548,7 +548,7 @@ mod tests {
         let schema_merger = SchemaMerge::new(options);
         let merged = schema_merger
             .merge(&[schema1, schema2])
-            .map_err(|e| anyhow::anyhow!("should merge schemas: {}", e))?;
+            .expect("should merge schemas: {}");
 
         assert_eq!(merged.classes.len(), 1);
         assert!(merged.classes.contains_key("Person"));

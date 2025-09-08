@@ -1,8 +1,7 @@
-//! Real migration engine implementation for LinkML CLI
+//! Real migration engine implementation for `LinkML` CLI
 
-use linkml_core::error::Result;
-use linkml_core::types::{PermissibleValue, SchemaDefinition};
 use serde::{Deserialize, Serialize};
+use linkml_core::types::{PermissibleValue, SchemaDefinition};
 use std::collections::HashSet;
 
 /// Migration analysis result
@@ -250,7 +249,7 @@ pub struct MigrationEngine {
 
 impl MigrationEngine {
     /// Create a new migration engine
-    pub fn new(from_schema: SchemaDefinition, to_schema: SchemaDefinition) -> Self {
+    #[must_use] pub fn new(from_schema: SchemaDefinition, to_schema: SchemaDefinition) -> Self {
         Self {
             from_schema,
             to_schema,
@@ -258,7 +257,7 @@ impl MigrationEngine {
     }
 
     /// Analyze schema changes
-    pub fn analyze(&self) -> Result<MigrationAnalysis> {
+    pub fn analyze(&self) -> crate::Result<MigrationAnalysis> {
         let mut breaking_changes = Vec::new();
         let mut non_breaking_changes = Vec::new();
         let mut data_migrations = Vec::new();
@@ -309,7 +308,7 @@ impl MigrationEngine {
         &self,
         breaking_changes: &mut Vec<BreakingChange>,
         non_breaking_changes: &mut Vec<NonBreakingChange>,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         let from_classes: HashSet<_> = self.from_schema.classes.keys().cloned().collect();
         let to_classes: HashSet<_> = self.to_schema.classes.keys().cloned().collect();
 
@@ -332,17 +331,15 @@ impl MigrationEngine {
             let from_class = &self.from_schema.classes[class_name];
             let to_class = &self.to_schema.classes[class_name];
 
-            if from_class.is_a != to_class.is_a {
-                if let (Some(old_parent), Some(new_parent)) = (&from_class.is_a, &to_class.is_a) {
-                    if old_parent != new_parent {
+            if from_class.is_a != to_class.is_a
+                && let (Some(old_parent), Some(new_parent)) = (&from_class.is_a, &to_class.is_a)
+                    && old_parent != new_parent {
                         breaking_changes.push(BreakingChange::InheritanceChanged {
                             class_name: class_name.clone(),
                             old_parent: old_parent.clone(),
                             new_parent: new_parent.clone(),
                         });
                     }
-                }
-            }
         }
 
         Ok(())
@@ -353,7 +350,7 @@ impl MigrationEngine {
         &self,
         breaking_changes: &mut Vec<BreakingChange>,
         non_breaking_changes: &mut Vec<NonBreakingChange>,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         // Check slots in each class
         for (class_name, from_class) in &self.from_schema.classes {
             if let Some(to_class) = self.to_schema.classes.get(class_name) {
@@ -396,21 +393,19 @@ impl MigrationEngine {
         &self,
         breaking_changes: &mut Vec<BreakingChange>,
         _non_breaking_changes: &mut Vec<NonBreakingChange>,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         // Check type changes in slots
         for (slot_name, from_slot) in &self.from_schema.slots {
             if let Some(to_slot) = self.to_schema.slots.get(slot_name) {
-                if from_slot.range != to_slot.range {
-                    if let (Some(from_range), Some(to_range)) = (&from_slot.range, &to_slot.range) {
-                        if from_range != to_range {
+                if from_slot.range != to_slot.range
+                    && let (Some(from_range), Some(to_range)) = (&from_slot.range, &to_slot.range)
+                        && from_range != to_range {
                             breaking_changes.push(BreakingChange::TypeChanged {
                                 entity: slot_name.clone(),
                                 from_type: from_range.clone(),
                                 to_type: to_range.clone(),
                             });
                         }
-                    }
-                }
 
                 // Check cardinality changes
                 let from_multivalued = from_slot.multivalued.unwrap_or(false);
@@ -435,7 +430,7 @@ impl MigrationEngine {
         &self,
         breaking_changes: &mut Vec<BreakingChange>,
         non_breaking_changes: &mut Vec<NonBreakingChange>,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         for (enum_name, from_enum) in &self.from_schema.enums {
             if let Some(to_enum) = self.to_schema.enums.get(enum_name) {
                 let from_values: HashSet<_> = from_enum
@@ -481,14 +476,14 @@ impl MigrationEngine {
         &self,
         breaking_changes: &[BreakingChange],
         data_migrations: &mut Vec<DataMigration>,
-    ) -> Result<()> {
+    ) -> crate::Result<()> {
         for change in breaking_changes {
             match change {
                 BreakingChange::ClassRemoved { name } => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Delete,
                         entity: name.clone(),
-                        script: format!("-- Archive data from table {}\nINSERT INTO archive.{} SELECT * FROM {};", name, name, name),
+                        script: format!("-- Archive data from table {name}\nINSERT INTO archive.{name} SELECT * FROM {name};"),
                         validation: format!("SELECT COUNT(*) FROM archive.{name};"),
                     });
                 }
@@ -501,12 +496,10 @@ impl MigrationEngine {
                         migration_type: MigrationType::Transform,
                         entity: entity.clone(),
                         script: format!(
-                            "-- Convert {} from {} to {}\nALTER TABLE data MODIFY COLUMN {} {};",
-                            entity, from_type, to_type, entity, to_type
+                            "-- Convert {entity} from {from_type} to {to_type}\nALTER TABLE data MODIFY COLUMN {entity} {to_type};"
                         ),
                         validation: format!(
-                            "SELECT COUNT(*) FROM data WHERE {} IS NOT NULL;",
-                            entity
+                            "SELECT COUNT(*) FROM data WHERE {entity} IS NOT NULL;"
                         ),
                     });
                 }
@@ -516,11 +509,9 @@ impl MigrationEngine {
                 } => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Delete,
-                        entity: format!("{}.{}", class_name, slot_name),
-                        script: format!("-- Remove column {}.{}\nALTER TABLE {} DROP COLUMN {};",
-                                      class_name, slot_name, class_name, slot_name),
-                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';",
-                                         class_name, slot_name),
+                        entity: format!("{class_name}.{slot_name}"),
+                        script: format!("-- Remove column {class_name}.{slot_name}\nALTER TABLE {class_name} DROP COLUMN {slot_name};"),
+                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{class_name}' AND column_name = '{slot_name}';"),
                     });
                 }
                 _ => {}
@@ -565,7 +556,7 @@ impl MigrationEngine {
     }
 
     /// Create migration plan
-    pub fn create_plan(&self, analysis: &MigrationAnalysis) -> Result<MigrationPlan> {
+    pub fn create_plan(&self, analysis: &MigrationAnalysis) -> crate::Result<MigrationPlan> {
         let mut steps = Vec::new();
         let mut rollback_steps = Vec::new();
         let mut step_counter = 0;
@@ -573,7 +564,7 @@ impl MigrationEngine {
         // Create backup step
         step_counter += 1;
         steps.push(MigrationStep {
-            id: format!("step_{:03}", step_counter),
+            id: format!("step_{step_counter:03}"),
             description: "Create full backup".to_string(),
             step_type: StepType::Backup,
             script: "CREATE BACKUP OF DATABASE;".to_string(),
@@ -596,7 +587,7 @@ impl MigrationEngine {
         for migration in &analysis.data_migrations {
             step_counter += 1;
             steps.push(MigrationStep {
-                id: format!("step_{:03}", step_counter),
+                id: format!("step_{step_counter:03}"),
                 description: format!("Migrate data for {}", migration.entity),
                 step_type: StepType::Data,
                 script: migration.script.clone(),
@@ -610,7 +601,7 @@ impl MigrationEngine {
         // Create validation step
         step_counter += 1;
         steps.push(MigrationStep {
-            id: format!("step_{:03}", step_counter),
+            id: format!("step_{step_counter:03}"),
             description: "Validate migration".to_string(),
             step_type: StepType::Validation,
             script: "CALL validate_migration();".to_string(),
@@ -645,25 +636,23 @@ impl MigrationEngine {
     }
 
     /// Create migration step for a breaking change
-    fn create_migration_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
+    fn create_migration_step(&self, id: usize, change: &BreakingChange) -> crate::Result<MigrationStep> {
         let (description, script, validation) = match change {
             BreakingChange::ClassRemoved { name } => (
                 format!("Remove class {name}"),
                 format!("DROP TABLE IF EXISTS {name};"),
                 format!(
-                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{}';",
-                    name
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{name}';"
                 ),
             ),
             BreakingChange::SlotRemoved {
                 class_name,
                 slot_name,
             } => (
-                format!("Remove slot {} from {}", slot_name, class_name),
-                format!("ALTER TABLE {} DROP COLUMN {};", class_name, slot_name),
+                format!("Remove slot {slot_name} from {class_name}"),
+                format!("ALTER TABLE {class_name} DROP COLUMN {slot_name};"),
                 format!(
-                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{}' AND column_name = '{}';",
-                    class_name, slot_name
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{class_name}' AND column_name = '{slot_name}';"
                 ),
             ),
             BreakingChange::TypeChanged {
@@ -672,13 +661,11 @@ impl MigrationEngine {
                 to_type,
             } => (
                 format!(
-                    "Change type of {} from {} to {}",
-                    entity, from_type, to_type
+                    "Change type of {entity} from {from_type} to {to_type}"
                 ),
-                format!("ALTER TABLE data MODIFY COLUMN {} {};", entity, to_type),
+                format!("ALTER TABLE data MODIFY COLUMN {entity} {to_type};"),
                 format!(
-                    "SELECT data_type FROM information_schema.columns WHERE column_name = '{}';",
-                    entity
+                    "SELECT data_type FROM information_schema.columns WHERE column_name = '{entity}';"
                 ),
             ),
             _ => (
@@ -689,7 +676,7 @@ impl MigrationEngine {
         };
 
         Ok(MigrationStep {
-            id: format!("step_{:03}", id),
+            id: format!("step_{id:03}"),
             description,
             step_type: StepType::Schema,
             script,
@@ -701,11 +688,11 @@ impl MigrationEngine {
     }
 
     /// Create rollback step for a breaking change
-    fn create_rollback_step(&self, id: usize, change: &BreakingChange) -> Result<MigrationStep> {
+    fn create_rollback_step(&self, id: usize, change: &BreakingChange) -> crate::Result<MigrationStep> {
         let (description, script, validation) = match change {
             BreakingChange::ClassRemoved { name } => (
                 format!("Restore class {name}"),
-                format!("CREATE TABLE {} AS SELECT * FROM archive.{};", name, name),
+                format!("CREATE TABLE {name} AS SELECT * FROM archive.{name};"),
                 format!("SELECT COUNT(*) FROM {name};"),
             ),
             _ => (
@@ -716,7 +703,7 @@ impl MigrationEngine {
         };
 
         Ok(MigrationStep {
-            id: format!("rollback_{:03}", id),
+            id: format!("rollback_{id:03}"),
             description,
             step_type: StepType::Schema,
             script,

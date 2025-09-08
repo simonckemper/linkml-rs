@@ -31,6 +31,8 @@ use task_management_core::{TaskId, TaskManagementService};
 use timeout_core::TimeoutService;
 use timestamp_core::TimestampService;
 
+
+
 /// Main `LinkML` service implementation
 ///
 /// Generic parameters for non-dyn-compatible services:
@@ -294,15 +296,14 @@ where
 
                 // Attempt to warm the cache (log errors but don't fail initialization)
                 let ttl = Some(cache_core::CacheTtl::Seconds(3600)); // 1 hour TTL
-                if let Err(e) = self.cache.set(&cache_key, &warmup_value, ttl).await {
-                    if let Err(log_err) = self.logger
+                if let Err(e) = self.cache.set(&cache_key, &warmup_value, ttl).await
+                    && let Err(log_err) = self.logger
                         .debug(&format!("Cache warming failed for key '{cache_key}': {e}"))
                         .await
                     {
                         // If even logging fails, we can't do much more
                         eprintln!("Failed to log cache warming error: {log_err}");
                     }
-                }
             }
         }
 
@@ -341,12 +342,12 @@ where
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
         // Start monitoring and cleanup task
-        let validator_cache = self.validator_cache.clone();
-        let schema_cache = self.schema_cache.clone();
-        let logger = self.logger.clone();
-        let monitor = self.monitor.clone();
-        let error_handler = self.error_handler.clone();
-        let timestamp = self.timestamp.clone();
+        let validator_cache = Arc::clone(&self.validator_cache);
+        let schema_cache = Arc::clone(&self.schema_cache);
+        let logger = Arc::clone(&self.logger);
+        let monitor = Arc::clone(&self.monitor);
+        let error_handler = Arc::clone(&self.error_handler);
+        let timestamp = Arc::clone(&self.timestamp);
         let interval_secs = 60; // 1 minute for health checks
 
         let task_handle = self
@@ -362,32 +363,30 @@ where
                         iteration_count += 1;
 
                         // Record health check
-                        if let Ok(now) = timestamp.now_utc().await {
-                            if let Err(e) = logger
+                        if let Ok(now) = timestamp.now_utc().await
+                            && let Err(e) = logger
                                 .debug(&format!("Health check #{iteration_count} at {now}"))
                                 .await
                             {
                                 eprintln!("Failed to log health check: {e}");
                             }
-                        }
 
                         // Monitor cache sizes and log if too large
                         let schema_count = schema_cache.read().len();
-                        if schema_count > 100 {
-                            if let Err(e) = logger
+                        if schema_count > 100
+                            && let Err(e) = logger
                                 .warn(&format!(
                                     "Schema cache has {schema_count} entries, consider cleanup"
                                 ))
                                 .await
                             {
-                                eprintln!("Failed to log cache size warning: {}", e);
+                                eprintln!("Failed to log cache size warning: {e}");
                             }
-                        }
 
                         // Check memory usage and cleanup if needed (every 5 iterations = 5 minutes)
                         if iteration_count % 5 == 0 {
                             if let Err(e) = logger.debug("Running periodic cache cleanup").await {
-                                eprintln!("Logger error in cache cleanup: {}", e);
+                                eprintln!("Logger error in cache cleanup: {e}");
                             }
 
                             // Clear validator cache if it's grown too large
@@ -400,13 +399,11 @@ where
                                     {
                                         eprintln!("Failed to log cache clear error: {log_err}");
                                     }
-                                } else {
-                                    if let Err(e) = logger
-                                        .info("Cleared validator cache due to size limit")
-                                        .await
-                                    {
-                                        eprintln!("Failed to log cache cleanup: {}", e);
-                                    }
+                                } else if let Err(e) = logger
+                                    .info("Cleared validator cache due to size limit")
+                                    .await
+                                {
+                                    eprintln!("Failed to log cache cleanup: {e}");
                                 }
 
                                 // Report cleanup to error handler for tracking
@@ -421,7 +418,7 @@ where
                                     )
                                     .await
                                 {
-                                    eprintln!("Failed to report cache cleanup to error handler: {}", e);
+                                    eprintln!("Failed to report cache cleanup to error handler: {e}");
                                 }
                             }
                         }
@@ -473,6 +470,10 @@ where
     ///
     /// Note: Actually updating configuration would require interior mutability
     /// or a redesign of the service structure.
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn has_config_updates(&self) -> Result<bool> {
         // Fetch latest configuration
         if let Ok(new_config) = self
@@ -570,8 +571,7 @@ where
 
         self.logger
             .debug(&format!(
-                "Clearing {} cached schemas on shutdown",
-                schema_cache_final_size
+                "Clearing {schema_cache_final_size} cached schemas on shutdown"
             ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
@@ -592,8 +592,7 @@ where
         // Set service ready status to 0 (not ready)
         self.logger
             .info(&format!(
-                "LinkML service shutdown complete in {}ms",
-                shutdown_duration_ms
+                "LinkML service shutdown complete in {shutdown_duration_ms}ms"
             ))
             .await
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
@@ -669,8 +668,7 @@ where
                     .await;
                 self.logger
                     .error(&format!(
-                        "Failed to parse schema: {} - Context: {:?}",
-                        e, error_context
+                        "Failed to parse schema: {e} - Context: {error_context:?}"
                     ))
                     .await
                     .map_err(|log_err| LinkMLError::service(format!("Logger error: {log_err}")))?;

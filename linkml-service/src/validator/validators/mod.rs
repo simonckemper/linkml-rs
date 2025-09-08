@@ -1,9 +1,9 @@
 //! Validators for different constraint types
 
-use linkml_core::types::{SchemaDefinition, SlotDefinition};
 use serde_json::Value;
 
 use crate::validator::{context::ValidationContext, report::ValidationIssue};
+use linkml_core::types::{SchemaDefinition, SlotDefinition};
 
 pub mod boolean_constraints;
 pub mod conditional_requirements;

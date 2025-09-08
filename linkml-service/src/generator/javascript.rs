@@ -1,4 +1,4 @@
-//! JavaScript (ES6) code generator for LinkML schemas
+//! JavaScript (ES6) code generator for `LinkML` schemas
 
 use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
 use super::options::{GeneratorOptions, IndentStyle};
@@ -19,13 +19,13 @@ impl Default for JavaScriptGenerator {
 }
 
 impl JavaScriptGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new JavaScript generator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             name: "javascript".to_string(),
             description: "Generate JavaScript ES6 classes from LinkML schemas".to_string(),
@@ -47,7 +47,7 @@ impl JavaScriptGenerator {
             writeln!(&mut output, "/**").map_err(Self::fmt_error_to_generator_error)?;
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 70, " * ");
-                writeln!(&mut output, " * {}", wrapped)
+                writeln!(&mut output, " * {wrapped}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
             writeln!(&mut output, " * @generated from LinkML schema")
@@ -64,8 +64,7 @@ impl JavaScriptGenerator {
 
         writeln!(
             &mut output,
-            "export class {}{} {{",
-            class_name, extends_clause
+            "export class {class_name}{extends_clause} {{"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -104,24 +103,23 @@ impl JavaScriptGenerator {
 
                 write!(
                     &mut output,
-                    "   * @param {{{}{}{}}} ",
-                    optional, type_str, optional_close
+                    "   * @param {{{optional}{type_str}{optional_close}}} "
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
                 if is_optional_slot(slot) {
-                    write!(&mut output, "[data.{}] - ", slot_name)
+                    write!(&mut output, "[data.{slot_name}] - ")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(&mut output, "data.{} - ", slot_name)
+                    write!(&mut output, "data.{slot_name} - ")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if let Some(ref desc) = slot.description {
-                    write!(&mut output, "{}", desc).map_err(Self::fmt_error_to_generator_error)?;
+                    write!(&mut output, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
                 } else {
                     write!(
                         &mut output,
                         "{} value",
-                        BaseCodeFormatter::to_pascal_case(&slot_name)
+                        BaseCodeFormatter::to_pascal_case(slot_name)
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -150,19 +148,17 @@ impl JavaScriptGenerator {
                 if slot.multivalued.unwrap_or(false) {
                     writeln!(
                         &mut output,
-                        "    this.{} = data.{} || [];",
-                        slot_name, slot_name
+                        "    this.{slot_name} = data.{slot_name} || [];"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 } else if is_optional_slot(slot) {
                     writeln!(
                         &mut output,
-                        "    this.{} = data.{} || null;",
-                        slot_name, slot_name
+                        "    this.{slot_name} = data.{slot_name} || null;"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    writeln!(&mut output, "    this.{} = data.{};", slot_name, slot_name)
+                    writeln!(&mut output, "    this.{slot_name} = data.{slot_name};")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
@@ -180,15 +176,14 @@ impl JavaScriptGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "   * @param {{string}} json - JSON string")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "   * @returns {{{}}}", class_name)
+        writeln!(&mut output, "   * @returns {{{class_name}}}")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "   */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  static fromJSON(json) {{")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             &mut output,
-            "    return new {}(JSON.parse(json));",
-            class_name
+            "    return new {class_name}(JSON.parse(json));"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "  }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -216,10 +211,10 @@ impl JavaScriptGenerator {
         for (i, slot_name) in direct_slots.iter().enumerate() {
             if let Some(slot) = schema.slots.get(slot_name) {
                 if slot.multivalued.unwrap_or(false) {
-                    write!(&mut output, "      {}: [...this.{}]", slot_name, slot_name)
+                    write!(&mut output, "      {slot_name}: [...this.{slot_name}]")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
-                    write!(&mut output, "      {}: this.{}", slot_name, slot_name)
+                    write!(&mut output, "      {slot_name}: this.{slot_name}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 if i < direct_slots.len() - 1 {
@@ -289,14 +284,12 @@ impl JavaScriptGenerator {
                 if let Some(ref pattern) = slot.pattern {
                     writeln!(
                         output,
-                        "    if (data.{} && !/{}/u.test(data.{})) {{",
-                        slot_name, pattern, slot_name
+                        "    if (data.{slot_name} && !/{pattern}/u.test(data.{slot_name})) {{"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "      throw new TypeError('{} does not match pattern: {}');",
-                        slot_name, pattern
+                        "      throw new TypeError('{slot_name} does not match pattern: {pattern}');"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -308,14 +301,12 @@ impl JavaScriptGenerator {
                     if let Some(ref min) = slot.minimum_value {
                         writeln!(
                             output,
-                            "    if (typeof data.{} === 'number' && data.{} < {}) {{",
-                            slot_name, slot_name, min
+                            "    if (typeof data.{slot_name} === 'number' && data.{slot_name} < {min}) {{"
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             output,
-                            "      throw new RangeError('{} must be >= {}');",
-                            slot_name, min
+                            "      throw new RangeError('{slot_name} must be >= {min}');"
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -324,14 +315,12 @@ impl JavaScriptGenerator {
                     if let Some(ref max) = slot.maximum_value {
                         writeln!(
                             output,
-                            "    if (typeof data.{} === 'number' && data.{} > {}) {{",
-                            slot_name, slot_name, max
+                            "    if (typeof data.{slot_name} === 'number' && data.{slot_name} > {max}) {{"
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             output,
-                            "      throw new RangeError('{} must be <= {}');",
-                            slot_name, max
+                            "      throw new RangeError('{slot_name} must be <= {max}');"
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -343,14 +332,12 @@ impl JavaScriptGenerator {
                 if slot.multivalued.unwrap_or(false) {
                     writeln!(
                         output,
-                        "    if (data.{} && !Array.isArray(data.{})) {{",
-                        slot_name, slot_name
+                        "    if (data.{slot_name} && !Array.isArray(data.{slot_name})) {{"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "      throw new TypeError('{} must be an array');",
-                        slot_name
+                        "      throw new TypeError('{slot_name} must be an array');"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(output, "    }}").map_err(Self::fmt_error_to_generator_error)?;
@@ -368,7 +355,7 @@ impl JavaScriptGenerator {
         Ok(())
     }
 
-    /// Get JSDoc type annotation
+    /// Get `JSDoc` type annotation
     fn get_jsdoc_type(
         &self,
         slot: &SlotDefinition,
@@ -433,24 +420,24 @@ impl JavaScriptGenerator {
 
         writeln!(output, "/**").map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = slot.description {
-            writeln!(output, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(output, " * {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(output, " * @readonly").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, " * @enum {{string}}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, " */").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "export const {} = Object.freeze({{", enum_name)
+        writeln!(output, "export const {enum_name} = Object.freeze({{")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         for value in &slot.permissible_values {
             match value {
                 PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "  {}: \"{}\",", const_name, text)
+                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
+                    writeln!(output, "  {const_name}: \"{text}\",")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
-                    let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "  {}: \"{}\",", const_name, text)
+                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
+                    writeln!(output, "  {const_name}: \"{text}\",")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
@@ -488,7 +475,7 @@ impl Generator for JavaScriptGenerator {
         )
         .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
-            writeln!(&mut content, " * {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, " * {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut content, " */").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
@@ -530,8 +517,7 @@ impl Generator for JavaScriptGenerator {
                     let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
                     writeln!(
                         &mut content,
-                        "  module.exports.{} = {};",
-                        enum_name, enum_name
+                        "  module.exports.{enum_name} = {enum_name};"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -541,8 +527,7 @@ impl Generator for JavaScriptGenerator {
             for class_name in schema.classes.keys() {
                 writeln!(
                     &mut content,
-                    "  module.exports.{} = {};",
-                    class_name, class_name
+                    "  module.exports.{class_name} = {class_name};"
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -553,17 +538,17 @@ impl Generator for JavaScriptGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "js"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(LinkMLError::service("Schema must have a name".to_string()));
+            return Err(LinkMLError::service("Schema must have a name".to_string());
         }
 
         if schema.classes.is_empty() {
@@ -577,11 +562,11 @@ impl Generator for JavaScriptGenerator {
 }
 
 impl CodeFormatter for JavaScriptGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "javascript"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for javascript output with proper indentation and syntax"
     }
 
@@ -666,6 +651,7 @@ impl CodeFormatter for JavaScriptGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -695,7 +681,7 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate JavaScript: {}", e))?;
+            .expect("should generate JavaScript: {}");
         assert!(output.contains("export class Person"));
         assert!(output.contains("constructor(data = {})"));
         assert!(output.contains("#validate(data)"));

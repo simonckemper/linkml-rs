@@ -1,9 +1,8 @@
-//! Unique key validation for LinkML collections
+//! Unique key validation for `LinkML` collections
 //!
 //! This module ensures unique key constraints are enforced across collections,
 //! supporting composite keys and case-insensitive matching.
 
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -36,9 +35,15 @@ pub struct UniqueKeyDefinition {
     pub nulls_equal: bool,
 }
 
+impl Default for UniqueKeyValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UniqueKeyValidator {
     /// Create a new unique key validator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             unique_keys: HashMap::new(),
             case_sensitive: HashMap::new(),
@@ -46,7 +51,7 @@ impl UniqueKeyValidator {
     }
 
     /// Create from a `LinkML` schema
-    pub fn from_schema(schema: &SchemaDefinition) -> Self {
+    #[must_use] pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut validator = Self::new();
 
         // Extract unique keys from classes
@@ -66,8 +71,8 @@ impl UniqueKeyValidator {
 
             // Check for identifier slots (implicit unique key)
             for slot_name in &class_def.slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
-                    if slot_def.identifier.unwrap_or(false) {
+                if let Some(slot_def) = schema.slots.get(slot_name)
+                    && slot_def.identifier.unwrap_or(false) {
                         keys.push(UniqueKeyDefinition {
                             name: format!("{class_name}_id"),
                             unique_key_slots: vec![slot_name.clone()],
@@ -76,7 +81,6 @@ impl UniqueKeyValidator {
                             nulls_equal: false,
                         });
                     }
-                }
             }
 
             if !keys.is_empty() {
@@ -91,7 +95,7 @@ impl UniqueKeyValidator {
     pub fn add_unique_key(&mut self, class_name: &str, key_def: UniqueKeyDefinition) {
         self.unique_keys
             .entry(class_name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(key_def);
     }
 
@@ -102,6 +106,10 @@ impl UniqueKeyValidator {
     }
 
     /// Validate unique keys in a collection
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_collection(
         &self,
         instances: &[Value],
@@ -158,7 +166,7 @@ impl UniqueKeyValidator {
                 // Check for duplicates
                 seen_keys
                     .entry(key_values.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(index);
             }
         }
@@ -187,6 +195,10 @@ impl UniqueKeyValidator {
     }
 
     /// Validate a single instance for uniqueness (when adding to collection)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_instance(
         &self,
         instance: &Value,
@@ -208,11 +220,11 @@ impl UniqueKeyValidator {
     }
 
     /// Get the primary key value(s) for an instance
-    pub fn get_primary_key(&self, instance: &Value, class_name: &str) -> Option<Vec<Value>> {
+    #[must_use] pub fn get_primary_key(&self, instance: &Value, class_name: &str) -> Option<Vec<Value>> {
         if let Some(key_defs) = self.unique_keys.get(class_name) {
             // Find the primary key
-            if let Some(primary) = key_defs.iter().find(|k| k.is_primary) {
-                if let Value::Object(obj) = instance {
+            if let Some(primary) = key_defs.iter().find(|k| k.is_primary)
+                && let Value::Object(obj) = instance {
                     let mut key_values = Vec::new();
 
                     for slot_name in &primary.unique_key_slots {
@@ -222,7 +234,6 @@ impl UniqueKeyValidator {
 
                     return Some(key_values);
                 }
-            }
         }
 
         None
@@ -247,7 +258,7 @@ pub struct UniqueKeyViolation {
 
 impl UniqueKeyViolation {
     /// Format the violation as a user-friendly message
-    pub fn message(&self) -> String {
+    #[must_use] pub fn message(&self) -> String {
         let _key_str = self.key_slots.join(", ");
         let value_str = self
             .key_values
@@ -280,7 +291,7 @@ pub struct UniqueKeyIndex {
 
 impl UniqueKeyIndex {
     /// Create a new index
-    pub fn new(key_def: UniqueKeyDefinition) -> Self {
+    #[must_use] pub fn new(key_def: UniqueKeyDefinition) -> Self {
         Self {
             indices: HashMap::new(),
             key_def,
@@ -288,6 +299,10 @@ impl UniqueKeyIndex {
     }
 
     /// Build index from instances
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn build(&mut self, instances: &[Value]) -> Result<()> {
         for (index, instance) in instances.iter().enumerate() {
             if let Value::Object(obj) = instance {
@@ -300,9 +315,8 @@ impl UniqueKeyIndex {
 
                 if self.indices.contains_key(&key_values) {
                     return Err(LinkMLError::service(format!(
-                        "Duplicate key found while building index: {:?}",
-                        key_values
-                    )));
+                        "Duplicate key found while building index: {key_values:?}"
+                    ));
                 }
 
                 self.indices.insert(key_values, index);
@@ -313,12 +327,12 @@ impl UniqueKeyIndex {
     }
 
     /// Look up an instance by key values
-    pub fn lookup(&self, key_values: &[Value]) -> Option<usize> {
+    #[must_use] pub fn lookup(&self, key_values: &[Value]) -> Option<usize> {
         self.indices.get(key_values).copied()
     }
 
     /// Check if key values exist
-    pub fn contains(&self, key_values: &[Value]) -> bool {
+    #[must_use] pub fn contains(&self, key_values: &[Value]) -> bool {
         self.indices.contains_key(key_values)
     }
 }

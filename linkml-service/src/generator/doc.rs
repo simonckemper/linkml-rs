@@ -13,9 +13,9 @@ pub struct DocGenerator {
 }
 
 impl DocGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new documentation generator
@@ -358,22 +358,22 @@ impl Generator for DocGenerator {
             .map_err(|e| LinkMLError::service(format!("Documentation generation error: {e}")))
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         // For now, always return markdown
         "md"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema_documentation"
     }
 }
 
 impl CodeFormatter for DocGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "doc"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for doc output with proper indentation and syntax"
     }
 
@@ -450,6 +450,7 @@ impl CodeFormatter for DocGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_doc_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

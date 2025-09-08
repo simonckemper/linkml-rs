@@ -101,4 +101,5 @@ pub use summary::{SummaryGenerator, SummaryGeneratorConfig, SummaryFormat};
 pub use typescript::TypeScriptGenerator;
 pub use namespace_manager::TargetLanguage;
 pub use yaml_validator::{YamlValidatorGenerator, YamlValidatorGeneratorConfig, ValidationFramework};
+pub use typeql_generator::TypeQLGenerator;
 pub use yuml::YumlGenerator;

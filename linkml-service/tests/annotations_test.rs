@@ -5,6 +5,8 @@ use linkml_core::{
     types::{ClassDefinition, SchemaDefinition, SlotDefinition},
 };
 use linkml_service::parser::{SchemaParser, YamlParser};
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 
 #[test]
 fn test_annotations_api() {
@@ -35,7 +37,7 @@ fn test_annotations_api() {
 
     // Remove annotation
     let removed = schema.remove_annotation("deprecated");
-    assert_eq!(removed, Some(AnnotationValue::Bool(false)));
+    assert_eq!(removed, Some(AnnotationValue::Bool(false));
     assert!(!schema.has_annotation("deprecated"));
 }
 
@@ -103,7 +105,7 @@ slots:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Test operation failed");
 
     // Check schema annotations
@@ -120,8 +122,8 @@ slots:
     // Check array annotation
     if let Some(AnnotationValue::Array(tags)) = schema.get_annotation("tags") {
         assert_eq!(tags.len(), 2);
-        assert_eq!(tags[0], AnnotationValue::String("experimental".to_string()));
-        assert_eq!(tags[1], AnnotationValue::String("internal".to_string()));
+        assert_eq!(tags[0], AnnotationValue::String("experimental".to_string());
+        assert_eq!(tags[1], AnnotationValue::String("internal".to_string());
     } else {
         panic!("Expected array annotation");
     }
@@ -171,7 +173,7 @@ classes:
 
     let parser = YamlParser::new();
     let schema = parser
-        .parse_str(yaml_content)
+        .parse(yaml_content)
         .expect("Test operation failed");
 
     let dataset_class = schema

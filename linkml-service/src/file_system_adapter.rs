@@ -6,7 +6,7 @@
 //! async file operations.
 
 use async_trait::async_trait;
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::{LinkMLError, Result};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
@@ -56,20 +56,26 @@ pub struct FileMetadata {
     pub modified: Option<u64>,
 }
 
-/// Default file system adapter using tokio::fs
+/// Default file system adapter using `tokio::fs`
 pub struct TokioFileSystemAdapter {
     /// Optional root directory for sandboxing
     root: Option<PathBuf>,
 }
 
+impl Default for TokioFileSystemAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TokioFileSystemAdapter {
     /// Create new adapter
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self { root: None }
     }
 
     /// Create sandboxed adapter limited to a root directory
-    pub fn sandboxed(root: PathBuf) -> Self {
+    #[must_use] pub fn sandboxed(root: PathBuf) -> Self {
         Self { root: Some(root) }
     }
 
@@ -82,7 +88,7 @@ impl TokioFileSystemAdapter {
                     return Err(LinkMLError::IoError(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
                         format!("Path contains '..' which could escape sandbox: {path:?}"),
-                    )));
+                    ));
                 }
             }
 
@@ -91,7 +97,7 @@ impl TokioFileSystemAdapter {
                 return Err(LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
                     format!("Absolute paths not allowed in sandbox: {path:?}"),
-                )));
+                ));
             }
 
             // Safe to join
@@ -168,8 +174,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
         })?;
 
         while let Some(entry) = dir.next_entry().await.map_err(|e| {
-            LinkMLError::IoError(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            LinkMLError::IoError(std::io::Error::other(
                 format!("Failed to read directory entry: {e}"),
             ))
         })? {
@@ -254,7 +259,7 @@ pub fn sandboxed_fs(root: impl Into<PathBuf>) -> TokioFileSystemAdapter {
 }
 
 /// Create an unrestricted file system adapter
-pub fn unrestricted_fs() -> TokioFileSystemAdapter {
+#[must_use] pub fn unrestricted_fs() -> TokioFileSystemAdapter {
     TokioFileSystemAdapter::new()
 }
 
@@ -265,26 +270,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_sandboxed_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let fs = sandboxed_fs(temp_dir.path());
 
         // Test write and read
         let test_path = Path::new("test.txt");
         fs.write(test_path, "Hello, World!")
             .await
-            .map_err(|e| anyhow::anyhow!("should write file: {}", e))?;
+            .expect("should write file: {}");
         let content = fs
             .read_to_string(test_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should read file: {}", e))?;
+            .expect("should read file: {}");
         assert_eq!(content, "Hello, World!");
 
         // Test exists
-        assert!(fs.exists(test_path).await.map_err(|e| anyhow::anyhow!("should check existence: {}", e))?);
+        assert!(fs.exists(test_path).await.expect("should check existence: {}"));
         assert!(
             !fs.exists(Path::new("nonexistent.txt"))
                 .await
-                .map_err(|e| anyhow::anyhow!("should check non-existence: {}", e))?
+                .expect("should check non-existence: {}")
         );
 
         // Test sandbox escape prevention
@@ -295,26 +300,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_directory_operations() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let temp_dir = TempDir::new().map_err(|e| anyhow::anyhow!("should create temporary directory: {}", e))?;
+        let temp_dir = TempDir::new().expect("should create temporary directory: {}");
         let fs = sandboxed_fs(temp_dir.path());
 
         // Create nested directories
         let dir_path = Path::new("a/b/c");
         fs.create_dir_all(dir_path)
             .await
-            .map_err(|e| anyhow::anyhow!("should create nested directories: {}", e))?;
+            .expect("should create nested directories: {}");
 
         // Write file in nested directory
         let file_path = Path::new("a/b/c/file.txt");
         fs.write(file_path, "nested content")
             .await
-            .map_err(|e| anyhow::anyhow!("should write file in nested directory: {}", e))?;
+            .expect("should write file in nested directory: {}");
 
         // Read directory
         let entries = fs
             .read_dir(Path::new("a/b/c"))
             .await
-            .map_err(|e| anyhow::anyhow!("should read directory: {}", e))?;
+            .expect("should read directory: {}");
         assert_eq!(entries.len(), 1);
         Ok(())
     }

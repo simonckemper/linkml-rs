@@ -95,7 +95,7 @@ pub struct ExpressionEngineV2 {
 
 impl ExpressionEngineV2 {
     /// Create a new enhanced expression engine
-    pub fn new(config: EngineConfig) -> Self {
+    #[must_use] pub fn new(config: EngineConfig) -> Self {
         let function_registry = Arc::new(FunctionRegistry::new());
         let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
 
@@ -146,7 +146,7 @@ impl ExpressionEngineV2 {
     }
 
     /// Create with custom function registry
-    pub fn with_function_registry(
+    #[must_use] pub fn with_function_registry(
         config: EngineConfig,
         function_registry: Arc<FunctionRegistry>,
     ) -> Self {
@@ -202,6 +202,10 @@ impl ExpressionEngineV2 {
     }
 
     /// Evaluate an expression with the given context
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn evaluate(
         &self,
         expression: &str,
@@ -211,6 +215,10 @@ impl ExpressionEngineV2 {
     }
 
     /// Evaluate an expression with schema context for better caching
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn evaluate_with_schema(
         &self,
         expression: &str,
@@ -229,22 +237,21 @@ impl ExpressionEngineV2 {
         // Create cache key
         let key = ExpressionKey {
             source: expression.to_string(),
-            schema_id: schema_id.map(|s| s.to_string()),
+            schema_id: schema_id.map(std::string::ToString::to_string),
         };
 
         // Try to get from cache
         let (ast, compiled) = if self.config.use_caching {
             if let Some(cached) = self.cache.get(&key) {
                 if let Some(start) = start_time {
-                    let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+                    let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned: {}");
                     metrics.cache_hit_rate = self.cache.overall_hit_rate();
                     // Track cache hit timing - this is very fast
-                    if let Ok(now) = self.timestamp_service.system_time() {
-                        if let Ok(duration) = now.duration_since(start) {
+                    if let Ok(now) = self.timestamp_service.system_time()
+                        && let Ok(duration) = now.duration_since(start) {
                             // Cache hits are typically sub-microsecond
                             metrics.total_time_us += duration.as_micros() as u64;
                         }
-                    }
                 }
                 (cached.ast, cached.compiled)
             } else {
@@ -272,7 +279,7 @@ impl ExpressionEngineV2 {
 
         // Update metrics including total operation time
         if self.config.collect_metrics {
-            let mut metrics = self.metrics.write().map_err(|e| anyhow::anyhow!("metrics lock should not be poisoned: {}", e))?;
+            let mut metrics = self.metrics.write().expect("metrics lock should not be poisoned: {}");
             metrics.total_evaluations += 1;
 
             // Calculate and record total operation time if we have a start time
@@ -400,7 +407,7 @@ impl ExpressionEngineV2 {
                 message: format!("Failed to get system time: {e}")
             }))?;
         let result = self.evaluator.evaluate(ast, context)
-            .map_err(|e| ExpressionError::Evaluation(e))?;
+            .map_err(ExpressionError::Evaluation)?;
 
         if let Some(_start) = start_time {
             let eval_end = self.timestamp_service.system_time()
@@ -420,8 +427,8 @@ impl ExpressionEngineV2 {
     }
 
     /// Get performance metrics
-    pub fn metrics(&self) -> PerformanceMetrics {
-        self.metrics.read().unwrap_or_else(|poisoned| poisoned.into_inner()).clone()
+    #[must_use] pub fn metrics(&self) -> PerformanceMetrics {
+        self.metrics.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
     /// Clear the expression cache
@@ -435,6 +442,10 @@ impl ExpressionEngineV2 {
     }
 
     /// Pre-compile an expression for later use
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn precompile(
         &self,
         expression: &str,
@@ -442,7 +453,7 @@ impl ExpressionEngineV2 {
     ) -> Result<(), ExpressionError> {
         let key = ExpressionKey {
             source: expression.to_string(),
-            schema_id: schema_id.map(|s| s.to_string()),
+            schema_id: schema_id.map(std::string::ToString::to_string),
         };
 
         // Check if already cached
@@ -460,7 +471,7 @@ impl ExpressionEngineV2 {
     }
 
     /// Batch evaluate multiple expressions
-    pub fn batch_evaluate(
+    #[must_use] pub fn batch_evaluate(
         &self,
         expressions: &[(String, HashMap<String, Value>)],
     ) -> Vec<Result<Value, ExpressionError>> {
@@ -478,7 +489,7 @@ pub struct EngineBuilder {
 
 impl EngineBuilder {
     /// Create a new builder with default config
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             config: EngineConfig::default(),
             function_registry: None,
@@ -486,43 +497,43 @@ impl EngineBuilder {
     }
 
     /// Set whether to use compilation
-    pub fn use_compilation(mut self, enabled: bool) -> Self {
+    #[must_use] pub fn use_compilation(mut self, enabled: bool) -> Self {
         self.config.use_compilation = enabled;
         self
     }
 
     /// Set whether to use caching
-    pub fn use_caching(mut self, enabled: bool) -> Self {
+    #[must_use] pub fn use_caching(mut self, enabled: bool) -> Self {
         self.config.use_caching = enabled;
         self
     }
 
     /// Set cache capacity
-    pub fn cache_capacity(mut self, capacity: usize) -> Self {
+    #[must_use] pub fn cache_capacity(mut self, capacity: usize) -> Self {
         self.config.cache_capacity = capacity;
         self
     }
 
     /// Set optimization level (0-3)
-    pub fn optimization_level(mut self, level: u8) -> Self {
+    #[must_use] pub fn optimization_level(mut self, level: u8) -> Self {
         self.config.optimization_level = level.min(3);
         self
     }
 
     /// Set custom function registry
-    pub fn with_function_registry(mut self, registry: Arc<FunctionRegistry>) -> Self {
+    #[must_use] pub fn with_function_registry(mut self, registry: Arc<FunctionRegistry>) -> Self {
         self.function_registry = Some(registry);
         self
     }
 
     /// Enable metrics collection
-    pub fn collect_metrics(mut self, enabled: bool) -> Self {
+    #[must_use] pub fn collect_metrics(mut self, enabled: bool) -> Self {
         self.config.collect_metrics = enabled;
         self
     }
 
     /// Build the engine
-    pub fn build(self) -> ExpressionEngineV2 {
+    #[must_use] pub fn build(self) -> ExpressionEngineV2 {
         if let Some(registry) = self.function_registry {
             ExpressionEngineV2::with_function_registry(self.config, registry)
         } else {
@@ -542,16 +553,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_evaluation() {
+    fn test_basic_evaluation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let engine = EngineBuilder::new().build();
         let context = HashMap::new();
 
-        let result = engine.evaluate("1 + 2 * 3", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression: {}", e))?;
-        assert_eq!(result, Value::Number(serde_json::Number::from(7)));
+        let result = engine.evaluate("1 + 2 * 3", &context).expect("should evaluate simple expression: {}");
+        assert_eq!(result, Value::Number(serde_json::Number::from(7));
+        Ok(())
     }
 
     #[test]
-    fn test_caching_performance() {
+    fn test_caching_performance() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let engine = EngineBuilder::new()
             .collect_metrics(true)
             .build();
@@ -560,20 +572,21 @@ mod tests {
         let expr = "1 + 2 + 3 + 4 + 5";
 
         // First evaluation - cache miss
-        engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate expression on first try: {}", e))?;
+        engine.evaluate(expr, &context).expect("should evaluate expression on first try: {}");
 
         // Subsequent evaluations - cache hits
         for _ in 0..10 {
-            engine.evaluate(expr, &context).map_err(|e| anyhow::anyhow!("should evaluate cached expression: {}", e))?;
+            engine.evaluate(expr, &context).expect("should evaluate cached expression: {}");
         }
 
         let metrics = engine.metrics();
         assert_eq!(metrics.total_evaluations, 11);
         assert!(metrics.cache_hit_rate > 0.9);
+        Ok(())
     }
 
     #[test]
-    fn test_compilation_threshold() {
+    fn test_compilation_threshold() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let engine = EngineBuilder::new()
             .collect_metrics(true)
             .compilation_threshold(10)
@@ -582,14 +595,15 @@ mod tests {
         let context = HashMap::new();
 
         // Simple expression - should use interpreter
-        engine.evaluate("1 + 2", &context).map_err(|e| anyhow::anyhow!("should evaluate simple expression with interpreter: {}", e))?;
+        engine.evaluate("1 + 2", &context).expect("should evaluate simple expression with interpreter: {}");
 
         // Complex expression - should use VM
         let complex = "1 + 2 * 3 - 4 / 5 + 6 * 7 - 8 / 9 + 10";
-        engine.evaluate(complex, &context).map_err(|e| anyhow::anyhow!("should evaluate complex expression with VM: {}", e))?;
+        engine.evaluate(complex, &context).expect("should evaluate complex expression with VM: {}");
 
         let metrics = engine.metrics();
         assert_eq!(metrics.interpreted_evaluations, 1);
         assert_eq!(metrics.compiled_evaluations, 1);
+        Ok(())
     }
 }

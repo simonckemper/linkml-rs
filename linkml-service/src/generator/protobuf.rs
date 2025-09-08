@@ -1,6 +1,6 @@
-//! Protocol Buffers code generator for LinkML schemas
+//! Protocol Buffers code generator for `LinkML` schemas
 //!
-//! This module generates Protocol Buffers (.proto) files from LinkML schemas,
+//! This module generates Protocol Buffers (.proto) files from `LinkML` schemas,
 //! enabling cross-language serialization and RPC support.
 
 use linkml_core::types::{
@@ -21,9 +21,9 @@ pub struct ProtobufGenerator {
 }
 
 impl ProtobufGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new Protocol Buffers generator
@@ -76,7 +76,7 @@ impl ProtobufGenerator {
         writeln!(&mut output, "// Schema ID: {}", schema.id)
             .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "// Version: {}", version)
+            writeln!(&mut output, "// Version: {version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -86,7 +86,7 @@ impl ProtobufGenerator {
 
         // Package name from schema name
         let package_name = self.to_snake_case(&schema.name);
-        writeln!(&mut output, "package {};", package_name)
+        writeln!(&mut output, "package {package_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -115,7 +115,7 @@ impl ProtobufGenerator {
 
         // Add description as comment
         if let Some(desc) = &enum_def.description {
-            writeln!(&mut output, "// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "// {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output, "enum {} {{", self.to_pascal_case(name))
@@ -161,7 +161,7 @@ impl ProtobufGenerator {
 
         // Add description as comment
         if let Some(desc) = &class.description {
-            writeln!(&mut output, "// {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "// {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(&mut output, "message {} {{", self.to_pascal_case(name))
@@ -182,7 +182,7 @@ impl ProtobufGenerator {
 
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field = self.generate_field(slot, field_number, schema)?;
-                write!(&mut output, "{}", field).map_err(Self::fmt_error_to_generator_error)?;
+                write!(&mut output, "{field}").map_err(Self::fmt_error_to_generator_error)?;
                 field_number += 1;
             }
         }
@@ -197,11 +197,10 @@ impl ProtobufGenerator {
         let mut all_slots = Vec::new();
 
         // First, recursively get slots from parent
-        if let Some(parent_name) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 all_slots.extend(self.collect_all_slots(parent_class, schema));
             }
-        }
 
         // Then add direct slots
         all_slots.extend(class.slots.clone());
@@ -220,7 +219,7 @@ impl ProtobufGenerator {
 
         // Add description as comment
         if let Some(desc) = &slot.description {
-            writeln!(&mut output, "  // {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "  // {desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         // Determine proto type
@@ -237,8 +236,7 @@ impl ProtobufGenerator {
         let field_name = self.to_snake_case(&slot.name);
         writeln!(
             &mut output,
-            "  {}{} {} = {};",
-            repeated, proto_type, field_name, field_number
+            "  {repeated}{proto_type} {field_name} = {field_number};"
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -268,7 +266,7 @@ impl ProtobufGenerator {
         }
     }
 
-    /// Convert to snake_case
+    /// Convert to `snake_case`
     fn to_snake_case(&self, s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
@@ -288,7 +286,7 @@ impl ProtobufGenerator {
         result
     }
 
-    /// Convert to PascalCase
+    /// Convert to `PascalCase`
     fn to_pascal_case(&self, s: &str) -> String {
         s.split('_')
             .map(|word| {
@@ -301,7 +299,7 @@ impl ProtobufGenerator {
             .collect()
     }
 
-    /// Convert to SCREAMING_SNAKE_CASE
+    /// Convert to `SCREAMING_SNAKE_CASE`
     fn to_screaming_snake_case(&self, s: &str) -> String {
         // Handle hyphens and underscores
         let with_underscores = s.replace('-', "_");
@@ -340,11 +338,11 @@ impl Default for ProtobufGenerator {
 }
 
 impl Generator for ProtobufGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "protobuf"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates Protocol Buffers (.proto) files from LinkML schemas"
     }
 
@@ -372,9 +370,9 @@ impl Generator for ProtobufGenerator {
         let mut enum_output = String::new();
         for (name, enum_def) in &schema.enums {
             let enum_code = self.generate_enum(name, enum_def).map_err(|e| {
-                LinkMLError::service(format!("Error generating enum {}: {}", name, e))
+                LinkMLError::service(format!("Error generating enum {name}: {e}"))
             })?;
-            writeln!(&mut enum_output, "{}", enum_code)
+            writeln!(&mut enum_output, "{enum_code}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -386,20 +384,20 @@ impl Generator for ProtobufGenerator {
         // Generate messages
         for (name, class) in &schema.classes {
             let message_code = self.generate_message(name, class, schema).map_err(|e| {
-                LinkMLError::service(format!("Error generating class {}: {}", name, e))
+                LinkMLError::service(format!("Error generating class {name}: {e}"))
             })?;
-            writeln!(&mut output, "{}", message_code)
+            writeln!(&mut output, "{message_code}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         Ok(output)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "proto"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -408,6 +406,7 @@ impl Generator for ProtobufGenerator {
 mod tests {
     use super::*;
     use linkml_core::types::SlotDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
     fn test_protobuf_generation() -> anyhow::Result<()> {
@@ -468,7 +467,7 @@ mod tests {
         let generator = ProtobufGenerator::new();
         let proto_content = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate protobuf: {}", e))?;
+            .expect("should generate protobuf: {}");
 
         assert!(proto_content.contains("syntax = \"proto3\""));
         assert!(proto_content.contains("package test_schema"));
@@ -511,31 +510,31 @@ mod tests {
         assert_eq!(
             generator
                 .get_proto_type(&Some("string".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
+                .expect("should get proto type: {}"),
             "string"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("integer".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
+                .expect("should get proto type: {}"),
             "int64"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("boolean".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
+                .expect("should get proto type: {}"),
             "bool"
         );
         assert_eq!(
             generator
                 .get_proto_type(&Some("CustomType".to_string()), &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
+                .expect("should get proto type: {}"),
             "CustomType"
         );
         assert_eq!(
             generator
                 .get_proto_type(&None, &schema)
-                .map_err(|e| anyhow::anyhow!("should get proto type: {}", e))?,
+                .expect("should get proto type: {}"),
             "string"
         );
         Ok(())

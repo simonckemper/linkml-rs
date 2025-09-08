@@ -3,7 +3,6 @@
 //! This module defines the fundamental traits and types used by all code generators.
 
 use async_trait::async_trait;
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -95,18 +94,42 @@ pub struct GeneratorConfig {
 
 impl GeneratorOptions {
     /// Create new generator options
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set whether to include documentation
+    #[must_use] pub fn with_docs(mut self, include_docs: bool) -> Self {
+        self.include_docs = include_docs;
+        self
+    }
+
+    /// Set whether to generate tests
+    #[must_use] pub fn with_tests(mut self, generate_tests: bool) -> Self {
+        self.generate_tests = generate_tests;
+        self
+    }
+
+    /// Set indentation style
+    #[must_use] pub fn with_indent(mut self, indent: IndentStyle) -> Self {
+        self.indent = indent;
+        self
+    }
+
+    /// Set output format
+    #[must_use] pub fn with_format(mut self, format: OutputFormat) -> Self {
+        self.output_format = format;
+        self
+    }
+
     /// Set a custom option
-    pub fn set_custom(mut self, key: &str, value: &str) -> Self {
+    #[must_use] pub fn set_custom(mut self, key: &str, value: &str) -> Self {
         self.custom.insert(key.to_string(), value.to_string());
         self
     }
 
     /// Get a custom option
-    pub fn get_custom(&self, key: &str) -> Option<&String> {
+    #[must_use] pub fn get_custom(&self, key: &str) -> Option<&String> {
         self.custom.get(key)
     }
 }
@@ -128,7 +151,7 @@ impl Default for IndentStyle {
 
 impl IndentStyle {
     /// Get single indentation string
-    pub fn single(&self) -> String {
+    #[must_use] pub fn single(&self) -> String {
         match self {
             Self::Spaces(n) => " ".repeat(*n),
             Self::Tabs => "\t".to_string(),
@@ -136,7 +159,7 @@ impl IndentStyle {
     }
 
     /// Get indentation string for given level
-    pub fn to_string(&self, level: usize) -> String {
+    #[must_use] pub fn to_string(&self, level: usize) -> String {
         match self {
             Self::Spaces(n) => " ".repeat(n * level),
             Self::Tabs => "\t".repeat(level),
@@ -149,7 +172,7 @@ impl IndentStyle {
 pub enum OutputFormat {
     /// Rust code
     Rust,
-    /// TypeQL schema
+    /// `TypeQL` schema
     TypeQL,
     /// GraphQL schema
     GraphQL,
@@ -253,7 +276,7 @@ pub trait CodeFormatter {
     fn format_doc(&self, doc: &str, indent: &IndentStyle, level: usize) -> String {
         let prefix = indent.to_string(level);
         doc.lines()
-            .map(|line| format!("{}{}", prefix, line))
+            .map(|line| format!("{prefix}{line}"))
             .collect::<Vec<_>>()
             .join("\n")
     }
@@ -285,10 +308,3 @@ pub trait CodeFormatter {
         id.to_string()
     }
 }
-
-
-
-
-
-
-

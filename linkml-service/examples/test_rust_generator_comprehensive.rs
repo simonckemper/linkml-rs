@@ -2,7 +2,7 @@ use linkml_core::prelude::*;
 use linkml_service::generator::{registry::GeneratorRegistry, Generator};
 use std::fs;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("=== Comprehensive RustGenerator Test ===\n");
 
     // Create a complex schema with various field types

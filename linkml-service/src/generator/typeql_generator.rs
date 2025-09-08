@@ -5,7 +5,6 @@ use super::traits::{
     AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
 };
 use async_trait::async_trait;
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
@@ -25,15 +24,14 @@ impl TypeQLGenerator {
         }
     }
 
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        GeneratorError::Io(std::io::Error::other(
             format!("Formatting error: {err}"),
         ))
     }
 
-    /// Check if a string is a valid TypeQL identifier
+    /// Check if a string is a valid `TypeQL` identifier
     fn is_valid_typeql_identifier(name: &str) -> bool {
         if name.is_empty() {
             return false;
@@ -41,11 +39,10 @@ impl TypeQLGenerator {
 
         // Must start with a letter
         let mut chars = name.chars();
-        if let Some(first) = chars.next() {
-            if !first.is_ascii_alphabetic() {
+        if let Some(first) = chars.next()
+            && !first.is_ascii_alphabetic() {
                 return false;
             }
-        }
 
         // Rest must be letters, numbers, or underscores
         for ch in chars {
@@ -209,12 +206,11 @@ impl TypeQLGenerator {
             for class in schema.classes.values() {
                 if !class.slots.is_empty() {
                     for slot_name in &class.slots {
-                        if !generated_attrs.contains(slot_name) {
-                            if let Some(slot) = schema.slots.get(slot_name) {
+                        if !generated_attrs.contains(slot_name)
+                            && let Some(slot) = schema.slots.get(slot_name) {
                                 self.generate_attribute(output, slot_name, slot)?;
                                 generated_attrs.insert(slot_name.clone());
                             }
-                        }
                     }
                 }
             }
@@ -257,11 +253,10 @@ impl TypeQLGenerator {
             for (class_name, class) in &schema.classes {
                 if !class.slots.is_empty() {
                     for slot_name in &class.slots {
-                        if let Some(slot) = schema.slots.get(slot_name) {
-                            if slot.required == Some(true) {
+                        if let Some(slot) = schema.slots.get(slot_name)
+                            && slot.required == Some(true) {
                                 self.generate_required_rule(output, class_name, slot_name, indent)?;
                             }
-                        }
                     }
                 }
             }
@@ -312,14 +307,13 @@ impl TypeQLGenerator {
         // A class is a relation if it has slots that reference other classes
         if !class.slots.is_empty() {
             for slot_name in &class.slots {
-                if let Some(slot) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot.range {
+                if let Some(slot) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot.range {
                         // Check if range is a class reference
                         if schema.classes.contains_key(range) {
                             return true;
                         }
                     }
-                }
             }
         }
         false
@@ -337,11 +331,10 @@ impl TypeQLGenerator {
             for slot_name in &class.slots {
                 if let Some(slot) = schema.slots.get(slot_name) {
                     // Only include non-relation slots as attributes
-                    if let Some(range) = &slot.range {
-                        if !schema.classes.contains_key(range) {
+                    if let Some(range) = &slot.range
+                        && !schema.classes.contains_key(range) {
                             attributes.push(self.convert_identifier(slot_name));
                         }
-                    }
                 }
             }
         }
@@ -359,8 +352,8 @@ impl TypeQLGenerator {
 
         if !class.slots.is_empty() {
             for slot_name in &class.slots {
-                if let Some(slot) = schema.slots.get(slot_name) {
-                    if let Some(range) = &slot.range {
+                if let Some(slot) = schema.slots.get(slot_name)
+                    && let Some(range) = &slot.range {
                         // Check if range is a class reference
                         if schema.classes.contains_key(range) {
                             let role_name = self.convert_identifier(slot_name);
@@ -368,7 +361,6 @@ impl TypeQLGenerator {
                             roles.push((role_name, vec![player_type]));
                         }
                     }
-                }
             }
         }
 
@@ -401,7 +393,7 @@ impl AsyncGenerator for TypeQLGenerator {
         &self.name
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate TypeQL schema definitions for TypeDB from LinkML schemas"
     }
 
@@ -422,9 +414,8 @@ impl AsyncGenerator for TypeQLGenerator {
             // Check class name is valid TypeQL identifier
             if !Self::is_valid_typeql_identifier(class_name) {
                 return Err(GeneratorError::Validation(format!(
-                    "Class name '{}' is not a valid TypeQL identifier. Must start with a letter and contain only letters, numbers, and underscores.",
-                    class_name
-                )));
+                    "Class name '{class_name}' is not a valid TypeQL identifier. Must start with a letter and contain only letters, numbers, and underscores."
+                ));
             }
 
             // Validate slots
@@ -433,9 +424,8 @@ impl AsyncGenerator for TypeQLGenerator {
                 for slot_name in slots {
                     if !Self::is_valid_typeql_identifier(slot_name) {
                         return Err(GeneratorError::Validation(format!(
-                            "Slot name '{}' in class '{}' is not a valid TypeQL identifier",
-                            slot_name, class_name
-                        )));
+                            "Slot name '{slot_name}' in class '{class_name}' is not a valid TypeQL identifier"
+                        ));
                     }
                 }
             }
@@ -446,9 +436,8 @@ impl AsyncGenerator for TypeQLGenerator {
                 for attr_name in attributes.keys() {
                     if !Self::is_valid_typeql_identifier(attr_name) {
                         return Err(GeneratorError::Validation(format!(
-                            "Attribute name '{}' in class '{}' is not a valid TypeQL identifier",
-                            attr_name, class_name
-                        )));
+                            "Attribute name '{attr_name}' in class '{class_name}' is not a valid TypeQL identifier"
+                        ));
                     }
                 }
             }
@@ -458,9 +447,8 @@ impl AsyncGenerator for TypeQLGenerator {
         for (slot_name, _slot_def) in &schema.slots {
             if !Self::is_valid_typeql_identifier(slot_name) {
                 return Err(GeneratorError::Validation(format!(
-                    "Slot definition name '{}' is not a valid TypeQL identifier",
-                    slot_name
-                )));
+                    "Slot definition name '{slot_name}' is not a valid TypeQL identifier"
+                ));
             }
         }
 
@@ -503,7 +491,7 @@ impl AsyncGenerator for TypeQLGenerator {
         }
 
         // Generate rules if requested
-        if options.get_custom("generate_rules").map(|s| s.as_str()) == Some("true") {
+        if options.get_custom("generate_rules").map(std::string::String::as_str) == Some("true") {
             writeln!(&mut output, "# Rules").map_err(Self::fmt_error_to_generator_error)?;
             self.generate_rules(&mut output, schema, indent)?;
         }
@@ -532,11 +520,11 @@ impl AsyncGenerator for TypeQLGenerator {
 
 // Implement the synchronous Generator trait for backward compatibility
 impl Generator for TypeQLGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typeql"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate TypeQL schema definitions for TypeDB graph database from LinkML schemas"
     }
 
@@ -568,21 +556,21 @@ impl Generator for TypeQLGenerator {
             .join("\n"))
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "tql"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "generated.tql"
     }
 }
 
 impl CodeFormatter for TypeQLGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "typeql_formatter"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Code formatter for TypeQL schema definitions with proper indentation and comment handling"
     }
 
@@ -668,6 +656,7 @@ impl CodeFormatter for TypeQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[tokio::test]
     async fn test_typeql_generation() -> anyhow::Result<()> {
@@ -695,7 +684,7 @@ mod tests {
         let options = GeneratorOptions::new();
         let outputs = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("Failed to generate TypeQL: {}", e))?;
+            .expect("Failed to generate TypeQL: {}");
 
         assert_eq!(outputs.len(), 1);
         assert!(outputs[0].content.contains("person sub entity"));
@@ -718,14 +707,14 @@ mod tests {
     }
 }
 
-/// Create a new TypeQL generator using the factory pattern
+/// Create a new `TypeQL` generator using the factory pattern
 ///
-/// This is the preferred way to create a TypeQL generator, ensuring proper
-/// initialization and following RootReal's factory pattern standards.
+/// This is the preferred way to create a `TypeQL` generator, ensuring proper
+/// initialization and following `RootReal`'s factory pattern standards.
 ///
 /// # Returns
 ///
-/// Returns a configured TypeQL generator instance
-pub fn create_typeql_generator() -> TypeQLGenerator {
+/// Returns a configured `TypeQL` generator instance
+#[must_use] pub fn create_typeql_generator() -> TypeQLGenerator {
     TypeQLGenerator::new()
 }

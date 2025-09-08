@@ -1,4 +1,4 @@
-//! Trait implementations for the RustGenerator
+//! Trait implementations for the `RustGenerator`
 
 use super::core::RustGenerator;
 use super::traits::{AsyncGenerator, GeneratedOutput, GeneratorResult, GeneratorOptions};
@@ -33,13 +33,12 @@ impl AsyncGenerator for RustGenerator {
         // Validate class references
         for (class_name, class) in &schema.classes {
             // Check parent class exists
-            if let Some(parent) = &class.is_a {
-                if !schema.classes.contains_key(parent) {
+            if let Some(parent) = &class.is_a
+                && !schema.classes.contains_key(parent) {
                     return Err(super::traits::GeneratorError::Validation(
-                        format!("Class '{}' references unknown parent '{}'", class_name, parent),
+                        format!("Class '{class_name}' references unknown parent '{parent}'"),
                     ));
                 }
-            }
 
             // Check slot references
             if !class.slots.is_empty() {
@@ -47,7 +46,7 @@ impl AsyncGenerator for RustGenerator {
                 for slot_name in slots {
                     if !schema.slots.contains_key(slot_name) {
                         return Err(super::traits::GeneratorError::Validation(
-                            format!("Class '{}' references unknown slot '{}'", class_name, slot_name),
+                            format!("Class '{class_name}' references unknown slot '{slot_name}'"),
                         ));
                     }
                 }
@@ -193,7 +192,7 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    fn test_{}_creation() {{", class_name.to_lowercase())
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        let instance = {}::new();", struct_name)
+        writeln!(output, "        let instance = {struct_name}::new();")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "        assert!(instance.validate().is_ok());")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -207,11 +206,11 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    fn test_{}_serialization() {{", class_name.to_lowercase())
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        let instance = {}::new();", struct_name)
+        writeln!(output, "        let instance = {struct_name}::new();")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "        let json = instance.to_json().expect(\"Serialization failed\");")
             .map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "        let _deserialized: {} = {}::from_json(&json).expect(\"Deserialization failed\");", struct_name, struct_name)
+        writeln!(output, "        let _deserialized: {struct_name} = {struct_name}::from_json(&json).expect(\"Deserialization failed\");")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "    }}")
             .map_err(Self::fmt_error_to_generator_error)?;

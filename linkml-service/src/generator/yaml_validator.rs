@@ -1,6 +1,6 @@
-//! YAML validator generator for LinkML schemas
+//! YAML validator generator for `LinkML` schemas
 //!
-//! This module generates YAML validation rules and schemas from LinkML schemas,
+//! This module generates YAML validation rules and schemas from `LinkML` schemas,
 //! enabling validation of YAML data against LinkML-defined structures.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
@@ -31,7 +31,7 @@ pub struct YamlValidatorGeneratorConfig {
 /// Supported validation frameworks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationFramework {
-    /// `JSON` SchemaDefinition for `YAML` validation
+    /// `JSON` `SchemaDefinition` for `YAML` validation
     JsonSchemaDefinition,
     /// Cerberus (Python) validation rules
     Cerberus,
@@ -63,7 +63,7 @@ pub struct YamlValidatorGenerator {
 
 impl YamlValidatorGenerator {
     /// Create a new `YAML` validator generator
-    pub fn new(config: YamlValidatorGeneratorConfig) -> Self {
+    #[must_use] pub fn new(config: YamlValidatorGeneratorConfig) -> Self {
         Self { config }
     }
 
@@ -78,7 +78,7 @@ impl YamlValidatorGenerator {
         }
     }
 
-    /// Generate `JSON` SchemaDefinition for `YAML` validation
+    /// Generate `JSON` `SchemaDefinition` for `YAML` validation
     fn generate_json_schema(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
         let mut json_schema = Map::new();
 
@@ -146,15 +146,14 @@ impl YamlValidatorGenerator {
         })
     }
 
-    /// Convert `LinkML` type to JSON SchemaDefinition
+    /// Convert `LinkML` type to JSON `SchemaDefinition`
     fn type_to_json_schema(&self, type_def: &TypeDefinition) -> Result<Value, LinkMLError> {
         let mut schema = Map::new();
 
-        if let Some(description) = &type_def.description {
-            if self.config.include_docs {
+        if let Some(description) = &type_def.description
+            && self.config.include_docs {
                 schema.insert("description".to_string(), json!(description));
             }
-        }
 
         // Base type mapping
         match type_def.base_type.as_deref() {
@@ -211,15 +210,14 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(schema))
     }
 
-    /// Convert `LinkML` enum to JSON SchemaDefinition
+    /// Convert `LinkML` enum to JSON `SchemaDefinition`
     fn enum_to_json_schema(&self, enum_def: &EnumDefinition) -> Result<Value, LinkMLError> {
         let mut schema = Map::new();
 
-        if let Some(description) = &enum_def.description {
-            if self.config.include_docs {
+        if let Some(description) = &enum_def.description
+            && self.config.include_docs {
                 schema.insert("description".to_string(), json!(description));
             }
-        }
 
         if !enum_def.permissible_values.is_empty() {
             let enum_values: Vec<String> = enum_def
@@ -241,7 +239,7 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(schema))
     }
 
-    /// Convert `LinkML` class to JSON SchemaDefinition
+    /// Convert `LinkML` class to JSON `SchemaDefinition`
     fn class_to_json_schema(
         &self,
         class_def: &ClassDefinition,
@@ -251,11 +249,10 @@ impl YamlValidatorGenerator {
 
         json_schema.insert("type".to_string(), json!("object"));
 
-        if let Some(description) = &class_def.description {
-            if self.config.include_docs {
+        if let Some(description) = &class_def.description
+            && self.config.include_docs {
                 json_schema.insert("description".to_string(), json!(description));
             }
-        }
 
         let mut properties = Map::new();
         let mut required = Vec::new();
@@ -301,7 +298,7 @@ impl YamlValidatorGenerator {
         Ok(Value::Object(json_schema))
     }
 
-    /// Convert `LinkML` slot to JSON SchemaDefinition
+    /// Convert `LinkML` slot to JSON `SchemaDefinition`
     fn slot_to_json_schema(
         &self,
         slot_def: &SlotDefinition,
@@ -309,11 +306,10 @@ impl YamlValidatorGenerator {
     ) -> Result<Value, LinkMLError> {
         let mut json_schema = Map::new();
 
-        if let Some(description) = &slot_def.description {
-            if self.config.include_docs {
+        if let Some(description) = &slot_def.description
+            && self.config.include_docs {
                 json_schema.insert("description".to_string(), json!(description));
             }
-        }
 
         // Handle multivalued slots
         if slot_def.multivalued == Some(true) {
@@ -338,7 +334,7 @@ impl YamlValidatorGenerator {
         self.get_range_schema(slot_def, schema)
     }
 
-    /// Get `JSON` SchemaDefinition for slot range
+    /// Get `JSON` `SchemaDefinition` for slot range
     fn get_range_schema(
         &self,
         slot_def: &SlotDefinition,
@@ -387,7 +383,7 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 output.push_str(&format!("# Validation schema for {class_name}\n"));
-                output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase()));
+                output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase());
 
                 // Process slots
                 for slot_name in &class_def.slots {
@@ -547,14 +543,13 @@ impl YamlValidatorGenerator {
         }
 
         // Description
-        if let Some(description) = &slot_def.description {
-            if self.config.include_docs {
+        if let Some(description) = &slot_def.description
+            && self.config.include_docs {
                 rule.push_str(&format!(
                     ".description('{}')",
                     description.replace('\'', "\\'")
                 ));
             }
-        }
 
         Ok(rule)
     }
@@ -645,11 +640,10 @@ impl YamlValidatorGenerator {
         }
 
         // Custom error message
-        if self.config.custom_error_messages {
-            if let Some(_description) = &slot_def.description {
+        if self.config.custom_error_messages
+            && let Some(_description) = &slot_def.description {
                 rule.push_str(&format!(".label('{name}')"));
             }
-        }
 
         Ok(rule)
     }
@@ -750,11 +744,11 @@ impl YamlValidatorGenerator {
 }
 
 impl Generator for YamlValidatorGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "yaml-validator"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generate YAML validators from LinkML schemas"
     }
 
@@ -795,10 +789,10 @@ impl Generator for YamlValidatorGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::prelude::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_yaml_validator_generation() {
+    fn test_yaml_validator_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "TestSchemaDefinition".to_string();
 
@@ -821,10 +815,11 @@ mod tests {
         let generator = YamlValidatorGenerator::new(config);
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate YAML validator: {}", e))?;
+            .expect("should generate YAML validator: {}");
 
         assert!(result.contains("$schema"));
         assert!(result.contains("definitions"));
         assert!(result.contains("Person"));
+        Ok(())
     }
 }

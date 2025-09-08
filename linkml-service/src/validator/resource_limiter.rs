@@ -8,8 +8,8 @@
 //! - Timeout enforcement
 
 use dashmap::DashMap;
-use linkml_core::error::{LinkMLError, Result};
 use parking_lot::{Mutex, RwLock};
+use linkml_core::{LinkMLError, Result};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
@@ -206,23 +206,22 @@ impl ResourceLimiter {
             return Err(LinkMLError::service(format!(
                 "Document size {} exceeds limit {}",
                 requirements.document_size, limits.max_document_size
-            )));
+            ));
         }
 
         if requirements.memory_bytes > limits.max_memory_bytes {
             return Err(LinkMLError::service(format!(
                 "Memory requirement {} exceeds limit {}",
                 requirements.memory_bytes, limits.max_memory_bytes
-            )));
+            ));
         }
 
         // Check rate limit
         {
-            if let Some(rate_limiter) = &mut *self.rate_limiter.lock() {
-                if !rate_limiter.try_consume(1.0) {
+            if let Some(rate_limiter) = &mut *self.rate_limiter.lock()
+                && !rate_limiter.try_consume(1.0) {
                     return Err(LinkMLError::service("Rate limit exceeded"));
                 }
-            }
         } // Drop the lock before await
 
         // Check dynamic resources if monitor available
@@ -243,7 +242,7 @@ impl ResourceLimiter {
         // Set up timeout
         let timeout_duration = self.limits.read().max_validation_duration;
         let operation_id_clone = operation_id.clone();
-        let active_ops = self.active_operations.clone();
+        let active_ops = Arc::clone(&self.active_operations);
 
         let timeout_handle = tokio::spawn(async move {
             tokio::time::sleep(timeout_duration).await;
@@ -369,8 +368,8 @@ impl ResourceLimiter {
             .count();
 
         // Precision loss acceptable here
-        let result = count as f64 / window.as_secs_f64();
-        result
+        
+        count as f64 / window.as_secs_f64()
     }
 
     /// Get resource statistics
@@ -481,11 +480,10 @@ pub struct ResourceGuard {
 impl Drop for ResourceGuard {
     fn drop(&mut self) {
         // Remove from active operations
-        if let Some((_, mut op)) = self.limiter.active_operations.remove(&self.operation_id) {
-            if let Some(handle) = op.timeout_handle.take() {
+        if let Some((_, mut op)) = self.limiter.active_operations.remove(&self.operation_id)
+            && let Some(handle) = op.timeout_handle.take() {
                 handle.abort();
             }
-        }
 
         // Record duration
         let duration = self.start_time.elapsed();
@@ -592,7 +590,7 @@ impl ValidationResourceLimiter {
         if current_depth > max_depth {
             return Err(LinkMLError::service(format!(
                 "Nested depth {current_depth} exceeds limit {max_depth}"
-            )));
+            ));
         }
 
         self.depth_tracker

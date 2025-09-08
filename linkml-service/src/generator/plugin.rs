@@ -258,7 +258,7 @@ mod tests {
             vec![".test"]
         }
 
-        fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
+        fn generate(&self, _schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
             Ok(String::new())
         }
 
@@ -297,7 +297,7 @@ mod tests {
         manager
             .register_plugin(plugin)
             .await
-            .map_err(|e| anyhow::anyhow!("should register plugin: {}", e))?;
+            .expect("should register plugin: {}");
 
         // Verify plugin is loaded
         assert_eq!(manager.list_plugins().len(), 1);

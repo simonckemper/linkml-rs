@@ -268,10 +268,10 @@ fn test_generator_registry_error_handling() {
     let mut registry = GeneratorRegistry::new();
 
     // Register generators
-    registry.register("test", Box::new(TypeQLGenerator::new()));
+    registry.register("test", Box::new(TypeQLGenerator::new());
 
     // Try to register duplicate
-    let result = registry.register("test", Box::new(SQLGenerator::new()));
+    let result = registry.register("test", Box::new(SQLGenerator::new());
     assert!(result.is_err());
 
     // Try to get non-existent generator
@@ -279,7 +279,7 @@ fn test_generator_registry_error_handling() {
     assert!(result.is_err());
 
     // Test with empty name
-    let result = registry.register("", Box::new(PythonDataclassGenerator::new()));
+    let result = registry.register("", Box::new(PythonDataclassGenerator::new());
     assert!(result.is_err());
 }
 
@@ -320,6 +320,8 @@ fn test_typescript_generator_complex_types() {
 #[tokio::test]
 async fn test_generator_concurrent_access() {
     use tokio::task::JoinSet;
+use linkml_core::types::SchemaDefinition;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     let schema = create_test_schema();
     let generators: Vec<Box<dyn Generator + Send + Sync>> = vec![

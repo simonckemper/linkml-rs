@@ -1,4 +1,4 @@
-//! Main SchemaView API for schema introspection
+//! Main `SchemaView` API for schema introspection
 
 use linkml_core::{
     error::{LinkMLError, Result},
@@ -29,7 +29,7 @@ pub enum ElementType {
     Subset,
 }
 
-/// Error type for SchemaView operations
+/// Error type for `SchemaView` operations
 #[derive(Debug, thiserror::Error)]
 pub enum SchemaViewError {
     /// Element not found in schema
@@ -57,7 +57,7 @@ impl From<SchemaViewError> for LinkMLError {
 
 /// High-level `API` for `LinkML` schema introspection and navigation
 ///
-/// SchemaView provides a denormalized view of `LinkML` schemas, resolving
+/// `SchemaView` provides a denormalized view of `LinkML` schemas, resolving
 /// inheritance, imports, and slot usage patterns to make schema analysis easier.
 #[derive(Clone, Debug)]
 pub struct SchemaView {
@@ -78,7 +78,11 @@ pub struct SchemaView {
 }
 
 impl SchemaView {
-    /// Create a new SchemaView from a schema definition
+    /// Create a new `SchemaView` from a schema definition
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn new(schema: SchemaDefinition) -> Result<Self> {
         let import_resolver = ImportResolver::new();
         let merged = import_resolver.resolve_imports(&schema)?;
@@ -97,6 +101,10 @@ impl SchemaView {
 
 
     /// Load a schema from a file path
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_from_file(path: impl AsRef<Path>) -> Result<Self> {
         let loader = SchemaLoader::new();
         let schema = loader.load_file(path).await?;
@@ -104,6 +112,10 @@ impl SchemaView {
     }
 
     /// Load a schema from a `URL`
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub async fn load_from_url(url: &str) -> Result<Self> {
         let loader = SchemaLoader::new();
         let schema = loader.load_url(url).await?;
@@ -113,6 +125,10 @@ impl SchemaView {
     // === Class Operations ===
 
     /// Get all classes in the schema (including imported)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_classes(&self) -> Result<HashMap<String, ClassDefinition>> {
         let merged = self
             .merged_schema
@@ -122,11 +138,19 @@ impl SchemaView {
     }
 
     /// Get all class names
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_class_names(&self) -> Result<Vec<String>> {
         Ok(self.all_classes()?.keys().cloned().collect())
     }
 
     /// Get a specific class definition
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_class(&self, name: &str) -> Result<Option<ClassDefinition>> {
         let merged = self
             .merged_schema
@@ -136,6 +160,10 @@ impl SchemaView {
     }
 
     /// Get a fully resolved ("induced") class with all inherited properties
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn induced_class(&self, name: &str) -> Result<ClassDefinition> {
         // Check cache first
         {
@@ -190,6 +218,10 @@ impl SchemaView {
     }
 
     /// Get all ancestor classes (superclasses) of a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_ancestors(&self, name: &str) -> Result<Vec<String>> {
         let mut ancestors = Vec::new();
         let mut visited = HashSet::new();
@@ -198,6 +230,10 @@ impl SchemaView {
     }
 
     /// Get all descendant classes (subclasses) of a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_descendants(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -218,6 +254,10 @@ impl SchemaView {
     }
 
     /// Get all slots applicable to a class (including inherited)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_slots(&self, class_name: &str) -> Result<Vec<String>> {
         let induced = self.induced_class(class_name)?;
         Ok(induced.slots)
@@ -226,6 +266,10 @@ impl SchemaView {
     // === Slot Operations ===
 
     /// Get all slots in the schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_slots(&self) -> Result<HashMap<String, SlotDefinition>> {
         let merged = self
             .merged_schema
@@ -235,6 +279,10 @@ impl SchemaView {
     }
 
     /// Get a specific slot definition
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_slot(&self, name: &str) -> Result<Option<SlotDefinition>> {
         let merged = self
             .merged_schema
@@ -244,12 +292,20 @@ impl SchemaView {
     }
 
     /// Get a fully resolved slot in the context of a specific class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn induced_slot(&self, slot_name: &str, class_name: &str) -> Result<SlotDefinition> {
         let resolution = SlotResolution::new(self);
         resolution.resolve_slot(slot_name, class_name)
     }
 
     /// Get the identifier slot for a class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_identifier_slot(&self, class_name: &str) -> Result<Option<String>> {
         let class_slots = self.class_slots(class_name)?;
         let merged = self
@@ -258,11 +314,10 @@ impl SchemaView {
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
 
         for slot_name in &class_slots {
-            if let Some(slot) = merged.slots.get(slot_name) {
-                if slot.identifier.unwrap_or(false) {
-                    return Ok(Some(slot_name.clone()));
+            if let Some(slot) = merged.slots.get(slot_name)
+                && slot.identifier.unwrap_or(false) {
+                    return Ok(Some(slot_name.clone());
                 }
-            }
         }
 
         Ok(None)
@@ -271,6 +326,10 @@ impl SchemaView {
     // === Enum Operations ===
 
     /// Get all enums in the schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_enums(&self) -> Result<HashMap<String, EnumDefinition>> {
         let merged = self
             .merged_schema
@@ -280,6 +339,10 @@ impl SchemaView {
     }
 
     /// Get a fully resolved enum with inherited permissible values
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn induced_enum(&self, name: &str) -> Result<EnumDefinition> {
         let merged = self
             .merged_schema
@@ -299,6 +362,10 @@ impl SchemaView {
     // === Type Operations ===
 
     /// Get all types in the schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_types(&self) -> Result<HashMap<String, TypeDefinition>> {
         let merged = self
             .merged_schema
@@ -309,7 +376,11 @@ impl SchemaView {
 
     // === View Operations ===
 
-    /// Get a ClassView for detailed class inspection
+    /// Get a `ClassView` for detailed class inspection
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_view(&self, class_name: &str) -> Result<ClassView> {
         // Check if class exists first
         let merged = self
@@ -326,7 +397,11 @@ impl SchemaView {
         ClassView::new(class_name, Arc::new(self.clone()))
     }
 
-    /// Get a SlotView for detailed slot inspection
+    /// Get a `SlotView` for detailed slot inspection
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn slot_view(&self, slot_name: &str) -> Result<SlotView> {
         // Check if slot exists first
         let merged = self
@@ -346,6 +421,10 @@ impl SchemaView {
     // === Analysis Operations ===
 
     /// Get usage index showing where each element is referenced
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn usage_index(&self) -> Result<UsageIndex> {
         // Check if already computed
         {
@@ -372,6 +451,10 @@ impl SchemaView {
     }
 
     /// Check if a class should be inlined
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn is_inlined(&self, class_name: &str) -> Result<bool> {
         let merged = self
             .merged_schema
@@ -395,6 +478,10 @@ impl SchemaView {
     ///
     /// This expands `LinkML` structured patterns (e.g., for identifiers)
     /// into their full regular expression form.
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn materialize_patterns(&mut self) -> Result<()> {
         let mut merged = self
             .merged_schema
@@ -445,6 +532,10 @@ impl SchemaView {
     ///
     /// This searches across all element types and returns the first match.
     /// Returns the element type and the element itself.
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_element(&self, name: &str) -> Result<Option<(ElementType, serde_json::Value)>> {
         let merged = self
             .merged_schema
@@ -457,7 +548,7 @@ impl SchemaView {
                 ElementType::Class,
                 serde_json::to_value(class)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            )));
+            ));
         }
 
         // Check slots
@@ -466,7 +557,7 @@ impl SchemaView {
                 ElementType::Slot,
                 serde_json::to_value(slot)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            )));
+            ));
         }
 
         // Check types
@@ -475,7 +566,7 @@ impl SchemaView {
                 ElementType::Type,
                 serde_json::to_value(type_def)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            )));
+            ));
         }
 
         // Check enums
@@ -484,7 +575,7 @@ impl SchemaView {
                 ElementType::Enum,
                 serde_json::to_value(enum_def)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            )));
+            ));
         }
 
         Ok(None)
@@ -493,6 +584,10 @@ impl SchemaView {
     // === Class Hierarchy Methods ===
 
     /// Get direct parent classes only (not full ancestry)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_parents(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -515,6 +610,10 @@ impl SchemaView {
     }
 
     /// Get direct child classes only (not full descendants)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_children(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -543,6 +642,10 @@ impl SchemaView {
     }
 
     /// Get all root classes (classes with no parents)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_roots(&self) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -562,6 +665,10 @@ impl SchemaView {
     }
 
     /// Get all leaf classes (classes with no children)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn class_leaves(&self) -> Result<Vec<String>> {
         let all_classes = self.all_classes()?;
         let mut leaves = Vec::new();
@@ -580,6 +687,10 @@ impl SchemaView {
     // === URI/CURIE Resolution ===
 
     /// Get the URI for an element, expanding CURIEs if needed
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_uri(&self, element_name: &str, expand: bool) -> Result<Option<String>> {
         let merged = self
             .merged_schema
@@ -608,19 +719,23 @@ impl SchemaView {
             Ok(Some(uri_str))
         } else {
             // Generate a default URI based on schema ID + element name
-            if !merged.id.is_empty() {
+            if merged.id.is_empty() {
+                Ok(None)
+            } else {
                 Ok(Some(format!(
                     "{}/{}",
                     merged.id.trim_end_matches('/'),
                     element_name
                 )))
-            } else {
-                Ok(None)
             }
         }
     }
 
     /// Expand a CURIE to its full URI form
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn expand_curie(&self, curie: &str) -> Result<String> {
         if let Some(colon_pos) = curie.find(':') {
             let prefix = &curie[..colon_pos];
@@ -638,7 +753,7 @@ impl SchemaView {
                         prefix_prefix
                     }
                 };
-                return Ok(format!("{}{}", uri_str, local));
+                return Ok(format!("{uri_str}{local}"));
             }
         }
 
@@ -649,6 +764,10 @@ impl SchemaView {
     // === Type Hierarchy Methods ===
 
     /// Get a specific type definition
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_type(&self, name: &str) -> Result<Option<TypeDefinition>> {
         let merged = self
             .merged_schema
@@ -658,22 +777,29 @@ impl SchemaView {
     }
 
     /// Get direct parent types
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn type_parents(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
             .read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
 
-        if let Some(type_def) = merged.types.get(name) {
-            if let Some(base_type) = &type_def.base_type {
+        if let Some(type_def) = merged.types.get(name)
+            && let Some(base_type) = &type_def.base_type {
                 return Ok(vec![base_type.clone()]);
             }
-        }
 
         Ok(Vec::new())
     }
 
     /// Get direct child types
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn type_children(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -693,6 +819,10 @@ impl SchemaView {
     }
 
     /// Get all type ancestors
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn type_ancestors(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
         let mut ancestors = Vec::new();
         if reflexive {
@@ -704,8 +834,7 @@ impl SchemaView {
             if let Some(parent) = parents.first() {
                 if ancestors.contains(parent) {
                     return Err(SchemaViewError::CircularDependency(format!(
-                        "Circular type inheritance detected at '{}'",
-                        parent
+                        "Circular type inheritance detected at '{parent}'"
                     ))
                     .into());
                 }
@@ -720,6 +849,10 @@ impl SchemaView {
     }
 
     /// Get all type descendants
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn type_descendants(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
         let mut descendants = Vec::new();
         if reflexive {
@@ -744,11 +877,19 @@ impl SchemaView {
     // === Slot Hierarchy Methods ===
 
     /// Get all slot names
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_slot_names(&self) -> Result<Vec<String>> {
         Ok(self.all_slots()?.keys().cloned().collect())
     }
 
     /// Get direct slot parents
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn slot_parents(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -771,6 +912,10 @@ impl SchemaView {
     }
 
     /// Get direct slot children
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn slot_children(&self, name: &str) -> Result<Vec<String>> {
         let merged = self
             .merged_schema
@@ -799,6 +944,10 @@ impl SchemaView {
     }
 
     /// Get all slot ancestors
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn slot_ancestors(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
         let mut ancestors = Vec::new();
         if reflexive {
@@ -812,6 +961,10 @@ impl SchemaView {
     }
 
     /// Get all slot descendants
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn slot_descendants(&self, name: &str, reflexive: bool) -> Result<Vec<String>> {
         let mut descendants = Vec::new();
         if reflexive {
@@ -836,6 +989,10 @@ impl SchemaView {
     // === Enum Methods ===
 
     /// Get a specific enum definition
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_enum(&self, name: &str) -> Result<Option<EnumDefinition>> {
         let merged = self
             .merged_schema
@@ -845,6 +1002,10 @@ impl SchemaView {
     }
 
     /// Get all enum names
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_enum_names(&self) -> Result<Vec<String>> {
         Ok(self.all_enums()?.keys().cloned().collect())
     }
@@ -852,6 +1013,10 @@ impl SchemaView {
     // === Subset Operations ===
 
     /// Get all subsets in the schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn all_subsets(&self) -> Result<HashMap<String, linkml_core::types::SubsetDefinition>> {
         let merged = self
             .merged_schema
@@ -861,6 +1026,10 @@ impl SchemaView {
     }
 
     /// Get a specific subset
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_subset(&self, name: &str) -> Result<Option<linkml_core::types::SubsetDefinition>> {
         let merged = self
             .merged_schema
@@ -870,6 +1039,10 @@ impl SchemaView {
     }
 
     /// Check if an element is in a subset
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn in_subset(&self, _element_name: &str, subset_name: &str) -> Result<bool> {
         let merged = self
             .merged_schema
@@ -889,6 +1062,10 @@ impl SchemaView {
     // === Schema Information ===
 
     /// Get the schema name
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn schema_name(&self) -> Result<String> {
         let merged = self
             .merged_schema
@@ -898,6 +1075,10 @@ impl SchemaView {
     }
 
     /// Get the schema ID
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn schema_id(&self) -> Result<Option<String>> {
         let merged = self
             .merged_schema
@@ -911,6 +1092,10 @@ impl SchemaView {
     }
 
     /// Get all prefixes defined in the schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_prefixes(&self) -> Result<HashMap<String, String>> {
         let merged = self
             .merged_schema
@@ -933,6 +1118,10 @@ impl SchemaView {
     }
 
     /// Get a specific prefix expansion
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_prefix(&self, prefix: &str) -> Result<Option<String>> {
         let merged = self
             .merged_schema
@@ -955,6 +1144,10 @@ impl SchemaView {
     // === Annotation/Metadata Access ===
 
     /// Get annotations for an element as a dictionary
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn annotation_dict(
         &self,
         element_name: &str,
@@ -1001,8 +1194,7 @@ impl SchemaView {
     ) -> Result<()> {
         if visited.contains(name) {
             return Err(SchemaViewError::CircularDependency(format!(
-                "Circular inheritance detected at class '{}'",
-                name
+                "Circular inheritance detected at class '{name}'"
             ))
             .into());
         }
@@ -1013,12 +1205,11 @@ impl SchemaView {
             .read()
             .map_err(|_| SchemaViewError::CacheError("Failed to acquire read lock".into()))?;
 
-        if let Some(class_def) = merged.classes.get(name) {
-            if let Some(parent) = &class_def.is_a {
+        if let Some(class_def) = merged.classes.get(name)
+            && let Some(parent) = &class_def.is_a {
                 ancestors.push(parent.clone());
                 self.collect_class_ancestors(parent, ancestors, visited)?;
             }
-        }
 
         Ok(())
     }
@@ -1053,8 +1244,7 @@ impl SchemaView {
     ) -> Result<()> {
         if visited.contains(name) {
             return Err(SchemaViewError::CircularDependency(format!(
-                "Circular inheritance detected at slot '{}'",
-                name
+                "Circular inheritance detected at slot '{name}'"
             ))
             .into());
         }

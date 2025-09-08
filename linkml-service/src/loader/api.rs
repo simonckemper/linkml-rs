@@ -1,7 +1,7 @@
-//! API loader and dumper for LinkML
+//! API loader and dumper for `LinkML`
 //!
 //! This module provides functionality to load data from REST APIs
-//! and dump LinkML instances to API endpoints.
+//! and dump `LinkML` instances to API endpoints.
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
@@ -77,13 +77,13 @@ pub enum AuthConfig {
         key: String,
     },
 
-    /// OAuth2 configuration
+    /// `OAuth2` configuration
     OAuth2 {
         /// Token endpoint `URL`
         token_url: String,
-        /// OAuth2 client ID
+        /// `OAuth2` client ID
         client_id: String,
-        /// OAuth2 client secret
+        /// `OAuth2` client secret
         client_secret: String,
         /// Required scopes
         scopes: Vec<String>,
@@ -217,16 +217,15 @@ pub struct ApiLoader {
 
 impl ApiLoader {
     /// Create a new `API` loader
-    pub fn new(options: ApiOptions) -> Self {
+    #[must_use] pub fn new(options: ApiOptions) -> Self {
         let mut headers = HeaderMap::new();
 
         // Add custom headers
         for (name, value) in &options.headers {
-            if let Ok(header_name) = HeaderName::from_bytes(name.as_bytes()) {
-                if let Ok(header_value) = HeaderValue::from_str(value) {
+            if let Ok(header_name) = HeaderName::from_bytes(name.as_bytes())
+                && let Ok(header_value) = HeaderValue::from_str(value) {
                     headers.insert(header_name, header_value);
                 }
-            }
         }
 
         // Build client
@@ -321,8 +320,7 @@ impl ApiLoader {
 
         loop {
             let req = request.try_clone().ok_or_else(|| {
-                LoaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                LoaderError::Io(std::io::Error::other(
                     "Failed to clone request",
                 ))
             })?;
@@ -354,10 +352,9 @@ impl ApiLoader {
                         continue;
                     }
 
-                    return Err(LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Err(LoaderError::Io(std::io::Error::other(
                         format!("Request failed with status: {status}"),
-                    )));
+                    ));
                 }
                 Err(e) => {
                     if retries < self.options.retry_config.max_retries {
@@ -377,10 +374,9 @@ impl ApiLoader {
                         continue;
                     }
 
-                    return Err(LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Err(LoaderError::Io(std::io::Error::other(
                         format!("Request failed: {e}"),
-                    )));
+                    ));
                 }
             }
         }
@@ -521,14 +517,13 @@ impl ApiLoader {
                             LoaderError::Parse(format!("Array index {index} out of bounds"))
                         })?;
                     } else {
-                        return Err(LoaderError::Parse(format!("Invalid array index: {part}")));
+                        return Err(LoaderError::Parse(format!("Invalid array index: {part}"));
                     }
                 }
                 _ => {
                     return Err(LoaderError::Parse(format!(
-                        "Cannot navigate path '{}' in non-object/array",
-                        part
-                    )));
+                        "Cannot navigate path '{part}' in non-object/array"
+                    ));
                 }
             }
         }
@@ -549,9 +544,8 @@ impl ApiLoader {
         // Check if the class exists in the schema
         if !schema.classes.contains_key(class_name) {
             return Err(LoaderError::Parse(format!(
-                "Class '{}' not found in schema",
-                class_name
-            )));
+                "Class '{class_name}' not found in schema"
+            ));
         }
 
         match json {
@@ -563,9 +557,8 @@ impl ApiLoader {
                         // Validate the instance against the schema
                         if let Err(e) = self.validate_instance(&instance, class_name, schema) {
                             return Err(LoaderError::Parse(format!(
-                                "Instance at index {} failed validation: {}",
-                                index, e
-                            )));
+                                "Instance at index {index} failed validation: {e}"
+                            ));
                         }
 
                         instances.push(instance);
@@ -578,9 +571,8 @@ impl ApiLoader {
                 // Validate the instance against the schema
                 if let Err(e) = self.validate_instance(&instance, class_name, schema) {
                     return Err(LoaderError::Parse(format!(
-                        "Instance failed validation: {}",
-                        e
-                    )));
+                        "Instance failed validation: {e}"
+                    ));
                 }
 
                 instances.push(instance);
@@ -611,22 +603,19 @@ impl ApiLoader {
         for (slot_name, slot_def) in &class_def.attributes {
             if slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
                 return Err(LoaderError::Parse(format!(
-                    "Required field '{}' missing in class '{}'",
-                    slot_name, class_name
-                )));
+                    "Required field '{slot_name}' missing in class '{class_name}'"
+                ));
             }
         }
 
         // Validate slot definitions if referenced
         for slot_name in &class_def.slots {
-            if let Some(slot_def) = schema.slots.get(slot_name) {
-                if slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
+            if let Some(slot_def) = schema.slots.get(slot_name)
+                && slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
                     return Err(LoaderError::Parse(format!(
-                        "Required slot '{}' missing in class '{}'",
-                        slot_name, class_name
-                    )));
+                        "Required slot '{slot_name}' missing in class '{class_name}'"
+                    ));
                 }
-            }
         }
 
         // Validate data types and constraints for each field
@@ -636,11 +625,10 @@ impl ApiLoader {
                 self.validate_field(field_name, field_value, slot_def)?;
             }
             // Check if field is defined as a slot reference
-            else if class_def.slots.contains(field_name) {
-                if let Some(slot_def) = schema.slots.get(field_name) {
+            else if class_def.slots.contains(field_name)
+                && let Some(slot_def) = schema.slots.get(field_name) {
                     self.validate_field(field_name, field_value, slot_def)?;
                 }
-            }
             // Field not defined in schema - this might be allowed depending on schema settings
             // For now, we'll allow extra fields but could make this configurable
         }
@@ -656,15 +644,14 @@ impl ApiLoader {
         slot_def: &SlotDefinition,
     ) -> LoaderResult<()> {
         // Check pattern if defined
-        if let Some(pattern) = &slot_def.pattern {
-            if let Value::String(s) = value {
+        if let Some(pattern) = &slot_def.pattern
+            && let Value::String(s) = value {
                 match Regex::new(pattern) {
                     Ok(re) => {
                         if !re.is_match(s) {
                             return Err(LoaderError::Parse(format!(
-                                "Field '{}' value '{}' does not match pattern '{}'",
-                                field_name, s, pattern
-                            )));
+                                "Field '{field_name}' value '{s}' does not match pattern '{pattern}'"
+                            ));
                         }
                     }
                     Err(e) => {
@@ -676,43 +663,32 @@ impl ApiLoader {
                     }
                 }
             }
-        }
 
         // Check minimum value
         if let Some(min_val) = &slot_def.minimum_value {
-            match (value, min_val) {
-                (Value::Number(n), Value::Number(min_n)) => {
-                    if let (Some(v), Some(min_v)) = (n.as_f64(), min_n.as_f64()) {
-                        if v < min_v {
-                            return Err(LoaderError::Parse(format!(
-                                "Field '{}' value {} is less than minimum {}",
-                                field_name, v, min_v
-                            )));
-                        }
+            if let (Value::Number(n), Value::Number(min_n)) = (value, min_val) {
+                if let (Some(v), Some(min_v)) = (n.as_f64(), min_n.as_f64())
+                    && v < min_v {
+                        return Err(LoaderError::Parse(format!(
+                            "Field '{field_name}' value {v} is less than minimum {min_v}"
+                        ));
                     }
-                }
-                _ => {
-                    // Skip validation if types don't match
-                }
+            } else {
+                // Skip validation if types don't match
             }
         }
 
         // Check maximum value
         if let Some(max_val) = &slot_def.maximum_value {
-            match (value, max_val) {
-                (Value::Number(n), Value::Number(max_n)) => {
-                    if let (Some(v), Some(max_v)) = (n.as_f64(), max_n.as_f64()) {
-                        if v > max_v {
-                            return Err(LoaderError::Parse(format!(
-                                "Field '{}' value {} is greater than maximum {}",
-                                field_name, v, max_v
-                            )));
-                        }
+            if let (Value::Number(n), Value::Number(max_n)) = (value, max_val) {
+                if let (Some(v), Some(max_v)) = (n.as_f64(), max_n.as_f64())
+                    && v > max_v {
+                        return Err(LoaderError::Parse(format!(
+                            "Field '{field_name}' value {v} is greater than maximum {max_v}"
+                        ));
                     }
-                }
-                _ => {
-                    // Skip validation if types don't match
-                }
+            } else {
+                // Skip validation if types don't match
             }
         }
 
@@ -721,25 +697,22 @@ impl ApiLoader {
             match (value, multivalued) {
                 (Value::Array(_), false) => {
                     return Err(LoaderError::Parse(format!(
-                        "Field '{}' should not be multivalued but is an array",
-                        field_name
-                    )));
+                        "Field '{field_name}' should not be multivalued but is an array"
+                    ));
                 }
                 (Value::Array(arr), true)
                     if arr.is_empty() && slot_def.required.unwrap_or(false) =>
                 {
                     return Err(LoaderError::Parse(format!(
-                        "Field '{}' is required and multivalued but is empty",
-                        field_name
-                    )));
+                        "Field '{field_name}' is required and multivalued but is empty"
+                    ));
                 }
                 (v, true)
                     if !matches!(v, Value::Array(_)) && slot_def.required.unwrap_or(false) =>
                 {
                     return Err(LoaderError::Parse(format!(
-                        "Field '{}' should be multivalued (array) but is not",
-                        field_name
-                    )));
+                        "Field '{field_name}' should be multivalued (array) but is not"
+                    ));
                 }
                 _ => {}
             }
@@ -786,11 +759,11 @@ impl ApiLoader {
 
 #[async_trait]
 impl DataLoader for ApiLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "api"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Load data from REST APIs"
     }
 
@@ -862,16 +835,15 @@ pub struct ApiDumper {
 
 impl ApiDumper {
     /// Create a new `API` dumper
-    pub fn new(options: ApiOptions) -> Self {
+    #[must_use] pub fn new(options: ApiOptions) -> Self {
         let mut headers = HeaderMap::new();
 
         // Add custom headers
         for (name, value) in &options.headers {
-            if let Ok(header_name) = HeaderName::from_bytes(name.as_bytes()) {
-                if let Ok(header_value) = HeaderValue::from_str(value) {
+            if let Ok(header_name) = HeaderName::from_bytes(name.as_bytes())
+                && let Ok(header_value) = HeaderValue::from_str(value) {
                     headers.insert(header_name, header_value);
                 }
-            }
         }
 
         // Build client
@@ -974,7 +946,7 @@ impl ApiDumper {
 
             for (linkml_field, value) in data {
                 if let Some(api_field) = reverse_mapping.get(linkml_field.as_str()) {
-                    unmapped_data.insert(api_field.to_string(), value);
+                    unmapped_data.insert((*api_field).to_string(), value);
                 } else {
                     unmapped_data.insert(linkml_field, value);
                 }
@@ -992,7 +964,7 @@ impl ApiDumper {
             Method::PUT => {
                 // For PUT, we might need to include ID in URL
                 if let Some(id_value) = data.get(&endpoint_config.id_field) {
-                    let url_with_id = format!("{}/{}", url, id_value);
+                    let url_with_id = format!("{url}/{id_value}");
                     self.build_request(Method::PUT, &url_with_id).json(&data)
                 } else {
                     self.build_request(Method::PUT, &url).json(&data)
@@ -1001,7 +973,7 @@ impl ApiDumper {
             Method::PATCH => {
                 // Similar to PUT
                 if let Some(id_value) = data.get(&endpoint_config.id_field) {
-                    let url_with_id = format!("{}/{}", url, id_value);
+                    let url_with_id = format!("{url}/{id_value}");
                     self.build_request(Method::PATCH, &url_with_id).json(&data)
                 } else {
                     self.build_request(Method::PATCH, &url).json(&data)
@@ -1011,22 +983,20 @@ impl ApiDumper {
                 return Err(DumperError::Configuration(format!(
                     "Unsupported HTTP method for dumping: {}",
                     endpoint_config.method
-                )));
+                ));
             }
         };
 
         let response = request.send().await.map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            DumperError::Io(std::io::Error::other(
                 format!("Failed to send request: {e}"),
             ))
         })?;
 
         if !response.status().is_success() {
-            return Err(DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            return Err(DumperError::Io(std::io::Error::other(
                 format!("Request failed with status: {}", response.status()),
-            )));
+            ));
         }
 
         Ok(())
@@ -1035,11 +1005,11 @@ impl ApiDumper {
 
 #[async_trait]
 impl DataDumper for ApiDumper {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "api"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dump data to REST APIs"
     }
 
@@ -1104,7 +1074,7 @@ impl DataDumper for ApiDumper {
             if let Some(config) = endpoint_config {
                 for instance in class_instances {
                     match self.dump_instance(instance, config).await {
-                        Ok(_) => success_count += 1,
+                        Ok(()) => success_count += 1,
                         Err(e) => {
                             error!("Failed to dump instance: {}", e);
                             error_count += 1;
@@ -1118,8 +1088,7 @@ impl DataDumper for ApiDumper {
         }
 
         let summary = format!(
-            "API dump complete: {} successful, {} failed",
-            success_count, error_count
+            "API dump complete: {success_count} successful, {error_count} failed"
         );
 
         if error_count > 0 {
@@ -1141,12 +1110,12 @@ impl DataDumper for ApiDumper {
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
         // Validate that schema classes match endpoint configurations
-        for (_, endpoint_config) in &self.options.endpoint_mapping {
+        for endpoint_config in self.options.endpoint_mapping.values() {
             if !schema.classes.contains_key(&endpoint_config.class_name) {
                 return Err(DumperError::Configuration(format!(
                     "Class '{}' referenced in endpoint configuration not found in schema",
                     endpoint_config.class_name
-                )));
+                ));
             }
         }
         Ok(())
@@ -1245,7 +1214,7 @@ mod tests {
         assert_eq!(config.method, Method::GET);
         assert_eq!(config.path, "/api/v1/users");
         assert_eq!(config.class_name, "User");
-        assert_eq!(config.query_params.get("active"), Some(&"true".to_string()));
+        assert_eq!(config.query_params.get("active"), Some(&"true".to_string());
     }
 
     #[tokio::test]
@@ -1284,7 +1253,7 @@ mod tests {
     #[test]
     fn test_validate_instance() {
         use indexmap::IndexMap;
-        use linkml_core::prelude::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
         // Create test schema
         let mut schema = SchemaDefinition::default();

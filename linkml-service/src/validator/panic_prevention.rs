@@ -186,9 +186,7 @@ impl PanicSafeWrapper {
                 self.record_panic(info);
 
                 Err(LinkMLError::service(format!(
-                    "Operation '{}' panicked: {}",
-                    operation_name,
-                    message
+                    "Operation '{operation_name}' panicked: {message}"
                 )))
             }
         }

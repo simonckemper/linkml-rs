@@ -23,7 +23,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Service Comprehensive Demo");
     println!("=================================\n");
 
@@ -528,8 +528,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_comprehensive_demo() -> Result<()> {
-        main().map_err(|e| anyhow::anyhow!("Comprehensive demo should run successfully: {}", e))?;
+    fn test_comprehensive_demo() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        main()?;
         Ok(())
     }
 }

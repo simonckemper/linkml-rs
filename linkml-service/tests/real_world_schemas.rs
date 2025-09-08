@@ -6,11 +6,13 @@ use linkml_service::parser::yaml_parser::YamlParser;
 use linkml_service::validator::ValidationEngine;
 use serde_json::json;
 use std::sync::Arc;
+use std::error::Error as StdError;
 use tokio;
+
 
 /// Test with a biomedical schema (simplified version of biolink-model)
 #[tokio::test]
-async fn test_biolink_model_schema() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_biolink_model_schema() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let biolink_schema = r#"
 id: https://w3id.org/biolink/biolink-model
 name: biolink_model
@@ -150,7 +152,7 @@ enums:
 
     // Parse the schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(biolink_schema)?;
+    let schema = parser.parse(biolink_schema)?;
 
     // Create test data
     let test_gene = json!({
@@ -161,7 +163,9 @@ enums:
         "symbol": "BRCA1",
         "synonyms": ["breast cancer 1", "BRCC1"],
         "taxon": "NCBITaxon:9606"
-    });
+    }
+    Ok(())
+});
 
     let test_protein = json!({
         "id": "UniProtKB:P38398",
@@ -211,7 +215,7 @@ enums:
 
 /// Test with a scientific data schema (simplified version of FAIR data schema)
 #[tokio::test]
-async fn test_fair_data_schema() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_fair_data_schema() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let fair_schema = r#"
 id: https://example.org/fair-data-model
 name: fair_data_model
@@ -301,7 +305,9 @@ slots:
   email:
     description: Email address
     range: string
-    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}
+    Ok(())
+}$"
 
   url:
     description: A URL
@@ -359,7 +365,7 @@ types:
 
     // Parse the schema
     let parser = YamlParser::new();
-    let schema = parser.parse_str(fair_schema)?;
+    let schema = parser.parse(fair_schema)?;
 
     // Create test data
     let test_person = json!({
@@ -423,7 +429,7 @@ types:
 
 /// Test cross-reference validation with complex relationships
 #[tokio::test]
-async fn test_cross_reference_validation() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_cross_reference_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let schema_yaml = r#"
 id: https://example.org/cross-ref-test
 name: cross_ref_test
@@ -501,7 +507,7 @@ types:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    let schema = parser.parse(schema_yaml)?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     // Test data with valid cross-references
@@ -509,7 +515,9 @@ types:
         "id": "author:001",
         "name": "Dr. Alice Johnson",
         "publications": ["pub:001", "pub:002"]
-    });
+    }
+    Ok(())
+});
 
     let author2 = json!({
         "id": "author:002",
@@ -570,7 +578,7 @@ types:
 
 /// Test performance with large datasets
 #[tokio::test]
-async fn test_large_dataset_performance() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_large_dataset_performance() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let schema_yaml = r#"
 id: https://example.org/performance-test
 name: performance_test
@@ -599,7 +607,9 @@ slots:
     maximum_value: 1000.0
   timestamp:
     range: string
-    pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    pattern: "^\\d{4}
+    Ok(())
+}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
   category:
     range: RecordCategory
 
@@ -618,7 +628,7 @@ types:
 "#;
 
     let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
+    let schema = parser.parse(schema_yaml)?;
     let engine = ValidationEngine::new(Arc::new(schema));
 
     // Generate large dataset

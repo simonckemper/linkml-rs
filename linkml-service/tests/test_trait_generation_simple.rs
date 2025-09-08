@@ -1,8 +1,8 @@
 //! Simple test for trait generation in RustGenerator
 
-use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, RustGenerator};
-
+use linkml_core::types::SchemaDefinition;
 #[test]
 fn test_trait_generation_simple() {
     let mut schema = SchemaDefinition::default();

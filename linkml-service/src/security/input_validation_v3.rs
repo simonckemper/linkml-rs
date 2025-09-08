@@ -58,6 +58,10 @@ impl InputValidator {
     }
 
     /// Validate a string input
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_string(&self, input: &str) -> Result<(), ValidationError> {
         if input.is_empty() {
             return Err(ValidationError::EmptyInput);
@@ -74,6 +78,10 @@ impl InputValidator {
     }
 
     /// Validate an identifier (variable names, keys, etc.)
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_identifier(&self, identifier: &str) -> Result<(), ValidationError> {
         if identifier.is_empty() {
             return Err(ValidationError::EmptyInput);
@@ -103,6 +111,10 @@ impl InputValidator {
     }
 
     /// Validate expression depth
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_expression_depth(&self, depth: usize) -> Result<(), ValidationError> {
         if depth > self.limits.max_expression_depth {
             return Err(ValidationError::ExpressionTooDeep {
@@ -114,6 +126,10 @@ impl InputValidator {
     }
 
     /// Validate constraint count
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_constraint_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_constraint_count {
             return Err(ValidationError::TooManyConstraints {
@@ -125,6 +141,10 @@ impl InputValidator {
     }
 
     /// Validate function argument count
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_function_args(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_function_args {
             return Err(ValidationError::TooManyFunctionArgs {
@@ -136,6 +156,10 @@ impl InputValidator {
     }
 
     /// Validate `JSON` size
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size_bytes {
             return Err(ValidationError::JsonTooLarge {
@@ -147,6 +171,10 @@ impl InputValidator {
     }
 
     /// Validate slots per class
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_slots_per_class(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_slots_per_class {
             return Err(ValidationError::TooManySlotsPerClass {
@@ -158,6 +186,10 @@ impl InputValidator {
     }
 
     /// Validate classes per schema
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_classes_per_schema(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_classes_per_schema {
             return Err(ValidationError::TooManyClassesPerSchema {
@@ -169,6 +201,10 @@ impl InputValidator {
     }
 
     /// Validate cache entries
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate_cache_entries(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_cache_entries {
             return Err(ValidationError::TooManyCacheEntries {

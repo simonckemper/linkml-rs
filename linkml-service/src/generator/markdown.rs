@@ -1,6 +1,6 @@
-//! Markdown documentation generator for LinkML schemas
+//! Markdown documentation generator for `LinkML` schemas
 //!
-//! This generator creates comprehensive Markdown documentation from LinkML schemas,
+//! This generator creates comprehensive Markdown documentation from `LinkML` schemas,
 //! including class hierarchies, slot tables, enumerations, and cross-references.
 
 use super::traits::Generator;
@@ -19,9 +19,9 @@ pub struct MarkdownGenerator {
 }
 
 impl MarkdownGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> super::traits::GeneratorError {
-        super::traits::GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        super::traits::GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new Markdown generator
@@ -72,17 +72,17 @@ impl MarkdownGenerator {
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(title) = &schema.title {
-            writeln!(&mut output, "**Title**: {}", title)
+            writeln!(&mut output, "**Title**: {title}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(description) = &schema.description {
-            writeln!(&mut output, "\n**Description**: {}", description)
+            writeln!(&mut output, "\n**Description**: {description}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         if let Some(version) = &schema.version {
-            writeln!(&mut output, "\n**Version**: {}", version)
+            writeln!(&mut output, "\n**Version**: {version}")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -103,7 +103,7 @@ impl MarkdownGenerator {
         if !schema.classes.is_empty() {
             writeln!(&mut output, "2. [Classes](#classes)")
                 .map_err(Self::fmt_error_to_generator_error)?;
-            for (_i, class_name) in schema.classes.keys().enumerate() {
+            for class_name in schema.classes.keys() {
                 let anchor = class_name.to_lowercase().replace(' ', "-");
                 writeln!(&mut output, "   - [{class_name}](#{anchor})")
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -174,7 +174,7 @@ impl MarkdownGenerator {
                         prefix_prefix.as_str()
                     }
                 };
-                writeln!(&mut output, "| {} | {} |", prefix, uri)
+                writeln!(&mut output, "| {prefix} | {uri} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
         }
@@ -202,11 +202,11 @@ impl MarkdownGenerator {
         sorted_classes.sort_by_key(|(name, _)| name.as_str());
 
         for (class_name, class_def) in sorted_classes {
-            writeln!(&mut output, "### {}\n", class_name)
+            writeln!(&mut output, "### {class_name}\n")
                 .map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(description) = &class_def.description {
-                writeln!(&mut output, "{}\n", description)
+                writeln!(&mut output, "{description}\n")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -228,18 +228,18 @@ impl MarkdownGenerator {
             }
 
             if let Some(abstract_) = class_def.abstract_ {
-                writeln!(&mut output, "| Abstract | {} |", abstract_)
+                writeln!(&mut output, "| Abstract | {abstract_} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
             if let Some(mixin) = class_def.mixin {
-                writeln!(&mut output, "| Mixin | {} |", mixin)
+                writeln!(&mut output, "| Mixin | {mixin} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
             if !class_def.mixins.is_empty() {
                 let mixins = class_def.mixins.join(", ");
-                writeln!(&mut output, "| Uses Mixins | {} |", mixins)
+                writeln!(&mut output, "| Uses Mixins | {mixins} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -307,14 +307,14 @@ impl MarkdownGenerator {
                 writeln!(&mut output, "\n#### Example\n")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, "```yaml").map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "{}:", class_name)
+                writeln!(&mut output, "{class_name}:")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 // Generate example values for each slot
                 for slot_name in &class_def.slots {
                     if let Some(slot_def) = schema.slots.get(slot_name) {
                         let example_value = self.generate_example_value(slot_def);
-                        writeln!(&mut output, "  {}: {}", slot_name, example_value)
+                        writeln!(&mut output, "  {slot_name}: {example_value}")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
@@ -380,11 +380,11 @@ impl MarkdownGenerator {
         sorted_enums.sort_by_key(|(name, _)| name.as_str());
 
         for (enum_name, enum_def) in sorted_enums {
-            writeln!(&mut output, "### {}\n", enum_name)
+            writeln!(&mut output, "### {enum_name}\n")
                 .map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(description) = &enum_def.description {
-                writeln!(&mut output, "{}\n", description)
+                writeln!(&mut output, "{description}\n")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -402,7 +402,7 @@ impl MarkdownGenerator {
                         text, description, ..
                     } => (text.as_str(), description.as_deref().unwrap_or("")),
                 };
-                writeln!(&mut output, "| {} | {} |", value, description)
+                writeln!(&mut output, "| {value} | {description} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -442,8 +442,7 @@ impl MarkdownGenerator {
 
             writeln!(
                 &mut output,
-                "| {} | {} | {} | {} |",
-                type_name, base, pattern_str, description
+                "| {type_name} | {base} | {pattern_str} | {description} |"
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -475,7 +474,7 @@ impl Default for MarkdownGenerator {
 }
 
 impl Generator for MarkdownGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "markdown"
     }
 
@@ -523,11 +522,11 @@ impl Generator for MarkdownGenerator {
         Ok(content)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "md"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -535,6 +534,7 @@ impl Generator for MarkdownGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -595,7 +595,7 @@ mod tests {
 
         let result = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate markdown documentation: {}", e))?;
+            .expect("should generate markdown documentation: {}");
 
         // Check content includes expected sections
         assert!(result.contains("# TestSchema"));

@@ -7,6 +7,7 @@ use configuration_core::{ConfigurationError, Validate};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+
 /// Main `LinkML` service configuration
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct LinkMLServiceConfig {
@@ -174,7 +175,7 @@ pub struct PerformanceConfig {
 impl Validate for LinkMLServiceConfig {
     type Error = ConfigurationError;
 
-    fn validate(&self) -> Result<(), Self::Error> {
+    fn validate(&self) -> std::result::Result<(), Self::Error> {
         // Validate TypeDB config
         if self.typedb.server_address.is_empty() {
             return Err(ConfigurationError::validation_error(

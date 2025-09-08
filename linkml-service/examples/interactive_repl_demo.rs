@@ -12,7 +12,7 @@ use timestamp_service::factory::create_timestamp_service;
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Interactive REPL Demo");
     println!("============================\n");
     

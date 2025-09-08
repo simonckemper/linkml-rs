@@ -1,9 +1,8 @@
-//! Real stress testing implementation for LinkML CLI
+//! Real stress testing implementation for `LinkML` CLI
 
-use linkml_core::error::Result;
-use linkml_core::types::SchemaDefinition;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use linkml_core::types::SchemaDefinition;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
@@ -90,7 +89,7 @@ where
     }
 
     /// Run the stress test
-    pub async fn run(&self, schema: &SchemaDefinition) -> Result<StressTestResults> {
+    pub async fn run(&self, schema: &SchemaDefinition) -> crate::Result<StressTestResults> {
         let start_time = std::time::Instant::now();
         let semaphore = Arc::new(Semaphore::new(self.config.concurrency));
 
@@ -110,17 +109,17 @@ where
                 operations_per_worker
             };
 
-            let service = self.service.clone();
+            let service = Arc::clone(&self.service);
             let schema = schema.clone();
             let test_data = test_data.clone();
             let target_class = target_class.clone();
             let semaphore = semaphore.clone();
-            let success_count = self.success_count.clone();
-            let failure_count = self.failure_count.clone();
-            let latencies = self.latencies.clone();
-            let errors = self.errors.clone();
-            let stop_signal = self.stop_signal.clone();
-            let _timestamp = self.timestamp.clone();
+            let success_count = Arc::clone(&self.success_count);
+            let failure_count = Arc::clone(&self.failure_count);
+            let latencies = Arc::clone(&self.latencies);
+            let errors = Arc::clone(&self.errors);
+            let stop_signal = Arc::clone(&self.stop_signal);
+            let _timestamp = Arc::clone(&self.timestamp);
             let chaos = self.config.chaos;
             let chaos_failure_rate = self.config.chaos_failure_rate;
             let chaos_max_delay_ms = self.config.chaos_max_delay_ms;
@@ -148,7 +147,7 @@ where
                         }
                         Err(e) => {
                             failure_count.fetch_add(1, Ordering::Relaxed);
-                            errors.lock().push(format!("Worker {}: {}", worker_id, e));
+                            errors.lock().push(format!("Worker {worker_id}: {e}"));
                         }
                     }
                 }
@@ -221,7 +220,7 @@ where
     }
 
     /// Calculate final results
-    fn calculate_results(&self, duration: Duration) -> Result<StressTestResults> {
+    fn calculate_results(&self, duration: Duration) -> crate::Result<StressTestResults> {
         let success = self.success_count.load(Ordering::Relaxed);
         let failure = self.failure_count.load(Ordering::Relaxed);
         let total = success + failure;
@@ -241,10 +240,10 @@ where
             0.0
         };
 
-        let avg_latency_ms = if !latencies.is_empty() {
-            latencies.iter().map(|d| d.as_millis() as f64).sum::<f64>() / latencies.len() as f64
-        } else {
+        let avg_latency_ms = if latencies.is_empty() {
             0.0
+        } else {
+            latencies.iter().map(|d| d.as_millis() as f64).sum::<f64>() / latencies.len() as f64
         };
 
         let p50_latency_ms = Self::percentile(&latencies, 0.50);
@@ -252,8 +251,7 @@ where
         let p99_latency_ms = Self::percentile(&latencies, 0.99);
         let max_latency_ms = latencies
             .last()
-            .map(|d| d.as_millis() as f64)
-            .unwrap_or(0.0);
+            .map_or(0.0, |d| d.as_millis() as f64);
 
         let errors = self.errors.lock().clone();
 
@@ -282,7 +280,6 @@ where
         let index = ((sorted_latencies.len() - 1) as f64 * percentile) as usize;
         sorted_latencies
             .get(index)
-            .map(|d| d.as_millis() as f64)
-            .unwrap_or(0.0)
+            .map_or(0.0, |d| d.as_millis() as f64)
     }
 }

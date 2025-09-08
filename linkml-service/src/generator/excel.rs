@@ -1,11 +1,11 @@
-//! Excel generator for LinkML schemas
+//! Excel generator for `LinkML` schemas
 //!
-//! This generator creates Excel workbooks with multiple sheets from LinkML schemas,
+//! This generator creates Excel workbooks with multiple sheets from `LinkML` schemas,
 //! including data validation rules, formatting, and documentation.
 //!
 //! ## Features
 //!
-//! With rust_xlsxwriter v0.89.1, we now have full support for:
+//! With `rust_xlsxwriter` v0.89.1, we now have full support for:
 //! - Cell comments/notes for inline documentation
 //! - Data validation with dropdown lists and constraints
 //! - Conditional formatting for visual feedback
@@ -78,7 +78,7 @@ impl ExcelGenerator {
     pub fn generate_file(&self, schema: &SchemaDefinition, path: &str) -> GeneratorResult<()> {
         let content = self.generate_workbook(schema)?;
         std::fs::write(path, content)
-            .map_err(|e| GeneratorError::Generation(format!("Failed to write file {}: {}", path, e)))?;
+            .map_err(|e| GeneratorError::Generation(format!("Failed to write file {path}: {e}")))?;
         Ok(())
     }
 
@@ -200,10 +200,10 @@ impl ExcelGenerator {
 
         // Statistics
         worksheet
-            .write_string_with_format(row, 0, "Statistics", &header_format)
+            .write_string_with_format(row, 0, "Statistics", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 1, "Count", &header_format)
+            .write_string_with_format(row, 1, "Count", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -281,7 +281,7 @@ impl ExcelGenerator {
         // Write headers
         for (slot_name, slot_def) in &slots {
             worksheet
-                .write_string_with_format(row, col, slot_name, &header_format)
+                .write_string_with_format(row, col, slot_name, header_format)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
             // Add description as a cell note
@@ -301,7 +301,7 @@ impl ExcelGenerator {
         for (_, slot_def) in &slots {
             let type_str = format!("<{}>", slot_def.range.as_deref().unwrap_or("string"));
             worksheet
-                .write_string_with_format(row, col, &type_str, &type_format)
+                .write_string_with_format(row, col, &type_str, type_format)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
             col += 1;
         }
@@ -336,7 +336,7 @@ impl ExcelGenerator {
 
                 let sample = self.generate_sample_value(slot_name, slot_def, i);
                 worksheet
-                    .write_string_with_format(row, col, &sample, &format)
+                    .write_string_with_format(row, col, &sample, format)
                     .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 col += 1;
             }
@@ -388,13 +388,13 @@ impl ExcelGenerator {
 
         // Headers
         worksheet
-            .write_string_with_format(row, 0, "Enumeration", &header_format)
+            .write_string_with_format(row, 0, "Enumeration", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 1, "Value", &header_format)
+            .write_string_with_format(row, 1, "Value", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 2, "Description", &header_format)
+            .write_string_with_format(row, 2, "Description", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -461,8 +461,8 @@ impl ExcelGenerator {
             let col = col as u16;
 
             // Check if this is an enum field
-            if let Some(range) = &slot_def.range {
-                if let Some(enum_def) = schema.enums.get(range) {
+            if let Some(range) = &slot_def.range
+                && let Some(enum_def) = schema.enums.get(range) {
                     // Create dropdown list from enum values
                     let values: Vec<String> = enum_def
                         .permissible_values
@@ -474,7 +474,7 @@ impl ExcelGenerator {
                         .collect();
 
                     let data_validation = DataValidation::new()
-                        .allow_list_strings(&values.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+                        .allow_list_strings(&values.iter().map(std::string::String::as_str).collect::<Vec<_>>())
                         .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
                     // Apply to entire column (starting from row 3)
@@ -482,7 +482,6 @@ impl ExcelGenerator {
                         .add_data_validation(start_row, col, 1_048_575, col, &data_validation)
                         .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
                 }
-            }
 
             // Add numeric constraints
             match slot_def.range.as_deref() {
@@ -616,19 +615,19 @@ impl ExcelGenerator {
 
         // Headers
         worksheet
-            .write_string_with_format(row, 0, "Class", &header_format)
+            .write_string_with_format(row, 0, "Class", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 1, "Field", &header_format)
+            .write_string_with_format(row, 1, "Field", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 2, "Type", &header_format)
+            .write_string_with_format(row, 2, "Type", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 3, "Required", &header_format)
+            .write_string_with_format(row, 3, "Required", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_string_with_format(row, 4, "Constraints", &header_format)
+            .write_string_with_format(row, 4, "Constraints", header_format)
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -665,11 +664,10 @@ impl ExcelGenerator {
                 // Build constraints string
                 let mut constraints = Vec::new();
 
-                if let Some(range) = &slot_def.range {
-                    if schema.enums.contains_key(range) {
+                if let Some(range) = &slot_def.range
+                    && schema.enums.contains_key(range) {
                         constraints.push(format!("Enum: {range}"));
                     }
-                }
 
                 if let Some(min) = &slot_def.minimum_value {
                     constraints.push(format!("Min: {min}"));
@@ -727,14 +725,13 @@ impl ExcelGenerator {
         let mut slots = BTreeMap::new();
 
         // Get inherited slots
-        if let Some(parent) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_class_slots(parent, parent_class, schema)?;
                 for (name, slot) in parent_slots {
                     slots.insert(name, slot);
                 }
             }
-        }
 
         // Add direct slots
         for slot_name in &class_def.slots {
@@ -789,7 +786,7 @@ impl Default for ExcelGenerator {
 
 #[async_trait]
 impl Generator for ExcelGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "excel"
     }
 
@@ -844,11 +841,11 @@ impl Generator for ExcelGenerator {
         Ok(encoded)
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "xlsx"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema"
     }
 }
@@ -856,6 +853,7 @@ impl Generator for ExcelGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -905,14 +903,14 @@ mod tests {
         let schema = create_test_schema();
         let generator = ExcelGenerator::new();
 
-        let result = generator.generate(&schema).map_err(|e| anyhow::anyhow!("should generate Excel: {}", e))?;
+        let result = generator.generate(&schema).expect("should generate Excel: {}");
         // The old Generator trait returns a String, not Vec<GeneratedOutput>
         assert!(!result.is_empty());
         Ok(())
     }
 
     #[test]
-    fn test_sheet_name_sanitization() {
+    fn test_sheet_name_sanitization() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let generator = ExcelGenerator::new();
 
         assert_eq!(generator.sanitize_sheet_name("Simple"), "Simple");

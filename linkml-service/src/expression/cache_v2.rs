@@ -1,4 +1,4 @@
-//! Optimized expression cache using HashMap utilities
+//! Optimized expression cache using `HashMap` utilities
 //!
 //! This module provides an optimized version of the expression cache that
 //! minimizes cloning and uses more efficient collection operations.
@@ -45,7 +45,7 @@ pub struct CacheStats {
 
 impl CacheStats {
     /// Calculate hit rate
-    pub fn hit_rate(&self) -> f64 {
+    #[must_use] pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
         if total == 0 {
             0.0
@@ -71,7 +71,7 @@ pub struct ExpressionCacheV2 {
 
 impl ExpressionCacheV2 {
     /// Create a new expression cache
-    pub fn new(capacity: usize) -> Self {
+    #[must_use] pub fn new(capacity: usize) -> Self {
         Self {
             cache: Arc::new(RwLock::new(HashMap::with_capacity(capacity))),
             lru_order: Arc::new(RwLock::new(VecDeque::with_capacity(capacity))),
@@ -82,13 +82,13 @@ impl ExpressionCacheV2 {
     }
 
     /// Set maximum age for cache entries
-    pub fn with_max_age(mut self, max_age: Duration) -> Self {
+    #[must_use] pub fn with_max_age(mut self, max_age: Duration) -> Self {
         self.max_age = max_age;
         self
     }
 
     /// Get a parsed expression from cache
-    pub fn get(&self, expression: &str) -> Option<Arc<Expression>> {
+    #[must_use] pub fn get(&self, expression: &str) -> Option<Arc<Expression>> {
         let key = intern(expression);
         let mut cache = self.cache.write().ok()?;
         let mut lru_order = self.lru_order.write().ok()?;
@@ -133,9 +133,9 @@ impl ExpressionCacheV2 {
         let key = intern(expression);
         let now = Instant::now();
 
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut lru_order = self.lru_order.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut lru_order = self.lru_order.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         // Check if we need to evict
         if cache.len() >= self.capacity {
@@ -161,6 +161,10 @@ impl ExpressionCacheV2 {
     }
 
     /// Get or compute and cache an expression
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_or_compute<F>(&self, expression: &str, compute: F) -> Result<Arc<Expression>>
     where
         F: FnOnce() -> Result<Expression>,
@@ -181,22 +185,22 @@ impl ExpressionCacheV2 {
 
     /// Clear the cache
     pub fn clear(&self) {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         cache.clear();
         *stats = CacheStats::default();
     }
 
     /// Get cache statistics
-    pub fn stats(&self) -> CacheStats {
-        self.stats.read().unwrap_or_else(|poisoned| poisoned.into_inner()).clone()
+    #[must_use] pub fn stats(&self) -> CacheStats {
+        self.stats.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
     }
 
     /// Clean up old entries (optimized version)
     pub fn cleanup(&self) {
-        let mut cache = self.cache.write().unwrap_or_else(|poisoned| poisoned.into_inner());
-        let mut stats = self.stats.write().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = self.cache.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut stats = self.stats.write().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         let now = Instant::now();
 
@@ -217,7 +221,7 @@ impl ExpressionCacheV2 {
     }
 }
 
-/// Global expression cache using ArcCache
+/// Global expression cache using `ArcCache`
 pub struct GlobalExpressionCacheV2 {
     /// Primary cache for all expressions
     primary: ArcCache<Arc<str>, Expression>,
@@ -231,7 +235,7 @@ pub struct GlobalExpressionCacheV2 {
 
 impl GlobalExpressionCacheV2 {
     /// Create a new global cache
-    pub fn new(primary_capacity: usize, hot_capacity: usize) -> Self {
+    #[must_use] pub fn new(primary_capacity: usize, hot_capacity: usize) -> Self {
         Self {
             primary: ArcCache::with_capacity(primary_capacity),
             hot: ArcCache::with_capacity(hot_capacity),
@@ -241,6 +245,10 @@ impl GlobalExpressionCacheV2 {
     }
 
     /// Get or compute an expression
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_or_compute<F>(
         &mut self,
         expression: &str,
@@ -252,16 +260,14 @@ impl GlobalExpressionCacheV2 {
         let key = intern(expression);
 
         // Check hot cache first
-        if let Ok(counts) = self.access_counts.read() {
-            if let Some(&count) = counts.get(&key) {
-                if count >= self.hot_threshold {
+        if let Ok(counts) = self.access_counts.read()
+            && let Some(&count) = counts.get(&key)
+                && count >= self.hot_threshold {
                     return match compute() {
                         Ok(parsed) => Ok(self.hot.get_or_compute(&key, || parsed)),
                         Err(e) => Err(e),
                     };
                 }
-            }
-        }
 
         // Update access count
         if let Ok(mut counts) = self.access_counts.write() {
@@ -277,6 +283,10 @@ impl GlobalExpressionCacheV2 {
     }
 
     /// Clear all caches
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn clear(&mut self) -> Result<()> {
         self.primary.clear();
         self.hot.clear();
@@ -294,7 +304,7 @@ pub struct ThreadSafeGlobalCache {
 
 impl ThreadSafeGlobalCache {
     /// Create new thread-safe cache
-    pub fn new(primary_capacity: usize, hot_capacity: usize) -> Self {
+    #[must_use] pub fn new(primary_capacity: usize, hot_capacity: usize) -> Self {
         Self {
             inner: Arc::new(RwLock::new(GlobalExpressionCacheV2::new(
                 primary_capacity,
@@ -304,6 +314,10 @@ impl ThreadSafeGlobalCache {
     }
 
     /// Get or compute with thread safety
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_or_compute<F>(
         &self,
         expression: &str,
@@ -322,6 +336,7 @@ impl ThreadSafeGlobalCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::string_pool::intern;
 
     #[test]
     fn test_expression_cache_v2() {

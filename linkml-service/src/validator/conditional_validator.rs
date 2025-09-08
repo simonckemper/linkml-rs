@@ -1,9 +1,8 @@
-//! Conditional validation rules for LinkML
+//! Conditional validation rules for `LinkML`
 //!
 //! This module implements if/then conditional requirements,
 //! allowing complex validation logic based on field values.
 
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -156,9 +155,15 @@ pub enum Requirement {
 }
 
 
+impl Default for ConditionalValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConditionalValidator {
     /// Create a new conditional validator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             rules: HashMap::new(),
             expression_engine: Arc::new(ExpressionEngine::new()),
@@ -166,7 +171,7 @@ impl ConditionalValidator {
     }
 
     /// Create from `LinkML` schema
-    pub fn from_schema(schema: &SchemaDefinition) -> Self {
+    #[must_use] pub fn from_schema(schema: &SchemaDefinition) -> Self {
         let mut validator = Self::new();
 
         // Extract rules from classes
@@ -176,8 +181,8 @@ impl ConditionalValidator {
             // Process conditional requirements from ClassDefinition.if_required
             if let Some(if_required_map) = &class_def.if_required {
                 for (trigger_slot, conditional_req) in if_required_map {
-                    if let Some(condition) = &conditional_req.condition {
-                        if let Some(then_required) = &conditional_req.then_required {
+                    if let Some(condition) = &conditional_req.condition
+                        && let Some(then_required) = &conditional_req.then_required {
                             // Convert SlotCondition to our Condition enum
                             let our_condition = if condition.required == Some(true) {
                                 Condition::Present {
@@ -215,7 +220,6 @@ impl ConditionalValidator {
                             };
                             class_rules.push(rule);
                         }
-                    }
                 }
             }
 
@@ -234,7 +238,7 @@ impl ConditionalValidator {
         validator
     }
 
-    /// Parse a rule from ClassDefinition.rules into a ConditionalRule
+    /// Parse a rule from ClassDefinition.rules into a `ConditionalRule`
     fn parse_rule(rule: &linkml_core::types::Rule) -> Option<ConditionalRule> {
         // Convert Rule to ConditionalRule
         if let Some(preconditions) = &rule.preconditions {
@@ -292,10 +296,10 @@ impl ConditionalValidator {
                                 });
                             }
                         }
-                        if !else_reqs.is_empty() {
-                            Some(else_reqs)
-                        } else {
+                        if else_reqs.is_empty() {
                             None
+                        } else {
+                            Some(else_reqs)
                         }
                     } else {
                         None
@@ -324,11 +328,15 @@ impl ConditionalValidator {
     pub fn add_rule(&mut self, class_name: &str, rule: ConditionalRule) {
         self.rules
             .entry(class_name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(rule);
     }
 
     /// Validate an instance against conditional rules
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn validate(
         &self,
         instance: &Value,
@@ -374,7 +382,9 @@ impl ConditionalValidator {
             }
         }
 
-        if !failed_requirements.is_empty() {
+        if failed_requirements.is_empty() {
+            Ok(None)
+        } else {
             Ok(Some(ConditionalViolation {
                 rule_name: rule.name.clone(),
                 condition: rule.condition.clone(),
@@ -382,8 +392,6 @@ impl ConditionalValidator {
                 failed_requirements,
                 message: rule.message.clone(),
             }))
-        } else {
-            Ok(None)
         }
     }
 
@@ -505,21 +513,18 @@ impl ConditionalValidator {
 
     /// Convert a `JSON` Value to a context map for expression evaluation
     fn value_to_context(value: &Value) -> Result<HashMap<String, Value>> {
-        match value {
-            Value::Object(map) => {
-                // Convert the serde_json::Map to a HashMap
-                let mut context = HashMap::new();
-                for (key, val) in map.iter() {
-                    context.insert(key.clone(), val.clone());
-                }
-                Ok(context)
+        if let Value::Object(map) = value {
+            // Convert the serde_json::Map to a HashMap
+            let mut context = HashMap::new();
+            for (key, val) in map {
+                context.insert(key.clone(), val.clone());
             }
-            _ => {
-                // For non-object values, create a context with a single "value" key
-                let mut context = HashMap::new();
-                context.insert("value".to_string(), value.clone());
-                Ok(context)
-            }
+            Ok(context)
+        } else {
+            // For non-object values, create a context with a single "value" key
+            let mut context = HashMap::new();
+            context.insert("value".to_string(), value.clone());
+            Ok(context)
         }
     }
 }
@@ -545,7 +550,7 @@ pub struct ConditionalViolation {
 
 impl ConditionalViolation {
     /// Format as user-friendly message
-    pub fn format_message(&self) -> String {
+    #[must_use] pub fn format_message(&self) -> String {
         if let Some(msg) = &self.message {
             msg.clone()
         } else {

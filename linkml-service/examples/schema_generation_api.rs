@@ -385,7 +385,7 @@ pub struct Loan {
 
 // Validation implementations
 impl Book {
-    pub fn validate(&self) -> Result<(), ValidationError> {
+    pub fn validate(&self) -> std::result::Result<(), ValidationError> {
         // Validate ISBN pattern
         let isbn_regex = regex::Regex::new(r"^(97[89])?\d{10}$")?;
         if !isbn_regex.is_match(&self.isbn) {

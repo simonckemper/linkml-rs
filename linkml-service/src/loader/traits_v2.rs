@@ -1,6 +1,6 @@
 //! Version 2 traits for data loading and dumping with file system adapter support
 //!
-//! This module provides updated traits that use FileSystemOperations instead
+//! This module provides updated traits that use `FileSystemOperations` instead
 //! of direct file system access.
 
 use async_trait::async_trait;
@@ -89,7 +89,7 @@ pub struct LoaderOptionsV2 {
 
 impl LoaderOptionsV2 {
     /// Create new loader options
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             validate: true,
             strict: false,
@@ -100,19 +100,19 @@ impl LoaderOptionsV2 {
     }
 
     /// Set validation enabled
-    pub fn with_validation(mut self, validate: bool) -> Self {
+    #[must_use] pub fn with_validation(mut self, validate: bool) -> Self {
         self.validate = validate;
         self
     }
 
     /// Set strict mode
-    pub fn with_strict(mut self, strict: bool) -> Self {
+    #[must_use] pub fn with_strict(mut self, strict: bool) -> Self {
         self.strict = strict;
         self
     }
 
     /// Set target class
-    pub fn with_target_class(mut self, class: String) -> Self {
+    #[must_use] pub fn with_target_class(mut self, class: String) -> Self {
         self.target_class = Some(class);
         self
     }

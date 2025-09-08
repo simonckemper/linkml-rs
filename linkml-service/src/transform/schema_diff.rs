@@ -1,6 +1,6 @@
-//! Schema diff implementation for LinkML
+//! Schema diff implementation for `LinkML`
 //!
-//! This module provides functionality to compute differences between LinkML schemas,
+//! This module provides functionality to compute differences between `LinkML` schemas,
 //! including structural differences, semantic changes, and breaking change detection.
 
 use linkml_core::prelude::*;
@@ -174,7 +174,7 @@ impl Default for DiffConfig {
 
 impl SchemaDiffer {
     /// Create a new schema differ
-    pub fn new(config: DiffConfig) -> Self {
+    #[must_use] pub fn new(config: DiffConfig) -> Self {
         Self {
             config,
             renames: HashMap::new(),
@@ -182,7 +182,7 @@ impl SchemaDiffer {
     }
 
     /// Create with default configuration
-    pub fn with_defaults() -> Self {
+    #[must_use] pub fn with_defaults() -> Self {
         Self::new(DiffConfig::default())
     }
 
@@ -256,14 +256,13 @@ impl SchemaDiffer {
 
         for removed in &removed_classes {
             for added in &added_classes {
-                if let Some(old_class) = old_schema.classes.get(*removed) {
-                    if let Some(new_class) = new_schema.classes.get(*added) {
+                if let Some(old_class) = old_schema.classes.get(*removed)
+                    && let Some(new_class) = new_schema.classes.get(*added) {
                         let similarity = self.calculate_class_similarity(old_class, new_class);
                         if similarity >= self.config.rename_threshold {
-                            self.renames.insert(removed.to_string(), added.to_string());
+                            self.renames.insert((*removed).to_string(), (*added).to_string());
                         }
                     }
-                }
             }
         }
 
@@ -412,7 +411,7 @@ impl SchemaDiffer {
                     element_type: "class".to_string(),
                     element_name: name.clone(),
                     path: vec!["classes".to_string(), name.clone()],
-                    description: format!("Class '{}' was renamed to '{}'", name, new_name),
+                    description: format!("Class '{name}' was renamed to '{new_name}'"),
                     severity: ChangeSeverity::Major,
                     old_value: Some(name.clone()),
                     new_value: Some(new_name.clone()),
@@ -513,7 +512,7 @@ impl SchemaDiffer {
                 element_type: "attribute".to_string(),
                 element_name: removed.clone(),
                 path,
-                description: format!("Attribute '{}' removed from class '{}'", removed, name),
+                description: format!("Attribute '{removed}' removed from class '{name}'"),
                 severity: ChangeSeverity::Major,
                 old_value: Some(removed.clone()),
                 new_value: None,
@@ -530,7 +529,7 @@ impl SchemaDiffer {
                 element_type: "attribute".to_string(),
                 element_name: added.clone(),
                 path,
-                description: format!("Attribute '{}' added to class '{}'", added, name),
+                description: format!("Attribute '{added}' added to class '{name}'"),
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
@@ -551,7 +550,7 @@ impl SchemaDiffer {
                 element_type: "mixin".to_string(),
                 element_name: removed.clone(),
                 path,
-                description: format!("Mixin '{}' removed from class '{}'", removed, name),
+                description: format!("Mixin '{removed}' removed from class '{name}'"),
                 severity: ChangeSeverity::Minor,
                 old_value: Some(removed.clone()),
                 new_value: None,
@@ -568,7 +567,7 @@ impl SchemaDiffer {
                 element_type: "mixin".to_string(),
                 element_name: added.clone(),
                 path,
-                description: format!("Mixin '{}' added to class '{}'", added, name),
+                description: format!("Mixin '{added}' added to class '{name}'"),
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
@@ -831,7 +830,7 @@ impl SchemaDiffer {
                 element_type: "enum_value".to_string(),
                 element_name: removed.clone(),
                 path,
-                description: format!("Enum value '{}' removed from '{}'", removed, name),
+                description: format!("Enum value '{removed}' removed from '{name}'"),
                 severity: ChangeSeverity::Major,
                 old_value: Some(removed.clone()),
                 new_value: None,
@@ -848,7 +847,7 @@ impl SchemaDiffer {
                 element_type: "enum_value".to_string(),
                 element_name: added.clone(),
                 path,
-                description: format!("Enum value '{}' added to '{}'", added, name),
+                description: format!("Enum value '{added}' added to '{name}'"),
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
@@ -955,6 +954,7 @@ impl fmt::Display for SchemaDiff {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema(name: &str) -> SchemaDefinition {
         let mut schema = SchemaDefinition {
@@ -985,18 +985,19 @@ mod tests {
     }
 
     #[test]
-    fn test_no_changes() {
+    fn test_no_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema("test");
         let mut differ = SchemaDiffer::with_defaults();
 
-        let diff = differ.diff(&schema, &schema).map_err(|e| anyhow::anyhow!("diff should succeed: {}", e))?;
+        let diff = differ.diff(&schema, &schema).expect("diff should succeed: {}");
 
         assert_eq!(diff.stats.total_changes, 0);
         assert!(diff.changes.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn test_class_addition() {
+    fn test_class_addition() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = create_test_schema("test");
         let mut new_schema = old_schema.clone();
 
@@ -1011,15 +1012,16 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .map_err(|e| anyhow::anyhow!("diff should succeed: {}", e))?;
+            .expect("diff should succeed: {}");
 
         assert_eq!(diff.stats.additions, 1);
         assert_eq!(diff.stats.compatible_changes, 1);
         assert_eq!(diff.stats.breaking_changes, 0);
+        Ok(())
     }
 
     #[test]
-    fn test_class_removal() {
+    fn test_class_removal() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut old_schema = create_test_schema("test");
         let new_schema = create_test_schema("test");
 
@@ -1034,14 +1036,15 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .map_err(|e| anyhow::anyhow!("diff should succeed: {}", e))?;
+            .expect("diff should succeed: {}");
 
         assert_eq!(diff.stats.removals, 1);
         assert_eq!(diff.stats.breaking_changes, 1);
+        Ok(())
     }
 
     #[test]
-    fn test_slot_modification() {
+    fn test_slot_modification() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = create_test_schema("test");
         let mut new_schema = old_schema.clone();
 
@@ -1052,14 +1055,15 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .map_err(|e| anyhow::anyhow!("diff should succeed: {}", e))?;
+            .expect("diff should succeed: {}");
 
         assert_eq!(diff.stats.modifications, 1);
         assert_eq!(diff.stats.compatible_changes, 1); // Making required field optional is compatible
+        Ok(())
     }
 
     #[test]
-    fn test_breaking_change() {
+    fn test_breaking_change() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let old_schema = create_test_schema("test");
         let mut new_schema = old_schema.clone();
 
@@ -1070,10 +1074,11 @@ mod tests {
         let mut differ = SchemaDiffer::with_defaults();
         let diff = differ
             .diff(&old_schema, &new_schema)
-            .map_err(|e| anyhow::anyhow!("diff should succeed: {}", e))?;
+            .expect("diff should succeed: {}");
 
         assert_eq!(diff.stats.modifications, 1);
         assert_eq!(diff.stats.breaking_changes, 1);
         assert!(!diff.breaking_changes.is_empty());
+        Ok(())
     }
 }

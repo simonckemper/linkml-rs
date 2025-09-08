@@ -1,6 +1,6 @@
-//! yUML generator for LinkML schemas
+//! yUML generator for `LinkML` schemas
 //!
-//! This module generates yUML diagrams from LinkML schemas. yUML is a simple
+//! This module generates yUML diagrams from `LinkML` schemas. yUML is a simple
 //! online tool for creating UML diagrams using a text-based syntax.
 
 use linkml_core::prelude::*;
@@ -61,9 +61,9 @@ pub struct YumlGenerator {
 }
 
 impl YumlGenerator {
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(e: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(std::io::ErrorKind::Other, e))
+        GeneratorError::Io(std::io::Error::other(e))
     }
 
     /// Create a new yUML generator
@@ -123,7 +123,7 @@ impl YumlGenerator {
         // Generate class definitions
         for (name, class_def) in &schema.classes {
             let mut class_str = String::new();
-            write!(&mut class_str, "[{}", name).map_err(Self::fmt_error_to_generator_error)?;
+            write!(&mut class_str, "[{name}").map_err(Self::fmt_error_to_generator_error)?;
 
             if self.options.include_slots {
                 // Collect all slots
@@ -148,12 +148,12 @@ impl YumlGenerator {
                                     .map_err(Self::fmt_error_to_generator_error)?;
                             }
 
-                            write!(&mut class_str, "{}", slot_name)
+                            write!(&mut class_str, "{slot_name}")
                                 .map_err(Self::fmt_error_to_generator_error)?;
 
                             // Add type if available
                             if let Some(range) = &slot_def.range {
-                                write!(&mut class_str, ":{}", range)
+                                write!(&mut class_str, ":{range}")
                                     .map_err(Self::fmt_error_to_generator_error)?;
                             }
 
@@ -174,17 +174,17 @@ impl YumlGenerator {
             }
 
             write!(&mut class_str, "]").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "{}", class_str).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut output, "{class_str}").map_err(Self::fmt_error_to_generator_error)?;
 
             // Collect inheritance relationships
             if self.options.show_inheritance {
                 if let Some(parent) = &class_def.is_a {
-                    relationships.push(format!("[{}]^-[{}]", parent, name));
+                    relationships.push(format!("[{parent}]^-[{name}]"));
                 }
 
                 // Mixins (interface realization)
                 for mixin in &class_def.mixins {
-                    relationships.push(format!("[{}]^-.-[{}]", mixin, name));
+                    relationships.push(format!("[{mixin}]^-.-[{name}]"));
                 }
             }
 
@@ -193,19 +193,17 @@ impl YumlGenerator {
                 let all_slots = self.collect_all_slots(name, class_def, schema);
 
                 for slot_name in &all_slots {
-                    if let Some(slot_def) = schema.slots.get(slot_name) {
-                        if let Some(range) = &slot_def.range {
-                            if schema.classes.contains_key(range) {
+                    if let Some(slot_def) = schema.slots.get(slot_name)
+                        && let Some(range) = &slot_def.range
+                            && schema.classes.contains_key(range) {
                                 // This is an object reference
                                 let arrow = if slot_def.multivalued == Some(true) {
-                                    format!("[{}]-{}*>[{}]", name, slot_name, range)
+                                    format!("[{name}]-{slot_name}*>[{range}]")
                                 } else {
-                                    format!("[{}]-{}>[{}]", name, slot_name, range)
+                                    format!("[{name}]-{slot_name}>[{range}]")
                                 };
                                 relationships.push(arrow);
                             }
-                        }
-                    }
                 }
             }
         }
@@ -214,7 +212,7 @@ impl YumlGenerator {
         if !relationships.is_empty() {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             for rel in relationships {
-                writeln!(&mut output, "{}", rel).map_err(Self::fmt_error_to_generator_error)?;
+                writeln!(&mut output, "{rel}").map_err(Self::fmt_error_to_generator_error)?;
             }
         }
 
@@ -281,7 +279,7 @@ impl YumlGenerator {
 
                 // Create relationships
                 for actor in &actors {
-                    writeln!(&mut output, "[{}]-({})", actor, use_case_name)
+                    writeln!(&mut output, "[{actor}]-({use_case_name})")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
@@ -316,7 +314,7 @@ impl YumlGenerator {
         for (name, enum_def) in &schema.enums {
             if name.to_lowercase().contains("status") || name.to_lowercase().contains("state") {
                 has_workflow = true;
-                writeln!(&mut output, "// Workflow for {}", name)
+                writeln!(&mut output, "// Workflow for {name}")
                     .map_err(Self::fmt_error_to_generator_error)?;
 
                 let states: Vec<String> = enum_def
@@ -333,7 +331,7 @@ impl YumlGenerator {
 
                 for (i, state) in states.iter().enumerate() {
                     if i == 0 {
-                        writeln!(&mut output, "(start)->|begin|<{}>;", state)
+                        writeln!(&mut output, "(start)->|begin|<{state}>;")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
 
@@ -341,7 +339,7 @@ impl YumlGenerator {
                         writeln!(&mut output, "<{}>->|next|<{}>;", state, states[i + 1])
                             .map_err(Self::fmt_error_to_generator_error)?;
                     } else {
-                        writeln!(&mut output, "<{}>->|complete|(end)", state)
+                        writeln!(&mut output, "<{state}>->|complete|(end)")
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
                 }
@@ -378,8 +376,8 @@ impl YumlGenerator {
         let mut seen = HashSet::new();
 
         // First, get slots from parent if any
-        if let Some(parent_name) = &class_def.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
+        if let Some(parent_name) = &class_def.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name) {
                 let parent_slots = self.collect_all_slots(parent_name, parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -387,7 +385,6 @@ impl YumlGenerator {
                     }
                 }
             }
-        }
 
         // Then add direct slots
         for slot in &class_def.slots {
@@ -423,7 +420,7 @@ impl AsyncGenerator for YumlGenerator {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates yUML diagrams from LinkML schemas"
     }
 
@@ -474,8 +471,8 @@ impl AsyncGenerator for YumlGenerator {
         metadata.insert("style".to_string(), self.options.style.clone());
 
         Ok(vec![GeneratedOutput {
-            filename,
             content,
+            filename,
             metadata,
         }])
     }
@@ -491,7 +488,7 @@ impl Generator for YumlGenerator {
         }
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Generates yUML diagrams from LinkML schemas"
     }
 
@@ -523,11 +520,11 @@ impl Generator for YumlGenerator {
             .join("\n"))
     }
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "yuml"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "generated.yuml"
     }
 }
@@ -535,6 +532,7 @@ impl Generator for YumlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -575,7 +573,7 @@ mod tests {
 
         let result = AsyncGenerator::generate(&generator, &schema, &options)
             .await
-            .map_err(|e| anyhow::anyhow!("should generate yuml: {}", e))?;
+            .expect("should generate yuml: {}");
         assert_eq!(result.len(), 1);
 
         let output = &result[0];
@@ -599,10 +597,10 @@ mod tests {
             let generator = YumlGenerator::with_options(yuml_options);
             let result = AsyncGenerator::generate(&generator, &schema, &options)
                 .await
-                .map_err(|e| anyhow::anyhow!("should generate yuml: {}", e))?;
+                .expect("should generate yuml: {}");
 
             let output = &result[0];
-            assert!(output.content.contains(&format!("diagram/{style}/")));
+            assert!(output.content.contains(&format!("diagram/{style}/"));
         }
     }
 }

@@ -1,11 +1,12 @@
-//! Aggregation functions for LinkML expressions
+//! Aggregation functions for `LinkML` expressions
 //!
 //! This module provides functions for aggregating values from arrays or collections.
 
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
+use std::collections::HashMap;
 
-/// Convert f64 to serde_json::Number, returning error for non-finite values
+/// Convert f64 to `serde_json::Number`, returning error for non-finite values
 fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, FunctionError> {
     serde_json::Number::from_f64(val).ok_or_else(|| {
         FunctionError::invalid_result(
@@ -15,17 +16,17 @@ fn f64_to_number(val: f64, function_name: &str) -> Result<serde_json::Number, Fu
     })
 }
 
-/// sum() - Sum of numeric values
+/// `sum()` - Sum of numeric values
 pub struct SumFunction;
 
 impl BuiltinFunction for SumFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sum"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -55,17 +56,17 @@ impl BuiltinFunction for SumFunction {
     }
 }
 
-/// avg() - Average of numeric values
+/// `avg()` - Average of numeric values
 pub struct AvgFunction;
 
 impl BuiltinFunction for AvgFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "avg"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -101,11 +102,11 @@ impl BuiltinFunction for AvgFunction {
     }
 }
 
-/// count() - Count of values (with optional condition)
+/// `count()` - Count of values (with optional condition)
 pub struct CountFunction;
 
 impl BuiltinFunction for CountFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "count"
     }
 
@@ -172,17 +173,17 @@ impl BuiltinFunction for CountFunction {
     }
 }
 
-/// median() - Median of numeric values
+/// `median()` - Median of numeric values
 pub struct MedianFunction;
 
 impl BuiltinFunction for MedianFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "median"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -213,7 +214,7 @@ impl BuiltinFunction for MedianFunction {
                 let median = if numbers.len() % 2 == 0 {
                     // Even number of elements
                     let mid = numbers.len() / 2;
-                    (numbers[mid - 1] + numbers[mid]) / 2.0
+                    f64::midpoint(numbers[mid - 1], numbers[mid])
                 } else {
                     // Odd number of elements
                     numbers[numbers.len() / 2]
@@ -229,17 +230,17 @@ impl BuiltinFunction for MedianFunction {
     }
 }
 
-/// mode() - Most frequent value(s)
+/// `mode()` - Most frequent value(s)
 pub struct ModeFunction;
 
 impl BuiltinFunction for ModeFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "mode"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -288,17 +289,17 @@ impl BuiltinFunction for ModeFunction {
     }
 }
 
-/// stddev() - Standard deviation
+/// `stddev()` - Standard deviation
 pub struct StdDevFunction;
 
 impl BuiltinFunction for StdDevFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "stddev"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -349,17 +350,17 @@ impl BuiltinFunction for StdDevFunction {
     }
 }
 
-/// variance() - Variance of numeric values
+/// `variance()` - Variance of numeric values
 pub struct VarianceFunction;
 
 impl BuiltinFunction for VarianceFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "variance"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -407,17 +408,17 @@ impl BuiltinFunction for VarianceFunction {
     }
 }
 
-/// unique() - Unique values from array
+/// `unique()` - Unique values from array
 pub struct UniqueFunction;
 
 impl BuiltinFunction for UniqueFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "unique"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
         }
         Ok(())
     }
@@ -446,17 +447,17 @@ impl BuiltinFunction for UniqueFunction {
     }
 }
 
-/// group_by() - Group array elements by a key
+/// `group_by()` - Group array elements by a key
 pub struct GroupByFunction;
 
 impl BuiltinFunction for GroupByFunction {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "group_by"
     }
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
         }
         Ok(())
     }
@@ -464,7 +465,6 @@ impl BuiltinFunction for GroupByFunction {
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError> {
         match (&args[0], &args[1]) {
             (Value::Array(arr), Value::String(key)) => {
-                use std::collections::HashMap;
                 let mut groups: HashMap<String, Vec<Value>> = HashMap::new();
 
                 for val in arr {
@@ -478,7 +478,7 @@ impl BuiltinFunction for GroupByFunction {
 
                         groups
                             .entry(group_key)
-                            .or_insert_with(Vec::new)
+                            .or_default()
                             .push(val.clone());
                     } else {
                         return Err(FunctionError::invalid_argument(
@@ -519,13 +519,13 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![numbers.clone()])
-                .map_err(|e| anyhow::anyhow!("should calculate sum: {}", e))?,
+                .expect("should calculate sum: {}"),
             json!(15.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![numbers])
-                .map_err(|e| anyhow::anyhow!("should calculate average: {}", e))?,
+                .expect("should calculate average: {}"),
             json!(3.0)
         );
 
@@ -533,13 +533,13 @@ mod tests {
         assert_eq!(
             sum_fn
                 .call(vec![json!([])])
-                .map_err(|e| anyhow::anyhow!("should handle empty array sum: {}", e))?,
+                .expect("should handle empty array sum: {}"),
             json!(0.0)
         );
         assert_eq!(
             avg_fn
                 .call(vec![json!([])])
-                .map_err(|e| anyhow::anyhow!("should handle empty array average: {}", e))?,
+                .expect("should handle empty array average: {}"),
             json!(null)
         );
         Ok(())
@@ -553,7 +553,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!([1, 2, 3, 4, 5])])
-                .map_err(|e| anyhow::anyhow!("should count array elements: {}", e))?,
+                .expect("should count array elements: {}"),
             json!(5)
         );
 
@@ -561,7 +561,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!([1, null, 3, null, 5]), json!("non-null")])
-                .map_err(|e| anyhow::anyhow!("should count non-null elements: {}", e))?,
+                .expect("should count non-null elements: {}"),
             json!(3)
         );
 
@@ -569,7 +569,7 @@ mod tests {
         assert_eq!(
             count_fn
                 .call(vec![json!(["a", "", "c", ""]), json!("non-empty")])
-                .map_err(|e| anyhow::anyhow!("should count non-empty elements: {}", e))?,
+                .expect("should count non-empty elements: {}"),
             json!(2)
         );
         Ok(())
@@ -583,7 +583,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 3, 5, 7, 9])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of odd elements: {}", e))?,
+                .expect("should calculate median of odd elements: {}"),
             json!(5.0)
         );
 
@@ -591,7 +591,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([1, 2, 3, 4])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of even elements: {}", e))?,
+                .expect("should calculate median of even elements: {}"),
             json!(2.5)
         );
 
@@ -599,7 +599,7 @@ mod tests {
         assert_eq!(
             median_fn
                 .call(vec![json!([5, 1, 3, 9, 7])])
-                .map_err(|e| anyhow::anyhow!("should calculate median of unsorted array: {}", e))?,
+                .expect("should calculate median of unsorted array: {}"),
             json!(5.0)
         );
         Ok(())
@@ -613,19 +613,19 @@ mod tests {
         assert_eq!(
             mode_fn
                 .call(vec![json!([1, 2, 2, 3, 2, 4])])
-                .map_err(|e| anyhow::anyhow!("should find single mode: {}", e))?,
+                .expect("should find single mode: {}"),
             json!(2)
         );
 
         // Multiple modes
         let result = mode_fn
             .call(vec![json!([1, 1, 2, 2, 3])])
-            .map_err(|e| anyhow::anyhow!("should find multiple modes: {}", e))?;
+            .expect("should find multiple modes: {}");
         match result {
             Value::Array(arr) => {
                 assert_eq!(arr.len(), 2);
-                assert!(arr.contains(&json!(1)));
-                assert!(arr.contains(&json!(2)));
+                assert!(arr.contains(&json!(1));
+                assert!(arr.contains(&json!(2));
             }
             _ => panic!("Expected array of modes"),
         }
@@ -642,7 +642,7 @@ mod tests {
         // Sample variance (using n-1) should be 32/7 ≈ 4.571428571428571
         let variance_result = variance_fn
             .call(vec![data.clone()])
-            .map_err(|e| anyhow::anyhow!("should calculate variance: {}", e))?;
+            .expect("should calculate variance: {}");
         assert!(
             matches!(variance_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 4.571_428_571_428_571).abs() < 0.0001)
         );
@@ -650,7 +650,7 @@ mod tests {
         // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
         let stddev_result = stddev_fn
             .call(vec![data])
-            .map_err(|e| anyhow::anyhow!("should calculate standard deviation: {}", e))?;
+            .expect("should calculate standard deviation: {}");
         assert!(
             matches!(stddev_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 2.138_089_935_299_394_7).abs() < 0.0001)
         );
@@ -663,13 +663,13 @@ mod tests {
 
         let result = unique_fn
             .call(vec![json!([1, 2, 2, 3, 1, 4, 3])])
-            .map_err(|e| anyhow::anyhow!("should find unique numbers: {}", e))?;
+            .expect("should find unique numbers: {}");
         assert_eq!(result, json!([1, 2, 3, 4]));
 
         // With strings
         let result = unique_fn
             .call(vec![json!(["a", "b", "a", "c", "b"])])
-            .map_err(|e| anyhow::anyhow!("should find unique strings: {}", e))?;
+            .expect("should find unique strings: {}");
         assert_eq!(result, json!(["a", "b", "c"]));
         Ok(())
     }
@@ -687,7 +687,7 @@ mod tests {
 
         let result = group_by_fn
             .call(vec![data, json!("type")])
-            .map_err(|e| anyhow::anyhow!("should group by type field: {}", e))?;
+            .expect("should group by type field: {}");
 
         match result {
             Value::Object(groups) => {

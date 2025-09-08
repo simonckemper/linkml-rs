@@ -1,6 +1,6 @@
 //! Expression compilation for performance optimization
 //!
-//! This module provides JIT compilation capabilities for LinkML expressions,
+//! This module provides JIT compilation capabilities for `LinkML` expressions,
 //! converting AST nodes into optimized bytecode for faster evaluation.
 
 use super::ast::Expression;
@@ -117,7 +117,7 @@ pub struct Compiler {
 
 impl Compiler {
     /// Create a new compiler with default settings
-    pub fn new(function_registry: Arc<FunctionRegistry>) -> Self {
+    #[must_use] pub fn new(function_registry: Arc<FunctionRegistry>) -> Self {
         Self {
             function_registry,
             optimization_level: 2,
@@ -125,12 +125,16 @@ impl Compiler {
     }
 
     /// Set optimization level (0=none, 3=maximum)
-    pub fn with_optimization_level(mut self, level: u8) -> Self {
+    #[must_use] pub fn with_optimization_level(mut self, level: u8) -> Self {
         self.optimization_level = level.min(3);
         self
     }
 
     /// Compile an expression AST into bytecode
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn compile(
         &self,
         expr: &Expression,
@@ -173,18 +177,18 @@ impl Compiler {
                 ctx.emit(Instruction::Const(Value::Null));
             }
             Expression::Boolean(b) => {
-                ctx.emit(Instruction::Const(Value::from(*b)));
+                ctx.emit(Instruction::Const(Value::from(*b));
             }
             Expression::Number(n) => {
-                ctx.emit(Instruction::Const(Value::from(*n)));
+                ctx.emit(Instruction::Const(Value::from(*n));
             }
             Expression::String(s) => {
-                ctx.emit(Instruction::Const(Value::from(s.clone())));
+                ctx.emit(Instruction::Const(Value::from(s.clone()));
             }
 
             Expression::Variable(name) => {
                 ctx.accessed_variables.insert(name.clone());
-                ctx.emit(Instruction::Load(name.clone()));
+                ctx.emit(Instruction::Load(name.clone());
             }
 
             // Binary operations
@@ -310,11 +314,11 @@ impl Compiler {
                 let end_jump = ctx.emit_placeholder();
 
                 // Compile else branch
-                ctx.patch_jump(else_jump, Instruction::JumpIfFalse(ctx.instructions.len()));
+                ctx.patch_jump(else_jump, Instruction::JumpIfFalse(ctx.instructions.len());
                 self.compile_expr(else_expr, ctx)?;
 
                 // Patch end jump
-                ctx.patch_jump(end_jump, Instruction::Jump(ctx.instructions.len()));
+                ctx.patch_jump(end_jump, Instruction::Jump(ctx.instructions.len());
             }
 
             Expression::FunctionCall { name, args } => {
@@ -334,7 +338,7 @@ impl Compiler {
                 }
 
                 // Emit call
-                ctx.emit(Instruction::Call(name.clone(), args.len()));
+                ctx.emit(Instruction::Call(name.clone(), args.len());
             }
         }
 
@@ -367,34 +371,29 @@ impl Compiler {
         let mut i = 0;
         while i < ctx.instructions.len() {
             // Look for patterns like: Const, Const, BinaryOp
-            if i + 2 < ctx.instructions.len() {
-                if let (Instruction::Const(a), Instruction::Const(b), op) = (
+            if i + 2 < ctx.instructions.len()
+                && let (Instruction::Const(a), Instruction::Const(b), op) = (
                     &ctx.instructions[i],
                     &ctx.instructions[i + 1],
                     &ctx.instructions[i + 2],
-                ) {
-                    if let Some(result) = self.evaluate_constant_binary_op(a, b, op) {
+                )
+                    && let Some(result) = self.evaluate_constant_binary_op(a, b, op) {
                         // Replace with single constant
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.remove(i + 1);
                         ctx.instructions.remove(i + 1);
                         continue;
                     }
-                }
-            }
 
             // Look for patterns like: Const, UnaryOp
-            if i + 1 < ctx.instructions.len() {
-                if let (Instruction::Const(val), op) =
+            if i + 1 < ctx.instructions.len()
+                && let (Instruction::Const(val), op) =
                     (&ctx.instructions[i], &ctx.instructions[i + 1])
-                {
-                    if let Some(result) = self.evaluate_constant_unary_op(val, op) {
+                    && let Some(result) = self.evaluate_constant_unary_op(val, op) {
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.remove(i + 1);
                         continue;
                     }
-                }
-            }
 
             i += 1;
         }
@@ -419,7 +418,7 @@ impl Compiler {
                 Some(Value::Number(serde_json::Number::from_f64(v1 * v2)?))
             }
             (Value::String(s1), Value::String(s2), Instruction::Add) => {
-                Some(Value::String(format!("{}{}", s1, s2)))
+                Some(Value::String(format!("{s1}{s2}")))
             }
             (Value::Bool(b1), Value::Bool(b2), Instruction::And) => Some(Value::Bool(*b1 && *b2)),
             (Value::Bool(b1), Value::Bool(b2), Instruction::Or) => Some(Value::Bool(*b1 || *b2)),
@@ -514,15 +513,14 @@ impl Compiler {
             }
 
             // Remove double negation
-            if i + 1 < ctx.instructions.len() {
-                if let (Instruction::Not, Instruction::Not) =
+            if i + 1 < ctx.instructions.len()
+                && let (Instruction::Not, Instruction::Not) =
                     (&ctx.instructions[i], &ctx.instructions[i + 1])
                 {
                     ctx.instructions.remove(i);
                     ctx.instructions.remove(i);
                     continue;
                 }
-            }
 
             i += 1;
         }
@@ -651,7 +649,7 @@ impl Compiler {
             match inst {
                 Instruction::Call(_, _) => complexity += 10,
                 Instruction::Jump(_) | Instruction::JumpIfTrue(_) | Instruction::JumpIfFalse(_) => {
-                    complexity += 2
+                    complexity += 2;
                 }
                 _ => complexity += 1,
             }
@@ -712,10 +710,10 @@ mod tests {
         let parser = Parser::new();
 
         // Test arithmetic
-        let expr = parser.parse("1 + 2 * 3").map_err(|e| anyhow::anyhow!("should parse expression: {}", e))?;
+        let expr = parser.parse("1 + 2 * 3").expect("should parse expression: {}");
         let compiled = compiler
             .compile(&expr, "1 + 2 * 3")
-            .map_err(|e| anyhow::anyhow!("should compile expression: {}", e))?;
+            .expect("should compile expression: {}");
 
         // The compiler optimizes 2 * 3 to 6 at compile time
         // So we get: 1, 6, Add
@@ -744,10 +742,10 @@ mod tests {
         // Constants should be folded
         let expr = parser
             .parse("2 + 3")
-            .map_err(|e| anyhow::anyhow!("should parse constant expression: {}", e))?;
+            .expect("should parse constant expression: {}");
         let compiled = compiler
             .compile(&expr, "2 + 3")
-            .map_err(|e| anyhow::anyhow!("should compile constant expression: {}", e))?;
+            .expect("should compile constant expression: {}");
 
         // Should be optimized to a single constant
         assert_eq!(compiled.instructions.len(), 2); // Const(5), Return
@@ -771,10 +769,10 @@ mod tests {
         // // Test short-circuit AND
         // let expr = parser
         //     .parse("false && expensive_func()")
-        //     .map_err(|e| anyhow::anyhow!("should parse short-circuit expression: {}", e))?;
+        //     .expect("should parse short-circuit expression: {}");
         // let compiled = compiler
         //     .compile(&expr, "false && expensive_func()")
-        //     .map_err(|e| anyhow::anyhow!("should compile short-circuit expression: {}", e))?;
+        //     .expect("should compile short-circuit expression: {}");
         //
         // // Should have jump instruction for short-circuit
         // assert!(

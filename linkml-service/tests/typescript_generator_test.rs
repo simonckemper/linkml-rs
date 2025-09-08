@@ -1,9 +1,9 @@
 //! Tests for the TypeScript generator
 
-use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, PermissibleValue, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, TypeScriptGenerator};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 fn generate_typescript(schema: SchemaDefinition) -> String {
     let generator = TypeScriptGenerator::new();
 

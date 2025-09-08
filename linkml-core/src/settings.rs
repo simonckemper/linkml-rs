@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+
 /// Schema settings that control processing behavior
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct SchemaSettings {
@@ -404,6 +405,7 @@ impl ImportSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
+use crate::error::Result;
 
     #[test]
     fn test_schema_settings_default() {
@@ -436,7 +438,7 @@ mod tests {
     }
 
     #[test]
-    fn test_custom_settings() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_custom_settings() -> crate::Result<()> {
         let mut settings = SchemaSettings::new();
 
         // Set a custom value
@@ -485,7 +487,7 @@ mod tests {
     }
 
     #[test]
-    fn test_serialization() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_serialization() -> crate::Result<()> {
         let settings = SchemaSettings::strict();
         let json = serde_json::to_string_pretty(&settings).map_err(|e| {
             anyhow::anyhow!(

@@ -1,9 +1,9 @@
 //! Tests for the JavaScript ES6 generator
 
-use linkml_core::types::{ClassDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, PermissibleValue, Definition, SlotDefinition};
 use linkml_service::generator::{Generator, GeneratorOptions, JavaScriptGenerator};
 use serde_json::json;
-
+use linkml_core::types::SchemaDefinition;
 async fn generate_javascript(schema: SchemaDefinition) -> String {
     let generator = JavaScriptGenerator::new();
     let options = GeneratorOptions::new().with_docs(true);

@@ -356,7 +356,7 @@ fn bench_schema_merging(c: &mut Criterion) {
 
     c.bench_function("schema_merge", |b| {
         b.iter(|| {
-            let result = merger.merge(black_box(schema1.clone()), black_box(schema2.clone()));
+            let result = merger.merge(black_box(schema1.clone()), black_box(schema2.clone());
             assert!(result.is_ok());
         })
     });

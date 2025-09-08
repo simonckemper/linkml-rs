@@ -16,7 +16,7 @@ pub struct RuleInheritanceResolver<'a> {
 
 impl<'a> RuleInheritanceResolver<'a> {
     /// Create a new inheritance resolver
-    pub fn new(schema: &'a SchemaDefinition) -> Self {
+    #[must_use] pub fn new(schema: &'a SchemaDefinition) -> Self {
         Self {
             schema,
             inheritance_cache: HashMap::new(),
@@ -24,6 +24,10 @@ impl<'a> RuleInheritanceResolver<'a> {
     }
 
     /// Get all rules for a class including inherited rules
+    /// Returns an error if the operation fails
+    ///
+    /// # Errors
+    ///
     pub fn get_all_rules(&mut self, class_name: &str) -> Result<Vec<(Rule, String)>> {
         // Get inheritance chain
         let inheritance_chain = self.get_inheritance_chain(class_name)?;
@@ -47,13 +51,13 @@ impl<'a> RuleInheritanceResolver<'a> {
                     seen_rules.insert(rule_id);
 
                     // Adjust priority for inherited rules
-                    let adjusted_rule = if ancestor_name != class_name {
-                        self.adjust_inherited_rule(rule, ancestor_name, class_name)?
-                    } else {
+                    let adjusted_rule = if ancestor_name == class_name {
                         rule.clone()
+                    } else {
+                        self.adjust_inherited_rule(rule, ancestor_name, class_name)?
                     };
 
-                    all_rules.push((adjusted_rule, ancestor_name.clone()));
+                    all_rules.push((adjusted_rule, ancestor_name.clone());
                 }
             }
         }
@@ -62,7 +66,7 @@ impl<'a> RuleInheritanceResolver<'a> {
     }
 
     /// Get the inheritance chain for a class (including mixins)
-    fn get_inheritance_chain(&mut self, class_name: &str) -> Result<Vec<String>> {
+    fn get_inheritance_chain(&mut self, class_name: &str) -> linkml_core::error::Result<Vec<String>> {
         // Check cache
         if let Some(cached) = self.inheritance_cache.get(class_name) {
             return Ok(cached.clone());
@@ -149,7 +153,7 @@ impl<'a> RuleInheritanceResolver<'a> {
         rule: &Rule,
         source_class: &str,
         target_class: &str,
-    ) -> Result<Rule> {
+    ) -> linkml_core::error::Result<Rule> {
         let mut adjusted = rule.clone();
 
         // Reduce priority for inherited rules
@@ -170,7 +174,7 @@ impl<'a> RuleInheritanceResolver<'a> {
     }
 
     /// Calculate inheritance distance between two classes
-    fn calculate_inheritance_distance(&self, ancestor: &str, descendant: &str) -> Result<usize> {
+    fn calculate_inheritance_distance(&self, ancestor: &str, descendant: &str) -> linkml_core::error::Result<usize> {
         // Simple BFS to find shortest path
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
@@ -202,8 +206,7 @@ impl<'a> RuleInheritanceResolver<'a> {
 
         // If we get here, ancestor is not actually an ancestor
         Err(LinkMLError::schema_validation(format!(
-            "{} is not an ancestor of {}",
-            ancestor, descendant
+            "{ancestor} is not an ancestor of {descendant}"
         )))
     }
 }
@@ -227,9 +230,15 @@ pub struct RuleOverride {
     pub additional_postconditions: Option<linkml_core::types::RuleConditions>,
 }
 
+impl Default for RuleOverrideManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RuleOverrideManager {
     /// Create a new override manager
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             overrides: HashMap::new(),
         }
@@ -244,14 +253,14 @@ impl RuleOverrideManager {
     ) {
         self.overrides
             .entry(class_name)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(rule_id, override_spec);
     }
 
     /// Apply overrides to a rule
     pub fn apply_override(&self, rule: &mut Rule, rule_id: &str, class_name: &str) -> bool {
-        if let Some(class_overrides) = self.overrides.get(class_name) {
-            if let Some(override_spec) = class_overrides.get(rule_id) {
+        if let Some(class_overrides) = self.overrides.get(class_name)
+            && let Some(override_spec) = class_overrides.get(rule_id) {
                 if override_spec.disable {
                     rule.deactivated = Some(true);
                     return true;
@@ -265,7 +274,6 @@ impl RuleOverrideManager {
 
                 return true;
             }
-        }
 
         false
     }
@@ -311,34 +319,36 @@ mod tests {
     }
 
     #[test]
-    fn test_inheritance_chain() {
+    fn test_inheritance_chain() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let mut resolver = RuleInheritanceResolver::new(&schema);
 
         let chain = resolver
             .get_inheritance_chain("Derived")
-            .map_err(|e| anyhow::anyhow!("should get inheritance chain: {}", e))?;
+            .expect("should get inheritance chain: {}");
         assert_eq!(chain.len(), 2);
         assert_eq!(chain[0], "Derived");
         assert_eq!(chain[1], "Base");
+        Ok(())
     }
 
     #[test]
-    fn test_rule_inheritance() {
+    fn test_rule_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
         let mut resolver = RuleInheritanceResolver::new(&schema);
 
         let rules = resolver
             .get_all_rules("Derived")
-            .map_err(|e| anyhow::anyhow!("should get all rules: {}", e))?;
+            .expect("should get all rules: {}");
         assert_eq!(rules.len(), 2);
 
         // Check that derived rule comes first
-        assert_eq!(rules[0].0.title, Some("derived_rule".to_string()));
+        assert_eq!(rules[0].0.title, Some("derived_rule".to_string());
         assert_eq!(rules[0].0.priority, Some(50));
 
         // Check that base rule is inherited with adjusted priority
-        assert_eq!(rules[1].0.title, Some("base_rule".to_string()));
+        assert_eq!(rules[1].0.title, Some("base_rule".to_string());
         assert_eq!(rules[1].0.priority, Some(90)); // 100 - 10 for inheritance distance
+        Ok(())
     }
 }

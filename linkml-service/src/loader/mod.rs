@@ -37,7 +37,7 @@ pub use traits::{
 };
 pub use typedb::{TypeDBDumper, TypeDBLoader, TypeDBOptions};
 pub use typedb_integration::{
-    TypeDBIntegrationDumper, TypeDBIntegrationLoader as TypeDBIntegration,
+    TypeDBIntegrationDumper, TypeDBIntegrationLoader,
     TypeDBIntegrationOptions, TypeDBQueryExecutor,
 };
 pub use xml::{XmlDumper, XmlLoader};

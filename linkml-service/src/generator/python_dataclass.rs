@@ -1,4 +1,4 @@
-//! Python dataclass code generator for LinkML schemas
+//! Python dataclass code generator for `LinkML` schemas
 
 use super::base::{
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, get_default_value_str,
@@ -6,7 +6,6 @@ use super::base::{
 };
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
-use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
 use std::fmt::Write;
 
@@ -24,17 +23,16 @@ impl Default for PythonDataclassGenerator {
 
 impl PythonDataclassGenerator {
     /// Create a new Python dataclass generator
-    pub fn new() -> Self {
+    #[must_use] pub fn new() -> Self {
         Self {
             name: "python-dataclass".to_string(),
             description: "Generate Python dataclasses from LinkML schemas".to_string(),
         }
     }
 
-    /// Convert fmt::Error to GeneratorError
+    /// Convert `fmt::Error` to `GeneratorError`
     fn fmt_error_to_generator_error(err: std::fmt::Error) -> GeneratorError {
-        GeneratorError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        GeneratorError::Io(std::io::Error::other(
             format!("Formatting error: {err}"),
         ))
     }
@@ -47,11 +45,10 @@ impl PythonDataclassGenerator {
 
         // Must start with letter or underscore
         let mut chars = name.chars();
-        if let Some(first) = chars.next() {
-            if !first.is_ascii_alphabetic() && first != '_' {
+        if let Some(first) = chars.next()
+            && !first.is_ascii_alphabetic() && first != '_' {
                 return false;
             }
-        }
 
         // Rest must be letters, numbers, or underscores
         for ch in chars {
@@ -86,23 +83,23 @@ impl PythonDataclassGenerator {
         imports.add_import("dataclasses", "dataclass");
 
         // Generate class documentation
-        if options.include_docs && (class.description.is_some() || options.get_custom("include_examples").map_or(false, |v| v == "true")) {
+        if options.include_docs && (class.description.is_some() || options.get_custom("include_examples").is_some_and(|v| v == "true")) {
             writeln!(&mut output, "@dataclass").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "class {}:", class_name)
+            writeln!(&mut output, "class {class_name}:")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
 
             if let Some(ref desc) = class.description {
                 let wrapped = BaseCodeFormatter::wrap_text(desc, 72, "    ");
-                writeln!(&mut output, "    {}", wrapped)
+                writeln!(&mut output, "    {wrapped}")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
-            if options.get_custom("include_examples").map_or(false, |v| v == "true") {
+            if options.get_custom("include_examples").is_some_and(|v| v == "true") {
                 writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, "    Examples:")
                     .map_err(Self::fmt_error_to_generator_error)?;
-                writeln!(&mut output, "        >>> person = {}(", class_name)
+                writeln!(&mut output, "        >>> person = {class_name}(")
                     .map_err(Self::fmt_error_to_generator_error)?;
                 writeln!(&mut output, "        ...     name=\"John Doe\",")
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -115,7 +112,7 @@ impl PythonDataclassGenerator {
             writeln!(&mut output, "    \"\"\"").map_err(Self::fmt_error_to_generator_error)?;
         } else {
             writeln!(&mut output, "@dataclass").map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut output, "class {}:", class_name)
+            writeln!(&mut output, "class {class_name}:")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
@@ -140,7 +137,7 @@ impl PythonDataclassGenerator {
             }
 
             // Generate __post_init__ if we need validation
-            if options.get_custom("generate_validation").map(|s| s.as_str()) == Some("true") {
+            if options.get_custom("generate_validation").map(std::string::String::as_str) == Some("true") {
                 writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                 self.generate_post_init(&mut output, &slots, schema, &options.indent)?;
             }
@@ -155,7 +152,7 @@ impl PythonDataclassGenerator {
         let mut final_output = String::new();
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_output, "{}", import_block)
+            writeln!(&mut final_output, "{import_block}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_output).map_err(Self::fmt_error_to_generator_error)?;
@@ -178,11 +175,10 @@ impl PythonDataclassGenerator {
         let _indent = options.indent.single();
 
         // Add field documentation
-        if options.include_docs {
-            if let Some(ref desc) = slot.description {
-                writeln!(output, "    # {}", desc).map_err(Self::fmt_error_to_generator_error)?;
+        if options.include_docs
+            && let Some(ref desc) = slot.description {
+                writeln!(output, "    # {desc}").map_err(Self::fmt_error_to_generator_error)?;
             }
-        }
 
         // Determine the type
         let base_type = self.get_field_type(slot, schema, imports)?;
@@ -190,7 +186,7 @@ impl PythonDataclassGenerator {
         // Handle optional and multivalued with advanced type annotations
         let field_type = if slot.multivalued.unwrap_or(false) {
             // Use more specific collection types based on constraints
-            if slot.unique_keys.len() > 0 || slot.unique.unwrap_or(false) {
+            if !slot.unique_keys.is_empty() || slot.unique.unwrap_or(false) {
                 imports.add_import("typing", "Set");
                 format!("Set[{base_type}]")
             } else if slot.ordered.unwrap_or(false) {
@@ -215,11 +211,11 @@ impl PythonDataclassGenerator {
         let default_str = get_default_value_str(slot, "python");
 
         // Write the field
-        write!(output, "{}    {}: {}", "", slot_name, final_type)
+        write!(output, "    {slot_name}: {final_type}")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(default) = default_str {
-            write!(output, " = {}", default).map_err(Self::fmt_error_to_generator_error)?;
+            write!(output, " = {default}").map_err(Self::fmt_error_to_generator_error)?;
         }
 
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -249,11 +245,10 @@ impl PythonDataclassGenerator {
             }
 
             // Check if it's a type
-            if let Some(type_def) = schema.types.get(range) {
-                if let Some(ref base_type) = type_def.base_type {
+            if let Some(type_def) = schema.types.get(range)
+                && let Some(ref base_type) = type_def.base_type {
                     return Ok(TypeMapper::to_python(base_type).to_string());
                 }
-            }
 
             // Otherwise map as primitive
             Ok(TypeMapper::to_python(range).to_string())
@@ -262,7 +257,7 @@ impl PythonDataclassGenerator {
         }
     }
 
-    /// Generate __post_init__ method for validation
+    /// Generate __`post_init`__ method for validation
     fn generate_post_init(
         &self,
         output: &mut String,
@@ -292,14 +287,12 @@ impl PythonDataclassGenerator {
                     writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "        if self.{} is not None and not re.match(r\"{}\", self.{}):",
-                        slot_name, pattern, slot_name
+                        "        if self.{slot_name} is not None and not re.match(r\"{pattern}\", self.{slot_name}):"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "            raise ValueError(f\"{} does not match pattern: {}\")",
-                        slot_name, pattern
+                        "            raise ValueError(f\"{slot_name} does not match pattern: {pattern}\")"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -309,14 +302,12 @@ impl PythonDataclassGenerator {
                     writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "        if self.{} is not None and self.{} < {}:",
-                        slot_name, slot_name, min
+                        "        if self.{slot_name} is not None and self.{slot_name} < {min}:"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "            raise ValueError(f\"{} must be >= {}\")",
-                        slot_name, min
+                        "            raise ValueError(f\"{slot_name} must be >= {min}\")"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
@@ -326,14 +317,12 @@ impl PythonDataclassGenerator {
                     writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "        if self.{} is not None and self.{} > {}:",
-                        slot_name, slot_name, max
+                        "        if self.{slot_name} is not None and self.{slot_name} > {max}:"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "            raise ValueError(f\"{} must be <= {}\")",
-                        slot_name, max
+                        "            raise ValueError(f\"{slot_name} must be <= {max}\")"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
@@ -369,14 +358,12 @@ impl PythonDataclassGenerator {
                     writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "        if self.{} is None:",
-                        slot_name
+                        "        if self.{slot_name} is None:"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(
                         output,
-                        "            raise ValueError(\"{} is required\")",
-                        slot_name
+                        "            raise ValueError(\"{slot_name} is required\")"
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                     has_validation = true;
@@ -454,7 +441,7 @@ impl Generator for PythonDataclassGenerator {
         .map_err(Self::fmt_error_to_generator_error)?;
         if let Some(ref desc) = schema.description {
             writeln!(&mut content).map_err(Self::fmt_error_to_generator_error)?;
-            writeln!(&mut content, "{}", desc).map_err(Self::fmt_error_to_generator_error)?;
+            writeln!(&mut content, "{desc}").map_err(Self::fmt_error_to_generator_error)?;
         }
         writeln!(&mut content, "\"\"\"").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -482,7 +469,7 @@ impl Generator for PythonDataclassGenerator {
         // Imports
         let import_block = imports.python_imports();
         if !import_block.is_empty() {
-            writeln!(&mut final_content, "{}", import_block)
+            writeln!(&mut final_content, "{import_block}")
                 .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(&mut final_content).map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -508,11 +495,11 @@ impl Generator for PythonDataclassGenerator {
     }
 
 
-    fn get_file_extension(&self) -> &str {
+    fn get_file_extension(&self) -> &'static str {
         "py"
     }
 
-    fn get_default_filename(&self) -> &str {
+    fn get_default_filename(&self) -> &'static str {
         "schema_dataclass"
     }
 }
@@ -530,24 +517,24 @@ impl PythonDataclassGenerator {
 
         let enum_name = BaseCodeFormatter::to_pascal_case(slot_name);
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(output, "class {}(Enum):", enum_name)
+        writeln!(output, "class {enum_name}(Enum):")
             .map_err(Self::fmt_error_to_generator_error)?;
 
         if let Some(ref desc) = slot.description {
-            writeln!(output, "    \"\"\"{}\"\"\"", desc)
+            writeln!(output, "    \"\"\"{desc}\"\"\"")
                 .map_err(Self::fmt_error_to_generator_error)?;
         }
 
         for value in &slot.permissible_values {
             match value {
                 PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text)
+                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
+                    writeln!(output, "    {const_name} = \"{text}\"")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
                 PermissibleValue::Complex { text, .. } => {
-                    let const_name = text.to_uppercase().replace(' ', "_").replace('-', "_");
-                    writeln!(output, "    {} = \"{}\"", const_name, text)
+                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
+                    writeln!(output, "    {const_name} = \"{text}\"")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
@@ -558,11 +545,11 @@ impl PythonDataclassGenerator {
 }
 
 impl CodeFormatter for PythonDataclassGenerator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "python-dataclass-formatter"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Python dataclass code formatter with docstring and type hint support"
     }
 
@@ -618,7 +605,7 @@ impl CodeFormatter for PythonDataclassGenerator {
         if lines.len() == 1 {
             format!("{}\"\"\"{}\"\"\"", indent_str, lines[0])
         } else {
-            let mut result = format!("{}\"\"\"", indent_str);
+            let mut result = format!("{indent_str}\"\"\"");
             for line in lines {
                 result.push('\n');
                 result.push_str(&indent_str);
@@ -662,9 +649,10 @@ impl CodeFormatter for PythonDataclassGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_basic_generation() {
+    fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut schema = SchemaDefinition::default();
         schema.name = "test_schema".to_string();
 
@@ -691,10 +679,11 @@ mod tests {
 
         let output = generator
             .generate(&schema)
-            .map_err(|e| anyhow::anyhow!("should generate dataclass output: {}", e))?;
+            .expect("should generate dataclass output");
         assert!(output.contains("@dataclass"));
         assert!(output.contains("class Person:"));
         assert!(output.contains("name: str"));
         assert!(output.contains("age: Optional[int] = None"));
+        Ok(())
     }
 }

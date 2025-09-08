@@ -1,7 +1,7 @@
-//! Advanced relation analysis for TypeQL generation
+//! Advanced relation analysis for `TypeQL` generation
 //!
-//! This module provides sophisticated analysis of LinkML relationships
-//! to generate optimal TypeQL relations, including multi-way relations,
+//! This module provides sophisticated analysis of `LinkML` relationships
+//! to generate optimal `TypeQL` relations, including multi-way relations,
 //! nested relations, and role detection.
 
 use linkml_core::prelude::*;
@@ -38,12 +38,18 @@ pub struct RoleInfo {
     pub is_inherited: bool,
 }
 
-/// Analyzes relations in `LinkML` schemas for TypeQL generation
+/// Analyzes relations in `LinkML` schemas for `TypeQL` generation
 pub struct RelationAnalyzer {
     /// Cache of analyzed relations
     relation_cache: HashMap<String, RelationInfo>,
     /// Map of which entities can play which roles
     role_player_map: HashMap<String, Vec<String>>,
+}
+
+impl Default for RelationAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RelationAnalyzer {
@@ -154,12 +160,10 @@ impl RelationAnalyzer {
                     .slots
                     .get(*slot_name)
                     .or_else(|| class.slot_usage.get(*slot_name))
-                {
-                    if let Some(range) = &slot.range {
+                    && let Some(range) = &slot.range {
                         // Check if range is a class (not a type)
                         return schema.classes.contains_key(range);
                     }
-                }
                 false
             })
             .count()
@@ -210,7 +214,7 @@ impl RelationAnalyzer {
 
     /// Get cardinality for a slot
     fn get_slot_cardinality(&self, slot: &SlotDefinition) -> Option<(usize, Option<usize>)> {
-        let min = if slot.required.unwrap_or(false) { 1 } else { 0 };
+        let min = usize::from(slot.required.unwrap_or(false));
         let max = if slot.multivalued.unwrap_or(false) {
             if let Some(Value::Number(max_card)) = &slot.maximum_value {
                 max_card.as_u64().map(|n| n as usize)
@@ -238,13 +242,10 @@ impl RelationAnalyzer {
                     .slots
                     .get(slot_name)
                     .or_else(|| other_class.slot_usage.get(slot_name))
-                {
-                    if let Some(range) = &slot.range {
-                        if range == class_name {
+                    && let Some(range) = &slot.range
+                        && range == class_name {
                             return true;
                         }
-                    }
-                }
             }
         }
         false
@@ -255,13 +256,13 @@ impl RelationAnalyzer {
         for role in &relation_info.roles {
             self.role_player_map
                 .entry(role.player_type.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(format!("{}:{}", relation_info.name, role.name));
         }
     }
 
     /// Get all roles that an entity type can play
-    pub fn get_playable_roles(&self, entity_type: &str) -> Vec<String> {
+    #[must_use] pub fn get_playable_roles(&self, entity_type: &str) -> Vec<String> {
         self.role_player_map
             .get(entity_type)
             .cloned()
@@ -276,9 +277,9 @@ impl RelationAnalyzer {
         schema: &SchemaDefinition,
     ) {
         // Check if relation inherits from another
-        if let Some(parent_name) = &class.is_a {
-            if let Some(parent_class) = schema.classes.get(parent_name) {
-                if let Some(parent_info) = self.analyze_relation(parent_name, parent_class, schema)
+        if let Some(parent_name) = &class.is_a
+            && let Some(parent_class) = schema.classes.get(parent_name)
+                && let Some(parent_info) = self.analyze_relation(parent_name, parent_class, schema)
                 {
                     // Mark inherited roles
                     for role in &mut relation_info.roles {
@@ -287,12 +288,10 @@ impl RelationAnalyzer {
                         }
                     }
                 }
-            }
-        }
     }
 
     /// Detect polymorphic roles (multiple types playing same role)
-    pub fn detect_polymorphic_roles(
+    #[must_use] pub fn detect_polymorphic_roles(
         &self,
         schema: &SchemaDefinition,
     ) -> HashMap<String, Vec<String>> {
@@ -326,12 +325,11 @@ impl RelationAnalyzer {
 
         // Find all classes that inherit from this one
         for (name, class) in &schema.classes {
-            if let Some(parent) = &class.is_a {
-                if parent == class_name {
+            if let Some(parent) = &class.is_a
+                && parent == class_name {
                     // Recursively get subtypes
                     subtypes.extend(self.get_all_subtypes(name, schema));
                 }
-            }
         }
 
         subtypes
@@ -341,9 +339,10 @@ impl RelationAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 
     #[test]
-    fn test_relation_detection() {
+    fn test_relation_detection() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut analyzer = RelationAnalyzer::new();
         let schema = create_test_schema();
 
@@ -358,10 +357,11 @@ mod tests {
         let info = relation_info.ok_or_else(|| anyhow::anyhow!("relation info should exist"))?;
         assert_eq!(info.roles.len(), 2);
         assert!(!info.is_multiway);
+        Ok(())
     }
 
     #[test]
-    fn test_multiway_relation() {
+    fn test_multiway_relation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut analyzer = RelationAnalyzer::new();
         let schema = create_multiway_schema();
 
@@ -376,6 +376,7 @@ mod tests {
         let info = relation_info.ok_or_else(|| anyhow::anyhow!("relation info should exist"))?;
         assert_eq!(info.roles.len(), 3);
         assert!(info.is_multiway);
+        Ok(())
     }
 
     fn create_test_schema() -> SchemaDefinition {
