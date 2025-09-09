@@ -495,7 +495,7 @@ mod tests {
             })
             .collect();
 
-        assert!(error_fields.contains(&"state".to_string());
-        assert!(error_fields.contains(&"student_id".to_string());
+        assert!(error_fields.contains(&"state".to_string()));
+        assert!(error_fields.contains(&"student_id".to_string()));
     }
 }

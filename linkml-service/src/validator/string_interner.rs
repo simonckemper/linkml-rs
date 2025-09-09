@@ -292,8 +292,8 @@ use linkml_core::string_pool::intern;
         assert_ne!(s1, s3);
 
         // Can retrieve strings
-        assert_eq!(interner.get(s1), Some("hello".to_string());
-        assert_eq!(interner.get(s3), Some("world".to_string());
+        assert_eq!(interner.get(s1), Some("hello".to_string()));
+        assert_eq!(interner.get(s3), Some("world".to_string()));
     }
 
     #[test]
@@ -302,8 +302,8 @@ use linkml_core::string_pool::intern;
         let common = interner.common();
 
         // Common strings are pre-interned
-        assert_eq!(interner.get(common.field_name), Some("name".to_string());
-        assert_eq!(interner.get(common.type_string), Some("string".to_string());
+        assert_eq!(interner.get(common.field_name), Some("name".to_string()));
+        assert_eq!(interner.get(common.type_string), Some("string".to_string()));
         assert_eq!(
             interner.get(common.error_required),
             Some("required_field_missing".to_string())
@@ -339,6 +339,6 @@ use linkml_core::string_pool::intern;
 
         // Common strings still work
         let common = interner.common();
-        assert_eq!(interner.get(common.field_name), Some("name".to_string());
+        assert_eq!(interner.get(common.field_name), Some("name".to_string()));
     }
 }

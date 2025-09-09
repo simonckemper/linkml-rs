@@ -15,7 +15,7 @@ use std::collections::HashMap;
 /// Common structured patterns with error handling
 static EMAIL_PATTERN: std::sync::LazyLock<Result<Regex>> =
     std::sync::LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-        .map_err(|e| LinkMLError::service(format!("Invalid email regex: {e}")));
+        .map_err(|e| LinkMLError::service(format!("Invalid email regex: {e}"))));
 
 static URL_PATTERN: std::sync::LazyLock<Result<Regex>> = std::sync::LazyLock::new(|| {
     Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
@@ -29,7 +29,7 @@ static UUID_PATTERN: std::sync::LazyLock<Result<Regex>> = std::sync::LazyLock::n
 
 static ISO_DATE_PATTERN: std::sync::LazyLock<Result<Regex>> = std::sync::LazyLock::new(||
     Regex::new(r"^\d{4}-\d{2}-\d{2}$")
-        .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {e}")));
+        .map_err(|e| LinkMLError::service(format!("Invalid ISO date regex: {e}"))));
 
 static ISO_DATETIME_PATTERN: std::sync::LazyLock<Result<Regex>> = std::sync::LazyLock::new(|| {
     Regex::new(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$")
@@ -204,7 +204,7 @@ impl PatternValidator {
                         eprintln!("DEBUG: Pattern match failed!");
                         return Err(LinkMLError::service(format!(
                             "Value '{s}' does not match pattern for slot '{slot_name}'"
-                        ));
+                        )));
                     }
                     eprintln!("DEBUG: Pattern match succeeded!");
                 }
@@ -215,7 +215,7 @@ impl PatternValidator {
                     && !pattern.is_match(&string_value) {
                         return Err(LinkMLError::service(format!(
                             "Value '{string_value}' does not match pattern for slot '{slot_name}'"
-                        ));
+                        )));
                     }
             }
             Value::Array(items) => {
@@ -227,7 +227,7 @@ impl PatternValidator {
                                 && !pattern.is_match(s) {
                                     return Err(LinkMLError::service(format!(
                                         "Array item [{i}] '{s}' does not match pattern for slot '{slot_name}'"
-                                    ));
+                                    )));
                                 }
                         }
                         Value::Number(n) => {
@@ -236,14 +236,14 @@ impl PatternValidator {
                                 && !pattern.is_match(&string_value) {
                                     return Err(LinkMLError::service(format!(
                                         "Array item [{i}] '{string_value}' does not match pattern for slot '{slot_name}'"
-                                    ));
+                                    )));
                                 }
                         }
                         Value::Null => {} // Skip null values in arrays
                         _ => {
                             return Err(LinkMLError::service(format!(
                                 "Pattern validation only applies to string/number values, got {item:?} for slot '{slot_name}' at index {i}"
-                            ));
+                            )));
                         }
                     }
                 }
@@ -252,7 +252,7 @@ impl PatternValidator {
             _ => {
                 return Err(LinkMLError::service(format!(
                     "Pattern validation only applies to string/number values or arrays thereof, got {value:?} for slot '{slot_name}'"
-                ));
+                )));
             }
         }
 

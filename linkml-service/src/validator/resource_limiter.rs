@@ -206,14 +206,14 @@ impl ResourceLimiter {
             return Err(LinkMLError::service(format!(
                 "Document size {} exceeds limit {}",
                 requirements.document_size, limits.max_document_size
-            ));
+            )));
         }
 
         if requirements.memory_bytes > limits.max_memory_bytes {
             return Err(LinkMLError::service(format!(
                 "Memory requirement {} exceeds limit {}",
                 requirements.memory_bytes, limits.max_memory_bytes
-            ));
+            )));
         }
 
         // Check rate limit
@@ -590,7 +590,7 @@ impl ValidationResourceLimiter {
         if current_depth > max_depth {
             return Err(LinkMLError::service(format!(
                 "Nested depth {current_depth} exceeds limit {max_depth}"
-            ));
+            )));
         }
 
         self.depth_tracker

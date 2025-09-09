@@ -172,7 +172,7 @@ impl InputSanitizer {
                 "Input size {} exceeds maximum {}",
                 input.len(),
                 config.max_input_size
-            ));
+            )));
         }
 
         // Check for blocked patterns
@@ -267,7 +267,7 @@ impl PathValidator {
                 "Path depth {} exceeds maximum {}",
                 components.len(),
                 config.max_path_depth
-            ));
+            )));
         }
 
         // Check extension
@@ -276,7 +276,7 @@ impl PathValidator {
             if !config.allowed_extensions.contains(&ext_str) {
                 return Err(LinkMLError::service(format!(
                     "File extension '{ext_str}' not allowed"
-                ));
+                )));
             }
         }
 
@@ -381,7 +381,7 @@ impl InjectionPrevention {
             if path.contains(func) {
                 return Err(LinkMLError::service(format!(
                     "JSONPath contains potentially dangerous function: {func}"
-                ));
+                )));
             }
         }
 
@@ -406,7 +406,7 @@ impl InjectionPrevention {
         if depth > 10 {
             return Err(LinkMLError::service(format!(
                 "GraphQL query depth {depth} exceeds maximum 10"
-            ));
+            )));
         }
 
         Ok(())
@@ -717,7 +717,7 @@ impl SecurityRateLimiter {
             return Err(LinkMLError::service(format!(
                 "Rate limit exceeded: {} requests in {:?}",
                 entry.limit, entry.window
-            ));
+            )));
         }
 
         entry.requests.push(now);

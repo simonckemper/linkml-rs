@@ -316,7 +316,7 @@ impl UniqueKeyIndex {
                 if self.indices.contains_key(&key_values) {
                     return Err(LinkMLError::service(format!(
                         "Duplicate key found while building index: {key_values:?}"
-                    ));
+                    )));
                 }
 
                 self.indices.insert(key_values, index);

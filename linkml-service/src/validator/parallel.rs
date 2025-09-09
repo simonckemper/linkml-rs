@@ -155,7 +155,7 @@ impl ParallelValidationEngine {
         let engine = Arc::clone(&self.engine);
         let class_name = class_name.to_string();
         let options = options.unwrap_or_default();
-        let results = Arc::new(Mutex::new(StreamValidationResult::new());
+        let results = Arc::new(Mutex::new(StreamValidationResult::new()));
 
         // Process in chunks for better parallelism
         let chunks: Vec<Vec<Value>> = values

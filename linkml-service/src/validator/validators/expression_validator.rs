@@ -247,12 +247,12 @@ mod tests {
         // Test invalid value (negative)
         let issues = validator.validate(&json!(-5), &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string());
+        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
 
         // Test invalid value (too large)
         let issues = validator.validate(&json!(200), &slot, &mut context);
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string());
+        assert_eq!(issues[0].code, Some("RULE_VIOLATION".to_string()));
     }
 
     #[test]
