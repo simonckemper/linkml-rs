@@ -272,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_rule_execution() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new());
+        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
         let rule = create_test_rule()?;
 
         // Test with adult without ID
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_execution_strategies() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new());
+        let executor = RuleExecutor::new(Arc::new(ExpressionEngine::new()));
         let rules = vec![create_test_rule()?];
 
         let mut validation_ctx = ValidationContext::new(Default::default());

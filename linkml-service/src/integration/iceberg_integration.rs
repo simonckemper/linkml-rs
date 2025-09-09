@@ -255,27 +255,27 @@ impl IcebergIntegration {
 
         for field in field_mappings.values() {
             let mut field_json = serde_json::Map::new();
-            field_json.insert("id".to_string(), Value::Number(serde_json::Number::from(fields.len() + 1));
-            field_json.insert("name".to_string(), Value::String(field.name.clone());
+            field_json.insert("id".to_string(), Value::Number(serde_json::Number::from(fields.len() + 1)));
+            field_json.insert("name".to_string(), Value::String(field.name.clone()));
             field_json.insert("required".to_string(), Value::Bool(!field.nullable));
-            field_json.insert("type".to_string(), Value::String(field.data_type.clone());
-            
+            field_json.insert("type".to_string(), Value::String(field.data_type.clone()));
+
             // Add compression info from config if available
             if !self.config.compression.is_empty() {
-                field_json.insert("compression".to_string(), Value::String(self.config.compression.clone());
+                field_json.insert("compression".to_string(), Value::String(self.config.compression.clone()));
             }
             
             fields.push(Value::Object(field_json));
         }
 
         let mut schema_map = serde_json::Map::new();
-        schema_map.insert("type".to_string(), Value::String("struct".to_string());
+        schema_map.insert("type".to_string(), Value::String("struct".to_string()));
         schema_map.insert("fields".to_string(), Value::Array(fields));
         
         // Add table-level properties from config
         let mut properties = serde_json::Map::new();
-        properties.insert("format".to_string(), Value::String(self.config.file_format.clone());
-        properties.insert("compression".to_string(), Value::String(self.config.compression.clone());
+        properties.insert("format".to_string(), Value::String(self.config.file_format.clone()));
+        properties.insert("compression".to_string(), Value::String(self.config.compression.clone()));
         schema_map.insert("properties".to_string(), Value::Object(properties));
 
         let schema = Value::Object(schema_map);

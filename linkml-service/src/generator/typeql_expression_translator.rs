@@ -307,7 +307,7 @@ impl ExpressionTranslator {
             "Add" | "Subtract" | "Multiply" | "Divide" | "Modulo" => {
                 return Err(TranslationError::ComplexExpression(format!(
                     "Arithmetic operation {op} requires computed attribute"
-                ));
+                )));
             }
 
             // Logical operators
@@ -324,7 +324,7 @@ impl ExpressionTranslator {
             _ => {
                 return Err(TranslationError::UnsupportedExpression(format!(
                     "Unknown operator: {op}"
-                ));
+                )));
             }
         }
 
@@ -472,8 +472,8 @@ mod tests {
             .translate(&expr, &mut ctx)
             .expect("should translate comparison: {}");
 
-        assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1"));
-        assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18"));
+        assert!(result.patterns.iter().any(|p| p.contains("$p has age $v1")));
+        assert!(result.patterns.iter().any(|p| p.contains("$v1 >= 18")));
         Ok(())
     }
 

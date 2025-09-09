@@ -15,7 +15,7 @@ impl BuiltinFunction for UpperFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -41,7 +41,7 @@ impl BuiltinFunction for LowerFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -67,7 +67,7 @@ impl BuiltinFunction for TrimFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -93,7 +93,7 @@ impl BuiltinFunction for StartsWithFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -133,7 +133,7 @@ impl BuiltinFunction for EndsWithFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -173,7 +173,7 @@ impl BuiltinFunction for ReplaceFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
         }
         Ok(())
     }
@@ -223,7 +223,7 @@ impl BuiltinFunction for SplitFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -268,7 +268,7 @@ impl BuiltinFunction for JoinFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }

@@ -383,7 +383,7 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 output.push_str(&format!("# Validation schema for {class_name}\n"));
-                output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase());
+                output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase()));
 
                 // Process slots
                 for slot_name in &class_def.slots {
@@ -789,7 +789,7 @@ impl Generator for YamlValidatorGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_yaml_validator_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

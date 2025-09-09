@@ -282,7 +282,7 @@ pub fn collect_all_slots(
 
     // Remove duplicates while preserving order
     let mut seen = HashSet::new();
-    slots.retain(|slot| seen.insert(slot.clone());
+    slots.retain(|slot| seen.insert(slot.clone()));
 
     Ok(slots)
 }
@@ -322,7 +322,7 @@ pub fn collect_all_slots(
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_type_mapping() {

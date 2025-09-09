@@ -78,7 +78,7 @@ impl CsvGenerator {
                 .iter()
                 .map(|(name, _)| self.escape_field(name))
                 .collect();
-            output.push_str(&header.join(&self.delimiter.to_string());
+            output.push_str(&header.join(&self.delimiter.to_string()));
             output.push('\n');
         }
 
@@ -90,7 +90,7 @@ impl CsvGenerator {
                 self.escape_field(&format!("<{range}>"))
             })
             .collect();
-        output.push_str(&type_row.join(&self.delimiter.to_string());
+        output.push_str(&type_row.join(&self.delimiter.to_string()));
         output.push('\n');
 
         // Generate example row with constraints
@@ -122,7 +122,7 @@ impl CsvGenerator {
                 }
             })
             .collect();
-        output.push_str(&constraint_row.join(&self.delimiter.to_string());
+        output.push_str(&constraint_row.join(&self.delimiter.to_string()));
         output.push('\n');
 
         // Generate sample data rows
@@ -385,7 +385,7 @@ impl Generator for CsvGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

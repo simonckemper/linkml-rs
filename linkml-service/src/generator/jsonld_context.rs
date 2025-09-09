@@ -366,7 +366,7 @@ impl Generator for JsonLdContextGenerator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_jsonld_context_generation() -> anyhow::Result<()> {

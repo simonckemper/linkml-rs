@@ -180,7 +180,7 @@ impl CaptureExtractor {
                 }
                 None => {
                     if definition.required {
-                        return Err(CaptureError::CaptureNotFound(name.clone());
+                        return Err(CaptureError::CaptureNotFound(name.clone()));
                     } else if let Some(default) = &definition.default {
                         self.process_capture(default, definition)?
                     } else {
@@ -489,8 +489,8 @@ mod tests {
             .extract(&captures)
             .expect("extraction should succeed: {}");
 
-        assert_eq!(extracted.get("count"), Some(&CaptureValue::Integer(42));
-        assert_eq!(extracted.get("enabled"), Some(&CaptureValue::Boolean(true));
+        assert_eq!(extracted.get("count"), Some(&CaptureValue::Integer(42)));
+        assert_eq!(extracted.get("enabled"), Some(&CaptureValue::Boolean(true)));
         Ok(())
     }
 
@@ -558,7 +558,7 @@ mod tests {
             extracted.get("name"),
             Some(&CaptureValue::String("server".to_string()))
         );
-        assert_eq!(extracted.get("port"), Some(&CaptureValue::Integer(8080));
+        assert_eq!(extracted.get("port"), Some(&CaptureValue::Integer(8080)));
         Ok(())
     }
 }

@@ -473,7 +473,7 @@ impl Generator for PydanticGenerator {
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> std::result::Result<(), LinkMLError> {
         if schema.name.is_empty() {
-            return Err(LinkMLError::service("Schema must have a name".to_string());
+            return Err(LinkMLError::service("Schema must have a name".to_string()));
         }
 
         if schema.classes.is_empty() {
@@ -627,7 +627,7 @@ impl CodeFormatter for PydanticGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_basic_generation() {

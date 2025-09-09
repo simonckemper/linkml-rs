@@ -859,8 +859,7 @@ impl Generator for SummaryGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::types::SchemaDefinition;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_summary_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

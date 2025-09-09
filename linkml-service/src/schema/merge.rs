@@ -127,7 +127,7 @@ impl SchemaMerge {
             return Err(LinkMLError::schema_validation(format!(
                 "{} conflicts found during merge",
                 conflicts.len()
-            ));
+            )));
         }
 
         Ok(merged)
@@ -494,7 +494,7 @@ impl SchemaMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_merge_union() -> Result<()> {

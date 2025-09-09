@@ -48,17 +48,17 @@ impl StringInterner {
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > MAX_STRING_LENGTH {
-            return Err(InternError::StringTooLarge(s.len());
+            return Err(InternError::StringTooLarge(s.len()));
         }
 
         // Check if already interned
         if let Some(interned) = self.cache.get(s) {
-            return Ok(Arc::clone(interned.value());
+            return Ok(Arc::clone(interned.value()));
         }
 
         // Check cache size before inserting
         if self.cache.len() >= MAX_CACHE_SIZE {
-            return Err(InternError::CacheFull(self.cache.len());
+            return Err(InternError::CacheFull(self.cache.len()));
         }
 
         // Intern the string

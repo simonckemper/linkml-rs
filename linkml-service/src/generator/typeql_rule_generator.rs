@@ -541,7 +541,7 @@ impl RuleGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_required_rule_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -551,7 +551,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             .expect("should generate required rule: {}");
 
         assert_eq!(rule.rule_type, RuleType::Validation);
-        assert!(rule.when_patterns.contains(&"$x isa person".to_string());
+        assert!(rule.when_patterns.contains(&"$x isa person".to_string()));
         assert!(
             rule.when_patterns
                 .contains(&"not { $x has name $v; }".to_string())
@@ -564,16 +564,16 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
     fn test_range_rule_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut generator = RuleGenerator::new();
         let mut slot = SlotDefinition::default();
-        slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
-        slot.maximum_value = Some(Value::Number(serde_json::Number::from(150));
+        slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
+        slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
 
         let rule = generator
             .generate_range_rule("Person", "age", &slot)
             .expect("should generate range rule: {}");
 
         assert_eq!(rule.rule_type, RuleType::Validation);
-        assert!(rule.when_patterns.iter().any(|p| p.contains("$v < 0"));
-        assert!(rule.when_patterns.iter().any(|p| p.contains("$v > 150"));
+        assert!(rule.when_patterns.iter().any(|p| p.contains("$v < 0")));
+        assert!(rule.when_patterns.iter().any(|p| p.contains("$v > 150")));
         Ok(())
     }
 

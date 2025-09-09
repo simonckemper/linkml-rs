@@ -304,6 +304,8 @@ macro_rules! export_plugin {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use dbms_core::{HealthStatus, HealthState};
 
     #[test]
     fn test_plugin_builder() {

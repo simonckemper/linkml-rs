@@ -330,14 +330,14 @@ mod tests {
     #[tokio::test]
     async fn test_json_dumper() -> std::result::Result<(), anyhow::Error> {
         let mut alice_data = HashMap::new();
-        alice_data.insert("name".to_string(), Value::String("Alice".to_string());
+        alice_data.insert("name".to_string(), Value::String("Alice".to_string()));
         alice_data.insert(
             "age".to_string(),
             Value::Number(serde_json::Number::from(25)),
         );
 
         let mut bob_data = HashMap::new();
-        bob_data.insert("name".to_string(), Value::String("Bob".to_string());
+        bob_data.insert("name".to_string(), Value::String("Bob".to_string()));
         bob_data.insert(
             "age".to_string(),
             Value::Number(serde_json::Number::from(30)),

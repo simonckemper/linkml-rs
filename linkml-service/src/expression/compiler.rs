@@ -177,18 +177,18 @@ impl Compiler {
                 ctx.emit(Instruction::Const(Value::Null));
             }
             Expression::Boolean(b) => {
-                ctx.emit(Instruction::Const(Value::from(*b));
+                ctx.emit(Instruction::Const(Value::from(*b)));
             }
             Expression::Number(n) => {
-                ctx.emit(Instruction::Const(Value::from(*n));
+                ctx.emit(Instruction::Const(Value::from(*n)));
             }
             Expression::String(s) => {
-                ctx.emit(Instruction::Const(Value::from(s.clone()));
+                ctx.emit(Instruction::Const(Value::from(s.clone())));
             }
 
             Expression::Variable(name) => {
                 ctx.accessed_variables.insert(name.clone());
-                ctx.emit(Instruction::Load(name.clone());
+                ctx.emit(Instruction::Load(name.clone()));
             }
 
             // Binary operations
@@ -314,11 +314,11 @@ impl Compiler {
                 let end_jump = ctx.emit_placeholder();
 
                 // Compile else branch
-                ctx.patch_jump(else_jump, Instruction::JumpIfFalse(ctx.instructions.len());
+                ctx.patch_jump(else_jump, Instruction::JumpIfFalse(ctx.instructions.len()));
                 self.compile_expr(else_expr, ctx)?;
 
                 // Patch end jump
-                ctx.patch_jump(end_jump, Instruction::Jump(ctx.instructions.len());
+                ctx.patch_jump(end_jump, Instruction::Jump(ctx.instructions.len()));
             }
 
             Expression::FunctionCall { name, args } => {
@@ -338,7 +338,7 @@ impl Compiler {
                 }
 
                 // Emit call
-                ctx.emit(Instruction::Call(name.clone(), args.len());
+                ctx.emit(Instruction::Call(name.clone(), args.len()));
             }
         }
 

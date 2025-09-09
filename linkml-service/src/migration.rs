@@ -654,7 +654,7 @@ where
                 if let Some(latest_version) = versions.last_mut() {
                     self.apply_schema_transform(&mut latest_version.schema, transform)?;
                 } else {
-                    return Err(LinkMLError::service("No schema versions available for transformation".to_string());
+                    return Err(LinkMLError::service("No schema versions available for transformation".to_string()));
                 }
             }
             StepType::DataMigration { migration } => {
@@ -669,7 +669,7 @@ where
                 // Execute custom script
                 return Err(LinkMLError::service(format!(
                     "Custom scripts not yet implemented: {script}"
-                ));
+                )));
             }
         }
 
@@ -716,7 +716,7 @@ where
                         RollbackStrategy::Manual { instructions } => {
                             return Err(LinkMLError::service(format!(
                                 "Manual rollback required: {instructions}"
-                            ));
+                            )));
                         }
                     }
                 }
@@ -889,7 +889,7 @@ where
                     return Err(LinkMLError::service(format!(
                         "Class '{}' not found in schema",
                         transform.target_element
-                    ));
+                    )));
                 }
             }
             TransformType::ModifyClass => {
@@ -963,7 +963,7 @@ where
                     return Err(LinkMLError::service(format!(
                         "Slot '{}' not found in schema",
                         transform.target_element
-                    ));
+                    )));
                 }
             }
             TransformType::ModifySlot => {
@@ -1010,7 +1010,7 @@ where
             return Err(LinkMLError::service(format!(
                 "Data file not found: {}",
                 data_path.display()
-            ));
+            )));
         }
 
         println!("Migrating data from: {}", data_path.display());
@@ -1162,7 +1162,7 @@ where
                             "number" => {
                                 if let Some(s) = value.as_str()
                                     && let Ok(n) = s.parse::<f64>() {
-                                        *value = Value::Number(serde_json::Number::from_f64(n).unwrap_or_else(|| serde_json::Number::from(0));
+                                        *value = Value::Number(serde_json::Number::from_f64(n).unwrap_or_else(|| serde_json::Number::from(0)));
                                         println!("  ✓ Converted field '{field}' to number");
                                     }
                             }
@@ -1342,7 +1342,7 @@ where
                                     for (i, target) in target_fields.iter().enumerate() {
                                         if let Some(field_name) = target.as_str()
                                             && let Some(part) = parts.get(i) {
-                                                map.insert(field_name.to_string(), Value::String((*part).to_string());
+                                                map.insert(field_name.to_string(), Value::String((*part).to_string()));
                                             }
                                     }
                                     map.remove(source);
@@ -1365,7 +1365,7 @@ where
             return Err(LinkMLError::service(format!(
                 "Data file not found for validation: {}",
                 data_path.display()
-            ));
+            )));
         }
 
         println!("Validating migration for: {}", data_path.display());

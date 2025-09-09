@@ -1001,7 +1001,7 @@ impl DataDumper for RdfDumper {
 mod tests {
     use super::*;
     use serde_json::json;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -1066,7 +1066,7 @@ ex:bob rdf:type ex:Person ;
             .find(|i| i.id.as_deref() == Some("http://example.org/alice"))
             .ok_or_else(|| anyhow::anyhow!("should find alice instance"))?;
         assert_eq!(alice.class_name, "Person");
-        assert_eq!(alice.data.get("name"), Some(&json!("Alice"));
+        assert_eq!(alice.data.get("name"), Some(&json!("Alice")));
         assert_eq!(
             alice.data.get("knows"),
             Some(&json!("http://example.org/bob"))
@@ -1101,7 +1101,7 @@ ex:bob rdf:type ex:Person ;
             .await
             .expect("should load valid N-Triples content: {}");
         assert_eq!(instances.len(), 1);
-        assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie"));
+        assert_eq!(instances[0].data.get("name"), Some(&json!("Charlie")));
 
         // Dump to N-Triples
         let dump_options = DumpOptions::default();

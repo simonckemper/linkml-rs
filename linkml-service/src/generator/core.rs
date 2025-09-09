@@ -218,7 +218,7 @@ impl RustGenerator {
         
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        slots.retain(|slot| seen.insert(slot.clone());
+        slots.retain(|slot| seen.insert(slot.clone()));
         
         slots
     }

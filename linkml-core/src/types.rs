@@ -912,7 +912,6 @@ impl Annotatable for EnumDefinition {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::*;
 
     #[test]
     fn test_schema_serialization() -> crate::Result<()> {

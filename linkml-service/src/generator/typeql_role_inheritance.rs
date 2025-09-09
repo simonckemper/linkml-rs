@@ -176,7 +176,7 @@ impl RoleInheritanceResolver {
         if let Some(parent_type) = parent_roles.get(child_role) {
             // Check if child type is subtype of parent type
             if self.is_subtype_of(child_type, parent_type, schema) {
-                return Some((child_role.to_string(), parent_type.clone());
+                return Some((child_role.to_string(), parent_type.clone()));
             }
         }
 
@@ -186,7 +186,7 @@ impl RoleInheritanceResolver {
                 || self.is_semantic_specialization(child_role, parent_role))
                 && self.is_subtype_of(child_type, parent_type, schema)
             {
-                return Some((parent_role.clone(), parent_type.clone());
+                return Some((parent_role.clone(), parent_type.clone()));
             }
         }
 

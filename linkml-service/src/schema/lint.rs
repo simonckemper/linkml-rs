@@ -127,7 +127,7 @@ impl LintOptions {
     /// Filter rules by name
     pub fn filter_rules(&mut self, rule_names: &[String]) {
         self.rules
-            .retain(|rule| rule_names.contains(&rule.name().to_string());
+            .retain(|rule| rule_names.contains(&rule.name().to_string()));
     }
 }
 
@@ -172,8 +172,8 @@ impl LintResult {
 
         xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.push_str("<testsuite name=\"LinkML Lint\" tests=\"1\"");
-        xml.push_str(&format!(" errors=\"{}\"", self.error_count());
-        xml.push_str(&format!(" failures=\"{}\"", self.warning_count());
+        xml.push_str(&format!(" errors=\"{}\"", self.error_count()));
+        xml.push_str(&format!(" failures=\"{}\"", self.warning_count()));
         xml.push_str(">\n");
 
         xml.push_str(&format!("  <testcase name=\"{test_name}\">\n"));
@@ -746,7 +746,7 @@ fn to_snake_case(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_naming_convention_rule() {

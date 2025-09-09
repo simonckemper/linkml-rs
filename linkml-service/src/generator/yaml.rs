@@ -369,7 +369,7 @@ impl YamlGenerator {
             );
         }
         if let Some(role) = &contributor.role {
-            map.insert("role".to_string(), serde_yaml::Value::String(role.clone());
+            map.insert("role".to_string(), serde_yaml::Value::String(role.clone()));
         }
 
         serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
@@ -411,7 +411,7 @@ impl YamlGenerator {
         let mut map = IndexMap::new();
 
         if let Some(uri) = &type_def.uri {
-            map.insert("uri".to_string(), serde_yaml::Value::String(uri.clone());
+            map.insert("uri".to_string(), serde_yaml::Value::String(uri.clone()));
         }
         if let Some(base_type) = &type_def.base_type {
             map.insert(
@@ -555,7 +555,7 @@ impl YamlGenerator {
 
         // Inheritance
         if let Some(is_a) = &slot.is_a {
-            map.insert("is_a".to_string(), serde_yaml::Value::String(is_a.clone());
+            map.insert("is_a".to_string(), serde_yaml::Value::String(is_a.clone()));
         }
         if !slot.mixins.is_empty() {
             map.insert(
@@ -639,7 +639,7 @@ impl YamlGenerator {
 
         // Inheritance
         if let Some(is_a) = &class.is_a {
-            map.insert("is_a".to_string(), serde_yaml::Value::String(is_a.clone());
+            map.insert("is_a".to_string(), serde_yaml::Value::String(is_a.clone()));
         }
         if !class.mixins.is_empty() {
             map.insert(

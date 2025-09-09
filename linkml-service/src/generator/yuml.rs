@@ -532,7 +532,7 @@ impl Generator for YumlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -600,7 +600,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                 .expect("should generate yuml: {}");
 
             let output = &result[0];
-            assert!(output.content.contains(&format!("diagram/{style}/"));
+            assert!(output.content.contains(&format!("diagram/{style}/")));
         }
     }
 }

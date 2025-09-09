@@ -44,9 +44,9 @@ impl JsonLdGenerator {
 
         if use_compact {
             // Compact output - only required prefixes
-            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id));
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
         } else {
-            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id));
+            context.insert("@vocab".to_string(), json!(format!("{}#", schema.id)));
             context.insert(
                 "xsd".to_string(),
                 json!("http://www.w3.org/2001/XMLSchema#"),
@@ -69,7 +69,7 @@ impl JsonLdGenerator {
 
         // Add schema name as prefix
         let schema_prefix = self.to_snake_case(&schema.name);
-        context.insert(schema_prefix.clone(), json!(format!("{}#", schema.id));
+        context.insert(schema_prefix.clone(), json!(format!("{}#", schema.id)));
 
         // Add classes
         for (class_name, _) in &schema.classes {
@@ -396,7 +396,7 @@ impl JsonLdGenerator {
         );
 
         // Add type
-        instance.insert("@type".to_string(), json!(self.to_pascal_case(class_name));
+        instance.insert("@type".to_string(), json!(self.to_pascal_case(class_name)));
 
         // Add ID
         instance.insert(
@@ -483,7 +483,7 @@ impl JsonLdGenerator {
 
         // Remove duplicates while preserving order
         let mut seen = std::collections::HashSet::new();
-        all_slots.retain(|slot| seen.insert(slot.clone());
+        all_slots.retain(|slot| seen.insert(slot.clone()));
 
         all_slots
     }

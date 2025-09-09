@@ -26,7 +26,7 @@ impl BuiltinFunction for SumFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -66,7 +66,7 @@ impl BuiltinFunction for AvgFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -183,7 +183,7 @@ impl BuiltinFunction for MedianFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -240,7 +240,7 @@ impl BuiltinFunction for ModeFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -299,7 +299,7 @@ impl BuiltinFunction for StdDevFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -360,7 +360,7 @@ impl BuiltinFunction for VarianceFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -418,7 +418,7 @@ impl BuiltinFunction for UniqueFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -457,7 +457,7 @@ impl BuiltinFunction for GroupByFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -624,8 +624,8 @@ mod tests {
         match result {
             Value::Array(arr) => {
                 assert_eq!(arr.len(), 2);
-                assert!(arr.contains(&json!(1));
-                assert!(arr.contains(&json!(2));
+                assert!(arr.contains(&json!(1)));
+                assert!(arr.contains(&json!(2)));
             }
             _ => panic!("Expected array of modes"),
         }

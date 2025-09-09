@@ -351,7 +351,7 @@ impl BuiltinFunction for LenFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -400,7 +400,7 @@ impl BuiltinFunction for MaxFunction {
             match arg {
                 Value::Number(n) => {
                     let val = n.as_f64().unwrap_or(0.0);
-                    max_val = Some(max_val.map_or(val, |m| m.max(val));
+                    max_val = Some(max_val.map_or(val, |m| m.max(val)));
                 }
                 _ => {
                     return Err(FunctionError::invalid_argument(
@@ -444,7 +444,7 @@ impl BuiltinFunction for MinFunction {
             match arg {
                 Value::Number(n) => {
                     let val = n.as_f64().unwrap_or(0.0);
-                    min_val = Some(min_val.map_or(val, |m| m.min(val));
+                    min_val = Some(min_val.map_or(val, |m| m.min(val)));
                 }
                 _ => {
                     return Err(FunctionError::invalid_argument(
@@ -505,7 +505,7 @@ impl BuiltinFunction for MatchesFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -547,7 +547,7 @@ impl BuiltinFunction for ContainsFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }

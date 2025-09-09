@@ -314,7 +314,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     // Extract the instance ID
                     if let Some(Value::Object(x)) = obj.get("x")
                         && let Some(Value::String(iid)) = x.get("iid") {
-                            data.insert("_typedb_iid".to_string(), Value::String(iid.clone());
+                            data.insert("_typedb_iid".to_string(), Value::String(iid.clone()));
                         }
 
                     // Extract attribute values
@@ -639,7 +639,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                                 match_part.push_str(&format!(
                                     "${slot_name} isa {role_type}, has id \"{id}\"; "
                                 ));
-                                role_players.push((to_snake_case(slot_name), slot_name.clone());
+                                role_players.push((to_snake_case(slot_name), slot_name.clone()));
                             }
                     }
         }

@@ -108,7 +108,7 @@ impl Validator for PatternValidator {
                     }
                 }
             } else {
-                issues.extend(validate_string(value, &context.path());
+                issues.extend(validate_string(value, &context.path()));
             }
         }
 
@@ -140,7 +140,7 @@ impl Validator for PatternValidator {
                             }
                         }
                     } else {
-                        issues.extend(validate_string(value, &context.path());
+                        issues.extend(validate_string(value, &context.path()));
                     }
                 }
 

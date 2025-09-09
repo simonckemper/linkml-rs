@@ -227,7 +227,7 @@ pub struct StressTestRunner {
     config: Arc<RwLock<StressTestConfig>>,
     operations: Vec<Arc<dyn StressOperation>>,
     results: Arc<RwLock<Vec<OperationResult>>>,
-    chaos_engine: Option<ChaosEngine>,
+    chaos_engine: Option<Arc<ChaosEngine>>,
 }
 
 impl StressTestRunner {
@@ -235,7 +235,7 @@ impl StressTestRunner {
     #[must_use]
     pub fn new(config: StressTestConfig) -> Self {
         let chaos_engine = if config.chaos_testing {
-            Some(ChaosEngine::new())
+            Some(Arc::new(ChaosEngine::new()))
         } else {
             None
         };
@@ -283,7 +283,7 @@ impl StressTestRunner {
             let operation = self.select_operation(i);
             let results = Arc::clone(&self.results);
             let config = config.clone();
-            let chaos = Arc::clone(&self.chaos_engine);
+            let chaos = self.chaos_engine.clone();
 
             // Pre-compute values that need RNG outside the async block
             let should_fail = config.error_injection && rand::random::<f64>() < config.error_rate;
@@ -442,7 +442,7 @@ impl StressTestRunner {
             chaos_events: self
                 .chaos_engine
                 .as_ref()
-                .map_or(0, ChaosEngine::events_triggered),
+                .map_or(0, |engine| engine.events_triggered()),
         }
     }
 

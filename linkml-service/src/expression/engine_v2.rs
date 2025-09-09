@@ -558,7 +558,7 @@ mod tests {
         let context = HashMap::new();
 
         let result = engine.evaluate("1 + 2 * 3", &context).expect("should evaluate simple expression: {}");
-        assert_eq!(result, Value::Number(serde_json::Number::from(7));
+        assert_eq!(result, Value::Number(serde_json::Number::from(7)));
         Ok(())
     }
 

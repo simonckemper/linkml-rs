@@ -152,7 +152,7 @@ impl XmlLoader {
         let mut obj = Map::new();
 
         // Add element name as type hint
-        obj.insert("_type".to_string(), Value::String(element.name.clone());
+        obj.insert("_type".to_string(), Value::String(element.name.clone()));
 
         // Add attributes
         if self.config.attributes_as_properties && !element.attributes.is_empty() {
@@ -180,7 +180,7 @@ impl XmlLoader {
                     // Group children by element name
                     let entry = obj
                         .entry(child_name.clone())
-                        .or_insert_with(|| Value::Array(Vec::new());
+                        .or_insert_with(|| Value::Array(Vec::new()));
                     if let Value::Array(arr) = entry {
                         // Clean up child object (remove _type)
                         let mut clean_child = child_obj.clone();
@@ -200,7 +200,7 @@ impl XmlLoader {
                 // Simple value child
                 let children_entry = obj
                     .entry("children".to_string())
-                    .or_insert_with(|| Value::Array(Vec::new());
+                    .or_insert_with(|| Value::Array(Vec::new()));
                 if let Value::Array(arr) = children_entry {
                     arr.push(child);
                 }
@@ -328,8 +328,8 @@ mod tests {
 
         assert!(value.is_object());
         if let Value::Object(obj) = value {
-            assert_eq!(obj.get("_type"), Some(&Value::String("person".to_string()));
-            assert_eq!(obj.get("@id"), Some(&Value::String("123".to_string()));
+            assert_eq!(obj.get("_type"), Some(&Value::String("person".to_string())));
+            assert_eq!(obj.get("@id"), Some(&Value::String("123".to_string())));
         }
     }
 

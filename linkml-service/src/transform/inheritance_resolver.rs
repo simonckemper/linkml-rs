@@ -125,7 +125,7 @@ impl InheritanceResolver {
 
         // Cache the result
         self.resolved_cache
-            .insert(class.name.clone(), Arc::new(resolved.clone());
+            .insert(class.name.clone(), Arc::new(resolved.clone()));
 
         Ok(resolved)
     }
@@ -141,7 +141,7 @@ impl InheritanceResolver {
         if !visited.insert(parent_name.to_string()) {
             return Err(InheritanceError::CircularInheritance(format!(
                 "Circular inheritance involving {parent_name}"
-            ));
+            )));
         }
 
         // Check depth limit
@@ -149,7 +149,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum inheritance depth {} exceeded",
                 self.max_depth
-            ));
+            )));
         }
 
         let parent = schema
@@ -177,7 +177,7 @@ impl InheritanceResolver {
         if !visited.insert(format!("mixin:{mixin_name}")) {
             return Err(InheritanceError::CircularInheritance(format!(
                 "Circular mixin reference involving {mixin_name}"
-            ));
+            )));
         }
 
         // Check depth limit for mixins
@@ -185,7 +185,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum mixin depth {} exceeded",
                 self.max_depth
-            ));
+            )));
         }
 
         let mixin = schema
@@ -196,7 +196,7 @@ impl InheritanceResolver {
         if !mixin.mixin.unwrap_or(false) {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "{mixin_name} is not marked as a mixin"
-            ));
+            )));
         }
 
         // Recursively resolve mixin first
@@ -301,7 +301,7 @@ impl InheritanceResolver {
             let cycle = path[pos..].to_vec().join(" -> ");
             return Err(InheritanceError::CircularInheritance(format!(
                 "{cycle} -> {class_name}"
-            ));
+            )));
         }
 
         // Check depth limit
@@ -309,7 +309,7 @@ impl InheritanceResolver {
             return Err(InheritanceError::InvalidInheritance(format!(
                 "Maximum inheritance depth {} exceeded at class {}",
                 self.max_depth, class_name
-            ));
+            )));
         }
 
         if visited.contains(class_name) {
@@ -519,7 +519,7 @@ impl Default for InheritanceResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition {
@@ -651,7 +651,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         assert!(result.is_err());
         if let Err(e) = result {
-            assert!(matches!(e, InheritanceError::CircularInheritance(_));
+            assert!(matches!(e, InheritanceError::CircularInheritance(_)));
         }
     }
 
@@ -674,7 +674,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         assert!(result.is_err());
         if let Err(e) = result {
-            assert!(matches!(e, InheritanceError::InvalidInheritance(_));
+            assert!(matches!(e, InheritanceError::InvalidInheritance(_)));
         }
     }
 }

@@ -124,8 +124,8 @@ impl SQLGenerator {
                 "{}updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
                 indent.single()
             ));
-            columns.push(format!("{}created_by VARCHAR(255)", indent.single());
-            columns.push(format!("{}updated_by VARCHAR(255)", indent.single());
+            columns.push(format!("{}created_by VARCHAR(255)", indent.single()));
+            columns.push(format!("{}updated_by VARCHAR(255)", indent.single()));
         }
 
         // Collect all slots including inherited ones
@@ -642,7 +642,7 @@ impl AsyncGenerator for SQLGenerator {
                 && !first.is_ascii_alphabetic() && first != '_' {
                     return Err(GeneratorError::SchemaValidation(format!(
                         "Class name '{class_name}' is not a valid SQL table name: must start with letter or underscore"
-                    ));
+                    )));
                 }
 
             // Check for SQL reserved words (basic set)
@@ -655,7 +655,7 @@ impl AsyncGenerator for SQLGenerator {
             ) {
                 return Err(GeneratorError::SchemaValidation(format!(
                     "Class name '{class_name}' is a SQL reserved keyword"
-                ));
+                )));
             }
         }
 
@@ -665,7 +665,7 @@ impl AsyncGenerator for SQLGenerator {
                 && !first.is_ascii_alphabetic() && first != '_' {
                     return Err(GeneratorError::SchemaValidation(format!(
                         "Slot name '{slot_name}' is not a valid SQL column name"
-                    ));
+                    )));
                 }
         }
 
@@ -878,7 +878,7 @@ impl CodeFormatter for SQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[tokio::test]
     async fn test_sql_generation() {

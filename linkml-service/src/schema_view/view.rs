@@ -316,7 +316,7 @@ impl SchemaView {
         for slot_name in &class_slots {
             if let Some(slot) = merged.slots.get(slot_name)
                 && slot.identifier.unwrap_or(false) {
-                    return Ok(Some(slot_name.clone());
+                    return Ok(Some(slot_name.clone()));
                 }
         }
 
@@ -548,7 +548,7 @@ impl SchemaView {
                 ElementType::Class,
                 serde_json::to_value(class)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            ));
+            )));
         }
 
         // Check slots
@@ -557,7 +557,7 @@ impl SchemaView {
                 ElementType::Slot,
                 serde_json::to_value(slot)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            ));
+            )));
         }
 
         // Check types
@@ -566,7 +566,7 @@ impl SchemaView {
                 ElementType::Type,
                 serde_json::to_value(type_def)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            ));
+            )));
         }
 
         // Check enums
@@ -575,7 +575,7 @@ impl SchemaView {
                 ElementType::Enum,
                 serde_json::to_value(enum_def)
                     .map_err(|e| LinkMLError::SerializationError(e.to_string()))?,
-            ));
+            )));
         }
 
         Ok(None)

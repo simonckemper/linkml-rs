@@ -169,7 +169,7 @@ impl GeneratorRegistry {
         if generators.contains_key(&name) {
             return Err(GeneratorError::Configuration(format!(
                 "Generator '{name}' is already registered"
-            ));
+            )));
         }
 
         generators.insert(name, generator);
@@ -183,7 +183,7 @@ impl GeneratorRegistry {
         if generators.remove(name).is_none() {
             return Err(GeneratorError::Configuration(format!(
                 "Generator '{name}' not found"
-            ));
+            )));
         }
 
         Ok(())
@@ -271,7 +271,7 @@ impl GeneratorRegistry {
         if plugin_generators.contains_key(&name) {
             return Err(GeneratorError::Configuration(format!(
                 "Plugin generator '{name}' is already registered"
-            ));
+            )));
         }
 
         plugin_generators.insert(name, generator);
@@ -383,7 +383,7 @@ mod tests {
 
         // List should include it
         let names = registry.list_generators().await;
-        assert!(names.contains(&"test".to_string());
+        assert!(names.contains(&"test".to_string()));
 
         // Get info
         let info = registry

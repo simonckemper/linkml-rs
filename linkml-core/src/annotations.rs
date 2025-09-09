@@ -8,6 +8,8 @@
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::convert::TryFrom;
+use crate::error::{LinkMLError, Result};
 
 /// An annotation on a schema element
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -127,13 +129,16 @@ impl From<i32> for AnnotationValue {
     }
 }
 
-impl From<f64> for AnnotationValue {
-    fn from(n: f64) -> Self {
-        if let Some(num) = serde_json::Number::from_f64(n) {
-            AnnotationValue::Number(num)
-        } else {
-            AnnotationValue::Null
-        }
+impl TryFrom<f64> for AnnotationValue {
+    type Error = LinkMLError;
+    
+    fn try_from(n: f64) -> Result<Self> {
+        serde_json::Number::from_f64(n)
+            .map(AnnotationValue::Number)
+            .ok_or_else(|| LinkMLError::coercion(
+                "f64 (NaN or infinite values are not supported)",
+                "JSON Number"
+            ))
     }
 }
 
@@ -194,7 +199,6 @@ pub fn merge_annotations(
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Result;
 
     #[test]
     fn test_annotation_value_conversions() {

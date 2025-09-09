@@ -12,7 +12,9 @@ use linkml_core::prelude::*;
 use serde_json::{json, Value};
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use sqlx::{Column, Row};
+use sqlx::{Column, Row, Database, Execute, Transaction};
+use sqlx::postgres::{PgRow, PgConnection};
+use sqlx::mysql::{MySqlRow, MySqlConnection};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use tracing::{debug, info};
@@ -322,28 +324,57 @@ impl DatabaseLoader {
             }
         };
 
-        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to query tables: {e}"),
-            ))
-        })?;
-
         let mut tables = Vec::new();
-        for row in rows {
-            if let Ok(table_name) = row.try_get::<String, _>(0) {
-                // Apply filtering
-                if self.options.exclude_tables.contains(&table_name) {
-                    continue;
-                }
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query tables: {e}"),
+                    ))
+                })?;
 
-                if let Some(include) = &self.options.include_tables {
-                    if !include.contains(&table_name) {
-                        continue;
+                for row in rows {
+                    if let Ok(table_name) = row.try_get::<String, _>(0) {
+                        // Apply filtering
+                        if self.options.exclude_tables.contains(&table_name) {
+                            continue;
+                        }
+
+                        if let Some(include) = &self.options.include_tables {
+                            if !include.contains(&table_name) {
+                                continue;
+                            }
+                        }
+
+                        tables.push(table_name);
                     }
                 }
+            }
+            DatabasePool::MySQL(mysql_pool) => {
+                let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query tables: {e}"),
+                    ))
+                })?;
 
-                tables.push(table_name);
+                for row in rows {
+                    if let Ok(table_name) = row.try_get::<String, _>(0) {
+                        // Apply filtering
+                        if self.options.exclude_tables.contains(&table_name) {
+                            continue;
+                        }
+
+                        if let Some(include) = &self.options.include_tables {
+                            if !include.contains(&table_name) {
+                                continue;
+                            }
+                        }
+
+                        tables.push(table_name);
+                    }
+                }
             }
         }
 
@@ -392,28 +423,57 @@ impl DatabaseLoader {
             }
         };
 
-        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to query tables: {e}"),
-            ))
-        })?;
-
         let mut tables = Vec::new();
-        for row in rows {
-            if let Ok(table_name) = row.try_get::<String, _>(0) {
-                // Apply filtering
-                if self.options.exclude_tables.contains(&table_name) {
-                    continue;
-                }
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query tables: {e}"),
+                    ))
+                })?;
 
-                if let Some(include) = &self.options.include_tables {
-                    if !include.contains(&table_name) {
-                        continue;
+                for row in rows {
+                    if let Ok(table_name) = row.try_get::<String, _>(0) {
+                        // Apply filtering
+                        if self.options.exclude_tables.contains(&table_name) {
+                            continue;
+                        }
+
+                        if let Some(include) = &self.options.include_tables {
+                            if !include.contains(&table_name) {
+                                continue;
+                            }
+                        }
+
+                        tables.push(table_name);
                     }
                 }
+            }
+            DatabasePool::MySQL(mysql_pool) => {
+                let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query tables: {e}"),
+                    ))
+                })?;
 
-                tables.push(table_name);
+                for row in rows {
+                    if let Ok(table_name) = row.try_get::<String, _>(0) {
+                        // Apply filtering
+                        if self.options.exclude_tables.contains(&table_name) {
+                            continue;
+                        }
+
+                        if let Some(include) = &self.options.include_tables {
+                            if !include.contains(&table_name) {
+                                continue;
+                            }
+                        }
+
+                        tables.push(table_name);
+                    }
+                }
             }
         }
 
@@ -566,32 +626,54 @@ impl DatabaseLoader {
             }
         };
 
-        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to query columns: {e}"),
-            ))
-        })?;
-
         let mut columns = Vec::new();
 
-        match self.get_database_type()? {
-            DatabaseType::SQLite => {
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query columns: {e}"),
+                    ))
+                })?;
+
                 for row in rows {
                     columns.push(ColumnInfo {
-                        name: row.try_get::<String, _>(1)?,
-                        data_type: row.try_get::<String, _>(2)?,
-                        is_nullable: row.try_get::<i32, _>(3)? == 0,
-                        is_primary_key: row.try_get::<i32, _>(5)? == 1,
+                        name: row.try_get::<String, _>(0).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get column name: {e}"))
+                        ))?,
+                        data_type: row.try_get::<String, _>(1).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get data type: {e}"))
+                        ))?,
+                        is_nullable: row.try_get::<String, _>(2).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get nullable: {e}"))
+                        ))? == "YES",
+                        is_primary_key: false, // Will be determined separately
                     });
                 }
+
+                // Get primary key information
+                self.update_primary_keys(&mut columns, table_name).await?;
             }
-            _ => {
+            DatabasePool::MySQL(mysql_pool) => {
+                let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query columns: {e}"),
+                    ))
+                })?;
+
                 for row in rows {
                     columns.push(ColumnInfo {
-                        name: row.try_get::<String, _>(0)?,
-                        data_type: row.try_get::<String, _>(1)?,
-                        is_nullable: row.try_get::<String, _>(2)? == "YES",
+                        name: row.try_get::<String, _>(0).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get column name: {e}"))
+                        ))?,
+                        data_type: row.try_get::<String, _>(1).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get data type: {e}"))
+                        ))?,
+                        is_nullable: row.try_get::<String, _>(2).map_err(|e| LoaderError::Io(
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get nullable: {e}"))
+                        ))? == "YES",
                         is_primary_key: false, // Will be determined separately
                     });
                 }
@@ -719,17 +801,35 @@ impl DatabaseLoader {
             _ => return Ok(()), // SQLite handled differently
         };
 
-        let rows = sqlx::query(&query).fetch_all(pool).await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to query primary keys: {e}"),
-            ))
-        })?;
-
         let mut pk_columns = HashSet::new();
-        for row in rows {
-            if let Ok(col_name) = row.try_get::<String, _>(0) {
-                pk_columns.insert(col_name);
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query primary keys: {e}"),
+                    ))
+                })?;
+
+                for row in rows {
+                    if let Ok(col_name) = row.try_get::<String, _>(0) {
+                        pk_columns.insert(col_name);
+                    }
+                }
+            }
+            DatabasePool::MySQL(mysql_pool) => {
+                let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to query primary keys: {e}"),
+                    ))
+                })?;
+
+                for row in rows {
+                    if let Ok(col_name) = row.try_get::<String, _>(0) {
+                        pk_columns.insert(col_name);
+                    }
+                }
             }
         }
 
@@ -881,40 +981,54 @@ impl DatabaseLoader {
         &self,
         table_name: &str,
         columns: &[ColumnInfo],
-        schema: &SchemaDefinition,
+        _schema: &SchemaDefinition,
     ) -> LoaderResult<Vec<DataInstance>> {
         let pool = self.get_pool()?;
         let mut instances = Vec::new();
 
-        // Get the class name for this table
-        let class_name = self
-            .options
-            .table_mapping
-            .get(table_name)
-            .cloned()
-            .unwrap_or_else(|| to_pascal_case(table_name));
-
         // Build query
         let query = format!("SELECT * FROM {table_name}");
-        let mut rows = sqlx::query(&query).fetch(pool);
+        
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                let mut rows = sqlx::query(&query).fetch(pg_pool);
+                let mut batch = Vec::new();
 
-        let mut batch = Vec::new();
+                while let Some(row) = rows.try_next().await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to fetch row: {e}"),
+                    ))
+                })? {
+                    let instance = self.pg_row_to_instance(&row, table_name, columns)?;
+                    batch.push(instance);
 
-        while let Some(row) = rows.try_next().await.map_err(|e| {
-            LoaderError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to fetch row: {e}"),
-            ))
-        })? {
-            let instance = self.row_to_instance(&row, table_name, columns)?;
-            batch.push(instance);
+                    if batch.len() >= self.options.batch_size {
+                        instances.extend(batch.drain(..));
+                    }
+                }
+                instances.extend(batch);
+            }
+            DatabasePool::MySQL(mysql_pool) => {
+                let mut rows = sqlx::query(&query).fetch(mysql_pool);
+                let mut batch = Vec::new();
 
-            if batch.len() >= self.options.batch_size {
-                instances.extend(batch.drain(..));
+                while let Some(row) = rows.try_next().await.map_err(|e| {
+                    LoaderError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to fetch row: {e}"),
+                    ))
+                })? {
+                    let instance = self.mysql_row_to_instance(&row, table_name, columns)?;
+                    batch.push(instance);
+
+                    if batch.len() >= self.options.batch_size {
+                        instances.extend(batch.drain(..));
+                    }
+                }
+                instances.extend(batch);
             }
         }
-
-        instances.extend(batch);
 
         // Apply foreign key relationships
         if let Some(fk_relations) = self.options.foreign_keys.get(table_name) {
@@ -958,6 +1072,200 @@ impl DatabaseLoader {
             id: None,
             metadata: HashMap::new(),
         })
+    }
+
+    /// Convert a database row to a DataInstance (PostgreSQL version)
+    fn pg_row_to_instance(
+        &self,
+        row: &PgRow,
+        table_name: &str,
+        columns: &[ColumnInfo],
+    ) -> LoaderResult<DataInstance> {
+        let mut data = HashMap::new();
+        
+        // Get class name for this table
+        let class_name = self
+            .options
+            .table_mapping
+            .get(table_name)
+            .cloned()
+            .unwrap_or_else(|| to_pascal_case(table_name));
+
+        // Get column mapping for this table
+        let column_mapping = self.options.column_mapping.get(table_name);
+
+        for (i, column) in columns.iter().enumerate() {
+            let column_name = &column.name;
+            let mapped_name = column_mapping
+                .and_then(|mapping| mapping.get(column_name))
+                .cloned()
+                .unwrap_or_else(|| to_snake_case(column_name));
+
+            // Extract value with proper type handling
+            let value = self.get_pg_column_value(row, i, &column.data_type)?;
+            
+            if !value.is_null() {
+                data.insert(mapped_name, value);
+            }
+        }
+
+        Ok(DataInstance {
+            class_name,
+            data,
+            id: None,
+            metadata: HashMap::new(),
+        })
+    }
+
+    /// Convert a database row to a DataInstance (MySQL version)
+    fn mysql_row_to_instance(
+        &self,
+        row: &MySqlRow,
+        table_name: &str,
+        columns: &[ColumnInfo],
+    ) -> LoaderResult<DataInstance> {
+        let mut data = HashMap::new();
+        
+        // Get class name for this table
+        let class_name = self
+            .options
+            .table_mapping
+            .get(table_name)
+            .cloned()
+            .unwrap_or_else(|| to_pascal_case(table_name));
+
+        // Get column mapping for this table
+        let column_mapping = self.options.column_mapping.get(table_name);
+
+        for (i, column) in columns.iter().enumerate() {
+            let column_name = &column.name;
+            let mapped_name = column_mapping
+                .and_then(|mapping| mapping.get(column_name))
+                .cloned()
+                .unwrap_or_else(|| to_snake_case(column_name));
+
+            // Extract value with proper type handling
+            let value = self.get_mysql_column_value(row, i, &column.data_type)?;
+            
+            if !value.is_null() {
+                data.insert(mapped_name, value);
+            }
+        }
+
+        Ok(DataInstance {
+            class_name,
+            data,
+            id: None,
+            metadata: HashMap::new(),
+        })
+    }
+
+    /// Get column value with proper type conversion (PostgreSQL)
+    fn get_pg_column_value(&self, row: &PgRow, idx: usize, db_type: &str) -> LoaderResult<Value> {
+        use sqlx::Row;
+        
+        // Try to decode based on the database type
+        match db_type.to_lowercase().as_str() {
+            "integer" | "int" | "int4" | "smallint" => {
+                if let Ok(val) = row.try_get::<Option<i32>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "bigint" | "int8" => {
+                if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "real" | "float" | "float4" => {
+                if let Ok(val) = row.try_get::<Option<f32>, _>(idx) {
+                    Ok(val.map(|v| Value::from(v as f64)).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "double" | "float8" | "decimal" | "numeric" => {
+                if let Ok(val) = row.try_get::<Option<f64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "boolean" | "bool" => {
+                if let Ok(val) = row.try_get::<Option<bool>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            _ => {
+                // Default to string
+                if let Ok(val) = row.try_get::<Option<String>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+        }
+    }
+
+    /// Get column value with proper type conversion (MySQL)
+    fn get_mysql_column_value(&self, row: &MySqlRow, idx: usize, db_type: &str) -> LoaderResult<Value> {
+        use sqlx::Row;
+        
+        // Try to decode based on the database type
+        match db_type.to_lowercase().as_str() {
+            "integer" | "int" | "int4" | "smallint" => {
+                if let Ok(val) = row.try_get::<Option<i32>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "bigint" | "int8" => {
+                if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "real" | "float" | "float4" => {
+                if let Ok(val) = row.try_get::<Option<f32>, _>(idx) {
+                    Ok(val.map(|v| Value::from(v as f64)).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "double" | "float8" | "decimal" | "numeric" => {
+                if let Ok(val) = row.try_get::<Option<f64>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            "boolean" | "bool" => {
+                if let Ok(val) = row.try_get::<Option<bool>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+            _ => {
+                // Default to string
+                if let Ok(val) = row.try_get::<Option<String>, _>(idx) {
+                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                } else {
+                    Ok(Value::Null)
+                }
+            }
+        }
     }
 
     // TODO: Implement database-specific row parsing
@@ -1428,7 +1736,7 @@ impl DatabaseDumper {
         sql.push_str(&columns.join(",\n  "));
 
         if !primary_keys.is_empty() && has_id_slot {
-            sql.push_str(&format!(",\n  PRIMARY KEY ({})", primary_keys.join(", "));
+            sql.push_str(&format!(",\n  PRIMARY KEY ({})", primary_keys.join(", ")));
         }
 
         sql.push_str("\n)");
@@ -1524,58 +1832,28 @@ impl DatabaseDumper {
             columns.join(", ")
         );
 
-        sqlx::query(&create_sql).execute(pool).await.map_err(|e| {
-            DumperError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to create table: {e}"),
-            ))
-        })?;
+        match pool {
+            DatabasePool::PostgreSQL(pg_pool) => {
+                sqlx::query(&create_sql).execute(pg_pool).await.map_err(|e| {
+                    DumperError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to create table: {e}"),
+                    ))
+                })?;
+            }
+            DatabasePool::MySQL(mysql_pool) => {
+                sqlx::query(&create_sql).execute(mysql_pool).await.map_err(|e| {
+                    DumperError::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to create table: {e}"),
+                    ))
+                })?;
+            }
+        }
 
         Ok(())
     }
 
-    /// Convert `LinkML` range to database type
-    fn linkml_range_to_db_type(&self, range: &str) -> DumperResult<String> {
-        let db_type = match self.get_database_type()? {
-            DatabaseType::PostgreSQL => match range {
-                "string" => "TEXT",
-                "integer" => "INTEGER",
-                "float" => "DOUBLE PRECISION",
-                "boolean" => "BOOLEAN",
-                "date" => "DATE",
-                "datetime" => "TIMESTAMP",
-                "time" => "TIME",
-                _ => "TEXT",
-            },
-            DatabaseType::MySQL => match range {
-                "string" => "TEXT",
-                "integer" => "INT",
-                "float" => "DOUBLE",
-                "boolean" => "BOOLEAN",
-                "date" => "DATE",
-                "datetime" => "DATETIME",
-                "time" => "TIME",
-                _ => "TEXT",
-            },
-            DatabaseType::SQLite => match range {
-                "string" => "TEXT",
-                "integer" => "INTEGER",
-                "float" => "REAL",
-                "boolean" => "INTEGER",
-                "date" => "TEXT",
-                "datetime" => "TEXT",
-                "time" => "TEXT",
-                _ => "TEXT",
-            },
-            _ => {
-                return Err(DumperError::Configuration(
-                    "Unsupported database type".to_string(),
-                ));
-            }
-        };
-
-        Ok(db_type.to_string())
-    }
 
     /// Insert instances for a class
     async fn insert_instances(
@@ -1725,7 +2003,7 @@ impl DatabaseDumper {
                 })?;
             }
             None => {
-                return Err(DumperError::Configuration("No database connection available".to_string());
+                return Err(DumperError::Configuration("No database connection available".to_string()));
             }
         }
         Ok(())
@@ -1778,7 +2056,7 @@ impl DatabaseDumper {
                 }
             }
             None => {
-                return Err(DumperError::Configuration("No database connection available".to_string());
+                return Err(DumperError::Configuration("No database connection available".to_string()));
             }
         }
         Ok(())
@@ -1823,75 +2101,151 @@ impl DatabaseDumper {
 
         // Process in batches
         for batch in instances.chunks(self.options.batch_size) {
-            let mut tx = pool.begin().await.map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to begin transaction: {e}"),
-                ))
-            })?;
+            // Process instances based on pool type
+            match pool {
+                DatabasePool::PostgreSQL(pg_pool) => {
+                    let mut tx = pg_pool.begin().await.map_err(|e| {
+                        DumperError::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("Failed to begin PostgreSQL transaction: {e}"),
+                        ))
+                    })?;
 
-            for instance in batch {
-                // Build INSERT statement
-                let mut columns = Vec::new();
-                let mut values = Vec::new();
-                let mut placeholders = Vec::new();
+                    for instance in batch {
+                        // Build INSERT statement
+                        let mut columns = Vec::new();
+                        let mut values = Vec::new();
+                        let mut placeholders = Vec::new();
 
-                for (slot_name, value) in &instance.data {
-                    let column_name = if let Some(mapping) = column_mapping {
-                        mapping
-                            .get(slot_name)
-                            .cloned()
-                            .unwrap_or_else(|| to_snake_case(slot_name))
-                    } else {
-                        to_snake_case(slot_name)
-                    };
-
-                    columns.push(column_name);
-                    values.push(value.clone());
-                    placeholders.push(format!("${}", placeholders.len() + 1));
-                }
-
-                let insert_sql = format!(
-                    "INSERT INTO {} ({}) VALUES ({})",
-                    table_name,
-                    columns.join(", "),
-                    placeholders.join(", ")
-                );
-
-                // Build query with values
-                let mut query = sqlx::query(&insert_sql);
-                for value in values {
-                    query = match value {
-                        Value::String(s) => query.bind(s),
-                        Value::Number(n) => {
-                            if let Some(i) = n.as_i64() {
-                                query.bind(i)
-                            } else if let Some(f) = n.as_f64() {
-                                query.bind(f)
+                        for (slot_name, value) in &instance.data {
+                            let column_name = if let Some(mapping) = column_mapping {
+                                mapping
+                                    .get(slot_name)
+                                    .cloned()
+                                    .unwrap_or_else(|| to_snake_case(slot_name))
                             } else {
-                                query.bind(n.to_string())
-                            }
+                                to_snake_case(slot_name)
+                            };
+
+                            columns.push(column_name);
+                            values.push(value.clone());
+                            placeholders.push(format!("${}", placeholders.len() + 1));
                         }
-                        Value::Bool(b) => query.bind(b),
-                        Value::Null => query.bind(None::<String>),
-                        _ => query.bind(value.to_string()),
-                    };
+
+                        let insert_sql = format!(
+                            "INSERT INTO {} ({}) VALUES ({})",
+                            table_name,
+                            columns.join(", "),
+                            placeholders.join(", ")
+                        );
+
+                        // Build query with values
+                        let mut query = sqlx::query(&insert_sql);
+                        for value in values {
+                            query = match value {
+                                Value::String(s) => query.bind(s),
+                                Value::Number(n) => {
+                                    if let Some(i) = n.as_i64() {
+                                        query.bind(i)
+                                    } else if let Some(f) = n.as_f64() {
+                                        query.bind(f)
+                                    } else {
+                                        query.bind(n.to_string())
+                                    }
+                                }
+                                Value::Bool(b) => query.bind(b),
+                                Value::Null => query.bind(None::<String>),
+                                _ => query.bind(value.to_string()),
+                            };
+                        }
+
+                        query.execute(&mut *tx).await.map_err(|e| {
+                            DumperError::Io(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                format!("Failed to insert row: {e}"),
+                            ))
+                        })?;
+                    }
+
+                    tx.commit().await.map_err(|e| {
+                        DumperError::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("Failed to commit transaction: {e}"),
+                        ))
+                    })?;
                 }
+                DatabasePool::MySQL(mysql_pool) => {
+                    let mut tx = mysql_pool.begin().await.map_err(|e| {
+                        DumperError::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("Failed to begin MySQL transaction: {e}"),
+                        ))
+                    })?;
 
-                query.execute(&mut *tx).await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Failed to insert row: {e}"),
-                    ))
-                })?;
+                    for instance in batch {
+                        // Build INSERT statement
+                        let mut columns = Vec::new();
+                        let mut values = Vec::new();
+                        let mut placeholders = Vec::new();
+
+                        for (slot_name, value) in &instance.data {
+                            let column_name = if let Some(mapping) = column_mapping {
+                                mapping
+                                    .get(slot_name)
+                                    .cloned()
+                                    .unwrap_or_else(|| to_snake_case(slot_name))
+                            } else {
+                                to_snake_case(slot_name)
+                            };
+
+                            columns.push(column_name);
+                            values.push(value.clone());
+                            placeholders.push("?".to_string()); // MySQL uses ? placeholders
+                        }
+
+                        let insert_sql = format!(
+                            "INSERT INTO {} ({}) VALUES ({})",
+                            table_name,
+                            columns.join(", "),
+                            placeholders.join(", ")
+                        );
+
+                        // Build query with values
+                        let mut query = sqlx::query(&insert_sql);
+                        for value in values {
+                            query = match value {
+                                Value::String(s) => query.bind(s),
+                                Value::Number(n) => {
+                                    if let Some(i) = n.as_i64() {
+                                        query.bind(i)
+                                    } else if let Some(f) = n.as_f64() {
+                                        query.bind(f)
+                                    } else {
+                                        query.bind(n.to_string())
+                                    }
+                                }
+                                Value::Bool(b) => query.bind(b),
+                                Value::Null => query.bind(None::<String>),
+                                _ => query.bind(value.to_string()),
+                            };
+                        }
+
+                        query.execute(&mut *tx).await.map_err(|e| {
+                            DumperError::Io(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                format!("Failed to insert row: {e}"),
+                            ))
+                        })?;
+                    }
+
+                    tx.commit().await.map_err(|e| {
+                        DumperError::Io(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("Failed to commit transaction: {e}"),
+                        ))
+                    })?;
+                }
             }
-
-            tx.commit().await.map_err(|e| {
-                DumperError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to commit transaction: {e}"),
-                ))
-            })?;
         }
 
         Ok(())
@@ -2056,7 +2410,7 @@ fn to_snake_case(s: &str) -> String {
 }
 
 // Helper trait imports for async operations
-use futures::TryStreamExt;
+use futures::{TryStreamExt, StreamExt};
 
 #[cfg(test)]
 mod tests {

@@ -415,7 +415,7 @@ impl AsyncGenerator for TypeQLGenerator {
             if !Self::is_valid_typeql_identifier(class_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Class name '{class_name}' is not a valid TypeQL identifier. Must start with a letter and contain only letters, numbers, and underscores."
-                ));
+                )));
             }
 
             // Validate slots
@@ -425,7 +425,7 @@ impl AsyncGenerator for TypeQLGenerator {
                     if !Self::is_valid_typeql_identifier(slot_name) {
                         return Err(GeneratorError::Validation(format!(
                             "Slot name '{slot_name}' in class '{class_name}' is not a valid TypeQL identifier"
-                        ));
+                        )));
                     }
                 }
             }
@@ -437,7 +437,7 @@ impl AsyncGenerator for TypeQLGenerator {
                     if !Self::is_valid_typeql_identifier(attr_name) {
                         return Err(GeneratorError::Validation(format!(
                             "Attribute name '{attr_name}' in class '{class_name}' is not a valid TypeQL identifier"
-                        ));
+                        )));
                     }
                 }
             }
@@ -448,7 +448,7 @@ impl AsyncGenerator for TypeQLGenerator {
             if !Self::is_valid_typeql_identifier(slot_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Slot definition name '{slot_name}' is not a valid TypeQL identifier"
-                ));
+                )));
             }
         }
 
@@ -656,7 +656,7 @@ impl CodeFormatter for TypeQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[tokio::test]
     async fn test_typeql_generation() -> anyhow::Result<()> {

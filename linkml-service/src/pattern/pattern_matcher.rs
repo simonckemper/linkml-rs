@@ -345,7 +345,7 @@ impl PatternMatcherBuilder {
     /// Add a pattern
     pub fn add_pattern(mut self, name: impl Into<String>, pattern: impl Into<String>) -> Self {
         self.patterns
-            .push((name.into(), pattern.into(), self.default_metadata.clone());
+            .push((name.into(), pattern.into(), self.default_metadata.clone()));
         self
     }
 
@@ -453,7 +453,7 @@ mod tests {
     }
 
     #[test]
-    fn test_case_insensitive() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_case_insensitive() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         let metadata = PatternMetadata {
@@ -479,7 +479,7 @@ mod tests {
     }
 
     #[test]
-    fn test_builder_pattern() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_builder_pattern() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let matcher = PatternMatcherBuilder::new()
             .add_pattern("email", r"[\w.+-]+@[\w.-]+\.[\w.-]+")
             .add_pattern("url", r"https?://[\w.-]+(?:\.[\w.-]+)+[\w/]")

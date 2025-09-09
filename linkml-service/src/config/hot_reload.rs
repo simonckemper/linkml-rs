@@ -55,9 +55,9 @@ impl ConfigHotReloader {
     /// # Errors
     ///
     pub async fn start_watching(&mut self) -> linkml_core::error::Result<()> {
-        let config_path = Arc::clone(&self.config_path);
-        let tx = Arc::clone(&self.tx);
-        let config = Arc::clone(&self.config);
+        let config_path = self.config_path.clone();
+        let tx = self.tx.clone();
+        let config = self.config.clone();
 
         // Create watcher
         let mut watcher = notify::recommended_watcher(move |res: std::result::Result<Event, notify::Error>| {

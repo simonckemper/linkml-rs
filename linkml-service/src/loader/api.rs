@@ -354,7 +354,7 @@ impl ApiLoader {
 
                     return Err(LoaderError::Io(std::io::Error::other(
                         format!("Request failed with status: {status}"),
-                    ));
+                    )));
                 }
                 Err(e) => {
                     if retries < self.options.retry_config.max_retries {
@@ -376,7 +376,7 @@ impl ApiLoader {
 
                     return Err(LoaderError::Io(std::io::Error::other(
                         format!("Request failed: {e}"),
-                    ));
+                    )));
                 }
             }
         }
@@ -517,13 +517,13 @@ impl ApiLoader {
                             LoaderError::Parse(format!("Array index {index} out of bounds"))
                         })?;
                     } else {
-                        return Err(LoaderError::Parse(format!("Invalid array index: {part}"));
+                        return Err(LoaderError::Parse(format!("Invalid array index: {part}")));
                     }
                 }
                 _ => {
                     return Err(LoaderError::Parse(format!(
                         "Cannot navigate path '{part}' in non-object/array"
-                    ));
+                    )));
                 }
             }
         }
@@ -545,7 +545,7 @@ impl ApiLoader {
         if !schema.classes.contains_key(class_name) {
             return Err(LoaderError::Parse(format!(
                 "Class '{class_name}' not found in schema"
-            ));
+            )));
         }
 
         match json {
@@ -558,7 +558,7 @@ impl ApiLoader {
                         if let Err(e) = self.validate_instance(&instance, class_name, schema) {
                             return Err(LoaderError::Parse(format!(
                                 "Instance at index {index} failed validation: {e}"
-                            ));
+                            )));
                         }
 
                         instances.push(instance);
@@ -572,7 +572,7 @@ impl ApiLoader {
                 if let Err(e) = self.validate_instance(&instance, class_name, schema) {
                     return Err(LoaderError::Parse(format!(
                         "Instance failed validation: {e}"
-                    ));
+                    )));
                 }
 
                 instances.push(instance);
@@ -604,7 +604,7 @@ impl ApiLoader {
             if slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
                 return Err(LoaderError::Parse(format!(
                     "Required field '{slot_name}' missing in class '{class_name}'"
-                ));
+                )));
             }
         }
 
@@ -614,7 +614,7 @@ impl ApiLoader {
                 && slot_def.required.unwrap_or(false) && !instance.data.contains_key(slot_name) {
                     return Err(LoaderError::Parse(format!(
                         "Required slot '{slot_name}' missing in class '{class_name}'"
-                    ));
+                    )));
                 }
         }
 
@@ -651,7 +651,7 @@ impl ApiLoader {
                         if !re.is_match(s) {
                             return Err(LoaderError::Parse(format!(
                                 "Field '{field_name}' value '{s}' does not match pattern '{pattern}'"
-                            ));
+                            )));
                         }
                     }
                     Err(e) => {
@@ -671,7 +671,7 @@ impl ApiLoader {
                     && v < min_v {
                         return Err(LoaderError::Parse(format!(
                             "Field '{field_name}' value {v} is less than minimum {min_v}"
-                        ));
+                        )));
                     }
             } else {
                 // Skip validation if types don't match
@@ -685,7 +685,7 @@ impl ApiLoader {
                     && v > max_v {
                         return Err(LoaderError::Parse(format!(
                             "Field '{field_name}' value {v} is greater than maximum {max_v}"
-                        ));
+                        )));
                     }
             } else {
                 // Skip validation if types don't match
@@ -698,21 +698,21 @@ impl ApiLoader {
                 (Value::Array(_), false) => {
                     return Err(LoaderError::Parse(format!(
                         "Field '{field_name}' should not be multivalued but is an array"
-                    ));
+                    )));
                 }
                 (Value::Array(arr), true)
                     if arr.is_empty() && slot_def.required.unwrap_or(false) =>
                 {
                     return Err(LoaderError::Parse(format!(
                         "Field '{field_name}' is required and multivalued but is empty"
-                    ));
+                    )));
                 }
                 (v, true)
                     if !matches!(v, Value::Array(_)) && slot_def.required.unwrap_or(false) =>
                 {
                     return Err(LoaderError::Parse(format!(
                         "Field '{field_name}' should be multivalued (array) but is not"
-                    ));
+                    )));
                 }
                 _ => {}
             }
@@ -983,7 +983,7 @@ impl ApiDumper {
                 return Err(DumperError::Configuration(format!(
                     "Unsupported HTTP method for dumping: {}",
                     endpoint_config.method
-                ));
+                )));
             }
         };
 
@@ -996,7 +996,7 @@ impl ApiDumper {
         if !response.status().is_success() {
             return Err(DumperError::Io(std::io::Error::other(
                 format!("Request failed with status: {}", response.status()),
-            ));
+            )));
         }
 
         Ok(())
@@ -1115,7 +1115,7 @@ impl DataDumper for ApiDumper {
                 return Err(DumperError::Configuration(format!(
                     "Class '{}' referenced in endpoint configuration not found in schema",
                     endpoint_config.class_name
-                ));
+                )));
             }
         }
         Ok(())
@@ -1214,7 +1214,7 @@ mod tests {
         assert_eq!(config.method, Method::GET);
         assert_eq!(config.path, "/api/v1/users");
         assert_eq!(config.class_name, "User");
-        assert_eq!(config.query_params.get("active"), Some(&"true".to_string());
+        assert_eq!(config.query_params.get("active"), Some(&"true".to_string()));
     }
 
     #[tokio::test]
@@ -1253,7 +1253,7 @@ mod tests {
     #[test]
     fn test_validate_instance() {
         use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
         // Create test schema
         let mut schema = SchemaDefinition::default();

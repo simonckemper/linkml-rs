@@ -122,7 +122,7 @@ impl CsvLoader {
                         "Record has more fields than headers: {} > {}",
                         record.len(),
                         headers.len()
-                    ));
+                    )));
                 }
                 continue;
             }
@@ -429,7 +429,7 @@ impl DataLoader for CsvLoader {
                             "Failed to read record {}: {}",
                             i + 1,
                             e
-                        ));
+                        )));
                     }
                 }
             }
@@ -734,7 +734,7 @@ impl DataDumper for CsvDumper {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -805,7 +805,7 @@ p2,Bob,25,bob@example.com,tag3
 
         // Check first instance
         assert_eq!(instances[0].class_name, "Person");
-        assert_eq!(instances[0].id, Some("p1".to_string());
+        assert_eq!(instances[0].id, Some("p1".to_string()));
         assert_eq!(
             instances[0].data.get("name"),
             Some(&JsonValue::String("Alice".to_string()))

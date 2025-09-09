@@ -835,7 +835,7 @@ impl<'a> ValidatorCompiler<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[tokio::test]
     async fn test_compiled_validator() -> anyhow::Result<()> {

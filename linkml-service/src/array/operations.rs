@@ -99,7 +99,7 @@ impl ArrayOperations for ArrayData {
         for (i, value) in self.data.iter().enumerate() {
             if f(value) {
                 let indices = self.spec.flat_to_indices(i, &self.shape);
-                results.push((indices, value.clone());
+                results.push((indices, value.clone()));
             }
         }
 
@@ -339,7 +339,7 @@ impl ArrayData {
         if dimension >= self.shape.len() {
             return Err(ArrayError::InvalidDimension(format!(
                 "Dimension {dimension} out of range"
-            ));
+            )));
         }
 
         // For simplicity, we'll implement sorting for 1D and 2D arrays
@@ -366,7 +366,7 @@ impl ArrayData {
     }
 
     fn sort_2d(&self, dimension: usize, descending: bool) -> ArrayResult<ArrayData> {
-        let mut result_data = Arc::clone(&self.data);
+        let mut result_data = self.data.clone();
 
         if dimension == 0 {
             // Sort rows
@@ -374,7 +374,7 @@ impl ArrayData {
                 let mut column_data: Vec<(usize, Value)> = Vec::new();
                 for row in 0..self.shape[0] {
                     let idx = self.spec.indices_to_flat(&[row, col], &self.shape)?;
-                    column_data.push((row, self.data[idx].clone());
+                    column_data.push((row, self.data[idx].clone()));
                 }
 
                 column_data.sort_by(|(_, a), (_, b)| {
@@ -393,7 +393,7 @@ impl ArrayData {
                 let mut row_data: Vec<(usize, Value)> = Vec::new();
                 for col in 0..self.shape[1] {
                     let idx = self.spec.indices_to_flat(&[row, col], &self.shape)?;
-                    row_data.push((col, self.data[idx].clone());
+                    row_data.push((col, self.data[idx].clone()));
                 }
 
                 row_data.sort_by(|(_, a), (_, b)| {

@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::error::Result;
 
 
 /// Schema settings that control processing behavior
@@ -337,11 +338,15 @@ impl SchemaSettings {
     }
 
     /// Get a custom setting value
-    #[must_use]
-    pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Option<T> {
-        self.custom
-            .get(key)
-            .and_then(|v| serde_json::from_value(v.clone()).ok())
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the value exists but cannot be deserialized to the target type.
+    pub fn get_custom<T: serde::de::DeserializeOwned>(&self, key: &str) -> Result<Option<T>> {
+        match self.custom.get(key) {
+            Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
+            None => Ok(None),
+        }
     }
 
     /// Set a custom setting value
@@ -353,7 +358,7 @@ impl SchemaSettings {
         &mut self,
         key: &str,
         value: T,
-    ) -> Result<(), serde_json::Error> {
+    ) -> std::result::Result<(), serde_json::Error> {
         self.custom
             .insert(key.to_string(), serde_json::to_value(value)?);
         Ok(())
@@ -405,7 +410,6 @@ impl ImportSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Result;
 
     #[test]
     fn test_schema_settings_default() {
@@ -418,9 +422,10 @@ use crate::error::Result;
     #[test]
     fn test_strict_settings() {
         let settings = SchemaSettings::strict();
-        let validation = settings
-            .validation
-            .expect("validation settings should be present in strict settings - test invariant");
+        let validation = match settings.validation {
+            Some(v) => v,
+            None => panic!("validation settings should be present in strict settings - test invariant"),
+        };
         assert_eq!(validation.strict, Some(true));
         assert_eq!(validation.check_permissibles, Some(true));
         assert_eq!(validation.allow_additional_properties, Some(false));
@@ -429,9 +434,10 @@ use crate::error::Result;
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = settings
-            .generation
-            .expect("generation settings should be present");
+        let generation = match settings.generation {
+            Some(g) => g,
+            None => panic!("generation settings should be present"),
+        };
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
         assert_eq!(generation.generate_docs, Some(true));
@@ -450,7 +456,12 @@ use crate::error::Result;
         })?;
 
         // Get the custom value
-        let max_items: Option<i32> = settings.get_custom("max_items");
+        let max_items: Option<i32> = settings.get_custom("max_items").map_err(|e| {
+            anyhow::anyhow!(
+                "getting custom value with valid data should not fail in test: {}",
+                e
+            )
+        })?;
         assert_eq!(max_items, Some(100));
         Ok(())
     }
@@ -477,13 +488,11 @@ use crate::error::Result;
 
         assert!(merged.validation.is_some());
         assert!(merged.generation.is_some());
-        assert_eq!(
-            merged
-                .generation
-                .expect("generation settings should be present after merge - test invariant")
-                .generate_builders,
-            Some(false)
-        );
+        let generation = match merged.generation {
+            Some(ref g) => g,
+            None => panic!("generation settings should be present after merge - test invariant"),
+        };
+        assert_eq!(generation.generate_builders, Some(false));
     }
 
     #[test]

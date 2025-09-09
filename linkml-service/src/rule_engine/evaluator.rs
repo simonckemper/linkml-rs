@@ -459,7 +459,7 @@ mod tests {
             ?;
 
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_REQUIRED_FIELD".to_string());
+        assert_eq!(issues[0].code, Some("RULE_REQUIRED_FIELD".to_string()));
         assert!(issues[0].message.contains("ID required for persons"));
     }
 
@@ -483,6 +483,6 @@ mod tests {
             ?;
 
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].code, Some("RULE_EXPRESSION_FAILED".to_string());
+        assert_eq!(issues[0].code, Some("RULE_EXPRESSION_FAILED".to_string()));
     }
 }

@@ -52,8 +52,7 @@ impl<K: Eq + Hash + Clone, V, S: BuildHasher> HashMapExt<K, V, S> for HashMap<K,
     {
         let old_value = self.remove(&key);
         let new_value = f(old_value);
-        self.insert(key.clone(), new_value);
-        self.get_mut(&key).unwrap()
+        self.entry(key).or_insert(new_value)
     }
 }
 

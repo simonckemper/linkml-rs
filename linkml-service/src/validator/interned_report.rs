@@ -225,7 +225,7 @@ impl InternedValidationReport {
         );
 
         report.valid = self.valid;
-        report.stats = Arc::clone(&self.stats);
+        report.stats = self.stats.clone();
 
         if let Some(tc) = self.target_class {
             report.target_class = Some(interner.get(tc).unwrap_or_default());

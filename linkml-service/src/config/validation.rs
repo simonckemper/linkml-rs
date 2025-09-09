@@ -41,7 +41,7 @@ pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Resul
         return Err(LinkMLError::ConfigError(format!(
             "Configuration validation failed:\n{}",
             errors.join("\n")
-        ));
+        )));
     }
 
     Ok(())

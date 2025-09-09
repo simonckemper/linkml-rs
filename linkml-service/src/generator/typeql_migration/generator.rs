@@ -501,7 +501,7 @@ impl Default for MigrationGenerator {
 mod tests {
     use super::*;
     use crate::generator::typeql_migration::{
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
         diff::SchemaDiffer,
         analyzer::MigrationAnalyzer,
     };

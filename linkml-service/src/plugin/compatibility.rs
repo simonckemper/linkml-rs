@@ -116,7 +116,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but current version is {}",
                 requirement, self.linkml_version
-            ));
+            )));
         }
 
         // In strict mode, require exact major version match
@@ -124,7 +124,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Plugin requires LinkML {} but strict mode requires major version {}",
                 requirement, self.linkml_version.major
-            ));
+            )));
         }
 
         Err(LinkMLError::ServiceError(format!(
@@ -155,7 +155,7 @@ impl CompatibilityChecker {
             return Err(LinkMLError::ServiceError(format!(
                 "Invalid version requirement for dependency '{}'",
                 dependency.id
-            ));
+            )));
         }
 
         // Validate version requirement can be parsed
@@ -175,7 +175,7 @@ impl CompatibilityChecker {
         if api_version != PLUGIN_API_VERSION {
             return Err(LinkMLError::ServiceError(format!(
                 "Plugin API version {api_version} is not compatible with current API version {PLUGIN_API_VERSION}"
-            ));
+            )));
         }
         Ok(())
     }
@@ -332,6 +332,7 @@ impl VersionMigration {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_version_compatibility() -> std::result::Result<(), Box<dyn std::error::Error>> {

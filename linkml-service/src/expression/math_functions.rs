@@ -25,7 +25,7 @@ impl BuiltinFunction for AbsFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -54,7 +54,7 @@ impl BuiltinFunction for SqrtFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -89,7 +89,7 @@ impl BuiltinFunction for PowFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -132,7 +132,7 @@ impl BuiltinFunction for SinFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -161,7 +161,7 @@ impl BuiltinFunction for CosFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -190,7 +190,7 @@ impl BuiltinFunction for TanFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -285,7 +285,7 @@ impl BuiltinFunction for ExpFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -314,7 +314,7 @@ impl BuiltinFunction for FloorFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -343,7 +343,7 @@ impl BuiltinFunction for CeilFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -425,7 +425,7 @@ impl BuiltinFunction for ModFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }

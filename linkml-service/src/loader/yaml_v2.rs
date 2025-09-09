@@ -274,7 +274,7 @@ mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
     use tempfile::TempDir;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[tokio::test]
     async fn test_yaml_loader_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {

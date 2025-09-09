@@ -330,7 +330,7 @@ mod tests {
     use super::*;
     use crate::generator::typeql_migration::diff::SchemaDiffer;
     use linkml_core::prelude::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_safe_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {

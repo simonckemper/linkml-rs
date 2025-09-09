@@ -284,7 +284,6 @@ pub struct GenerationOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Result;
 
     #[test]
     fn test_default_config() {

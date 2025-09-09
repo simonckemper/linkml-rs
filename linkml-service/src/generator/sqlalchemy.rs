@@ -322,7 +322,7 @@ impl SQLAlchemyGenerator {
 
         // Add column arguments
         if let Some(desc) = &slot.description {
-            column_args.push(format!("comment='{}'", desc.replace('\'', "\\'"));
+            column_args.push(format!("comment='{}'", desc.replace('\'', "\\'")));
         }
 
         if slot.required == Some(true) {
@@ -735,8 +735,7 @@ impl SQLAlchemyGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::types::SchemaDefinition;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_sqlalchemy_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

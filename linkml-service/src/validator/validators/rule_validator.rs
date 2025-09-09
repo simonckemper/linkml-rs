@@ -223,8 +223,8 @@ mod tests {
 
         // Should have 2 issues - missing guardian_name and guardian_phone
         assert_eq!(issues.len(), 2);
-        assert!(issues.iter().any(|i| i.message.contains("guardian_name"));
-        assert!(issues.iter().any(|i| i.message.contains("guardian_phone"));
+        assert!(issues.iter().any(|i| i.message.contains("guardian_name")));
+        assert!(issues.iter().any(|i| i.message.contains("guardian_phone")));
     }
 
     #[test]

@@ -465,9 +465,9 @@ mod tests {
             .await;
 
         assert_eq!(result.successful.len(), 3);
-        assert_eq!(result.successful.get("sum"), Some(&json!(15.0));
-        assert_eq!(result.successful.get("diff"), Some(&json!(5.0));
-        assert_eq!(result.successful.get("product"), Some(&json!(50.0));
+        assert_eq!(result.successful.get("sum"), Some(&json!(15.0)));
+        assert_eq!(result.successful.get("diff"), Some(&json!(5.0)));
+        assert_eq!(result.successful.get("product"), Some(&json!(50.0)));
         assert_eq!(result.failed.len(), 0);
         Ok(())
     }

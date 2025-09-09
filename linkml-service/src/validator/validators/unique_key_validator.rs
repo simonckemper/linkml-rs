@@ -92,7 +92,7 @@ impl UniqueKeyValidator {
                 Some(Value::Null) | None => {
                     if consider_nulls_inequal {
                         // Each null is considered unique
-                        key_parts.push(format!("__null_{}__", uuid::Uuid::new_v4());
+                        key_parts.push(format!("__null_{}__", uuid::Uuid::new_v4()));
                     } else {
                         // Null values make the entire key null (not unique)
                         return None;
@@ -277,26 +277,26 @@ impl Validator for UniqueKeyValidator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_unique_value_tracker() {
         let mut tracker = UniqueValueTracker::new();
 
         // First value should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "ssn", "123-45-6789".to_string());
+        assert!(!tracker.check_and_record("Person", "ssn", "123-45-6789".to_string()));
 
         // Same value should be a duplicate
-        assert!(tracker.check_and_record("Person", "ssn", "123-45-6789".to_string());
+        assert!(tracker.check_and_record("Person", "ssn", "123-45-6789".to_string()));
 
         // Different value should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "ssn", "987-65-4321".to_string());
+        assert!(!tracker.check_and_record("Person", "ssn", "987-65-4321".to_string()));
 
         // Same value in different class should not be a duplicate
-        assert!(!tracker.check_and_record("Employee", "ssn", "123-45-6789".to_string());
+        assert!(!tracker.check_and_record("Employee", "ssn", "123-45-6789".to_string()));
 
         // Same value for different key should not be a duplicate
-        assert!(!tracker.check_and_record("Person", "email", "123-45-6789".to_string());
+        assert!(!tracker.check_and_record("Person", "email", "123-45-6789".to_string()));
     }
 
     #[test]

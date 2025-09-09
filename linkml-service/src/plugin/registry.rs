@@ -68,7 +68,7 @@ impl PluginRegistry {
             if plugins.contains_key(&id) {
                 return Err(LinkMLError::ServiceError(format!(
                     "Plugin error: Plugin '{id}' is already registered"
-                ));
+                )));
             }
         }
 
@@ -92,7 +92,7 @@ impl PluginRegistry {
                     return Err(LinkMLError::ServiceError(format!(
                         "Plugin error: Required dependency '{}' not found for plugin '{}'",
                         dep.id, id
-                    ));
+                    )));
                 }
             }
 
@@ -451,6 +451,8 @@ pub struct DependencyError {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use async_trait::async_trait;
 
     // Mock plugin for testing
     struct MockPlugin {
@@ -487,27 +489,27 @@ mod tests {
     impl logger_core::LoggerService for TestLogger {
         type Error = logger_core::LoggerError;
 
-        async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        async fn debug<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        async fn info<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        async fn warn<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
+        async fn error<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
+        async fn log<'a>(&'a self, _level: logger_core::LogLevel, _message: &'a str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
+        async fn log_entry<'a>(&'a self, _entry: &'a logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
     }

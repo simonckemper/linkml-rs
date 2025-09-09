@@ -336,7 +336,7 @@ impl Validator for StructuredPatternValidator {
                         .insert("pattern".to_string(), Value::String(final_pattern));
                     issue
                         .context
-                        .insert("syntax".to_string(), Value::String(syntax.to_string());
+                        .insert("syntax".to_string(), Value::String(syntax.to_string()));
                     issues.push(issue);
                 }
             }
@@ -576,8 +576,8 @@ mod tests {
         let mut context = ValidationContext::new(schema);
 
         // Set up context data for interpolation
-        context.set_data("prefix", Value::String("TEST".to_string());
-        context.set_data("suffix", Value::String("\\d+".to_string());
+        context.set_data("prefix", Value::String("TEST".to_string()));
+        context.set_data("suffix", Value::String("\\d+".to_string()));
 
         let mut slot = SlotDefinition::new("code");
         slot.structured_pattern = Some(StructuredPattern {

@@ -230,7 +230,6 @@ fn merge_vec<T: Clone + PartialEq>(base: &[T], override_vec: &[T]) -> Vec<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Result;
 
     #[test]
     fn test_element_metadata() {

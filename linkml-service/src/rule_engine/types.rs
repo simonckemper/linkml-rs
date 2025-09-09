@@ -357,7 +357,7 @@ impl<'a> RuleExecutionContext<'a> {
 
         // Add special variables
         context.insert("_instance".to_string(), self.instance.clone());
-        context.insert("_class".to_string(), Value::String(self.class_name.clone());
+        context.insert("_class".to_string(), Value::String(self.class_name.clone()));
 
         // Add parent/root from validation context
         if let Some(parent) = self.validation_context.parent() {
@@ -425,8 +425,8 @@ mod tests {
         );
 
         let expr_ctx = ctx.get_expression_context();
-        assert_eq!(expr_ctx.get("name"), Some(&serde_json::json!("test"));
-        assert_eq!(expr_ctx.get("value"), Some(&serde_json::json!(42));
+        assert_eq!(expr_ctx.get("name"), Some(&serde_json::json!("test")));
+        assert_eq!(expr_ctx.get("value"), Some(&serde_json::json!(42)));
         assert_eq!(
             expr_ctx.get("_class"),
             Some(&serde_json::json!("TestClass"))

@@ -100,7 +100,7 @@ impl SlotView {
             if visited.contains(&parent_name) {
                 return Err(LinkMLError::service(format!(
                     "Circular inheritance detected in slot '{parent_name}'"
-                ));
+                )));
             }
             visited.insert(parent_name.clone());
             ancestors.push(parent_name.clone());
@@ -184,7 +184,7 @@ impl SlotView {
         // If there's a class-specific override, use it
         if let Some(override_def) = self.class_overrides.get(class_name) {
             // Merge the override with the base definition
-            let mut resolved = Arc::clone(&self.definition);
+            let mut resolved = self.definition.clone();
 
             // Apply overrides (only non-None values)
             if override_def.description.is_some() {

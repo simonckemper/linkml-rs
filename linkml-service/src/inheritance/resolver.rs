@@ -41,7 +41,7 @@ impl<'a> InheritanceResolver<'a> {
         if self.visited.contains(class_name) {
             return Err(LinkMLError::service(format!(
                 "Circular inheritance detected for class '{class_name}'"
-            ));
+            )));
         }
 
         // Get base class
@@ -402,7 +402,7 @@ pub fn is_subclass_of(child: &str, parent: &str, schema: &SchemaDefinition) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_simple_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -426,8 +426,8 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
         let resolved = resolver.resolve_class("Dog")?;
 
         // Check that slots are inherited
-        assert!(resolved.slots.contains(&"name".to_string());
-        assert!(resolved.slots.contains(&"breed".to_string());
+        assert!(resolved.slots.contains(&"name".to_string()));
+        assert!(resolved.slots.contains(&"breed".to_string()));
         Ok(())
     }
 
@@ -513,10 +513,10 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
         let resolved = resolver.resolve_class("D")?;
 
         // Check that all slots are inherited (A's slot should appear only once)
-        assert!(resolved.slots.contains(&"a_slot".to_string());
-        assert!(resolved.slots.contains(&"b_slot".to_string());
-        assert!(resolved.slots.contains(&"c_slot".to_string());
-        assert!(resolved.slots.contains(&"d_slot".to_string());
+        assert!(resolved.slots.contains(&"a_slot".to_string()));
+        assert!(resolved.slots.contains(&"b_slot".to_string()));
+        assert!(resolved.slots.contains(&"c_slot".to_string()));
+        assert!(resolved.slots.contains(&"d_slot".to_string()));
 
         // Check that A's slot appears only once
         let a_count = resolved.slots.iter().filter(|s| *s == "a_slot").count();

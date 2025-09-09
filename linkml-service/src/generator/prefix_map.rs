@@ -344,14 +344,14 @@ impl PrefixMapGenerator {
         {
             return Err(LinkMLError::ServiceError(format!(
                 "Invalid prefix '{prefix}': must contain only alphanumeric characters, underscores, or hyphens"
-            ));
+            )));
         }
 
         // Check URI format
         if !uri.ends_with('/') && !uri.ends_with('#') {
             return Err(LinkMLError::ServiceError(format!(
                 "Invalid URI '{uri}': should end with '/' or '#'"
-            ));
+            )));
         }
 
         Ok(())
@@ -362,7 +362,7 @@ impl PrefixMapGenerator {
         let mut stats = Map::new();
 
         if !schema.prefixes.is_empty() {
-            stats.insert("total_prefixes".to_string(), json!(schema.prefixes.len());
+            stats.insert("total_prefixes".to_string(), json!(schema.prefixes.len()));
 
             // Count usage in classes and slots
             let usage_count: HashMap<String, usize> = HashMap::new();

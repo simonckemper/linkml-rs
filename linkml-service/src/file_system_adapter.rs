@@ -88,7 +88,7 @@ impl TokioFileSystemAdapter {
                     return Err(LinkMLError::IoError(std::io::Error::new(
                         std::io::ErrorKind::PermissionDenied,
                         format!("Path contains '..' which could escape sandbox: {path:?}"),
-                    ));
+                    )));
                 }
             }
 
@@ -97,7 +97,7 @@ impl TokioFileSystemAdapter {
                 return Err(LinkMLError::IoError(std::io::Error::new(
                     std::io::ErrorKind::PermissionDenied,
                     format!("Absolute paths not allowed in sandbox: {path:?}"),
-                ));
+                )));
             }
 
             // Safe to join

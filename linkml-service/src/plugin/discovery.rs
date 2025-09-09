@@ -87,7 +87,7 @@ impl PluginDiscovery {
             return Err(LinkMLError::IoError(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!("Path is not a directory: {path:?}"),
-            ));
+            )));
         }
 
         for entry in fs::read_dir(path)? {

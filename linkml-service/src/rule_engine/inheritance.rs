@@ -57,7 +57,7 @@ impl<'a> RuleInheritanceResolver<'a> {
                         self.adjust_inherited_rule(rule, ancestor_name, class_name)?
                     };
 
-                    all_rules.push((adjusted_rule, ancestor_name.clone());
+                    all_rules.push((adjusted_rule, ancestor_name.clone()));
                 }
             }
         }
@@ -343,11 +343,11 @@ mod tests {
         assert_eq!(rules.len(), 2);
 
         // Check that derived rule comes first
-        assert_eq!(rules[0].0.title, Some("derived_rule".to_string());
+        assert_eq!(rules[0].0.title, Some("derived_rule".to_string()));
         assert_eq!(rules[0].0.priority, Some(50));
 
         // Check that base rule is inherited with adjusted priority
-        assert_eq!(rules[1].0.title, Some("base_rule".to_string());
+        assert_eq!(rules[1].0.title, Some("base_rule".to_string()));
         assert_eq!(rules[1].0.priority, Some(90)); // 100 - 10 for inheritance distance
         Ok(())
     }

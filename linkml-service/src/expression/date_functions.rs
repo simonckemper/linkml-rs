@@ -16,7 +16,7 @@ impl BuiltinFunction for NowFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if !args.is_empty() {
-            return Err(FunctionError::wrong_arity(self.name(), "0", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "0", args.len()));
         }
         Ok(())
     }
@@ -37,7 +37,7 @@ impl BuiltinFunction for TodayFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if !args.is_empty() {
-            return Err(FunctionError::wrong_arity(self.name(), "0", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "0", args.len()));
         }
         Ok(())
     }
@@ -125,7 +125,7 @@ impl BuiltinFunction for DateFormatFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 2 {
-            return Err(FunctionError::wrong_arity(self.name(), "2", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "2", args.len()));
         }
         Ok(())
     }
@@ -177,7 +177,7 @@ impl BuiltinFunction for DateAddFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
         }
         Ok(())
     }
@@ -278,7 +278,7 @@ impl BuiltinFunction for DateDiffFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 3 {
-            return Err(FunctionError::wrong_arity(self.name(), "3", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "3", args.len()));
         }
         Ok(())
     }
@@ -368,7 +368,7 @@ impl BuiltinFunction for YearFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -409,7 +409,7 @@ impl BuiltinFunction for MonthFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -450,7 +450,7 @@ impl BuiltinFunction for DayFunction {
 
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError> {
         if args.len() != 1 {
-            return Err(FunctionError::wrong_arity(self.name(), "1", args.len());
+            return Err(FunctionError::wrong_arity(self.name(), "1", args.len()));
         }
         Ok(())
     }
@@ -490,11 +490,11 @@ mod tests {
     fn test_now_today() {
         let now_fn = NowFunction;
         let result = now_fn.call(vec![]).expect("now_fn.call should succeed");
-        assert!(matches!(result, Value::String(_));
+        assert!(matches!(result, Value::String(_)));
 
         let today_fn = TodayFunction;
         let result = today_fn.call(vec![]).expect("today_fn.call should succeed");
-        assert!(matches!(result, Value::String(_));
+        assert!(matches!(result, Value::String(_)));
     }
 
     #[test]

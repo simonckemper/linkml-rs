@@ -248,7 +248,7 @@ impl DataDumper for XmlDumper {
             for (key, value) in &instance.data {
                 if let Value::String(s) = value
                     && !s.contains('\n') && s.len() < 50 {
-                        xml.push_str(&format!(" {}=\"{}\"", key, escape_xml(s));
+                        xml.push_str(&format!(" {}=\"{}\"", key, escape_xml(s)));
                     }
             }
 

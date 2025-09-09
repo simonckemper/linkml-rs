@@ -143,7 +143,7 @@ impl Validator for RangeValidator {
                 }
             }
         } else {
-            issues.extend(validate_number(value, &context.path());
+            issues.extend(validate_number(value, &context.path()));
         }
 
         issues

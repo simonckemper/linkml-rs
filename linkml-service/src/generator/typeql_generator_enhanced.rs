@@ -305,7 +305,7 @@ impl EnhancedTypeQLGenerator {
         if visiting.contains(type_name) {
             return Err(GeneratorError::SchemaValidation(format!(
                 "Inheritance cycle detected: {type_name}"
-            ));
+            )));
         }
 
         if visited.contains(type_name) {
@@ -1611,7 +1611,7 @@ impl SchemaAnalyzer {
                     }) {
                         return Err(GeneratorError::SchemaValidation(format!(
                             "Relation {class_name} has no object-valued slots"
-                        ));
+                        )));
                     }
         }
 
@@ -1629,7 +1629,7 @@ impl SchemaAnalyzer {
         if visited.contains(class_name) {
             return Err(GeneratorError::SchemaValidation(format!(
                 "Inheritance cycle detected: {class_name}"
-            ));
+            )));
         }
 
         visited.insert(class_name.to_string());
@@ -1677,7 +1677,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
             if !self.is_valid_identifier(class_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Class name '{class_name}' is not a valid TypeQL identifier"
-                ));
+                )));
             }
         }
 
@@ -1686,7 +1686,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
             if !self.is_valid_identifier(slot_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Slot name '{slot_name}' is not a valid TypeQL identifier"
-                ));
+                )));
             }
         }
 
@@ -2120,7 +2120,7 @@ impl EnhancedTypeQLGenerator {
 mod tests {
     use super::*;
     use serde_json::json;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[tokio::test]
     async fn test_enhanced_typeql_generation() -> anyhow::Result<()> {

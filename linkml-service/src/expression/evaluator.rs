@@ -308,7 +308,7 @@ impl Evaluator {
     #[must_use] pub fn cache_stats(&self) -> Option<(usize, usize)> {
         if let Some(cache) = &self.cache
             && let Ok(cache) = cache.lock() {
-                return Some((cache.len(), cache.cap().into());
+                return Some((cache.len(), cache.cap().into()));
             }
         None
     }
@@ -1145,7 +1145,7 @@ mod tests {
         );
 
         // not true = false
-        let expr = Expression::Not(Box::new(Expression::Boolean(true));
+        let expr = Expression::Not(Box::new(Expression::Boolean(true)));
         assert_eq!(
             evaluator
                 .evaluate(&expr, &context)

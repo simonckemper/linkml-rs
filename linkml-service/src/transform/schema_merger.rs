@@ -140,7 +140,7 @@ impl SchemaMerger {
             return schemas
                 .into_iter()
                 .next()
-                .ok_or_else(|| MergeError::InvalidInput("checked that schemas has one element".to_string());
+                .ok_or_else(|| MergeError::InvalidInput("checked that schemas has one element".to_string()));
         }
 
         let mut schemas_iter = schemas.into_iter();
@@ -656,14 +656,14 @@ impl SchemaMerger {
                 && !all_classes.contains(parent) {
                     return Err(MergeError::InvalidMerge(format!(
                         "Class '{class_name}' references non-existent parent '{parent}'"
-                    ));
+                    )));
                 }
 
             for mixin in &class_def.mixins {
                 if !all_classes.contains(mixin) {
                     return Err(MergeError::InvalidMerge(format!(
                         "Class '{class_name}' references non-existent mixin '{mixin}'"
-                    ));
+                    )));
                 }
             }
         }
@@ -674,7 +674,7 @@ impl SchemaMerger {
                 && !all_slots.contains(parent) {
                     return Err(MergeError::InvalidMerge(format!(
                         "Slot '{slot_name}' references non-existent parent '{parent}'"
-                    ));
+                    )));
                 }
         }
 
@@ -701,7 +701,7 @@ impl Default for SchemaMerger {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     fn create_test_schema(id: &str) -> SchemaDefinition {
         let mut schema = SchemaDefinition {
@@ -805,7 +805,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         // Should have schema2's version
         let name_slot = result.slots.get("name").ok_or_else(|| anyhow::anyhow!("name slot should exist"))?;
-        assert_eq!(name_slot.range, Some("text".to_string());
+        assert_eq!(name_slot.range, Some("text".to_string()));
         Ok(())
     }
 
@@ -832,9 +832,9 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         // Should have all unique imports
         assert_eq!(result.imports.len(), 3);
-        assert!(result.imports.contains(&"import1".to_string());
-        assert!(result.imports.contains(&"import2".to_string());
-        assert!(result.imports.contains(&"import3".to_string());
+        assert!(result.imports.contains(&"import1".to_string()));
+        assert!(result.imports.contains(&"import2".to_string()));
+        assert!(result.imports.contains(&"import3".to_string()));
         Ok(())
     }
 }

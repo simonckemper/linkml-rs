@@ -268,13 +268,13 @@ mod tests {
     #[test]
     fn test_expression_builders() {
         let var = Expression::var("x");
-        assert_eq!(var, Expression::Variable("x".to_string());
+        assert_eq!(var, Expression::Variable("x".to_string()));
 
         let num = Expression::number(42.0);
         assert_eq!(num, Expression::Number(42.0));
 
         let string = Expression::string("hello");
-        assert_eq!(string, Expression::String("hello".to_string());
+        assert_eq!(string, Expression::String("hello".to_string()));
 
         let boolean = Expression::boolean(true);
         assert_eq!(boolean, Expression::Boolean(true));

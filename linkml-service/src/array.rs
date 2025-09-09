@@ -133,7 +133,7 @@ impl ArrayDimension {
                 return Err(ArrayError::InvalidDimension(format!(
                     "Dimension '{}' size {} is less than minimum {}",
                     self.name, size, min
-                ));
+                )));
             }
 
         if let Some(max) = self.max_size
@@ -141,7 +141,7 @@ impl ArrayDimension {
                 return Err(ArrayError::InvalidDimension(format!(
                     "Dimension '{}' size {} exceeds maximum {}",
                     self.name, size, max
-                ));
+                )));
             }
 
         Ok(())
@@ -243,7 +243,7 @@ impl ArraySpec {
                 "Expected {} dimensions, got {}",
                 self.dimensions.len(),
                 shape.len()
-            ));
+            )));
         }
 
         for (i, (dim, &size)) in self.dimensions.iter().zip(shape.iter()).enumerate() {
@@ -289,7 +289,7 @@ impl ArraySpec {
                 "Indices length {} doesn't match shape length {}",
                 indices.len(),
                 shape.len()
-            ));
+            )));
         }
 
         // Validate indices
@@ -354,7 +354,7 @@ impl ArrayData {
                 "Expected {} elements, got {}",
                 expected_size,
                 data.len()
-            ));
+            )));
         }
 
         Ok(Self { spec, shape, data })
@@ -401,7 +401,7 @@ impl ArrayData {
         if dimension >= self.shape.len() {
             return Err(ArrayError::InvalidDimension(format!(
                 "Dimension {dimension} out of range"
-            ));
+            )));
         }
 
         let dim_size = self.shape.get(dimension).copied().ok_or_else(|| {
@@ -416,11 +416,11 @@ impl ArrayData {
         }
 
         // Create new shape without the sliced dimension
-        let mut new_shape = Arc::clone(&self.shape);
+        let mut new_shape = self.shape.clone();
         new_shape.remove(dimension);
 
         // Create new spec without the sliced dimension
-        let mut new_spec = Arc::clone(&self.spec);
+        let mut new_spec = self.spec.clone();
         new_spec.dimensions.remove(dimension);
 
         // Extract slice data
@@ -449,11 +449,11 @@ impl ArrayData {
             return Err(ArrayError::InvalidShape(format!(
                 "Cannot reshape from {:?} to {:?}: different sizes",
                 self.shape, new_shape
-            ));
+            )));
         }
 
         // Update spec dimensions
-        let mut new_spec = Arc::clone(&self.spec);
+        let mut new_spec = self.spec.clone();
         new_spec.dimensions = new_shape
             .iter()
             .enumerate()
@@ -476,10 +476,10 @@ impl ArrayData {
     /// # Errors
     ///
     pub fn transpose(&self) -> Result<ArrayData, Box<dyn std::error::Error>> {
-        let mut new_spec = Arc::clone(&self.spec);
+        let mut new_spec = self.spec.clone();
         new_spec.dimensions.reverse();
 
-        let mut new_shape = Arc::clone(&self.shape);
+        let mut new_shape = self.shape.clone();
         new_shape.reverse();
 
         // Reorder data

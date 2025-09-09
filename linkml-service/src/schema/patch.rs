@@ -181,7 +181,7 @@ impl SchemaPatcher {
                     }
                     result
                         .skipped_operations
-                        .push((operation.clone(), e.to_string());
+                        .push((operation.clone(), e.to_string()));
                 }
             }
         }
@@ -480,7 +480,7 @@ impl SchemaPatcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
 
     #[test]
     fn test_add_class() {

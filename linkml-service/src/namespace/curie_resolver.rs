@@ -158,7 +158,7 @@ impl CurieResolver {
             if let Some(uri_base) = self.prefixes.get(prefix) {
                 return Ok(format!("{uri_base}{local}"));
             } else if self.strict {
-                return Err(LinkMLError::service(format!("Unknown prefix: {prefix}"));
+                return Err(LinkMLError::service(format!("Unknown prefix: {prefix}")));
             }
             // In non-strict mode, return as-is
             return Ok(curie.to_string());
