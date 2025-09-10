@@ -274,10 +274,10 @@ impl MarkdownGenerator {
                             overridden.required = slot_usage.required;
                         }
                         if slot_usage.range.is_some() {
-                            overridden.range = slot_usage.range.clone();
+                            overridden.range.clone_from(&slot_usage.range);
                         }
                         if slot_usage.description.is_some() {
-                            overridden.description = slot_usage.description.clone();
+                            overridden.description.clone_from(&slot_usage.description);
                         }
                         all_slots.insert(slot_name.clone(), overridden);
                     }

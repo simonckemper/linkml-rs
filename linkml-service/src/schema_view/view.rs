@@ -834,7 +834,7 @@ impl SchemaView {
                     .into());
                 }
                 ancestors.push(parent.clone());
-                current = parent.clone();
+                current.clone_from(&parent);
             } else {
                 break;
             }
@@ -1227,7 +1227,7 @@ impl SchemaView {
 
         // Merge other properties as needed
         if target.description.is_none() && source.description.is_some() {
-            target.description = source.description.clone();
+            target.description.clone_from(&source.description);
         }
     }
 

@@ -523,7 +523,8 @@ where
 
         // Record shutdown event
         // Cancel background task if it exists
-        if let Some(task_id) = self.background_task_handle.write().take() {
+        let task_id = self.background_task_handle.write().take();
+        if let Some(task_id) = task_id {
             self.logger
                 .debug("Cancelling background monitoring task")
                 .await

@@ -1,6 +1,7 @@
 //! Error types for the expression language
-
-#![allow(missing_docs)]
+//!
+//! This module provides comprehensive error handling for the LinkML expression language,
+//! including parse-time errors and runtime evaluation errors.
 
 use thiserror::Error;
 
@@ -30,65 +31,124 @@ impl From<anyhow::Error> for ExpressionError {
 pub enum ParseError {
     /// Unexpected end of input
     #[error("Unexpected end of input at position {position}")]
-    UnexpectedEof { position: usize },
+    UnexpectedEof {
+        /// Position in the input where parsing failed
+        position: usize
+    },
 
     /// Unexpected token
     #[error("Unexpected token '{token}' at position {position}")]
-    UnexpectedToken { token: String, position: usize },
+    UnexpectedToken {
+        /// The unexpected token found
+        token: String,
+        /// Position in the input where the token was found
+        position: usize
+    },
 
     /// Invalid number format
     #[error("Invalid number '{value}' at position {position}")]
-    InvalidNumber { value: String, position: usize },
+    InvalidNumber {
+        /// The invalid number string
+        value: String,
+        /// Position in the input where the number was found
+        position: usize
+    },
 
     /// Invalid string literal
     #[error("Invalid string literal at position {position}: {reason}")]
-    InvalidString { position: usize, reason: String },
+    InvalidString {
+        /// Position in the input where the invalid string was found
+        position: usize,
+        /// Reason why the string is invalid
+        reason: String
+    },
 
     /// Invalid variable name
     #[error("Invalid variable name '{name}' at position {position}")]
-    InvalidVariable { name: String, position: usize },
+    InvalidVariable {
+        /// The invalid variable name
+        name: String,
+        /// Position in the input where the variable was found
+        position: usize
+    },
 
     /// Missing closing delimiter
     #[error("Missing closing '{delimiter}' at position {position}")]
-    MissingDelimiter { delimiter: char, position: usize },
+    MissingDelimiter {
+        /// The expected delimiter character
+        delimiter: char,
+        /// Position in the input where the delimiter was expected
+        position: usize
+    },
 
     /// Expression too deep
     #[error("Expression nesting depth {depth} exceeds maximum of {max}")]
-    TooDeep { depth: usize, max: usize },
+    TooDeep {
+        /// Current nesting depth
+        depth: usize,
+        /// Maximum allowed nesting depth
+        max: usize
+    },
 
     /// Expression too long
     #[error("Expression length {length} exceeds maximum of {max}")]
-    TooLong { length: usize, max: usize },
+    TooLong {
+        /// Current expression length
+        length: usize,
+        /// Maximum allowed expression length
+        max: usize
+    },
 
     /// Unknown function
     #[error("Unknown function '{name}' at position {position}")]
-    UnknownFunction { name: String, position: usize },
+    UnknownFunction {
+        /// The unknown function name
+        name: String,
+        /// Position in the input where the function was found
+        position: usize
+    },
 
     /// Wrong number of arguments
     #[error("Function '{name}' expects {expected} arguments, got {actual}")]
     WrongArity {
+        /// The function name
         name: String,
+        /// Expected number of arguments (as string for flexibility)
         expected: String,
-        actual: usize},
+        /// Actual number of arguments provided
+        actual: usize
+    },
 
     /// Trailing input after expression
     #[error("Unexpected input after expression: '{input}'")]
-    TrailingInput { input: String },
+    TrailingInput {
+        /// The unexpected trailing input
+        input: String
+    },
 
     /// System error (e.g., time operations)
     #[error("System error: {message}")]
-    SystemError { message: String }}
+    SystemError {
+        /// Description of the system error
+        message: String
+    }}
 
 /// Errors that can occur during evaluation
 #[derive(Debug, Clone, Error)]
 pub enum EvaluationError {
     /// Variable not found in context
     #[error("Undefined variable '{name}'")]
-    UndefinedVariable { name: String },
+    UndefinedVariable {
+        /// The undefined variable name
+        name: String
+    },
 
     /// Type mismatch in operation
     #[error("Type error: {message}")]
-    TypeError { message: String },
+    TypeError {
+        /// Description of the type error
+        message: String
+    },
 
     /// Division by zero
     #[error("Division by zero")]
@@ -100,27 +160,49 @@ pub enum EvaluationError {
 
     /// Function evaluation error
     #[error("Function '{name}' error: {message}")]
-    FunctionError { name: String, message: String },
+    FunctionError {
+        /// The function name that caused the error
+        name: String,
+        /// Error message from the function
+        message: String
+    },
 
     /// Invalid argument for function
     #[error("Invalid argument for function '{function}': {message}")]
-    InvalidArgument { function: String, message: String },
+    InvalidArgument {
+        /// The function name with invalid argument
+        function: String,
+        /// Description of why the argument is invalid
+        message: String
+    },
 
     /// Evaluation timeout
     #[error("Expression evaluation timed out after {seconds} seconds")]
-    Timeout { seconds: f64 },
+    Timeout {
+        /// Number of seconds after which evaluation timed out
+        seconds: f64
+    },
 
     /// Too many iterations
     #[error("Expression evaluation exceeded maximum iterations ({max})")]
-    TooManyIterations { max: usize },
+    TooManyIterations {
+        /// Maximum number of iterations allowed
+        max: usize
+    },
 
     /// Call stack too deep
     #[error("Expression evaluation exceeded maximum call depth ({max})")]
-    CallStackTooDeep { max: usize },
+    CallStackTooDeep {
+        /// Maximum call depth allowed
+        max: usize
+    },
 
     /// Memory limit exceeded
     #[error("Expression evaluation exceeded memory limit ({limit} bytes)")]
-    MemoryLimitExceeded { limit: usize },
+    MemoryLimitExceeded {
+        /// Memory limit in bytes
+        limit: usize
+    },
 
     /// Overflow in numeric operation
     #[error("Numeric overflow in operation")]
@@ -128,7 +210,10 @@ pub enum EvaluationError {
 
     /// Invalid regex pattern
     #[error("Invalid regex pattern: {pattern}")]
-    InvalidRegex { pattern: String }}
+    InvalidRegex {
+        /// The invalid regex pattern
+        pattern: String
+    }}
 
 impl EvaluationError {
     /// Create a type error for binary operations

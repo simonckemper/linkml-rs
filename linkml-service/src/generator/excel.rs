@@ -208,7 +208,7 @@ impl ExcelGenerator {
             .write_string(row, 0, "Classes")
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_number(row, 1, schema.classes.len() as f64)
+            .write_number(row, 1, f64::from(u32::try_from(schema.classes.len()).unwrap_or(u32::MAX)))
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -216,7 +216,7 @@ impl ExcelGenerator {
             .write_string(row, 0, "Slots")
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_number(row, 1, schema.slots.len() as f64)
+            .write_number(row, 1, f64::from(u32::try_from(schema.slots.len()).unwrap_or(u32::MAX)))
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -224,7 +224,7 @@ impl ExcelGenerator {
             .write_string(row, 0, "Enumerations")
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_number(row, 1, schema.enums.len() as f64)
+            .write_number(row, 1, f64::from(u32::try_from(schema.enums.len()).unwrap_or(u32::MAX)))
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         row += 1;
 
@@ -232,7 +232,7 @@ impl ExcelGenerator {
             .write_string(row, 0, "Types")
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         worksheet
-            .write_number(row, 1, schema.types.len() as f64)
+            .write_number(row, 1, f64::from(u32::try_from(schema.types.len()).unwrap_or(u32::MAX)))
             .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
 
         // Set column widths

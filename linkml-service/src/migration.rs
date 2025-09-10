@@ -699,7 +699,7 @@ where
         for (old_name, new_name) in &transform.rename_classes {
             if let Some(class_def) = schema.classes.shift_remove(old_name) {
                 let mut renamed_class = class_def;
-                renamed_class.name = new_name.clone();
+                renamed_class.name.clone_from(new_name);
                 schema.classes.insert(new_name.clone(), renamed_class);
             } else {
                 return Err(LinkMLError::DataValidationError {
@@ -738,7 +738,7 @@ where
         for (old_name, new_name) in &transform.rename_slots {
             if let Some(slot_def) = schema.slots.shift_remove(old_name) {
                 let mut renamed_slot = slot_def;
-                renamed_slot.name = new_name.clone();
+                renamed_slot.name.clone_from(new_name);
                 schema.slots.insert(new_name.clone(), renamed_slot);
             } else {
                 return Err(LinkMLError::DataValidationError {

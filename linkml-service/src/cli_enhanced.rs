@@ -1658,7 +1658,7 @@ return Err (LinkMLError ::  config ("Database support not compiled in" . to_stri
 }
 LoadFormat ::  Api =>  {
 let mut api_options = ApiOptions ::  default () ;
-api_options . base_url = load_options . get ("url") . ok_or_else (| | LinkMLError ::  config ("API URL required" . to_string ())) ? . clone () ;
+api_options.base_url = load_options.get("url").ok_or_else(|| LinkMLError::config("API URL required".to_string()))?.clone();
 let loader = ApiLoader ::  new (api_options) ;
 let load_opts = LoadOptions ::  default () ;
 loader . load_file (input ,
@@ -1864,7 +1864,7 @@ return Err (LinkMLError ::  config ("Database support not compiled in" . to_stri
 }
 DumpFormat ::  Api =>  {
 let mut api_options = ApiOptions ::  default () ;
-api_options . base_url = dump_options . get ("url") . ok_or_else (| | LinkMLError ::  config ("API URL required" . to_string ())) ? . clone () ;
+api_options.base_url = dump_options.get("url").ok_or_else(|| LinkMLError::config("API URL required".to_string()))?.clone();
 let dumper = ApiDumper ::  new (api_options) ;
 let dump_opts = DumpOptions ::  default () ;
 let _ = dumper . dump_string (& instances ,

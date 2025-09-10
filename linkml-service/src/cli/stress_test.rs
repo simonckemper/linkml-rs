@@ -207,7 +207,7 @@ where
 
         // Add some synthetic slots for stress testing
         for i in 0..rng.gen_range(1..5) {
-            let synthetic_key = format!("stress_field_{}", i);
+            let synthetic_key = format!("stress_field_{i}");
             test_object.insert(synthetic_key, self.generate_generic_value(&mut rng));
         }
 

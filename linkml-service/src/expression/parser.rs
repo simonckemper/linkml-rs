@@ -112,7 +112,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 '"' => self.read_string(),
                 '0'..='9' => self.read_number(),
-                'a'..='z' | 'A'..='Z' | '_' => self.read_identifier(),
+                'a'..='z' | 'A'..='Z' | '_' => Ok(self.read_identifier()),
                 '=' => {
                     self.advance();
                     if self.chars.peek() == Some(&'=') {
@@ -278,7 +278,9 @@ impl<'a> Tokenizer<'a> {
         }
 
         // Check for keywords
-        let token = match ident.as_str() {
+        
+
+        match ident.as_str() {
             "null" => Token::Null,
             "true" => Token::Boolean(true),
             "false" => Token::Boolean(false),
@@ -287,9 +289,7 @@ impl<'a> Tokenizer<'a> {
             "not" => Token::Not,
             "if" => Token::If,
             "else" => Token::Else,
-            _ => Token::Identifier(ident)};
-
-        token
+            _ => Token::Identifier(ident)}
 
     }
 

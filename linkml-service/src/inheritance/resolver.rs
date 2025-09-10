@@ -237,7 +237,7 @@ impl<'a> InheritanceResolver<'a> {
                 && let Some(parent_slot) = self.schema.slots.get(parent_slot_name) {
                     // Start with parent slot's annotations
                     if resolved_slot.annotations.is_none() {
-                        resolved_slot.annotations = parent_slot.annotations.clone();
+                        resolved_slot.annotations.clone_from(&parent_slot.annotations);
                     } else if let Some(parent_annotations) = &parent_slot.annotations {
                         // Merge parent annotations (as defaults)
                         if let Some(ref mut slot_annotations) = resolved_slot.annotations {
@@ -249,10 +249,10 @@ impl<'a> InheritanceResolver<'a> {
 
                     // Apply other parent properties as defaults
                     if resolved_slot.description.is_none() {
-                        resolved_slot.description = parent_slot.description.clone();
+                        resolved_slot.description.clone_from(&parent_slot.description);
                     }
                     if resolved_slot.range.is_none() {
-                        resolved_slot.range = parent_slot.range.clone();
+                        resolved_slot.range.clone_from(&parent_slot.range);
                     }
                     if resolved_slot.required.is_none() {
                         resolved_slot.required = parent_slot.required;
@@ -261,7 +261,7 @@ impl<'a> InheritanceResolver<'a> {
                         resolved_slot.multivalued = parent_slot.multivalued;
                     }
                     if resolved_slot.pattern.is_none() {
-                        resolved_slot.pattern = parent_slot.pattern.clone();
+                        resolved_slot.pattern.clone_from(&parent_slot.pattern);
                     }
                 }
 
@@ -338,7 +338,7 @@ impl<'a> InheritanceResolver<'a> {
 
         // Override non-None values
         if override_def.description.is_some() {
-            target.description = override_def.description.clone();
+            target.description.clone_from(&override_def.description);
         }
         if override_def.required.is_some() {
             target.required = override_def.required;
@@ -347,19 +347,19 @@ impl<'a> InheritanceResolver<'a> {
             target.multivalued = override_def.multivalued;
         }
         if override_def.range.is_some() {
-            target.range = override_def.range.clone();
+            target.range.clone_from(&override_def.range);
         }
         if override_def.pattern.is_some() {
-            target.pattern = override_def.pattern.clone();
+            target.pattern.clone_from(&override_def.pattern);
         }
         if override_def.minimum_value.is_some() {
-            target.minimum_value = override_def.minimum_value.clone();
+            target.minimum_value.clone_from(&override_def.minimum_value);
         }
         if override_def.maximum_value.is_some() {
-            target.maximum_value = override_def.maximum_value.clone();
+            target.maximum_value.clone_from(&override_def.maximum_value);
         }
         if override_def.ifabsent.is_some() {
-            target.ifabsent = override_def.ifabsent.clone();
+            target.ifabsent.clone_from(&override_def.ifabsent);
         }
     }
 }

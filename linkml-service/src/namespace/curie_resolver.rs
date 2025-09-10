@@ -63,7 +63,7 @@ impl CurieResolver {
         let mut resolver = Self::new();
 
         // Set default prefix
-        resolver.default_prefix = schema.default_prefix.clone();
+        resolver.default_prefix.clone_from(&schema.default_prefix);
 
         // Add schema prefixes
         for (prefix, definition) in &schema.prefixes {

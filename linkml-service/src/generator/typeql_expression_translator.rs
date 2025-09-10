@@ -167,10 +167,10 @@ impl ExpressionTranslator {
     ) -> Result<TranslatedExpression, TranslationError> {
         match expr {
             Expression::Null => self.translate_literal_null(),
-            Expression::Boolean(b) => self.translate_literal_bool(*b),
-            Expression::Number(n) => self.translate_literal_number(*n),
-            Expression::String(s) => self.translate_literal_string(s),
-            Expression::Variable(name) => self.translate_variable(name, ctx),
+            Expression::Boolean(b) => Ok(self.translate_literal_bool(*b)),
+            Expression::Number(n) => Ok(self.translate_literal_number(*n)),
+            Expression::String(s) => Ok(self.translate_literal_string(s)),
+            Expression::Variable(name) => Ok(self.translate_variable(name, ctx)),
             Expression::Add(left, right) => self.translate_binary_op(left, "Add", right, ctx),
             Expression::Subtract(left, right) => {
                 self.translate_binary_op(left, "Subtract", right, ctx)
@@ -213,27 +213,27 @@ impl ExpressionTranslator {
     }
 
     /// Translate a boolean literal
-    fn translate_literal_bool(&self, b: bool) -> Result<TranslatedExpression, TranslationError> {
-        Ok(TranslatedExpression {
+    fn translate_literal_bool(&self, b: bool) -> TranslatedExpression {
+        TranslatedExpression {
             patterns: vec![],
             result: b.to_string(),
-            bindings: HashMap::new()})
+            bindings: HashMap::new()}
     }
 
     /// Translate a number literal
-    fn translate_literal_number(&self, n: f64) -> Result<TranslatedExpression, TranslationError> {
-        Ok(TranslatedExpression {
+    fn translate_literal_number(&self, n: f64) -> TranslatedExpression {
+        TranslatedExpression {
             patterns: vec![],
             result: n.to_string(),
-            bindings: HashMap::new()})
+            bindings: HashMap::new()}
     }
 
     /// Translate a string literal
-    fn translate_literal_string(&self, s: &str) -> Result<TranslatedExpression, TranslationError> {
-        Ok(TranslatedExpression {
+    fn translate_literal_string(&self, s: &str) -> TranslatedExpression {
+        TranslatedExpression {
             patterns: vec![],
             result: format!("\"{s}\""),
-            bindings: HashMap::new()})
+            bindings: HashMap::new()}
     }
 
     /// Translate a variable reference
@@ -241,15 +241,15 @@ impl ExpressionTranslator {
         &self,
         name: &str,
         ctx: &mut TranslationContext,
-    ) -> Result<TranslatedExpression, TranslationError> {
+    ) -> TranslatedExpression {
         // Generate pattern to bind the variable
         let var = ctx.get_attribute_var(name);
         let pattern = format!("{} has {} {}", ctx.entity_var, name, var);
 
-        Ok(TranslatedExpression {
+        TranslatedExpression {
             patterns: vec![pattern],
             result: var,
-            bindings: HashMap::new()})
+            bindings: HashMap::new()}
     }
 
     /// Translate a binary operation

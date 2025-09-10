@@ -30,9 +30,6 @@ use timestamp_core::TimestampService;
 ///
 /// Returns an error if service initialization fails
 #[allow(clippy::too_many_arguments)]
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
 pub async fn create_linkml_service<T, E, C, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
@@ -70,14 +67,15 @@ where
     Ok(Arc::new(service))
 }
 
-/// Create a `LinkML` service with custom configuration
+/// Service dependencies for `LinkML` service creation
 ///
+/// This structure groups all service dependencies required to create a LinkML service instance.
 /// Generic parameters for non-dyn-compatible services:
 /// - `T`: `TaskManagementService` implementation
 /// - `E`: `ErrorHandlingService` implementation
 /// - `C`: `ConfigurationService` implementation
-///
-/// Service dependencies for `LinkML` service creation
+/// - `D`: `DBMSService` implementation
+/// - `O`: `TimeoutService` implementation
 pub struct LinkMLServiceDependencies<T, E, C, D, O> {
     /// Logger service
     pub logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -98,6 +96,20 @@ pub struct LinkMLServiceDependencies<T, E, C, D, O> {
     /// Monitoring service
     pub monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>}
 
+/// Create a `LinkML` service with custom configuration
+///
+/// Generic parameters for non-dyn-compatible services:
+/// - `T`: `TaskManagementService` implementation
+/// - `E`: `ErrorHandlingService` implementation
+/// - `C`: `ConfigurationService` implementation
+/// - `D`: `DBMSService` implementation
+/// - `O`: `TimeoutService` implementation
+///
+/// # Parameters
+///
+/// * `config` - Custom LinkML configuration
+/// * `deps` - Service dependencies struct
+///
 /// # Errors
 ///
 /// Returns an error if service initialization fails

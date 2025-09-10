@@ -4,10 +4,11 @@
 //! to slots when values are missing.
 
 use chrono::{Local, Utc};
-use linkml_core::types::{SchemaDefinition, IfAbsentAction, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, IfAbsentAction};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
+use crate::expression::ExpressionEngine;
 
 // Compile regex pattern once at startup
 // Using Result type to handle regex compilation errors properly
@@ -17,12 +18,17 @@ static VARIABLE_PATTERN: std::sync::LazyLock<Result<Regex, regex::Error>> = std:
 
 /// Apply default values to data based on schema definitions
 pub struct DefaultApplier<'a> {
-    schema: &'a SchemaDefinition}
+    schema: &'a SchemaDefinition,
+    expression_engine: ExpressionEngine,
+}
 
 impl<'a> DefaultApplier<'a> {
     /// Create a new default applier
     #[must_use] pub fn new(schema: &'a SchemaDefinition) -> Self {
-        Self { schema }
+        Self { 
+            schema,
+            expression_engine: ExpressionEngine::new(),
+        }
     }
 
     /// Create from schema (alias for new)
@@ -145,9 +151,12 @@ impl<'a> DefaultApplier<'a> {
             }
 
             IfAbsentAction::DefaultValue => {
-                // This would need to look up a separate default_value field
-                // For now, return None (no default)
-                None
+                // Look up the default value field in the slot definition
+                if let Some(slot_def) = self.schema.slots.get(slot_name) {
+                    slot_def.default.clone()
+                } else {
+                    None
+                }
             }
 
             IfAbsentAction::String(s) => {
@@ -181,35 +190,39 @@ impl<'a> DefaultApplier<'a> {
         }
     }
 
-    /// Evaluate an expression to produce a default value
+    /// Evaluate an expression to produce a default value using the real expression engine
     fn evaluate_expression(
         &self,
         expression: &str,
         data: &HashMap<String, Value>,
     ) -> Option<Value> {
-        // Simple expression evaluation
-        // In a real implementation, this would use the expression engine
+        // Use the real expression engine for evaluation
+        match self.expression_engine.evaluate(expression, data) {
+            Ok(value) => Some(value),
+            Err(_) => {
+                // Fallback: Handle simple variable references like "{id}_derived" 
+                // for backwards compatibility with expressions that don't use full engine syntax
+                if expression.contains('{') && expression.contains('}') {
+                    let mut result = expression.to_string();
 
-        // Handle simple variable references like "{id}_derived"
-        if expression.contains('{') && expression.contains('}') {
-            let mut result = expression.to_string();
+                    // Find all {variable} patterns
+                    // Handle regex compilation error gracefully
+                    if let Ok(ref pattern) = *VARIABLE_PATTERN {
+                        for cap in pattern.captures_iter(expression) {
+                            if let Some(var_name) = cap.get(1)
+                                && let Some(value) = data.get(var_name.as_str())
+                                    && let Some(str_val) = value.as_str() {
+                                        result = result.replace(&format!("{{{}}}", var_name.as_str()), str_val);
+                                    }
+                        }
+                    }
 
-            // Find all {variable} patterns
-            // Handle regex compilation error gracefully
-            if let Ok(ref pattern) = *VARIABLE_PATTERN {
-                for cap in pattern.captures_iter(expression) {
-                    if let Some(var_name) = cap.get(1)
-                        && let Some(value) = data.get(var_name.as_str())
-                            && let Some(str_val) = value.as_str() {
-                                result = result.replace(&format!("{{{}}}", var_name.as_str()), str_val);
-                            }
+                    Some(Value::String(result))
+                } else {
+                    // Return the expression as-is if no variables found
+                    Some(Value::String(expression.to_string()))
                 }
             }
-
-            Some(Value::String(result))
-        } else {
-            // For now, just return the expression as a string
-            Some(Value::String(expression.to_string()))
         }
     }
 }

@@ -229,19 +229,19 @@ impl<'a> SlotResolution<'a> {
             slot.multivalued = usage.multivalued;
         }
         if usage.range.is_some() {
-            slot.range = usage.range.clone();
+            slot.range.clone_from(&usage.range);
         }
         if usage.pattern.is_some() {
-            slot.pattern = usage.pattern.clone();
+            slot.pattern.clone_from(&usage.pattern);
         }
         if usage.minimum_value.is_some() {
-            slot.minimum_value = usage.minimum_value.clone();
+            slot.minimum_value.clone_from(&usage.minimum_value);
         }
         if usage.maximum_value.is_some() {
-            slot.maximum_value = usage.maximum_value.clone();
+            slot.maximum_value.clone_from(&usage.maximum_value);
         }
         if usage.description.is_some() {
-            slot.description = usage.description.clone();
+            slot.description.clone_from(&usage.description);
         }
         // Add more overrides as needed
     }
@@ -271,7 +271,7 @@ impl<'a> ClassNavigator<'a> {
 
         // Collect mixins
         if let Some(class_def) = self.schema_view.get_class(class_name)? {
-            chain.mixins = class_def.mixins.clone();
+            chain.mixins.clone_from(&class_def.mixins);
 
             // Also collect mixins from ancestors
             for ancestor_name in &chain.chain {

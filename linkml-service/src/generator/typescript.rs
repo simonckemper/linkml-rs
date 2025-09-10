@@ -504,18 +504,12 @@ impl TypeScriptGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
 
         for (i, value) in slot.permissible_values.iter().enumerate() {
-            match value {
-                PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
-                    write!(output, "  {const_name} = \"{text}\"")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-                PermissibleValue::Complex { text, .. } => {
-                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
-                    write!(output, "  {const_name} = \"{text}\"")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-            }
+            let text = match value {
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => text,
+            };
+            let const_name = text.to_uppercase().replace([' ', '-'], "_");
+            write!(output, "  {const_name} = \"{text}\"")
+                .map_err(Self::fmt_error_to_generator_error)?;
             if i < slot.permissible_values.len() - 1 {
                 writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
             } else {

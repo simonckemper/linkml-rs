@@ -69,7 +69,7 @@ impl YamlValidatorGenerator {
             ValidationFramework::JsonSchemaDefinition => self.generate_json_schema(schema),
             ValidationFramework::Cerberus => self.generate_cerberus(schema),
             ValidationFramework::Joi => self.generate_joi(schema),
-            ValidationFramework::Yup => self.generate_yup(schema),
+            ValidationFramework::Yup => Ok(self.generate_yup(schema)),
             ValidationFramework::OpenAPI => self.generate_openapi(schema)}
     }
 
@@ -476,12 +476,12 @@ impl YamlValidatorGenerator {
 
                 for slot_name in &class_def.slots {
                     if let Some(slot_def) = schema.slots.get(slot_name) {
-                        slot_rules.push(self.slot_to_joi(slot_name, slot_def, schema)?);
+                        slot_rules.push(self.slot_to_joi(slot_name, slot_def, schema));
                     }
                 }
 
                 for (attr_name, attr_def) in &class_def.attributes {
-                    slot_rules.push(self.slot_to_joi(attr_name, attr_def, schema)?);
+                    slot_rules.push(self.slot_to_joi(attr_name, attr_def, schema));
                 }
 
                 output.push_str(&slot_rules.join(",\n"));
@@ -582,12 +582,12 @@ impl YamlValidatorGenerator {
 
                 for slot_name in &class_def.slots {
                     if let Some(slot_def) = schema.slots.get(slot_name) {
-                        slot_rules.push(self.slot_to_yup(slot_name, slot_def, schema)?);
+                        slot_rules.push(self.slot_to_yup(slot_name, slot_def, schema));
                     }
                 }
 
                 for (attr_name, attr_def) in &class_def.attributes {
-                    slot_rules.push(self.slot_to_yup(attr_name, attr_def, schema)?);
+                    slot_rules.push(self.slot_to_yup(attr_name, attr_def, schema));
                 }
 
                 output.push_str(&slot_rules.join(",\n"));
@@ -611,7 +611,7 @@ impl YamlValidatorGenerator {
         name: &str,
         slot_def: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> Result<String, LinkMLError> {
+    ) -> String {
         let mut rule = format!("  {name}: ");
 
         // Base type

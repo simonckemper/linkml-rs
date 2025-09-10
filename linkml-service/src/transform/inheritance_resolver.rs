@@ -229,7 +229,7 @@ impl InheritanceResolver {
 
         // Merge description if not set
         if target.description.is_none() && source.description.is_some() {
-            target.description = source.description.clone();
+            target.description.clone_from(&source.description);
         }
 
         // Merge annotations
@@ -429,11 +429,11 @@ impl InheritanceResolver {
     fn merge_slot_attributes(&self, target: &mut SlotDefinition, source: &SlotDefinition) {
         // Merge basic properties
         if target.description.is_none() {
-            target.description = source.description.clone();
+            target.description.clone_from(&source.description);
         }
 
         if target.range.is_none() {
-            target.range = source.range.clone();
+            target.range.clone_from(&source.range);
         }
 
         if target.required.is_none() {
@@ -445,16 +445,16 @@ impl InheritanceResolver {
         }
 
         if target.pattern.is_none() {
-            target.pattern = source.pattern.clone();
+            target.pattern.clone_from(&source.pattern);
         }
 
         // Merge constraints
         if target.minimum_value.is_none() {
-            target.minimum_value = source.minimum_value.clone();
+            target.minimum_value.clone_from(&source.minimum_value);
         }
 
         if target.maximum_value.is_none() {
-            target.maximum_value = source.maximum_value.clone();
+            target.maximum_value.clone_from(&source.maximum_value);
         }
 
         // Merge annotations
@@ -490,7 +490,7 @@ impl InheritanceResolver {
 
         // Merge other properties
         if target.description.is_none() {
-            target.description = source.description.clone();
+            target.description.clone_from(&source.description);
         }
 
         // Merge annotations

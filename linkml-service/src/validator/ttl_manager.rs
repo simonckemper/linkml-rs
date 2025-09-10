@@ -226,7 +226,8 @@ impl TtlManager {
             entries: DashMap::new(),
             rules: Arc::new(RwLock::new(Vec::new())),
             global_patterns: Arc::new(RwLock::new(AccessPattern::default())),
-            _timestamp}
+            _timestamp,
+        }
     }
 
     /// Set TTL for a key
@@ -237,8 +238,9 @@ impl TtlManager {
         // Get base TTL for cache level
         let base_ttl = match cache_level {
             1 => config.l1_base_ttl,
-            2 | _ => config.l2_base_ttl, // Use L2 as default for level 2 and any other level
+            2 => config.l2_base_ttl,
             3 => config.l3_base_ttl,
+            _ => config.l2_base_ttl, // Use L2 as default for any other level
         };
 
         // Apply rules

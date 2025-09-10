@@ -136,7 +136,7 @@ impl SQLAlchemyGenerator {
                 let value_name = match value {
                     PermissibleValue::Simple(name) => name,
                     PermissibleValue::Complex { text, .. } => text};
-                let safe_name = self.to_python_name(&value_name);
+                let safe_name = self.to_python_name(value_name);
                 lines.push(format!(
                     "    {} = \"{}\"",
                     safe_name.to_uppercase(),

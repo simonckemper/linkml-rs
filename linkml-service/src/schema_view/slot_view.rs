@@ -185,7 +185,7 @@ impl SlotView {
 
             // Apply overrides (only non-None values)
             if override_def.description.is_some() {
-                resolved.description = override_def.description.clone();
+                resolved.description.clone_from(&override_def.description);
             }
             if override_def.required.is_some() {
                 resolved.required = override_def.required;
@@ -194,16 +194,16 @@ impl SlotView {
                 resolved.multivalued = override_def.multivalued;
             }
             if override_def.range.is_some() {
-                resolved.range = override_def.range.clone();
+                resolved.range.clone_from(&override_def.range);
             }
             if override_def.pattern.is_some() {
-                resolved.pattern = override_def.pattern.clone();
+                resolved.pattern.clone_from(&override_def.pattern);
             }
             if override_def.minimum_value.is_some() {
-                resolved.minimum_value = override_def.minimum_value.clone();
+                resolved.minimum_value.clone_from(&override_def.minimum_value);
             }
             if override_def.maximum_value.is_some() {
-                resolved.maximum_value = override_def.maximum_value.clone();
+                resolved.maximum_value.clone_from(&override_def.maximum_value);
             }
 
             return Ok(resolved);

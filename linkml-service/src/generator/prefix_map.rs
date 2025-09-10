@@ -72,9 +72,9 @@ impl PrefixMapGenerator {
         match self.config.format {
             PrefixMapFormat::Simple => self.generate_simple_json(schema),
             PrefixMapFormat::Extended => self.generate_extended_json(schema),
-            PrefixMapFormat::Turtle => self.generate_turtle(schema),
-            PrefixMapFormat::Yaml => self.generate_yaml(schema),
-            PrefixMapFormat::Csv => self.generate_csv(schema)}
+            PrefixMapFormat::Turtle => Ok(self.generate_turtle(schema)),
+            PrefixMapFormat::Yaml => Ok(self.generate_yaml(schema)),
+            PrefixMapFormat::Csv => Ok(self.generate_csv(schema))}
     }
 
     /// Generate simple `JSON` format
@@ -178,7 +178,7 @@ impl PrefixMapGenerator {
     }
 
     /// Generate Turtle/SPARQL prefix format
-    fn generate_turtle(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn generate_turtle(&self, schema: &SchemaDefinition) -> String {
         let mut lines = vec![];
 
         // Add header comment
@@ -213,11 +213,11 @@ impl PrefixMapGenerator {
             }
         }
 
-        Ok(lines.join("\n"))
+        lines.join("\n")
     }
 
     /// Generate `YAML` format
-    fn generate_yaml(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn generate_yaml(&self, schema: &SchemaDefinition) -> String {
         let mut lines = vec![];
 
         // Add header
@@ -260,11 +260,11 @@ impl PrefixMapGenerator {
             }
         }
 
-        Ok(lines.join("\n"))
+        lines.join("\n")
     }
 
     /// Generate CSV format
-    fn generate_csv(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn generate_csv(&self, schema: &SchemaDefinition) -> String {
         let mut lines = vec![];
 
         // Header
@@ -288,7 +288,7 @@ impl PrefixMapGenerator {
             lines.push(format!("{prefix},{uri},custom,false"));
         }
 
-        Ok(lines.join("\n"))
+        lines.join("\n")
     }
 
     /// Add common semantic web prefixes

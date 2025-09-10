@@ -194,21 +194,21 @@ impl SchemaMerger {
     ) -> MergeResult<()> {
         // Merge description
         if target.description.is_none() && source.description.is_some() {
-            target.description = source.description.clone();
+            target.description.clone_from(&source.description);
         }
 
         // Merge version (keep newer)
         if let (Some(target_ver), Some(source_ver)) = (&target.version, &source.version) {
             if source_ver > target_ver {
-                target.version = source.version.clone();
+                target.version.clone_from(&source.version);
             }
         } else if target.version.is_none() {
-            target.version = source.version.clone();
+            target.version.clone_from(&source.version);
         }
 
         // Merge license
         if target.license.is_none() && source.license.is_some() {
-            target.license = source.license.clone();
+            target.license.clone_from(&source.license);
         }
 
         // Merge annotations
@@ -369,12 +369,12 @@ impl SchemaMerger {
 
         // Merge description
         if merged.description.is_none() && source.description.is_some() {
-            merged.description = source.description.clone();
+            merged.description.clone_from(&source.description);
         }
 
         // Merge is_a
         if merged.is_a.is_none() && source.is_a.is_some() {
-            merged.is_a = source.is_a.clone();
+            merged.is_a.clone_from(&source.is_a);
         } else if merged.is_a != source.is_a && source.is_a.is_some() {
             return Err(MergeError::ConflictingDefinition {
                 element_type: "class".to_string(),
@@ -472,11 +472,11 @@ impl SchemaMerger {
 
         // Merge basic properties
         if merged.description.is_none() {
-            merged.description = source.description.clone();
+            merged.description.clone_from(&source.description);
         }
 
         if merged.range.is_none() {
-            merged.range = source.range.clone();
+            merged.range.clone_from(&source.range);
         }
 
         if merged.required.is_none() {
@@ -582,7 +582,7 @@ impl SchemaMerger {
 
         // Merge description
         if merged.description.is_none() {
-            merged.description = source.description.clone();
+            merged.description.clone_from(&source.description);
         }
 
         // Merge permissible values

@@ -115,10 +115,10 @@ impl SummaryGenerator {
 
     /// Generate summary from schema
     fn generate_summary(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
-        let stats = self.calculate_statistics(schema)?;
+        let stats = self.calculate_statistics(schema);
 
         match self.config.format {
-            SummaryFormat::Tsv => self.generate_tsv(&stats, schema),
+            SummaryFormat::Tsv => Ok(self.generate_tsv(&stats, schema)),
             SummaryFormat::Markdown => self.generate_markdown(&stats, schema),
             SummaryFormat::Json => self.generate_json(&stats, schema),
             SummaryFormat::Html => self.generate_html(&stats, schema)}

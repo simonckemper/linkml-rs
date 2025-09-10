@@ -508,6 +508,12 @@ impl EngineBuilder {
         self
     }
 
+    /// Set compilation threshold
+    #[must_use] pub fn compilation_threshold(mut self, threshold: u64) -> Self {
+        self.config.compilation_threshold = threshold;
+        self
+    }
+
     /// Set custom function registry
     #[must_use] pub fn with_function_registry(mut self, registry: Arc<FunctionRegistry>) -> Self {
         self.function_registry = Some(registry);

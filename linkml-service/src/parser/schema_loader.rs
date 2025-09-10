@@ -114,10 +114,11 @@ impl SchemaLoader {
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to read response: {e}")))?;
 
-        // Determine format from URL extension or content type
-        let format = if url.ends_with(".json") {
+        // Determine format from URL extension or content type (case-insensitive)
+        let url_lower = url.to_lowercase();
+        let format = if url_lower.ends_with(".json") {
             "json"
-        } else if url.ends_with(".yaml") || url.ends_with(".yml") {
+        } else if url_lower.ends_with(".yaml") || url_lower.ends_with(".yml") {
             "yaml"
         } else {
             // Default to YAML as it's more common for LinkML

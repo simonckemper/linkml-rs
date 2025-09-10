@@ -113,12 +113,14 @@ impl NamespaceManagerGenerator {
         // Initialize prefix mappings
         output.push_str("        self.prefixes: Dict[str, str] = {\n");
         if !schema.prefixes.is_empty() {
+            use std::fmt::Write;
             for (prefix, expansion) in &schema.prefixes {
-                output.push_str(&format!(
+                let _ = write!(
+                    output,
                     "            '{}': '{}',\n",
                     prefix,
                     Self::get_prefix_reference(expansion)
-                ));
+                );
             }
         }
         // Add common prefixes
@@ -396,12 +398,14 @@ impl NamespaceManagerGenerator {
 
         // Add schema prefixes
         if !schema.prefixes.is_empty() {
+            use std::fmt::Write;
             for (prefix, expansion) in &schema.prefixes {
-                output.push_str(&format!(
+                let _ = write!(
+                    output,
                     "      ['{}', '{}'],\n",
                     prefix,
                     Self::get_prefix_reference(expansion)
-                ));
+                );
             }
         }
 
@@ -440,17 +444,24 @@ impl NamespaceManagerGenerator {
         // Export
         output.push_str("// Export for different module systems\n");
         output.push_str("if (typeof module !== 'undefined' && module.exports) {\n");
-        writeln!(output, "  module.exports = {};", self.config.class_name).unwrap();
+        let _ = writeln!(output, "  module.exports = {};", self.config.class_name);
         output.push_str("} else if (typeof define === 'function' && define.amd) {\n");
-        output.push_str(&format!(
+        use std::fmt::Write;
+
+        let _ = write!(
+
+            output,
+
             "  define([], function() {{ return {}; }});\n",
+
             self.config.class_name
-        ));
+
+        );
         output.push_str("} else if (typeof window !== 'undefined') {\n");
-        writeln!(output, 
+        let _ = writeln!(output, 
             "  window.{} = {};",
             self.config.class_name, self.config.class_name
-        ).unwrap();
+        );
         output.push_str("}\n");
 
         output
@@ -584,12 +595,16 @@ impl NamespaceManagerGenerator {
         output.push_str("        let mut prefixes = HashMap::new();\n");
 
         // Add schema prefixes
-        for (prefix, expansion) in &schema.prefixes {
-            output.push_str(&format!(
-                "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());\n",
-                prefix,
-                Self::get_prefix_reference(expansion)
-            ));
+        {
+            use std::fmt::Write;
+            for (prefix, expansion) in &schema.prefixes {
+                let _ = write!(
+                    output,
+                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());\n",
+                    prefix,
+                    Self::get_prefix_reference(expansion)
+                );
+            }
         }
 
         // Add common prefixes
@@ -617,9 +632,11 @@ impl NamespaceManagerGenerator {
         }
 
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!(
+            use std::fmt::Write;
+            let _ = write!(
+                output,
                 "            default_prefix: Some(\"{default_prefix}\".to_string()),\n"
-            ));
+            );
         } else {
             output.push_str("            default_prefix: None,\n");
         }
@@ -780,7 +797,17 @@ impl NamespaceManagerGenerator {
         output.push_str("    private final String defaultPrefix;\n\n");
 
         // Constructor
-        output.push_str(&format!("    public {}() {{\n", self.config.class_name));
+        use std::fmt::Write;
+
+        let _ = write!(
+
+            output,
+
+            "    public {}() {{\n",
+
+            self.config.class_name
+
+        );
 
         // Add schema prefixes
         for (prefix, expansion) in &schema.prefixes {

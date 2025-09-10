@@ -80,7 +80,7 @@ impl SssomGenerator {
         let mappings = self.extract_mappings(schema)?;
 
         match self.config.format {
-            SssomFormat::Tsv => self.generate_tsv(&mappings, schema),
+            SssomFormat::Tsv => Ok(self.generate_tsv(&mappings, schema)),
             SssomFormat::Json => self.generate_json(&mappings, schema)}
     }
 

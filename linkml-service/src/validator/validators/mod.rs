@@ -132,7 +132,7 @@ impl ValidatorRegistry {
                     "EnhancedPatternValidator" | "PatternValidator" 
                         if slot.pattern.is_some() 
                             || slot.structured_pattern.is_some()
-                            || (slot.range.is_some() && slot.range.as_ref().map_or(false, |r| !r.is_empty())) 
+                            || (slot.range.is_some() && slot.range.as_ref().is_some_and(|r| !r.is_empty())) 
                         => Some(validator.as_ref()),
                     "RangeValidator" 
                         if slot.minimum_value.is_some() 
@@ -193,7 +193,7 @@ impl BaseValidator {
     }
 
     /// Get the validator name
-    pub fn name(&self) -> &str {
+    #[must_use] pub fn name(&self) -> &str {
         &self.name
     }
 }

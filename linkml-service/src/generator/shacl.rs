@@ -258,19 +258,19 @@ impl ShaclGenerator {
             } else if let Some(type_def) = schema.types.get(range) {
                 // Custom type - use base type but merge constraints
                 let mut merged_slot = slot.clone();
-                merged_slot.range = type_def.base_type.clone();
+                merged_slot.range.clone_from(&type_def.base_type);
 
                 // Merge pattern constraint if not already present
                 if merged_slot.pattern.is_none() && type_def.pattern.is_some() {
-                    merged_slot.pattern = type_def.pattern.clone();
+                    merged_slot.pattern.clone_from(&type_def.pattern);
                 }
 
                 // Merge min/max constraints if not already present
                 if merged_slot.minimum_value.is_none() && type_def.minimum_value.is_some() {
-                    merged_slot.minimum_value = type_def.minimum_value.clone();
+                    merged_slot.minimum_value.clone_from(&type_def.minimum_value);
                 }
                 if merged_slot.maximum_value.is_none() && type_def.maximum_value.is_some() {
-                    merged_slot.maximum_value = type_def.maximum_value.clone();
+                    merged_slot.maximum_value.clone_from(&type_def.maximum_value);
                 }
 
                 return self.generate_property_shape(slot_name, &merged_slot, schema);

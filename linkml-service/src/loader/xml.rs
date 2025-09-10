@@ -55,7 +55,7 @@ impl XmlLoader {
                     for parent in &current_def.is_a {
                         if parent == class_name {
                             return Err(LoaderError::SchemaValidation(
-                                format!("Circular inheritance detected: class '{}' inherits from itself", class_name)
+                                format!("Circular inheritance detected: class '{class_name}' inherits from itself")
                             ));
                         }
                         if !visited.contains(parent) {
@@ -151,7 +151,7 @@ impl DataLoader for XmlLoader {
                     if let Some(ref mut instance) = current_instance
                         && instance.class_name == name {
                             // End of instance
-                            instance.data = current_values.clone();
+                            instance.data.clone_from(&current_values);
                             instances.push(instance.clone());
                             current_instance = None;
                             current_values.clear();
@@ -193,7 +193,7 @@ impl DataLoader for XmlLoader {
             // Check for XML-incompatible characters in class names
             if class_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
                 return Err(LoaderError::SchemaValidation(
-                    format!("Class name '{}' contains XML-incompatible characters", class_name)
+                    format!("Class name '{class_name}' contains XML-incompatible characters")
                 ));
             }
 
@@ -201,8 +201,7 @@ impl DataLoader for XmlLoader {
             for slot_name in &class_def.slots {
                 if slot_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
                     return Err(LoaderError::SchemaValidation(
-                        format!("Slot name '{}' in class '{}' contains XML-incompatible characters",
-                                slot_name, class_name)
+                        format!("Slot name '{slot_name}' in class '{class_name}' contains XML-incompatible characters")
                     ));
                 }
             }
@@ -212,7 +211,7 @@ impl DataLoader for XmlLoader {
         for (enum_name, enum_def) in &schema.enums {
             if enum_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
                 return Err(LoaderError::SchemaValidation(
-                    format!("Enum name '{}' contains XML-incompatible characters", enum_name)
+                    format!("Enum name '{enum_name}' contains XML-incompatible characters")
                 ));
             }
 
@@ -223,8 +222,7 @@ impl DataLoader for XmlLoader {
                 };
                 if pv_text.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-' && c != '.') {
                     return Err(LoaderError::SchemaValidation(
-                        format!("Enum value '{}' in enum '{}' contains XML-incompatible characters",
-                                pv_text, enum_name)
+                        format!("Enum value '{pv_text}' in enum '{enum_name}' contains XML-incompatible characters")
                     ));
                 }
             }
@@ -412,14 +410,14 @@ impl DataDumper for XmlDumper {
             // Check for XML-incompatible characters in class names
             if class_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
                 return Err(DumperError::SchemaValidation(
-                    format!("Class name '{}' contains XML-incompatible characters", class_name)
+                    format!("Class name '{class_name}' contains XML-incompatible characters")
                 ));
             }
 
             // Check if class name conflicts with XML reserved names
             if class_name.to_lowercase().starts_with("xml") {
                 return Err(DumperError::SchemaValidation(
-                    format!("Class name '{}' starts with 'xml' which is reserved in XML", class_name)
+                    format!("Class name '{class_name}' starts with 'xml' which is reserved in XML")
                 ));
             }
 
@@ -427,15 +425,14 @@ impl DataDumper for XmlDumper {
             for slot_name in &class_def.slots {
                 if slot_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-' && c != '.') {
                     return Err(DumperError::SchemaValidation(
-                        format!("Slot name '{}' in class '{}' contains XML-incompatible characters",
-                                slot_name, class_name)
+                        format!("Slot name '{slot_name}' in class '{class_name}' contains XML-incompatible characters")
                     ));
                 }
 
                 // Check for XML namespace conflicts
                 if slot_name.contains(':') {
                     return Err(DumperError::SchemaValidation(
-                        format!("Slot name '{}' contains ':' which conflicts with XML namespaces", slot_name)
+                        format!("Slot name '{slot_name}' contains ':' which conflicts with XML namespaces")
                     ));
                 }
             }
@@ -445,7 +442,7 @@ impl DataDumper for XmlDumper {
         for (enum_name, enum_def) in &schema.enums {
             if enum_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
                 return Err(DumperError::SchemaValidation(
-                    format!("Enum name '{}' contains XML-incompatible characters", enum_name)
+                    format!("Enum name '{enum_name}' contains XML-incompatible characters")
                 ));
             }
 
@@ -456,14 +453,14 @@ impl DataDumper for XmlDumper {
                 };
                 if pv_text.is_empty() {
                     return Err(DumperError::SchemaValidation(
-                        format!("Empty enum value in enum '{}'", enum_name)
+                        format!("Empty enum value in enum '{enum_name}'")
                     ));
                 }
 
                 // Check for XML-unsafe characters in enum values
-                if pv_text.contains(|c: char| c == '<' || c == '>' || c == '&' || c == '"' || c == '\'') {
+                if pv_text.contains(['<', '>', '&', '"', '\'']) {
                     return Err(DumperError::SchemaValidation(
-                        format!("Enum value '{}' contains XML-unsafe characters", pv_text)
+                        format!("Enum value '{pv_text}' contains XML-unsafe characters")
                     ));
                 }
             }
@@ -480,7 +477,7 @@ impl DataDumper for XmlDumper {
             // Validate namespace URI format (basic check)
             if !namespace.starts_with("http://") && !namespace.starts_with("https://") && !namespace.starts_with("urn:") {
                 return Err(DumperError::SchemaValidation(
-                    format!("Invalid namespace URI format: {}", namespace)
+                    format!("Invalid namespace URI format: {namespace}")
                 ));
             }
         }

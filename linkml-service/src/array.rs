@@ -424,7 +424,7 @@ impl ArrayData {
     ///
     /// Returns `ArrayError::InvalidDimension` if the dimension index is out of range.
     /// Returns `ArrayError::IndexOutOfBounds` if the slice index is greater than or equal to the dimension size.
-    /// Returns `ArrayError` if creating the new ArrayData fails during slice extraction.
+    /// Returns `ArrayError` if creating the new `ArrayData` fails during slice extraction.
     pub fn slice(&self, dimension: usize, index: usize) -> ArrayResult<ArrayData> {
         if dimension >= self.shape.len() {
             return Err(ArrayError::InvalidDimension(format!(

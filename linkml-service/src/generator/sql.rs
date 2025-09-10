@@ -388,9 +388,12 @@ impl SQLGenerator {
                 let values: Vec<String> = enum_def
                     .permissible_values
                     .iter()
-                    .map(|v| match v {
-                        PermissibleValue::Simple(text) => format!("'{text}'"),
-                        PermissibleValue::Complex { text, .. } => format!("'{text}'")})
+                    .map(|v| {
+                        let text = match v {
+                            PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => text,
+                        };
+                        format!("'{text}'")
+                    })
                     .collect();
 
                 write!(&mut output, "{}", values.join(", "))

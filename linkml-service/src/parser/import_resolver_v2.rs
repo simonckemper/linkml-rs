@@ -11,7 +11,6 @@ use linkml_core::{
     error::{LinkMLError, Result},
     settings::{ImportResolutionStrategy, ImportSettings},
     types::{ClassDefinition, SchemaDefinition, SlotDefinition}};
-use super::SchemaParser;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::future::Future;
@@ -127,7 +126,7 @@ impl ImportResolverV2 {
                     merged_settings.resolution_strategy = import_settings.resolution_strategy;
                 }
                 if import_settings.base_url.is_some() {
-                    merged_settings.base_url = import_settings.base_url.clone();
+                    merged_settings.base_url.clone_from(&import_settings.base_url);
                 }
 
                 self.set_settings(merged_settings);
@@ -168,7 +167,7 @@ impl ImportResolverV2 {
             let import_specs: Vec<ImportSpec> = schema
                 .imports
                 .iter()
-                .map(|imp| self.parse_import_spec(imp))
+                .map(|import| Self::parse_import_spec(import))
                 .collect();
 
             // Process each import
@@ -210,7 +209,7 @@ impl ImportResolverV2 {
     }
 
     /// Parse an import specification
-    fn parse_import_spec(&self, import: &str) -> ImportSpec {
+    fn parse_import_spec(import: &str) -> ImportSpec {
         // For now, simple string to ImportSpec conversion
         // Advanced import syntax is reserved for future LinkML specification updates
         ImportSpec::from(import.to_string())
@@ -292,7 +291,7 @@ impl ImportResolverV2 {
         })?;
 
         // Parse based on URL extension
-        self.parse_schema_content(&content, &final_url)
+        Self::parse_schema_content(&content, &final_url)
     }
 
     /// Load schema from file
@@ -303,7 +302,7 @@ impl ImportResolverV2 {
             .await
             .map_err(|e| LinkMLError::import(path, format!("Failed to read file: {e}")))?;
 
-        self.parse_schema_content(&content, path)
+        Self::parse_schema_content(&content, path)
     }
 
     /// Resolve file path using search paths and resolution strategy
@@ -325,20 +324,20 @@ impl ImportResolverV2 {
                 } else {
                     vec![PathBuf::from(&search_paths[0])]
                 };
-                self.find_in_paths(import, &base_paths, &extensions)
+                Self::find_in_paths(import, &base_paths, &extensions)
             }
             ImportResolutionStrategy::Absolute => {
                 // Only use search paths
                 let paths: Vec<PathBuf> = search_paths.iter().map(PathBuf::from).collect();
-                self.find_in_paths(import, &paths, &extensions)
+                Self::find_in_paths(import, &paths, &extensions)
             }
             ImportResolutionStrategy::Mixed => {
                 // Try relative first, then search paths
-                self.find_in_paths(import, &[PathBuf::from(".")], &extensions)
+                Self::find_in_paths(import, &[PathBuf::from(".")], &extensions)
                     .or_else(|_| {
                         let paths: Vec<PathBuf> =
                             search_paths.iter().map(PathBuf::from).collect();
-                        self.find_in_paths(import, &paths, &extensions)
+                        Self::find_in_paths(import, &paths, &extensions)
                     })
             }
         }
@@ -346,7 +345,6 @@ impl ImportResolverV2 {
 
     /// Find file in given paths
     fn find_in_paths(
-        &self,
         import: &str,
         paths: &[PathBuf],
         extensions: &[&str],
@@ -374,11 +372,11 @@ impl ImportResolverV2 {
     }
 
     /// Parse schema content based on format
-    fn parse_schema_content(&self, content: &str, source: &str) -> Result<SchemaDefinition> {
+    fn parse_schema_content(content: &str, source: &str) -> Result<SchemaDefinition> {
         use crate::parser::{JsonParser, SchemaParser, YamlParser};
 
-        // Determine format from extension
-        if source.ends_with(".json") {
+        // Determine format from extension (case-insensitive)
+        if source.to_lowercase().ends_with(".json") {
             let parser = JsonParser::new();
             parser.parse_str(content)
         } else {
@@ -397,7 +395,7 @@ impl ImportResolverV2 {
     ) -> Result<()> {
         // Apply prefix if specified
         if let Some(prefix) = &spec.prefix {
-            self.apply_prefix(&mut source, prefix);
+            Self::apply_prefix(&mut source, prefix);
         }
 
         // Filter elements based on only/exclude
@@ -423,7 +421,7 @@ impl ImportResolverV2 {
 
         // Merge classes with conflict detection
         for (name, class) in source.classes {
-            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
+            let qualified_name = Self::get_qualified_name(&name, spec, &source.name);
             if target.classes.contains_key(&name) {
                 // Conflict - use qualified name
                 target.classes.insert(qualified_name, class);
@@ -434,7 +432,7 @@ impl ImportResolverV2 {
 
         // Merge slots
         for (name, slot) in source.slots {
-            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
+            let qualified_name = Self::get_qualified_name(&name, spec, &source.name);
             if target.slots.contains_key(&name) {
                 target.slots.insert(qualified_name, slot);
             } else {
@@ -444,7 +442,7 @@ impl ImportResolverV2 {
 
         // Merge types
         for (name, type_def) in source.types {
-            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
+            let qualified_name = Self::get_qualified_name(&name, spec, &source.name);
             if target.types.contains_key(&name) {
                 target.types.insert(qualified_name, type_def);
             } else {
@@ -454,7 +452,7 @@ impl ImportResolverV2 {
 
         // Merge enums
         for (name, enum_def) in source.enums {
-            let qualified_name = self.get_qualified_name(&name, spec, &source.name);
+            let qualified_name = Self::get_qualified_name(&name, spec, &source.name);
             if target.enums.contains_key(&name) {
                 target.enums.insert(qualified_name, enum_def);
             } else {
@@ -466,7 +464,7 @@ impl ImportResolverV2 {
     }
 
     /// Apply prefix to all elements in schema
-    fn apply_prefix(&self, schema: &mut SchemaDefinition, prefix: &str) {
+    fn apply_prefix(schema: &mut SchemaDefinition, prefix: &str) {
         // Prefix all class names
         let classes: Vec<(String, ClassDefinition)> = schema
             .classes
@@ -523,7 +521,7 @@ impl ImportResolverV2 {
     }
 
     /// Get qualified name for an element
-    fn get_qualified_name(&self, name: &str, spec: &ImportSpec, schema_name: &str) -> String {
+    fn get_qualified_name(name: &str, spec: &ImportSpec, schema_name: &str) -> String {
         if let Some(alias) = &spec.alias {
             format!("{alias}_{name}")
         } else {

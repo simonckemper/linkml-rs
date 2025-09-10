@@ -248,7 +248,7 @@ impl PredictiveStrategy {
                 .iter()
                 .map(std::time::Duration::as_secs_f64)
                 .sum::<f64>()
-                / intervals.len() as f64;
+                / f64::from(u32::try_from(intervals.len()).unwrap_or(u32::MAX));
 
             patterns.push((key, Duration::from_secs_f64(avg_interval)));
         }
@@ -329,10 +329,10 @@ impl WarmingStrategy for PredictiveStrategy {
         }
 
         // Precision loss acceptable here
-        let mean = intervals.iter().sum::<f64>() / intervals.len() as f64;
+        let mean = intervals.iter().sum::<f64>() / f64::from(u32::try_from(intervals.len()).unwrap_or(u32::MAX));
         // Precision loss acceptable here
         let variance =
-            intervals.iter().map(|i| (i - mean).powi(2)).sum::<f64>() / intervals.len() as f64;
+            intervals.iter().map(|i| (i - mean).powi(2)).sum::<f64>() / f64::from(u32::try_from(intervals.len()).unwrap_or(u32::MAX));
 
         // Lower variance = higher priority (more regular pattern)
         1.0 / (1.0 + variance.sqrt())
