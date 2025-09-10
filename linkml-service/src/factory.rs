@@ -61,8 +61,7 @@ where
         dbms_service,
         timeout_service,
         cache,
-        monitor,
-    };
+        monitor};
     let service = LinkMLServiceImpl::new(deps)?;
 
     // Initialize
@@ -97,8 +96,7 @@ pub struct LinkMLServiceDependencies<T, E, C, D, O> {
     /// Cache service
     pub cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     /// Monitoring service
-    pub monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
-}
+    pub monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>}
 
 /// # Errors
 ///

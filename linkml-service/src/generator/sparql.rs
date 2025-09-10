@@ -22,8 +22,7 @@ pub enum SparqlQueryType {
     /// INSERT DATA for adding triples
     Insert,
     /// DELETE WHERE for removing triples
-    Delete,
-}
+    Delete}
 
 /// Options for SPARQL generation
 #[derive(Debug, Clone)]
@@ -41,8 +40,7 @@ pub struct SparqlOptions {
     /// Base URI for the schema
     pub base_uri: String,
     /// Generate comments in queries
-    pub include_comments: bool,
-}
+    pub include_comments: bool}
 
 impl Default for SparqlOptions {
     fn default() -> Self {
@@ -53,8 +51,7 @@ impl Default for SparqlOptions {
             use_subqueries: false,
             limit: None,
             base_uri: "http://example.org/".to_string(),
-            include_comments: true,
-        }
+            include_comments: true}
     }
 }
 
@@ -63,8 +60,7 @@ pub struct SparqlGenerator {
     /// Generation options
     options: SparqlOptions,
     /// Namespace prefixes
-    prefixes: HashMap<String, String>,
-}
+    prefixes: HashMap<String, String>}
 
 impl SparqlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -97,8 +93,7 @@ impl SparqlGenerator {
 
         Self {
             options: SparqlOptions::default(),
-            prefixes,
-        }
+            prefixes}
     }
 
     /// Create with custom options
@@ -129,8 +124,7 @@ impl SparqlGenerator {
             SparqlQueryType::Construct => self.generate_construct_queries(&mut output, schema)?,
             SparqlQueryType::Ask => self.generate_ask_queries(&mut output, schema)?,
             SparqlQueryType::Insert => self.generate_insert_queries(&mut output, schema)?,
-            SparqlQueryType::Delete => self.generate_delete_queries(&mut output, schema)?,
-        }
+            SparqlQueryType::Delete => self.generate_delete_queries(&mut output, schema)?}
 
         Ok(output)
     }
@@ -554,8 +548,7 @@ impl SparqlGenerator {
                             .map(|pv| {
                                 let value = match pv {
                                     PermissibleValue::Simple(s) => s,
-                                    PermissibleValue::Complex { text, .. } => text,
-                                };
+                                    PermissibleValue::Complex { text, .. } => text};
                                 format!("\"{value}\"")
                             })
                             .collect();
@@ -670,8 +663,7 @@ impl SparqlGenerator {
             Some("date") => "\"2024-01-01\"^^xsd:date",
             Some("datetime") => "\"2024-01-01T00:00:00Z\"^^xsd:dateTime",
             Some("uri") => "<http://example.org/resource>",
-            _ => "\"value\"",
-        }
+            _ => "\"value\""}
     }
 
     /// Convert to variable name
@@ -714,8 +706,7 @@ impl SparqlGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -768,7 +759,7 @@ impl Generator for SparqlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

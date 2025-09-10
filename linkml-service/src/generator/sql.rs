@@ -2,8 +2,7 @@
 
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
-    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
-};
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
@@ -13,16 +12,14 @@ use std::fmt::Write;
 /// `SQL` DDL generator for `LinkML` schemas
 pub struct SQLGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl SQLGenerator {
     /// Create a new `SQL` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "sql".to_string(),
-        }
+            name: "sql".to_string()}
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -145,7 +142,7 @@ impl SQLGenerator {
 
                 // Add default value if specified
                 if let Some(default) = options.get_custom(&format!("default_{slot_name}")) {
-                    column_def.push_str(&format!(" DEFAULT {default}"));
+                    write!(column_def, " DEFAULT {default}").unwrap();
                 }
 
                 // Add CHECK constraint for pattern
@@ -157,7 +154,7 @@ impl SQLGenerator {
                 // Add column comment if dialect supports it
                 if options.include_docs && options.get_custom("dialect").map(std::string::String::as_str) == Some("postgresql")
                     && let Some(desc) = &slot.description {
-                        column_def.push_str(&format!(" -- {desc}"));
+                        write!(column_def, " -- {desc}").unwrap();
                     }
 
                 columns.push(column_def);
@@ -393,8 +390,7 @@ impl SQLGenerator {
                     .iter()
                     .map(|v| match v {
                         PermissibleValue::Simple(text) => format!("'{text}'"),
-                        PermissibleValue::Complex { text, .. } => format!("'{text}'"),
-                    })
+                        PermissibleValue::Complex { text, .. } => format!("'{text}'")})
                     .collect();
 
                 write!(&mut output, "{}", values.join(", "))
@@ -537,21 +533,18 @@ impl SQLGenerator {
             Some("boolean" | "bool") => match dialect {
                 "postgresql" => Ok("BOOLEAN".to_string()),
                 "mysql" => Ok("TINYINT(1)".to_string()),
-                _ => Ok("BOOLEAN".to_string()),
-            },
+                _ => Ok("BOOLEAN".to_string())},
             Some("date") => Ok("DATE".to_string()),
             Some("datetime") => match dialect {
                 "postgresql" => Ok("TIMESTAMP WITH TIME ZONE".to_string()),
-                _ => Ok("TIMESTAMP".to_string()),
-            },
+                _ => Ok("TIMESTAMP".to_string())},
             Some("uri" | "url") => Ok("TEXT".to_string()),
             Some(other) => {
                 // Check if it's an enum
                 if schema.enums.contains_key(other) {
                     match dialect {
                         "postgresql" => Ok(self.convert_table_name(other)),
-                        _ => Ok("VARCHAR(255)".to_string()),
-                    }
+                        _ => Ok("VARCHAR(255)".to_string())}
                 } else if schema.classes.contains_key(other) {
                     // Foreign key reference
                     Ok(self.get_id_type(options))
@@ -559,8 +552,7 @@ impl SQLGenerator {
                     Ok("TEXT".to_string())
                 }
             }
-            None => Ok("TEXT".to_string()),
-        }
+            None => Ok("TEXT".to_string())}
     }
 
     /// Get the ID column type based on options
@@ -568,20 +560,16 @@ impl SQLGenerator {
         match options.get_custom("id_type").map(std::string::String::as_str) {
             Some("uuid") => match options.get_custom("dialect").map(std::string::String::as_str) {
                 Some("postgresql") => "UUID DEFAULT gen_random_uuid()".to_string(),
-                _ => "CHAR(36)".to_string(),
-            },
+                _ => "CHAR(36)".to_string()},
             Some("serial") => match options.get_custom("dialect").map(std::string::String::as_str) {
                 Some("postgresql") => "SERIAL".to_string(),
                 Some("mysql") => "INTEGER AUTO_INCREMENT".to_string(),
-                _ => "INTEGER".to_string(),
-            },
+                _ => "INTEGER".to_string()},
             Some("bigserial") => match options.get_custom("dialect").map(std::string::String::as_str) {
                 Some("postgresql") => "BIGSERIAL".to_string(),
                 Some("mysql") => "BIGINT AUTO_INCREMENT".to_string(),
-                _ => "BIGINT".to_string(),
-            },
-            _ => "INTEGER".to_string(),
-        }
+                _ => "BIGINT".to_string()},
+            _ => "INTEGER".to_string()}
     }
 
     /// Convert to `SQL` table name
@@ -745,8 +733,7 @@ impl AsyncGenerator for SQLGenerator {
         Ok(vec![GeneratedOutput {
             content: output,
             filename,
-            metadata,
-        }])
+            metadata}])
     }
 }
 
@@ -878,7 +865,7 @@ impl CodeFormatter for SQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_sql_generation() {

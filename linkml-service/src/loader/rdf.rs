@@ -15,8 +15,7 @@ use std::path::Path;
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
 
 /// RDF serialization format
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -30,8 +29,7 @@ pub enum RdfSerializationFormat {
     /// N-Quads format (.nq)
     NQuads,
     /// `TriG` format (.trig)
-    TriG,
-}
+    TriG}
 
 impl RdfSerializationFormat {
     /// Convert to oxigraph `RdfFormat`
@@ -41,8 +39,7 @@ impl RdfSerializationFormat {
             Self::NTriples => RdfFormat::NTriples,
             Self::RdfXml => RdfFormat::RdfXml,
             Self::NQuads => RdfFormat::NQuads,
-            Self::TriG => RdfFormat::TriG,
-        }
+            Self::TriG => RdfFormat::TriG}
     }
 }
 
@@ -56,21 +53,17 @@ pub enum SkolemnizationOptions {
         /// Base URI for skolem URIs
         base_uri: String,
         /// Prefix for skolem identifiers
-        prefix: String,
-    },
+        prefix: String},
     /// Generate `UUID`s for blank nodes
     Uuid {
         /// Base URI for skolem URIs
-        base_uri: String,
-    },
+        base_uri: String},
     /// Hash-based skolemnization using triple content
     Hash {
         /// Base URI for skolem URIs
         base_uri: String,
         /// Hash algorithm (sha256, md5, etc.)
-        algorithm: String,
-    },
-}
+        algorithm: String}}
 
 impl Default for SkolemnizationOptions {
     fn default() -> Self {
@@ -103,8 +96,7 @@ pub struct RdfOptions {
     pub type_predicate: String,
 
     /// Whether to infer types from RDF types
-    pub infer_from_rdf_type: bool,
-}
+    pub infer_from_rdf_type: bool}
 
 impl Default for RdfOptions {
     fn default() -> Self {
@@ -134,23 +126,20 @@ impl Default for RdfOptions {
             generate_blank_nodes: false,
             skolemnization: SkolemnizationOptions::None,
             type_predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".to_string(),
-            infer_from_rdf_type: true,
-        }
+            infer_from_rdf_type: true}
     }
 }
 
 /// RDF data loader
 pub struct RdfLoader {
-    options: RdfOptions,
-}
+    options: RdfOptions}
 
 impl RdfLoader {
     /// Create a new RDF loader
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: RdfOptions::default(),
-        }
+            options: RdfOptions::default()}
     }
 
     /// Create with custom options
@@ -166,8 +155,7 @@ impl RdfLoader {
             options: RdfOptions {
                 format,
                 ..Default::default()
-            },
-        }
+            }}
     }
 
     /// Parse RDF data into a store
@@ -227,8 +215,7 @@ impl RdfLoader {
             .filter_map(|quad| match quad.subject {
                 Subject::NamedNode(node) => Some(NamedOrBlankNode::NamedNode(node)),
                 Subject::BlankNode(node) => Some(NamedOrBlankNode::BlankNode(node)),
-                _ => None,
-            })
+                _ => None})
             .collect();
 
         // Process each subject
@@ -251,8 +238,7 @@ impl RdfLoader {
                 .filter_map(std::result::Result::ok)
                 .filter_map(|quad| match &quad.object {
                     Term::NamedNode(n) => Some(n.as_str().to_string()),
-                    _ => None,
-                })
+                    _ => None})
                 .collect();
 
             // Determine the LinkML class
@@ -298,8 +284,7 @@ impl RdfLoader {
                 class_name,
                 data,
                 id: Some(subject_str.clone()),
-                metadata: HashMap::new(),
-            };
+                metadata: HashMap::new()};
 
             instance_map.insert(subject_str, instance);
         }
@@ -350,8 +335,7 @@ impl RdfLoader {
                         class_name,
                         data,
                         id: Some(subject_str.clone()),
-                        metadata: HashMap::new(),
-                    };
+                        metadata: HashMap::new()};
 
                     instance_map.insert(subject_str, instance);
                 }
@@ -372,8 +356,7 @@ impl RdfLoader {
     fn subject_to_string(&self, subject: &NamedOrBlankNode) -> String {
         match subject {
             NamedOrBlankNode::NamedNode(n) => n.as_str().to_string(),
-            NamedOrBlankNode::BlankNode(b) => self.skolemnize_blank_node(b),
-        }
+            NamedOrBlankNode::BlankNode(b) => self.skolemnize_blank_node(b)}
     }
 
     /// Skolemnize a blank node according to configuration
@@ -394,8 +377,7 @@ impl RdfLoader {
             }
             SkolemnizationOptions::Hash {
                 base_uri,
-                algorithm,
-            } => {
+                algorithm} => {
                 // Generate hash-based URI from blank node content
                 use sha2::{Digest, Sha256};
                 let hash = match algorithm.as_str() {
@@ -481,10 +463,8 @@ impl RdfLoader {
                         "false" | "0" => Ok(JsonValue::Bool(false)),
                         _ => Err(LoaderError::TypeConversion(format!(
                             "Cannot parse '{value}' as boolean"
-                        ))),
-                    },
-                    _ => Ok(JsonValue::String(value.to_string())),
-                }
+                        )))},
+                    _ => Ok(JsonValue::String(value.to_string()))}
             }
             Term::Triple(_) => {
                 // TODO: Add proper Triple support when RDF-star is needed
@@ -597,8 +577,7 @@ impl DataLoader for RdfLoader {
             RdfSerializationFormat::NTriples => "ntriples",
             RdfSerializationFormat::RdfXml => "rdfxml",
             RdfSerializationFormat::NQuads => "nquads",
-            RdfSerializationFormat::TriG => "trig",
-        }
+            RdfSerializationFormat::TriG => "trig"}
     }
 
     fn description(&self) -> &'static str {
@@ -611,8 +590,7 @@ impl DataLoader for RdfLoader {
             RdfSerializationFormat::NTriples => vec![".nt", ".ntriples"],
             RdfSerializationFormat::RdfXml => vec![".rdf", ".xml"],
             RdfSerializationFormat::NQuads => vec![".nq", ".nquads"],
-            RdfSerializationFormat::TriG => vec![".trig"],
-        }
+            RdfSerializationFormat::TriG => vec![".trig"]}
     }
 
     async fn load_file(
@@ -652,16 +630,14 @@ impl DataLoader for RdfLoader {
 
 /// RDF data dumper
 pub struct RdfDumper {
-    options: RdfOptions,
-}
+    options: RdfOptions}
 
 impl RdfDumper {
     /// Create a new RDF dumper
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: RdfOptions::default(),
-        }
+            options: RdfOptions::default()}
     }
 
     /// Create with custom options
@@ -677,8 +653,7 @@ impl RdfDumper {
             options: RdfOptions {
                 format,
                 ..Default::default()
-            },
-        }
+            }}
     }
 
     /// Create RDF store from instances
@@ -734,8 +709,7 @@ impl RdfDumper {
                 subject: subject.clone().into(),
                 predicate: type_predicate.clone(),
                 object: Term::NamedNode(class_node),
-                graph_name: GraphName::DefaultGraph,
-            };
+                graph_name: GraphName::DefaultGraph};
 
             store.insert(&type_quad).map_err(|e| {
                 DumperError::Io(std::io::Error::other(
@@ -758,8 +732,7 @@ impl RdfDumper {
                             subject: subject.clone().into(),
                             predicate: predicate.clone(),
                             object,
-                            graph_name: GraphName::DefaultGraph,
-                        };
+                            graph_name: GraphName::DefaultGraph};
                         store.insert(&quad).map_err(|e| {
                             DumperError::Io(std::io::Error::other(
                                 format!("Failed to insert quad: {e}"),
@@ -772,8 +745,7 @@ impl RdfDumper {
                         subject: subject.clone().into(),
                         predicate: predicate.clone(),
                         object,
-                        graph_name: GraphName::DefaultGraph,
-                    };
+                        graph_name: GraphName::DefaultGraph};
                     store.insert(&quad).map_err(|e| {
                         DumperError::Io(std::io::Error::other(
                             format!("Failed to insert quad: {e}"),
@@ -883,8 +855,7 @@ impl RdfDumper {
 
             JsonValue::Object(_) => Err(DumperError::TypeConversion(
                 "Cannot convert complex objects to RDF terms".to_string(),
-            )),
-        }
+            ))}
     }
 
     /// Serialize store to bytes
@@ -932,8 +903,7 @@ impl DataDumper for RdfDumper {
             RdfSerializationFormat::NTriples => "ntriples",
             RdfSerializationFormat::RdfXml => "rdfxml",
             RdfSerializationFormat::NQuads => "nquads",
-            RdfSerializationFormat::TriG => "trig",
-        }
+            RdfSerializationFormat::TriG => "trig"}
     }
 
     fn description(&self) -> &'static str {
@@ -946,8 +916,7 @@ impl DataDumper for RdfDumper {
             RdfSerializationFormat::NTriples => vec![".nt", ".ntriples"],
             RdfSerializationFormat::RdfXml => vec![".rdf", ".xml"],
             RdfSerializationFormat::NQuads => vec![".nq", ".nquads"],
-            RdfSerializationFormat::TriG => vec![".trig"],
-        }
+            RdfSerializationFormat::TriG => vec![".trig"]}
     }
 
     async fn dump_file(
@@ -1001,7 +970,7 @@ impl DataDumper for RdfDumper {
 mod tests {
     use super::*;
     use serde_json::json;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

@@ -26,16 +26,14 @@ pub struct CacheKeyBuilder {
     /// Components to be joined
     components: KeyComponents,
     /// Separator character
-    separator: char,
-}
+    separator: char}
 
 impl Default for CacheKeyBuilder {
     fn default() -> Self {
         Self {
             buffer: String::with_capacity(128), // Pre-allocate typical key size
             components: KeyComponents::new(),
-            separator: ':',
-        }
+            separator: ':'}
     }
 }
 
@@ -52,8 +50,7 @@ impl CacheKeyBuilder {
         Self {
             buffer: String::with_capacity(capacity),
             components: KeyComponents::new(),
-            separator: ':',
-        }
+            separator: ':'}
     }
 
     /// Add a static component (zero allocation)
@@ -117,8 +114,7 @@ pub struct HierarchicalCacheKey {
     /// Key hash for fast comparison
     pub key_hash: u64,
     /// Hierarchy levels for invalidation
-    pub hierarchy: SmallVec<[String; 4]>,
-}
+    pub hierarchy: SmallVec<[String; 4]>}
 
 impl HierarchicalCacheKey {
     /// Create a new hierarchical cache key
@@ -147,8 +143,7 @@ impl HierarchicalCacheKey {
         Self {
             full_key,
             key_hash,
-            hierarchy,
-        }
+            hierarchy}
     }
 
     /// Get parent key at specific level
@@ -173,8 +168,7 @@ pub struct OptimizedCacheKey<'a> {
     /// Class name (can be borrowed or owned)
     pub class_name: Cow<'a, str>,
     /// Options hash (pre-computed)
-    pub options_hash: u64,
-}
+    pub options_hash: u64}
 
 impl<'a> OptimizedCacheKey<'a> {
     /// Create from borrowed data (zero allocation)
@@ -189,8 +183,7 @@ impl<'a> OptimizedCacheKey<'a> {
             schema_id: Cow::Borrowed(schema_id),
             schema_hash,
             class_name: Cow::Borrowed(class_name),
-            options_hash,
-        }
+            options_hash}
     }
 
     /// Convert to owned key
@@ -200,8 +193,7 @@ impl<'a> OptimizedCacheKey<'a> {
             schema_id: self.schema_id.into_owned(),
             schema_hash: self.schema_hash.to_string(),
             class_name: self.class_name.into_owned(),
-            options_hash: self.options_hash.to_string(),
-        }
+            options_hash: self.options_hash.to_string()}
     }
 
     /// Fast comparison using hashes
@@ -217,8 +209,7 @@ impl<'a> OptimizedCacheKey<'a> {
 /// Cache key optimizer for efficient key generation
 pub struct CacheKeyOptimizer {
     /// Cache for schema hashes
-    schema_hash_cache: DashMap<String, u64>,
-}
+    schema_hash_cache: DashMap<String, u64>}
 
 impl Default for CacheKeyOptimizer {
     fn default() -> Self {
@@ -231,8 +222,7 @@ impl CacheKeyOptimizer {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            schema_hash_cache: DashMap::new(),
-        }
+            schema_hash_cache: DashMap::new()}
     }
 
     /// Generate an optimized cache key
@@ -247,7 +237,7 @@ impl CacheKeyOptimizer {
             *hash
         } else {
             // Compute schema hash efficiently
-            let hash = self.compute_schema_hash(schema);
+            let hash = Self::compute_schema_hash(schema);
             self.schema_hash_cache.insert(schema.id.clone(), hash);
             hash
         };
@@ -256,8 +246,7 @@ impl CacheKeyOptimizer {
             schema_id: schema.id.clone(),
             schema_hash: schema_hash.to_string(),
             class_name: class_name.to_string(),
-            options_hash: options_hash.to_string(),
-        }
+            options_hash: options_hash.to_string()}
     }
 
     /// Generate a hierarchical cache key
@@ -271,8 +260,7 @@ impl CacheKeyOptimizer {
     }
 
     /// Compute schema hash efficiently
-    fn compute_schema_hash(&self, schema: &SchemaDefinition) -> u64 {
-        let _ = self;
+    fn compute_schema_hash(schema: &SchemaDefinition) -> u64 {
         // Use xxHash for fast, non-cryptographic hashing
         let mut hasher_input = Vec::with_capacity(1024);
 
@@ -310,7 +298,7 @@ impl CacheKeyOptimizer {
         let schema_hash = if let Some(hash) = self.schema_hash_cache.get(&schema.id) {
             *hash
         } else {
-            let hash = self.compute_schema_hash(schema);
+            let hash = Self::compute_schema_hash(schema);
             self.schema_hash_cache.insert(schema.id.clone(), hash);
             hash
         };
@@ -322,8 +310,7 @@ impl CacheKeyOptimizer {
                 schema_id: schema.id.clone(),
                 schema_hash: schema_hash.to_string(),
                 class_name: class_name.clone(),
-                options_hash: options_hash.to_string(),
-            })
+                options_hash: options_hash.to_string()})
             .collect()
     }
 }
@@ -332,8 +319,7 @@ impl CacheKeyOptimizer {
 #[derive(Debug, Clone)]
 pub struct CacheKeyPattern {
     /// Pattern components
-    components: Vec<PatternComponent>,
-}
+    components: Vec<PatternComponent>}
 
 #[derive(Debug, Clone)]
 enum PatternComponent {
@@ -342,8 +328,7 @@ enum PatternComponent {
     /// Wildcard match
     Wildcard,
     /// Prefix match
-    Prefix(String),
-}
+    Prefix(String)}
 
 impl CacheKeyPattern {
     /// Create a pattern from string

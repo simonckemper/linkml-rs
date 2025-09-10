@@ -69,7 +69,7 @@ impl RustGenerator {
             if let Some(slot) = schema.slots.get(slot_name)
                 && (slot.identifier == Some(true) || slot.required == Some(true)) {
                     let field_name = BaseCodeFormatter::to_snake_case(slot_name);
-                    let return_type = self.get_rust_type(slot, schema)?;
+                    let return_type = self.get_rust_type(slot, schema);
                     writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
                     writeln!(&mut output, "    /// Get the {field_name} field")
                         .map_err(Self::fmt_error_to_generator_error)?;
@@ -86,6 +86,7 @@ impl RustGenerator {
     }
 
     /// Generate trait implementation for a struct
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn generate_trait_impl(
         &self,
         output: &mut String,

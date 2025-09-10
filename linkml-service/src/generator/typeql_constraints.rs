@@ -4,13 +4,13 @@
 //! supporting `TypeDB` 3.0 features including @card, @key, @unique, and regex patterns.
 
 use linkml_core::prelude::*;
+use std::fmt::Write;
 use std::collections::HashMap;
 
 /// Enhanced constraint translator for `TypeQL` generation
 pub struct TypeQLConstraintTranslator {
     /// Cache for compiled regex patterns
-    regex_cache: HashMap<String, String>,
-}
+    regex_cache: HashMap<String, String>}
 
 impl Default for TypeQLConstraintTranslator {
     fn default() -> Self {
@@ -23,8 +23,7 @@ impl TypeQLConstraintTranslator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            regex_cache: HashMap::new(),
-        }
+            regex_cache: HashMap::new()}
     }
 
     /// Translate all constraints for a slot
@@ -91,8 +90,7 @@ impl TypeQLConstraintTranslator {
             (0, Some(1)) if slot.required != Some(true) => None, // Default optional
             (1, Some(1)) if slot.required == Some(true) => None, // Default required
             (min, Some(max)) => Some(format!("@card({min}..{max})")),
-            (min, None) => Some(format!("@card({min}..)")),
-        }
+            (min, None) => Some(format!("@card({min}..)"))}
     }
 
     /// Get minimum cardinality for a slot
@@ -231,17 +229,17 @@ impl TypeQLConstraintTranslator {
         let rule_name = format!("{}-unique-{}", class_typeql, "key");
 
         let mut rule = String::new();
-        rule.push_str(&format!("rule {rule_name}:\n"));
+        writeln!(rule, "rule {rule_name}:").unwrap();
         rule.push_str("when {\n");
-        rule.push_str(&format!("    $x isa {class_typeql};\n"));
-        rule.push_str(&format!("    $y isa {class_typeql};\n"));
+        writeln!(rule, "    $x isa {class_typeql};").unwrap();
+        writeln!(rule, "    $y isa {class_typeql};").unwrap();
         rule.push_str("    not { $x is $y; };\n");
 
         // Add conditions for each slot in the unique key
         for (i, slot) in unique_key.unique_key_slots.iter().enumerate() {
             let attr = type_name_converter(slot);
-            rule.push_str(&format!("    $x has {attr} $v{i};\n"));
-            rule.push_str(&format!("    $y has {attr} $v{i};\n"));
+            writeln!(rule, "    $x has {attr} $v{i};").unwrap();
+            writeln!(rule, "    $y has {attr} $v{i};").unwrap();
         }
 
         rule.push_str("} then {\n");

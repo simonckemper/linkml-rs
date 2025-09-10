@@ -12,8 +12,7 @@ pub struct CompatibilityChecker {
     /// Current `LinkML` version
     linkml_version: Version,
     /// Compatibility rules
-    rules: CompatibilityRules,
-}
+    rules: CompatibilityRules}
 
 /// Compatibility rules configuration
 #[derive(Debug, Clone)]
@@ -25,8 +24,7 @@ pub struct CompatibilityRules {
     /// Strict mode - require exact major version match
     pub strict_mode: bool,
     /// Deprecated `API` versions to warn about
-    pub deprecated_versions: Vec<VersionReq>,
-}
+    pub deprecated_versions: Vec<VersionReq>}
 
 impl Default for CompatibilityRules {
     fn default() -> Self {
@@ -36,8 +34,7 @@ impl Default for CompatibilityRules {
             strict_mode: false,
             deprecated_versions: vec![
                 VersionReq::parse("<0.9.0").expect("valid version requirement"),
-            ],
-        }
+            ]}
     }
 }
 
@@ -53,8 +50,7 @@ impl CompatibilityChecker {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
                 .expect("CARGO_PKG_VERSION should be a valid semver"),
-            rules: CompatibilityRules::default(),
-        }
+            rules: CompatibilityRules::default()}
     }
 
     /// Create with custom rules
@@ -62,8 +58,7 @@ impl CompatibilityChecker {
         Self {
             linkml_version: Version::parse(env!("CARGO_PKG_VERSION"))
                 .expect("CARGO_PKG_VERSION should be a valid semver"),
-            rules,
-        }
+            rules}
     }
 
     /// Check if a plugin is compatible
@@ -71,6 +66,8 @@ impl CompatibilityChecker {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::IncompatiblePlugin` if version requirements are not met
+    /// Returns `LinkMLError::DeprecatedApi` if the plugin uses deprecated APIs
     pub fn check_compatibility(&self, manifest: &PluginManifest) -> Result<()> {
         let plugin_info = &manifest.plugin;
 
@@ -220,8 +217,7 @@ pub struct CompatibilityMatrix {
     /// Known compatible plugin versions
     compatible: HashMap<String, Vec<VersionRange>>,
     /// Known incompatible plugin versions
-    incompatible: HashMap<String, Vec<VersionRange>>,
-}
+    incompatible: HashMap<String, Vec<VersionRange>>}
 
 /// Version range specification
 #[derive(Debug, Clone)]
@@ -231,8 +227,7 @@ pub struct VersionRange {
     /// Maximum version (exclusive)
     pub max: Option<Version>,
     /// Reason for compatibility/incompatibility
-    pub reason: String,
-}
+    pub reason: String}
 
 impl Default for CompatibilityMatrix {
     fn default() -> Self {
@@ -245,8 +240,7 @@ impl CompatibilityMatrix {
     #[must_use] pub fn new() -> Self {
         Self {
             compatible: HashMap::new(),
-            incompatible: HashMap::new(),
-        }
+            incompatible: HashMap::new()}
     }
 
     /// Add a compatible version range
@@ -297,8 +291,7 @@ pub struct VersionMigration {
     /// Target version
     pub to: Version,
     /// Migration steps
-    pub steps: Vec<MigrationStep>,
-}
+    pub steps: Vec<MigrationStep>}
 
 /// Individual migration step
 #[derive(Debug, Clone)]
@@ -308,8 +301,7 @@ pub struct MigrationStep {
     /// Whether this step is automated
     pub automated: bool,
     /// Migration script or instructions
-    pub script: String,
-}
+    pub script: String}
 
 impl VersionMigration {
     /// Check if migration is needed
@@ -358,8 +350,7 @@ mod tests {
             VersionRange {
                 min: Version::new(1, 0, 0),
                 max: Some(Version::new(2, 0, 0)),
-                reason: "Tested and verified".to_string(),
-            },
+                reason: "Tested and verified".to_string()},
         );
 
         assert_eq!(

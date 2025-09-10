@@ -107,8 +107,7 @@ impl AsyncGenerator for RustGenerator {
         outputs.push(GeneratedOutput {
             content: main_output,
             filename,
-            metadata,
-        });
+            metadata});
 
         // Generate tests if requested
         if options.generate_tests {
@@ -172,8 +171,7 @@ impl RustGenerator {
         Ok(GeneratedOutput {
             content: output,
             filename,
-            metadata,
-        })
+            metadata})
     }
 
     /// Generate tests for a specific class

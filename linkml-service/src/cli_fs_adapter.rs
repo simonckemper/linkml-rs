@@ -10,8 +10,7 @@ use crate::file_system_adapter::FileSystemOperations;
 
 /// CLI file system operations wrapper
 pub struct CLIFileSystemOps<F: FileSystemOperations> {
-    fs: Arc<F>,
-}
+    fs: Arc<F>}
 
 impl<F: FileSystemOperations> CLIFileSystemOps<F> {
     /// Create a new CLI file system operations wrapper
@@ -87,10 +86,11 @@ impl<F: FileSystemOperations> CLIFileSystemOps<F> {
 /// Helper to run async operations in sync context
 ///
 /// This function bridges async and sync contexts for CLI commands.
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns any error that occurs during the async operation execution
 pub fn block_on<Fut, T>(future: Fut) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
 where
     Fut: std::future::Future<Output = linkml_core::error::Result<T>>,
@@ -104,10 +104,11 @@ where
 ///
 /// This variant accepts a file system adapter that can be used within the future.
 /// The fs is passed to ensure proper dependency injection when needed.
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns any error that occurs during the async operation execution
 pub fn block_on_with_fs<F, Fut, T>(fs: Arc<F>, future: Fut) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
 where
     F: FileSystemOperations,

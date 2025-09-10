@@ -1,8 +1,7 @@
 //! Pydantic v2 code generator for `LinkML` schemas
 
 use super::base::{
-    BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, is_optional_slot,
-};
+    BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, is_optional_slot};
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::error::LinkMLError;
@@ -12,8 +11,7 @@ use std::fmt::Write;
 /// Pydantic v2 generator
 pub struct PydanticGenerator {
     name: String,
-    description: String,
-}
+    description: String}
 
 impl Default for PydanticGenerator {
     fn default() -> Self {
@@ -26,8 +24,7 @@ impl PydanticGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "pydantic".to_string(),
-            description: "Generate Pydantic v2 models from LinkML schemas".to_string(),
-        }
+            description: "Generate Pydantic v2 models from LinkML schemas".to_string()}
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -517,12 +514,7 @@ impl PydanticGenerator {
 
         for value in &slot.permissible_values {
             match value {
-                PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
-                    writeln!(output, "    {const_name} = \"{text}\"")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-                PermissibleValue::Complex { text, .. } => {
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace([' ', '-'], "_");
                     writeln!(output, "    {const_name} = \"{text}\"")
                         .map_err(Self::fmt_error_to_generator_error)?;
@@ -627,7 +619,7 @@ impl CodeFormatter for PydanticGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_basic_generation() {

@@ -3,8 +3,7 @@
 use super::base::{BaseCodeFormatter, TypeMapper, collect_all_slots, is_optional_slot};
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
-    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
-};
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::error::LinkMLError;
 use linkml_core::prelude::*;
@@ -14,8 +13,7 @@ use std::fmt::Write;
 /// TypeScript generator
 pub struct TypeScriptGenerator {
     name: String,
-    description: String,
-}
+    description: String}
 
 impl Default for TypeScriptGenerator {
     fn default() -> Self {
@@ -80,8 +78,7 @@ impl TypeScriptGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "typescript".to_string(),
-            description: "Generate TypeScript interfaces and types from LinkML schemas".to_string(),
-        }
+            description: "Generate TypeScript interfaces and types from LinkML schemas".to_string()}
     }
 
     /// Generate code for a single interface
@@ -272,8 +269,7 @@ impl TypeScriptGenerator {
                         "string" => "string",
                         "number" => "number",
                         "boolean" => "boolean",
-                        _ => "object",
-                    };
+                        _ => "object"};
 
                     if expected_type != "object" {
                         write!(output, " &&").map_err(Self::fmt_error_to_generator_error)?;
@@ -425,8 +421,7 @@ impl TypeScriptGenerator {
                     let values: Vec<String> = slot.permissible_values.iter().map(|pv| {
                         let text = match pv {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
-                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
-                        };
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text};
                         format!("'{text}'")
                     }).collect();
                     writeln!(
@@ -619,8 +614,7 @@ impl AsyncGenerator for TypeScriptGenerator {
                 meta.insert("schema".to_string(), schema.name.clone());
                 meta.insert("typescript_version".to_string(), "5.0".to_string());
                 meta
-            },
-        });
+            }});
 
         Ok(outputs)
     }
@@ -732,7 +726,7 @@ impl CodeFormatter for TypeScriptGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_basic_generation() {

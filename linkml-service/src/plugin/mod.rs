@@ -26,6 +26,8 @@ pub use discovery::{DiscoveryStrategy, EntryPoint, PluginDiscovery, PluginManife
 pub use loader::{DynamicLoader, FsAccessMode, PluginLoader, PluginSandbox, ResourceLimits};
 pub use registry::{PluginRegistration, PluginRegistry};
 
+// Core plugin types are already defined in this module
+
 /// Plugin type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PluginType {
@@ -42,8 +44,7 @@ pub enum PluginType {
     /// Custom function provider
     Function,
     /// Analysis tool plugin
-    Analyzer,
-}
+    Analyzer}
 
 /// Plugin information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,8 +70,7 @@ pub struct PluginInfo {
     /// Plugin dependencies
     pub dependencies: Vec<PluginDependency>,
     /// Plugin capabilities
-    pub capabilities: Vec<PluginCapability>,
-}
+    pub capabilities: Vec<PluginCapability>}
 
 /// Plugin dependency specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,8 +80,7 @@ pub struct PluginDependency {
     /// Required version range
     pub version: VersionReq,
     /// Whether the dependency is optional
-    pub optional: bool,
-}
+    pub optional: bool}
 
 /// Plugin context for execution
 #[derive(Clone)]
@@ -93,8 +92,7 @@ pub struct PluginContext {
     /// Temporary directory
     pub temp_dir: PathBuf,
     /// Logger service
-    pub logger: Arc<dyn LoggerService<Error = LoggerError>>,
-}
+    pub logger: Arc<dyn LoggerService<Error = LoggerError>>}
 
 /// Core plugin trait
 #[async_trait]
@@ -129,8 +127,7 @@ pub enum PluginStatus {
     /// Plugin is shutting down
     ShuttingDown,
     /// Plugin is shut down
-    Shutdown,
-}
+    Shutdown}
 
 /// Generator plugin trait
 #[async_trait]
@@ -231,8 +228,7 @@ pub struct FunctionSignature {
     /// Return type
     pub return_type: String,
     /// Whether the function is variadic
-    pub variadic: bool,
-}
+    pub variadic: bool}
 
 /// Parameter definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -244,8 +240,7 @@ pub struct ParameterDef {
     /// Whether the parameter is optional
     pub optional: bool,
     /// Default value if optional
-    pub default: Option<serde_json::Value>,
-}
+    pub default: Option<serde_json::Value>}
 
 /// Validation result from plugin
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -255,8 +250,7 @@ pub struct ValidationResult {
     /// Validation errors
     pub errors: Vec<ValidationError>,
     /// Validation warnings
-    pub warnings: Vec<ValidationWarning>,
-}
+    pub warnings: Vec<ValidationWarning>}
 
 /// Validation error
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -266,8 +260,7 @@ pub struct ValidationError {
     /// `JSON` path to the error
     pub path: Option<String>,
     /// Error code
-    pub code: Option<String>,
-}
+    pub code: Option<String>}
 
 /// Validation warning
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -277,8 +270,7 @@ pub struct ValidationWarning {
     /// `JSON` path to the warning
     pub path: Option<String>,
     /// Warning code
-    pub code: Option<String>,
-}
+    pub code: Option<String>}
 
 /// Plugin manager for coordinating all plugins
 pub struct PluginManager {
@@ -291,8 +283,7 @@ pub struct PluginManager {
     /// Compatibility checker
     compatibility: CompatibilityChecker,
     /// Logger service
-    logger: Arc<dyn LoggerService<Error = LoggerError>>,
-}
+    logger: Arc<dyn LoggerService<Error = LoggerError>>}
 
 impl PluginManager {
     /// Create a new plugin manager
@@ -302,8 +293,7 @@ impl PluginManager {
             loader: DynamicLoader::new(),
             discovery: PluginDiscovery::new(),
             compatibility: CompatibilityChecker::new(),
-            logger,
-        }
+            logger}
     }
 
     /// Discover and load plugins from a directory
@@ -402,8 +392,7 @@ mod tests {
             homepage: None,
             linkml_version: VersionReq::parse(">=1.0.0")?,
             dependencies: vec![],
-            capabilities: vec![],
-        };
+            capabilities: vec![]};
 
         let json = serde_json::to_string(&info).expect("should serialize PluginInfo: {}");
         let deserialized: PluginInfo =

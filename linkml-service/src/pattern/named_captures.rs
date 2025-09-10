@@ -24,8 +24,7 @@ pub enum CaptureError {
         /// Target type for conversion
         target_type: String,
         /// Error message from conversion attempt
-        error: String,
-    },
+        error: String},
 
     /// Validation failed
     #[error("Validation failed for capture '{name}': {reason}")]
@@ -33,13 +32,11 @@ pub enum CaptureError {
         /// Name of the capture that failed validation
         name: String,
         /// Reason for validation failure
-        reason: String,
-    },
+        reason: String},
 
     /// Pattern error
     #[error("Pattern error: {0}")]
-    PatternError(String),
-}
+    PatternError(String)}
 
 /// Result type for capture operations
 pub type CaptureResult<T> = Result<T, CaptureError>;
@@ -60,8 +57,7 @@ pub struct CaptureDefinition {
     pub default: Option<String>,
 
     /// Validation rules
-    pub validators: Vec<CaptureValidator>,
-}
+    pub validators: Vec<CaptureValidator>}
 
 /// Type of a capture
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,8 +74,7 @@ pub enum CaptureType {
     /// Enumeration value
     Enum(Vec<String>),
     /// Custom type with converter
-    Custom(String),
-}
+    Custom(String)}
 
 /// Validation rule for captures
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,8 +91,7 @@ pub enum CaptureValidator {
     /// Pattern match
     Pattern(String),
     /// Custom validator name
-    Custom(String),
-}
+    Custom(String)}
 
 /// Type alias for converter functions
 type ConverterFn = Box<dyn Fn(&str) -> CaptureResult<CaptureValue>>;
@@ -114,8 +108,7 @@ pub struct CaptureExtractor {
     converters: HashMap<String, ConverterFn>,
 
     /// Custom validators
-    validators: HashMap<String, ValidatorFn>,
-}
+    validators: HashMap<String, ValidatorFn>}
 
 /// Extracted capture value
 #[derive(Debug, Clone, PartialEq)]
@@ -129,8 +122,7 @@ pub enum CaptureValue {
     /// Boolean value
     Boolean(bool),
     /// Null value
-    Null,
-}
+    Null}
 
 impl CaptureExtractor {
     /// Create a new capture extractor
@@ -138,8 +130,7 @@ impl CaptureExtractor {
         Self {
             definitions: HashMap::new(),
             converters: HashMap::new(),
-            validators: HashMap::new(),
-        }
+            validators: HashMap::new()}
     }
 
     /// Add a capture definition
@@ -212,16 +203,14 @@ impl CaptureExtractor {
                 CaptureError::ConversionError {
                     name: definition.name.clone(),
                     target_type: "integer".to_string(),
-                    error: e.to_string(),
-                }
+                    error: e.to_string()}
             }),
 
             CaptureType::Float => f64::from_str(text).map(CaptureValue::Float).map_err(|e| {
                 CaptureError::ConversionError {
                     name: definition.name.clone(),
                     target_type: "float".to_string(),
-                    error: e.to_string(),
-                }
+                    error: e.to_string()}
             }),
 
             CaptureType::Boolean => match text.to_lowercase().as_str() {
@@ -230,9 +219,7 @@ impl CaptureExtractor {
                 _ => Err(CaptureError::ConversionError {
                     name: definition.name.clone(),
                     target_type: "boolean".to_string(),
-                    error: format!("Invalid boolean value: {text}"),
-                }),
-            },
+                    error: format!("Invalid boolean value: {text}")})},
 
             CaptureType::Enum(values) => {
                 if values.contains(&text.to_string()) {
@@ -240,8 +227,7 @@ impl CaptureExtractor {
                 } else {
                     Err(CaptureError::ValidationError {
                         name: definition.name.clone(),
-                        reason: format!("Value '{text}' not in allowed values: {values:?}"),
-                    })
+                        reason: format!("Value '{text}' not in allowed values: {values:?}")})
                 }
             }
 
@@ -252,8 +238,7 @@ impl CaptureExtractor {
                     Err(CaptureError::ConversionError {
                         name: definition.name.clone(),
                         target_type: converter_name.clone(),
-                        error: "Converter not found".to_string(),
-                    })
+                        error: "Converter not found".to_string()})
                 }
             }
         }
@@ -267,8 +252,7 @@ impl CaptureExtractor {
                     if text.len() < *min {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Length {} is less than minimum {}", text.len(), min),
-                        });
+                            reason: format!("Length {} is less than minimum {}", text.len(), min)});
                     }
                 }
 
@@ -276,8 +260,7 @@ impl CaptureExtractor {
                     if text.len() > *max {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Length {} exceeds maximum {}", text.len(), max),
-                        });
+                            reason: format!("Length {} exceeds maximum {}", text.len(), max)});
                     }
                 }
 
@@ -286,8 +269,7 @@ impl CaptureExtractor {
                         && value < *min {
                             return Err(CaptureError::ValidationError {
                                 name: definition.name.clone(),
-                                reason: format!("Value {value} is less than minimum {min}"),
-                            });
+                                reason: format!("Value {value} is less than minimum {min}")});
                         }
                 }
 
@@ -296,8 +278,7 @@ impl CaptureExtractor {
                         && value > *max {
                             return Err(CaptureError::ValidationError {
                                 name: definition.name.clone(),
-                                reason: format!("Value {value} exceeds maximum {max}"),
-                            });
+                                reason: format!("Value {value} exceeds maximum {max}")});
                         }
                 }
 
@@ -308,8 +289,7 @@ impl CaptureExtractor {
                     if !regex.is_match(text) {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Value '{text}' doesn't match pattern '{pattern}'"),
-                        });
+                            reason: format!("Value '{text}' doesn't match pattern '{pattern}'")});
                     }
                 }
 
@@ -319,8 +299,7 @@ impl CaptureExtractor {
                     } else {
                         return Err(CaptureError::ValidationError {
                             name: definition.name.clone(),
-                            reason: format!("Custom validator '{validator_name}' not found"),
-                        });
+                            reason: format!("Custom validator '{validator_name}' not found")});
                     }
                 }
             }
@@ -336,8 +315,7 @@ pub struct CaptureDefinitionBuilder {
     capture_type: CaptureType,
     required: bool,
     default: Option<String>,
-    validators: Vec<CaptureValidator>,
-}
+    validators: Vec<CaptureValidator>}
 
 impl CaptureDefinitionBuilder {
     /// Create a new builder
@@ -347,8 +325,7 @@ impl CaptureDefinitionBuilder {
             capture_type,
             required: true,
             default: None,
-            validators: Vec::new(),
-        }
+            validators: Vec::new()}
     }
 
     /// Set whether the capture is required
@@ -376,8 +353,7 @@ impl CaptureDefinitionBuilder {
             capture_type: self.capture_type,
             required: self.required,
             default: self.default,
-            validators: self.validators,
-        }
+            validators: self.validators}
     }
 }
 
@@ -386,16 +362,14 @@ impl CaptureValue {
     #[must_use] pub fn as_string(&self) -> Option<&str> {
         match self {
             CaptureValue::String(s) => Some(s),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Try to get as integer
     #[must_use] pub fn as_integer(&self) -> Option<i64> {
         match self {
             CaptureValue::Integer(i) => Some(*i),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Try to get as float
@@ -403,16 +377,14 @@ impl CaptureValue {
         match self {
             CaptureValue::Float(f) => Some(*f),
             CaptureValue::Integer(i) => Some(*i as f64),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Try to get as boolean
     #[must_use] pub fn as_boolean(&self) -> Option<bool> {
         match self {
             CaptureValue::Boolean(b) => Some(*b),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Check if null

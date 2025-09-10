@@ -24,8 +24,7 @@ pub struct OptimizedValidationIssue {
     /// Severity (1 byte + padding)
     pub severity: Severity,
     /// Context stored separately to avoid inline `HashMap` overhead
-    pub context_id: Option<u32>,
-}
+    pub context_id: Option<u32>}
 
 impl OptimizedValidationIssue {
     /// Convert from standard `ValidationIssue`
@@ -37,8 +36,7 @@ impl OptimizedValidationIssue {
             validator: issue.validator,
             code: issue.code,
             severity: issue.severity,
-            context_id,
-        }
+            context_id}
     }
 
     /// Convert back to standard `ValidationIssue`
@@ -53,8 +51,7 @@ impl OptimizedValidationIssue {
             path: self.path,
             validator: self.validator,
             code: self.code,
-            context,
-        }
+            context}
     }
 }
 
@@ -67,8 +64,7 @@ pub struct CompactInstruction {
     /// Common path field used by most instructions
     pub path: String,
     /// Instruction variant data
-    pub variant: InstructionVariant,
-}
+    pub variant: InstructionVariant}
 
 /// Instruction variant data
 #[derive(Debug, Clone)]
@@ -76,13 +72,11 @@ pub enum InstructionVariant {
     /// Check required field
     CheckRequired {
         /// The field name to check
-        field: String,
-    },
+        field: String},
     /// Pattern validation
     ValidatePattern {
         /// The pattern ID to validate against
-        pattern_id: u32,
-    },
+        pattern_id: u32},
     /// Range validation
     ValidateRange {
         /// Minimum value (inclusive or exclusive based on inclusive flag)
@@ -90,38 +84,31 @@ pub enum InstructionVariant {
         /// Maximum value (inclusive or exclusive based on inclusive flag)
         max: Option<f64>,
         /// Whether the range is inclusive on both ends
-        inclusive: bool,
-    },
+        inclusive: bool},
     /// Length validation
     ValidateLength {
         /// Minimum length
         min: Option<u32>,
         /// Maximum length
-        max: Option<u32>,
-    },
+        max: Option<u32>},
     /// Enum validation
     ValidateEnum {
         /// The enum ID to validate against
-        enum_id: u32,
-    },
+        enum_id: u32},
     /// Type validation
     ValidateType {
         /// The expected type
-        expected: CompiledType,
-    },
+        expected: CompiledType},
     /// Array validation
     ValidateArray {
         /// Instructions to validate each element
-        element_instructions: Box<Vec<CompactInstruction>>,
-    },
+        element_instructions: Box<Vec<CompactInstruction>>},
     /// Object validation
     ValidateObject {
         /// Instructions for each field (field name, instructions)
-        field_instructions: Box<Vec<(String, Vec<CompactInstruction>)>>,
-    },
+        field_instructions: Box<Vec<(String, Vec<CompactInstruction>)>>},
     /// No operation (placeholder for unimplemented features)
-    NoOp,
-}
+    NoOp}
 
 impl CompactInstruction {
     /// Convert from standard `ValidationInstruction`
@@ -129,53 +116,39 @@ impl CompactInstruction {
         match instruction {
             ValidationInstruction::CheckRequired { path, field } => Self {
                 path,
-                variant: InstructionVariant::CheckRequired { field },
-            },
+                variant: InstructionVariant::CheckRequired { field }},
             ValidationInstruction::ValidatePattern { path, pattern_id } => Self {
                 path,
                 variant: InstructionVariant::ValidatePattern {
-                    pattern_id: u32::try_from(pattern_id).unwrap_or(u32::MAX),
-                },
-            },
+                    pattern_id: u32::try_from(pattern_id).unwrap_or(u32::MAX)}},
             ValidationInstruction::ValidateRange {
                 path,
                 min,
                 max,
-                inclusive,
-            } => Self {
+                inclusive} => Self {
                 path,
                 variant: InstructionVariant::ValidateRange {
                     min,
                     max,
-                    inclusive,
-                },
-            },
+                    inclusive}},
             ValidationInstruction::ValidateLength { path, min, max } => Self {
                 path,
                 variant: InstructionVariant::ValidateLength {
                     min: min.map(|v| u32::try_from(v).unwrap_or(u32::MAX)),
-                    max: max.map(|v| u32::try_from(v).unwrap_or(u32::MAX)),
-                },
-            },
+                    max: max.map(|v| u32::try_from(v).unwrap_or(u32::MAX))}},
             ValidationInstruction::ValidateEnum { path, enum_id } => Self {
                 path,
                 variant: InstructionVariant::ValidateEnum {
-                    enum_id: u32::try_from(enum_id).unwrap_or(u32::MAX),
-                },
-            },
+                    enum_id: u32::try_from(enum_id).unwrap_or(u32::MAX)}},
             ValidationInstruction::ValidateType {
                 path,
-                expected_type,
-            } => Self {
+                expected_type} => Self {
                 path,
                 variant: InstructionVariant::ValidateType {
-                    expected: expected_type,
-                },
-            },
+                    expected: expected_type}},
             ValidationInstruction::ValidateArray {
                 path,
-                element_instructions,
-            } => Self {
+                element_instructions} => Self {
                 path,
                 variant: InstructionVariant::ValidateArray {
                     element_instructions: Box::new(
@@ -183,13 +156,10 @@ impl CompactInstruction {
                             .into_iter()
                             .map(CompactInstruction::from_standard)
                             .collect(),
-                    ),
-                },
-            },
+                    )}},
             ValidationInstruction::ValidateObject {
                 path,
-                field_instructions,
-            } => Self {
+                field_instructions} => Self {
                 path,
                 variant: InstructionVariant::ValidateObject {
                     field_instructions: Box::new(
@@ -204,16 +174,13 @@ impl CompactInstruction {
                                 )
                             })
                             .collect(),
-                    ),
-                },
-            },
+                    )}},
             ValidationInstruction::ConditionalValidation { .. } => {
                 // Conditional validation is evaluated at runtime in the validator
                 // For now, return a no-op instruction
                 Self {
                     path: String::new(),
-                    variant: InstructionVariant::NoOp,
-                }
+                    variant: InstructionVariant::NoOp}
             }
         }
     }
@@ -227,8 +194,7 @@ pub struct ValidationContextPool {
     /// Pool of context maps
     contexts: parking_lot::Mutex<Vec<std::collections::HashMap<String, serde_json::Value>>>,
     /// Maximum pool size
-    max_size: usize,
-}
+    max_size: usize}
 
 impl ValidationContextPool {
     /// Create a new context pool
@@ -236,8 +202,7 @@ impl ValidationContextPool {
     pub fn new(max_size: usize) -> Self {
         Self {
             contexts: parking_lot::Mutex::new(Vec::with_capacity(max_size)),
-            max_size,
-        }
+            max_size}
     }
 
     /// Get a context map from the pool
@@ -281,8 +246,7 @@ pub enum CompactType {
     /// Array type
     Array = 8,
     /// Any type
-    Any = 9,
-}
+    Any = 9}
 
 impl From<CompiledType> for CompactType {
     fn from(compiled: CompiledType) -> Self {
@@ -296,8 +260,7 @@ impl From<CompiledType> for CompactType {
             CompiledType::Uri => CompactType::Uri,
             CompiledType::Object => CompactType::Object,
             CompiledType::Array => CompactType::Array,
-            CompiledType::Any => CompactType::Any,
-        }
+            CompiledType::Any => CompactType::Any}
     }
 }
 
@@ -313,8 +276,7 @@ impl From<CompactType> for CompiledType {
             CompactType::Uri => CompiledType::Uri,
             CompactType::Object => CompiledType::Object,
             CompactType::Array => CompiledType::Array,
-            CompactType::Any => CompiledType::Any,
-        }
+            CompactType::Any => CompiledType::Any}
     }
 }
 
@@ -332,8 +294,7 @@ pub struct MemoryStats {
     /// Size of `CompiledType`
     pub compiled_type_size: usize,
     /// Size of `CompactType`
-    pub compact_type_size: usize,
-}
+    pub compact_type_size: usize}
 
 impl MemoryStats {
     /// Calculate memory statistics
@@ -345,8 +306,7 @@ impl MemoryStats {
             instruction_size: mem::size_of::<ValidationInstruction>(),
             compact_instruction_size: mem::size_of::<CompactInstruction>(),
             compiled_type_size: mem::size_of::<CompiledType>(),
-            compact_type_size: mem::size_of::<CompactType>(),
-        }
+            compact_type_size: mem::size_of::<CompactType>()}
     }
 
     /// Print memory statistics

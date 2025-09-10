@@ -3,6 +3,7 @@
 //! Handles schema versioning, version comparison, and checksum generation.
 
 use chrono::{DateTime, Utc};
+use std::fmt::Write;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
@@ -23,8 +24,7 @@ pub struct SchemaVersion {
     /// Version timestamp
     pub timestamp: DateTime<Utc>,
     /// Schema content checksum
-    pub checksum: String,
-}
+    pub checksum: String}
 
 impl SchemaVersion {
     /// Create a new schema version
@@ -34,8 +34,7 @@ impl SchemaVersion {
             minor,
             patch,
             timestamp: Utc::now(),
-            checksum: String::new(),
-        }
+            checksum: String::new()}
     }
 
     /// Parse version from string (e.g., "1.2.3")
@@ -124,10 +123,8 @@ impl Ord for SchemaVersion {
         match self.major.cmp(&other.major) {
             Ordering::Equal => match self.minor.cmp(&other.minor) {
                 Ordering::Equal => self.patch.cmp(&other.patch),
-                other => other,
-            },
-            other => other,
-        }
+                other => other},
+            other => other}
     }
 }
 
@@ -143,8 +140,7 @@ pub struct VersionedSchema {
     /// The schema definition
     pub schema: SchemaDefinition,
     /// Version information
-    pub version: SchemaVersion,
-}
+    pub version: SchemaVersion}
 
 impl VersionedSchema {
     /// Create a new versioned schema

@@ -19,8 +19,7 @@ pub enum RuleType {
     /// Computation rule that calculates values
     Computation,
     /// Classification rule that adds type information
-    Classification,
-}
+    Classification}
 
 /// A generated `TypeQL` rule
 #[derive(Debug, Clone)]
@@ -36,8 +35,7 @@ pub struct TypeQLRule {
     /// Rule description
     pub description: Option<String>,
     /// Dependencies on other rules
-    pub dependencies: Vec<String>,
-}
+    pub dependencies: Vec<String>}
 
 impl TypeQLRule {
     /// Generate `TypeQL` string for this rule
@@ -106,8 +104,7 @@ pub struct RuleGenerator {
     /// Generated rules
     rules: Vec<TypeQLRule>,
     /// Rule name counter for uniqueness
-    rule_counter: usize,
-}
+    rule_counter: usize}
 
 impl Default for RuleGenerator {
     fn default() -> Self {
@@ -122,8 +119,7 @@ impl RuleGenerator {
         Self {
             expression_translator: ExpressionTranslator::new(),
             rules: Vec::new(),
-            rule_counter: 0,
-        }
+            rule_counter: 0}
     }
 
     /// Generate a unique rule name
@@ -221,8 +217,7 @@ impl RuleGenerator {
             when_patterns,
             then_patterns,
             description: Some(format!("Validates that {slot_name} is required")),
-            dependencies: vec![],
-        })
+            dependencies: vec![]})
     }
 
     /// Generate a pattern validation rule
@@ -257,8 +252,7 @@ impl RuleGenerator {
             when_patterns,
             then_patterns,
             description: Some(format!("Validates {slot_name} matches pattern")),
-            dependencies: vec![],
-        })
+            dependencies: vec![]})
     }
 
     /// Generate a range validation rule
@@ -310,8 +304,7 @@ impl RuleGenerator {
             when_patterns,
             then_patterns,
             description: Some(format!("Validates {slot_name} range constraints")),
-            dependencies: vec![],
-        })
+            dependencies: vec![]})
     }
 
     /// Generate a rule from an expression
@@ -349,8 +342,7 @@ impl RuleGenerator {
                             when_patterns,
                             then_patterns,
                             description: Some(format!("Computes {slot_name} from expression")),
-                            dependencies: vec![],
-                        })
+                            dependencies: vec![]})
                     }
                     Err(_) => {
                         // Complex expressions may need special handling
@@ -358,8 +350,7 @@ impl RuleGenerator {
                     }
                 }
             }
-            Err(_) => None,
-        }
+            Err(_) => None}
     }
 
     /// Generate a conditional requirement rule
@@ -424,8 +415,7 @@ impl RuleGenerator {
                 when_patterns,
                 then_patterns,
                 description: Some("Conditional requirement validation".to_string()),
-                dependencies: vec![],
-            })
+                dependencies: vec![]})
         } else {
             // No then_required fields, no rule needed
             None
@@ -462,8 +452,7 @@ impl RuleGenerator {
                     .unwrap_or(rule.title.as_ref().unwrap_or(&"unspecified".to_string()))
             )],
             description: rule.description.clone(),
-            dependencies: vec![],
-        })
+            dependencies: vec![]})
     }
 
     /// Get all generated rules
@@ -490,8 +479,7 @@ impl RuleGenerator {
                 match rule.rule_type {
                     RuleType::Validation => validation_rules.push(rule),
                     RuleType::Inference | RuleType::Classification => inference_rules.push(rule),
-                    RuleType::Computation => computation_rules.push(rule),
-                }
+                    RuleType::Computation => computation_rules.push(rule)}
             }
 
             // Output validation rules
@@ -541,7 +529,7 @@ impl RuleGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_required_rule_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -588,8 +576,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             ],
             then_patterns: vec!["$x has validation-error \"Missing name\"".to_string()],
             description: Some("Test rule".to_string()),
-            dependencies: vec![],
-        };
+            dependencies: vec![]};
 
         let typeql = rule.to_typeql().expect("should generate TypeQL string: {}");
 

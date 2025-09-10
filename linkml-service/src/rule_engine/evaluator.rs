@@ -11,14 +11,12 @@ use crate::validator::report::{Severity, ValidationIssue};
 
 use super::matcher::RuleMatcher;
 use super::types::{
-    CompiledCompositeCondition, CompiledCondition, CompiledSlotCondition, RuleExecutionContext,
-};
+    CompiledCompositeCondition, CompiledCondition, CompiledSlotCondition, RuleExecutionContext};
 
 /// Evaluator for rule postconditions
 pub struct RuleEvaluator {
     expression_engine: ExpressionEngine,
-    matcher: RuleMatcher,
-}
+    matcher: RuleMatcher}
 
 impl RuleEvaluator {
     /// Create a new rule evaluator
@@ -26,8 +24,7 @@ impl RuleEvaluator {
         let matcher = RuleMatcher::new(expression_engine.clone());
         Self {
             expression_engine,
-            matcher,
-        }
+            matcher}
     }
 
     /// Evaluate postconditions and generate validation issues
@@ -73,8 +70,7 @@ impl RuleEvaluator {
                 CompiledCondition::Combined {
                     slot_conditions,
                     expression_conditions,
-                    composite_conditions,
-                } => {
+                    composite_conditions} => {
                     if let Some(slots) = slot_conditions {
                         issues.extend(self.evaluate_slot_conditions(
                             slots,
@@ -437,8 +433,7 @@ mod tests {
                 required: Some(true),
                 ..Default::default()
             },
-            equals_expression_ast: None,
-        };
+            equals_expression_ast: None};
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(

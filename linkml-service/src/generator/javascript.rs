@@ -9,8 +9,7 @@ use std::fmt::Write;
 /// JavaScript generator
 pub struct JavaScriptGenerator {
     name: String,
-    description: String,
-}
+    description: String}
 
 impl Default for JavaScriptGenerator {
     fn default() -> Self {
@@ -28,8 +27,7 @@ impl JavaScriptGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "javascript".to_string(),
-            description: "Generate JavaScript ES6 classes from LinkML schemas".to_string(),
-        }
+            description: "Generate JavaScript ES6 classes from LinkML schemas".to_string()}
     }
 
     /// Generate code for a single class
@@ -387,8 +385,7 @@ impl JavaScriptGenerator {
                 "string" | "str" => "string",
                 "integer" | "int" | "float" | "double" | "decimal" => "number",
                 "boolean" | "bool" => "boolean",
-                _ => "object",
-            }
+                _ => "object"}
         } else {
             "object"
         }
@@ -399,11 +396,9 @@ impl JavaScriptGenerator {
         if let Some(r) = range {
             match r.as_str() {
                 "string" | "str" => "string",
-                "integer" | "int" => "number",
-                "float" | "double" | "decimal" => "number",
+                "integer" | "int" | "float" | "double" | "decimal" => "number",
                 "boolean" | "bool" => "boolean",
-                _ => "object",
-            }
+                _ => "object"}
         } else {
             "value"
         }
@@ -430,12 +425,7 @@ impl JavaScriptGenerator {
 
         for value in &slot.permissible_values {
             match value {
-                PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
-                    writeln!(output, "  {const_name}: \"{text}\",")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-                PermissibleValue::Complex { text, .. } => {
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace([' ', '-'], "_");
                     writeln!(output, "  {const_name}: \"{text}\",")
                         .map_err(Self::fmt_error_to_generator_error)?;
@@ -651,7 +641,7 @@ impl CodeFormatter for JavaScriptGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

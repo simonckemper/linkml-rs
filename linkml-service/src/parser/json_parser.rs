@@ -2,8 +2,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use std::fs;
 use std::path::Path;
 
@@ -33,10 +32,8 @@ impl SchemaParser for JsonParser {
         self.parse_str(&content).map_err(|e| match e {
             LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
                 message: format!("{message} in file {}", path.display()),
-                location,
-            },
-            other => other,
-        })
+                location},
+            other => other})
     }
 }
 

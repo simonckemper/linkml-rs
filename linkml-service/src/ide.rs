@@ -37,8 +37,7 @@ pub struct LanguageServerConfig {
     /// Validation on save
     pub validate_on_save: bool,
     /// Validation on change
-    pub validate_on_change: bool,
-}
+    pub validate_on_change: bool}
 
 impl Default for LanguageServerConfig {
     fn default() -> Self {
@@ -51,8 +50,7 @@ impl Default for LanguageServerConfig {
             code_actions: true,
             max_diagnostics: 100,
             validate_on_save: true,
-            validate_on_change: false,
-        }
+            validate_on_change: false}
     }
 }
 
@@ -66,8 +64,7 @@ pub struct SyntaxHighlighting {
     /// Vim syntax file
     pub vim_syntax: String,
     /// Emacs mode
-    pub emacs_mode: String,
-}
+    pub emacs_mode: String}
 
 /// `TextMate` grammar for VS Code and other editors
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,8 +78,7 @@ pub struct TextMateGrammar {
     /// Patterns
     pub patterns: Vec<GrammarPattern>,
     /// Repository of reusable patterns
-    pub repository: HashMap<String, GrammarPattern>,
-}
+    pub repository: HashMap<String, GrammarPattern>}
 
 /// Grammar pattern
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,15 +96,13 @@ pub struct GrammarPattern {
     /// Include other patterns
     pub include: Option<String>,
     /// Sub-patterns
-    pub patterns: Option<Vec<GrammarPattern>>,
-}
+    pub patterns: Option<Vec<GrammarPattern>>}
 
 /// Capture group
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Capture {
     /// Scope name
-    pub name: String,
-}
+    pub name: String}
 
 /// Generate `TextMate` grammar for `LinkML`
 #[must_use]
@@ -123,8 +117,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
         end: None,
         captures: None,
         include: None,
-        patterns: None,
-    });
+        patterns: None});
 
     // Strings
     repository.insert(
@@ -143,9 +136,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 end: None,
                 captures: None,
                 include: None,
-                patterns: None,
-            }]),
-        },
+                patterns: None}])},
     );
 
     // Comments
@@ -158,8 +149,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
             end: None,
             captures: None,
             include: None,
-            patterns: None,
-        },
+            patterns: None},
     );
 
     // Numbers
@@ -172,8 +162,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
             end: None,
             captures: None,
             include: None,
-            patterns: None,
-        },
+            patterns: None},
     );
 
     // Booleans
@@ -186,8 +175,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
             end: None,
             captures: None,
             include: None,
-            patterns: None,
-        },
+            patterns: None},
     );
 
     TextMateGrammar {
@@ -202,8 +190,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 begin: None,
                 end: None,
                 captures: None,
-                patterns: None,
-            },
+                patterns: None},
             GrammarPattern {
                 include: Some("#strings".to_string()),
                 name: None,
@@ -211,8 +198,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 begin: None,
                 end: None,
                 captures: None,
-                patterns: None,
-            },
+                patterns: None},
             GrammarPattern {
                 include: Some("#comments".to_string()),
                 name: None,
@@ -220,8 +206,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 begin: None,
                 end: None,
                 captures: None,
-                patterns: None,
-            },
+                patterns: None},
             GrammarPattern {
                 include: Some("#numbers".to_string()),
                 name: None,
@@ -229,8 +214,7 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 begin: None,
                 end: None,
                 captures: None,
-                patterns: None,
-            },
+                patterns: None},
             GrammarPattern {
                 include: Some("#booleans".to_string()),
                 name: None,
@@ -238,11 +222,9 @@ pub fn generate_textmate_grammar() -> TextMateGrammar {
                 begin: None,
                 end: None,
                 captures: None,
-                patterns: None,
-            },
+                patterns: None},
         ],
-        repository,
-    }
+        repository}
 }
 
 /// Generate Tree-sitter grammar for `LinkML`
@@ -413,8 +395,7 @@ pub struct CompletionProvider {
     /// Keywords
     keywords: Vec<CompletionItem>,
     /// Types
-    types: Vec<CompletionItem>,
-}
+    types: Vec<CompletionItem>}
 
 /// Completion item
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -428,8 +409,7 @@ pub struct CompletionItem {
     /// Documentation
     pub documentation: Option<String>,
     /// Insert text
-    pub insert_text: Option<String>,
-}
+    pub insert_text: Option<String>}
 
 /// Completion item kind
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -447,8 +427,7 @@ pub enum CompletionKind {
     /// Value
     Value,
     /// Snippet
-    Snippet,
-}
+    Snippet}
 
 impl Default for CompletionProvider {
     fn default() -> Self {
@@ -466,29 +445,25 @@ impl CompletionProvider {
                 kind: CompletionKind::Keyword,
                 detail: Some("Define classes".to_string()),
                 documentation: Some("Define the classes in the schema".to_string()),
-                insert_text: Some("classes:\n  ".to_string()),
-            },
+                insert_text: Some("classes:\n  ".to_string())},
             CompletionItem {
                 label: "slots".to_string(),
                 kind: CompletionKind::Keyword,
                 detail: Some("Define slots".to_string()),
                 documentation: Some("Define the slots in the schema".to_string()),
-                insert_text: Some("slots:\n  ".to_string()),
-            },
+                insert_text: Some("slots:\n  ".to_string())},
             CompletionItem {
                 label: "is_a".to_string(),
                 kind: CompletionKind::Keyword,
                 detail: Some("Parent class".to_string()),
                 documentation: Some("Specify the parent class for inheritance".to_string()),
-                insert_text: Some("is_a: ".to_string()),
-            },
+                insert_text: Some("is_a: ".to_string())},
             CompletionItem {
                 label: "required".to_string(),
                 kind: CompletionKind::Keyword,
                 detail: Some("Required field".to_string()),
                 documentation: Some("Specify if this field is required".to_string()),
-                insert_text: Some("required: true".to_string()),
-            },
+                insert_text: Some("required: true".to_string())},
         ];
 
         let types = vec![
@@ -497,36 +472,31 @@ impl CompletionProvider {
                 kind: CompletionKind::Type,
                 detail: Some("String type".to_string()),
                 documentation: Some("A sequence of characters".to_string()),
-                insert_text: None,
-            },
+                insert_text: None},
             CompletionItem {
                 label: "integer".to_string(),
                 kind: CompletionKind::Type,
                 detail: Some("Integer type".to_string()),
                 documentation: Some("A whole number".to_string()),
-                insert_text: None,
-            },
+                insert_text: None},
             CompletionItem {
                 label: "float".to_string(),
                 kind: CompletionKind::Type,
                 detail: Some("Float type".to_string()),
                 documentation: Some("A floating point number".to_string()),
-                insert_text: None,
-            },
+                insert_text: None},
             CompletionItem {
                 label: "boolean".to_string(),
                 kind: CompletionKind::Type,
                 detail: Some("Boolean type".to_string()),
                 documentation: Some("True or false value".to_string()),
-                insert_text: None,
-            },
+                insert_text: None},
         ];
 
         Self {
             schema: None,
             keywords,
-            types,
-        }
+            types}
     }
 
     /// Set schema context
@@ -558,8 +528,7 @@ impl CompletionProvider {
                         kind: CompletionKind::Class,
                         detail: class.description.clone(),
                         documentation: None,
-                        insert_text: None,
-                    });
+                        insert_text: None});
                 }
             }
 
@@ -570,8 +539,7 @@ impl CompletionProvider {
                         kind: CompletionKind::Slot,
                         detail: slot.description.clone(),
                         documentation: None,
-                        insert_text: None,
-                    });
+                        insert_text: None});
                 }
             }
         }
@@ -594,8 +562,7 @@ pub struct CompletionContext {
     /// Current line
     pub line: String,
     /// Cursor position
-    pub position: usize,
-}
+    pub position: usize}
 
 /// Diagnostic provider
 pub struct DiagnosticProvider<S>
@@ -605,8 +572,7 @@ where
     /// `LinkML` service
     service: Arc<S>,
     /// Current diagnostics
-    diagnostics: Arc<RwLock<Vec<Diagnostic>>>,
-}
+    diagnostics: Arc<RwLock<Vec<Diagnostic>>>}
 
 /// Diagnostic
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -620,8 +586,7 @@ pub struct Diagnostic {
     /// Source
     pub source: String,
     /// Code
-    pub code: Option<String>,
-}
+    pub code: Option<String>}
 
 /// Diagnostic severity
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -633,8 +598,7 @@ pub enum DiagnosticSeverity {
     /// Information
     Information,
     /// Hint
-    Hint,
-}
+    Hint}
 
 /// Range in document
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -642,8 +606,7 @@ pub struct Range {
     /// Start position
     pub start: Position,
     /// End position
-    pub end: Position,
-}
+    pub end: Position}
 
 /// Position in document
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -651,8 +614,7 @@ pub struct Position {
     /// Line (0-based)
     pub line: u32,
     /// Character (0-based)
-    pub character: u32,
-}
+    pub character: u32}
 
 impl<S> DiagnosticProvider<S>
 where
@@ -662,8 +624,7 @@ where
     pub fn new(service: Arc<S>) -> Self {
         Self {
             service,
-            diagnostics: Arc::new(RwLock::new(Vec::new())),
-        }
+            diagnostics: Arc::new(RwLock::new(Vec::new()))}
     }
 
     /// Validate document
@@ -691,18 +652,14 @@ where
                             range: Range {
                                 start: Position {
                                     line: 0,
-                                    character: 0,
-                                },
+                                    character: 0},
                                 end: Position {
                                     line: 0,
-                                    character: 0,
-                                },
-                            },
+                                    character: 0}},
                             severity: DiagnosticSeverity::Error,
                             message: format!("Invalid LinkML schema: {e}"),
                             source: "linkml".to_string(),
-                            code: Some("E001".to_string()),
-                        });
+                            code: Some("E001".to_string())});
                     }
                 }
             }
@@ -712,18 +669,14 @@ where
                     range: Range {
                         start: Position {
                             line: 0,
-                            character: 0,
-                        },
+                            character: 0},
                         end: Position {
                             line: 0,
-                            character: 0,
-                        },
-                    },
+                            character: 0}},
                     severity: DiagnosticSeverity::Error,
                     message: format!("YAML parse error: {e}"),
                     source: "yaml".to_string(),
-                    code: None,
-                });
+                    code: None});
             }
         }
 
@@ -756,8 +709,7 @@ pub struct VSCodeExtension {
     /// Keywords
     pub keywords: Vec<String>,
     /// Contributes
-    pub contributes: VSCodeContributes,
-}
+    pub contributes: VSCodeContributes}
 
 /// VS Code contributions
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -769,8 +721,7 @@ pub struct VSCodeContributes {
     /// Commands
     pub commands: Vec<CommandConfiguration>,
     /// Configuration
-    pub configuration: ConfigurationSchema,
-}
+    pub configuration: ConfigurationSchema}
 
 /// Language configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -782,8 +733,7 @@ pub struct LanguageConfiguration {
     /// Extensions
     pub extensions: Vec<String>,
     /// Configuration file
-    pub configuration: String,
-}
+    pub configuration: String}
 
 /// Grammar configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -793,8 +743,7 @@ pub struct GrammarConfiguration {
     /// Scope name
     pub scope_name: String,
     /// Path to grammar file
-    pub path: String,
-}
+    pub path: String}
 
 /// Command configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -804,8 +753,7 @@ pub struct CommandConfiguration {
     /// Title
     pub title: String,
     /// Category
-    pub category: Option<String>,
-}
+    pub category: Option<String>}
 
 /// Configuration schema
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -813,8 +761,7 @@ pub struct ConfigurationSchema {
     /// Title
     pub title: String,
     /// Properties
-    pub properties: HashMap<String, ConfigProperty>,
-}
+    pub properties: HashMap<String, ConfigProperty>}
 
 /// Configuration property
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -824,8 +771,7 @@ pub struct ConfigProperty {
     /// Default value
     pub default: Value,
     /// Description
-    pub description: String,
-}
+    pub description: String}
 
 /// Generate VS Code extension configuration
 #[must_use]
@@ -837,8 +783,7 @@ pub fn generate_vscode_extension() -> VSCodeExtension {
         ConfigProperty {
             r#type: "boolean".to_string(),
             default: Value::Bool(true),
-            description: "Enable validation on save".to_string(),
-        },
+            description: "Enable validation on save".to_string()},
     );
 
     properties.insert(
@@ -846,8 +791,7 @@ pub fn generate_vscode_extension() -> VSCodeExtension {
         ConfigProperty {
             r#type: "boolean".to_string(),
             default: Value::Bool(false),
-            description: "Enable validation on change".to_string(),
-        },
+            description: "Enable validation on change".to_string()},
     );
 
     properties.insert(
@@ -855,8 +799,7 @@ pub fn generate_vscode_extension() -> VSCodeExtension {
         ConfigProperty {
             r#type: "boolean".to_string(),
             default: Value::Bool(true),
-            description: "Enable code completion".to_string(),
-        },
+            description: "Enable code completion".to_string()},
     );
 
     VSCodeExtension {
@@ -885,31 +828,24 @@ pub fn generate_vscode_extension() -> VSCodeExtension {
                     ".yaml".to_string(),
                     ".yml".to_string(),
                 ],
-                configuration: "./language-configuration.json".to_string(),
-            }],
+                configuration: "./language-configuration.json".to_string()}],
             grammars: vec![GrammarConfiguration {
                 language: "linkml".to_string(),
                 scope_name: "source.linkml".to_string(),
-                path: "./syntaxes/linkml.tmLanguage.json".to_string(),
-            }],
+                path: "./syntaxes/linkml.tmLanguage.json".to_string()}],
             commands: vec![
                 CommandConfiguration {
                     command: "linkml.validate".to_string(),
                     title: "Validate LinkML Schema".to_string(),
-                    category: Some("LinkML".to_string()),
-                },
+                    category: Some("LinkML".to_string())},
                 CommandConfiguration {
                     command: "linkml.format".to_string(),
                     title: "Format LinkML Schema".to_string(),
-                    category: Some("LinkML".to_string()),
-                },
+                    category: Some("LinkML".to_string())},
             ],
             configuration: ConfigurationSchema {
                 title: "LinkML".to_string(),
-                properties,
-            },
-        },
-    }
+                properties}}}
 }
 
 /// Generate package.json for VS Code extension
@@ -932,8 +868,7 @@ pub struct IntelliJPlugin {
     /// Description
     pub description: String,
     /// Dependencies
-    pub dependencies: Vec<String>,
-}
+    pub dependencies: Vec<String>}
 
 /// Generate `IntelliJ` plugin configuration
 #[must_use]
@@ -947,8 +882,7 @@ pub fn generate_intellij_plugin() -> IntelliJPlugin {
         dependencies: vec![
             "com.intellij.modules.lang".to_string(),
             "org.jetbrains.plugins.yaml".to_string(),
-        ],
-    }
+        ]}
 }
 
 #[cfg(test)]
@@ -965,8 +899,7 @@ mod tests {
             expecting_class: false,
             expecting_slot: false,
             line: String::new(),
-            position: 0,
-        };
+            position: 0};
 
         let completions = provider.get_completions(&context);
         assert!(!completions.is_empty());

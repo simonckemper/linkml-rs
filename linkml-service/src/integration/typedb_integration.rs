@@ -25,8 +25,7 @@ pub struct QueryResult {
     /// Result data as `JSON` string
     pub data: String,
     /// Number of affected rows for mutations
-    pub affected_rows: usize,
-}
+    pub affected_rows: usize}
 
 /// `TypeDB` integration service for `LinkML`
 pub struct TypeDBIntegration<D>
@@ -38,8 +37,7 @@ where
     /// Schema mapping cache
     schema_cache: HashMap<String, TypeDBSchema>,
     /// Configuration for the integration
-    config: TypeDBIntegrationConfig,
-}
+    config: TypeDBIntegrationConfig}
 
 /// Configuration for `TypeDB` integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,8 +51,7 @@ pub struct TypeDBIntegrationConfig {
     /// Maximum retry attempts for operations
     pub max_retries: u32,
     /// Timeout for operations in seconds
-    pub operation_timeout: u64,
-}
+    pub operation_timeout: u64}
 
 impl Default for TypeDBIntegrationConfig {
     fn default() -> Self {
@@ -63,8 +60,7 @@ impl Default for TypeDBIntegrationConfig {
             auto_sync: true,
             validate_before_ops: true,
             max_retries: 3,
-            operation_timeout: 30,
-        }
+            operation_timeout: 30}
     }
 }
 
@@ -84,8 +80,7 @@ pub struct TypeDBSchema {
     /// Mapping of relationships
     pub relation_mappings: HashMap<String, RelationMapping>,
     /// Schema version
-    pub version: String,
-}
+    pub version: String}
 
 /// Mapping for `TypeDB` relations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -95,8 +90,7 @@ pub struct RelationMapping {
     /// Roles in the relation
     pub roles: Vec<String>,
     /// Mapping of `LinkML` slots to roles
-    pub role_mappings: HashMap<String, String>,
-}
+    pub role_mappings: HashMap<String, String>}
 
 impl<D> TypeDBIntegration<D>
 where
@@ -108,8 +102,7 @@ where
         Self {
             dbms_service,
             schema_cache: HashMap::new(),
-            config,
-        }
+            config}
     }
 
     /// Convert `LinkML` schema to `TypeDB` schema
@@ -139,7 +132,7 @@ where
         // Convert LinkML classes to TypeDB entities
         for (class_name, class_def) in &schema.classes {
             let entity_type = self.map_class_to_entity(class_name, class_def, schema)?;
-            typeql.push_str(&format!("\n{entity_type}\n"));
+            writeln!(typeql, "\n{entity_type}").unwrap();
             entity_mappings.insert(class_name.clone(), Self::sanitize_name(class_name));
 
             // Check for relationships
@@ -152,7 +145,7 @@ where
 
         // Add relations to TypeQL
         for relation in relation_mappings.values() {
-            typeql.push_str(&format!("\n{} sub relation,\n", relation.relation_type));
+            writeln!(typeql, "\n{} sub relation,", relation.relation_type).unwrap();
             for role in &relation.roles {
                 let _ = writeln!(typeql, "  relates {role},");
             }
@@ -165,8 +158,7 @@ where
             entity_mappings,
             attribute_mappings,
             relation_mappings,
-            version: schema.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
-        })
+            version: schema.version.clone().unwrap_or_else(|| "1.0.0".to_string())})
     }
 
     /// Map `LinkML` slot to `TypeDB` attribute
@@ -178,7 +170,7 @@ where
 
         // Add regex constraint if pattern is specified
         if let Some(ref pattern) = slot_def.pattern {
-            attribute.push_str(&format!(" regex \"{pattern}\";"));
+            write!(attribute, " regex \"{pattern}\";").unwrap();
         }
 
         attribute
@@ -254,8 +246,7 @@ where
                         relations.push(RelationMapping {
                             relation_type,
                             roles: vec!["owner".to_string(), "target".to_string()],
-                            role_mappings,
-                        });
+                            role_mappings});
                     }
             }
         }
@@ -365,7 +356,7 @@ where
             for (field, value) in map {
                 if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
                     let value_str = self.format_value_for_typedb(value)?;
-                    query.push_str(&format!(" $x has {attr_name} {value_str};"));
+                    write!(query, " $x has {attr_name} {value_str};").unwrap();
                 }
             }
         }
@@ -410,7 +401,7 @@ where
         // Add filters
         for (field, value) in &filters {
             if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
-                query.push_str(&format!(" $x has {attr_name} {value};"));
+                write!(query, " $x has {attr_name} {value};").unwrap();
             }
         }
 
@@ -457,8 +448,7 @@ where
             Value::Number(n) => Ok(n.to_string()),
             Value::Bool(b) => Ok(b.to_string()),
             Value::Null => Err(LinkMLError::service("Cannot insert null values into TypeDB".to_string())),
-            _ => Err(LinkMLError::service(format!("Unsupported value type for TypeDB: {value:?}"))),
-        }
+            _ => Err(LinkMLError::service(format!("Unsupported value type for TypeDB: {value:?}")))}
     }
 
     /// Validate `LinkML` data against `TypeDB` schema constraints
@@ -616,10 +606,10 @@ mod tests {
             config,
         );
 
-        assert_eq!(integration.sanitize_name("ValidName"), "validname");
-        assert_eq!(integration.sanitize_name("name-with-dashes"), "name_with_dashes");
-        assert_eq!(integration.sanitize_name("123_starts_with_number"), "_123_starts_with_number");
-        assert_eq!(integration.sanitize_name("CamelCase"), "camelcase");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::sanitize_name("ValidName"), "validname");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::sanitize_name("name-with-dashes"), "name_with_dashes");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::sanitize_name("123_starts_with_number"), "_123_starts_with_number");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::sanitize_name("CamelCase"), "camelcase");
     }
 
     #[test]
@@ -630,19 +620,18 @@ mod tests {
             config,
         );
 
-        assert_eq!(integration.map_range_to_typedb_type("string"), "string");
-        assert_eq!(integration.map_range_to_typedb_type("integer"), "long");
-        assert_eq!(integration.map_range_to_typedb_type("float"), "double");
-        assert_eq!(integration.map_range_to_typedb_type("boolean"), "boolean");
-        assert_eq!(integration.map_range_to_typedb_type("datetime"), "datetime");
-        assert_eq!(integration.map_range_to_typedb_type("unknown"), "string");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("string"), "string");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("integer"), "long");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("float"), "double");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("boolean"), "boolean");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("datetime"), "datetime");
+        assert_eq!(TypeDBIntegration::<MockDBMSService>::map_range_to_typedb_type("unknown"), "string");
     }
 
     // Mock database connection implementation
     #[derive(Debug)]
     struct MockDatabaseConnection {
-        database_name: String,
-    }
+        database_name: String}
 
     impl MockDatabaseConnection {
         fn new(database_name: String) -> Self {
@@ -682,8 +671,7 @@ mod tests {
     // Mock connection pool implementation
     #[derive(Debug)]
     struct MockConnectionPool {
-        database_name: String,
-    }
+        database_name: String}
 
     impl MockConnectionPool {
         fn new(database_name: String) -> Self {
@@ -708,8 +696,7 @@ mod tests {
                 connections_created: 10,
                 connections_closed: 0,
                 avg_wait_time_ms: 5.0,
-                max_wait_time_ms: 10.0,
-            }
+                max_wait_time_ms: 10.0}
         }
 
         async fn acquire_connection(&self) -> std::result::Result<Arc<dyn DatabaseConnection<Error = Self::Error>>, Self::Error> {
@@ -727,8 +714,7 @@ mod tests {
                 database: self.database_name.clone(),
                 components: std::collections::HashMap::new(),
                 details: Some("Mock pool is healthy".to_string()),
-                check_duration_ms: 5,
-            })
+                check_duration_ms: 5})
         }
 
         async fn resize_pool(&self, _new_size: u32) -> std::result::Result<(), Self::Error> {
@@ -757,10 +743,18 @@ mod tests {
                 entity_count: 0,
                 relation_count: 0,
                 attribute_count: 0,
-                schema_version: Some("1.0.0".to_string()),
+                schema_version: Some(dbms_core::types::SchemaVersion {
+                    version: "1.0.0".to_string(),
+                    description: None,
+                    deployed_at: chrono::Utc::now(),
+                    deployed_by: "test".to_string(),
+                    content_hash: "test_hash".to_string(),
+                    status: dbms_core::types::SchemaVersionStatus::Active,
+                    migrations: Vec::new(),
+                    previous_version: None,
+                    tags: Vec::new()}),
                 tags: Vec::new(),
-                metadata: std::collections::HashMap::new(),
-            })
+                metadata: std::collections::HashMap::new()})
         }
 
         async fn delete_database(&self, _name: &str) -> DBMSResult<()> {
@@ -804,8 +798,7 @@ mod tests {
                 database: _database.to_string(),
                 components: std::collections::HashMap::new(),
                 details: Some("Mock DBMS service is healthy".to_string()),
-                check_duration_ms: 5,
-            })
+                check_duration_ms: 5})
         }
 
         async fn validate_schema(&self, _schema: &str) -> DBMSResult<SchemaValidation> {
@@ -816,8 +809,7 @@ mod tests {
                 errors: Vec::new(),
                 warnings: Vec::new(),
                 validation_duration_ms: 10,
-                elements_validated: 1,
-            })
+                elements_validated: 1})
         }
 
         async fn get_schema_version(&self, _database: &str) -> DBMSResult<SchemaVersion> {
@@ -830,45 +822,134 @@ mod tests {
                 migrations: Vec::new(),
                 status: dbms_core::types::SchemaVersionStatus::Active,
                 previous_version: None,
-                tags: Vec::new(),
-            })
+                tags: Vec::new()})
         }
 
 
 
         async fn get_database_metrics(&self, _database: &str) -> DBMSResult<DatabaseMetrics> {
+            use dbms_core::types::*;
             // Mock implementation - return basic metrics for testing
             Ok(DatabaseMetrics {
-                database_name: _database.to_string(),
-                entity_count: 0,
-                relation_count: 0,
-                attribute_count: 0,
-                rule_count: 0,
-                query_count: 0,
-                avg_query_time_ms: 5.0,
-                max_query_time_ms: 10.0,
-                cache_hit_rate: 0.95,
-                memory_usage_bytes: 1024,
-                disk_usage_bytes: 2048,
-                connection_count: 1,
-                last_updated: chrono::Utc::now(),
-            })
+                timestamp: chrono::Utc::now(),
+                database: _database.to_string(),
+                connection_pool: ConnectionPoolMetrics {
+                    total_connections: 10,
+                    active_connections: 5,
+                    idle_connections: 5,
+                    waiting_connections: 0,
+                    avg_acquisition_time_ms: 5.0,
+                    max_acquisition_time_ms: 10.0,
+                    utilization_percent: 0.5,
+                    connection_timeouts: 0,
+                    connection_errors: 0},
+                query_performance: QueryPerformanceMetrics {
+                    total_queries: 100,
+                    avg_query_time_ms: 5.0,
+                    max_query_time_ms: 10.0,
+                    p95_query_time_ms: 8.0,
+                    slow_queries: 0,
+                    query_timeouts: 0,
+                    cache_hit_rate: 0.95},
+                resource_usage: ResourceUsageMetrics {
+                    disk_usage_bytes: 2048,
+                    memory_usage_bytes: 1024,
+                    cpu_usage_percent: 25.0,
+                    open_file_descriptors: 50,
+                    network_bytes_sent: 1000,
+                    network_bytes_received: 2000},
+                transaction_metrics: TransactionMetrics {
+                    total_transactions: 50,
+                    committed_transactions: 48,
+                    rolled_back_transactions: 2,
+                    avg_transaction_duration_ms: 10.0,
+                    max_transaction_duration_ms: 20.0,
+                    deadlocks_detected: 0},
+                schema_metrics: SchemaMetrics {
+                    entity_types: 5,
+                    relation_types: 3,
+                    attribute_types: 10,
+                    roles: 8,
+                    rules: 2,
+                    complexity_score: 0.5},
+                error_metrics: ErrorMetrics {
+                    total_errors: 5,
+                    connection_errors: 1,
+                    query_errors: 2,
+                    transaction_errors: 1,
+                    auth_errors: 0,
+                    error_rate_per_minute: 0.1}})
         }
 
         async fn optimize_database(&self, _database: &str) -> DBMSResult<OptimizationReport> {
+            use dbms_core::types::*;
             // Mock implementation - return basic optimization report for testing
+            let mock_metrics = DatabaseMetrics {
+                timestamp: chrono::Utc::now(),
+                database: _database.to_string(),
+                connection_pool: ConnectionPoolMetrics {
+                    total_connections: 10,
+                    active_connections: 5,
+                    idle_connections: 5,
+                    waiting_connections: 0,
+                    avg_acquisition_time_ms: 5.0,
+                    max_acquisition_time_ms: 10.0,
+                    utilization_percent: 0.5,
+                    connection_timeouts: 0,
+                    connection_errors: 0},
+                query_performance: QueryPerformanceMetrics {
+                    total_queries: 100,
+                    avg_query_time_ms: 5.0,
+                    max_query_time_ms: 10.0,
+                    p95_query_time_ms: 8.0,
+                    slow_queries: 0,
+                    query_timeouts: 0,
+                    cache_hit_rate: 0.95},
+                resource_usage: ResourceUsageMetrics {
+                    disk_usage_bytes: 2048,
+                    memory_usage_bytes: 1024,
+                    cpu_usage_percent: 25.0,
+                    open_file_descriptors: 50,
+                    network_bytes_sent: 1000,
+                    network_bytes_received: 2000},
+                transaction_metrics: TransactionMetrics {
+                    total_transactions: 50,
+                    committed_transactions: 48,
+                    rolled_back_transactions: 2,
+                    avg_transaction_duration_ms: 10.0,
+                    max_transaction_duration_ms: 20.0,
+                    deadlocks_detected: 0},
+                schema_metrics: SchemaMetrics {
+                    entity_types: 5,
+                    relation_types: 3,
+                    attribute_types: 10,
+                    roles: 8,
+                    rules: 2,
+                    complexity_score: 0.5},
+                error_metrics: ErrorMetrics {
+                    total_errors: 5,
+                    connection_errors: 1,
+                    query_errors: 2,
+                    transaction_errors: 1,
+                    auth_errors: 0,
+                    error_rate_per_minute: 0.1}};
+            
             Ok(OptimizationReport {
-                database_name: _database.to_string(),
-                optimization_type: "mock_optimization".to_string(),
-                started_at: chrono::Utc::now(),
-                completed_at: chrono::Utc::now(),
-                duration_ms: 100,
-                improvements: vec!["Mock improvement: Reduced query time by 10%".to_string()],
-                metrics_before: std::collections::HashMap::new(),
-                metrics_after: std::collections::HashMap::new(),
-                success: true,
-                error_message: None,
-            })
+                generated_at: chrono::Utc::now(),
+                database: _database.to_string(),
+                optimization_score: 85.0,
+                recommendations: vec![
+                    OptimizationRecommendation {
+                        priority: RecommendationPriority::Medium,
+                        category: OptimizationCategory::QueryOptimization,
+                        description: "Mock improvement: Reduced query time by 10%".to_string(),
+                        impact: PerformanceImpact::Medium,
+                        complexity: ImplementationComplexity::Low,
+                        actions: vec!["Optimize query patterns".to_string()]}
+                ],
+                before_metrics: mock_metrics.clone(),
+                projected_metrics: Some(mock_metrics),
+                estimated_improvement: 10.0})
         }
 
         async fn get_events(&self, _database: Option<&str>, _since: chrono::DateTime<chrono::Utc>, _limit: u32) -> DBMSResult<Vec<DatabaseEvent>> {

@@ -9,8 +9,7 @@ use std::fmt;
 /// Error type for function calls
 #[derive(Debug)]
 pub struct FunctionError {
-    pub message: String,
-}
+    pub message: String}
 
 impl fmt::Display for FunctionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -23,16 +22,14 @@ impl std::error::Error for FunctionError {}
 impl FunctionError {
     pub fn new(message: impl Into<String>) -> Self {
         Self {
-            message: message.into(),
-        }
+            message: message.into()}
     }
 
     #[must_use] pub fn wrong_arity(name: &str, expected: &str, actual: usize) -> Self {
         Self {
             message: format!(
                 "Function '{name}' expects {expected} arguments, got {actual}"
-            ),
-        }
+            )}
     }
 
     pub fn invalid_argument(name: &str, message: impl Into<String>) -> Self {
@@ -41,8 +38,7 @@ impl FunctionError {
                 "Invalid argument for function '{}': {}",
                 name,
                 message.into()
-            ),
-        }
+            )}
     }
 
     pub fn invalid_result(name: &str, message: impl Into<String>) -> Self {
@@ -51,8 +47,7 @@ impl FunctionError {
                 "Invalid result from function '{}': {}",
                 name,
                 message.into()
-            ),
-        }
+            )}
     }
 }
 
@@ -83,15 +78,12 @@ pub struct CustomFunction {
     name: String,
     min_args: usize,
     max_args: Option<usize>,
-    handler: Box<dyn Fn(Vec<Value>) -> Result<Value, FunctionError> + Send + Sync>,
-}
+    handler: Box<dyn Fn(Vec<Value>) -> Result<Value, FunctionError> + Send + Sync>}
 
 impl CustomFunction {
     /// Create a new custom function
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+    /// 
+    /// This function cannot fail as it only constructs the function wrapper.
     pub fn new(
         name: impl Into<String>,
         min_args: usize,
@@ -102,8 +94,7 @@ impl CustomFunction {
             name: name.into(),
             min_args,
             max_args,
-            handler: Box::new(handler),
-        }
+            handler: Box::new(handler)}
     }
 }
 
@@ -140,16 +131,14 @@ impl BuiltinFunction for CustomFunction {
 pub struct FunctionRegistry {
     functions: HashMap<String, Box<dyn BuiltinFunction>>,
     /// Whether the registry is locked to prevent further registrations
-    locked: bool,
-}
+    locked: bool}
 
 impl FunctionRegistry {
     /// Create a new function registry with all built-in functions
     #[must_use] pub fn new() -> Self {
         let mut registry = Self {
             functions: HashMap::new(),
-            locked: false,
-        };
+            locked: false};
 
         // Register all built-in functions
         registry.register(Box::new(LenFunction));
@@ -318,8 +307,7 @@ impl FunctionRegistry {
                 function.validate_arity(&args)?;
                 function.call(args)
             }
-            None => Err(FunctionError::new(format!("Unknown function: {name}"))),
-        }
+            None => Err(FunctionError::new(format!("Unknown function: {name}")))}
     }
 
     /// Check if a function exists
@@ -413,8 +401,7 @@ impl BuiltinFunction for MaxFunction {
 
         match max_val {
             Some(val) => Ok(Value::Number(f64_to_number(val, self.name())?)),
-            None => Ok(Value::Null),
-        }
+            None => Ok(Value::Null)}
     }
 }
 
@@ -457,8 +444,7 @@ impl BuiltinFunction for MinFunction {
 
         match min_val {
             Some(val) => Ok(Value::Number(f64_to_number(val, self.name())?)),
-            None => Ok(Value::Null),
-        }
+            None => Ok(Value::Null)}
     }
 }
 
@@ -562,8 +548,7 @@ impl BuiltinFunction for ContainsFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "invalid argument types for contains",
-            )),
-        }
+            ))}
     }
 }
 
@@ -576,8 +561,7 @@ fn is_truthy(value: &Value) -> bool {
         Value::Number(n) => n.as_f64().unwrap_or(0.0) != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Array(a) => !a.is_empty(),
-        Value::Object(o) => !o.is_empty(),
-    }
+        Value::Object(o) => !o.is_empty()}
 }
 
 fn values_equal(a: &Value, b: &Value) -> bool {
@@ -588,8 +572,7 @@ fn values_equal(a: &Value, b: &Value) -> bool {
         (Value::String(a), Value::String(b)) => a == b,
         (Value::Array(a), Value::Array(b)) => a == b,
         (Value::Object(a), Value::Object(b)) => a == b,
-        _ => false,
-    }
+        _ => false}
 }
 
 #[cfg(test)]

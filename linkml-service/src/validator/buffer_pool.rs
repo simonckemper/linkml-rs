@@ -11,8 +11,7 @@ use std::sync::Arc;
 pub struct StringPool {
     pool: Arc<Mutex<VecDeque<String>>>,
     max_size: usize,
-    max_buffer_capacity: usize,
-}
+    max_buffer_capacity: usize}
 
 impl StringPool {
     /// Create a new string pool
@@ -21,8 +20,7 @@ impl StringPool {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
             max_size,
-            max_buffer_capacity,
-        }
+            max_buffer_capacity}
     }
 
     /// Get a string buffer from the pool
@@ -34,8 +32,7 @@ impl StringPool {
             buffer,
             pool: Arc::clone(&self.pool),
             max_capacity: self.max_buffer_capacity,
-            max_pool_size: self.max_size,
-        }
+            max_pool_size: self.max_size}
     }
 
     /// Get current pool size
@@ -50,8 +47,7 @@ pub struct StringBuffer {
     buffer: String,
     pool: Arc<Mutex<VecDeque<String>>>,
     max_capacity: usize,
-    max_pool_size: usize,
-}
+    max_pool_size: usize}
 
 impl StringBuffer {
     /// Get a mutable reference to the string
@@ -105,8 +101,7 @@ impl std::ops::DerefMut for StringBuffer {
 pub struct VecPool<T> {
     pool: Arc<Mutex<VecDeque<Vec<T>>>>,
     max_size: usize,
-    max_buffer_capacity: usize,
-}
+    max_buffer_capacity: usize}
 
 impl<T> VecPool<T> {
     /// Create a new vector pool
@@ -115,8 +110,7 @@ impl<T> VecPool<T> {
         Self {
             pool: Arc::new(Mutex::new(VecDeque::with_capacity(max_size))),
             max_size,
-            max_buffer_capacity,
-        }
+            max_buffer_capacity}
     }
 
     /// Get a vector buffer from the pool
@@ -128,8 +122,7 @@ impl<T> VecPool<T> {
             buffer,
             pool: Arc::clone(&self.pool),
             max_capacity: self.max_buffer_capacity,
-            max_pool_size: self.max_size,
-        }
+            max_pool_size: self.max_size}
     }
 
     /// Get current pool size
@@ -144,8 +137,7 @@ pub struct VecBuffer<T> {
     buffer: Vec<T>,
     pool: Arc<Mutex<VecDeque<Vec<T>>>>,
     max_capacity: usize,
-    max_pool_size: usize,
-}
+    max_pool_size: usize}
 
 impl<T> VecBuffer<T> {
     /// Clear the buffer for reuse
@@ -193,8 +185,7 @@ pub struct ValidationBufferPools {
     /// Pool for temporary string buffers
     pub temp_strings: StringPool,
     /// Pool for validation issue vectors
-    pub issue_vecs: VecPool<super::report::ValidationIssue>,
-}
+    pub issue_vecs: VecPool<super::report::ValidationIssue>}
 
 impl ValidationBufferPools {
     /// Create a new set of buffer pools with default settings
@@ -204,8 +195,7 @@ impl ValidationBufferPools {
             path_strings: StringPool::new(100, 256),
             error_messages: StringPool::new(50, 512),
             temp_strings: StringPool::new(200, 1024),
-            issue_vecs: VecPool::new(50, 100),
-        }
+            issue_vecs: VecPool::new(50, 100)}
     }
 
     /// Create pools with custom settings
@@ -220,8 +210,7 @@ impl ValidationBufferPools {
             path_strings: StringPool::new(path_pool_size, 256),
             error_messages: StringPool::new(error_pool_size, 512),
             temp_strings: StringPool::new(temp_pool_size, 1024),
-            issue_vecs: VecPool::new(issue_pool_size, 100),
-        }
+            issue_vecs: VecPool::new(issue_pool_size, 100)}
     }
 
     /// Get statistics about pool usage
@@ -231,8 +220,7 @@ impl ValidationBufferPools {
             path_strings_pooled: self.path_strings.size(),
             error_messages_pooled: self.error_messages.size(),
             temp_strings_pooled: self.temp_strings.size(),
-            issue_vecs_pooled: self.issue_vecs.size(),
-        }
+            issue_vecs_pooled: self.issue_vecs.size()}
     }
 }
 
@@ -252,8 +240,7 @@ pub struct PoolStats {
     /// Number of temp strings in pool
     pub temp_strings_pooled: usize,
     /// Number of issue vectors in pool
-    pub issue_vecs_pooled: usize,
-}
+    pub issue_vecs_pooled: usize}
 
 #[cfg(test)]
 mod tests {

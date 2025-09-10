@@ -4,8 +4,7 @@
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::{Map, Value};
@@ -15,8 +14,7 @@ use std::collections::HashMap;
 /// `YAML` loader for `LinkML` data
 pub struct YamlLoader {
     /// Input file path
-    file_path: Option<String>,
-}
+    file_path: Option<String>}
 
 impl YamlLoader {
     /// Create a new `YAML` loader
@@ -173,8 +171,7 @@ impl YamlLoader {
             class_name,
             data: obj.into_iter().collect(),
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Infer class from object structure
@@ -209,15 +206,13 @@ impl YamlLoader {
 /// `YAML` dumper for `LinkML` data
 pub struct YamlDumper {
     /// Include document markers
-    include_markers: bool,
-}
+    include_markers: bool}
 
 impl YamlDumper {
     /// Create a new `YAML` dumper
     #[must_use] pub fn new() -> Self {
         Self {
-            include_markers: true,
-        }
+            include_markers: true}
     }
 
     /// Set whether to include document markers
@@ -368,8 +363,7 @@ emails:
                 map
             },
             id: Some("person_1".to_string()),
-            metadata: HashMap::new(),
-        }];
+            metadata: HashMap::new()}];
 
         let schema = SchemaDefinition::default();
         let dumper = YamlDumper::new();

@@ -48,8 +48,7 @@ pub enum GeneratorError {
 
     /// Configuration error (alternative name)
     #[error("Configuration error: {0}")]
-    Config(String),
-}
+    Config(String)}
 
 impl From<anyhow::Error> for GeneratorError {
     fn from(err: anyhow::Error) -> Self {
@@ -79,8 +78,7 @@ pub struct GeneratorOptions {
     pub output_format: OutputFormat,
 
     /// Custom options for specific generators
-    pub custom: HashMap<String, String>,
-}
+    pub custom: HashMap<String, String>}
 
 /// Configuration for generators
 #[derive(Debug, Clone, Default)]
@@ -89,8 +87,7 @@ pub struct GeneratorConfig {
     pub output_dir: Option<String>,
 
     /// Generator options
-    pub options: GeneratorOptions,
-}
+    pub options: GeneratorOptions}
 
 impl GeneratorOptions {
     /// Create new generator options
@@ -140,8 +137,7 @@ pub enum IndentStyle {
     /// Use spaces for indentation
     Spaces(usize),
     /// Use tabs for indentation
-    Tabs,
-}
+    Tabs}
 
 impl Default for IndentStyle {
     fn default() -> Self {
@@ -154,16 +150,14 @@ impl IndentStyle {
     #[must_use] pub fn single(&self) -> String {
         match self {
             Self::Spaces(n) => " ".repeat(*n),
-            Self::Tabs => "\t".to_string(),
-        }
+            Self::Tabs => "\t".to_string()}
     }
 
     /// Get indentation string for given level
     #[must_use] pub fn to_string(&self, level: usize) -> String {
         match self {
             Self::Spaces(n) => " ".repeat(n * level),
-            Self::Tabs => "\t".repeat(level),
-        }
+            Self::Tabs => "\t".repeat(level)}
     }
 }
 
@@ -189,8 +183,7 @@ pub enum OutputFormat {
     /// Markdown documentation
     Markdown,
     /// HTML documentation
-    HTML,
-}
+    HTML}
 
 impl Default for OutputFormat {
     fn default() -> Self {
@@ -206,8 +199,7 @@ pub struct GeneratedOutput {
     /// Suggested filename
     pub filename: String,
     /// Metadata about the generation
-    pub metadata: HashMap<String, String>,
-}
+    pub metadata: HashMap<String, String>}
 
 /// Core trait for synchronous code generators
 pub trait Generator: Send + Sync {

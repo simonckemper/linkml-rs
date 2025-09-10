@@ -4,6 +4,7 @@
 //! flattening the class hierarchy into tabular format.
 
 use super::traits::{Generator, GeneratorResult};
+use std::fmt::Write;
 use linkml_core::prelude::*;
 use std::collections::BTreeMap;
 
@@ -16,8 +17,7 @@ pub struct CsvGenerator {
     /// Quote character for escaping
     quote_char: char,
     /// Whether to generate TSV instead of CSV
-    use_tabs: bool,
-}
+    use_tabs: bool}
 
 impl CsvGenerator {
     /// Create a new CSV generator
@@ -27,8 +27,7 @@ impl CsvGenerator {
             delimiter: ',',
             include_headers: true,
             quote_char: '"',
-            use_tabs: false,
-        }
+            use_tabs: false}
     }
 
     /// Create a TSV generator
@@ -38,8 +37,7 @@ impl CsvGenerator {
             delimiter: '\t',
             include_headers: true,
             quote_char: '"',
-            use_tabs: true,
-        }
+            use_tabs: true}
     }
 
     /// Set custom delimiter
@@ -220,8 +218,7 @@ impl CsvGenerator {
                     Some("date") => "2024-01-15".to_string(),
                     Some("datetime") => "2024-01-15T10:30:00Z".to_string(),
                     Some("uri") => "https://example.com/resource".to_string(),
-                    _ => "sample_value".to_string(),
-                };
+                    _ => "sample_value".to_string()};
                 self.escape_field(&value)
             })
             .collect();
@@ -235,10 +232,10 @@ impl CsvGenerator {
 
         // Header
         if self.include_headers {
-            output.push_str(&format!(
-                "Type{}Name{}Description{}Count\n",
+            writeln!(output, 
+                "Type{}Name{}Description{}Count",
                 self.delimiter, self.delimiter, self.delimiter
-            ));
+            ).unwrap();
         }
 
         // Classes
@@ -357,13 +354,12 @@ impl Generator for CsvGenerator {
             match self.generate_class_csv(class_name, class_def, schema) {
                 Ok(content) => {
                     if !content.is_empty() {
-                        result.push_str(&format!("=== {class_name} ===\n"));
+                        writeln!(result, "=== {class_name} ===").unwrap();
                         result.push_str(&content);
                         result.push_str("\n\n");
                     }
                 }
-                Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {e}"))),
-            }
+                Err(e) => return Err(LinkMLError::service(format!("CSV generation error: {e}")))}
         }
 
         Ok(result)
@@ -385,7 +381,7 @@ impl Generator for CsvGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -430,7 +426,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         // Should contain summary and person class (entity is abstract)
         assert!(result.contains("Type,Name,Description,Count"));
-        assert!(result.contains("Class,,,Schema classes,2"));
+        assert!(result.contains("Class,,Schema classes,2"));
         assert!(result.contains("=== Person ==="));
         // Slots are in alphabetical order due to BTreeMap
         assert!(result.contains("age,id,name"));

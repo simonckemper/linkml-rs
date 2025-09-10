@@ -16,8 +16,7 @@ use super::Validator;
 #[derive(Default)]
 pub struct UniqueValueTracker {
     /// Maps from class name to unique key name to set of seen value combinations
-    seen_values: HashMap<String, HashMap<String, HashSet<String>>>,
-}
+    seen_values: HashMap<String, HashMap<String, HashSet<String>>>}
 
 impl UniqueValueTracker {
     /// Create a new unique value tracker
@@ -54,8 +53,7 @@ impl UniqueValueTracker {
 
 /// Validator for unique key constraints
 pub struct UniqueKeyValidator {
-    tracker: Mutex<UniqueValueTracker>,
-}
+    tracker: Mutex<UniqueValueTracker>}
 
 impl Default for UniqueKeyValidator {
     fn default() -> Self {
@@ -67,16 +65,14 @@ impl UniqueKeyValidator {
     /// Create a new unique key validator
     #[must_use] pub fn new() -> Self {
         Self {
-            tracker: Mutex::new(UniqueValueTracker::new()),
-        }
+            tracker: Mutex::new(UniqueValueTracker::new())}
     }
 
     /// Extract the value for a slot from an instance
     fn get_slot_value<'a>(instance: &'a Value, slot_name: &str) -> Option<&'a Value> {
         match instance {
             Value::Object(map) => map.get(slot_name),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Create a composite key string from multiple slot values
@@ -104,8 +100,7 @@ impl UniqueKeyValidator {
                         Value::String(s) => s.clone(),
                         Value::Number(n) => n.to_string(),
                         Value::Bool(b) => b.to_string(),
-                        _ => serde_json::to_string(value).unwrap_or_else(|_| "?".to_string()),
-                    };
+                        _ => serde_json::to_string(value).unwrap_or_else(|_| "?".to_string())};
                     key_parts.push(value_str);
                 }
             }
@@ -248,8 +243,7 @@ impl UniqueKeyValidator {
                 context.path(),
                 format!("Unique key validation error: {e}"),
                 "UniqueKeyValidator",
-            )],
-        }
+            )]}
     }
 }
 
@@ -277,7 +271,7 @@ impl Validator for UniqueKeyValidator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+    use linkml_core::types::UniqueKeyDefinition;
 
     #[test]
     fn test_unique_value_tracker() {
@@ -355,8 +349,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                     "last_name".to_string(),
                     "email".to_string(),
                 ],
-                consider_nulls_inequal: Some(true),
-            },
+                consider_nulls_inequal: Some(true)},
         );
 
         let class_def = ClassDefinition {
@@ -423,8 +416,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             UniqueKeyDefinition {
                 description: None,
                 unique_key_slots: vec!["email".to_string()],
-                consider_nulls_inequal: Some(true),
-            },
+                consider_nulls_inequal: Some(true)},
         );
 
         let class_def = ClassDefinition {
@@ -468,8 +460,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             UniqueKeyDefinition {
                 description: None,
                 unique_key_slots: vec!["email".to_string()],
-                consider_nulls_inequal: Some(false),
-            },
+                consider_nulls_inequal: Some(false)},
         );
 
         let class_def = ClassDefinition {

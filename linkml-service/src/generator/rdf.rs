@@ -23,8 +23,7 @@ pub struct RdfGenerator {
     /// Whether to use compact Turtle syntax
     compact_syntax: bool,
     /// Whether to include `LinkML`-specific properties
-    include_linkml_props: bool,
-}
+    include_linkml_props: bool}
 
 impl Default for RdfGenerator {
     fn default() -> Self {
@@ -40,8 +39,7 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: true,
             compact_syntax: true,
-            include_linkml_props: true,
-        }
+            include_linkml_props: true}
     }
 
     /// Create a new RDF generator in RDFS mode
@@ -51,8 +49,7 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: true,
             compact_syntax: false,
-            include_linkml_props: false,
-        }
+            include_linkml_props: false}
     }
 
     /// Create a new RDF generator in simple mode
@@ -62,8 +59,7 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: false,
             compact_syntax: true,
-            include_linkml_props: false,
-        }
+            include_linkml_props: false}
     }
 
     /// Set the base URI
@@ -155,8 +151,7 @@ impl RdfGenerator {
                 PrefixDefinition::Simple(url) => url.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.clone().unwrap_or_default(),
-            };
+                } => prefix_reference.clone().unwrap_or_default()};
             writeln_rdf!(output, "@prefix {}: <{}> .", prefix, reference)?;
         }
 
@@ -466,8 +461,7 @@ impl RdfGenerator {
             for pv in &enum_def.permissible_values {
                 let text = match pv {
                     PermissibleValue::Simple(s) => s,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
+                    PermissibleValue::Complex { text, .. } => text};
                 writeln_rdf!(output, "        \"{}\"", escape_literal(text))?;
             }
             writeln_rdf!(output, "    ) ;")?;
@@ -482,9 +476,7 @@ impl RdfGenerator {
                 PermissibleValue::Complex {
                     text,
                     description,
-                    meaning,
-                } => (text.as_str(), description.as_deref(), meaning.as_deref()),
-            };
+                    meaning} => (text.as_str(), description.as_deref(), meaning.as_deref())};
             writeln_rdf!(output, ":{} a <{}> ;", text.replace(' ', "_"), enum_uri)?;
             writeln_rdf!(output, "    rdfs:label \"{}\" ;", text)?;
 
@@ -514,8 +506,7 @@ fn map_range_to_xsd(range: &str) -> String {
         "date" => "xsd:date".to_string(),
         "datetime" => "xsd:dateTime".to_string(),
         "time" => "xsd:time".to_string(),
-        "uri" => "xsd:anyURI".to_string(),
-        "uriorcurie" => "xsd:anyURI".to_string(),
+        "uri" | "uriorcurie" => "xsd:anyURI".to_string(),
         _ => format!(":{range}"), // Assume it's a class reference
     }
 }

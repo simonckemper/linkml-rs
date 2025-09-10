@@ -13,8 +13,7 @@ pub struct JsonPath {
     /// The path segments
     segments: Vec<PathSegment>,
     /// String representation for display
-    string_repr: String,
-}
+    string_repr: String}
 
 /// A segment in a `JSON` path
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -26,8 +25,7 @@ pub enum PathSegment {
     /// Array index ([n])
     Index(usize),
     /// Wildcard array access ([*])
-    Wildcard,
-}
+    Wildcard}
 
 impl JsonPath {
     /// Create a new `JSON` path from a string
@@ -114,8 +112,7 @@ impl JsonPath {
 
         Ok(Self {
             segments,
-            string_repr: path.to_string(),
-        })
+            string_repr: path.to_string()})
     }
 
     /// Create a root path
@@ -123,8 +120,7 @@ impl JsonPath {
     pub fn root() -> Self {
         Self {
             segments: vec![PathSegment::Root],
-            string_repr: "$".to_string(),
-        }
+            string_repr: "$".to_string()}
     }
 
     /// Append a property access
@@ -274,16 +270,14 @@ impl fmt::Display for JsonPath {
 /// Optimized `JSON` path navigator with caching
 pub struct JsonNavigator {
     /// Cache of compiled paths
-    path_cache: std::collections::HashMap<String, JsonPath>,
-}
+    path_cache: std::collections::HashMap<String, JsonPath>}
 
 impl JsonNavigator {
     /// Create a new navigator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            path_cache: std::collections::HashMap::new(),
-        }
+            path_cache: std::collections::HashMap::new()}
     }
 
     /// Navigate to a value using a path string

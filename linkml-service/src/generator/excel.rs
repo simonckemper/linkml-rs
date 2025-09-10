@@ -16,8 +16,7 @@ use async_trait::async_trait;
 use linkml_core::prelude::*;
 use rust_xlsxwriter::{
     Color, DataValidation, DataValidationRule, ExcelDateTime, Format, FormatAlign, FormatBorder, Note, Workbook,
-    Worksheet,
-};
+    Worksheet};
 use std::collections::BTreeMap;
 
 /// Excel generator
@@ -29,8 +28,7 @@ pub struct ExcelGenerator {
     /// Whether to freeze header rows
     freeze_headers: bool,
     /// Whether to add filters
-    add_filters: bool,
-}
+    add_filters: bool}
 
 impl ExcelGenerator {
     /// Create a new Excel generator
@@ -40,8 +38,7 @@ impl ExcelGenerator {
             include_summary: true,
             add_validation: true,
             freeze_headers: true,
-            add_filters: true,
-        }
+            add_filters: true}
     }
 
     /// Configure summary sheet generation
@@ -250,6 +247,7 @@ impl ExcelGenerator {
     }
 
     /// Generate sheet for a class
+    #[allow(clippy::too_many_arguments)]
     fn generate_class_sheet(
         &self,
         workbook: &mut Workbook,
@@ -405,8 +403,7 @@ impl ExcelGenerator {
                     linkml_core::types::PermissibleValue::Simple(s) => (s.as_str(), ""),
                     linkml_core::types::PermissibleValue::Complex {
                         text, description, ..
-                    } => (text.as_str(), description.as_deref().unwrap_or("")),
-                };
+                    } => (text.as_str(), description.as_deref().unwrap_or(""))};
 
                 worksheet.write_string(row, 0, enum_name).map_err(|e| {
                     GeneratorError::Generation(e.to_string(),)
@@ -469,8 +466,7 @@ impl ExcelGenerator {
                         .iter()
                         .map(|pv| match pv {
                             PermissibleValue::Simple(s) => s.clone(),
-                            PermissibleValue::Complex { text, .. } => text.clone(),
-                        })
+                            PermissibleValue::Complex { text, .. } => text.clone()})
                         .collect();
 
                     let data_validation = DataValidation::new()
@@ -757,8 +753,7 @@ impl ExcelGenerator {
             Some("boolean") => if index % 2 == 0 { "TRUE" } else { "FALSE" }.to_string(),
             Some("date") => format!("2024-01-{:02}", index + 1),
             Some("datetime") => format!("2024-01-{:02}T10:00:00", index + 1),
-            _ => format!("Sample {}", index + 1),
-        }
+            _ => format!("Sample {}", index + 1)}
     }
 
     /// Sanitize sheet name for Excel
@@ -853,7 +848,7 @@ impl Generator for ExcelGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -923,5 +918,6 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             generator.sanitize_sheet_name("A".repeat(40).as_str()),
             "A".repeat(31)
         );
+        Ok(())
     }
 }

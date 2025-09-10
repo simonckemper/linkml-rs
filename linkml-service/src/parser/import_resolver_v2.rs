@@ -10,8 +10,8 @@
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::{ImportResolutionStrategy, ImportSettings},
-    types::{ClassDefinition, SchemaDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, SchemaDefinition, SlotDefinition}};
+use super::SchemaParser;
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::future::Future;
@@ -32,8 +32,7 @@ pub struct ImportSpec {
     /// Elements to exclude
     pub exclude: Option<Vec<String>>,
     /// Prefix to apply to imported elements
-    pub prefix: Option<String>,
-}
+    pub prefix: Option<String>}
 
 impl From<String> for ImportSpec {
     fn from(path: String) -> Self {
@@ -42,8 +41,7 @@ impl From<String> for ImportSpec {
             alias: None,
             only: None,
             exclude: None,
-            prefix: None,
-        }
+            prefix: None}
     }
 }
 
@@ -56,8 +54,7 @@ pub struct ImportResolverV2 {
     /// `HTTP` client for URL imports
     http_client: reqwest::Client,
     /// Visited imports for circular dependency detection
-    visited_stack: Arc<RwLock<Vec<String>>>,
-}
+    visited_stack: Arc<RwLock<Vec<String>>>}
 
 impl Default for ImportResolverV2 {
     fn default() -> Self {
@@ -73,8 +70,7 @@ impl ImportResolverV2 {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(ImportSettings::default())),
             http_client: reqwest::Client::new(),
-            visited_stack: Arc::new(RwLock::new(Vec::new())),
-        }
+            visited_stack: Arc::new(RwLock::new(Vec::new()))}
     }
 
     /// Create with schema settings
@@ -84,8 +80,7 @@ impl ImportResolverV2 {
             cache: Arc::new(RwLock::new(HashMap::new())),
             settings: Arc::new(RwLock::new(settings)),
             http_client: reqwest::Client::new(),
-            visited_stack: Arc::new(RwLock::new(Vec::new())),
-        }
+            visited_stack: Arc::new(RwLock::new(Vec::new()))}
     }
 
     /// Update import settings

@@ -17,8 +17,7 @@ pub struct TypeChange {
     /// Type after change (None if removed)
     pub new_type: Option<ClassDefinition>,
     /// Specific changes
-    pub changes: Vec<DetailedChange>,
-}
+    pub changes: Vec<DetailedChange>}
 
 /// Represents a change to an attribute
 #[derive(Debug, Clone, PartialEq)]
@@ -32,8 +31,7 @@ pub struct AttributeChange {
     /// Owner type
     pub owner: String,
     /// Specific changes
-    pub changes: Vec<DetailedChange>,
-}
+    pub changes: Vec<DetailedChange>}
 
 /// Represents a change to a relation
 #[derive(Debug, Clone, PartialEq)]
@@ -45,8 +43,7 @@ pub struct RelationChange {
     /// Roles after change
     pub new_roles: Vec<String>,
     /// Role player changes
-    pub role_changes: Vec<RolePlayerChange>,
-}
+    pub role_changes: Vec<RolePlayerChange>}
 
 /// Represents a change to a rule
 #[derive(Debug, Clone, PartialEq)]
@@ -56,8 +53,7 @@ pub struct RuleChange {
     /// Rule before change
     pub old_rule: Option<String>,
     /// Rule after change
-    pub new_rule: Option<String>,
-}
+    pub new_rule: Option<String>}
 
 /// Detailed change information
 #[derive(Debug, Clone, PartialEq)]
@@ -77,8 +73,7 @@ pub enum DetailedChange {
     /// Added mixin
     AddedMixin(String),
     /// Removed mixin
-    RemovedMixin(String),
-}
+    RemovedMixin(String)}
 
 /// Specific slot changes
 #[derive(Debug, Clone, PartialEq)]
@@ -90,8 +85,7 @@ pub struct SlotChange {
     /// Changed range/type
     pub range_changed: Option<(String, String)>,
     /// Changed pattern
-    pub pattern_changed: Option<(Option<String>, Option<String>)>,
-}
+    pub pattern_changed: Option<(Option<String>, Option<String>)>}
 
 /// Role player change
 #[derive(Debug, Clone, PartialEq)]
@@ -101,8 +95,7 @@ pub struct RolePlayerChange {
     /// Old player types
     pub old_players: Vec<String>,
     /// New player types
-    pub new_players: Vec<String>,
-}
+    pub new_players: Vec<String>}
 
 /// Complete schema diff
 #[derive(Debug, Clone)]
@@ -122,8 +115,7 @@ pub struct SchemaDiff {
     /// Relation changes
     pub relation_changes: Vec<RelationChange>,
     /// Rule changes
-    pub rule_changes: Vec<RuleChange>,
-}
+    pub rule_changes: Vec<RuleChange>}
 
 impl Default for SchemaDiff {
     fn default() -> Self {
@@ -142,8 +134,7 @@ impl SchemaDiff {
             removed_attributes: Vec::new(),
             modified_attributes: Vec::new(),
             relation_changes: Vec::new(),
-            rule_changes: Vec::new(),
-        }
+            rule_changes: Vec::new()}
     }
 
     /// Check if there are any changes
@@ -203,8 +194,7 @@ impl SchemaDiffer {
                     name: (*name).clone(),
                     old_type: None,
                     new_type: Some(class.clone()),
-                    changes: vec![],
-                });
+                    changes: vec![]});
             }
         }
 
@@ -215,8 +205,7 @@ impl SchemaDiffer {
                     name: (*name).clone(),
                     old_type: Some(class.clone()),
                     new_type: None,
-                    changes: vec![],
-                });
+                    changes: vec![]});
             }
         }
 
@@ -229,8 +218,7 @@ impl SchemaDiffer {
                         name: (*name).clone(),
                         old_type: Some(old_class.clone()),
                         new_type: Some(new_class.clone()),
-                        changes,
-                    });
+                        changes});
                 }
 
                 // Compare class-specific slots
@@ -311,8 +299,7 @@ impl SchemaDiffer {
                         old_attr: Some(old_slot.clone()),
                         new_attr: Some(new_slot.clone()),
                         owner: class_name.to_string(),
-                        changes: vec![DetailedChange::SlotChanged(slot_name.clone(), change)],
-                    });
+                        changes: vec![DetailedChange::SlotChanged(slot_name.clone(), change)]});
                 }
             }
         }
@@ -326,8 +313,7 @@ impl SchemaDiffer {
             required_changed: None,
             cardinality_changed: None,
             range_changed: None,
-            pattern_changed: None,
-        };
+            pattern_changed: None};
 
         let mut has_changes = false;
 
@@ -383,8 +369,7 @@ impl SchemaDiffer {
                     old_attr: None,
                     new_attr: Some(slot.clone()),
                     owner: "global".to_string(),
-                    changes: vec![],
-                });
+                    changes: vec![]});
             }
         }
 
@@ -396,8 +381,7 @@ impl SchemaDiffer {
                     old_attr: Some(slot.clone()),
                     new_attr: None,
                     owner: "global".to_string(),
-                    changes: vec![],
-                });
+                    changes: vec![]});
             }
         }
 
@@ -410,8 +394,7 @@ impl SchemaDiffer {
                         old_attr: Some(old_slot.clone()),
                         new_attr: Some(new_slot.clone()),
                         owner: "global".to_string(),
-                        changes: vec![DetailedChange::SlotChanged((*name).clone(), change)],
-                    });
+                        changes: vec![DetailedChange::SlotChanged((*name).clone(), change)]});
                 }
             }
         }
@@ -423,7 +406,7 @@ impl SchemaDiffer {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_empty_diff() -> std::result::Result<(), Box<dyn std::error::Error>> {

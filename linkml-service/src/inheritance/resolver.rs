@@ -13,8 +13,7 @@ pub struct InheritanceResolver<'a> {
     /// Cache of resolved classes
     resolved_cache: HashMap<String, ClassDefinition>,
     /// Track visited classes to detect cycles
-    visited: HashSet<String>,
-}
+    visited: HashSet<String>}
 
 impl<'a> InheritanceResolver<'a> {
     /// Create a new inheritance resolver
@@ -22,8 +21,7 @@ impl<'a> InheritanceResolver<'a> {
         Self {
             schema,
             resolved_cache: HashMap::new(),
-            visited: HashSet::new(),
-        }
+            visited: HashSet::new()}
     }
 
     /// Resolve all inheritance for a class (`is_a` + mixins)
@@ -402,7 +400,7 @@ pub fn is_subclass_of(child: &str, parent: &str, schema: &SchemaDefinition) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_simple_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {

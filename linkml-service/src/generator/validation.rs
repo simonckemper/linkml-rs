@@ -220,6 +220,7 @@ impl RustGenerator {
     }
 
     /// Generate range validation for numeric fields
+    #[allow(clippy::too_many_arguments)]
     fn generate_range_validation(
         &self,
         output: &mut String,

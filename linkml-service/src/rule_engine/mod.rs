@@ -30,6 +30,8 @@ pub struct RuleEngine {
     expression_engine: Arc<ExpressionEngine>,
     /// Cache of compiled rules
     rule_cache: Arc<RwLock<HashMap<String, Vec<CompiledRule>>>>,
+    /// Rule execution strategy
+    execution_strategy: RuleExecutionStrategy,
 }
 
 impl RuleEngine {
@@ -39,6 +41,7 @@ impl RuleEngine {
             schema,
             expression_engine: Arc::new(ExpressionEngine::new()),
             rule_cache: Arc::new(RwLock::new(HashMap::new())),
+            execution_strategy: RuleExecutionStrategy::default(),
         }
     }
 
@@ -51,6 +54,20 @@ impl RuleEngine {
             schema,
             expression_engine,
             rule_cache: Arc::new(RwLock::new(HashMap::new())),
+            execution_strategy: RuleExecutionStrategy::default(),
+        }
+    }
+
+    /// Create a rule engine with a custom execution strategy
+    #[must_use] pub fn with_strategy(
+        schema: Arc<SchemaDefinition>, 
+        strategy: RuleExecutionStrategy
+    ) -> Self {
+        Self {
+            schema,
+            expression_engine: Arc::new(ExpressionEngine::new()),
+            rule_cache: Arc::new(RwLock::new(HashMap::new())),
+            execution_strategy: strategy,
         }
     }
 
@@ -81,10 +98,9 @@ impl RuleEngine {
             RuleExecutionContext::new(instance.clone(), class_name.to_string(), context);
 
         // Execute rules based on strategy
-        let strategy = RuleExecutionStrategy::Sequential; // TODO: Make configurable
         let executor = executor::RuleExecutor::new(self.expression_engine.clone());
 
-        match executor.execute_rules(&rules, &mut exec_context, strategy) {
+        match executor.execute_rules(&rules, &mut exec_context, self.execution_strategy) {
             Ok(rule_issues) => issues.extend(rule_issues),
             Err(e) => {
                 issues.push(ValidationIssue::error(

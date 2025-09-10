@@ -42,8 +42,7 @@ use tokio::sync::Semaphore;
     /// Enable chaos testing
     pub chaos_testing: bool,
     /// Performance thresholds
-    pub performance_thresholds: PerformanceThresholds,
-}
+    pub performance_thresholds: PerformanceThresholds}
 
 impl Default for StressTestConfig {
     fn default() -> Self {
@@ -58,8 +57,7 @@ impl Default for StressTestConfig {
             error_injection: false,
             error_rate: 0.01, // 1%
             chaos_testing: false,
-            performance_thresholds: PerformanceThresholds::default(),
-        }
+            performance_thresholds: PerformanceThresholds::default()}
     }
 }
 
@@ -77,8 +75,7 @@ pub struct PerformanceThresholds {
     /// Maximum memory usage
     pub max_memory_bytes: usize,
     /// Maximum error rate
-    pub max_error_rate: f64,
-}
+    pub max_error_rate: f64}
 
 impl Default for PerformanceThresholds {
     fn default() -> Self {
@@ -121,8 +118,7 @@ pub struct OperationResult {
     /// Operation duration
     pub duration: Duration,
     /// Memory used
-    pub memory_delta: i64,
-}
+    pub memory_delta: i64}
 
 /// Stress test results
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,8 +140,7 @@ pub struct StressTestResults {
     /// Performance violations
     pub violations: Vec<PerformanceViolation>,
     /// Chaos events triggered
-    pub chaos_events: usize,
-}
+    pub chaos_events: usize}
 
 /// Stress test configuration summary
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -157,8 +152,7 @@ pub struct StressTestSummary {
     /// Rate of error injection (0.0 to 1.0)
     pub error_injection_rate: f64,
     /// Whether chaos testing was enabled
-    pub chaos_testing: bool,
-}
+    pub chaos_testing: bool}
 
 /// Latency percentiles
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -180,8 +174,7 @@ pub struct LatencyPercentiles {
     /// Maximum latency observed
     pub max: Duration,
     /// Mean (average) latency
-    pub mean: Duration,
-}
+    pub mean: Duration}
 
 /// Memory statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -195,8 +188,7 @@ pub struct MemoryStats {
     /// Total number of allocations
     pub allocations: usize,
     /// Total number of deallocations
-    pub deallocations: usize,
-}
+    pub deallocations: usize}
 
 /// Performance violation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,8 +200,7 @@ pub struct PerformanceViolation {
     /// Actual value observed
     pub actual: String,
     /// Severity of the violation
-    pub severity: ViolationSeverity,
-}
+    pub severity: ViolationSeverity}
 
 /// Violation severity
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -219,16 +210,14 @@ pub enum ViolationSeverity {
     /// Significant violation that may affect performance
     Error,
     /// Severe violation that requires immediate attention
-    Critical,
-}
+    Critical}
 
 /// Stress test runner
 pub struct StressTestRunner {
     config: Arc<RwLock<StressTestConfig>>,
     operations: Vec<Arc<dyn StressOperation>>,
     results: Arc<RwLock<Vec<OperationResult>>>,
-    chaos_engine: Option<Arc<ChaosEngine>>,
-}
+    chaos_engine: Option<Arc<ChaosEngine>>}
 
 impl StressTestRunner {
     /// Create new stress test runner
@@ -244,8 +233,7 @@ impl StressTestRunner {
             config: Arc::new(RwLock::new(config)),
             operations: Vec::new(),
             results: Arc::new(RwLock::new(Vec::with_capacity(10000))),
-            chaos_engine,
-        }
+            chaos_engine}
     }
 
     /// Add stress operation
@@ -261,7 +249,7 @@ impl StressTestRunner {
     pub async fn run(&self) -> Result<StressTestResults> {
         let config = self.config.read().clone();
         let start_time = Instant::now();
-        let initial_memory = self.get_memory_usage();
+        let initial_memory = Self::get_memory_usage();
 
         // Create semaphore for concurrency control
         let semaphore = Arc::new(Semaphore::new(config.concurrency));
@@ -314,8 +302,7 @@ impl StressTestRunner {
                     success: result.is_ok(),
                     error: result.err().map(|e| e.to_string()),
                     duration,
-                    memory_delta: i64::from(memory_after - memory_before),
-                };
+                    memory_delta: i64::from(memory_after - memory_before)};
 
                 results.write().push(op_result);
             });
@@ -329,7 +316,7 @@ impl StressTestRunner {
 
             // Apply memory pressure if configured
             if config.memory_pressure {
-                self.apply_memory_pressure(config.target_memory_bytes);
+                Self::apply_memory_pressure(config.target_memory_bytes);
             }
         }
 
@@ -395,8 +382,7 @@ impl StressTestRunner {
                 )
                 .unwrap_or(u64::MAX)
                     / latencies.len() as u64,
-            ),
-        };
+            )};
 
         // Error distribution
         let errors_by_type = results.iter().filter_map(|r| r.error.as_ref()).fold(
@@ -411,13 +397,12 @@ impl StressTestRunner {
         let memory_stats = MemoryStats {
             initial_bytes: initial_memory,
             peak_bytes: initial_memory, // Would track actual peak
-            final_bytes: self.get_memory_usage(),
+            final_bytes: Self::get_memory_usage(),
             allocations: 0, // Would track actual allocations
-            deallocations: 0,
-        };
+            deallocations: 0};
 
         // Check for violations
-        let violations = self.check_violations(
+        let violations = Self::check_violations(
             &config.performance_thresholds,
             &latency_percentiles,
             throughput,
@@ -430,8 +415,7 @@ impl StressTestRunner {
                 concurrency: config.concurrency,
                 total_operations: config.total_operations,
                 error_injection_rate: config.error_rate,
-                chaos_testing: config.chaos_testing,
-            },
+                chaos_testing: config.chaos_testing},
             total_duration,
             throughput,
             success_rate,
@@ -442,20 +426,17 @@ impl StressTestRunner {
             chaos_events: self
                 .chaos_engine
                 .as_ref()
-                .map_or(0, |engine| engine.events_triggered()),
-        }
+                .map_or(0, |engine| engine.events_triggered())}
     }
 
     /// Check for performance violations
     fn check_violations(
-        &self,
         thresholds: &PerformanceThresholds,
         latencies: &LatencyPercentiles,
         throughput: f64,
         success_rate: f64,
         memory: &MemoryStats,
     ) -> Vec<PerformanceViolation> {
-        let _ = self;
         let mut violations = Vec::new();
 
         // Latency violations
@@ -464,8 +445,7 @@ impl StressTestRunner {
                 metric: "P99 Latency".to_string(),
                 threshold: format!("{:?}", thresholds.max_latency_p99),
                 actual: format!("{:?}", latencies.p99),
-                severity: ViolationSeverity::Critical,
-            });
+                severity: ViolationSeverity::Critical});
         }
 
         if latencies.p95 > thresholds.max_latency_p95 {
@@ -473,8 +453,7 @@ impl StressTestRunner {
                 metric: "P95 Latency".to_string(),
                 threshold: format!("{:?}", thresholds.max_latency_p95),
                 actual: format!("{:?}", latencies.p95),
-                severity: ViolationSeverity::Error,
-            });
+                severity: ViolationSeverity::Error});
         }
 
         // Throughput violation
@@ -483,8 +462,7 @@ impl StressTestRunner {
                 metric: "Throughput".to_string(),
                 threshold: format!("{} ops/sec", thresholds.min_throughput),
                 actual: format!("{throughput:.2} ops/sec"),
-                severity: ViolationSeverity::Critical,
-            });
+                severity: ViolationSeverity::Critical});
         }
 
         // Error rate violation
@@ -494,8 +472,7 @@ impl StressTestRunner {
                 metric: "Error Rate".to_string(),
                 threshold: format!("{}%", thresholds.max_error_rate * 100.0),
                 actual: format!("{:.2}%", error_rate * 100.0),
-                severity: ViolationSeverity::Error,
-            });
+                severity: ViolationSeverity::Error});
         }
 
         // Memory violation
@@ -504,16 +481,14 @@ impl StressTestRunner {
                 metric: "Peak Memory".to_string(),
                 threshold: format!("{} MB", thresholds.max_memory_bytes / 1024 / 1024),
                 actual: format!("{} MB", memory.peak_bytes / 1024 / 1024),
-                severity: ViolationSeverity::Warning,
-            });
+                severity: ViolationSeverity::Warning});
         }
 
         violations
     }
 
     /// Get current memory usage
-    fn get_memory_usage(&self) -> usize {
-        let _ = self;
+    fn get_memory_usage() -> usize {
         // Simplified - would use actual memory measurement
         0
     }
@@ -525,8 +500,7 @@ impl StressTestRunner {
     }
 
     /// Apply memory pressure
-    fn apply_memory_pressure(&self, _target_bytes: usize) {
-        let _ = self;
+    fn apply_memory_pressure(_target_bytes: usize) {
         // Simplified - would allocate memory to create pressure
     }
 }
@@ -535,15 +509,13 @@ impl StressTestRunner {
 #[derive(Clone)]
 struct ChaosEngine {
     enabled: Arc<RwLock<bool>>,
-    events: Arc<RwLock<usize>>,
-}
+    events: Arc<RwLock<usize>>}
 
 impl ChaosEngine {
     fn new() -> Self {
         Self {
             enabled: Arc::new(RwLock::new(false)),
-            events: Arc::new(RwLock::new(0)),
-        }
+            events: Arc::new(RwLock::new(0))}
     }
 
     fn start(&self) {
@@ -589,8 +561,7 @@ impl ChaosEngine {
 /// Example validation stress operation
 pub struct ValidationStressOperation {
     _schema_size: usize,
-    _document_size: usize,
-}
+    _document_size: usize}
 
 impl ValidationStressOperation {
     /// Create a new validation stress operation
@@ -598,8 +569,7 @@ impl ValidationStressOperation {
     pub fn new(schema_size: usize, document_size: usize) -> Self {
         Self {
             _schema_size: schema_size,
-            _document_size: document_size,
-        }
+            _document_size: document_size}
     }
 }
 

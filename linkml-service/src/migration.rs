@@ -34,8 +34,7 @@ pub struct MigrationConfig {
     /// Enable parallel processing
     pub parallel: bool,
     /// Migration timeout
-    pub timeout_seconds: u64,
-}
+    pub timeout_seconds: u64}
 
 impl Default for MigrationConfig {
     fn default() -> Self {
@@ -62,8 +61,7 @@ pub struct SchemaVersion {
     /// Breaking changes from previous version
     pub breaking_changes: Vec<BreakingChange>,
     /// Migration notes
-    pub notes: Option<String>,
-}
+    pub notes: Option<String>}
 
 /// Breaking change definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,8 +73,7 @@ pub struct BreakingChange {
     /// Description
     pub description: String,
     /// Migration strategy
-    pub migration_strategy: MigrationStrategy,
-}
+    pub migration_strategy: MigrationStrategy}
 
 /// Types of breaking changes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,8 +93,7 @@ pub enum ChangeType {
     /// Cardinality changed
     CardinalityChanged,
     /// Enum values changed
-    EnumChanged,
-}
+    EnumChanged}
 
 /// Migration strategies
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,24 +101,19 @@ pub enum MigrationStrategy {
     /// Automatic migration possible
     Automatic {
         /// Transformation function
-        transform: String,
-    },
+        transform: String},
     /// Manual intervention required
     Manual {
         /// Instructions for manual migration
-        instructions: String,
-    },
+        instructions: String},
     /// Data loss will occur
     DataLoss {
         /// Description of what will be lost
-        warning: String,
-    },
+        warning: String},
     /// Use default value
     DefaultValue {
         /// Default value to use
-        value: Value,
-    },
-}
+        value: Value}}
 
 /// Migration plan
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,8 +127,7 @@ pub struct MigrationPlan {
     /// Estimated duration
     pub estimated_duration: std::time::Duration,
     /// Risk assessment
-    pub risk_level: RiskLevel,
-}
+    pub risk_level: RiskLevel}
 
 /// Individual migration step
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -151,8 +141,7 @@ pub struct MigrationStep {
     /// Dependencies on other steps
     pub depends_on: Vec<String>,
     /// Rollback information
-    pub rollback: Option<RollbackInfo>,
-}
+    pub rollback: Option<RollbackInfo>}
 
 /// Types of migration steps
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -160,24 +149,19 @@ pub enum StepType {
     /// Schema transformation
     SchemaTransform {
         /// Transformation details
-        transform: SchemaTransform,
-    },
+        transform: SchemaTransform},
     /// Data migration
     DataMigration {
         /// Migration details
-        migration: DataMigration,
-    },
+        migration: DataMigration},
     /// Validation step
     Validation {
         /// Validation criteria
-        criteria: ValidationCriteria,
-    },
+        criteria: ValidationCriteria},
     /// Custom step
     Custom {
         /// Script to execute
-        script: String,
-    },
-}
+        script: String}}
 
 /// Transform type enumeration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,8 +177,7 @@ pub enum TransformType {
     /// Remove a slot
     RemoveSlot,
     /// Modify a slot
-    ModifySlot,
-}
+    ModifySlot}
 
 /// Schema transformation details
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -218,8 +201,7 @@ pub struct SchemaTransform {
     /// Target element name
     pub target_element: String,
     /// Transformation script
-    pub transformation_script: Option<String>,
-}
+    pub transformation_script: Option<String>}
 
 /// Type change definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -229,8 +211,7 @@ pub struct TypeChange {
     /// New type
     pub to_type: String,
     /// Conversion function
-    pub converter: Option<String>,
-}
+    pub converter: Option<String>}
 
 /// Data migration details
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -250,8 +231,7 @@ pub struct DataMigration {
     /// Transformation script (alternative name for compatibility)
     pub transformation_script: Option<String>,
     /// Default values for new fields
-    pub default_values: HashMap<String, Value>,
-}
+    pub default_values: HashMap<String, Value>}
 
 /// Field mapping definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -261,8 +241,7 @@ pub struct FieldMapping {
     /// Target field
     pub target: String,
     /// Transformation
-    pub transform: Option<FieldTransform>,
-}
+    pub transform: Option<FieldTransform>}
 
 impl std::fmt::Display for FieldMapping {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -278,28 +257,23 @@ pub enum FieldTransform {
     /// Type conversion
     Convert {
         /// Converter function or type name
-        converter: String,
-    },
+        converter: String},
     /// Split field
     Split {
         /// Delimiter to split on
         delimiter: String,
         /// Target fields for split values
-        target_fields: Vec<String>,
-    },
+        target_fields: Vec<String>},
     /// Merge fields
     Merge {
         /// Source fields to merge
         source_fields: Vec<String>,
         /// String to join fields with
-        joiner: String,
-    },
+        joiner: String},
     /// Custom transformation
     Custom {
         /// Custom transformation script
-        script: String,
-    },
-}
+        script: String}}
 
 /// Validation criteria
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -319,8 +293,7 @@ pub struct ValidationCriteria {
     /// Performance requirements
     pub performance_requirements: Option<String>,
     /// Custom validation rules (alternative name for compatibility)
-    pub custom_validation_rules: Vec<String>,
-}
+    pub custom_validation_rules: Vec<String>}
 
 /// Rollback information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -328,8 +301,7 @@ pub struct RollbackInfo {
     /// Rollback strategy
     pub strategy: RollbackStrategy,
     /// Backup location
-    pub backup_path: Option<PathBuf>,
-}
+    pub backup_path: Option<PathBuf>}
 
 /// Rollback strategies
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -341,9 +313,7 @@ pub enum RollbackStrategy {
     /// Manual rollback required
     Manual {
         /// Instructions for manual rollback
-        instructions: String,
-    },
-}
+        instructions: String}}
 
 /// Risk levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -355,8 +325,7 @@ pub enum RiskLevel {
     /// High risk - manual review required
     High,
     /// Critical - data loss possible
-    Critical,
-}
+    Critical}
 
 /// Migration engine
 pub struct MigrationEngine<S>
@@ -366,8 +335,7 @@ where
     config: Arc<RwLock<MigrationConfig>>,
     versions: Arc<RwLock<Vec<SchemaVersion>>>,
     _service: Arc<S>, // Reserved for future async validation
-    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
-}
+    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
 impl<S> MigrationEngine<S>
 where
@@ -383,8 +351,7 @@ where
             config: Arc::new(RwLock::new(config)),
             versions: Arc::new(RwLock::new(Vec::new())),
             _service: service,
-            _timestamp: timestamp,
-        }
+            _timestamp: timestamp}
     }
 
     /// Register a schema version
@@ -424,9 +391,7 @@ where
                     element: name.clone(),
                     description: format!("Class '{name}' was removed"),
                     migration_strategy: MigrationStrategy::Manual {
-                        instructions: format!("Manually handle data from removed class '{name}'"),
-                    },
-                });
+                        instructions: format!("Manually handle data from removed class '{name}'")}});
             }
         }
 
@@ -438,9 +403,7 @@ where
                     element: name.clone(),
                     description: format!("Slot '{name}' was removed"),
                     migration_strategy: MigrationStrategy::DataLoss {
-                        warning: format!("Data in slot '{name}' will be lost"),
-                    },
-                });
+                        warning: format!("Data in slot '{name}' will be lost")}});
             }
         }
 
@@ -460,9 +423,7 @@ where
                                 "convert_{}_{}",
                                 from_slot.range.as_deref().unwrap_or("any"),
                                 to_slot.range.as_deref().unwrap_or("any")
-                            ),
-                        },
-                    });
+                            )}});
                 }
         }
 
@@ -493,30 +454,21 @@ where
                             transform_script: Some(transform.clone()),
                             migration_type: "automatic".to_string(),
                             transformation_script: Some(transform.clone()),
-                            default_values: HashMap::new(),
-                        },
-                    },
+                            default_values: HashMap::new()}},
                     depends_on: vec![],
                     rollback: Some(RollbackInfo {
                         strategy: RollbackStrategy::RestoreBackup,
-                        backup_path: None,
-                    }),
-                },
+                        backup_path: None})},
                 _ => MigrationStep {
                     id: format!("step_{i}"),
                     description: format!("Manual migration step for {}", change.element),
                     step_type: StepType::Custom {
-                        script: "manual_migration_required".to_string(),
-                    },
+                        script: "manual_migration_required".to_string()},
                     depends_on: vec![],
                     rollback: Some(RollbackInfo {
                         strategy: RollbackStrategy::Manual {
-                            instructions: "Restore from backup".to_string(),
-                        },
-                        backup_path: None,
-                    }),
-                },
-            };
+                            instructions: "Restore from backup".to_string()},
+                        backup_path: None})}};
             steps.push(step);
         }
 
@@ -533,12 +485,9 @@ where
                     check_schema_compliance: true,
                     check_data_integrity: true,
                     performance_requirements: None,
-                    custom_validation_rules: vec![],
-                },
-            },
+                    custom_validation_rules: vec![]}},
             depends_on: steps.iter().map(|s| s.id.clone()).collect(),
-            rollback: None,
-        });
+            rollback: None});
 
         // Calculate risk level
         let risk_level = if changes
@@ -562,8 +511,7 @@ where
             to_version: to_version.to_string(),
             steps,
             estimated_duration: std::time::Duration::from_secs(60 * changes.len() as u64),
-            risk_level,
-        })
+            risk_level})
     }
 
     /// Execute migration plan
@@ -586,8 +534,7 @@ where
             steps_completed: vec![],
             errors: vec![],
             warnings: vec![],
-            statistics: MigrationStats::default(),
-        };
+            statistics: MigrationStats::default()};
 
         // Create backup if enabled
         if config.backup_enabled && !config.dry_run {
@@ -604,8 +551,7 @@ where
                     report.errors.push(MigrationError {
                         step_id: step.id.clone(),
                         error: e.to_string(),
-                        timestamp: Utc::now(),
-                    });
+                        timestamp: Utc::now()});
 
                     // Rollback if needed
                     if !config.dry_run {
@@ -642,8 +588,7 @@ where
                 status: StepStatus::Simulated,
                 duration: start.elapsed(),
                 records_processed: 0,
-                errors: vec![],
-            });
+                errors: vec![]});
         }
 
         match &step.step_type {
@@ -678,8 +623,7 @@ where
             status: StepStatus::Completed,
             duration: start.elapsed(),
             records_processed: 0, // Would track actual records
-            errors: vec![],
-        })
+            errors: vec![]})
     }
 
     /// Create backup of data
@@ -734,8 +678,7 @@ where
                     message: format!("Class '{}' already exists", class.name),
                     path: Some(format!("classes.{}", class.name)),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
             schema.classes.insert(class.name.clone(), class.clone());
         }
@@ -747,8 +690,7 @@ where
                     message: format!("Class '{class_name}' does not exist"),
                     path: Some(format!("classes.{class_name}")),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
             schema.classes.shift_remove(class_name);
         }
@@ -764,8 +706,7 @@ where
                     message: format!("Class '{old_name}' does not exist for renaming"),
                     path: Some(format!("classes.{old_name}")),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
         }
 
@@ -776,8 +717,7 @@ where
                     message: format!("Slot '{}' already exists", slot.name),
                     path: Some(format!("slots.{}", slot.name)),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
             schema.slots.insert(slot.name.clone(), slot.clone());
         }
@@ -789,8 +729,7 @@ where
                     message: format!("Slot '{slot_name}' does not exist"),
                     path: Some(format!("slots.{slot_name}")),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
             schema.slots.shift_remove(slot_name);
         }
@@ -806,8 +745,7 @@ where
                     message: format!("Slot '{old_name}' does not exist for renaming"),
                     path: Some(format!("slots.{old_name}")),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
         }
 
@@ -821,8 +759,7 @@ where
                     message: format!("Element '{element_name}' not found for type change"),
                     path: Some(format!("type_changes.{element_name}")),
                     expected: None,
-                    actual: None,
-                });
+                    actual: None});
             }
         }
 
@@ -856,9 +793,7 @@ where
                     todos: vec![],
                     see_also: vec![],
                     deprecated: None,
-                    examples: vec![],
-
-                };
+                    examples: vec![]};
 
                 // Add the class to the schema
                 schema.classes.insert(
@@ -1455,8 +1390,7 @@ where
                     let record_count = match &data {
                         Value::Array(arr) => arr.len() as u64,
                         Value::Object(_) => 1,
-                        _ => 0,
-                    };
+                        _ => 0};
                     
                     if record_count <= max_records {
                         println!("  ✓ Record count ({record_count}) within limit ({max_records})");
@@ -1690,8 +1624,7 @@ pub struct MigrationReport {
     /// Warnings
     pub warnings: Vec<String>,
     /// Statistics
-    pub statistics: MigrationStats,
-}
+    pub statistics: MigrationStats}
 
 /// Migration status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1705,8 +1638,7 @@ pub enum MigrationStatus {
     /// Failed
     Failed,
     /// Rolled back
-    RolledBack,
-}
+    RolledBack}
 
 /// Step result
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1720,8 +1652,7 @@ pub struct StepResult {
     /// Records processed
     pub records_processed: usize,
     /// Errors in this step
-    pub errors: Vec<String>,
-}
+    pub errors: Vec<String>}
 
 /// Step status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1733,8 +1664,7 @@ pub enum StepStatus {
     /// Skipped
     Skipped,
     /// Simulated (dry run)
-    Simulated,
-}
+    Simulated}
 
 /// Migration error
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1744,8 +1674,7 @@ pub struct MigrationError {
     /// Error message
     pub error: String,
     /// When it occurred
-    pub timestamp: DateTime<Utc>,
-}
+    pub timestamp: DateTime<Utc>}
 
 /// Migration statistics
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -1759,8 +1688,7 @@ pub struct MigrationStats {
     /// Records skipped
     pub records_skipped: usize,
     /// Records failed
-    pub records_failed: usize,
-}
+    pub records_failed: usize}
 
 /// Migration CLI commands
 pub mod cli {
@@ -1780,8 +1708,7 @@ pub mod cli {
             to: String,
             /// Output format
             #[arg(short = 'o', long, default_value = "table")]
-            format: String,
-        },
+            format: String},
 
         /// Create migration plan
         Plan {
@@ -1793,8 +1720,7 @@ pub mod cli {
             to: String,
             /// Output file
             #[arg(short = 'o', long)]
-            output: PathBuf,
-        },
+            output: PathBuf},
 
         /// Execute migration
         Execute {
@@ -1809,8 +1735,7 @@ pub mod cli {
             dry_run: bool,
             /// Skip validation
             #[arg(long)]
-            skip_validation: bool,
-        },
+            skip_validation: bool},
 
         /// Validate migration
         Validate {
@@ -1819,8 +1744,7 @@ pub mod cli {
             version: String,
             /// Data file
             #[arg(short = 'd', long)]
-            data: PathBuf,
-        },
+            data: PathBuf},
 
         /// Generate migration script
         Generate {
@@ -1835,9 +1759,7 @@ pub mod cli {
             output: PathBuf,
             /// Script language
             #[arg(long, default_value = "rust")]
-            language: String,
-        },
-    }
+            language: String}}
 }
 
 #[cfg(test)]
@@ -1852,9 +1774,7 @@ mod tests {
             element: "OldClass".to_string(),
             description: "Class was removed".to_string(),
             migration_strategy: MigrationStrategy::Manual {
-                instructions: "Handle manually".to_string(),
-            },
-        };
+                instructions: "Handle manually".to_string()}};
 
         assert_eq!(change.change_type, ChangeType::ClassRemoved);
     }
@@ -1866,8 +1786,7 @@ mod tests {
             to_version: "2.0".to_string(),
             steps: vec![],
             estimated_duration: std::time::Duration::from_secs(60),
-            risk_level: RiskLevel::High,
-        };
+            risk_level: RiskLevel::High};
 
         assert!(plan.risk_level > RiskLevel::Low);
     }

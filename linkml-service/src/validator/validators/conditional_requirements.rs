@@ -35,8 +35,7 @@ impl ConditionalRequirementValidator {
         // Get the slot value
         let slot_value = match instance {
             Value::Object(map) => map.get(slot_name),
-            _ => None,
-        };
+            _ => None};
 
         // If there's no condition specified, it's always satisfied
         let Some(slot_condition) = &condition.condition else {
@@ -58,8 +57,7 @@ impl ConditionalRequirementValidator {
                         return Ok(false);
                     }
                 }
-                _ => return Ok(false),
-            }
+                _ => return Ok(false)}
         }
 
         if let Some(equals_number) = slot_condition.equals_number {
@@ -73,8 +71,7 @@ impl ConditionalRequirementValidator {
                         return Ok(false);
                     }
                 }
-                _ => return Ok(false),
-            }
+                _ => return Ok(false)}
         }
 
         if let Some(ref pattern) = slot_condition.pattern {
@@ -116,8 +113,7 @@ impl ConditionalRequirementValidator {
                                 }
                     }
                 }
-                _ => return Ok(false),
-            }
+                _ => return Ok(false)}
         }
 
         // All conditions passed
@@ -153,8 +149,7 @@ impl ConditionalRequirementValidator {
                                 // Get the value of the required slot
                                 let slot_value = match instance {
                                     Value::Object(map) => map.get(required_slot),
-                                    _ => None,
-                                };
+                                    _ => None};
 
                                 // Check if the required slot is missing or null
                                 if slot_value.is_none() || matches!(slot_value, Some(Value::Null)) {
@@ -221,6 +216,7 @@ mod tests {
     use super::*;
     use indexmap::IndexMap;
     use std::sync::Arc;
+    use linkml_core::types::{SchemaDefinition, SlotCondition};
 
     #[test]
     fn test_conditional_requirement_string_equals() {
@@ -237,8 +233,7 @@ mod tests {
                     equals_string: Some("active".to_string()),
                     ..Default::default()
                 }),
-                then_required: Some(vec!["email".to_string(), "phone".to_string()]),
-            },
+                then_required: Some(vec!["email".to_string(), "phone".to_string()])},
         );
 
         let class_def = ClassDefinition {
@@ -295,8 +290,7 @@ mod tests {
                     maximum_value: Some(serde_json::json!(65)),
                     ..Default::default()
                 }),
-                then_required: Some(vec!["employment_status".to_string()]),
-            },
+                then_required: Some(vec!["employment_status".to_string()])},
         );
 
         let class_def = ClassDefinition {
@@ -350,8 +344,7 @@ mod tests {
                     pattern: Some(r".*@company\.com$".to_string()),
                     ..Default::default()
                 }),
-                then_required: Some(vec!["employee_id".to_string()]),
-            },
+                then_required: Some(vec!["employee_id".to_string()])},
         );
 
         let class_def = ClassDefinition {
@@ -395,8 +388,7 @@ mod tests {
                     required: Some(true), // If phone field is present
                     ..Default::default()
                 }),
-                then_required: Some(vec!["phone_type".to_string()]),
-            },
+                then_required: Some(vec!["phone_type".to_string()])},
         );
 
         let class_def = ClassDefinition {
@@ -451,8 +443,7 @@ mod tests {
                     equals_string: Some("US".to_string()),
                     ..Default::default()
                 }),
-                then_required: Some(vec!["state".to_string()]),
-            },
+                then_required: Some(vec!["state".to_string()])},
         );
 
         // If is_student is true, then student_id is required
@@ -463,8 +454,7 @@ mod tests {
                     required: Some(true),
                     ..Default::default()
                 }),
-                then_required: Some(vec!["student_id".to_string()]),
-            },
+                then_required: Some(vec!["student_id".to_string()])},
         );
 
         let class_def = ClassDefinition {

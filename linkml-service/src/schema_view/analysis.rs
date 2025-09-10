@@ -42,8 +42,7 @@ pub struct SchemaStatistics {
     pub abstract_class_count: usize,
 
     /// Total unique imports
-    pub import_count: usize,
-}
+    pub import_count: usize}
 
 /// Information about where an element is used
 #[derive(Debug, Clone)]
@@ -65,16 +64,14 @@ pub struct UsageInfo {
     pub used_in_slot_usage: bool,
 
     /// Total usage count
-    pub total_usage_count: usize,
-}
+    pub total_usage_count: usize}
 
 
 /// Index of element usage throughout the schema
 #[derive(Debug, Clone)]
 pub struct UsageIndex {
     /// Usage information for each element
-    usage_map: HashMap<String, UsageInfo>,
-}
+    usage_map: HashMap<String, UsageInfo>}
 
 impl UsageIndex {
     /// Build a usage index for the schema
@@ -84,8 +81,7 @@ impl UsageIndex {
     ///
     pub fn build(schema_view: &SchemaView) -> linkml_core::error::Result<Self> {
         let mut index = Self {
-            usage_map: HashMap::new(),
-        };
+            usage_map: HashMap::new()};
 
         // Analyze class usage
         for (class_name, class_def) in schema_view.all_classes()? {
@@ -181,8 +177,7 @@ impl UsageIndex {
 
 /// Analyzer for computing schema statistics and patterns
 pub struct SchemaAnalyzer<'a> {
-    schema_view: &'a SchemaView,
-}
+    schema_view: &'a SchemaView}
 
 impl<'a> SchemaAnalyzer<'a> {
     /// Create a new schema analyzer
@@ -295,6 +290,8 @@ impl<'a> SchemaAnalyzer<'a> {
     ///
     /// # Errors
     ///
+    /// Returns `SchemaViewError::LoadError` if the regex pattern is invalid
+    /// Returns schema view errors if element enumeration fails
     pub fn find_elements_by_pattern(&self, pattern: &str) -> Result<HashMap<String, Vec<String>>> {
         let mut results = HashMap::new();
         let regex = regex::Regex::new(pattern)
@@ -341,6 +338,7 @@ impl<'a> SchemaAnalyzer<'a> {
     ///
     /// # Errors
     ///
+    /// Returns schema view errors if class enumeration or slot resolution fails
     pub fn generate_class_dependency_graph(&self) -> Result<HashMap<String, HashSet<String>>> {
         let mut graph = HashMap::new();
 

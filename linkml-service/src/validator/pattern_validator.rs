@@ -14,11 +14,11 @@ use std::collections::HashMap;
 
 /// Common structured patterns with error handling
 static EMAIL_PATTERN: std::sync::LazyLock<Result<Regex>> =
-    std::sync::LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+    std::sync::LazyLock::new(|| Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2}$")
         .map_err(|e| LinkMLError::service(format!("Invalid email regex: {e}"))));
 
 static URL_PATTERN: std::sync::LazyLock<Result<Regex>> = std::sync::LazyLock::new(|| {
-    Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
+    Regex::new(r"^https?://[a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2})+(?:/[^?#]*)?(?:\?[^#]*)?(?:#.*)?$")
         .map_err(|e| LinkMLError::service(format!("Invalid URL regex: {e}")))
 });
 
@@ -45,8 +45,7 @@ pub struct PatternValidator {
     structured_patterns: HashMap<String, Regex>,
 
     /// Named capture patterns for extraction
-    named_patterns: HashMap<String, Regex>,
-}
+    named_patterns: HashMap<String, Regex>}
 
 impl PatternValidator {
     /// Create a new pattern validator
@@ -83,8 +82,7 @@ impl PatternValidator {
         Ok(Self {
             patterns: HashMap::new(),
             structured_patterns,
-            named_patterns: HashMap::new(),
-        })
+            named_patterns: HashMap::new()})
     }
 
     /// Create validator from schema
@@ -359,15 +357,13 @@ pub fn validate_patterns(
             }
             Ok(all_issues)
         }
-        _ => validator.validate_instance(data, class_name, schema),
-    }
+        _ => validator.validate_instance(data, class_name, schema)}
 }
 
 /// Pattern-based data transformation
 pub struct PatternTransformer {
     /// Transformation patterns
-    transformations: HashMap<String, TransformPattern>,
-}
+    transformations: HashMap<String, TransformPattern>}
 
 /// A transformation pattern
 #[derive(Clone)]
@@ -375,8 +371,7 @@ pub struct TransformPattern {
     /// Pattern to match
     pub pattern: Regex,
     /// Replacement template
-    pub replacement: String,
-}
+    pub replacement: String}
 
 impl Default for PatternTransformer {
     fn default() -> Self {
@@ -388,8 +383,7 @@ impl PatternTransformer {
     /// Create a new pattern transformer
     #[must_use] pub fn new() -> Self {
         Self {
-            transformations: HashMap::new(),
-        }
+            transformations: HashMap::new()}
     }
 
     /// Add a transformation pattern
@@ -410,8 +404,7 @@ impl PatternTransformer {
             slot_name.to_string(),
             TransformPattern {
                 pattern: regex,
-                replacement: replacement.to_string(),
-            },
+                replacement: replacement.to_string()},
         );
 
         Ok(())
@@ -503,6 +496,7 @@ mod tests {
                 .validate_slot("phone", &json!("+0123456789"))
                 .is_err()
         );
+        Ok(())
     }
 
     #[test]
@@ -522,6 +516,7 @@ mod tests {
         assert_eq!(captures.get("major").expect("Should have major"), "1");
         assert_eq!(captures.get("minor").expect("Should have minor"), "2");
         assert_eq!(captures.get("patch").expect("Should have patch"), "3");
+        Ok(())
     }
 
     #[test]

@@ -16,8 +16,7 @@ use super::types::{CompiledRule, RuleExecutionContext, RuleExecutionStrategy};
 /// Executor for rule-based validation
 pub struct RuleExecutor {
     matcher: RuleMatcher,
-    evaluator: RuleEvaluator,
-}
+    evaluator: RuleEvaluator}
 
 impl RuleExecutor {
     /// Create a new rule executor
@@ -43,8 +42,7 @@ impl RuleExecutor {
             RuleExecutionStrategy::Sequential => self.execute_sequential(rules, context),
             RuleExecutionStrategy::Parallel => self.execute_parallel(rules, context),
             RuleExecutionStrategy::FailFast => self.execute_fail_fast(rules, context),
-            RuleExecutionStrategy::CollectAll => self.execute_collect_all(rules, context),
-        }
+            RuleExecutionStrategy::CollectAll => self.execute_collect_all(rules, context)}
     }
 
     /// Execute rules sequentially in priority order
@@ -189,8 +187,7 @@ pub struct RuleExecutionStats {
     /// Total issues generated
     pub total_issues: usize,
     /// Execution time in milliseconds
-    pub execution_time_ms: u64,
-}
+    pub execution_time_ms: u64}
 
 impl RuleExecutor {
     /// Execute rules with statistics collection

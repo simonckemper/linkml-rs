@@ -12,16 +12,14 @@ pub enum Severity {
     /// Warning that doesn't prevent validation
     Warning,
     /// Error that causes validation to fail
-    Error,
-}
+    Error}
 
 impl fmt::Display for Severity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Severity::Info => write!(f, "INFO"),
             Severity::Warning => write!(f, "WARNING"),
-            Severity::Error => write!(f, "ERROR"),
-        }
+            Severity::Error => write!(f, "ERROR")}
     }
 }
 
@@ -39,8 +37,7 @@ pub struct ValidationIssue {
     /// Optional error code for programmatic handling
     pub code: Option<String>,
     /// Additional context information
-    pub context: HashMap<String, serde_json::Value>,
-}
+    pub context: HashMap<String, serde_json::Value>}
 
 impl ValidationIssue {
     /// Create a new validation issue
@@ -56,8 +53,7 @@ impl ValidationIssue {
             path: path.into(),
             validator: validator.into(),
             code: None,
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create an error issue
@@ -124,8 +120,7 @@ pub struct ValidationStats {
     /// Number of validators executed
     pub validators_executed: usize,
     /// Cache hit rate (0.0 to 1.0)
-    pub cache_hit_rate: f64,
-}
+    pub cache_hit_rate: f64}
 
 /// Complete validation report
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,8 +134,7 @@ pub struct ValidationReport {
     /// Schema ID that was validated against
     pub schema_id: String,
     /// Optional target class if specified
-    pub target_class: Option<String>,
-}
+    pub target_class: Option<String>}
 
 impl ValidationReport {
     /// Create a new validation report
@@ -150,8 +144,7 @@ impl ValidationReport {
             issues: Vec::new(),
             stats: ValidationStats::default(),
             schema_id: schema_id.into(),
-            target_class: None,
-        }
+            target_class: None}
     }
 
     /// Add an issue to the report
@@ -162,8 +155,7 @@ impl ValidationReport {
                 self.stats.error_count += 1;
             }
             Severity::Warning => self.stats.warning_count += 1,
-            Severity::Info => self.stats.info_count += 1,
-        }
+            Severity::Info => self.stats.info_count += 1}
         self.issues.push(issue);
     }
 

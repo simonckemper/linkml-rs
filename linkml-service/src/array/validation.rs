@@ -26,8 +26,7 @@ pub struct ArrayValidationContext<'a> {
     pub check_unique: bool,
 
     /// Custom validators
-    pub custom_validators: Vec<CustomValidator<'a>>,
-}
+    pub custom_validators: Vec<CustomValidator<'a>>}
 
 /// Array validation result
 #[derive(Debug, Clone)]
@@ -39,8 +38,7 @@ pub struct ArrayValidationResult {
     pub errors: Vec<ArrayValidationError>,
 
     /// Validation warnings
-    pub warnings: Vec<String>,
-}
+    pub warnings: Vec<String>}
 
 /// Array validation error
 #[derive(Debug, Clone)]
@@ -52,8 +50,7 @@ pub struct ArrayValidationError {
     pub message: String,
 
     /// Error type
-    pub error_type: ArrayValidationErrorType,
-}
+    pub error_type: ArrayValidationErrorType}
 
 /// Types of validation errors
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,8 +68,7 @@ pub enum ArrayValidationErrorType {
     /// Missing required value
     MissingError,
     /// Custom validation failure
-    CustomError,
-}
+    CustomError}
 
 /// Enhanced array validator
 pub struct ArrayValidatorV2;
@@ -91,8 +87,7 @@ impl ArrayValidatorV2 {
             errors.push(ArrayValidationError {
                 location: None,
                 message: e.to_string(),
-                error_type: ArrayValidationErrorType::ShapeError,
-            });
+                error_type: ArrayValidationErrorType::ShapeError});
         }
 
         // Validate each element
@@ -106,8 +101,7 @@ impl ArrayValidatorV2 {
                 errors.push(ArrayValidationError {
                     location: Some(indices.clone()),
                     message: e,
-                    error_type: ArrayValidationErrorType::TypeError,
-                });
+                    error_type: ArrayValidationErrorType::TypeError});
             }
 
             // Missing value check
@@ -115,8 +109,7 @@ impl ArrayValidatorV2 {
                 errors.push(ArrayValidationError {
                     location: Some(indices.clone()),
                     message: "Missing value not allowed".to_string(),
-                    error_type: ArrayValidationErrorType::MissingError,
-                });
+                    error_type: ArrayValidationErrorType::MissingError});
             }
 
             // Range validation
@@ -124,15 +117,13 @@ impl ArrayValidatorV2 {
                 let min_str = match min_value {
                     Value::String(s) => s.as_str(),
                     Value::Number(n) => &n.to_string(),
-                    _ => "",
-                };
+                    _ => ""};
                 if !min_str.is_empty()
                     && let Err(e) = Self::validate_minimum(value, min_str) {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
-                            error_type: ArrayValidationErrorType::RangeError,
-                        });
+                            error_type: ArrayValidationErrorType::RangeError});
                     }
             }
 
@@ -140,15 +131,13 @@ impl ArrayValidatorV2 {
                 let max_str = match max_value {
                     Value::String(s) => s.as_str(),
                     Value::Number(n) => &n.to_string(),
-                    _ => "",
-                };
+                    _ => ""};
                 if !max_str.is_empty()
                     && let Err(e) = Self::validate_maximum(value, max_str) {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
-                            error_type: ArrayValidationErrorType::RangeError,
-                        });
+                            error_type: ArrayValidationErrorType::RangeError});
                     }
             }
 
@@ -159,8 +148,7 @@ impl ArrayValidatorV2 {
                         errors.push(ArrayValidationError {
                             location: Some(indices.clone()),
                             message: e,
-                            error_type: ArrayValidationErrorType::PatternError,
-                        });
+                            error_type: ArrayValidationErrorType::PatternError});
                     }
 
             // Custom validators
@@ -169,8 +157,7 @@ impl ArrayValidatorV2 {
                     errors.push(ArrayValidationError {
                         location: Some(indices.clone()),
                         message: e,
-                        error_type: ArrayValidationErrorType::CustomError,
-                    });
+                        error_type: ArrayValidationErrorType::CustomError});
                 }
             }
         }
@@ -182,8 +169,7 @@ impl ArrayValidatorV2 {
                     errors.push(ArrayValidationError {
                         location: Some(indices),
                         message: "Duplicate value found".to_string(),
-                        error_type: ArrayValidationErrorType::UniquenessError,
-                    });
+                        error_type: ArrayValidationErrorType::UniquenessError});
                 }
             }
 
@@ -198,8 +184,7 @@ impl ArrayValidatorV2 {
         ArrayValidationResult {
             valid: errors.is_empty(),
             errors,
-            warnings,
-        }
+            warnings}
     }
 
     /// Validate element type
@@ -215,11 +200,10 @@ impl ArrayValidatorV2 {
 
         // Check against built-in types
         let valid = match expected_type {
-            "string" => value.is_string(),
+            "string" | "uri" | "uriorcurie" => value.is_string(),
             "integer" => value.is_i64() || value.is_u64(),
             "float" | "double" | "decimal" => value.is_number(),
             "boolean" => value.is_boolean(),
-            "uri" | "uriorcurie" => value.is_string(),
             _ => {
                 // Check custom types
                 if let Some(type_def) = type_defs.get(expected_type)
@@ -242,8 +226,7 @@ impl ArrayValidatorV2 {
                     Value::Number(_) => "number",
                     Value::String(_) => "string",
                     Value::Array(_) => "array",
-                    Value::Object(_) => "object",
-                }
+                    Value::Object(_) => "object"}
             ))
         }
     }
@@ -366,8 +349,7 @@ pub struct ArrayValidationContextBuilder<'a> {
     types: Option<&'a std::collections::HashMap<String, TypeDefinition>>,
     allow_missing: bool,
     check_unique: bool,
-    custom_validators: Vec<Box<dyn Fn(&Value) -> Result<(), String> + 'a>>,
-}
+    custom_validators: Vec<Box<dyn Fn(&Value) -> Result<(), String> + 'a>>}
 
 impl Default for ArrayValidationContextBuilder<'_> {
     fn default() -> Self {
@@ -383,8 +365,7 @@ impl<'a> ArrayValidationContextBuilder<'a> {
             types: None,
             allow_missing: false,
             check_unique: false,
-            custom_validators: Vec::new(),
-        }
+            custom_validators: Vec::new()}
     }
 
     /// Set the slot definition
@@ -434,8 +415,7 @@ impl<'a> ArrayValidationContextBuilder<'a> {
             types,
             allow_missing: self.allow_missing,
             check_unique: self.check_unique,
-            custom_validators: self.custom_validators,
-        })
+            custom_validators: self.custom_validators})
     }
 }
 

@@ -15,8 +15,7 @@ pub struct ShaclGenerator {
     /// Generator options
     options: GeneratorOptions,
     /// Namespace prefixes
-    prefixes: HashMap<String, String>,
-}
+    prefixes: HashMap<String, String>}
 
 impl ShaclGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -50,8 +49,7 @@ impl ShaclGenerator {
 
         Self {
             options: GeneratorOptions::default(),
-            prefixes,
-        }
+            prefixes}
     }
 
     /// Create with custom options
@@ -246,8 +244,7 @@ impl ShaclGenerator {
                     for (i, pv) in enum_def.permissible_values.iter().enumerate() {
                         let value = match pv {
                             PermissibleValue::Simple(s) => s,
-                            PermissibleValue::Complex { text, .. } => text,
-                        };
+                            PermissibleValue::Complex { text, .. } => text};
                         if i < enum_def.permissible_values.len() - 1 {
                             write!(&mut output, "\"{value}\" ")
                                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -353,8 +350,7 @@ impl ShaclGenerator {
             "datetime" => Some("xsd:dateTime".to_string()),
             "time" => Some("xsd:time".to_string()),
             "uri" => Some("xsd:anyURI".to_string()),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Convert to `snake_case`
@@ -384,8 +380,7 @@ impl ShaclGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -453,7 +448,7 @@ impl Generator for ShaclGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_xsd_datatype_mapping() {

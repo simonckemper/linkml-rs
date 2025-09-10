@@ -33,8 +33,7 @@ pub struct MemorySafetyConfig {
     /// Memory pressure threshold (bytes)
     pub memory_pressure_threshold: usize,
     /// Enable weak reference optimization
-    pub weak_ref_optimization: bool,
-}
+    pub weak_ref_optimization: bool}
 
 impl Default for MemorySafetyConfig {
     fn default() -> Self {
@@ -44,8 +43,7 @@ impl Default for MemorySafetyConfig {
             cleanup_interval: Duration::from_secs(60),
             auto_cleanup: true,
             memory_pressure_threshold: 500 * 1024 * 1024, // 500MB
-            weak_ref_optimization: true,
-        }
+            weak_ref_optimization: true}
     }
 }
 
@@ -59,16 +57,14 @@ struct AllocationInfo {
     /// Allocation time
     allocated_at: Instant,
     /// Stack trace (if available)
-    stack_trace: Option<String>,
-}
+    stack_trace: Option<String>}
 
 /// Memory tracker for leak detection
 pub struct MemoryTracker {
     config: Arc<RwLock<MemorySafetyConfig>>,
     allocations: Arc<DashMap<u64, AllocationInfo>>,
     next_id: Arc<Mutex<u64>>,
-    weak_refs: Arc<DashMap<String, Weak<dyn std::any::Any + Send + Sync>>>,
-}
+    weak_refs: Arc<DashMap<String, Weak<dyn std::any::Any + Send + Sync>>>}
 
 impl MemoryTracker {
     /// Create new memory tracker
@@ -78,8 +74,7 @@ impl MemoryTracker {
             config: Arc::new(RwLock::new(config)),
             allocations: Arc::new(DashMap::new()),
             next_id: Arc::new(Mutex::new(0)),
-            weak_refs: Arc::new(DashMap::new()),
-        }
+            weak_refs: Arc::new(DashMap::new())}
     }
 
     /// Track a new allocation
@@ -90,8 +85,7 @@ impl MemoryTracker {
         if !config.leak_detection_enabled {
             return AllocationGuard {
                 id: None,
-                tracker: None,
-            };
+                tracker: None};
         }
 
         drop(config);
@@ -119,8 +113,7 @@ impl MemoryTracker {
 
         AllocationGuard {
             id: Some(id),
-            tracker: Some(self.clone()),
-        }
+            tracker: Some(self.clone())}
     }
 
     /// Register a weak reference
@@ -185,8 +178,7 @@ impl MemoryTracker {
             oldest_allocation: allocations
                 .iter()
                 .min_by_key(|a| a.allocated_at)
-                .map(|a| a.allocated_at.elapsed()),
-        }
+                .map(|a| a.allocated_at.elapsed())}
     }
 
     /// Detect potential leaks
@@ -203,8 +195,7 @@ impl MemoryTracker {
                     type_name: info.type_name,
                     size: info.size,
                     age: info.allocated_at.elapsed(),
-                    stack_trace: info.stack_trace.clone(),
-                });
+                    stack_trace: info.stack_trace.clone()});
             }
         }
 
@@ -218,16 +209,14 @@ impl Clone for MemoryTracker {
             config: self.config.clone(),
             allocations: self.allocations.clone(),
             next_id: self.next_id.clone(),
-            weak_refs: self.weak_refs.clone(),
-        }
+            weak_refs: self.weak_refs.clone()}
     }
 }
 
 /// RAII guard for tracked allocations
 pub struct AllocationGuard {
     id: Option<u64>,
-    tracker: Option<MemoryTracker>,
-}
+    tracker: Option<MemoryTracker>}
 
 impl Drop for AllocationGuard {
     fn drop(&mut self) {
@@ -249,8 +238,7 @@ pub struct MemoryStats {
     /// Weak reference count
     pub weak_refs_count: usize,
     /// Oldest allocation age
-    pub oldest_allocation: Option<Duration>,
-}
+    pub oldest_allocation: Option<Duration>}
 
 /// Leak report
 #[derive(Debug, Clone)]
@@ -262,20 +250,17 @@ pub struct LeakReport {
     /// Age of allocation
     pub age: Duration,
     /// Stack trace if available
-    pub stack_trace: Option<String>,
-}
+    pub stack_trace: Option<String>}
 
 /// Circular reference breaker
 pub struct CircularRefBreaker {
     /// Registry of objects that might have circular refs
-    registry: Arc<DashMap<String, WeakRegistry>>,
-}
+    registry: Arc<DashMap<String, WeakRegistry>>}
 
 /// Weak reference registry entry
 struct WeakRegistry {
     /// Weak references
-    refs: Vec<Weak<dyn std::any::Any + Send + Sync>>,
-}
+    refs: Vec<Weak<dyn std::any::Any + Send + Sync>>}
 
 impl Default for CircularRefBreaker {
     fn default() -> Self {
@@ -288,8 +273,7 @@ impl CircularRefBreaker {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            registry: Arc::new(DashMap::new()),
-        }
+            registry: Arc::new(DashMap::new())}
     }
 
     /// Register an object that might have circular references
@@ -305,8 +289,7 @@ impl CircularRefBreaker {
                 entry.refs.push(weak.clone());
             })
             .or_insert_with(|| WeakRegistry {
-                refs: vec![weak],
-            });
+                refs: vec![weak]});
     }
 
     /// Break circular references for a key
@@ -332,8 +315,7 @@ pub struct ScopedMemoryPool {
     /// Cleanup callbacks
     cleanup_callbacks: Arc<Mutex<Vec<CleanupCallback>>>,
     /// Parent pool (if any)
-    parent: Option<Arc<ScopedMemoryPool>>,
-}
+    parent: Option<Arc<ScopedMemoryPool>>}
 
 impl ScopedMemoryPool {
     /// Create new scoped memory pool
@@ -342,8 +324,7 @@ impl ScopedMemoryPool {
             id: id.into(),
             resources: Arc::new(Mutex::new(Vec::new())),
             cleanup_callbacks: Arc::new(Mutex::new(Vec::new())),
-            parent: None,
-        }
+            parent: None}
     }
 
     /// Create child pool
@@ -353,8 +334,7 @@ impl ScopedMemoryPool {
             id: id.into(),
             resources: Arc::new(Mutex::new(Vec::new())),
             cleanup_callbacks: Arc::new(Mutex::new(Vec::new())),
-            parent: Some(Arc::new(self.clone())),
-        }
+            parent: Some(Arc::new(self.clone()))}
     }
 
     /// Allocate resource in pool
@@ -394,8 +374,7 @@ impl Clone for ScopedMemoryPool {
             id: self.id.clone(),
             resources: self.resources.clone(),
             cleanup_callbacks: self.cleanup_callbacks.clone(),
-            parent: self.parent.clone(),
-        }
+            parent: self.parent.clone()}
     }
 }
 
@@ -410,8 +389,7 @@ pub struct MemoryPressureMonitor {
     config: Arc<RwLock<MemorySafetyConfig>>,
     pressure_callbacks: Arc<Mutex<Vec<PressureCallback>>>,
     /// Shared reference to memory tracker for getting allocation data
-    memory_tracker: Option<Arc<MemoryTracker>>,
-}
+    memory_tracker: Option<Arc<MemoryTracker>>}
 
 impl MemoryPressureMonitor {
     /// Create new memory pressure monitor
@@ -420,8 +398,7 @@ impl MemoryPressureMonitor {
         Self {
             config: Arc::new(RwLock::new(config)),
             pressure_callbacks: Arc::new(Mutex::new(Vec::new())),
-            memory_tracker: None,
-        }
+            memory_tracker: None}
     }
 
     /// Create new memory pressure monitor with tracker
@@ -430,8 +407,7 @@ impl MemoryPressureMonitor {
         Self {
             config: Arc::new(RwLock::new(config)),
             pressure_callbacks: Arc::new(Mutex::new(Vec::new())),
-            memory_tracker: Some(tracker),
-        }
+            memory_tracker: Some(tracker)}
     }
 
     /// Register pressure callback
@@ -524,8 +500,7 @@ pub struct SafeValidationContext {
     /// Memory tracker
     tracker: MemoryTracker,
     /// Circular reference breaker
-    ref_breaker: CircularRefBreaker,
-}
+    ref_breaker: CircularRefBreaker}
 
 impl SafeValidationContext {
     /// Create new safe validation context
@@ -533,8 +508,7 @@ impl SafeValidationContext {
         Self {
             pool: ScopedMemoryPool::new(operation_id),
             tracker: MemoryTracker::new(MemorySafetyConfig::default()),
-            ref_breaker: CircularRefBreaker::new(),
-        }
+            ref_breaker: CircularRefBreaker::new()}
     }
 
     /// Allocate tracked resource

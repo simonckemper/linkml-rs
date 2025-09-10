@@ -22,8 +22,7 @@ pub struct MergeOptions {
     pub preserve_annotations: bool,
 
     /// Merge imports
-    pub merge_imports: bool,
-}
+    pub merge_imports: bool}
 
 impl Default for MergeOptions {
     fn default() -> Self {
@@ -32,8 +31,7 @@ impl Default for MergeOptions {
             conflict_resolution: ConflictResolution::Error,
             base_schema: None,
             preserve_annotations: true,
-            merge_imports: true,
-        }
+            merge_imports: true}
     }
 }
 
@@ -47,8 +45,7 @@ pub struct MergeResult {
     pub conflicts: Vec<MergeConflict>,
 
     /// Elements merged from each schema
-    pub merge_sources: HashMap<String, Vec<String>>,
-}
+    pub merge_sources: HashMap<String, Vec<String>>}
 
 /// Merge conflict information
 #[derive(Debug, Clone)]
@@ -63,8 +60,7 @@ pub struct MergeConflict {
     pub conflicting_values: Vec<ConflictValue>,
 
     /// Resolution applied
-    pub resolution: String,
-}
+    pub resolution: String}
 
 /// Conflicting value from a schema
 #[derive(Debug, Clone)]
@@ -73,13 +69,11 @@ pub struct ConflictValue {
     pub schema_index: usize,
 
     /// Value
-    pub value: serde_json::Value,
-}
+    pub value: serde_json::Value}
 
 /// Schema merge engine
 pub struct SchemaMerge {
-    options: MergeOptions,
-}
+    options: MergeOptions}
 
 impl SchemaMerge {
     /// Create new schema merge engine
@@ -117,8 +111,7 @@ impl SchemaMerge {
                 self.merge_intersection(schemas, &mut merged, &mut conflicts)?;
             }
             MergeStrategy::Override => self.merge_override(schemas, &mut merged, &mut conflicts)?,
-            MergeStrategy::Custom => self.merge_custom(schemas, &mut merged, &mut conflicts)?,
-        }
+            MergeStrategy::Custom => self.merge_custom(schemas, &mut merged, &mut conflicts)?}
 
         // Handle conflicts
         if !conflicts.is_empty()
@@ -236,8 +229,7 @@ impl SchemaMerge {
                     for pv in &enum_def.permissible_values {
                         let pv_text = match pv {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
-                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
-                        };
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text};
 
                         let already_exists =
                             merged_enum.permissible_values.iter().any(|existing_pv| {
@@ -245,8 +237,7 @@ impl SchemaMerge {
                                     linkml_core::types::PermissibleValue::Simple(s) => s == pv_text,
                                     linkml_core::types::PermissibleValue::Complex {
                                         text, ..
-                                    } => text == pv_text,
-                                }
+                                    } => text == pv_text}
                             });
 
                         if !already_exists {
@@ -398,15 +389,12 @@ impl SchemaMerge {
                 ConflictValue {
                     schema_index: 0,
                     value: serde_json::to_value(existing)
-                        .expect("should serialize existing element"),
-                },
+                        .expect("should serialize existing element")},
                 ConflictValue {
                     schema_index,
-                    value: serde_json::to_value(new).expect("should serialize new element"),
-                },
+                    value: serde_json::to_value(new).expect("should serialize new element")},
             ],
-            resolution: format!("{:?}", self.options.conflict_resolution),
-        }
+            resolution: format!("{:?}", self.options.conflict_resolution)}
     }
 
     /// Resolve class conflict
@@ -494,7 +482,7 @@ impl SchemaMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_merge_union() -> Result<()> {

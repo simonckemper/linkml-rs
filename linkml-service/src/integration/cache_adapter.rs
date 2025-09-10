@@ -6,8 +6,7 @@ use std::sync::Arc;
 
 /// Adapter to convert `RootReal`'s `CacheService` to our internal trait
 pub struct CacheServiceAdapter {
-    cache: Arc<dyn cache_core::CacheService<Error = cache_core::CacheError>>,
-}
+    cache: Arc<dyn cache_core::CacheService<Error = cache_core::CacheError>>}
 
 impl CacheServiceAdapter {
     /// Create a new cache service adapter
@@ -31,12 +30,10 @@ impl crate::validator::cache::CacheService for CacheServiceAdapter {
                 // Extract bytes from CacheValue
                 match value.to_bytes() {
                     Ok(bytes) => Ok(Some(bytes)),
-                    Err(e) => Err(Box::new(e) as Box<dyn std::error::Error>),
-                }
+                    Err(e) => Err(Box::new(e) as Box<dyn std::error::Error>)}
             }
             Ok(None) => Ok(None),
-            Err(e) => Err(Box::new(e) as Box<dyn std::error::Error>),
-        }
+            Err(e) => Err(Box::new(e) as Box<dyn std::error::Error>)}
     }
 
     async fn set(

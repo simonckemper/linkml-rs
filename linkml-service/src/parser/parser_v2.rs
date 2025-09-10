@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -18,8 +17,7 @@ pub struct ParserV2<F: FileSystemOperations> {
     yaml_parser: YamlParserV2<F>,
     json_parser: JsonParserV2<F>,
     /// Whether to automatically resolve imports
-    auto_resolve_imports: bool,
-}
+    auto_resolve_imports: bool}
 
 impl<F: FileSystemOperations> ParserV2<F> {
     /// Create a new parser with file system adapter
@@ -27,8 +25,7 @@ impl<F: FileSystemOperations> ParserV2<F> {
         Self {
             yaml_parser: YamlParserV2::new(fs.clone()),
             json_parser: JsonParserV2::new(fs),
-            auto_resolve_imports: true,
-        }
+            auto_resolve_imports: true}
     }
 
     /// Set whether to automatically resolve imports
@@ -46,8 +43,7 @@ impl<F: FileSystemOperations> ParserV2<F> {
         match format.to_lowercase().as_str() {
             "yaml" | "yml" => self.yaml_parser.parse_str(content).await,
             "json" => self.json_parser.parse_str(content).await,
-            _ => Err(LinkMLError::invalid_format(format)),
-        }
+            _ => Err(LinkMLError::invalid_format(format))}
     }
 
     /// Parse schema from file, detecting format from extension
@@ -64,8 +60,7 @@ impl<F: FileSystemOperations> ParserV2<F> {
         match format.to_lowercase().as_str() {
             "yaml" | "yml" => self.yaml_parser.parse_file(path).await,
             "json" => self.json_parser.parse_file(path).await,
-            _ => Err(LinkMLError::invalid_format(format)),
-        }
+            _ => Err(LinkMLError::invalid_format(format))}
     }
 
     /// Parse with explicit format

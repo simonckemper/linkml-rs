@@ -14,8 +14,7 @@ pub struct PluginDiscovery {
     /// File patterns to search for
     patterns: Vec<String>,
     /// Directories to exclude
-    exclude_dirs: Vec<String>,
-}
+    exclude_dirs: Vec<String>}
 
 /// Discovery strategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,8 +26,7 @@ pub enum DiscoveryStrategy {
     /// Search using glob patterns
     Glob,
     /// Search in system plugin directories
-    System,
-}
+    System}
 
 impl Default for PluginDiscovery {
     fn default() -> Self {
@@ -51,8 +49,7 @@ impl PluginDiscovery {
                 ".git".to_string(),
                 "dist".to_string(),
                 "build".to_string(),
-            ],
-        }
+            ]}
     }
 
     /// Add a file pattern to search for
@@ -70,13 +67,14 @@ impl PluginDiscovery {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::IoError` if directory traversal fails
+    /// Returns `LinkMLError::PluginError` if plugin discovery fails
     pub fn discover(&self, path: &Path, strategy: DiscoveryStrategy) -> Result<Vec<PathBuf>> {
         match strategy {
             DiscoveryStrategy::Shallow => self.discover_shallow(path),
             DiscoveryStrategy::Recursive => self.discover_recursive(path),
             DiscoveryStrategy::Glob => self.discover_glob(path),
-            DiscoveryStrategy::System => self.discover_system(),
-        }
+            DiscoveryStrategy::System => self.discover_system()}
     }
 
     /// Discover plugins in a single directory
@@ -266,8 +264,7 @@ pub struct PluginManifest {
     /// Build configuration
     pub build: Option<BuildConfig>,
     /// Installation requirements
-    pub requirements: Option<Requirements>,
-}
+    pub requirements: Option<Requirements>}
 
 /// Plugin entry point specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -278,30 +275,25 @@ pub enum EntryPoint {
         /// Library file path relative to manifest
         library: String,
         /// Symbol name to load
-        symbol: Option<String>,
-    },
+        symbol: Option<String>},
     /// Python plugin
     Python {
         /// Module path
         module: String,
         /// Class name
-        class: String,
-    },
+        class: String},
     /// JavaScript/Node.js plugin
     JavaScript {
         /// Module file
         module: String,
         /// Export name
-        export: Option<String>,
-    },
+        export: Option<String>},
     /// WebAssembly plugin
     Wasm {
         /// WASM module file
         module: String,
         /// Instance configuration
-        config: Option<serde_json::Value>,
-    },
-}
+        config: Option<serde_json::Value>}}
 
 /// Build configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -311,8 +303,7 @@ pub struct BuildConfig {
     /// Build directory
     pub directory: Option<String>,
     /// Environment variables
-    pub env: Option<HashMap<String, String>>,
-}
+    pub env: Option<HashMap<String, String>>}
 
 /// Installation requirements
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -324,15 +315,17 @@ pub struct Requirements {
     /// Node.js packages
     pub npm: Option<Vec<String>>,
     /// Rust crates
-    pub cargo: Option<Vec<String>>,
-}
+    pub cargo: Option<Vec<String>>}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::Path;
     use tempfile::TempDir;
 
     #[test]
-    fn test_plugin_discovery_shallow() -> Result<(), LinkMLError> {
+    fn test_plugin_discovery_shallow() -> std::result::Result<(), LinkMLError> {
         let temp_dir = TempDir::new().map_err(|e| LinkMLError::IoError(e))?;
         let plugin_file = temp_dir.path().join("plugin.toml");
         fs::write(&plugin_file, "# Plugin manifest").map_err(|e| LinkMLError::IoError(e))?;

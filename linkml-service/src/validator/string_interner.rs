@@ -26,8 +26,7 @@ pub struct StringInterner {
     /// Map from index to string
     index_to_string: Arc<RwLock<Vec<String>>>,
     /// Pre-interned common strings
-    common_strings: CommonStrings,
-}
+    common_strings: CommonStrings}
 
 /// Pre-interned common strings for fast access
 pub struct CommonStrings {
@@ -75,8 +74,7 @@ pub struct CommonStrings {
     /// Interned "`enum_violation`"
     pub error_enum_violation: InternedString,
     /// Interned "`length_violation`"
-    pub error_length_violation: InternedString,
-}
+    pub error_length_violation: InternedString}
 
 impl StringInterner {
     /// Create a new string interner
@@ -106,9 +104,7 @@ impl StringInterner {
                 error_pattern_mismatch: InternedString(0),
                 error_range_violation: InternedString(0),
                 error_enum_violation: InternedString(0),
-                error_length_violation: InternedString(0),
-            },
-        };
+                error_length_violation: InternedString(0)}};
 
         // Pre-intern common strings
         interner.common_strings = CommonStrings {
@@ -136,8 +132,7 @@ impl StringInterner {
             error_pattern_mismatch: interner.intern("pattern_mismatch"),
             error_range_violation: interner.intern("range_violation"),
             error_enum_violation: interner.intern("enum_violation"),
-            error_length_violation: interner.intern("length_violation"),
-        };
+            error_length_violation: interner.intern("length_violation")};
 
         interner
     }
@@ -176,8 +171,7 @@ impl StringInterner {
     pub fn get_ref(&self, interned: InternedString) -> StringRef<'_> {
         StringRef {
             interner: self,
-            handle: interned,
-        }
+            handle: interned}
     }
 
     /// Get common strings
@@ -202,8 +196,7 @@ impl StringInterner {
                 total_bytes as f64 / total_strings as f64
             } else {
                 0.0
-            },
-        }
+            }}
     }
 
     /// Clear the interner (except common strings)
@@ -235,8 +228,7 @@ impl Default for StringInterner {
 /// A reference to an interned string
 pub struct StringRef<'a> {
     interner: &'a StringInterner,
-    handle: InternedString,
-}
+    handle: InternedString}
 
 impl StringRef<'_> {
     /// Get the string value as an owned String
@@ -260,8 +252,7 @@ pub struct InternerStats {
     /// Total bytes used by strings
     pub total_bytes: usize,
     /// Average string length
-    pub average_length: f64,
-}
+    pub average_length: f64}
 
 /// Global string interner for the validation system
 static GLOBAL_INTERNER: std::sync::LazyLock<StringInterner> =
@@ -276,7 +267,6 @@ pub fn global_interner() -> &'static StringInterner {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::string_pool::intern;
 
     #[test]
     fn test_string_interning() {

@@ -23,7 +23,7 @@ static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Resu
         Regex::new(r"(?i)(password|passwd|pwd)\s*[:=]\s*\S+"),
         Regex::new(r"(?i)(api[_-]?key|apikey)\s*[:=]\s*\S+"),
         Regex::new(r"(?i)(secret|token)\s*[:=]\s*\S+"),
-        Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+        Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2}\b"),
         Regex::new(r"\b(?:\d{4}[-\s]?){3}\d{4}\b"), // Credit card
         Regex::new(r"\b\d{3}-\d{2}-\d{4}\b"), // SSN
     ]
@@ -49,8 +49,7 @@ static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Resu
     /// Blocked patterns (regex)
     pub blocked_patterns: Vec<String>,
     /// Rate limiting per IP/user
-    pub rate_limit_enabled: bool,
-}
+    pub rate_limit_enabled: bool}
 
 impl Default for SecurityConfig {
     fn default() -> Self {
@@ -70,8 +69,7 @@ impl Default for SecurityConfig {
                 r"(?i)(password|secret|token|key)\s*[:=]".to_string(),
                 r"(?i)bearer\s+[a-zA-Z0-9\-_]+".to_string(),
             ],
-            rate_limit_enabled: true,
-        }
+            rate_limit_enabled: true}
     }
 }
 
@@ -93,8 +91,7 @@ pub struct AuditEvent {
     /// Additional context
     pub context: serde_json::Map<String, serde_json::Value>,
     /// Timestamp
-    pub timestamp: chrono::DateTime<chrono::Utc>,
-}
+    pub timestamp: chrono::DateTime<chrono::Utc>}
 
 /// Audit event types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -110,8 +107,7 @@ pub enum AuditEventType {
     /// Security violation
     SecurityViolation,
     /// Configuration change
-    ConfigChange,
-}
+    ConfigChange}
 
 /// Audit result
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -123,14 +119,12 @@ pub enum AuditResult {
     /// Failed
     Failed,
     /// Rate limited
-    RateLimited,
-}
+    RateLimited}
 
 /// Input sanitizer
 pub struct InputSanitizer {
     config: Arc<RwLock<SecurityConfig>>,
-    blocked_patterns: Vec<regex::Regex>,
-}
+    blocked_patterns: Vec<regex::Regex>}
 
 impl InputSanitizer {
     /// Create new input sanitizer
@@ -150,8 +144,7 @@ impl InputSanitizer {
 
         Ok(Self {
             config: Arc::new(RwLock::new(config)),
-            blocked_patterns: patterns,
-        })
+            blocked_patterns: patterns})
     }
 
     /// Sanitize input string
@@ -223,16 +216,14 @@ impl InputSanitizer {
 
 /// Path security validator
 pub struct PathValidator {
-    config: Arc<RwLock<SecurityConfig>>,
-}
+    config: Arc<RwLock<SecurityConfig>>}
 
 impl PathValidator {
     /// Create new path validator
     #[must_use]
     pub fn new(config: SecurityConfig) -> Self {
         Self {
-            config: Arc::new(RwLock::new(config)),
-        }
+            config: Arc::new(RwLock::new(config))}
     }
 
     /// Validate file path
@@ -437,8 +428,7 @@ impl InjectionPrevention {
 /// Sensitive data handler
 pub struct SensitiveDataHandler {
     config: Arc<RwLock<SecurityConfig>>,
-    sensitive_patterns: Vec<regex::Regex>,
-}
+    sensitive_patterns: Vec<regex::Regex>}
 
 impl SensitiveDataHandler {
     /// Create new sensitive data handler
@@ -454,14 +444,12 @@ impl SensitiveDataHandler {
         for pattern_result in SENSITIVE_DATA_PATTERNS.iter() {
             match pattern_result {
                 Ok(regex) => patterns.push(regex.clone()),
-                Err(e) => return Err(LinkMLError::service(format!("Failed to compile sensitive data pattern: {e}"))),
-            }
+                Err(e) => return Err(LinkMLError::service(format!("Failed to compile sensitive data pattern: {e}")))}
         }
 
         Ok(Self {
             config: Arc::new(RwLock::new(config)),
-            sensitive_patterns: patterns,
-        })
+            sensitive_patterns: patterns})
     }
 
     /// Mask sensitive data in string
@@ -494,8 +482,7 @@ impl SensitiveDataHandler {
 /// Security audit logger
 pub struct AuditLogger {
     events: Arc<RwLock<Vec<AuditEvent>>>,
-    config: Arc<RwLock<SecurityConfig>>,
-}
+    config: Arc<RwLock<SecurityConfig>>}
 
 impl AuditLogger {
     /// Create new audit logger
@@ -503,8 +490,7 @@ impl AuditLogger {
     pub fn new(config: SecurityConfig) -> Self {
         Self {
             events: Arc::new(RwLock::new(Vec::with_capacity(10000))),
-            config: Arc::new(RwLock::new(config)),
-        }
+            config: Arc::new(RwLock::new(config))}
     }
 
     /// Log audit event
@@ -574,8 +560,7 @@ impl Clone for AuditLogger {
     fn clone(&self) -> Self {
         Self {
             events: self.events.clone(),
-            config: self.config.clone(),
-        }
+            config: self.config.clone()}
     }
 }
 
@@ -587,8 +572,7 @@ pub struct AuditEventBuilder {
     action: String,
     result: AuditResult,
     context: serde_json::Map<String, serde_json::Value>,
-    logger: AuditLogger,
-}
+    logger: AuditLogger}
 
 impl AuditEventBuilder {
     fn new(event_type: AuditEventType, logger: AuditLogger) -> Self {
@@ -599,8 +583,7 @@ impl AuditEventBuilder {
             action: String::new(),
             result: AuditResult::Success,
             context: serde_json::Map::new(),
-            logger,
-        }
+            logger}
     }
 
     /// Set the client ID for the audit event
@@ -650,8 +633,7 @@ impl AuditEventBuilder {
             action: self.action,
             result: self.result,
             context: self.context,
-            timestamp: chrono::Utc::now(),
-        };
+            timestamp: chrono::Utc::now()};
 
         self.logger.log_event(event);
     }
@@ -660,15 +642,13 @@ impl AuditEventBuilder {
 /// Rate limiter for security
 pub struct SecurityRateLimiter {
     limits: DashMap<String, RateLimit>,
-    config: Arc<RwLock<SecurityConfig>>,
-}
+    config: Arc<RwLock<SecurityConfig>>}
 
 #[derive(Debug)]
 struct RateLimit {
     requests: Vec<Instant>,
     limit: usize,
-    window: Duration,
-}
+    window: Duration}
 
 impl SecurityRateLimiter {
     /// Create new rate limiter
@@ -676,8 +656,7 @@ impl SecurityRateLimiter {
     pub fn new(config: SecurityConfig) -> Self {
         Self {
             limits: DashMap::new(),
-            config: Arc::new(RwLock::new(config)),
-        }
+            config: Arc::new(RwLock::new(config))}
     }
 
     /// Check rate limit
@@ -704,8 +683,7 @@ impl SecurityRateLimiter {
             .or_insert_with(|| RateLimit {
                 requests: Vec::new(),
                 limit: 100,
-                window: Duration::from_secs(60),
-            });
+                window: Duration::from_secs(60)});
 
         let now = Instant::now();
         let cutoff = now.checked_sub(entry.window).unwrap_or(now);
@@ -732,8 +710,7 @@ pub struct SecurityManager {
     injection_prevention: InjectionPrevention,
     sensitive_handler: SensitiveDataHandler,
     audit_logger: AuditLogger,
-    rate_limiter: SecurityRateLimiter,
-}
+    rate_limiter: SecurityRateLimiter}
 
 impl SecurityManager {
     /// Create new security manager
@@ -748,8 +725,7 @@ impl SecurityManager {
             injection_prevention: InjectionPrevention,
             sensitive_handler: SensitiveDataHandler::new(config.clone())?,
             audit_logger: AuditLogger::new(config.clone()),
-            rate_limiter: SecurityRateLimiter::new(config),
-        })
+            rate_limiter: SecurityRateLimiter::new(config)})
     }
 
     /// Get sanitizer

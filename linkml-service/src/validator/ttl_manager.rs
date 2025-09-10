@@ -31,8 +31,7 @@ pub struct TtlConfig {
     /// Enable adaptive TTL
     pub adaptive_ttl: bool,
     /// Access count threshold for promotion
-    pub promotion_threshold: u32,
-}
+    pub promotion_threshold: u32}
 
 impl Default for TtlConfig {
     fn default() -> Self {
@@ -44,8 +43,7 @@ impl Default for TtlConfig {
             max_ttl: Duration::from_secs(604_800),    // 7 days
             ttl_extension_factor: 1.5,
             adaptive_ttl: true,
-            promotion_threshold: 5,
-        }
+            promotion_threshold: 5}
     }
 }
 
@@ -75,8 +73,7 @@ struct AccessPattern {
     /// Average time between accesses
     avg_access_interval: Duration,
     /// Access history (limited size)
-    access_history: SmallVec<[std::time::Instant; 8]>,
-}
+    access_history: SmallVec<[std::time::Instant; 8]>}
 
 impl Default for AccessPattern {
     fn default() -> Self {
@@ -84,8 +81,7 @@ impl Default for AccessPattern {
             access_count: 0,
             last_access: std::time::Instant::now(),
             avg_access_interval: Duration::from_secs(0),
-            access_history: SmallVec::new(),
-        }
+            access_history: SmallVec::new()}
     }
 }
 
@@ -147,8 +143,7 @@ pub struct TtlEntry {
     /// Cache level (1, 2, or 3)
     pub cache_level: u8,
     /// Access pattern for this entry
-    access_pattern: AccessPattern,
-}
+    access_pattern: AccessPattern}
 
 impl TtlEntry {
     /// Create a new TTL entry
@@ -158,8 +153,7 @@ impl TtlEntry {
             expires_at: std::time::Instant::now() + ttl,
             ttl_duration: ttl,
             cache_level,
-            access_pattern: AccessPattern::default(),
-        }
+            access_pattern: AccessPattern::default()}
     }
 
     /// Check if expired
@@ -205,8 +199,7 @@ pub struct TtlRule {
     /// TTL multiplier for this pattern
     pub ttl_multiplier: Option<f64>,
     /// Priority (higher wins)
-    pub priority: i32,
-}
+    pub priority: i32}
 
 /// TTL manager for sophisticated cache expiration
 pub struct TtlManager {
@@ -219,8 +212,7 @@ pub struct TtlManager {
     /// Global access patterns
     global_patterns: Arc<RwLock<AccessPattern>>,
     /// Timestamp service
-    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
-}
+    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
 impl TtlManager {
     /// Create a new TTL manager
@@ -234,8 +226,7 @@ impl TtlManager {
             entries: DashMap::new(),
             rules: Arc::new(RwLock::new(Vec::new())),
             global_patterns: Arc::new(RwLock::new(AccessPattern::default())),
-            _timestamp,
-        }
+            _timestamp}
     }
 
     /// Set TTL for a key
@@ -246,9 +237,8 @@ impl TtlManager {
         // Get base TTL for cache level
         let base_ttl = match cache_level {
             1 => config.l1_base_ttl,
-            2 => config.l2_base_ttl,
+            2 | _ => config.l2_base_ttl, // Use L2 as default for level 2 and any other level
             3 => config.l3_base_ttl,
-            _ => config.l2_base_ttl, // Use L2 as default for any other level
         };
 
         // Apply rules
@@ -371,8 +361,7 @@ impl TtlManager {
             expired_count,
             entries_by_level: by_level,
             average_ttl: avg_ttl,
-            global_access_frequency: self.global_patterns.read().access_frequency(),
-        }
+            global_access_frequency: self.global_patterns.read().access_frequency()}
     }
 
     /// Predict optimal TTL based on access patterns
@@ -412,14 +401,12 @@ pub struct TtlStats {
     /// Average TTL duration
     pub average_ttl: Duration,
     /// Global access frequency
-    pub global_access_frequency: f64,
-}
+    pub global_access_frequency: f64}
 
 /// Background TTL maintenance worker
 pub struct TtlMaintenanceWorker {
     manager: Arc<TtlManager>,
-    interval: Duration,
-}
+    interval: Duration}
 
 impl TtlMaintenanceWorker {
     /// Create a new maintenance worker
@@ -537,8 +524,7 @@ mod tests {
             pattern: "schema:".to_string(),
             ttl_override: Some(Duration::from_secs(7200)),
             ttl_multiplier: None,
-            priority: 10,
-        });
+            priority: 10});
 
         let ttl = manager.set_ttl("linkml:schema:test".to_string(), 1);
         assert_eq!(ttl, Duration::from_secs(7200));

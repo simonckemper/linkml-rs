@@ -13,8 +13,7 @@ use std::sync::Arc;
 /// Convert f64 to `serde_json::Number`, returning error for non-finite values
 fn f64_to_number(val: f64) -> Result<serde_json::Number, EvaluationError> {
     serde_json::Number::from_f64(val).ok_or_else(|| EvaluationError::TypeError {
-        message: "Number must be finite (not NaN or infinity)".to_string(),
-    })
+        message: "Number must be finite (not NaN or infinity)".to_string()})
 }
 
 /// Stack-based virtual machine for expression evaluation
@@ -24,8 +23,7 @@ pub struct VirtualMachine {
     /// Maximum stack depth to prevent overflow
     max_stack_depth: usize,
     /// Maximum iterations to prevent infinite loops
-    max_iterations: usize,
-}
+    max_iterations: usize}
 
 impl VirtualMachine {
     /// Create a new virtual machine
@@ -34,8 +32,7 @@ impl VirtualMachine {
         Self {
             function_registry,
             max_stack_depth: 1024,
-            max_iterations: 10_000,
-        }
+            max_iterations: 10_000}
     }
 
     /// Set maximum stack depth
@@ -75,8 +72,7 @@ impl VirtualMachine {
         // Result should be on top of stack
         state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Empty stack after execution".to_string(),
-            })
+                message: "Empty stack after execution".to_string()})
         })
     }
 
@@ -96,8 +92,7 @@ impl VirtualMachine {
                     message: format!(
                         "Maximum iteration limit ({}) exceeded - possible infinite loop",
                         self.max_iterations
-                    ),
-                }));
+                    )}));
             }
 
             let inst = &instructions[state.pc];
@@ -133,20 +128,17 @@ impl VirtualMachine {
                     // This is for future use with variable assignment
                     let _val = state.pop().ok_or_else(|| {
                         ExpressionError::Evaluation(EvaluationError::TypeError {
-                            message: "Stack underflow".to_string(),
-                        })
+                            message: "Stack underflow".to_string()})
                     })?;
                     // For now, we don't support variable assignment
                     return Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                        message: "Variable assignment not supported".to_string(),
-                    }));
+                        message: "Variable assignment not supported".to_string()}));
                 }
 
                 Instruction::Pop => {
                     state.pop().ok_or_else(|| {
                         ExpressionError::Evaluation(EvaluationError::TypeError {
-                            message: "Stack underflow".to_string(),
-                        })
+                            message: "Stack underflow".to_string()})
                     })?;
                 }
 
@@ -155,8 +147,7 @@ impl VirtualMachine {
                         .peek()
                         .ok_or_else(|| {
                             ExpressionError::Evaluation(EvaluationError::TypeError {
-                                message: "Stack underflow".to_string(),
-                            })
+                                message: "Stack underflow".to_string()})
                         })?
                         .clone();
                     state.push(val)?;
@@ -190,8 +181,7 @@ impl VirtualMachine {
                 Instruction::JumpIfFalse(target) => {
                     let condition = state.pop().ok_or_else(|| {
                         ExpressionError::Evaluation(EvaluationError::TypeError {
-                            message: "Stack underflow".to_string(),
-                        })
+                            message: "Stack underflow".to_string()})
                     })?;
                     if !is_truthy(&condition) {
                         state.pc = *target;
@@ -201,8 +191,7 @@ impl VirtualMachine {
                 Instruction::JumpIfTrue(target) => {
                     let condition = state.pop().ok_or_else(|| {
                         ExpressionError::Evaluation(EvaluationError::TypeError {
-                            message: "Stack underflow".to_string(),
-                        })
+                            message: "Stack underflow".to_string()})
                     })?;
                     if is_truthy(&condition) {
                         state.pc = *target;
@@ -236,8 +225,7 @@ impl VirtualMachine {
         for _ in 0..size {
             elements.push(state.pop().ok_or_else(|| {
                 ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Stack underflow".to_string(),
-                })
+                    message: "Stack underflow".to_string()})
             })?);
         }
         elements.reverse();
@@ -249,21 +237,18 @@ impl VirtualMachine {
         for _ in 0..size {
             let value = state.pop().ok_or_else(|| {
                 ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Stack underflow".to_string(),
-                })
+                    message: "Stack underflow".to_string()})
             })?;
             let key = state.pop().ok_or_else(|| {
                 ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Stack underflow".to_string(),
-                })
+                    message: "Stack underflow".to_string()})
             })?;
 
             if let Value::String(k) = key {
                 obj.insert(k, value);
             } else {
                 return Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Object key must be string".to_string(),
-                }));
+                    message: "Object key must be string".to_string()}));
             }
         }
         state.push(Value::Object(obj))
@@ -272,13 +257,11 @@ impl VirtualMachine {
     fn execute_index(state: &mut VMState) -> Result<(), ExpressionError> {
         let index = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let container = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&container, &index) {
@@ -291,8 +274,7 @@ impl VirtualMachine {
             (Value::Object(obj), Value::String(key)) => {
                 obj.get(key).cloned().unwrap_or(Value::Null)
             }
-            _ => Value::Null,
-        };
+            _ => Value::Null};
 
         state.push(result)
     }
@@ -300,14 +282,12 @@ impl VirtualMachine {
     fn execute_get_field(state: &mut VMState, field: &str) -> Result<(), ExpressionError> {
         let obj = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match obj {
             Value::Object(map) => map.get(field).cloned().unwrap_or(Value::Null),
-            _ => Value::Null,
-        };
+            _ => Value::Null};
 
         state.push(result)
     }
@@ -317,13 +297,11 @@ impl VirtualMachine {
     fn execute_add(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&a, &b) {
@@ -335,8 +313,7 @@ impl VirtualMachine {
             (Value::String(s1), Value::String(s2)) => Value::String(format!("{s1}{s2}")),
             _ => {
                 return Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Invalid operands for addition".to_string(),
-                }));
+                    message: "Invalid operands for addition".to_string()}));
             }
         };
 
@@ -346,13 +323,11 @@ impl VirtualMachine {
     fn execute_subtract(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match (&a, &b) {
@@ -362,21 +337,17 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(v1 - v2)?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Invalid operands for subtraction".to_string(),
-            })),
-        }
+                message: "Invalid operands for subtraction".to_string()}))}
     }
 
     fn execute_multiply(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match (&a, &b) {
@@ -386,21 +357,17 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(v1 * v2)?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Invalid operands for multiplication".to_string(),
-            })),
-        }
+                message: "Invalid operands for multiplication".to_string()}))}
     }
 
     fn execute_divide(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match (&a, &b) {
@@ -415,21 +382,17 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(v1 / v2)?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Invalid operands for division".to_string(),
-            })),
-        }
+                message: "Invalid operands for division".to_string()}))}
     }
 
     fn execute_modulo(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match (&a, &b) {
@@ -444,21 +407,17 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(v1 % v2)?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Invalid operands for modulo".to_string(),
-            })),
-        }
+                message: "Invalid operands for modulo".to_string()}))}
     }
 
     fn execute_power(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match (&a, &b) {
@@ -468,9 +427,7 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(v1.powf(v2))?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Invalid operands for power".to_string(),
-            })),
-        }
+                message: "Invalid operands for power".to_string()}))}
     }
 
     // Comparison operations
@@ -478,13 +435,11 @@ impl VirtualMachine {
     fn execute_equal(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         state.push(Value::Bool(values_equal(&a, &b)))
@@ -493,13 +448,11 @@ impl VirtualMachine {
     fn execute_not_equal(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         state.push(Value::Bool(!values_equal(&a, &b)))
@@ -508,13 +461,11 @@ impl VirtualMachine {
     fn execute_less(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&a, &b) {
@@ -522,8 +473,7 @@ impl VirtualMachine {
                 n1.as_f64().unwrap_or(0.0) < n2.as_f64().unwrap_or(0.0)
             }
             (Value::String(s1), Value::String(s2)) => s1 < s2,
-            _ => false,
-        };
+            _ => false};
 
         state.push(Value::Bool(result))
     }
@@ -531,13 +481,11 @@ impl VirtualMachine {
     fn execute_less_equal(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&a, &b) {
@@ -545,8 +493,7 @@ impl VirtualMachine {
                 n1.as_f64().unwrap_or(0.0) <= n2.as_f64().unwrap_or(0.0)
             }
             (Value::String(s1), Value::String(s2)) => s1 <= s2,
-            _ => false,
-        };
+            _ => false};
 
         state.push(Value::Bool(result))
     }
@@ -554,13 +501,11 @@ impl VirtualMachine {
     fn execute_greater(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&a, &b) {
@@ -568,8 +513,7 @@ impl VirtualMachine {
                 n1.as_f64().unwrap_or(0.0) > n2.as_f64().unwrap_or(0.0)
             }
             (Value::String(s1), Value::String(s2)) => s1 > s2,
-            _ => false,
-        };
+            _ => false};
 
         state.push(Value::Bool(result))
     }
@@ -577,13 +521,11 @@ impl VirtualMachine {
     fn execute_greater_equal(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         let result = match (&a, &b) {
@@ -591,8 +533,7 @@ impl VirtualMachine {
                 n1.as_f64().unwrap_or(0.0) >= n2.as_f64().unwrap_or(0.0)
             }
             (Value::String(s1), Value::String(s2)) => s1 >= s2,
-            _ => false,
-        };
+            _ => false};
 
         state.push(Value::Bool(result))
     }
@@ -602,13 +543,11 @@ impl VirtualMachine {
     fn execute_and(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         state.push(Value::Bool(is_truthy(&a) && is_truthy(&b)))
@@ -617,13 +556,11 @@ impl VirtualMachine {
     fn execute_or(state: &mut VMState) -> Result<(), ExpressionError> {
         let b = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
         let a = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         state.push(Value::Bool(is_truthy(&a) || is_truthy(&b)))
@@ -634,8 +571,7 @@ impl VirtualMachine {
     fn execute_not(state: &mut VMState) -> Result<(), ExpressionError> {
         let val = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         state.push(Value::Bool(!is_truthy(&val)))
@@ -644,8 +580,7 @@ impl VirtualMachine {
     fn execute_negate(state: &mut VMState) -> Result<(), ExpressionError> {
         let val = state.pop().ok_or_else(|| {
             ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Stack underflow".to_string(),
-            })
+                message: "Stack underflow".to_string()})
         })?;
 
         match val {
@@ -654,9 +589,7 @@ impl VirtualMachine {
                 state.push(Value::Number(f64_to_number(-v)?))
             }
             _ => Err(ExpressionError::Evaluation(EvaluationError::TypeError {
-                message: "Cannot negate non-numeric value".to_string(),
-            })),
-        }
+                message: "Cannot negate non-numeric value".to_string()}))}
     }
 
     // Function call - This needs &self for function_registry access
@@ -672,8 +605,7 @@ impl VirtualMachine {
         for _ in 0..arg_count {
             args.push(state.pop().ok_or_else(|| {
                 ExpressionError::Evaluation(EvaluationError::TypeError {
-                    message: "Stack underflow".to_string(),
-                })
+                    message: "Stack underflow".to_string()})
             })?);
         }
         args.reverse();
@@ -682,8 +614,7 @@ impl VirtualMachine {
         let result = self.function_registry.call(name, args).map_err(|e| {
             ExpressionError::Evaluation(EvaluationError::FunctionError {
                 name: name.to_string(),
-                message: e.to_string(),
-            })
+                message: e.to_string()})
         })?;
 
         state.push(result)
@@ -699,8 +630,7 @@ struct VMState<'a> {
     /// Variable context
     context: &'a HashMap<String, Value>,
     /// Maximum stack depth
-    max_stack_depth: usize,
-}
+    max_stack_depth: usize}
 
 impl<'a> VMState<'a> {
     fn new(context: &'a HashMap<String, Value>, max_stack_depth: usize) -> Self {
@@ -708,16 +638,14 @@ impl<'a> VMState<'a> {
             stack: Vec::with_capacity(32),
             pc: 0,
             context,
-            max_stack_depth,
-        }
+            max_stack_depth}
     }
 
     fn push(&mut self, val: Value) -> Result<(), ExpressionError> {
         if self.stack.len() >= self.max_stack_depth {
             return Err(ExpressionError::Evaluation(
                 EvaluationError::CallStackTooDeep {
-                    max: self.max_stack_depth,
-                },
+                    max: self.max_stack_depth},
             ));
         }
         self.stack.push(val);
@@ -742,8 +670,7 @@ fn is_truthy(value: &Value) -> bool {
         Value::Number(n) => n.as_f64().unwrap_or(0.0) != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Array(a) => !a.is_empty(),
-        Value::Object(o) => !o.is_empty(),
-    }
+        Value::Object(o) => !o.is_empty()}
 }
 
 fn values_equal(a: &Value, b: &Value) -> bool {
@@ -754,8 +681,7 @@ fn values_equal(a: &Value, b: &Value) -> bool {
         (Value::String(a), Value::String(b)) => a == b,
         (Value::Array(a), Value::Array(b)) => a == b,
         (Value::Object(a), Value::Object(b)) => a == b,
-        _ => false,
-    }
+        _ => false}
 }
 
 #[cfg(test)]

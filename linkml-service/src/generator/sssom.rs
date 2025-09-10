@@ -4,6 +4,7 @@
 //! enabling interoperability between different ontologies and vocabularies.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use std::fmt::Write;
 use chrono::Local;
 use linkml_core::error::LinkMLError;
 use linkml_core::annotations::AnnotationValue;
@@ -25,8 +26,7 @@ pub struct SssomGeneratorConfig {
     /// License URI for mappings
     pub license: Option<String>,
     /// Creator information
-    pub creator: Option<String>,
-}
+    pub creator: Option<String>}
 
 /// SSSOM output format
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,8 +34,7 @@ pub enum SssomFormat {
     /// Tab-separated values (standard SSSOM format)
     Tsv,
     /// `JSON` representation
-    Json,
-}
+    Json}
 
 impl Default for SssomGeneratorConfig {
     fn default() -> Self {
@@ -46,15 +45,13 @@ impl Default for SssomGeneratorConfig {
             default_predicate: "skos:exactMatch".to_string(),
             default_confidence: 1.0,
             license: Some("https://creativecommons.org/publicdomain/zero/1.0/".to_string()),
-            creator: None,
-        }
+            creator: None}
     }
 }
 
 /// SSSOM generator
 pub struct SssomGenerator {
-    config: SssomGeneratorConfig,
-}
+    config: SssomGeneratorConfig}
 
 /// SSSOM mapping structure
 #[derive(Debug, Clone)]
@@ -70,8 +67,7 @@ struct SssomMapping {
     object_type: Option<String>,
     mapping_date: String,
     creator_id: Option<String>,
-    comment: Option<String>,
-}
+    comment: Option<String>}
 
 impl SssomGenerator {
     /// Create a new SSSOM generator
@@ -85,8 +81,7 @@ impl SssomGenerator {
 
         match self.config.format {
             SssomFormat::Tsv => self.generate_tsv(&mappings, schema),
-            SssomFormat::Json => self.generate_json(&mappings, schema),
-        }
+            SssomFormat::Json => self.generate_json(&mappings, schema)}
     }
 
     /// Extract mappings from schema
@@ -113,8 +108,7 @@ impl SssomGenerator {
                         "broad_mapping" | "broad_mappings" => "skos:broadMatch",
                         "narrow_mapping" | "narrow_mappings" => "skos:narrowMatch",
                         "related_mapping" | "related_mappings" => "skos:relatedMatch",
-                        _ => continue,
-                    };
+                        _ => continue};
 
                     // Parse value which might be a list or single value
                     let value_str = match value {
@@ -158,8 +152,7 @@ impl SssomGenerator {
                     let predicate = match key.as_str() {
                         "exact_mapping" | "exact_mappings" => "skos:exactMatch",
                         "close_mapping" | "close_mappings" => "skos:closeMatch",
-                        _ => continue,
-                    };
+                        _ => continue};
 
                     // Parse value which might be a list or single value
                     let value_str = match value {
@@ -237,6 +230,7 @@ impl SssomGenerator {
     }
 
     /// Create a mapping
+    #[allow(clippy::too_many_arguments)]
     fn _create_mapping(
         &self,
         subject: &str,
@@ -261,14 +255,12 @@ impl SssomGenerator {
                 match subject_type {
                     "class" => "Class",
                     "property" => "ObjectProperty",
-                    _ => "Thing",
-                }
+                    _ => "Thing"}
             )),
             object_type: None, // Would need external lookup
             mapping_date: date.to_string(),
             creator_id: self.config.creator.clone(),
-            comment,
-        }
+            comment}
     }
 
     /// Get URI for a class
@@ -339,8 +331,7 @@ impl SssomGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.clone().unwrap_or_default(),
-                    };
+                        } => prefix_reference.clone().unwrap_or_default()};
                     return format!("{reference}{name}");
                 }
                 return format!("{prefix}:{name}");
@@ -353,8 +344,7 @@ impl SssomGenerator {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.clone().unwrap_or_default(),
-                };
+                    } => prefix_reference.clone().unwrap_or_default()};
                 return format!("{reference}{name}");
             }
             return format!("{default_prefix}:{name}");
@@ -368,7 +358,8 @@ impl SssomGenerator {
         &self,
         mappings: &[SssomMapping],
         schema: &SchemaDefinition,
-    ) -> Result<String, LinkMLError> {
+    ) -> String {
+
         let mut output = String::new();
 
         // Add metadata header if requested
@@ -378,18 +369,18 @@ impl SssomGenerator {
             if !schema.id.is_empty() {
                 output.push_str(&schema.id);
             } else if !schema.name.is_empty() {
-                output.push_str(&format!("https://w3id.org/sssom/mappings/{}", schema.name));
+                write!(output, "https://w3id.org/sssom/mappings/{}", schema.name).unwrap();
             } else {
                 output.push_str("https://w3id.org/sssom/mappings/unknown");
             }
             output.push('\n');
 
             if let Some(license) = &self.config.license {
-                output.push_str(&format!("# license: {license}\n"));
+                writeln!(output, "# license: {license}").unwrap();
             }
 
             if let Some(creator) = &self.config.creator {
-                output.push_str(&format!("# creator_id: {creator}\n"));
+                writeln!(output, "# creator_id: {creator}").unwrap();
             }
 
             output.push_str(&format!(
@@ -398,9 +389,9 @@ impl SssomGenerator {
             ));
 
             if let Some(description) = &schema.description {
-                output.push_str(&format!(
-                    "# comment: Generated from LinkML schema - {description}\n"
-                ));
+                writeln!(output, 
+                    "# comment: Generated from LinkML schema - {description}"
+                ).unwrap();
             }
 
             // Add prefix declarations
@@ -411,9 +402,8 @@ impl SssomGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.clone().unwrap_or_default(),
-                    };
-                    output.push_str(&format!("#   {prefix}: {reference}\n"));
+                        } => prefix_reference.clone().unwrap_or_default()};
+                    writeln!(output, "#   {prefix}: {reference}").unwrap();
                 }
             }
             // Add standard prefixes used in SSSOM
@@ -447,7 +437,8 @@ impl SssomGenerator {
             ));
         }
 
-        Ok(output)
+        output
+
     }
 
     /// Generate `JSON` format
@@ -505,8 +496,7 @@ impl SssomGenerator {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.clone().unwrap_or_default(),
-                };
+                    } => prefix_reference.clone().unwrap_or_default()};
                 curie_map.insert(prefix.clone(), json!(reference));
             }
         }
@@ -594,8 +584,7 @@ impl Generator for SssomGenerator {
     fn get_file_extension(&self) -> &str {
         match self.config.format {
             SssomFormat::Tsv => "sssom.tsv",
-            SssomFormat::Json => "sssom.json",
-        }
+            SssomFormat::Json => "sssom.json"}
     }
 
     fn get_default_filename(&self) -> &'static str {
@@ -606,7 +595,7 @@ impl Generator for SssomGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

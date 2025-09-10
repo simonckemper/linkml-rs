@@ -17,8 +17,7 @@ pub struct ExpressionKey {
     /// The expression source code
     pub source: String,
     /// Optional context schema for validation
-    pub schema_id: Option<String>,
-}
+    pub schema_id: Option<String>}
 
 /// Cached expression entry
 #[derive(Clone)]
@@ -30,8 +29,7 @@ pub struct CachedExpression {
     /// When this entry was last accessed
     pub last_accessed: Instant,
     /// Number of times this expression has been used
-    pub hit_count: u64,
-}
+    pub hit_count: u64}
 
 /// Statistics about cache performance
 #[derive(Clone, Debug, Default)]
@@ -47,8 +45,7 @@ pub struct CacheStats {
     /// Current number of entries
     pub entries: usize,
     /// Current cache size in bytes (estimated)
-    pub size_bytes: usize,
-}
+    pub size_bytes: usize}
 
 /// Expression cache with LRU eviction
 pub struct ExpressionCache {
@@ -59,8 +56,7 @@ pub struct ExpressionCache {
     /// Maximum age for cache entries
     max_age: Duration,
     /// Whether to cache compiled bytecode
-    cache_compiled: bool,
-}
+    cache_compiled: bool}
 
 impl ExpressionCache {
     /// Create a new expression cache with given capacity
@@ -71,8 +67,7 @@ impl ExpressionCache {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
             max_age: Duration::from_secs(3600), // 1 hour default
-            cache_compiled: true,
-        }
+            cache_compiled: true}
     }
 
     /// Create expression cache from `LinkML` service configuration
@@ -85,8 +80,7 @@ impl ExpressionCache {
             cache: Arc::new(RwLock::new(LruCache::new(capacity))),
             stats: Arc::new(RwLock::new(CacheStats::default())),
             max_age: Duration::from_secs(config.ttl_seconds),
-            cache_compiled: true,
-        }
+            cache_compiled: true}
     }
 
     /// Set maximum age for cache entries
@@ -144,8 +138,7 @@ impl ExpressionCache {
             ast,
             compiled: if self.cache_compiled { compiled } else { None },
             last_accessed: Instant::now(),
-            hit_count: 0,
-        };
+            hit_count: 0};
 
         if cache.put(key, entry).is_some() {
             stats.evictions += 1;
@@ -220,8 +213,7 @@ pub struct GlobalExpressionCache {
     /// Separate cache for frequently used expressions
     hot_cache: ExpressionCache,
     /// Threshold for promoting to hot cache
-    hot_threshold: u64,
-}
+    hot_threshold: u64}
 
 impl GlobalExpressionCache {
     /// Create a new global cache
@@ -229,8 +221,7 @@ impl GlobalExpressionCache {
         Self {
             parse_cache: ExpressionCache::new(parse_capacity),
             hot_cache: ExpressionCache::new(hot_capacity).with_max_age(Duration::from_secs(7200)), // 2 hours for hot
-            hot_threshold: 10,
-        }
+            hot_threshold: 10}
     }
 
     /// Set the threshold for promoting expressions to hot cache
@@ -280,8 +271,7 @@ impl GlobalExpressionCache {
             total_hits: parse_stats.hits + hot_stats.hits,
             total_misses: parse_stats.misses,
             hot_hit_rate: self.hot_cache.hit_rate(),
-            overall_hit_rate: self.overall_hit_rate(),
-        }
+            overall_hit_rate: self.overall_hit_rate()}
     }
 
     /// Get overall hit rate
@@ -326,8 +316,7 @@ pub struct GlobalCacheStats {
     /// Hit rate for hot cache
     pub hot_hit_rate: f64,
     /// Overall hit rate
-    pub overall_hit_rate: f64,
-}
+    pub overall_hit_rate: f64}
 
 #[cfg(test)]
 mod tests {
@@ -339,8 +328,7 @@ mod tests {
         let cache = ExpressionCache::new(10);
         let key = ExpressionKey {
             source: "1 + 2".to_string(),
-            schema_id: None,
-        };
+            schema_id: None};
 
         // Cache miss
         assert!(cache.get(&key).is_none());
@@ -367,8 +355,7 @@ mod tests {
         for i in 0..3 {
             let key = ExpressionKey {
                 source: format!("expr{i}"),
-                schema_id: None,
-            };
+                schema_id: None};
             let ast = Expression::Number(i as f64);
             cache.insert(key, ast, None);
         }
@@ -376,15 +363,13 @@ mod tests {
         // First expression should be evicted
         let key0 = ExpressionKey {
             source: "expr0".to_string(),
-            schema_id: None,
-        };
+            schema_id: None};
         assert!(cache.get(&key0).is_none());
 
         // Later expressions should still be there
         let key2 = ExpressionKey {
             source: "expr2".to_string(),
-            schema_id: None,
-        };
+            schema_id: None};
         assert!(cache.get(&key2).is_some());
     }
 
@@ -394,8 +379,7 @@ mod tests {
 
         let key = ExpressionKey {
             source: "hot_expr".to_string(),
-            schema_id: None,
-        };
+            schema_id: None};
         let ast = Expression::Number(42.0);
 
         // Insert into regular cache

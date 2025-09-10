@@ -6,8 +6,7 @@
 use linkml_core::{
     Value,
     error::{LinkMLError, Result},
-    types::SlotDefinition,
-};
+    types::SlotDefinition};
 use std::sync::Arc;
 
 use crate::validator::{context::ValidationContext, report::ValidationIssue};
@@ -28,8 +27,7 @@ pub struct CustomValidator {
     /// The validation function
     validation_fn: ValidationFunction,
     /// Whether this validator applies to all slots or specific ones
-    applies_to: AppliesTo,
-}
+    applies_to: AppliesTo}
 
 /// Defines which slots a custom validator applies to
 #[derive(Clone)]
@@ -41,8 +39,7 @@ pub enum AppliesTo {
     /// Applies to slots with specific ranges
     SlotRanges(Vec<String>),
     /// Applies based on a predicate function
-    Predicate(Arc<dyn Fn(&SlotDefinition) -> bool + Send + Sync>),
-}
+    Predicate(Arc<dyn Fn(&SlotDefinition) -> bool + Send + Sync>)}
 
 impl std::fmt::Debug for AppliesTo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -50,8 +47,7 @@ impl std::fmt::Debug for AppliesTo {
             AppliesTo::All => write!(f, "All"),
             AppliesTo::SlotNames(names) => f.debug_tuple("SlotNames").field(names).finish(),
             AppliesTo::SlotRanges(ranges) => f.debug_tuple("SlotRanges").field(ranges).finish(),
-            AppliesTo::Predicate(_) => write!(f, "Predicate(<function>)"),
-        }
+            AppliesTo::Predicate(_) => write!(f, "Predicate(<function>)")}
     }
 }
 
@@ -62,8 +58,7 @@ impl CustomValidator {
             name: name.into(),
             description: None,
             validation_fn,
-            applies_to: AppliesTo::All,
-        }
+            applies_to: AppliesTo::All}
     }
 
     /// Set the description
@@ -90,8 +85,7 @@ impl CustomValidator {
                     false
                 }
             }
-            AppliesTo::Predicate(pred) => pred(slot),
-        }
+            AppliesTo::Predicate(pred) => pred(slot)}
     }
 }
 
@@ -119,8 +113,7 @@ pub struct CustomValidatorBuilder {
     name: String,
     description: Option<String>,
     applies_to: AppliesTo,
-    validation_fn: Option<ValidationFunction>,
-}
+    validation_fn: Option<ValidationFunction>}
 
 impl CustomValidatorBuilder {
     /// Create a new builder with a validator name
@@ -129,8 +122,7 @@ impl CustomValidatorBuilder {
             name: name.into(),
             description: None,
             applies_to: AppliesTo::All,
-            validation_fn: None,
-        }
+            validation_fn: None}
     }
 
     /// Set the description
@@ -186,8 +178,7 @@ impl CustomValidatorBuilder {
             name: self.name,
             description: self.description,
             validation_fn,
-            applies_to: self.applies_to,
-        })
+            applies_to: self.applies_to})
     }
 }
 
@@ -321,7 +312,8 @@ pub mod helpers {
 
 #[cfg(test)]
 mod tests {
-    use linkml_core::types::SchemaDefinition;
+    use super::*;
+    use linkml_core::{types::SchemaDefinition, Value};
 
     #[test]
     fn test_custom_validator_basic() -> anyhow::Result<()> {

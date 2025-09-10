@@ -19,8 +19,7 @@ pub struct YamlGenerator {
     /// Whether to inline simple definitions
     inline_simple: bool,
     /// Whether to include null values in output
-    include_nulls: bool,
-}
+    include_nulls: bool}
 
 impl Default for YamlGenerator {
     fn default() -> Self {
@@ -36,8 +35,7 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            include_nulls: false,
-        }
+            include_nulls: false}
     }
 
     /// Configure metadata inclusion
@@ -93,8 +91,7 @@ impl YamlGenerator {
                 "version".to_string(),
                 serde_yaml::Value::Null,
             ),
-            None => None,
-        };
+            None => None};
 
         match &schema.title {
             Some(title) => root.insert(
@@ -105,8 +102,7 @@ impl YamlGenerator {
                 "title".to_string(),
                 serde_yaml::Value::Null,
             ),
-            None => None,
-        };
+            None => None};
 
         match &schema.description {
             Some(description) => root.insert(
@@ -117,8 +113,7 @@ impl YamlGenerator {
                 "description".to_string(),
                 serde_yaml::Value::Null,
             ),
-            None => None,
-        };
+            None => None};
 
         // License and metadata
         if let Some(license) = &schema.license {
@@ -202,8 +197,7 @@ impl YamlGenerator {
                     PrefixDefinition::Simple(url) => serde_yaml::Value::String(url.clone()),
                     PrefixDefinition::Complex {
                         prefix_prefix,
-                        prefix_reference,
-                    } => {
+                        prefix_reference} => {
                         let mut prefix_map = IndexMap::new();
                         prefix_map.insert(
                             "prefix_prefix".to_string(),
@@ -469,8 +463,7 @@ impl YamlGenerator {
             for pv in &enum_def.permissible_values {
                 let text = match pv {
                     PermissibleValue::Simple(s) => s.clone(),
-                    PermissibleValue::Complex { text, .. } => text.clone(),
-                };
+                    PermissibleValue::Complex { text, .. } => text.clone()};
                 pv_map.insert(text, self.permissible_value_to_yaml(pv));
             }
             map.insert(

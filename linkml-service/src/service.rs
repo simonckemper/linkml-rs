@@ -9,8 +9,7 @@ use linkml_core::{
     config::LinkMLConfig,
     error::{LinkMLError, Result},
     traits::{LinkMLService, LinkMLServiceExt, SchemaFormat},
-    types::{SchemaDefinition, ValidationReport},
-};
+    types::{SchemaDefinition, ValidationReport}};
 
 use crate::factory::LinkMLServiceDependencies;
 use crate::integration::CacheServiceAdapter;
@@ -76,8 +75,7 @@ where
     dbms_service: Arc<D>,
     timeout_service: Arc<O>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
-    monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
-}
+    monitor: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>}
 
 impl<T, E, C, D, O> LinkMLServiceImpl<T, E, C, D, O>
 where
@@ -116,8 +114,7 @@ where
             dbms_service: deps.dbms_service,
             timeout_service: deps.timeout_service,
             cache: deps.cache,
-            monitor: deps.monitor,
-        })
+            monitor: deps.monitor})
     }
 
     /// Create with custom configuration
@@ -151,8 +148,7 @@ where
             dbms_service: deps.dbms_service,
             timeout_service: deps.timeout_service,
             cache: deps.cache,
-            monitor: deps.monitor,
-        })
+            monitor: deps.monitor})
     }
 
     /// Initialize the service
@@ -274,7 +270,7 @@ where
             .map_err(|e| LinkMLError::service(format!("Logger error: {e}")))?;
 
         // Initialize validator cache
-        if let Err(e) = self.validator_cache.clear().await {
+        if let Err(e) = self.validator_cache.clear() {
             self.logger
                 .warn(&format!("Failed to clear validator cache during initialization: {e}"))
                 .await
@@ -392,7 +388,7 @@ where
                             // Clear validator cache if it's grown too large
                             let cache_stats = validator_cache.stats();
                             if cache_stats.cached_validators > 1000 {
-                                if let Err(e) = validator_cache.clear().await {
+                                if let Err(e) = validator_cache.clear() {
                                     if let Err(log_err) = logger
                                         .error(&format!("Failed to clear validator cache: {e}"))
                                         .await
@@ -474,6 +470,8 @@ where
     ///
     /// # Errors
     ///
+    /// This function does not return errors as configuration fetching failures
+    /// are handled internally and do not affect the boolean result
     pub async fn has_config_updates(&self) -> Result<bool> {
         // Fetch latest configuration
         if let Ok(new_config) = self
@@ -578,7 +576,7 @@ where
 
         // Clear caches
         self.schema_cache.write().clear();
-        let _ = self.validator_cache.clear().await;
+        let _ = self.validator_cache.clear();
 
         // Record shutdown duration
         let shutdown_end = self
@@ -736,8 +734,7 @@ where
 
         let format_str = match format {
             SchemaFormat::Yaml => "yaml",
-            SchemaFormat::Json => "json",
-        };
+            SchemaFormat::Json => "json"};
 
         // Parse the schema
         let schema = match self.parser.parse_str(content, format_str) {
@@ -886,20 +883,17 @@ where
                     path: Some(e.path.clone()),
                     expected: e.code.clone(),
                     actual: None,
-                    severity: linkml_core::types::Severity::Error,
-                })
+                    severity: linkml_core::types::Severity::Error})
                 .collect(),
             warnings: report
                 .warnings()
                 .map(|e| linkml_core::types::ValidationWarning {
                     message: e.message.clone(),
                     path: Some(e.path.clone()),
-                    suggestion: None,
-                })
+                    suggestion: None})
                 .collect(),
             timestamp: Some(chrono::Utc::now()),
-            schema_id: Some(schema.id.clone()),
-        })
+            schema_id: Some(schema.id.clone())})
     }
 
 }

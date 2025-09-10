@@ -13,6 +13,11 @@ use std::path::Path;
     ///
     /// # Errors
     ///
+    /// Returns an error if:
+    /// - The configuration schema file cannot be loaded
+    /// - The validator cannot be built
+    /// - Configuration serialization fails
+    /// - Configuration validation fails
 pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Result<()> {
     // Load the configuration schema
     let schema_path = Path::new("config/schema/linkml-config-schema.yaml");
@@ -52,6 +57,9 @@ pub async fn validate_config(config: &LinkMLConfig) -> linkml_core::error::Resul
     ///
     /// # Errors
     ///
+    /// Returns an error if:
+    /// - The configuration file cannot be loaded
+    /// - The configuration fails validation
 pub async fn load_and_validate_config(path: &Path) -> linkml_core::error::Result<LinkMLConfig> {
     let config: LinkMLConfig = load_config(path)?;
     validate_config(&config).await?;
@@ -63,6 +71,10 @@ pub async fn load_and_validate_config(path: &Path) -> linkml_core::error::Result
     ///
     /// # Errors
     ///
+    /// Returns an error if configuration values are invalid:
+    /// - Cache TTL levels are not properly ordered (L1 < L2 < L3)
+    /// - Batch sizes are zero or negative
+    /// - Performance thresholds are invalid
 pub fn validate_values(config: &LinkMLConfig) -> linkml_core::error::Result<()> {
     // Additional runtime validations beyond schema
 

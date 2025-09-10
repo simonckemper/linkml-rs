@@ -17,8 +17,7 @@ pub struct XmlLoaderV2<P: ParseService> {
     /// Content to parse (instead of file path)
     content: Option<String>,
     /// Root element name
-    root_element: String,
-}
+    root_element: String}
 
 impl<P: ParseService> XmlLoaderV2<P> {
     /// Create a new `XML` loader with Parse Service
@@ -26,8 +25,7 @@ impl<P: ParseService> XmlLoaderV2<P> {
         Self {
             parse_service,
             content: None,
-            root_element: "data".to_string(),
-        }
+            root_element: "data".to_string()}
     }
 
     /// Set the content to parse
@@ -122,8 +120,7 @@ fn convert_element_to_instance(
 
     Ok(Some(DataInstance {
         class_name: element.name.clone(),
-        data: Value::Object(data),
-    }))
+        data: Value::Object(data)}))
 }
 
 /// Process mixed content (text and elements)
@@ -222,8 +219,7 @@ fn element_to_value(
             let text: String = mixed.items.iter()
                 .filter_map(|item| match item {
                     parse_core::MixedContentItem::Text(t) => Some(t.as_str()),
-                    _ => None,
-                })
+                    _ => None})
                 .collect::<Vec<_>>()
                 .join(" ");
             Ok(Some(Value::String(text.trim().to_string())))

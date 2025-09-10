@@ -76,8 +76,7 @@ pub enum Instruction {
     /// Index into array or object
     Index,
     /// Get field from object by name
-    GetField(String),
-}
+    GetField(String)}
 
 /// Compiled expression ready for execution
 #[derive(Debug, Clone)]
@@ -89,8 +88,7 @@ pub struct CompiledExpression {
     /// Source expression for debugging
     pub source: String,
     /// Metadata about the compilation
-    pub metadata: CompilationMetadata,
-}
+    pub metadata: CompilationMetadata}
 
 /// Metadata about the compilation process
 #[derive(Debug, Clone)]
@@ -104,24 +102,21 @@ pub struct CompilationMetadata {
     /// Whether the expression is pure (no side effects)
     pub is_pure: bool,
     /// Estimated complexity score
-    pub complexity: usize,
-}
+    pub complexity: usize}
 
 /// Expression compiler that converts AST to bytecode
 pub struct Compiler {
     /// Function registry for validation
     function_registry: Arc<FunctionRegistry>,
     /// Optimization level (0-3)
-    optimization_level: u8,
-}
+    optimization_level: u8}
 
 impl Compiler {
     /// Create a new compiler with default settings
     #[must_use] pub fn new(function_registry: Arc<FunctionRegistry>) -> Self {
         Self {
             function_registry,
-            optimization_level: 2,
-        }
+            optimization_level: 2}
     }
 
     /// Set optimization level (0=none, 3=maximum)
@@ -162,8 +157,7 @@ impl Compiler {
             instructions: ctx.instructions,
             constants: ctx.constants,
             source: source.to_string(),
-            metadata,
-        })
+            metadata})
     }
 
     /// Compile a single expression
@@ -301,8 +295,7 @@ impl Compiler {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => {
+                else_expr} => {
                 // Compile condition
                 self.compile_expr(condition, ctx)?;
 
@@ -326,8 +319,7 @@ impl Compiler {
                 if !self.function_registry.has_function(name) {
                     return Err(ExpressionError::Parse(ParseError::UnknownFunction {
                         name: name.clone(),
-                        position: 0,
-                    }));
+                        position: 0}));
                 }
 
                 ctx.called_functions.insert(name.clone());
@@ -422,8 +414,7 @@ impl Compiler {
             }
             (Value::Bool(b1), Value::Bool(b2), Instruction::And) => Some(Value::Bool(*b1 && *b2)),
             (Value::Bool(b1), Value::Bool(b2), Instruction::Or) => Some(Value::Bool(*b1 || *b2)),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Evaluate constant unary operations
@@ -434,8 +425,7 @@ impl Compiler {
                 let v = n.as_f64()?;
                 Some(Value::Number(serde_json::Number::from_f64(-v)?))
             }
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Remove unreachable code
@@ -482,10 +472,7 @@ impl Compiler {
         // Update jump targets
         for inst in &mut new_instructions {
             match inst {
-                Instruction::Jump(target) => {
-                    *target = *old_to_new.get(target).unwrap_or(target);
-                }
-                Instruction::JumpIfTrue(target) | Instruction::JumpIfFalse(target) => {
+                Instruction::Jump(target) | Instruction::JumpIfTrue(target) | Instruction::JumpIfFalse(target) => {
                     *target = *old_to_new.get(target).unwrap_or(target);
                 }
                 _ => {}
@@ -590,8 +577,7 @@ impl Compiler {
             Instruction::Call(_, _) => true,
             Instruction::MakeArray(_) | Instruction::MakeObject(_) => true,
             Instruction::Index | Instruction::GetField(_) => true,
-            _ => false,
-        }
+            _ => false}
     }
 
     /// Calculate compilation metadata
@@ -651,8 +637,7 @@ impl Compiler {
                 Instruction::Jump(_) | Instruction::JumpIfTrue(_) | Instruction::JumpIfFalse(_) => {
                     complexity += 2;
                 }
-                _ => complexity += 1,
-            }
+                _ => complexity += 1}
         }
 
         CompilationMetadata {
@@ -660,8 +645,7 @@ impl Compiler {
             accessed_variables: ctx.accessed_variables.iter().cloned().collect(),
             called_functions: ctx.called_functions.iter().cloned().collect(),
             is_pure,
-            complexity,
-        }
+            complexity}
     }
 }
 
@@ -670,8 +654,7 @@ struct CompilationContext {
     instructions: Vec<Instruction>,
     constants: Vec<Value>,
     accessed_variables: std::collections::HashSet<String>,
-    called_functions: std::collections::HashSet<String>,
-}
+    called_functions: std::collections::HashSet<String>}
 
 impl CompilationContext {
     fn new() -> Self {
@@ -679,8 +662,7 @@ impl CompilationContext {
             instructions: Vec::new(),
             constants: Vec::new(),
             accessed_variables: std::collections::HashSet::new(),
-            called_functions: std::collections::HashSet::new(),
-        }
+            called_functions: std::collections::HashSet::new()}
     }
 
     fn emit(&mut self, inst: Instruction) {

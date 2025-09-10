@@ -26,8 +26,7 @@ pub enum PatternError {
 
     /// Pattern not found
     #[error("Pattern not found: {0}")]
-    PatternNotFound(String),
-}
+    PatternNotFound(String)}
 
 /// Result type for pattern operations
 pub type PatternResult<T> = Result<T, PatternError>;
@@ -45,8 +44,7 @@ pub struct CompiledPattern {
     pub capture_groups: Vec<String>,
 
     /// Pattern metadata
-    pub metadata: PatternMetadata,
-}
+    pub metadata: PatternMetadata}
 
 /// Metadata about a pattern
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -61,8 +59,7 @@ pub struct PatternMetadata {
     pub dot_all: bool,
 
     /// Custom flags
-    pub flags: HashMap<String, String>,
-}
+    pub flags: HashMap<String, String>}
 
 /// Pattern matcher for `LinkML` schemas
 pub struct PatternMatcher {
@@ -70,24 +67,21 @@ pub struct PatternMatcher {
     patterns: HashMap<String, CompiledPattern>,
 
     /// Default metadata for patterns
-    default_metadata: PatternMetadata,
-}
+    default_metadata: PatternMetadata}
 
 impl PatternMatcher {
     /// Create a new pattern matcher
     #[must_use] pub fn new() -> Self {
         Self {
             patterns: HashMap::new(),
-            default_metadata: PatternMetadata::default(),
-        }
+            default_metadata: PatternMetadata::default()}
     }
 
     /// Create with default metadata
     #[must_use] pub fn with_defaults(metadata: PatternMetadata) -> Self {
         Self {
             patterns: HashMap::new(),
-            default_metadata: metadata,
-        }
+            default_metadata: metadata}
     }
 
     /// Compile a pattern
@@ -118,8 +112,7 @@ impl PatternMatcher {
             pattern: pattern.to_string(),
             regex: Arc::new(regex),
             capture_groups,
-            metadata,
-        };
+            metadata};
 
         self.patterns.insert(name.to_string(), compiled);
         Ok(())
@@ -186,8 +179,7 @@ impl PatternMatcher {
                 text: m.as_str(),
                 start: m.start(),
                 end: m.end(),
-                captures: HashMap::new(),
-            })
+                captures: HashMap::new()})
             .collect();
 
         Ok(matches)
@@ -227,14 +219,12 @@ impl PatternMatcher {
                     text: m.as_str(),
                     start: m.start(),
                     end: m.end(),
-                    captures: captures.clone(),
-                })
+                    captures: captures.clone()})
                 .ok_or_else(|| PatternError::CompilationError("regex match should always have group 0".to_string()))?;
 
             Ok(Some(CaptureMatch {
                 full_match,
-                captures,
-            }))
+                captures}))
         } else {
             Ok(None)
         }
@@ -302,8 +292,7 @@ pub struct Match<'t> {
     pub end: usize,
 
     /// Captured groups (if any)
-    pub captures: HashMap<String, &'t str>,
-}
+    pub captures: HashMap<String, &'t str>}
 
 /// A match with captures
 #[derive(Debug, Clone)]
@@ -312,14 +301,12 @@ pub struct CaptureMatch<'t> {
     pub full_match: Match<'t>,
 
     /// All captures (named and numbered)
-    pub captures: HashMap<String, &'t str>,
-}
+    pub captures: HashMap<String, &'t str>}
 
 /// Builder for pattern matcher
 pub struct PatternMatcherBuilder {
     patterns: Vec<(String, String, PatternMetadata)>,
-    default_metadata: PatternMetadata,
-}
+    default_metadata: PatternMetadata}
 
 impl Default for PatternMatcherBuilder {
     fn default() -> Self {
@@ -332,8 +319,7 @@ impl PatternMatcherBuilder {
     #[must_use] pub fn new() -> Self {
         Self {
             patterns: Vec::new(),
-            default_metadata: PatternMetadata::default(),
-        }
+            default_metadata: PatternMetadata::default()}
     }
 
     /// Set default metadata
@@ -384,7 +370,7 @@ mod tests {
     use linkml_core::error::Result;
 
     #[test]
-    fn test_basic_pattern_matching() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_basic_pattern_matching() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         matcher
@@ -405,7 +391,7 @@ mod tests {
     }
 
     #[test]
-    fn test_capture_groups() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_capture_groups() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         matcher
@@ -428,7 +414,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pattern_interpolation() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_pattern_interpolation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut matcher = PatternMatcher::new();
 
         let mut vars = HashMap::new();

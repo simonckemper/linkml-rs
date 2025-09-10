@@ -18,8 +18,7 @@ pub enum MergeError {
         /// Name of the conflicting element
         name: String,
         /// Details about the conflict
-        details: String,
-    },
+        details: String},
 
     /// Invalid merge operation
     #[error("Invalid merge operation: {0}")]
@@ -35,8 +34,7 @@ pub enum MergeError {
 
     /// Incompatible schemas
     #[error("Incompatible schemas: {0}")]
-    IncompatibleSchemas(String),
-}
+    IncompatibleSchemas(String)}
 
 /// Result type for merge operations
 pub type MergeResult<T> = std::result::Result<T, MergeError>;
@@ -49,10 +47,9 @@ impl From<MergeError> for linkml_core::LinkMLError {
                     "Conflicting definitions for {element_type} '{name}': {details}"
                 ))
             }
-            MergeError::InvalidMerge(msg) => linkml_core::LinkMLError::schema_validation(msg),
+            MergeError::InvalidMerge(msg) | MergeError::IncompatibleSchemas(msg) => linkml_core::LinkMLError::schema_validation(msg),
             MergeError::InvalidInput(msg) => linkml_core::LinkMLError::parse(msg),
-            MergeError::SchemaNotFound(name) => linkml_core::LinkMLError::import(name, "Schema not found"),
-            MergeError::IncompatibleSchemas(msg) => linkml_core::LinkMLError::schema_validation(msg),
+            MergeError::SchemaNotFound(name) => linkml_core::LinkMLError::import(name, "Schema not found")
         }
     }
 }
@@ -67,8 +64,7 @@ pub enum MergeStrategy {
     /// Keep target values on conflict
     Preserve,
     /// Merge compatible values
-    Merge,
-}
+    Merge}
 
 /// Configuration for schema merging
 #[derive(Debug, Clone)]
@@ -89,8 +85,7 @@ pub struct MergeConfig {
     pub validate_result: bool,
 
     /// Prefix for renamed elements
-    pub rename_prefix: Option<String>,
-}
+    pub rename_prefix: Option<String>}
 
 impl Default for MergeConfig {
     fn default() -> Self {
@@ -100,8 +95,7 @@ impl Default for MergeConfig {
             merge_prefixes: true,
             merge_subsets: true,
             validate_result: true,
-            rename_prefix: None,
-        }
+            rename_prefix: None}
     }
 }
 
@@ -111,16 +105,14 @@ pub struct SchemaMerger {
     config: MergeConfig,
 
     /// Conflict log
-    conflicts: Vec<String>,
-}
+    conflicts: Vec<String>}
 
 impl SchemaMerger {
     /// Create a new schema merger
     #[must_use] pub fn new(config: MergeConfig) -> Self {
         Self {
             config,
-            conflicts: Vec::new(),
-        }
+            conflicts: Vec::new()}
     }
 
     /// Create with default configuration
@@ -321,8 +313,7 @@ impl SchemaMerger {
                             return Err(MergeError::ConflictingDefinition {
                                 element_type: "subset".to_string(),
                                 name: name.clone(),
-                                details: "Subset already exists".to_string(),
-                            });
+                                details: "Subset already exists".to_string()});
                         }
                     }
                 }
@@ -357,8 +348,7 @@ impl SchemaMerger {
                         return Err(MergeError::ConflictingDefinition {
                             element_type: "class".to_string(),
                             name: name.clone(),
-                            details: "Class already exists".to_string(),
-                        });
+                            details: "Class already exists".to_string()});
                     }
                 }
             } else {
@@ -392,8 +382,7 @@ impl SchemaMerger {
                 details: format!(
                     "Different parent classes: {:?} vs {:?}",
                     merged.is_a, source.is_a
-                ),
-            });
+                )});
         }
 
         // Merge mixins
@@ -462,8 +451,7 @@ impl SchemaMerger {
                         return Err(MergeError::ConflictingDefinition {
                             element_type: "slot".to_string(),
                             name: name.clone(),
-                            details: "Slot already exists".to_string(),
-                        });
+                            details: "Slot already exists".to_string()});
                     }
                 }
             } else {
@@ -538,8 +526,7 @@ impl SchemaMerger {
                             return Err(MergeError::ConflictingDefinition {
                                 element_type: "type".to_string(),
                                 name: name.clone(),
-                                details: "Type already exists".to_string(),
-                            });
+                                details: "Type already exists".to_string()});
                         }
                     }
                 }
@@ -574,8 +561,7 @@ impl SchemaMerger {
                         return Err(MergeError::ConflictingDefinition {
                             element_type: "enum".to_string(),
                             name: name.clone(),
-                            details: "Enum already exists".to_string(),
-                        });
+                            details: "Enum already exists".to_string()});
                     }
                 }
             } else {
@@ -605,15 +591,13 @@ impl SchemaMerger {
             .iter()
             .map(|pv| match pv {
                 PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
 
         for pv in &source.permissible_values {
             let text = match pv {
                 PermissibleValue::Simple(s) => s,
-                PermissibleValue::Complex { text, .. } => text,
-            };
+                PermissibleValue::Complex { text, .. } => text};
             if !existing_values.contains(text) {
                 merged.permissible_values.push(pv.clone());
             }
@@ -638,10 +622,8 @@ impl SchemaMerger {
             MergeStrategy::Strict => Err(MergeError::ConflictingDefinition {
                 element_type: element_type.to_string(),
                 name: name.to_string(),
-                details: format!("Values differ: '{existing}' vs '{new}'"),
-            }),
-            _ => Ok(()),
-        }
+                details: format!("Values differ: '{existing}' vs '{new}'")}),
+            _ => Ok(())}
     }
 
     /// Validate the merged schema
@@ -701,7 +683,7 @@ impl Default for SchemaMerger {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema(id: &str) -> SchemaDefinition {
         let mut schema = SchemaDefinition {

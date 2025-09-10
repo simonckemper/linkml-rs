@@ -44,8 +44,7 @@ pub mod validators;
 pub use cache_warmer::{AccessEntry, WarmingStrategy};
 pub use composition::{ResolvedClass, SchemaComposer};
 pub use conditional_validator::{
-    Condition, ConditionalRule, ConditionalValidator, ConditionalViolation, Requirement,
-};
+    Condition, ConditionalRule, ConditionalValidator, ConditionalViolation, Requirement};
 pub use context::ValidationContext;
 pub use default_applier::{DefaultApplier, apply_defaults_to_instance};
 pub use engine::{ValidationEngine, ValidationOptions};

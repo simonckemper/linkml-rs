@@ -4,15 +4,13 @@
 //! and dump `LinkML` instances to API endpoints.
 
 use super::traits::{
-    DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
-};
+    DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use regex::Regex;
 use reqwest::{
     Client, Method,
-    header::{HeaderMap, HeaderName, HeaderValue},
-};
+    header::{HeaderMap, HeaderName, HeaderValue}};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -52,8 +50,7 @@ pub struct ApiOptions {
     pub user_agent: String,
 
     /// Rate limiting (requests per second)
-    pub rate_limit: Option<f64>,
-}
+    pub rate_limit: Option<f64>}
 
 /// Authentication configuration
 #[derive(Debug, Clone)]
@@ -66,16 +63,14 @@ pub enum AuthConfig {
         /// Username for authentication
         username: String,
         /// Password for authentication
-        password: String,
-    },
+        password: String},
 
     /// `API` key authentication
     ApiKey {
         /// `HTTP` header name for API key
         header_name: String,
         /// `API` key value
-        key: String,
-    },
+        key: String},
 
     /// `OAuth2` configuration
     OAuth2 {
@@ -86,9 +81,7 @@ pub enum AuthConfig {
         /// `OAuth2` client secret
         client_secret: String,
         /// Required scopes
-        scopes: Vec<String>,
-    },
-}
+        scopes: Vec<String>}}
 
 /// Retry configuration
 #[derive(Debug, Clone)]
@@ -106,8 +99,7 @@ pub struct RetryConfig {
     pub backoff_factor: f64,
 
     /// `HTTP` status codes to retry on
-    pub retry_on_status: Vec<u16>,
-}
+    pub retry_on_status: Vec<u16>}
 
 /// Pagination configuration
 #[derive(Debug, Clone)]
@@ -134,8 +126,7 @@ pub struct PaginationConfig {
     pub next_path: Option<String>,
 
     /// `JSON` path to total count
-    pub total_path: Option<String>,
-}
+    pub total_path: Option<String>}
 
 /// Pagination style
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -150,8 +141,7 @@ pub enum PaginationStyle {
     Cursor,
 
     /// Link header based (GitHub style)
-    LinkHeader,
-}
+    LinkHeader}
 
 /// Endpoint configuration
 #[derive(Debug, Clone)]
@@ -175,8 +165,7 @@ pub struct EndpointConfig {
     pub response_data_path: Option<String>,
 
     /// ID field in response
-    pub id_field: String,
-}
+    pub id_field: String}
 
 impl Default for ApiOptions {
     fn default() -> Self {
@@ -191,8 +180,7 @@ impl Default for ApiOptions {
             field_mapping: HashMap::new(),
             follow_redirects: true,
             user_agent: "LinkML-API-Loader/1.0".to_string(),
-            rate_limit: None,
-        }
+            rate_limit: None}
     }
 }
 
@@ -203,8 +191,7 @@ impl Default for RetryConfig {
             initial_delay_ms: 100,
             max_delay_ms: 10000,
             backoff_factor: 2.0,
-            retry_on_status: vec![429, 500, 502, 503, 504],
-        }
+            retry_on_status: vec![429, 500, 502, 503, 504]}
     }
 }
 
@@ -212,8 +199,7 @@ impl Default for RetryConfig {
 pub struct ApiLoader {
     options: ApiOptions,
     client: Client,
-    last_request_time: std::sync::Mutex<Option<std::time::Instant>>,
-}
+    last_request_time: std::sync::Mutex<Option<std::time::Instant>>}
 
 impl ApiLoader {
     /// Create a new `API` loader
@@ -244,8 +230,7 @@ impl ApiLoader {
         Self {
             options,
             client,
-            last_request_time: std::sync::Mutex::new(None),
-        }
+            last_request_time: std::sync::Mutex::new(None)}
     }
 
     /// Apply rate limiting
@@ -752,8 +737,7 @@ impl ApiLoader {
             class_name: class_name.to_string(),
             data: obj.into_iter().collect(),
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 }
 
@@ -830,8 +814,7 @@ impl DataLoader for ApiLoader {
 pub struct ApiDumper {
     options: ApiOptions,
     client: Client,
-    last_request_time: std::sync::Mutex<Option<std::time::Instant>>,
-}
+    last_request_time: std::sync::Mutex<Option<std::time::Instant>>}
 
 impl ApiDumper {
     /// Create a new `API` dumper
@@ -857,8 +840,7 @@ impl ApiDumper {
         Self {
             options,
             client,
-            last_request_time: std::sync::Mutex::new(None),
-        }
+            last_request_time: std::sync::Mutex::new(None)}
     }
 
     /// Apply rate limiting
@@ -1152,33 +1134,28 @@ mod tests {
         let bearer = AuthConfig::Bearer("token123".to_string());
         let basic = AuthConfig::Basic {
             username: "user".to_string(),
-            password: "pass".to_string(),
-        };
+            password: "pass".to_string()};
         let api_key = AuthConfig::ApiKey {
             header_name: "X-API-Key".to_string(),
-            key: "key123".to_string(),
-        };
+            key: "key123".to_string()};
 
         match bearer {
             AuthConfig::Bearer(token) => assert_eq!(token, "token123"),
-            _ => panic!("Wrong auth type"),
-        }
+            _ => panic!("Wrong auth type")}
 
         match basic {
             AuthConfig::Basic { username, password } => {
                 assert_eq!(username, "user");
                 assert_eq!(password, "pass");
             }
-            _ => panic!("Wrong auth type"),
-        }
+            _ => panic!("Wrong auth type")}
 
         match api_key {
             AuthConfig::ApiKey { header_name, key } => {
                 assert_eq!(header_name, "X-API-Key");
                 assert_eq!(key, "key123");
             }
-            _ => panic!("Wrong auth type"),
-        }
+            _ => panic!("Wrong auth type")}
     }
 
     #[test]
@@ -1191,8 +1168,7 @@ mod tests {
             max_size: 1000,
             data_path: "data".to_string(),
             next_path: Some("next".to_string()),
-            total_path: Some("total".to_string()),
-        };
+            total_path: Some("total".to_string())};
 
         assert_eq!(config.style, PaginationStyle::PageNumber);
         assert_eq!(config.page_param, "page");
@@ -1208,8 +1184,7 @@ mod tests {
             query_params: [("active".to_string(), "true".to_string())].into(),
             body_template: None,
             response_data_path: Some("data.users".to_string()),
-            id_field: "id".to_string(),
-        };
+            id_field: "id".to_string()};
 
         assert_eq!(config.method, Method::GET);
         assert_eq!(config.path, "/api/v1/users");
@@ -1253,7 +1228,7 @@ mod tests {
     #[test]
     fn test_validate_instance() {
         use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
         // Create test schema
         let mut schema = SchemaDefinition::default();
@@ -1277,7 +1252,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         // Add email field with pattern
         let mut email_slot = SlotDefinition::default();
-        email_slot.pattern = Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".to_string());
+        email_slot.pattern = Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2}$".to_string());
         email_slot.range = Some("string".to_string());
         attributes.insert("email".to_string(), email_slot);
 
@@ -1298,8 +1273,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             .into_iter()
             .collect(),
             id: None,
-            metadata: HashMap::new(),
-        };
+            metadata: HashMap::new()};
 
         assert!(
             loader
@@ -1314,8 +1288,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                 .into_iter()
                 .collect(),
             id: None,
-            metadata: HashMap::new(),
-        };
+            metadata: HashMap::new()};
 
         let result = loader.validate_instance(&missing_name, "Person", &schema);
         assert!(result.is_err());
@@ -1336,8 +1309,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             .into_iter()
             .collect(),
             id: None,
-            metadata: HashMap::new(),
-        };
+            metadata: HashMap::new()};
 
         let result = loader.validate_instance(&invalid_age, "Person", &schema);
         assert!(result.is_err());
@@ -1358,8 +1330,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             .into_iter()
             .collect(),
             id: None,
-            metadata: HashMap::new(),
-        };
+            metadata: HashMap::new()};
 
         let result = loader.validate_instance(&invalid_email, "Person", &schema);
         assert!(result.is_err());

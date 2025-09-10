@@ -27,8 +27,7 @@ pub struct CompiledRule {
     /// Source class (for debugging and error messages)
     pub source_class: String,
     /// Whether this rule is deactivated
-    pub deactivated: bool,
-}
+    pub deactivated: bool}
 
 impl CompiledRule {
     /// Compile a rule from its definition
@@ -65,8 +64,7 @@ impl CompiledRule {
             else_condition_ast,
             priority,
             source_class,
-            deactivated,
-        })
+            deactivated})
     }
 }
 
@@ -86,9 +84,7 @@ pub enum CompiledCondition {
         /// Expression-based conditions
         expression_conditions: Option<Vec<Expression>>,
         /// Composite conditions
-        composite_conditions: Option<Box<CompiledCompositeCondition>>,
-    },
-}
+        composite_conditions: Option<Box<CompiledCompositeCondition>>}}
 
 impl CompiledCondition {
     /// Compile conditions from their definition
@@ -135,8 +131,7 @@ impl CompiledCondition {
                                 message: format!(
                                     "Failed to parse expression '{expr_str}': {e}"
                                 ),
-                                location: None,
-                            })?,
+                                location: None})?,
                     );
                 }
                 Ok(CompiledCondition::ExpressionConditions(compiled))
@@ -182,8 +177,7 @@ impl CompiledCondition {
                                 message: format!(
                                     "Failed to parse expression '{expr_str}': {e}"
                                 ),
-                                location: None,
-                            }
+                                location: None}
                         })?);
                     }
                     Some(compiled)
@@ -205,8 +199,7 @@ impl CompiledCondition {
                 Ok(CompiledCondition::Combined {
                     slot_conditions,
                     expression_conditions,
-                    composite_conditions,
-                })
+                    composite_conditions})
             }
         }
     }
@@ -218,8 +211,7 @@ pub struct CompiledSlotCondition {
     /// Original slot condition
     pub original: SlotCondition,
     /// Compiled expression for `equals_expression`
-    pub equals_expression_ast: Option<Expression>,
-}
+    pub equals_expression_ast: Option<Expression>}
 
 impl CompiledSlotCondition {
     /// Compile a slot condition
@@ -235,8 +227,7 @@ impl CompiledSlotCondition {
                     .parse(expr_str)
                     .map_err(|e| LinkMLError::ParseError {
                         message: format!("Failed to parse expression '{expr_str}': {e}"),
-                        location: None,
-                    })?,
+                        location: None})?,
             )
         } else {
             None
@@ -244,8 +235,7 @@ impl CompiledSlotCondition {
 
         Ok(Self {
             original: condition.clone(),
-            equals_expression_ast,
-        })
+            equals_expression_ast})
     }
 }
 
@@ -259,8 +249,7 @@ pub enum CompiledCompositeCondition {
     /// Exactly one condition must be true
     ExactlyOneOf(Vec<CompiledCondition>),
     /// No conditions can be true
-    NoneOf(Vec<CompiledCondition>),
-}
+    NoneOf(Vec<CompiledCondition>)}
 
 impl CompiledCompositeCondition {
     /// Compile composite conditions
@@ -312,8 +301,7 @@ pub struct RuleExecutionContext<'a> {
     /// Rules that have already been matched
     pub matched_rules: Vec<String>,
     /// Current rule being evaluated (for recursion detection)
-    pub current_rule: Option<String>,
-}
+    pub current_rule: Option<String>}
 
 impl<'a> RuleExecutionContext<'a> {
     /// Create a new execution context
@@ -327,8 +315,7 @@ impl<'a> RuleExecutionContext<'a> {
             class_name,
             validation_context,
             matched_rules: Vec::new(),
-            current_rule: None,
-        }
+            current_rule: None}
     }
 
     /// Mark a rule as matched
@@ -382,8 +369,7 @@ pub enum RuleExecutionStrategy {
     /// Stop on first failure
     FailFast,
     /// Collect all failures
-    CollectAll,
-}
+    CollectAll}
 
 impl Default for RuleExecutionStrategy {
     fn default() -> Self {

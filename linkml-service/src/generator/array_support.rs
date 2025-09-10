@@ -42,8 +42,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             "integer" => "np.int64",
             "float" | "double" => "np.float64",
             "boolean" => "np.bool_",
-            _ => "np.object_",
-        };
+            _ => "np.object_"};
 
         if spec.is_fixed_shape() {
             // We checked is_fixed_shape() so this should always succeed
@@ -72,8 +71,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
             "integer" => "np.int64",
             "float" | "double" => "np.float64",
             "boolean" => "bool",
-            _ => "object",
-        };
+            _ => "object"};
 
         if let Some(shape) = spec.fixed_shape() {
             let shape_str = shape
@@ -246,8 +244,7 @@ impl PythonArrayGenerator {
             "boolean" => "bool",
             "date" => "date",
             "datetime" => "datetime",
-            _ => "Any",
-        }
+            _ => "Any"}
     }
 }
 
@@ -260,8 +257,7 @@ impl ArrayCodeGenerator for TypeScriptArrayGenerator {
             "integer" | "float" | "double" => "number",
             "string" => "string",
             "boolean" => "boolean",
-            _ => "any",
-        };
+            _ => "any"};
 
         // Generate nested array type based on dimensions
         let mut array_type = base_type.to_string();
@@ -360,8 +356,7 @@ impl TypeScriptArrayGenerator {
             "integer" | "float" | "double" => "0",
             "string" => r"''",
             "boolean" => "false",
-            _ => "null",
-        }
+            _ => "null"}
     }
 
     fn generate_shape_validation(
@@ -417,8 +412,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
             "float" | "double" => "f64",
             "boolean" => "bool",
             "string" => "String",
-            _ => "serde_json::Value",
-        };
+            _ => "serde_json::Value"};
 
         if let Some(shape) = spec.fixed_shape() {
             // Use fixed-size arrays for small dimensions
@@ -550,8 +544,7 @@ impl ArrayCodeGenerator for RustArrayGenerator {
 
         let return_type = match spec.element_type.as_str() {
             "string" => "&str",
-            _ => self.rust_type(&spec.element_type),
-        };
+            _ => self.rust_type(&spec.element_type)};
 
         writeln!(
             &mut code,
@@ -572,8 +565,7 @@ impl RustArrayGenerator {
             "integer" => "i64",
             "float" | "double" => "f64",
             "boolean" => "bool",
-            _ => "serde_json::Value",
-        }
+            _ => "serde_json::Value"}
     }
 }
 
@@ -581,8 +573,7 @@ fn capitalize_first(s: &str) -> String {
     let mut chars = s.chars();
     match chars.next() {
         None => String::new(),
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-    }
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
 }
 
 /// Get array code generator for a language
@@ -591,8 +582,7 @@ fn capitalize_first(s: &str) -> String {
         "python" | "pydantic" => Some(Box::new(PythonArrayGenerator)),
         "typescript" | "javascript" => Some(Box::new(TypeScriptArrayGenerator)),
         "rust" => Some(Box::new(RustArrayGenerator)),
-        _ => None,
-    }
+        _ => None}
 }
 
 #[cfg(test)]

@@ -23,28 +23,26 @@ pub enum InternError {
 
     /// Cache has reached maximum capacity
     #[error("Cache full: {0} entries (max: {MAX_CACHE_SIZE})")]
-    CacheFull(usize),
-}
+    CacheFull(usize)}
 
 /// Global string interner for commonly used strings
 pub struct StringInterner {
-    cache: DashMap<String, Arc<str>>,
-}
+    cache: DashMap<String, Arc<str>>}
 
 impl StringInterner {
     /// Create a new string interner
     #[must_use]
     pub fn new() -> Self {
         Self {
-            cache: DashMap::new(),
-        }
+            cache: DashMap::new()}
     }
 
     /// Intern a string, returning a shared reference
     ///
     /// # Errors
     ///
-    /// Returns an error if the string is too large or the cache is full
+    /// Returns `InternError::StringTooLarge` if the string exceeds maximum length
+    /// Returns `InternError::CacheFull` if the cache capacity is exceeded
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > MAX_STRING_LENGTH {
@@ -206,7 +204,6 @@ pub fn str_eq_fast(a: &Arc<str>, b: &Arc<str>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::string_pool::intern;
 
     #[test]
     fn test_string_interning() -> Result<(), Box<dyn std::error::Error>> {
@@ -235,8 +232,7 @@ use linkml_core::string_pool::intern;
             Err(InternError::StringTooLarge(size)) => {
                 assert_eq!(size, MAX_STRING_LENGTH + 1);
             }
-            _ => panic!("Expected StringTooLarge error"),
-        }
+            _ => panic!("Expected StringTooLarge error")}
     }
 
     #[test]

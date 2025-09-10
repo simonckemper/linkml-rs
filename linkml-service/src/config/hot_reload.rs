@@ -21,8 +21,7 @@ pub struct ConfigHotReloader {
     /// Receiver for configuration updates
     rx: watch::Receiver<Arc<LinkMLConfig>>,
     /// File watcher
-    watcher: Option<notify::RecommendedWatcher>,
-}
+    watcher: Option<notify::RecommendedWatcher>}
 
 impl ConfigHotReloader {
     /// Create a new hot-reload manager
@@ -30,6 +29,10 @@ impl ConfigHotReloader {
     ///
     /// # Errors
     ///
+    /// Returns an error if:
+    /// - The configuration file cannot be read
+    /// - The configuration file contains invalid YAML/JSON
+    /// - The configuration values fail validation
     pub fn new(config_path: impl AsRef<Path>) -> linkml_core::error::Result<Self> {
         let config_path = config_path.as_ref().to_path_buf();
 
@@ -45,8 +48,7 @@ impl ConfigHotReloader {
             config_path,
             tx,
             rx,
-            watcher: None,
-        })
+            watcher: None})
     }
 
     /// Start watching for configuration changes
@@ -54,6 +56,9 @@ impl ConfigHotReloader {
     ///
     /// # Errors
     ///
+    /// Returns an error if:
+    /// - The file watcher cannot be created
+    /// - The configuration file path cannot be watched
     pub async fn start_watching(&mut self) -> linkml_core::error::Result<()> {
         let config_path = self.config_path.clone();
         let tx = self.tx.clone();
@@ -78,8 +83,7 @@ impl ConfigHotReloader {
                         }
                     }
                 }
-                Err(e) => error!("File watch error: {}", e),
-            }
+                Err(e) => error!("File watch error: {}", e)}
         }).map_err(|e| LinkMLError::other(
             format!("Failed to create file watcher: {e}")
         ))?;
@@ -143,6 +147,7 @@ impl ConfigHotReloader {
     ///
     /// # Errors
     ///
+    /// Returns an error if the configuration update channel is closed
     pub async fn wait_for_update(&mut self) -> linkml_core::error::Result<Arc<LinkMLConfig>> {
         self.rx.changed().await.map_err(|_| {
             LinkMLError::ConfigError("Configuration update channel closed".to_string())
@@ -160,6 +165,10 @@ static HOT_RELOADER: std::sync::OnceLock<Arc<tokio::sync::Mutex<ConfigHotReloade
     ///
     /// # Errors
     ///
+    /// Returns an error if:
+    /// - The hot reloader cannot be created
+    /// - File watching cannot be started
+    /// - The global reloader is already initialized
 pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> linkml_core::error::Result<()> {
     let mut reloader = ConfigHotReloader::new(config_path)?;
     reloader.start_watching().await?;
@@ -176,6 +185,7 @@ pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> linkml_core::erro
     ///
     /// # Errors
     ///
+    /// Returns an error if the hot-reloader has not been initialized
 pub async fn get_hot_config() -> linkml_core::error::Result<Arc<LinkMLConfig>> {
     let reloader = HOT_RELOADER
         .get()
@@ -190,6 +200,7 @@ pub async fn get_hot_config() -> linkml_core::error::Result<Arc<LinkMLConfig>> {
     ///
     /// # Errors
     ///
+    /// Returns an error if the hot-reloader has not been initialized
 pub async fn subscribe_to_updates() -> linkml_core::error::Result<watch::Receiver<Arc<LinkMLConfig>>> {
     let reloader = HOT_RELOADER
         .get()

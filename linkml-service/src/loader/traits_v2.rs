@@ -84,8 +84,7 @@ pub struct LoaderOptionsV2 {
     pub max_errors: usize,
 
     /// Custom options for specific loaders
-    pub custom: std::collections::HashMap<String, serde_json::Value>,
-}
+    pub custom: std::collections::HashMap<String, serde_json::Value>}
 
 impl LoaderOptionsV2 {
     /// Create new loader options
@@ -95,8 +94,7 @@ impl LoaderOptionsV2 {
             strict: false,
             target_class: None,
             max_errors: 100,
-            custom: Default::default(),
-        }
+            custom: Default::default()}
     }
 
     /// Set validation enabled

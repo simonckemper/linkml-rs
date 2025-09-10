@@ -51,8 +51,7 @@ pub struct PerfCounter {
     /// Maximum time for a single call in nanoseconds
     pub max_time_ns: AtomicU64,
     /// Minimum time for a single call in nanoseconds
-    pub min_time_ns: AtomicU64,
-}
+    pub min_time_ns: AtomicU64}
 
 impl PerfCounter {
     /// Record a timing measurement
@@ -72,8 +71,7 @@ impl PerfCounter {
                 Ordering::Relaxed,
             ) {
                 Ok(_) => break,
-                Err(x) => current_max = x,
-            }
+                Err(x) => current_max = x}
         }
 
         // Update min
@@ -87,8 +85,7 @@ impl PerfCounter {
                     Ordering::Relaxed,
                 ) {
                     Ok(_) => break,
-                    Err(x) => current_min = x,
-                }
+                    Err(x) => current_min = x}
             }
         }
     }
@@ -126,8 +123,7 @@ impl PerfCounter {
 pub struct Profiler {
     counters: Arc<Mutex<HashMap<String, Arc<PerfCounter>>>>,
     enabled: AtomicU64,
-    _timestamp: Arc<dyn TimestampService>,
-}
+    _timestamp: Arc<dyn TimestampService>}
 
 impl Profiler {
     /// Create a new profiler
@@ -135,8 +131,7 @@ impl Profiler {
         Self {
             counters: Arc::new(Mutex::new(HashMap::new())),
             enabled: AtomicU64::new(1),
-            _timestamp: timestamp,
-        }
+            _timestamp: timestamp}
     }
 
     /// Enable or disable profiling
@@ -220,8 +215,7 @@ impl Default for Profiler {
 pub struct TimingGuard<'a> {
     profiler: &'a Profiler,
     key: String,
-    start: std::time::Instant,
-}
+    start: std::time::Instant}
 
 impl<'a> TimingGuard<'a> {
     /// Create a new timing guard
@@ -229,8 +223,7 @@ impl<'a> TimingGuard<'a> {
         Self {
             profiler,
             key: key.into(),
-            start: std::time::Instant::now(),
-        }
+            start: std::time::Instant::now()}
     }
 }
 

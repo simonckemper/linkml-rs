@@ -4,11 +4,11 @@
 //! enabling validation of YAML data against LinkML-defined structures.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use std::fmt::Write;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
-    TypeDefinition,
-};
+    TypeDefinition};
 use serde_json::{Map, Value, json};
 
 /// `YAML` validator generator configuration
@@ -25,8 +25,7 @@ pub struct YamlValidatorGeneratorConfig {
     /// Whether to include custom error messages
     pub custom_error_messages: bool,
     /// Additional validation plugins to include
-    pub plugins: Vec<String>,
-}
+    pub plugins: Vec<String>}
 
 /// Supported validation frameworks
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,8 +39,7 @@ pub enum ValidationFramework {
     /// Yup (JavaScript) validation schema
     Yup,
     /// Open`API`/Swagger specification
-    OpenAPI,
-}
+    OpenAPI}
 
 impl Default for YamlValidatorGeneratorConfig {
     fn default() -> Self {
@@ -51,15 +49,13 @@ impl Default for YamlValidatorGeneratorConfig {
             include_docs: true,
             strict_mode: false,
             custom_error_messages: true,
-            plugins: Vec::new(),
-        }
+            plugins: Vec::new()}
     }
 }
 
 /// `YAML` validator generator
 pub struct YamlValidatorGenerator {
-    config: YamlValidatorGeneratorConfig,
-}
+    config: YamlValidatorGeneratorConfig}
 
 impl YamlValidatorGenerator {
     /// Create a new `YAML` validator generator
@@ -74,8 +70,7 @@ impl YamlValidatorGenerator {
             ValidationFramework::Cerberus => self.generate_cerberus(schema),
             ValidationFramework::Joi => self.generate_joi(schema),
             ValidationFramework::Yup => self.generate_yup(schema),
-            ValidationFramework::OpenAPI => self.generate_openapi(schema),
-        }
+            ValidationFramework::OpenAPI => self.generate_openapi(schema)}
     }
 
     /// Generate `JSON` `SchemaDefinition` for `YAML` validation
@@ -225,8 +220,7 @@ impl YamlValidatorGenerator {
                 .iter()
                 .map(|pv| match pv {
                     PermissibleValue::Simple(s) => s.clone(),
-                    PermissibleValue::Complex { text, .. } => text.clone(),
-                })
+                    PermissibleValue::Complex { text, .. } => text.clone()})
                 .collect();
             schema.insert("enum".to_string(), json!(enum_values));
 
@@ -365,8 +359,7 @@ impl YamlValidatorGenerator {
                 "date" => Ok(json!({ "type": "string", "format": "date" })),
                 "datetime" => Ok(json!({ "type": "string", "format": "date-time" })),
                 "uri" => Ok(json!({ "type": "string", "format": "uri" })),
-                _ => Ok(json!({ "type": "string" })),
-            }
+                _ => Ok(json!({ "type": "string" }))}
         } else {
             Ok(json!({ "type": "string" }))
         }
@@ -382,7 +375,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                output.push_str(&format!("# Validation schema for {class_name}\n"));
+                writeln!(output, "# Validation schema for {class_name}").unwrap();
                 output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase()));
 
                 // Process slots
@@ -426,7 +419,7 @@ impl YamlValidatorGenerator {
         // Type
         if let Some(range) = &slot_def.range {
             let cerberus_type = self.range_to_cerberus_type(range, schema);
-            rule.push_str(&format!("        'type': '{cerberus_type}',\n"));
+            writeln!(rule, "        'type': '{cerberus_type}',").unwrap();
         }
 
         // Required
@@ -436,15 +429,15 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            rule.push_str(&format!("        'regex': r'{pattern}',\n"));
+            writeln!(rule, "        'regex': r'{pattern}',").unwrap();
         }
 
         // Min/max values
         if let Some(min) = &slot_def.minimum_value {
-            rule.push_str(&format!("        'min': {min},\n"));
+            writeln!(rule, "        'min': {min},").unwrap();
         }
         if let Some(max) = &slot_def.maximum_value {
-            rule.push_str(&format!("        'max': {max},\n"));
+            writeln!(rule, "        'max': {max},").unwrap();
         }
 
         rule.push_str("    },\n");
@@ -459,8 +452,7 @@ impl YamlValidatorGenerator {
             "float" | "double" => "float",
             "boolean" | "bool" => "boolean",
             "date" | "datetime" => "datetime",
-            _ => "string",
-        }
+            _ => "string"}
     }
 
     /// Generate Joi validation schema (JavaScript)
@@ -473,7 +465,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                output.push_str(&format!("// Validation schema for {class_name}\n"));
+                writeln!(output, "// Validation schema for {class_name}").unwrap();
                 output.push_str(&format!(
                     "const {}SchemaDefinition = Joi.object({{\n",
                     self.to_camel_case(class_name)
@@ -522,7 +514,8 @@ impl YamlValidatorGenerator {
         name: &str,
         slot_def: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> Result<String, LinkMLError> {
+    ) -> String {
+
         let mut rule = format!("  {name}: ");
 
         // Base type
@@ -551,7 +544,8 @@ impl YamlValidatorGenerator {
                 ));
             }
 
-        Ok(rule)
+        rule
+
     }
 
     /// Convert range to Joi type
@@ -561,15 +555,14 @@ impl YamlValidatorGenerator {
             "integer" | "int" => "Joi.number().integer()".to_string(),
             "float" | "double" => "Joi.number()".to_string(),
             "boolean" | "bool" => "Joi.boolean()".to_string(),
-            "date" => "Joi.date()".to_string(),
-            "datetime" => "Joi.date()".to_string(),
+            "date" | "datetime" => "Joi.date()".to_string(),
             "uri" => "Joi.string().uri()".to_string(),
-            _ => "Joi.any()".to_string(),
-        }
+            _ => "Joi.any()".to_string()}
     }
 
     /// Generate Yup validation schema (JavaScript)
-    fn generate_yup(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
+    fn generate_yup(&self, schema: &SchemaDefinition) -> String {
+
         let mut output = String::new();
 
         output.push_str("// Yup validation schema generated from LinkML\n\n");
@@ -578,7 +571,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                output.push_str(&format!("// Validation schema for {class_name}\n"));
+                writeln!(output, "// Validation schema for {class_name}").unwrap();
                 output.push_str(&format!(
                     "export const {}SchemaDefinition = yup.object({{\n",
                     self.to_camel_case(class_name)
@@ -608,7 +601,8 @@ impl YamlValidatorGenerator {
             }
         }
 
-        Ok(output)
+        output
+
     }
 
     /// Convert slot to Yup rule
@@ -645,7 +639,8 @@ impl YamlValidatorGenerator {
                 rule.push_str(&format!(".label('{name}')"));
             }
 
-        Ok(rule)
+        rule
+
     }
 
     /// Convert range to Yup type
@@ -655,11 +650,9 @@ impl YamlValidatorGenerator {
             "integer" | "int" => "yup.number().integer()".to_string(),
             "float" | "double" => "yup.number()".to_string(),
             "boolean" | "bool" => "yup.boolean()".to_string(),
-            "date" => "yup.date()".to_string(),
-            "datetime" => "yup.date()".to_string(),
+            "date" | "datetime" => "yup.date()".to_string(),
             "uri" => "yup.string().url()".to_string(),
-            _ => "yup.mixed()".to_string(),
-        }
+            _ => "yup.mixed()".to_string()}
     }
 
     /// Generate Open`API` validation specification
@@ -771,8 +764,7 @@ impl Generator for YamlValidatorGenerator {
             ValidationFramework::JsonSchemaDefinition => "json",
             ValidationFramework::Cerberus => "py",
             ValidationFramework::Joi | ValidationFramework::Yup => "js",
-            ValidationFramework::OpenAPI => "yaml",
-        }
+            ValidationFramework::OpenAPI => "yaml"}
     }
 
     fn get_default_filename(&self) -> &str {
@@ -781,15 +773,14 @@ impl Generator for YamlValidatorGenerator {
             ValidationFramework::Cerberus => "validation",
             ValidationFramework::Joi => "joi_schema",
             ValidationFramework::Yup => "yup_schema",
-            ValidationFramework::OpenAPI => "openapi",
-        }
+            ValidationFramework::OpenAPI => "openapi"}
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_yaml_validator_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

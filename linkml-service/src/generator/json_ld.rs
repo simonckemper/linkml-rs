@@ -5,24 +5,21 @@
 
 use linkml_core::{
     error::LinkMLError,
-    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition}};
 use serde_json::{Value as JsonValue, json};
 
 use super::traits::{Generator, GeneratorError, GeneratorOptions, GeneratorResult};
 
 /// `JSON`-LD generator for linked data contexts
 pub struct JsonLdGenerator {
-    options: GeneratorOptions,
-}
+    options: GeneratorOptions}
 
 impl JsonLdGenerator {
     /// Create a new `JSON`-LD generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: GeneratorOptions::default(),
-        }
+            options: GeneratorOptions::default()}
     }
 
     /// Create with custom options
@@ -355,8 +352,7 @@ impl JsonLdGenerator {
             .map(|pv| {
                 let value = match pv {
                     PermissibleValue::Simple(s) => s,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
+                    PermissibleValue::Complex { text, .. } => text};
                 json!(format!(
                     "{}:{}_{}",
                     schema_prefix,
@@ -446,8 +442,7 @@ impl JsonLdGenerator {
                             if let Some(first_value) = enum_def.permissible_values.first() {
                                 let value = match first_value {
                                     PermissibleValue::Simple(s) => s,
-                                    PermissibleValue::Complex { text, .. } => text,
-                                };
+                                    PermissibleValue::Complex { text, .. } => text};
                                 Ok(json!(value))
                             } else {
                                 Ok(json!(null))
@@ -506,8 +501,7 @@ impl JsonLdGenerator {
             "datetime" => Some("xsd:dateTime".to_string()),
             "time" => Some("xsd:time".to_string()),
             "uri" => Some("xsd:anyURI".to_string()),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Get XSD datatype
@@ -522,8 +516,7 @@ impl JsonLdGenerator {
             "datetime" => Some("xsd:dateTime".to_string()),
             "time" => Some("xsd:time".to_string()),
             "uri" => Some("xsd:anyURI".to_string()),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Convert to `snake_case`
@@ -553,8 +546,7 @@ impl JsonLdGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -609,8 +601,7 @@ impl Generator for JsonLdGenerator {
             // Use the comprehensive schema document generator
             match self.generate_schema_document(schema) {
                 serde_json::Value::Object(obj) => obj,
-                _ => serde_json::Map::new(),
-            }
+                _ => serde_json::Map::new()}
         } else {
             // Generate simple context document
             serde_json::Map::new()

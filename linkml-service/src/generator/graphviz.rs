@@ -20,8 +20,7 @@ pub enum GraphvizStyle {
     /// Entity-relationship style
     EntityRelationship,
     /// Hierarchical with inheritance focus
-    Hierarchical,
-}
+    Hierarchical}
 
 /// Graphviz layout engine
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,8 +34,7 @@ pub enum GraphvizLayout {
     /// Radial layout
     Twopi,
     /// Circular layout
-    Circo,
-}
+    Circo}
 
 /// Options for Graphviz generation
 #[derive(Debug, Clone)]
@@ -60,8 +58,7 @@ pub struct GraphvizOptions {
     /// Use color coding
     pub use_colors: bool,
     /// Rank direction (TB, BT, LR, RL)
-    pub rankdir: String,
-}
+    pub rankdir: String}
 
 impl Default for GraphvizOptions {
     fn default() -> Self {
@@ -75,24 +72,21 @@ impl Default for GraphvizOptions {
             show_inheritance: true,
             show_mixins: true,
             use_colors: true,
-            rankdir: "TB".to_string(),
-        }
+            rankdir: "TB".to_string()}
     }
 }
 
 /// Graphviz generator for schema visualization
 pub struct GraphvizGenerator {
     /// Generation options
-    options: GraphvizOptions,
-}
+    options: GraphvizOptions}
 
 impl GraphvizGenerator {
     /// Create a new Graphviz generator with default options
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: GraphvizOptions::default(),
-        }
+            options: GraphvizOptions::default()}
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -366,8 +360,7 @@ impl GraphvizGenerator {
 
                 let value = match pv {
                     PermissibleValue::Simple(s) => s,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
+                    PermissibleValue::Complex { text, .. } => text};
                 write!(output, "{value}").map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -589,8 +582,7 @@ impl Generator for GraphvizGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for Graphviz generation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Validate DOT identifier requirements
@@ -603,8 +595,7 @@ impl Generator for GraphvizGenerator {
                     message: format!(
                         "Class name '{class_name}' contains characters that need escaping in DOT format"
                     ),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -615,8 +606,7 @@ impl Generator for GraphvizGenerator {
                     message: format!(
                         "Slot name '{slot_name}' contains characters that need escaping in DOT format"
                     ),
-                    element: Some(format!("slot.{slot_name}")),
-                });
+                    element: Some(format!("slot.{slot_name}"))});
             }
         }
 
@@ -642,7 +632,7 @@ impl Generator for GraphvizGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

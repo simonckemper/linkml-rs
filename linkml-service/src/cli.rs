@@ -41,8 +41,7 @@ pub struct Cli {
 
     /// Subcommand to execute
     #[command(subcommand)]
-    command: Commands,
-}
+    command: Commands}
 
 /// Available output formats
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -54,8 +53,7 @@ enum OutputFormat {
     /// `YAML` output
     Yaml,
     /// Minimal output
-    Minimal,
-}
+    Minimal}
 
 /// CLI subcommands
 #[derive(Subcommand, Debug)]
@@ -84,8 +82,7 @@ enum Commands {
 
         /// Show validation statistics
         #[arg(long)]
-        stats: bool,
-    },
+        stats: bool},
 
     /// Check schema validity
     Check {
@@ -98,8 +95,7 @@ enum Commands {
 
         /// Check for unused definitions
         #[arg(long)]
-        check_unused: bool,
-    },
+        check_unused: bool},
 
     /// Convert schema between formats
     Convert {
@@ -117,8 +113,7 @@ enum Commands {
 
         /// Pretty print output
         #[arg(long)]
-        pretty: bool,
-    },
+        pretty: bool},
 
     /// Generate code from schema
     Generate {
@@ -136,8 +131,7 @@ enum Commands {
 
         /// Additional options (key=value)
         #[arg(long = "option", value_name = "KEY=VALUE")]
-        options: Vec<String>,
-    },
+        options: Vec<String>},
 
     /// Profile validation performance
     Profile {
@@ -159,8 +153,7 @@ enum Commands {
 
         /// Output profile data
         #[arg(long)]
-        output: Option<PathBuf>,
-    },
+        output: Option<PathBuf>},
 
     /// Debug schema issues
     Debug {
@@ -181,8 +174,7 @@ enum Commands {
 
         /// Filter by pattern
         #[arg(long)]
-        filter: Option<String>,
-    },
+        filter: Option<String>},
 
     /// Interactive validation mode
     Interactive {
@@ -192,8 +184,7 @@ enum Commands {
 
         /// History file
         #[arg(long)]
-        history: Option<PathBuf>,
-    },
+        history: Option<PathBuf>},
 
     /// Run stress tests
     Stress {
@@ -215,16 +206,13 @@ enum Commands {
 
         /// Output report
         #[arg(short, long)]
-        output: Option<PathBuf>,
-    },
+        output: Option<PathBuf>},
 
     /// Schema migration tools
     Migrate {
         /// Migration subcommand
         #[command(subcommand)]
-        command: crate::migration::cli::MigrationCommands,
-    },
-}
+        command: crate::migration::cli::MigrationCommands}}
 
 /// Schema conversion formats
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -240,8 +228,7 @@ enum ConvertFormat {
     /// GraphQL schema
     Graphql,
     /// Rust structs
-    Rust,
-}
+    Rust}
 
 /// Code generator types
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -255,15 +242,13 @@ enum GeneratorType {
     /// GraphQL schema
     Graphql,
     /// Documentation
-    Docs,
-}
+    Docs}
 
 /// CLI application
 pub struct CliApp<S> {
     service: Arc<S>,
     cli: Cli,
-    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
-}
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
 impl<S: LinkMLService + 'static> CliApp<S> {
     /// Create new CLI application
@@ -274,8 +259,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         Self {
             service,
             cli: Cli::parse(),
-            timestamp,
-        }
+            timestamp}
     }
 
     /// Run the CLI application
@@ -297,8 +281,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 class_name,
                 strict,
                 max_errors,
-                stats,
-            } => {
+                stats} => {
                 self.validate_command(
                     schema,
                     data,
@@ -313,8 +296,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             Commands::Check {
                 schema,
                 check_imports,
-                check_unused,
-            } => {
+                check_unused} => {
                 self.check_command(schema, *check_imports, *check_unused)
                     .await
             }
@@ -323,15 +305,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 input,
                 output,
                 format,
-                pretty,
-            } => self.convert_command(input, output, *format, *pretty).await,
+                pretty} => self.convert_command(input, output, *format, *pretty).await,
 
             Commands::Generate {
                 schema,
                 output,
                 generator,
-                options,
-            } => {
+                options} => {
                 self.generate_command(schema, output, *generator, options)
                     .await
             }
@@ -341,8 +321,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 data,
                 iterations,
                 memory,
-                output,
-            } => {
+                output} => {
                 self.profile_command(schema, data, *iterations, *memory, output.as_deref())
                     .await
             }
@@ -352,8 +331,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 tree,
                 inheritance,
                 slots,
-                filter,
-            } => {
+                filter} => {
                 self.debug_command(schema, *tree, *inheritance, *slots, filter.as_deref())
                     .await
             }
@@ -368,14 +346,12 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 concurrency,
                 operations,
                 chaos,
-                output,
-            } => {
+                output} => {
                 self.stress_command(schema, *concurrency, *operations, *chaos, output.as_deref())
                     .await
             }
 
-            Commands::Migrate { command } => self.migrate_command(command).await,
-        }
+            Commands::Migrate { command } => self.migrate_command(command).await}
     }
 
     /// Validate command implementation
@@ -690,8 +666,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             GeneratorType::Typeql => "typeql",
             GeneratorType::Sql => "sql",
             GeneratorType::Graphql => "graphql",
-            GeneratorType::Docs => "docs",
-        };
+            GeneratorType::Docs => "docs"};
 
         println!("Generating {generator_name} code...");
 
@@ -732,8 +707,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             GeneratorType::Typeql => "tql",
             GeneratorType::Sql => "sql",
             GeneratorType::Graphql => "graphql",
-            GeneratorType::Docs => "md",
-        };
+            GeneratorType::Docs => "md"};
 
         let output_file = output_dir.join(format!("generated.{extension}"));
         std::fs::create_dir_all(output_dir)?;
@@ -870,10 +844,8 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     "p95_ms": p95.as_secs_f64() * 1000.0,
                     "p99_ms": p99.as_secs_f64() * 1000.0,
                     "min_ms": durations[0].as_secs_f64() * 1000.0,
-                    "max_ms": durations[iterations - 1].as_secs_f64() * 1000.0,
-                },
-                "memory_usage": memory_usage,
-            });
+                    "max_ms": durations[iterations - 1].as_secs_f64() * 1000.0},
+                "memory_usage": memory_usage});
 
             std::fs::write(output_path, serde_json::to_string_pretty(&profile_data)?)?;
             println!("\n✓ Profile data saved to: {}", output_path.display());
@@ -1060,11 +1032,9 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                             current_schema = Some(schema);
                             current_schema_path = Some(schema_path.to_path_buf());
                         }
-                        Err(e) => eprintln!("Failed to parse schema: {e}"),
-                    }
+                        Err(e) => eprintln!("Failed to parse schema: {e}")}
                 }
-                Err(e) => eprintln!("Failed to read schema file: {e}"),
-            }
+                Err(e) => eprintln!("Failed to read schema file: {e}")}
         }
 
         // Main REPL loop
@@ -1265,11 +1235,9 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                         *current_schema = Some(schema);
                         *current_schema_path = Some(schema_path);
                     }
-                    Err(e) => eprintln!("Failed to parse schema: {e}"),
-                }
+                    Err(e) => eprintln!("Failed to parse schema: {e}")}
             }
-            Err(e) => eprintln!("Failed to read schema file: {e}"),
-        }
+            Err(e) => eprintln!("Failed to read schema file: {e}")}
     }
 
     /// Handle validation command
@@ -1594,14 +1562,12 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 if let Some(path) = output_path {
                     match std::fs::write(path, &output) {
                         Ok(()) => println!("✓ Generated {} code to {}", language, path.display()),
-                        Err(e) => eprintln!("Failed to write output: {e}"),
-                    }
+                        Err(e) => eprintln!("Failed to write output: {e}")}
                 } else {
                     println!("{output}");
                 }
             }
-            Err(e) => eprintln!("Generation failed: {e}"),
-        }
+            Err(e) => eprintln!("Generation failed: {e}")}
     }
 
     /// Handle check schema command
@@ -1706,8 +1672,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         match std::fs::write(&path, content) {
             Ok(()) => println!("✓ Exported schema to {}", path.display()),
-            Err(e) => eprintln!("Failed to write file: {e}"),
-        }
+            Err(e) => eprintln!("Failed to write file: {e}")}
     }
 
     /// Handle import schema command
@@ -1873,8 +1838,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                     current_depth
                 }
             }
-            None => current_depth,
-        }
+            None => current_depth}
     }
 
     /// Stress command implementation
@@ -1953,8 +1917,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             MigrationCommands::Analyze {
                 from,
                 to,
-                format: _format,
-            } => {
+                format: _format} => {
                 println!("{}", "Schema Change Analysis".bold().blue());
                 println!("{}", "=====================".blue());
                 println!("Analyzing changes from {from} to {to}...");
@@ -2031,8 +1994,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 plan,
                 data,
                 dry_run,
-                skip_validation,
-            } => {
+                skip_validation} => {
                 println!("{}", "Migration Execution".bold().blue());
                 println!("{}", "==================".blue());
 
@@ -2073,8 +2035,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 source,
                 target,
                 output,
-                language,
-            } => {
+                language} => {
                 println!("{}", "Migration Script Generation".bold().blue());
                 println!("{}", "==========================".blue());
 
@@ -2086,16 +2047,14 @@ impl<S: LinkMLService + 'static> CliApp<S> {
                 let script = match language.as_str() {
                     "rust" => "// Rust migration script\nfn migrate() { }\n",
                     "python" => "# Python migration script\ndef migrate():\n    pass\n",
-                    _ => "// Migration script\n",
-                };
+                    _ => "// Migration script\n"};
 
                 let script_file = output.join(format!(
                     "migrate.{}",
                     match language.as_str() {
                         "rust" => "rs",
                         "python" => "py",
-                        _ => "txt",
-                    }
+                        _ => "txt"}
                 ));
 
                 std::fs::create_dir_all(output)?;
@@ -2126,7 +2085,7 @@ pub fn run() -> linkml_core::error::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_cli_parsing() {

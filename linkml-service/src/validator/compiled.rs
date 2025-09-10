@@ -23,8 +23,7 @@ use std::collections::HashMap;
     pub precompute_inheritance: bool,
 
     /// Cache permissible values as hash sets
-    pub cache_permissible_values: bool,
-}
+    pub cache_permissible_values: bool}
 
 impl Default for CompilationOptions {
     fn default() -> Self {
@@ -33,8 +32,7 @@ impl Default for CompilationOptions {
             optimize_ranges: true,
             optimize_types: true,
             precompute_inheritance: true,
-            cache_permissible_values: true,
-        }
+            cache_permissible_values: true}
     }
 }
 
@@ -46,16 +44,14 @@ pub enum ValidationInstruction {
         /// `JSON` path to the value
         path: String,
         /// Field name to check
-        field: String,
-    },
+        field: String},
 
     /// Validate against a compiled regex
     ValidatePattern {
         /// `JSON` path to the value
         path: String,
         /// Index into compiled patterns array
-        pattern_id: usize,
-    },
+        pattern_id: usize},
 
     /// Check numeric range
     ValidateRange {
@@ -66,8 +62,7 @@ pub enum ValidationInstruction {
         /// Maximum value (inclusive/exclusive based on inclusive flag)
         max: Option<f64>,
         /// Whether bounds are inclusive
-        inclusive: bool,
-    },
+        inclusive: bool},
 
     /// Check string length
     ValidateLength {
@@ -76,32 +71,28 @@ pub enum ValidationInstruction {
         /// Minimum length
         min: Option<usize>,
         /// Maximum length
-        max: Option<usize>,
-    },
+        max: Option<usize>},
 
     /// Validate against permissible values
     ValidateEnum {
         /// `JSON` path to the value
         path: String,
         /// Index into cached enums array
-        enum_id: usize,
-    },
+        enum_id: usize},
 
     /// Type validation
     ValidateType {
         /// `JSON` path to the value
         path: String,
         /// Expected type
-        expected_type: CompiledType,
-    },
+        expected_type: CompiledType},
 
     /// Validate array elements
     ValidateArray {
         /// `JSON` path to the array
         path: String,
         /// Instructions to apply to each element
-        element_instructions: Vec<ValidationInstruction>,
-    },
+        element_instructions: Vec<ValidationInstruction>},
 
     /// Conditional validation
     ConditionalValidation {
@@ -110,17 +101,14 @@ pub enum ValidationInstruction {
         /// Instructions to execute if condition passes
         then_instructions: Vec<ValidationInstruction>,
         /// Instructions to execute if condition fails
-        else_instructions: Option<Vec<ValidationInstruction>>,
-    },
+        else_instructions: Option<Vec<ValidationInstruction>>},
 
     /// Nested object validation
     ValidateObject {
         /// `JSON` path to the object
         path: String,
         /// Instructions for each field
-        field_instructions: HashMap<String, Vec<ValidationInstruction>>,
-    },
-}
+        field_instructions: HashMap<String, Vec<ValidationInstruction>>}}
 
 /// Compiled type representation for fast checking
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -144,8 +132,7 @@ pub enum CompiledType {
     /// Array type
     Array,
     /// Any type (no validation)
-    Any,
-}
+    Any}
 
 /// Compiled validator with optimized validation logic
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -170,8 +157,7 @@ pub struct CompiledValidator {
     pub schema_id: String,
 
     /// Class or slot being validated
-    pub target_name: String,
-}
+    pub target_name: String}
 
 impl Default for CompiledValidator {
     fn default() -> Self {
@@ -190,8 +176,7 @@ impl CompiledValidator {
             pattern_strings: Vec::new(),
             cached_enums: Vec::new(),
             schema_id: "test-schema".to_string(),
-            target_name: "TestClass".to_string(),
-        }
+            target_name: "TestClass".to_string()}
     }
 
     /// Compile a validator from a schema and class/slot definition
@@ -242,13 +227,12 @@ impl CompiledValidator {
                             message: format!("Required field '{field}' is missing"),
                             validator: self.name.clone(),
                             code: Some("required_field_missing".to_string()),
-                            context: HashMap::new(),
-                        });
+                            context: HashMap::new()});
                     }
             }
 
             ValidationInstruction::ValidatePattern { path, pattern_id } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path)
+                if let Some(field_value) = Self::extract_value_at_path(value, path)
                     && let Some(s) = field_value.as_str()
                         && let Some(pattern) = self.compiled_patterns.get(*pattern_id)
                             && !pattern.is_match(s) {
@@ -270,8 +254,7 @@ impl CompiledValidator {
                                     ),
                                     validator: self.name.clone(),
                                     code: Some("pattern_mismatch".to_string()),
-                                    context,
-                                });
+                                    context});
                             }
             }
 
@@ -279,9 +262,8 @@ impl CompiledValidator {
                 path,
                 min,
                 max,
-                inclusive,
-            } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path)
+                inclusive} => {
+                if let Some(field_value) = Self::extract_value_at_path(value, path)
                     && let Some(num) = field_value.as_f64() {
                         let valid = match (min, max) {
                             (Some(min_val), Some(max_val)) => {
@@ -305,8 +287,7 @@ impl CompiledValidator {
                                     num < *max_val
                                 }
                             }
-                            (None, None) => true,
-                        };
+                            (None, None) => true};
 
                         if !valid {
                             let mut context = HashMap::new();
@@ -336,14 +317,13 @@ impl CompiledValidator {
                                 message: format!("Value {num} is out of range"),
                                 validator: self.name.clone(),
                                 code: Some("range_violation".to_string()),
-                                context,
-                            });
+                                context});
                         }
                     }
             }
 
             ValidationInstruction::ValidateEnum { path, enum_id } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path)
+                if let Some(field_value) = Self::extract_value_at_path(value, path)
                     && let Some(s) = field_value.as_str()
                         && let Some(enum_set) = self.cached_enums.get(*enum_id)
                             && !enum_set.contains(s) {
@@ -358,24 +338,21 @@ impl CompiledValidator {
                                     message: format!("Value '{s}' is not a permissible value"),
                                     validator: self.name.clone(),
                                     code: Some("enum_violation".to_string()),
-                                    context,
-                                });
+                                    context});
                             }
             }
 
             ValidationInstruction::ValidateType {
                 path,
-                expected_type,
-            } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path) {
-                    let actual_type = self.get_json_type(field_value);
+                expected_type} => {
+                if let Some(field_value) = Self::extract_value_at_path(value, path) {
+                    let actual_type = Self::get_json_type(field_value);
                     // Special handling for Date and DateTime types - they are strings in JSON
                     let type_mismatch = match expected_type {
                         CompiledType::Date | CompiledType::DateTime => {
                             actual_type != CompiledType::String
                         }
-                        _ => actual_type != *expected_type && *expected_type != CompiledType::Any,
-                    };
+                        _ => actual_type != *expected_type && *expected_type != CompiledType::Any};
 
                     if type_mismatch {
                         let mut context = HashMap::new();
@@ -395,16 +372,14 @@ impl CompiledValidator {
                             ),
                             validator: self.name.clone(),
                             code: Some("type_mismatch".to_string()),
-                            context,
-                        });
+                            context});
                     }
                 }
             }
 
             ValidationInstruction::ValidateArray {
                 path,
-                element_instructions,
-            } => {
+                element_instructions} => {
                 if let Some(arr) = value.as_array() {
                     for (i, elem) in arr.iter().enumerate() {
                         let elem_path = format!("{path}[{i}]");
@@ -419,8 +394,7 @@ impl CompiledValidator {
 
             ValidationInstruction::ValidateObject {
                 path,
-                field_instructions,
-            } => {
+                field_instructions} => {
                 if let Some(obj) = value.as_object() {
                     for (field, instructions) in field_instructions {
                         if let Some(field_value) = obj.get(field) {
@@ -442,8 +416,7 @@ impl CompiledValidator {
             ValidationInstruction::ConditionalValidation {
                 condition,
                 then_instructions,
-                else_instructions,
-            } => {
+                else_instructions} => {
                 // Evaluate condition
                 let condition_result = self.execute_instruction(condition, value, context);
 
@@ -461,15 +434,14 @@ impl CompiledValidator {
             }
 
             ValidationInstruction::ValidateLength { path, min, max } => {
-                if let Some(field_value) = self.extract_value_at_path(value, path)
+                if let Some(field_value) = Self::extract_value_at_path(value, path)
                     && let Some(s) = field_value.as_str() {
                         let len = s.chars().count();
                         let valid = match (min, max) {
                             (Some(min_len), Some(max_len)) => len >= *min_len && len <= *max_len,
                             (Some(min_len), None) => len >= *min_len,
                             (None, Some(max_len)) => len <= *max_len,
-                            (None, None) => true,
-                        };
+                            (None, None) => true};
 
                         if !valid {
                             let mut context_map = HashMap::new();
@@ -495,8 +467,7 @@ impl CompiledValidator {
                                 message: format!("String length {len} is out of range"),
                                 validator: self.name.clone(),
                                 code: Some("length_violation".to_string()),
-                                context: context_map,
-                            });
+                                context: context_map});
                         }
                     }
             }
@@ -507,8 +478,7 @@ impl CompiledValidator {
 
     /// Extract value at a `JSON` path
     /// Path format: $ (root), $.field, $.field.subfield
-    fn extract_value_at_path<'a>(&self, root: &'a JsonValue, path: &str) -> Option<&'a JsonValue> {
-        let _ = self;
+    fn extract_value_at_path<'a>(root: &'a JsonValue, path: &str) -> Option<&'a JsonValue> {
         if path == "$" {
             return Some(root);
         }
@@ -529,16 +499,14 @@ impl CompiledValidator {
                         return None;
                     }
                 }
-                _ => return None,
-            }
+                _ => return None}
         }
 
         Some(current)
     }
 
     /// Get the compiled type of a `JSON` value
-    fn get_json_type(&self, value: &JsonValue) -> CompiledType {
-        let _ = self;
+    fn get_json_type(value: &JsonValue) -> CompiledType {
         match value {
             JsonValue::String(_) => CompiledType::String,
             JsonValue::Number(n) => {
@@ -551,8 +519,7 @@ impl CompiledValidator {
             JsonValue::Bool(_) => CompiledType::Boolean,
             JsonValue::Array(_) => CompiledType::Array,
             JsonValue::Object(_) => CompiledType::Object,
-            JsonValue::Null => CompiledType::Any,
-        }
+            JsonValue::Null => CompiledType::Any}
     }
 
     /// Update instruction path for nested validation
@@ -571,8 +538,7 @@ impl CompiledValidator {
             ValidationInstruction::ConditionalValidation {
                 condition,
                 then_instructions,
-                else_instructions,
-            } => {
+                else_instructions} => {
                 // Update paths in condition and branches
                 self.update_instruction_path(condition, new_path);
                 for inst in then_instructions {
@@ -611,8 +577,7 @@ struct ValidatorCompiler<'a> {
     pattern_strings: Vec<String>,
     cached_enums: Vec<std::collections::HashSet<String>>,
     pattern_map: HashMap<String, usize>,
-    enum_map: HashMap<String, usize>,
-}
+    enum_map: HashMap<String, usize>}
 
 impl<'a> ValidatorCompiler<'a> {
     fn new(schema: &'a SchemaDefinition, options: &'a CompilationOptions) -> Self {
@@ -623,8 +588,7 @@ impl<'a> ValidatorCompiler<'a> {
             pattern_strings: Vec::new(),
             cached_enums: Vec::new(),
             pattern_map: HashMap::new(),
-            enum_map: HashMap::new(),
-        }
+            enum_map: HashMap::new()}
     }
 
     fn compile_class(
@@ -657,8 +621,7 @@ impl<'a> ValidatorCompiler<'a> {
             pattern_strings: self.pattern_strings.clone(),
             cached_enums: self.cached_enums.clone(),
             schema_id: self.schema.id.clone(),
-            target_name: class_name.to_string(),
-        })
+            target_name: class_name.to_string()})
     }
 
     fn compile_slot(
@@ -673,8 +636,7 @@ impl<'a> ValidatorCompiler<'a> {
         if slot.required == Some(true) {
             instructions.push(ValidationInstruction::CheckRequired {
                 path: "$".to_string(),
-                field: slot_name.to_string(),
-            });
+                field: slot_name.to_string()});
         }
 
         // Pattern validation
@@ -683,8 +645,7 @@ impl<'a> ValidatorCompiler<'a> {
                 let pattern_id = self.compile_pattern(pattern)?;
                 instructions.push(ValidationInstruction::ValidatePattern {
                     path: path.clone(),
-                    pattern_id,
-                });
+                    pattern_id});
             }
 
         // Range validation
@@ -701,8 +662,7 @@ impl<'a> ValidatorCompiler<'a> {
                     .maximum_value
                     .as_ref()
                     .and_then(linkml_core::Value::as_f64),
-                inclusive: true,
-            });
+                inclusive: true});
         }
 
         // Type validation
@@ -711,8 +671,7 @@ impl<'a> ValidatorCompiler<'a> {
                 let compiled_type = self.compile_type(range);
                 instructions.push(ValidationInstruction::ValidateType {
                     path: path.clone(),
-                    expected_type: compiled_type,
-                });
+                    expected_type: compiled_type});
             }
 
         // Enum validation
@@ -722,8 +681,7 @@ impl<'a> ValidatorCompiler<'a> {
                     let enum_id = self.cache_enum(range, enum_def);
                     instructions.push(ValidationInstruction::ValidateEnum {
                         path: path.clone(),
-                        enum_id,
-                    });
+                        enum_id});
                 }
 
         // Array validation
@@ -731,16 +689,14 @@ impl<'a> ValidatorCompiler<'a> {
             let element_instructions = if let Some(range) = &slot.range {
                 vec![ValidationInstruction::ValidateType {
                     path: "$".to_string(),
-                    expected_type: self.compile_type(range),
-                }]
+                    expected_type: self.compile_type(range)}]
             } else {
                 vec![]
             };
 
             instructions = vec![ValidationInstruction::ValidateArray {
                 path,
-                element_instructions,
-            }];
+                element_instructions}];
         }
 
         Ok(instructions)
@@ -835,7 +791,7 @@ impl<'a> ValidatorCompiler<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_compiled_validator() -> anyhow::Result<()> {

@@ -9,8 +9,7 @@ use std::fmt::Write;
 /// GraphQL schema generator for `LinkML` schemas
 pub struct GraphQLGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl GraphQLGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -22,8 +21,7 @@ impl GraphQLGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "graphql".to_string(),
-        }
+            name: "graphql".to_string()}
     }
 
     /// Generate GraphQL type for a class
@@ -146,7 +144,7 @@ impl GraphQLGenerator {
             for value_def in &enum_def.permissible_values {
                 match value_def {
                     PermissibleValue::Simple(text) => {
-                        let value_name = self.convert_enum_value(text);
+                        let value_name = Self::convert_enum_value(text);
                         writeln!(&mut output, "{}{}", indent.single(), value_name)
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
@@ -158,7 +156,7 @@ impl GraphQLGenerator {
                                 writeln!(&mut output, "{}\"\"\"{}\"\"\"", indent.single(), desc)
                                     .map_err(Self::fmt_error_to_generator_error)?;
                             }
-                        let value_name = self.convert_enum_value(text);
+                        let value_name = Self::convert_enum_value(text);
                         writeln!(&mut output, "{}{}", indent.single(), value_name)
                             .map_err(Self::fmt_error_to_generator_error)?;
                     }
@@ -251,8 +249,8 @@ impl GraphQLGenerator {
             }
 
             let type_name = self.convert_identifier(class_name);
-            let field_name = self.to_camel_case(&type_name);
-            let plural_field = self.pluralize(&field_name);
+            let field_name = Self::to_camel_case(&type_name);
+            let plural_field = Self::pluralize(&field_name);
 
             // Single item query
             writeln!(
@@ -298,7 +296,7 @@ impl GraphQLGenerator {
             }
 
             let type_name = self.convert_identifier(class_name);
-            let _field_name = self.to_camel_case(&type_name);
+            let _field_name = Self::to_camel_case(&type_name);
 
             // Create mutation
             writeln!(
@@ -609,13 +607,11 @@ impl GraphQLGenerator {
             Some("float" | "double" | "decimal") => "Float".to_string(),
             Some("boolean" | "bool") => "Boolean".to_string(),
             Some(other) => self.convert_identifier(other), // Assume it's a custom type
-            None => "String".to_string(),
-        }
+            None => "String".to_string()}
     }
 
     /// Convert to camelCase
-    fn to_camel_case(&self, s: &str) -> String {
-        let _ = self;
+    fn to_camel_case(s: &str) -> String {
         let mut result = String::new();
         let mut capitalize_next = false;
 
@@ -636,8 +632,7 @@ impl GraphQLGenerator {
     }
 
     /// Simple pluralization
-    fn pluralize(&self, s: &str) -> String {
-        let _ = self;
+    fn pluralize(s: &str) -> String {
         if s.ends_with('s') {
             format!("{s}es")
         } else if s.ends_with('y') {
@@ -648,8 +643,7 @@ impl GraphQLGenerator {
     }
 
     /// Convert enum values to GraphQL format
-    fn convert_enum_value(&self, value: &str) -> String {
-        let _ = self;
+    fn convert_enum_value(value: &str) -> String {
         // GraphQL enum values must be uppercase with underscores
         value.to_uppercase().replace(['-', ' '], "_")
     }
@@ -675,8 +669,7 @@ impl Generator for GraphQLGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for GraphQL generation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Validate GraphQL naming requirements
@@ -688,8 +681,7 @@ impl Generator for GraphQLGenerator {
                         message: format!(
                             "Class name '{class_name}' is not valid for GraphQL: must start with letter or underscore"
                         ),
-                        element: Some(format!("class.{class_name}")),
-                    });
+                        element: Some(format!("class.{class_name}"))});
                 }
 
             // Check rest of characters
@@ -699,8 +691,7 @@ impl Generator for GraphQLGenerator {
                         message: format!(
                             "Class name '{class_name}' contains invalid characters for GraphQL"
                         ),
-                        element: Some(format!("class.{class_name}")),
-                    });
+                        element: Some(format!("class.{class_name}"))});
                 }
             }
 
@@ -712,8 +703,7 @@ impl Generator for GraphQLGenerator {
             ) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Class name '{class_name}' conflicts with GraphQL reserved type"),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -726,8 +716,7 @@ impl Generator for GraphQLGenerator {
                         message: format!(
                             "Slot name '{slot_name}' is not valid for GraphQL fields"
                         ),
-                        element: Some(format!("slot.{slot_name}")),
-                    });
+                        element: Some(format!("slot.{slot_name}"))});
                 }
 
             // GraphQL introspection fields start with __
@@ -736,8 +725,7 @@ impl Generator for GraphQLGenerator {
                     message: format!(
                         "Slot name '{slot_name}' conflicts with GraphQL introspection naming"
                     ),
-                    element: Some(format!("slot.{slot_name}")),
-                });
+                    element: Some(format!("slot.{slot_name}"))});
             }
         }
 
@@ -955,14 +943,14 @@ impl CodeFormatter for GraphQLGenerator {
 impl GraphQLGenerator {
     /// Convert field names to camelCase
     fn convert_field_name(&self, name: &str) -> String {
-        self.to_camel_case(name)
+        Self::to_camel_case(name)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_graphql_generation() -> anyhow::Result<()> {
@@ -1009,8 +997,8 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
     fn test_enum_value_conversion() {
         let generator = GraphQLGenerator::new();
 
-        assert_eq!(generator.convert_enum_value("in progress"), "IN_PROGRESS");
-        assert_eq!(generator.convert_enum_value("not-started"), "NOT_STARTED");
-        assert_eq!(generator.convert_enum_value("completed"), "COMPLETED");
+        assert_eq!(GraphQLGenerator::convert_enum_value("in progress"), "IN_PROGRESS");
+        assert_eq!(GraphQLGenerator::convert_enum_value("not-started"), "NOT_STARTED");
+        assert_eq!(GraphQLGenerator::convert_enum_value("completed"), "COMPLETED");
     }
 }

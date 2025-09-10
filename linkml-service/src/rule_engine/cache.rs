@@ -20,8 +20,7 @@ struct CacheEntry {
     /// Last access time
     last_accessed: Instant,
     /// Number of times accessed
-    access_count: usize,
-}
+    access_count: usize}
 
 /// Configuration for the rule cache
 #[derive(Debug, Clone)]
@@ -31,16 +30,14 @@ pub struct CacheConfig {
     /// TTL for cache entries
     pub ttl: Duration,
     /// Whether to use LRU eviction
-    pub use_lru: bool,
-}
+    pub use_lru: bool}
 
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
             max_entries: 1000,
             ttl: Duration::from_secs(3600), // 1 hour
-            use_lru: true,
-        }
+            use_lru: true}
     }
 }
 
@@ -62,8 +59,7 @@ pub struct RuleCache {
     /// Cache configuration
     config: CacheConfig,
     /// Statistics
-    stats: Arc<RwLock<CacheStats>>,
-}
+    stats: Arc<RwLock<CacheStats>>}
 
 /// Cache statistics
 #[derive(Debug, Default, Clone)]
@@ -75,8 +71,7 @@ pub struct CacheStats {
     /// Total number of evictions
     pub evictions: usize,
     /// Current number of entries
-    pub entries: usize,
-}
+    pub entries: usize}
 
 impl Default for RuleCache {
     fn default() -> Self {
@@ -95,8 +90,7 @@ impl RuleCache {
         Self {
             cache: Arc::new(RwLock::new(HashMap::new())),
             config,
-            stats: Arc::new(RwLock::new(CacheStats::default())),
-        }
+            stats: Arc::new(RwLock::new(CacheStats::default()))}
     }
 
     /// Get compiled rules from the cache
@@ -141,8 +135,7 @@ impl RuleCache {
             rules,
             created_at: Instant::now(),
             last_accessed: Instant::now(),
-            access_count: 0,
-        };
+            access_count: 0};
 
         cache.insert(class_name, entry);
         stats.entries = cache.len();

@@ -13,8 +13,7 @@ use super::Validator;
 
 /// Validator for expression-based constraints
 pub struct ExpressionValidator {
-    engine: ExpressionEngine,
-}
+    engine: ExpressionEngine}
 
 impl Default for ExpressionValidator {
     fn default() -> Self {
@@ -26,8 +25,7 @@ impl ExpressionValidator {
     /// Create a new expression validator
     #[must_use] pub fn new() -> Self {
         Self {
-            engine: ExpressionEngine::new(),
-        }
+            engine: ExpressionEngine::new()}
     }
 }
 
@@ -177,8 +175,7 @@ impl TypeName for Value {
             Value::Number(_) => "number",
             Value::String(_) => "string",
             Value::Array(_) => "array",
-            Value::Object(_) => "object",
-        }
+            Value::Object(_) => "object"}
     }
 }
 

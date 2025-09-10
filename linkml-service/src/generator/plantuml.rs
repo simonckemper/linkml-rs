@@ -23,8 +23,7 @@ pub enum PlantUmlDiagramType {
     /// Mind map
     MindMap,
     /// Component diagram
-    Component,
-}
+    Component}
 
 /// `PlantUML` skin parameters
 #[derive(Debug, Clone)]
@@ -40,8 +39,7 @@ pub struct PlantUmlSkin {
     /// Font size
     pub font_size: u8,
     /// Arrow color
-    pub arrow_color: String,
-}
+    pub arrow_color: String}
 
 impl Default for PlantUmlSkin {
     fn default() -> Self {
@@ -51,8 +49,7 @@ impl Default for PlantUmlSkin {
             class_border_color: "#000000".to_string(),
             font_name: "Arial".to_string(),
             font_size: 12,
-            arrow_color: "#000000".to_string(),
-        }
+            arrow_color: "#000000".to_string()}
     }
 }
 
@@ -74,8 +71,7 @@ pub struct PlantUmlOptions {
     /// Show cardinality on relationships
     pub show_cardinality: bool,
     /// Direction (top to bottom, left to right)
-    pub direction: String,
-}
+    pub direction: String}
 
 impl Default for PlantUmlOptions {
     fn default() -> Self {
@@ -87,16 +83,14 @@ impl Default for PlantUmlOptions {
             use_packages: false,
             skin: PlantUmlSkin::default(),
             show_cardinality: true,
-            direction: "top to bottom".to_string(),
-        }
+            direction: "top to bottom".to_string()}
     }
 }
 
 /// `PlantUML` generator
 pub struct PlantUmlGenerator {
     /// Generation options
-    options: PlantUmlOptions,
-}
+    options: PlantUmlOptions}
 
 impl PlantUmlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -108,8 +102,7 @@ impl PlantUmlGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: PlantUmlOptions::default(),
-        }
+            options: PlantUmlOptions::default()}
     }
 
     /// Create with custom options
@@ -133,8 +126,7 @@ impl PlantUmlGenerator {
             PlantUmlDiagramType::EntityRelationship => self.generate_er_diagram(schema),
             PlantUmlDiagramType::State => self.generate_state_diagram(schema),
             PlantUmlDiagramType::MindMap => self.generate_mindmap(schema),
-            PlantUmlDiagramType::Component => self.generate_component_diagram(schema),
-        }
+            PlantUmlDiagramType::Component => self.generate_component_diagram(schema)}
     }
 
     /// Generate class diagram
@@ -399,8 +391,7 @@ impl PlantUmlGenerator {
                 PermissibleValue::Simple(s) => (s.clone(), None),
                 PermissibleValue::Complex {
                     text, description, ..
-                } => (text.clone(), description.clone()),
-            };
+                } => (text.clone(), description.clone())};
 
             write!(output, "  {value}").map_err(Self::fmt_error_to_generator_error)?;
 
@@ -556,8 +547,7 @@ impl PlantUmlGenerator {
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
 
                 // Initial state
@@ -640,8 +630,7 @@ impl PlantUmlGenerator {
                 for pv in enum_def.permissible_values.iter().take(3) {
                     let value = match pv {
                         PermissibleValue::Simple(s) => s,
-                        PermissibleValue::Complex { text, .. } => text,
-                    };
+                        PermissibleValue::Complex { text, .. } => text};
                     writeln!(&mut output, "**** {value}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -788,8 +777,7 @@ impl PlantUmlGenerator {
             Some("float" | "double") => "3.14",
             Some("boolean") => "true",
             Some("date") => "2024-01-01",
-            _ => "value",
-        }
+            _ => "value"}
     }
 
     /// Collect all slots including inherited ones
@@ -845,8 +833,7 @@ impl Generator for PlantUmlGenerator {
             PlantUmlDiagramType::EntityRelationship => "plantuml-er",
             PlantUmlDiagramType::State => "plantuml-state",
             PlantUmlDiagramType::MindMap => "plantuml-mindmap",
-            PlantUmlDiagramType::Component => "plantuml-component",
-        }
+            PlantUmlDiagramType::Component => "plantuml-component"}
     }
 
     fn description(&self) -> &'static str {
@@ -885,7 +872,7 @@ impl Generator for PlantUmlGenerator {
 mod tests {
     use super::*;
     use crate::generator::GeneratorOptions;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

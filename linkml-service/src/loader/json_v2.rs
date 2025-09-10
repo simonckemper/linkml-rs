@@ -19,16 +19,14 @@ use crate::file_system_adapter::FileSystemOperations;
 pub struct JsonLoaderV2 {
     /// Options for loading
     validate: bool,
-    strict: bool,
-}
+    strict: bool}
 
 impl JsonLoaderV2 {
     /// Create a new `JSON` loader
     #[must_use] pub fn new() -> Self {
         Self {
             validate: true,
-            strict: false,
-        }
+            strict: false}
     }
 
     /// Set validation enabled
@@ -107,8 +105,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
                                 class_name: self.infer_class_name(&obj, schema),
                                 data: obj.into_iter().collect(),
                                 id: None,
-                                metadata: HashMap::new(),
-                            })
+                                metadata: HashMap::new()})
                         } else {
                             None
                         }
@@ -120,8 +117,7 @@ impl DataLoaderV2 for JsonLoaderV2 {
                     class_name: self.infer_class_name(&obj, schema),
                     data: obj.into_iter().collect(),
                     id: None,
-                    metadata: HashMap::new(),
-                }]
+                    metadata: HashMap::new()}]
             }
             _ => {
                 return Err(LoaderError::Parse(
@@ -148,16 +144,14 @@ pub struct JsonDumperV2 {
     /// Pretty print output
     pretty: bool,
     /// Use `JSON` Lines format
-    jsonl: bool,
-}
+    jsonl: bool}
 
 impl JsonDumperV2 {
     /// Create a new `JSON` dumper
     #[must_use] pub fn new() -> Self {
         Self {
             pretty: true,
-            jsonl: false,
-        }
+            jsonl: false}
     }
 
     /// Set pretty printing
@@ -318,8 +312,7 @@ mod tests {
                     ("age".to_string(), serde_json::json!(30)),
                 ]),
                 id: Some("person1".to_string()),
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
             DataInstance {
                 class_name: "Person".to_string(),
                 data: HashMap::from([
@@ -327,8 +320,7 @@ mod tests {
                     ("age".to_string(), serde_json::json!(25)),
                 ]),
                 id: Some("person2".to_string()),
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
         ];
 
         // Test regular JSON

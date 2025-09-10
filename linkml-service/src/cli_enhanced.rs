@@ -56,8 +56,6 @@ ApiDumper ,
 DumpOptions ,
      LoadOptions
 }
-,
-
 }
 ;
 
@@ -84,8 +82,6 @@ LintOptions ,
 MergeOptions ,
      SchemaMerge
 }
-,
-
 }
 ;
 use crate ::  validator ::  ValidationEngine ;
@@ -115,9 +111,7 @@ struct LinkMLCli  {
      long ,
      global = true)] config : Option < PathBuf > ,
 
-#[command (subcommand)] command : LinkMLCommand ,
-
-}
+#[command (subcommand)] command : LinkMLCommand }
 
 #[doc = " Available output formats"]
 #[derive (Debug ,
@@ -135,9 +129,7 @@ enum OutputFormat  {
 
 #[doc = " Tab-separated values"] Tsv ,
 
-#[doc = " Minimal output"] Minimal ,
-
-}
+#[doc = " Minimal output"] Minimal }
 
 #[doc = " `LinkML` subcommands"]
 #[derive (Subcommand ,
@@ -169,9 +161,7 @@ enum LinkMLCommand  {
 #[arg (long)] stats : bool ,
 
 #[doc = " Validate in parallel"]
-#[arg (long)] parallel : bool ,
-
-}
+#[arg (long)] parallel : bool }
 ,
 
 #[doc = " Generate code or artifacts from schema"] Generate  {
@@ -200,9 +190,7 @@ enum LinkMLCommand  {
      long)] template_dir : Option < PathBuf > ,
 
 #[doc = " Include imports in generation"]
-#[arg (long)] include_imports : bool ,
-
-}
+#[arg (long)] include_imports : bool }
 ,
 
 #[doc = " Convert schema between formats"] Convert  {
@@ -227,9 +215,7 @@ enum LinkMLCommand  {
 #[arg (long)] pretty : bool ,
 
 #[doc = " Validate after conversion"]
-#[arg (long)] validate : bool ,
-
-}
+#[arg (long)] validate : bool }
 ,
 
 #[doc = " Merge multiple schemas"] Merge  {
@@ -257,9 +243,7 @@ enum LinkMLCommand  {
      long)] base : Option < PathBuf > ,
 
 #[doc = " Validate result"]
-#[arg (long)] validate : bool ,
-
-}
+#[arg (long)] validate : bool }
 ,
 
 #[doc = " Compare schemas and show differences"] Diff  {
@@ -287,9 +271,7 @@ enum LinkMLCommand  {
 #[doc = " Output file (stdout
     if not specified)"]
 #[arg (short ,
-     long)] output : Option < PathBuf > ,
-
-}
+     long)] output : Option < PathBuf > }
 ,
 
 #[doc = " Check schema quality and compliance"] Lint  {
@@ -315,9 +297,7 @@ where possible"]
 #[doc = " Output format"]
 #[arg (short = 'f' ,
      long ,
-     default_value = "pretty")] format : LintFormat ,
-
-}
+     default_value = "pretty")] format : LintFormat }
 ,
 
 #[doc = " Start schema API server"] Serve  {
@@ -351,9 +331,7 @@ where possible"]
 
 #[doc = " API documentation path"]
 #[arg (long ,
-     default_value = "/docs")] docs_path : String ,
-
-}
+     default_value = "/docs")] docs_path : String }
 ,
 
 #[doc = " Load data from various formats"] Load  {
@@ -383,9 +361,7 @@ where possible"]
 
 #[doc = " Target class for loading"]
 #[arg (short = 'C' ,
-     long)] class_name : Option < String > ,
-
-}
+     long)] class_name : Option < String > }
 ,
 
 #[doc = " Dump data to various formats"] Dump  {
@@ -411,9 +387,7 @@ where possible"]
      value_name = "KEY=VALUE")] options : Vec < String > ,
 
 #[doc = " Pretty print output"]
-#[arg (long)] pretty : bool ,
-
-}
+#[arg (long)] pretty : bool }
 ,
 
 #[doc = " Interactive `LinkML` shell"] Shell  {
@@ -430,11 +404,7 @@ where possible"]
 
 #[doc = " Enable syntax highlighting"]
 #[arg (long ,
-     default_value = "true")] highlight : bool ,
-
-}
-,
-
+     default_value = "true")] highlight : bool }
 }
 
 #[doc = " Schema formats for conversion"]
@@ -449,9 +419,7 @@ enum SchemaFormat  {
 
 #[doc = " JSON format"] Json ,
 
-#[doc = " JSON-LD format"] JsonLd ,
-
-}
+#[doc = " JSON-LD format"] JsonLd }
 
 #[doc = " Merge strategies"]
 #[derive (Debug ,
@@ -467,9 +435,7 @@ enum MergeStrategy  {
 
 #[doc = " Override with later schemas"] Override ,
 
-#[doc = " Custom merge with rules"] Custom ,
-
-}
+#[doc = " Custom merge with rules"] Custom }
 
 #[doc = " Conflict resolution strategies"]
 #[derive (Debug ,
@@ -485,9 +451,7 @@ enum ConflictResolution  {
 
 #[doc = " Use last definition"] Last ,
 
-#[doc = " Interactive resolution"] Interactive ,
-
-}
+#[doc = " Interactive resolution"] Interactive }
 
 #[doc = " Diff output formats"]
 #[derive (Debug ,
@@ -505,9 +469,7 @@ enum DiffFormat  {
 
 #[doc = " HTML diff"] Html ,
 
-#[doc = " Markdown diff"] Markdown ,
-
-}
+#[doc = " Markdown diff"] Markdown }
 
 #[doc = " Lint output formats"]
 #[derive (Debug ,
@@ -523,9 +485,7 @@ enum LintFormat  {
 
 #[doc = " GitHub Actions format"] Github ,
 
-#[doc = " `JUnit` XML format"] Junit ,
-
-}
+#[doc = " `JUnit` XML format"] Junit }
 
 #[doc = " Authentication types for serve command"]
 #[derive (Debug ,
@@ -541,9 +501,7 @@ enum AuthType  {
 
 #[doc = " Bearer token"] Bearer ,
 
-#[doc = " API key"] ApiKey ,
-
-}
+#[doc = " API key"] ApiKey }
 
 #[doc = " Data loading formats"]
 #[derive (Debug ,
@@ -569,9 +527,7 @@ enum LoadFormat  {
 
 #[doc = " REST API"] Api ,
 
-#[doc = " `TypeDB`"] TypeDb ,
-
-}
+#[doc = " `TypeDB`"] TypeDb }
 
 #[doc = " Data dumping formats"]
 #[derive (Debug ,
@@ -597,17 +553,13 @@ enum DumpFormat  {
 
 #[doc = " REST API"] Api ,
 
-#[doc = " `TypeDB`"] TypeDb ,
-
-}
+#[doc = " `TypeDB`"] TypeDb }
 
 #[doc = " CLI Application implementation"]
 pub
 struct LinkMLApp  {
 cli : LinkMLCli ,
-     generator_registry : GeneratorRegistry ,
-
-}
+     generator_registry : GeneratorRegistry }
 impl Default for LinkMLApp {
     fn default() -> Self {
         Self::new()
@@ -621,9 +573,7 @@ impl LinkMLApp  {
 fn new () -> Self  {
 Self  {
 cli : LinkMLCli ::  parse () ,
-     generator_registry : GeneratorRegistry ::  new () ,
-
-}
+     generator_registry : GeneratorRegistry ::  new () }
 
 }
 
@@ -646,9 +596,7 @@ schema ,
      _strict ,
      max_errors ,
      stats ,
-     parallel ,
-
-}
+     parallel }
 =>  {
 self . validate_command (schema ,
      data ,
@@ -665,9 +613,7 @@ schema ,
      generator ,
      options ,
      template_dir ,
-     include_imports ,
-
-}
+     include_imports }
 =>  {
 self . generate_command (schema ,
      output ,
@@ -683,9 +629,7 @@ input ,
      from ,
      to ,
      pretty ,
-     validate ,
-
-}
+     validate }
 =>  {
 self . convert_command (input ,
      output ,
@@ -700,9 +644,7 @@ schemas ,
      strategy ,
      conflict ,
      base ,
-     validate ,
-
-}
+     validate }
 =>  {
 self . merge_command (schemas ,
      output ,
@@ -719,9 +661,7 @@ schema1 ,
      include_docs ,
      breaking_only ,
      context ,
-     output ,
-
-}
+     output }
 =>  {
 self . diff_command (schema1 ,
      schema2 ,
@@ -738,9 +678,7 @@ schema ,
      config ,
      fix ,
      strict ,
-     format ,
-
-}
+     format }
 =>  {
 self . lint_command (schema ,
      rules ,
@@ -757,9 +695,7 @@ schema ,
      auth ,
      cert ,
      key ,
-     docs_path ,
-
-}
+     docs_path }
 =>  {
 self . serve_command (schema ,
      * port ,
@@ -778,9 +714,7 @@ schema ,
      output ,
      options ,
      validate ,
-     class_name ,
-
-}
+     class_name }
 =>  {
 self . load_command (schema ,
      input ,
@@ -797,9 +731,7 @@ schema ,
      output ,
      format ,
      options ,
-     pretty ,
-
-}
+     pretty }
 =>  {
 self . dump_command (schema ,
      input ,
@@ -812,9 +744,7 @@ LinkMLCommand ::  Shell  {
 schema ,
      history ,
      init ,
-     highlight ,
-
-}
+     highlight }
 =>  {
 self . shell_command (schema . as_deref () ,
      history . as_deref () ,
@@ -827,8 +757,9 @@ self . shell_command (schema . as_deref () ,
 
 }
 
-#[doc = " Validate command implementation"] async
-fn validate_command (& self ,
+#[doc = " Validate command implementation"] 
+#[allow(clippy::too_many_arguments)]
+async fn validate_command (& self ,
      schema_path : & Path ,
      data_paths : & [PathBuf] ,
      class_name : Option < & str > ,
@@ -1117,9 +1048,7 @@ else  {
 match input . extension () . and_then (| e | e . to_str ())  {
 Some ("json") => SchemaFormat ::  Json ,
      Some ("jsonld") => SchemaFormat ::  JsonLd ,
-     _ => SchemaFormat ::  Yaml ,
-
-}
+     _ => SchemaFormat ::  Yaml }
 
 }
 ;
@@ -1227,9 +1156,7 @@ strategy ,
      conflict_resolution : conflict ,
      base_schema ,
      preserve_annotations : true ,
-     merge_imports : true ,
-
-}
+     merge_imports : true }
 ;
 println ! ("\nMerging schemas...") ;
 let merger = SchemaMerge ::  new (merge_options) ;
@@ -1254,8 +1181,9 @@ println ! ("✓ Merged schema written to:  {
 Ok (())
 }
 
-#[doc = " Diff command implementation"] async
-fn diff_command (& self ,
+#[doc = " Diff command implementation"] 
+#[allow(clippy::too_many_arguments)]
+async fn diff_command (& self ,
      schema1_path : & Path ,
      schema2_path : & Path ,
      format : DiffFormat ,
@@ -1290,9 +1218,7 @@ println ! ("Schema 2:  {
 let diff_options = DiffOptions  {
 include_documentation : include_docs ,
      breaking_changes_only : breaking_only ,
-     context_lines : context ,
-
-}
+     context_lines : context }
 ;
 println ! ("\nComputing differences...") ;
 let differ = SchemaDiff ::  new (diff_options) ;
@@ -1304,9 +1230,7 @@ DiffFormat ::  Unified => diff_result . to_unified_diff () ,
      DiffFormat ::  SideBySide => diff_result . to_side_by_side () ,
      DiffFormat ::  JsonPatch => diff_result . to_json_patch () ? ,
      DiffFormat ::  Html => diff_result . to_html () ,
-     DiffFormat ::  Markdown => diff_result . to_markdown () ,
-
-}
+     DiffFormat ::  Markdown => diff_result . to_markdown () }
 ;
 if
     let Some (output_path) = output  {
@@ -1504,8 +1428,9 @@ std ::  process ::  exit (1) ;
 Ok (())
 }
 
-#[doc = " Serve command implementation"] async
-fn serve_command (& self ,
+#[doc = " Serve command implementation"] 
+#[allow(clippy::too_many_arguments)]
+async fn serve_command (& self ,
      schema_path : & Path ,
      port : u16 ,
      host : & str ,
@@ -1600,8 +1525,9 @@ println ! ("  - OpenAPI documentation") ;
 Ok (())
 }
 
-#[doc = " Load command implementation"] async
-fn load_command (& self ,
+#[doc = " Load command implementation"] 
+#[allow(clippy::too_many_arguments)]
+async fn load_command (& self ,
      schema_path : & Path ,
      input : & Path ,
      format : LoadFormat ,
@@ -1698,9 +1624,7 @@ rdf_options . format =
      "rdfxml" => RdfSerializationFormat ::  RdfXml ,
      "nquads" => RdfSerializationFormat ::  NQuads ,
      "trig" => RdfSerializationFormat ::  TriG ,
-     _ => RdfSerializationFormat ::  Turtle ,
-
-}
+     _ => RdfSerializationFormat ::  Turtle }
 ;
 
 }
@@ -1900,9 +1824,7 @@ rdf_options . format =
      "rdfxml" => RdfSerializationFormat ::  RdfXml ,
      "nquads" => RdfSerializationFormat ::  NQuads ,
      "trig" => RdfSerializationFormat ::  TriG ,
-     _ => RdfSerializationFormat ::  Turtle ,
-
-}
+     _ => RdfSerializationFormat ::  Turtle }
 ;
 
 }
@@ -2149,9 +2071,7 @@ for issue in & result . issues  {
 match issue . severity  {
 crate ::  schema ::  lint ::  Severity ::  Error => errors . push (issue) ,
      crate ::  schema ::  lint ::  Severity ::  Warning => warnings . push (issue) ,
-     crate ::  schema ::  lint ::  Severity ::  Info => info . push (issue) ,
-
-}
+     crate ::  schema ::  lint ::  Severity ::  Info => info . push (issue) }
 
 }
 if ! errors . is_empty ()  {
@@ -2328,9 +2248,7 @@ println ! ("✓ Loaded schema:  {
 
 }
 Err (e) => println ! ("Failed to load schema:  {e}
-") ,
-
-}
+") }
 
 }
 

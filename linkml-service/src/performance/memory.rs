@@ -4,6 +4,7 @@
 //! in the `LinkML` validation engine.
 
 use parking_lot::Mutex;
+use std::fmt::Write;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -27,8 +28,7 @@ pub struct MemoryStats {
     /// Number of allocations
     pub alloc_count: AtomicU64,
     /// Number of deallocations
-    pub dealloc_count: AtomicU64,
-}
+    pub dealloc_count: AtomicU64}
 
 impl MemoryStats {
     /// Get current memory usage
@@ -51,8 +51,7 @@ impl MemoryStats {
                 Ordering::Relaxed,
             ) {
                 Ok(_) => break,
-                Err(p) => peak = p,
-            }
+                Err(p) => peak = p}
         }
     }
 
@@ -77,8 +76,7 @@ impl MemoryStats {
 pub struct MemoryProfiler {
     stats: Arc<MemoryStats>,
     categories: Arc<Mutex<HashMap<String, MemoryStats>>>,
-    enabled: AtomicU64,
-}
+    enabled: AtomicU64}
 
 impl MemoryProfiler {
     /// Create a new memory profiler
@@ -163,7 +161,7 @@ impl MemoryProfiler {
         entries.sort_by(|a, b| b.1.cmp(&a.1));
 
         for (name, usage) in entries {
-            report.push_str(&format!("{}: {:.2} MB\n", name, usage as f64 / 1_048_576.0));
+            writeln!(report, "{}: {:.2} MB", name, usage as f64 / 1_048_576.0).unwrap();
         }
 
         report.push_str(&format!("\n{}\n", self.stats.summary()));
@@ -251,8 +249,7 @@ impl MemorySize for serde_json::Value {
 /// RAII guard for tracking memory in a scope
 pub struct MemoryScope {
     category: String,
-    start_usage: u64,
-}
+    start_usage: u64}
 
 impl MemoryScope {
     /// Create a new memory tracking scope
@@ -262,8 +259,7 @@ impl MemoryScope {
 
         Self {
             category: category.into(),
-            start_usage,
-        }
+            start_usage}
     }
 }
 

@@ -51,8 +51,7 @@ impl BuiltinFunction for SumFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -97,8 +96,7 @@ impl BuiltinFunction for AvgFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -140,8 +138,7 @@ impl BuiltinFunction for CountFunction {
                                         Value::Array(a) => !a.is_empty(),
                                         Value::Object(o) => !o.is_empty(),
                                         Value::Null => false,
-                                        _ => true,
-                                    })
+                                        _ => true})
                                     .count(),
                                 _ => {
                                     return Err(FunctionError::invalid_argument(
@@ -168,8 +165,7 @@ impl BuiltinFunction for CountFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -225,8 +221,7 @@ impl BuiltinFunction for MedianFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -278,14 +273,12 @@ impl BuiltinFunction for ModeFunction {
                 match modes.len() {
                     0 => Ok(Value::Null),
                     1 => Ok(modes[0].clone()),
-                    _ => Ok(Value::Array(modes)),
-                }
+                    _ => Ok(Value::Array(modes))}
             }
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -345,8 +338,7 @@ impl BuiltinFunction for StdDevFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -403,8 +395,7 @@ impl BuiltinFunction for VarianceFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -442,8 +433,7 @@ impl BuiltinFunction for UniqueFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -473,8 +463,7 @@ impl BuiltinFunction for GroupByFunction {
                             Some(v) => {
                                 serde_json::to_string(v).unwrap_or_else(|_| "null".to_string())
                             }
-                            None => "null".to_string(),
-                        };
+                            None => "null".to_string()};
 
                         groups
                             .entry(group_key)
@@ -499,8 +488,7 @@ impl BuiltinFunction for GroupByFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected array and string key",
-            )),
-        }
+            ))}
     }
 }
 
@@ -627,8 +615,7 @@ mod tests {
                 assert!(arr.contains(&json!(1)));
                 assert!(arr.contains(&json!(2)));
             }
-            _ => panic!("Expected array of modes"),
-        }
+            _ => panic!("Expected array of modes")}
         Ok(())
     }
 
@@ -644,7 +631,7 @@ mod tests {
             .call(vec![data.clone()])
             .expect("should calculate variance: {}");
         assert!(
-            matches!(variance_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 4.571_428_571_428_571).abs() < 0.0001)
+            matches!(variance_result, Value::Number(n) if (n.as_f64().ok_or_else(|| anyhow::anyhow!("should be number"))? - 4.571_428_571_428_571).abs() < 0.0001)
         );
 
         // Sample standard deviation should be sqrt(32/7) ≈ 2.1380899352993947
@@ -652,7 +639,7 @@ mod tests {
             .call(vec![data])
             .expect("should calculate standard deviation: {}");
         assert!(
-            matches!(stddev_result, Value::Number(n) if (n.as_f64().ok_or("should be number")? - 2.138_089_935_299_394_7).abs() < 0.0001)
+            matches!(stddev_result, Value::Number(n) if (n.as_f64().ok_or_else(|| anyhow::anyhow!("should be number"))? - 2.138_089_935_299_394_7).abs() < 0.0001)
         );
         Ok(())
     }
@@ -702,8 +689,7 @@ mod tests {
                     assert_eq!(veggies.len(), 2);
                 }
             }
-            _ => panic!("Expected object result"),
-        }
+            _ => panic!("Expected object result")}
         Ok(())
     }
 }

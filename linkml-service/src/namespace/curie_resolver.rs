@@ -35,8 +35,7 @@ pub struct CurieResolver {
     base_uri: Option<String>,
 
     /// Strict mode - fail on unknown prefixes
-    strict: bool,
-}
+    strict: bool}
 
 impl Default for CurieResolver {
     fn default() -> Self {
@@ -52,8 +51,7 @@ impl CurieResolver {
             uri_to_prefix: HashMap::new(),
             default_prefix: None,
             base_uri: None,
-            strict: false,
-        };
+            strict: false};
 
         // Add standard prefixes
         resolver.add_builtin_prefixes();
@@ -73,8 +71,7 @@ impl CurieResolver {
                 PrefixDefinition::Simple(uri) => uri.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.clone().unwrap_or_default(),
-            };
+                } => prefix_reference.clone().unwrap_or_default()};
             resolver.add_prefix(prefix, &uri);
         }
 
@@ -271,8 +268,7 @@ pub struct NamespaceContext {
     local_prefixes: HashMap<String, String>,
 
     /// Namespace of the current element
-    namespace: Option<String>,
-}
+    namespace: Option<String>}
 
 impl NamespaceContext {
     /// Create a new namespace context
@@ -280,8 +276,7 @@ impl NamespaceContext {
         Self {
             resolver,
             local_prefixes: HashMap::new(),
-            namespace: None,
-        }
+            namespace: None}
     }
 
     /// Create a child context with additional prefixes
@@ -289,8 +284,7 @@ impl NamespaceContext {
         Self {
             resolver: self.resolver.clone(),
             local_prefixes: self.local_prefixes.clone(),
-            namespace: self.namespace.clone(),
-        }
+            namespace: self.namespace.clone()}
     }
 
     /// Add a local prefix
@@ -380,6 +374,7 @@ pub mod utils {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_curie_expansion() {

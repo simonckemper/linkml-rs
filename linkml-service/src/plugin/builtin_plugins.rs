@@ -11,8 +11,7 @@ use std::collections::HashMap;
 
 /// Registry of built-in plugins
 pub struct BuiltinPluginRegistry {
-    plugins: HashMap<String, Box<dyn Plugin>>,
-}
+    plugins: HashMap<String, Box<dyn Plugin>>}
 
 impl Default for BuiltinPluginRegistry {
     fn default() -> Self {
@@ -24,8 +23,7 @@ impl BuiltinPluginRegistry {
     /// Create a new registry with all built-in plugins
     #[must_use] pub fn new() -> Self {
         let mut registry = Self {
-            plugins: HashMap::new(),
-        };
+            plugins: HashMap::new()};
 
         // Register all built-in plugins
         registry.register_builtin_plugins();
@@ -78,8 +76,7 @@ impl BuiltinPluginRegistry {
 /// `JSON` Schema generator plugin
 struct JsonSchemaGeneratorPlugin {
     info: PluginInfo,
-    status: PluginStatus,
-}
+    status: PluginStatus}
 
 impl JsonSchemaGeneratorPlugin {
     fn new() -> Self {
@@ -96,10 +93,8 @@ impl JsonSchemaGeneratorPlugin {
                 linkml_version: VersionReq::parse(">=1.0.0")
                     .expect("Valid version requirement"),
                 dependencies: vec![],
-                capabilities: vec![PluginCapability::CodeGeneration],
-            },
-            status: PluginStatus::Uninitialized,
-        }
+                capabilities: vec![PluginCapability::CodeGeneration]},
+            status: PluginStatus::Uninitialized}
     }
 }
 
@@ -131,8 +126,7 @@ impl Plugin for JsonSchemaGeneratorPlugin {
 /// `SQL` generator plugin
 struct SqlGeneratorPlugin {
     info: PluginInfo,
-    status: PluginStatus,
-}
+    status: PluginStatus}
 
 impl SqlGeneratorPlugin {
     fn new() -> Self {
@@ -149,10 +143,8 @@ impl SqlGeneratorPlugin {
                 linkml_version: VersionReq::parse(">=1.0.0")
                     .expect("Valid version requirement"),
                 dependencies: vec![],
-                capabilities: vec![PluginCapability::CodeGeneration],
-            },
-            status: PluginStatus::Uninitialized,
-        }
+                capabilities: vec![PluginCapability::CodeGeneration]},
+            status: PluginStatus::Uninitialized}
     }
 }
 
@@ -184,8 +176,7 @@ impl Plugin for SqlGeneratorPlugin {
 /// `TypeQL` generator plugin
 struct TypeQLGeneratorPlugin {
     info: PluginInfo,
-    status: PluginStatus,
-}
+    status: PluginStatus}
 
 impl TypeQLGeneratorPlugin {
     fn new() -> Self {
@@ -202,10 +193,8 @@ impl TypeQLGeneratorPlugin {
                 linkml_version: VersionReq::parse(">=1.0.0")
                     .expect("Valid version requirement"),
                 dependencies: vec![],
-                capabilities: vec![PluginCapability::CodeGeneration],
-            },
-            status: PluginStatus::Uninitialized,
-        }
+                capabilities: vec![PluginCapability::CodeGeneration]},
+            status: PluginStatus::Uninitialized}
     }
 }
 
@@ -237,8 +226,7 @@ impl Plugin for TypeQLGeneratorPlugin {
 /// Enhanced validator plugin
 struct EnhancedValidatorPlugin {
     info: PluginInfo,
-    status: PluginStatus,
-}
+    status: PluginStatus}
 
 impl EnhancedValidatorPlugin {
     fn new() -> Self {
@@ -255,10 +243,8 @@ impl EnhancedValidatorPlugin {
                 linkml_version: VersionReq::parse(">=1.0.0")
                     .expect("Valid version requirement"),
                 dependencies: vec![],
-                capabilities: vec![PluginCapability::DataValidation],
-            },
-            status: PluginStatus::Uninitialized,
-        }
+                capabilities: vec![PluginCapability::DataValidation]},
+            status: PluginStatus::Uninitialized}
     }
 }
 

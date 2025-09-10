@@ -53,14 +53,12 @@ pub struct FileMetadata {
     /// Is symlink
     pub is_symlink: bool,
     /// Last modified time (Unix timestamp)
-    pub modified: Option<u64>,
-}
+    pub modified: Option<u64>}
 
 /// Default file system adapter using `tokio::fs`
 pub struct TokioFileSystemAdapter {
     /// Optional root directory for sandboxing
-    root: Option<PathBuf>,
-}
+    root: Option<PathBuf>}
 
 impl Default for TokioFileSystemAdapter {
     fn default() -> Self {
@@ -149,8 +147,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
             Err(e) => Err(LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
                 format!("Failed to check existence: {e}"),
-            ))),
-        }
+            )))}
     }
 
     async fn create_dir_all(&self, path: &Path) -> Result<()> {
@@ -204,8 +201,7 @@ impl FileSystemOperations for TokioFileSystemAdapter {
             is_dir: meta.is_dir(),
             is_file: meta.is_file(),
             is_symlink: meta.is_symlink(),
-            modified,
-        })
+            modified})
     }
 
     async fn copy(&self, from: &Path, to: &Path) -> Result<()> {

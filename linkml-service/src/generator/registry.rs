@@ -13,8 +13,7 @@ pub struct GeneratorRegistry {
     /// Plugin manager for loading generator plugins
     plugin_manager: Option<Arc<Mutex<PluginManager>>>,
     /// Plugin-based generators
-    plugin_generators: RwLock<HashMap<String, Arc<dyn GeneratorPlugin>>>,
-}
+    plugin_generators: RwLock<HashMap<String, Arc<dyn GeneratorPlugin>>>}
 
 impl GeneratorRegistry {
     /// Create a new empty registry
@@ -23,8 +22,7 @@ impl GeneratorRegistry {
         Self {
             generators: RwLock::new(HashMap::new()),
             plugin_manager: None,
-            plugin_generators: RwLock::new(HashMap::new()),
-        }
+            plugin_generators: RwLock::new(HashMap::new())}
     }
 
     /// Create a new registry with plugin support
@@ -32,28 +30,26 @@ impl GeneratorRegistry {
         Self {
             generators: RwLock::new(HashMap::new()),
             plugin_manager: Some(plugin_manager),
-            plugin_generators: RwLock::new(HashMap::new()),
-        }
+            plugin_generators: RwLock::new(HashMap::new())}
     }
 
     /// Create a registry with default generators
     pub async fn with_defaults() -> Self {
-        let registry = Self::new();
-
         use super::{
             CsvGenerator, ExcelGenerator, GoGenerator, GraphQLGenerator, GraphvizGenerator,
             HtmlGenerator, JavaGenerator, JavaScriptGenerator, JsonLdContextGenerator,
-            JsonLdGenerator, JsonSchemaGenerator, MarkdownGenerator, MermaidDiagramType,
-            MermaidGenerator, NamespaceManagerGenerator, NamespaceManagerGeneratorConfig,
-            OpenApiGenerator, PlantUmlGenerator, PrefixMapFormat, PrefixMapGenerator,
-            PrefixMapGeneratorConfig, ProtobufGenerator, PydanticGenerator,
+            JsonLdContextGeneratorConfig, JsonLdGenerator, JsonSchemaGenerator, MarkdownGenerator, 
+            MermaidDiagramType, MermaidGenerator, NamespaceManagerGenerator, 
+            NamespaceManagerGeneratorConfig, OpenApiGenerator, PlantUmlGenerator, PrefixMapFormat, 
+            PrefixMapGenerator, PrefixMapGeneratorConfig, ProtobufGenerator, PydanticGenerator,
             PythonDataclassGenerator, RdfGenerator, RustGenerator, SQLAlchemyGenerator,
-            SQLGenerator, ShExGenerator, ShaclGenerator, SparqlGenerator, SssomFormat,
-            SssomGenerator, SssomGeneratorConfig, SummaryFormat, SummaryGenerator,
+            SQLAlchemyGeneratorConfig, SQLGenerator, ShExGenerator, ShaclGenerator, SparqlGenerator, 
+            SssomFormat, SssomGenerator, SssomGeneratorConfig, SummaryFormat, SummaryGenerator,
             SummaryGeneratorConfig, TargetLanguage as NsTargetLanguage, TypeScriptGenerator,
             ValidationFramework, YamlValidatorGenerator, YamlValidatorGeneratorConfig,
-            YumlGenerator, typeql_generator::create_typeql_generator,
-        };
+            YumlGenerator, typeql_generator::create_typeql_generator};
+        
+        let registry = Self::new();
 
         // Register all available generators
         let generators: Vec<Arc<dyn Generator>> = vec![
@@ -73,7 +69,7 @@ impl GeneratorRegistry {
             Arc::new(HtmlGenerator::new()),
             Arc::new(JsonSchemaGenerator::new()),
             Arc::new(JsonLdGenerator::new()),
-            Arc::new(JsonLdContextGenerator::new(Default::default())),
+            Arc::new(JsonLdContextGenerator::new(JsonLdContextGeneratorConfig::default())),
             Arc::new(MarkdownGenerator::new()),
             Arc::new(MermaidGenerator::new()), // ER diagram (default)
             Arc::new(MermaidGenerator::new().with_diagram_type(MermaidDiagramType::ClassDiagram)),
@@ -85,59 +81,59 @@ impl GeneratorRegistry {
             Arc::new(ShaclGenerator::new()),
             Arc::new(ShExGenerator::new()),
             Arc::new(SparqlGenerator::new()),
-            Arc::new(SQLAlchemyGenerator::new(Default::default())),
+            Arc::new(SQLAlchemyGenerator::new(SQLAlchemyGeneratorConfig::default())),
             Arc::new(SQLGenerator::new()),
             Arc::new(PlantUmlGenerator::new()),
             Arc::new(YumlGenerator::new()),
-            Arc::new(PrefixMapGenerator::new(Default::default())), // Simple JSON format
+            Arc::new(PrefixMapGenerator::new(PrefixMapGeneratorConfig::default())), // Simple JSON format
             Arc::new(PrefixMapGenerator::new(PrefixMapGeneratorConfig {
                 format: PrefixMapFormat::Extended,
                 include_metadata: true,
-                ..Default::default()
+                ..PrefixMapGeneratorConfig::default()
             })), // Extended format
             Arc::new(PrefixMapGenerator::new(PrefixMapGeneratorConfig {
                 format: PrefixMapFormat::Turtle,
-                ..Default::default()
+                ..PrefixMapGeneratorConfig::default()
             })), // Turtle format
-            Arc::new(YamlValidatorGenerator::new(Default::default())), // JSON Schema format
+            Arc::new(YamlValidatorGenerator::new(YamlValidatorGeneratorConfig::default())), // JSON Schema format
             Arc::new(YamlValidatorGenerator::new(YamlValidatorGeneratorConfig {
                 framework: ValidationFramework::Cerberus,
-                ..Default::default()
+                ..YamlValidatorGeneratorConfig::default()
             })), // Cerberus format
             Arc::new(YamlValidatorGenerator::new(YamlValidatorGeneratorConfig {
                 framework: ValidationFramework::Joi,
-                ..Default::default()
+                ..YamlValidatorGeneratorConfig::default()
             })), // Joi format
-            Arc::new(NamespaceManagerGenerator::new(Default::default())), // Python namespace manager
+            Arc::new(NamespaceManagerGenerator::new(NamespaceManagerGeneratorConfig::default())), // Python namespace manager
             Arc::new(NamespaceManagerGenerator::new(
                 NamespaceManagerGeneratorConfig {
                     target_language: NsTargetLanguage::JavaScript,
-                    ..Default::default()
+                    ..NamespaceManagerGeneratorConfig::default()
                 },
             )), // JavaScript namespace manager
             Arc::new(NamespaceManagerGenerator::new(
                 NamespaceManagerGeneratorConfig {
                     target_language: NsTargetLanguage::Rust,
                     thread_safe: true,
-                    ..Default::default()
+                    ..NamespaceManagerGeneratorConfig::default()
                 },
             )), // Rust namespace manager
-            Arc::new(SssomGenerator::new(Default::default())),            // SSSOM TSV format
+            Arc::new(SssomGenerator::new(SssomGeneratorConfig::default())),            // SSSOM TSV format
             Arc::new(SssomGenerator::new(SssomGeneratorConfig {
                 format: SssomFormat::Json,
-                ..Default::default()
+                ..SssomGeneratorConfig::default()
             })), // SSSOM JSON format
-            Arc::new(SummaryGenerator::new(Default::default())),          // Summary TSV format
+            Arc::new(SummaryGenerator::new(SummaryGeneratorConfig::default())),          // Summary TSV format
             Arc::new(SummaryGenerator::new(SummaryGeneratorConfig {
                 format: SummaryFormat::Markdown,
                 detailed: true,
-                ..Default::default()
+                ..SummaryGeneratorConfig::default()
             })), // Summary Markdown format
             Arc::new(SummaryGenerator::new(SummaryGeneratorConfig {
                 format: SummaryFormat::Json,
                 detailed: true,
                 complexity_metrics: true,
-                ..Default::default()
+                ..SummaryGeneratorConfig::default()
             })), // Summary JSON format
                                                                           // ProjectGenerator is not implemented yet
                                                                           // Arc::new(ProjectGenerator::new(Default::default())), // Project generator (Python)
@@ -161,6 +157,10 @@ impl GeneratorRegistry {
     }
 
     /// Register a generator
+    ///
+    /// # Errors
+    ///
+    /// Returns `GeneratorError::Configuration` if a generator with the same name is already registered.
     pub async fn register(&self, generator: Arc<dyn Generator>) -> GeneratorResult<()> {
         let name = generator.name().to_string();
 
@@ -177,6 +177,10 @@ impl GeneratorRegistry {
     }
 
     /// Unregister a generator
+    ///
+    /// # Errors
+    ///
+    /// Returns `GeneratorError::Configuration` if no generator with the specified name is found.
     pub async fn unregister(&self, name: &str) -> GeneratorResult<()> {
         let mut generators = self.generators.write().await;
 
@@ -219,8 +223,7 @@ impl GeneratorRegistry {
                 .file_extensions()
                 .iter()
                 .map(|s| (*s).to_string())
-                .collect(),
-        })
+                .collect()})
     }
 
     /// Get information for all generators
@@ -236,12 +239,17 @@ impl GeneratorRegistry {
                     .file_extensions()
                     .iter()
                     .map(|s| (*s).to_string())
-                    .collect(),
-            })
+                    .collect()})
             .collect()
     }
 
     /// Load generator plugins from the plugin manager
+    ///
+    /// # Errors
+    ///
+    /// Currently returns `Ok(count)` in all cases. Future implementations may return errors
+    /// if plugin loading fails due to invalid plugin files, missing dependencies, or
+    /// incompatible plugin versions.
     pub async fn load_generator_plugins(&self) -> GeneratorResult<usize> {
         if let Some(plugin_manager) = &self.plugin_manager {
             let manager = plugin_manager.lock().await;
@@ -261,6 +269,10 @@ impl GeneratorRegistry {
     }
 
     /// Register a plugin-based generator
+    ///
+    /// # Errors
+    ///
+    /// Returns `GeneratorError::Configuration` if a plugin generator with the same name is already registered.
     pub async fn register_plugin_generator(
         &self,
         name: String,
@@ -317,18 +329,16 @@ pub struct GeneratorInfo {
     pub description: String,
 
     /// File extensions produced
-    pub file_extensions: Vec<String>,
-}
+    pub file_extensions: Vec<String>}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use linkml_core::LinkMLError;
+    use linkml_core::{LinkMLError, types::SchemaDefinition};
 
     struct TestGenerator {
-        name: String,
-    }
+        name: String}
 
     impl Generator for TestGenerator {
         fn name(&self) -> &str {
@@ -366,8 +376,7 @@ mod tests {
 
         // Register a generator
         let generator = Arc::new(TestGenerator {
-            name: "test".to_string(),
-        });
+            name: "test".to_string()});
 
         registry
             .register(generator.clone())
@@ -407,11 +416,9 @@ mod tests {
         let registry = GeneratorRegistry::new();
 
         let gen1 = Arc::new(TestGenerator {
-            name: "test".to_string(),
-        });
+            name: "test".to_string()});
         let gen2 = Arc::new(TestGenerator {
-            name: "test".to_string(),
-        });
+            name: "test".to_string()});
 
         registry
             .register(gen1)

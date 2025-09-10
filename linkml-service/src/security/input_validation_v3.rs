@@ -43,13 +43,11 @@ pub enum ValidationError {
     EmptyInput,
 
     #[error("Invalid UTF-8 sequence")]
-    InvalidUtf8,
-}
+    InvalidUtf8}
 
 /// Input validator that uses configuration for limits
 pub struct InputValidator {
-    limits: SecurityLimitsConfig,
-}
+    limits: SecurityLimitsConfig}
 
 impl InputValidator {
     /// Create a new input validator with configuration
@@ -62,6 +60,8 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::EmptyInput` if the input string is empty
+    /// Returns `ValidationError::StringTooLarge` if the string exceeds max length
     pub fn validate_string(&self, input: &str) -> Result<(), ValidationError> {
         if input.is_empty() {
             return Err(ValidationError::EmptyInput);
@@ -70,8 +70,7 @@ impl InputValidator {
         if input.len() > self.limits.max_string_length {
             return Err(ValidationError::StringTooLarge {
                 size: input.len(),
-                max: self.limits.max_string_length,
-            });
+                max: self.limits.max_string_length});
         }
 
         Ok(())
@@ -82,6 +81,9 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::EmptyInput` if the identifier is empty
+    /// Returns `ValidationError::IdentifierTooLong` if the identifier exceeds max length
+    /// Returns `ValidationError::InvalidCharacterInIdentifier` if the identifier contains invalid characters
     pub fn validate_identifier(&self, identifier: &str) -> Result<(), ValidationError> {
         if identifier.is_empty() {
             return Err(ValidationError::EmptyInput);
@@ -90,8 +92,7 @@ impl InputValidator {
         if identifier.len() > self.limits.max_identifier_length {
             return Err(ValidationError::IdentifierTooLong {
                 size: identifier.len(),
-                max: self.limits.max_identifier_length,
-            });
+                max: self.limits.max_identifier_length});
         }
 
         // Check for valid identifier characters
@@ -101,8 +102,7 @@ impl InputValidator {
                 _ => {
                     return Err(ValidationError::InvalidCharacterInIdentifier {
                         position: i,
-                        char: ch,
-                    });
+                        char: ch});
                 }
             }
         }
@@ -115,12 +115,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::ExpressionTooDeep` if the depth exceeds the configured maximum
     pub fn validate_expression_depth(&self, depth: usize) -> Result<(), ValidationError> {
         if depth > self.limits.max_expression_depth {
             return Err(ValidationError::ExpressionTooDeep {
                 depth,
-                max: self.limits.max_expression_depth,
-            });
+                max: self.limits.max_expression_depth});
         }
         Ok(())
     }
@@ -130,12 +130,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyConstraints` if the count exceeds the configured maximum
     pub fn validate_constraint_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_constraint_count {
             return Err(ValidationError::TooManyConstraints {
                 count,
-                max: self.limits.max_constraint_count,
-            });
+                max: self.limits.max_constraint_count});
         }
         Ok(())
     }
@@ -145,12 +145,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyFunctionArgs` if the argument count exceeds the configured maximum
     pub fn validate_function_args(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_function_args {
             return Err(ValidationError::TooManyFunctionArgs {
                 count,
-                max: self.limits.max_function_args,
-            });
+                max: self.limits.max_function_args});
         }
         Ok(())
     }
@@ -160,12 +160,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::JsonTooLarge` if the JSON size exceeds the configured maximum
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size_bytes {
             return Err(ValidationError::JsonTooLarge {
                 size,
-                max: self.limits.max_json_size_bytes,
-            });
+                max: self.limits.max_json_size_bytes});
         }
         Ok(())
     }
@@ -175,12 +175,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManySlotsPerClass` if the slot count exceeds the configured maximum
     pub fn validate_slots_per_class(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_slots_per_class {
             return Err(ValidationError::TooManySlotsPerClass {
                 count,
-                max: self.limits.max_slots_per_class,
-            });
+                max: self.limits.max_slots_per_class});
         }
         Ok(())
     }
@@ -190,12 +190,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyClassesPerSchema` if the class count exceeds the configured maximum
     pub fn validate_classes_per_schema(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_classes_per_schema {
             return Err(ValidationError::TooManyClassesPerSchema {
                 count,
-                max: self.limits.max_classes_per_schema,
-            });
+                max: self.limits.max_classes_per_schema});
         }
         Ok(())
     }
@@ -205,12 +205,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyCacheEntries` if the cache entry count exceeds the configured maximum
     pub fn validate_cache_entries(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_cache_entries {
             return Err(ValidationError::TooManyCacheEntries {
                 count,
-                max: self.limits.max_cache_entries,
-            });
+                max: self.limits.max_cache_entries});
         }
         Ok(())
     }

@@ -31,8 +31,7 @@ pub struct MultiLayerCacheConfig {
     /// Cache warming on startup
     pub warm_on_startup: bool,
     /// Prefetch related validators
-    pub prefetch_related: bool,
-}
+    pub prefetch_related: bool}
 
 impl Default for MultiLayerCacheConfig {
     fn default() -> Self {
@@ -44,16 +43,14 @@ impl Default for MultiLayerCacheConfig {
             l3_directory: None,
             l3_max_size_bytes: 100 * 1024 * 1024, // 100MB
             warm_on_startup: false,
-            prefetch_related: true,
-        }
+            prefetch_related: true}
     }
 }
 
 /// Entry in L1 cache with timestamp
 struct L1Entry {
     validator: Arc<CompiledValidator>,
-    inserted_at: Instant,
-}
+    inserted_at: Instant}
 
 /// Multi-layer cache implementation
 pub struct MultiLayerCache {
@@ -68,8 +65,7 @@ pub struct MultiLayerCache {
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,
     /// Background tasks handle for cleanup on drop
-    background_handle: Option<Arc<tokio::task::JoinHandle<()>>>,
-}
+    background_handle: Option<Arc<tokio::task::JoinHandle<()>>>}
 
 /// Cache statistics across all layers
 #[derive(Debug, Default, Clone)]
@@ -93,8 +89,7 @@ pub struct CacheStats {
     /// Average get latency in microseconds
     pub avg_get_latency_us: u64,
     /// Average put latency in microseconds
-    pub avg_put_latency_us: u64,
-}
+    pub avg_put_latency_us: u64}
 
 impl CacheStats {
     /// Calculate overall hit rate
@@ -178,8 +173,7 @@ impl MultiLayerCache {
             l2_cache: cache_service,
             l3_cache,
             stats: Arc::new(RwLock::new(CacheStats::default())),
-            background_handle: background_handle.map(Arc::new),
-        })
+            background_handle: background_handle.map(Arc::new)})
     }
 
     /// Get a validator from the cache
@@ -218,7 +212,7 @@ impl MultiLayerCache {
 
             if let Ok(Some(value)) = l2.get(&cache_key).await
                 && let Ok(bytes) = value.to_bytes()
-                    && let Ok(validator) = self.deserialize_validator(&bytes) {
+                    && let Ok(validator) = Self::deserialize_validator(&bytes) {
                         let validator = Arc::new(validator);
 
                         // Promote to L1
@@ -291,8 +285,7 @@ impl MultiLayerCache {
                 key.clone(),
                 L1Entry {
                     validator: validator.clone(),
-                    inserted_at: Instant::now(),
-                },
+                    inserted_at: Instant::now()},
             );
         }
 
@@ -300,7 +293,7 @@ impl MultiLayerCache {
         if let Some(l2) = &self.l2_cache {
             let cache_key = CacheKey::new(format!("linkml:validator:{key}"))
                 .map_err(|e| LinkMLError::service(format!("Failed to create cache key: {e}")))?;
-            let serialized = self.serialize_validator(&validator)?;
+            let serialized = Self::serialize_validator(&validator)?;
             let cache_value = CacheValue::from_bytes(serialized);
             let ttl = Some(CacheTtl::Seconds(self.config.l2_ttl.as_secs()));
 
@@ -424,15 +417,14 @@ impl MultiLayerCache {
             key,
             L1Entry {
                 validator,
-                inserted_at: Instant::now(),
-            },
+                inserted_at: Instant::now()},
         );
     }
 
     async fn promote_to_l2(&self, key: ValidatorCacheKey, validator: Arc<CompiledValidator>) {
         if let Some(l2) = &self.l2_cache
             && let Ok(cache_key) = CacheKey::new(format!("linkml:validator:{key}"))
-                && let Ok(serialized) = self.serialize_validator(&validator) {
+                && let Ok(serialized) = Self::serialize_validator(&validator) {
                     let cache_value = CacheValue::from_bytes(serialized);
                     let ttl = Some(CacheTtl::Seconds(self.config.l2_ttl.as_secs()));
                     let _ = l2.set(&cache_key, &cache_value, ttl).await;
@@ -473,8 +465,7 @@ impl MultiLayerCache {
             if current_size < (max_size * 75 / 100) {
                 let entry = L1Entry {
                     validator: Arc::new(validator.clone()),
-                    inserted_at: Instant::now(),
-                };
+                    inserted_at: Instant::now()};
                 let _ = l1.put(key.clone(), entry);
             }
         }
@@ -494,8 +485,7 @@ impl MultiLayerCache {
                 schema_id: key.schema_id.clone(),
                 schema_hash: key.schema_hash.clone(),
                 class_name: format!("{}_slots", key.class_name),
-                options_hash: key.options_hash.clone(),
-            });
+                options_hash: key.options_hash.clone()});
         }
 
         if related.is_empty() {
@@ -515,15 +505,13 @@ impl MultiLayerCache {
         tracing::debug!("Marked validator for background compilation: {:?}", key);
     }
 
-    fn serialize_validator(&self, validator: &CompiledValidator) -> Result<Vec<u8>> {
-        let _ = self;
+    fn serialize_validator(validator: &CompiledValidator) -> Result<Vec<u8>> {
         // Use bincode for efficient binary serialization
         bincode::serialize(validator)
             .map_err(|e| LinkMLError::service(format!("Failed to serialize validator: {e}")))
     }
 
-    fn deserialize_validator(&self, data: &[u8]) -> Result<CompiledValidator> {
-        let _ = self;
+    fn deserialize_validator(data: &[u8]) -> Result<CompiledValidator> {
         bincode::deserialize(data)
             .map_err(|e| LinkMLError::service(format!("Failed to deserialize validator: {e}")))
     }
@@ -558,8 +546,7 @@ impl Drop for MultiLayerCache {
 struct DiskCache {
     directory: String,
     max_size_bytes: usize,
-    current_size: Arc<RwLock<usize>>,
-}
+    current_size: Arc<RwLock<usize>>}
 
 impl DiskCache {
     fn new(directory: &str, max_size_bytes: usize) -> Result<Self> {
@@ -573,8 +560,7 @@ impl DiskCache {
         Ok(Self {
             directory: directory.to_string(),
             max_size_bytes,
-            current_size: Arc::new(RwLock::new(current_size)),
-        })
+            current_size: Arc::new(RwLock::new(current_size))})
     }
 
     async fn get(&self, key: &ValidatorCacheKey) -> Result<Option<CompiledValidator>> {
@@ -587,8 +573,7 @@ impl DiskCache {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(LinkMLError::service(format!(
                 "Failed to read from disk cache: {e}"
-            ))),
-        }
+            )))}
     }
 
     async fn put(&self, key: ValidatorCacheKey, validator: &CompiledValidator) -> Result<()> {

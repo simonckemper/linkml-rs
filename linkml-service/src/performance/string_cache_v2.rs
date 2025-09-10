@@ -14,15 +14,13 @@ pub enum InternError {
     StringTooLarge { size: usize, max: usize },
 
     #[error("Cache full: {current} entries (max: {max})")]
-    CacheFull { current: usize, max: usize },
-}
+    CacheFull { current: usize, max: usize }}
 
 /// String interner with configurable limits
 pub struct StringInterner {
     cache: DashMap<String, Arc<str>>,
     max_entries: usize,
-    max_string_length: usize,
-}
+    max_string_length: usize}
 
 impl StringInterner {
     /// Create a new string interner with configuration
@@ -30,8 +28,7 @@ impl StringInterner {
         Self {
             cache: DashMap::new(),
             max_entries,
-            max_string_length,
-        }
+            max_string_length}
     }
 
     /// Create with default configuration
@@ -46,13 +43,14 @@ impl StringInterner {
     ///
     /// # Errors
     ///
+    /// Returns `InternError::StringTooLarge` if the string exceeds maximum length
+    /// Returns `InternError::CacheFull` if the cache capacity is exceeded
     pub fn intern(&self, s: &str) -> Result<Arc<str>, InternError> {
         // Validate string length
         if s.len() > self.max_string_length {
             return Err(InternError::StringTooLarge {
                 size: s.len(),
-                max: self.max_string_length,
-            });
+                max: self.max_string_length});
         }
 
         // Check if already interned
@@ -64,8 +62,7 @@ impl StringInterner {
         if self.cache.len() >= self.max_entries {
             return Err(InternError::CacheFull {
                 current: self.cache.len(),
-                max: self.max_entries,
-            });
+                max: self.max_entries});
         }
 
         // Intern the string
@@ -100,8 +97,7 @@ impl StringInterner {
         InternStats {
             entries: self.cache.len(),
             max_entries: self.max_entries,
-            max_string_length: self.max_string_length,
-        }
+            max_string_length: self.max_string_length}
     }
 }
 
@@ -113,8 +109,7 @@ pub struct InternStats {
     /// Maximum allowed entries
     pub max_entries: usize,
     /// Maximum allowed string length
-    pub max_string_length: usize,
-}
+    pub max_string_length: usize}
 
 impl Default for StringInterner {
     fn default() -> Self {
@@ -125,16 +120,14 @@ impl Default for StringInterner {
 /// Builder for StringInterner with configuration
 pub struct StringInternerBuilder {
     max_entries: usize,
-    max_string_length: usize,
-}
+    max_string_length: usize}
 
 impl StringInternerBuilder {
     /// Create a new builder
     pub fn new() -> Self {
         Self {
             max_entries: 100_000,
-            max_string_length: 10_000,
-        }
+            max_string_length: 10_000}
     }
 
     /// Set maximum entries
@@ -164,7 +157,6 @@ impl Default for StringInternerBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::string_pool::intern;
 
     #[test]
     fn test_basic_interning() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -189,8 +181,7 @@ use linkml_core::string_pool::intern;
                 assert_eq!(size, 11);
                 assert_eq!(max, 10);
             }
-            _ => panic!("Expected StringTooLarge error"),
-        }
+            _ => panic!("Expected StringTooLarge error")}
     }
 
     #[test]
@@ -205,8 +196,7 @@ use linkml_core::string_pool::intern;
                 assert_eq!(current, 2);
                 assert_eq!(max, 2);
             }
-            _ => panic!("Expected CacheFull error"),
-        }
+            _ => panic!("Expected CacheFull error")}
         Ok(())
     }
 

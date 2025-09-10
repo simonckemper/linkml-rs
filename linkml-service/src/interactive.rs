@@ -34,8 +34,7 @@ pub struct InteractiveSession<S> {
     /// Session configuration
     config: InteractiveConfig,
     /// `LinkML` service
-    service: Arc<S>,
-}
+    service: Arc<S>}
 
 /// Interactive session configuration
 #[derive(Debug, Clone)]pub struct InteractiveConfig {
@@ -50,8 +49,7 @@ pub struct InteractiveSession<S> {
     /// Pretty print `JSON`
     pub pretty_json: bool,
     /// Syntax highlighting
-    pub syntax_highlighting: bool,
-}
+    pub syntax_highlighting: bool}
 
 impl Default for InteractiveConfig {
     fn default() -> Self {
@@ -61,8 +59,7 @@ impl Default for InteractiveConfig {
             auto_reload: true,
             show_hints: true,
             pretty_json: true,
-            syntax_highlighting: true,
-        }
+            syntax_highlighting: true}
     }
 }
 
@@ -78,8 +75,7 @@ struct ValidationHistoryEntry {
     /// Issue count
     issue_count: usize,
     /// Timestamp
-    timestamp: chrono::DateTime<chrono::Local>,
-}
+    timestamp: chrono::DateTime<chrono::Local>}
 
 /// Interactive commands
 #[derive(Debug, Clone)]
@@ -97,8 +93,7 @@ enum Command {
     /// Validate file
     ValidateFile {
         path: PathBuf,
-        class: Option<String>,
-    },
+        class: Option<String>},
     /// Show schema info
     Info { item: Option<String> },
     /// Show class details
@@ -118,8 +113,7 @@ enum Command {
     /// Show help
     Help,
     /// Exit
-    Quit,
-}
+    Quit}
 
 impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     /// Create new interactive session
@@ -129,8 +123,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             current_schema: None,
             history: Vec::new(),
             config,
-            service,
-        }
+            service}
     }
 
     /// Run interactive session
@@ -217,8 +210,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                 }
                 Ok(Command::Load {
                     path: PathBuf::from(parts[1]),
-                    name: parts.get(2).map(|s| (*s).to_string()),
-                })
+                    name: parts.get(2).map(|s| (*s).to_string())})
             }
 
             "reload" => Ok(Command::Reload),
@@ -230,8 +222,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     return Err(LinkMLError::service("Usage: use <schema-name>"));
                 }
                 Ok(Command::Use {
-                    name: parts[1].to_string(),
-                })
+                    name: parts[1].to_string()})
             }
 
             "validate" | "v" => {
@@ -255,21 +246,18 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                 }
                 Ok(Command::ValidateFile {
                     path: PathBuf::from(parts[1]),
-                    class: parts.get(2).map(|s| (*s).to_string()),
-                })
+                    class: parts.get(2).map(|s| (*s).to_string())})
             }
 
             "info" | "i" => Ok(Command::Info {
-                item: parts.get(1).map(|s| (*s).to_string()),
-            }),
+                item: parts.get(1).map(|s| (*s).to_string())}),
 
             "class" | "c" => {
                 if parts.len() < 2 {
                     return Err(LinkMLError::service("Usage: class <name>"));
                 }
                 Ok(Command::Class {
-                    name: parts[1].to_string(),
-                })
+                    name: parts[1].to_string()})
             }
 
             "slot" | "s" => {
@@ -277,8 +265,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     return Err(LinkMLError::service("Usage: slot <name>"));
                 }
                 Ok(Command::Slot {
-                    name: parts[1].to_string(),
-                })
+                    name: parts[1].to_string()})
             }
 
             "type" | "t" => {
@@ -286,8 +273,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     return Err(LinkMLError::service("Usage: type <name>"));
                 }
                 Ok(Command::Type {
-                    name: parts[1].to_string(),
-                })
+                    name: parts[1].to_string()})
             }
 
             "enum" | "e" => {
@@ -295,8 +281,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     return Err(LinkMLError::service("Usage: enum <name>"));
                 }
                 Ok(Command::Enum {
-                    name: parts[1].to_string(),
-                })
+                    name: parts[1].to_string()})
             }
 
             "search" => {
@@ -304,13 +289,11 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     return Err(LinkMLError::service("Usage: search <pattern>"));
                 }
                 Ok(Command::Search {
-                    pattern: parts[1..].join(" "),
-                })
+                    pattern: parts[1..].join(" ")})
             }
 
             "history" | "h" => Ok(Command::History {
-                count: parts.get(1).and_then(|s| s.parse().ok()),
-            }),
+                count: parts.get(1).and_then(|s| s.parse().ok())}),
 
             "clear" | "cls" => Ok(Command::Clear),
 
@@ -321,8 +304,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             _ => Err(LinkMLError::service(format!(
                 "Unknown command: {}",
                 parts[0]
-            ))),
-        }
+            )))}
     }
 
     /// Execute command
@@ -532,8 +514,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             data: data.clone(),
             valid: report.valid,
             issue_count: report.errors.len() + report.warnings.len(),
-            timestamp: chrono::Local::now(),
-        });
+            timestamp: chrono::Local::now()});
 
         Ok(())
     }
@@ -674,10 +655,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             println!("\n{}", "Values:".bold());
             for value in &enum_def.permissible_values {
                 match value {
-                    linkml_core::types::PermissibleValue::Simple(text) => {
-                        println!("  - {text}");
-                    }
-                    linkml_core::types::PermissibleValue::Complex { text, .. } => {
+                    linkml_core::types::PermissibleValue::Simple(text) | linkml_core::types::PermissibleValue::Complex { text, .. } => {
                         println!("  - {text}");
                     }
                 }
@@ -840,8 +818,7 @@ struct InteractiveHelper {
     completer: FilenameCompleter,
     highlighter: MatchingBracketHighlighter,
     hinter: HistoryHinter,
-    commands: Vec<&'static str>,
-}
+    commands: Vec<&'static str>}
 
 impl InteractiveHelper {
     fn new() -> Self {
@@ -879,8 +856,7 @@ impl InteractiveHelper {
                 "quit",
                 "exit",
                 "q",
-            ],
-        }
+            ]}
     }
 }
 
@@ -903,8 +879,7 @@ impl Completer for InteractiveHelper {
                 .filter(|cmd| cmd.starts_with(line))
                 .map(|cmd| Pair {
                     display: (*cmd).to_string(),
-                    replacement: (*cmd).to_string(),
-                })
+                    replacement: (*cmd).to_string()})
                 .collect();
 
             return Ok((0, matches));

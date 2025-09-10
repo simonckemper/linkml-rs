@@ -11,40 +11,32 @@ impl TypeMapper {
     /// Map `LinkML` type to Python type
     #[must_use] pub fn to_python(linkml_type: &str) -> &'static str {
         match linkml_type {
-            "string" | "str" => "str",
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "str",
             "integer" | "int" => "int",
             "float" | "double" | "decimal" => "float",
             "boolean" | "bool" => "bool",
             "date" => "datetime.date",
             "datetime" => "datetime.datetime",
             "time" => "datetime.time",
-            "uri" | "uriorcurie" | "curie" => "str",
-            "ncname" => "str",
-            _ => "Any",
-        }
+            _ => "Any"}
     }
 
     /// Map `LinkML` type to TypeScript type
     #[must_use] pub fn to_typescript(linkml_type: &str) -> &'static str {
         match linkml_type {
-            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
-            "integer" | "int" => "number",
-            "float" | "double" | "decimal" => "number",
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" | "date" | "datetime" | "time" => "string",
+            "integer" | "int" | "float" | "double" | "decimal" => "number",
             "boolean" | "bool" => "boolean",
-            "date" | "datetime" | "time" => "string", // ISO 8601 strings
-            _ => "unknown",
-        }
+            _ => "unknown"}
     }
 
     /// Map `LinkML` type to JavaScript `JSDoc` type
     #[must_use] pub fn to_javascript(linkml_type: &str) -> &'static str {
         match linkml_type {
-            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" | "date" | "datetime" | "time" => "string",
             "integer" | "int" | "float" | "double" | "decimal" => "number",
             "boolean" | "bool" => "boolean",
-            "date" | "datetime" | "time" => "string",
-            _ => "*",
-        }
+            _ => "*"}
     }
 }
 
@@ -54,8 +46,7 @@ pub struct ImportManager {
     /// Module -> Set of imports from that module
     imports: HashMap<String, HashSet<String>>,
     /// Direct import statements
-    direct_imports: HashSet<String>,
-}
+    direct_imports: HashSet<String>}
 
 impl ImportManager {
     /// Create a new import manager
@@ -164,8 +155,7 @@ impl BaseCodeFormatter {
                 let mut chars = part.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().chain(chars).collect(),
-                }
+                    Some(first) => first.to_uppercase().chain(chars).collect()}
             })
             .collect()
     }
@@ -181,8 +171,7 @@ impl BaseCodeFormatter {
                         let mut chars = part.chars();
                         match chars.next() {
                             None => String::new(),
-                            Some(first) => first.to_uppercase().chain(chars).collect(),
-                        }
+                            Some(first) => first.to_uppercase().chain(chars).collect()}
                     })
                     .collect();
                 format!("{first}{rest}")
@@ -299,8 +288,7 @@ pub fn collect_all_slots(
         return match language {
             "python" => Some("field(default_factory=list)".to_string()),
             "typescript" | "javascript" => Some("[]".to_string()),
-            _ => None,
-        };
+            _ => None};
     }
 
     // Note: LinkML doesn't have a default_value field in SlotDefinition
@@ -312,8 +300,7 @@ pub fn collect_all_slots(
             "python" => Some("None".to_string()),
             "typescript" => None, // TypeScript uses ? for optional
             "javascript" => Some("null".to_string()),
-            _ => None,
-        }
+            _ => None}
     } else {
         None
     }
@@ -322,7 +309,7 @@ pub fn collect_all_slots(
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_type_mapping() {

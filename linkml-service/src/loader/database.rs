@@ -5,8 +5,7 @@
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
-    DumpOptions, LoadOptions,
-};
+    DumpOptions, LoadOptions};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::{json, Value};
@@ -23,8 +22,7 @@ use tracing::{debug, info};
 #[derive(Debug)]
 enum DatabasePool {
     PostgreSQL(PgPool),
-    MySQL(MySqlPool),
-}
+    MySQL(MySqlPool)}
 
 /// Options for database loading and dumping
 #[derive(Debug, Clone)]
@@ -66,8 +64,7 @@ pub struct DatabaseOptions {
     pub use_transactions: bool,
 
     /// Maximum number of connections in the pool
-    pub max_connections: u32,
-}
+    pub max_connections: u32}
 
 /// Foreign key relationship definition
 #[derive(Debug, Clone)]
@@ -82,8 +79,7 @@ pub struct ForeignKeyRelation {
     pub referenced_column: String,
 
     /// Slot name in `LinkML` schema
-    pub slot_name: String,
-}
+    pub slot_name: String}
 
 impl Default for DatabaseOptions {
     fn default() -> Self {
@@ -100,24 +96,21 @@ impl Default for DatabaseOptions {
             infer_types: true,
             create_if_not_exists: false,
             use_transactions: true,
-            max_connections: 5,
-        }
+            max_connections: 5}
     }
 }
 
 /// Database loader for `LinkML` data
 pub struct DatabaseLoader {
     options: DatabaseOptions,
-    pool: Option<DatabasePool>,
-}
+    pool: Option<DatabasePool>}
 
 impl DatabaseLoader {
     /// Create a new database loader
     pub fn new(options: DatabaseOptions) -> Self {
         Self {
             options,
-            pool: None,
-        }
+            pool: None}
     }
 
     /// Execute a query and return results as a vector of string maps
@@ -163,24 +156,21 @@ impl DatabaseLoader {
                 }
                 Ok(results)
             }
-            None => Err(LoaderError::Configuration("No database connection available".to_string())),
-        }
+            None => Err(LoaderError::Configuration("No database connection available".to_string()))}
     }
 
     /// Get the Postgre`SQL` pool if available
     fn get_pg_pool(&self) -> LoaderResult<&PgPool> {
         match self.pool.as_ref() {
             Some(DatabasePool::PostgreSQL(pool)) => Ok(pool),
-            _ => Err(LoaderError::Configuration("PostgreSQL pool not available".to_string())),
-        }
+            _ => Err(LoaderError::Configuration("PostgreSQL pool not available".to_string()))}
     }
 
     /// Get the My`SQL` pool if available
     fn get_mysql_pool(&self) -> LoaderResult<&MySqlPool> {
         match self.pool.as_ref() {
             Some(DatabasePool::MySQL(pool)) => Ok(pool),
-            _ => Err(LoaderError::Configuration("MySQL pool not available".to_string())),
-        }
+            _ => Err(LoaderError::Configuration("MySQL pool not available".to_string()))}
     }
 
     /// Connect to the database
@@ -920,8 +910,7 @@ impl DatabaseLoader {
                 class_name: class_name.clone(),
                 data,
                 id: None,
-                metadata: HashMap::new(),
-            };
+                metadata: HashMap::new()};
 
             instances.push(instance);
         }
@@ -1070,8 +1059,7 @@ impl DatabaseLoader {
             class_name,
             data,
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Convert a database row to a DataInstance (PostgreSQL version)
@@ -1113,8 +1101,7 @@ impl DatabaseLoader {
             class_name,
             data,
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Convert a database row to a DataInstance (MySQL version)
@@ -1156,8 +1143,7 @@ impl DatabaseLoader {
             class_name,
             data,
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Get column value with proper type conversion (PostgreSQL)
@@ -1403,8 +1389,7 @@ impl DataLoader for DatabaseLoader {
             batch_size: 1000,
             infer_types: true,
             create_if_not_exists: false,
-            use_transactions: true,
-        });
+            use_transactions: true});
         loader.load_from_database(schema).await
     }
 
@@ -1430,16 +1415,14 @@ impl DataLoader for DatabaseLoader {
 /// Database dumper for `LinkML` data
 pub struct DatabaseDumper {
     options: DatabaseOptions,
-    pool: Option<DatabasePool>,
-}
+    pool: Option<DatabasePool>}
 
 impl DatabaseDumper {
     /// Create a new database dumper
     pub fn new(options: DatabaseOptions) -> Self {
         Self {
             options,
-            pool: None,
-        }
+            pool: None}
     }
 
     /// Execute a query and return results as a vector of string maps
@@ -1485,8 +1468,7 @@ impl DatabaseDumper {
                 }
                 Ok(results)
             }
-            None => Err(DumperError::Configuration("No database connection available".to_string())),
-        }
+            None => Err(DumperError::Configuration("No database connection available".to_string()))}
     }
 
     /// Execute a DDL/DML statement
@@ -1512,24 +1494,21 @@ impl DatabaseDumper {
                     )))?;
                 Ok(())
             }
-            None => Err(DumperError::Configuration("No database connection available".to_string())),
-        }
+            None => Err(DumperError::Configuration("No database connection available".to_string()))}
     }
 
     /// Get the Postgre`SQL` pool if available
     fn get_pg_pool(&self) -> DumperResult<&PgPool> {
         match self.pool.as_ref() {
             Some(DatabasePool::PostgreSQL(pool)) => Ok(pool),
-            _ => Err(DumperError::Configuration("PostgreSQL pool not available".to_string())),
-        }
+            _ => Err(DumperError::Configuration("PostgreSQL pool not available".to_string()))}
     }
 
     /// Get the My`SQL` pool if available
     fn get_mysql_pool(&self) -> DumperResult<&MySqlPool> {
         match self.pool.as_ref() {
             Some(DatabasePool::MySQL(pool)) => Ok(pool),
-            _ => Err(DumperError::Configuration("MySQL pool not available".to_string())),
-        }
+            _ => Err(DumperError::Configuration("MySQL pool not available".to_string()))}
     }
 
     /// Connect to the database
@@ -1658,8 +1637,7 @@ impl DatabaseDumper {
                 DatabaseType::MySQL => {
                     row.get("count").and_then(|v| v.parse::<i32>().ok()).unwrap_or(0) > 0
                 }
-                _ => false,
-            }
+                _ => false}
         } else {
             false
         };
@@ -1700,8 +1678,7 @@ impl DatabaseDumper {
             let id_type = match self.get_database_type()? {
                 DatabaseType::PostgreSQL => "SERIAL PRIMARY KEY",
                 DatabaseType::MySQL => "INT AUTO_INCREMENT PRIMARY KEY",
-                _ => "INTEGER PRIMARY KEY",
-            };
+                _ => "INTEGER PRIMARY KEY"};
             columns.push(format!("id {id_type}"));
         }
 
@@ -1755,8 +1732,7 @@ impl DatabaseDumper {
                 "date" => "DATE",
                 "datetime" => "TIMESTAMP",
                 "time" => "TIME",
-                _ => "TEXT",
-            },
+                _ => "TEXT"},
             DatabaseType::MySQL => match range {
                 "string" => "TEXT",
                 "integer" => "INT",
@@ -1765,8 +1741,7 @@ impl DatabaseDumper {
                 "date" => "DATE",
                 "datetime" => "DATETIME",
                 "time" => "TIME",
-                _ => "TEXT",
-            },
+                _ => "TEXT"},
             DatabaseType::SQLite => {
                 return Err(DumperError::Configuration(
                     "SQLite support disabled to resolve dependency conflicts. Use PostgreSQL or MySQL instead.".to_string()
@@ -2069,8 +2044,7 @@ impl DatabaseDumper {
             Value::Number(n) => n.to_string(),
             Value::Bool(b) => b.to_string(),
             Value::Null => String::new(),
-            _ => value.to_string(),
-        }
+            _ => value.to_string()}
     }
 
     /// Insert instances for a class (original implementation - commented out)
@@ -2155,8 +2129,7 @@ impl DatabaseDumper {
                                 }
                                 Value::Bool(b) => query.bind(b),
                                 Value::Null => query.bind(None::<String>),
-                                _ => query.bind(value.to_string()),
-                            };
+                                _ => query.bind(value.to_string())};
                         }
 
                         query.execute(&mut *tx).await.map_err(|e| {
@@ -2226,8 +2199,7 @@ impl DatabaseDumper {
                                 }
                                 Value::Bool(b) => query.bind(b),
                                 Value::Null => query.bind(None::<String>),
-                                _ => query.bind(value.to_string()),
-                            };
+                                _ => query.bind(value.to_string())};
                         }
 
                         query.execute(&mut *tx).await.map_err(|e| {
@@ -2364,16 +2336,14 @@ struct ColumnInfo {
     name: String,
     data_type: String,
     is_nullable: bool,
-    is_primary_key: bool,
-}
+    is_primary_key: bool}
 
 /// Database type enumeration
 #[derive(Debug, Clone, Copy)]
 enum DatabaseType {
     PostgreSQL,
     MySQL,
-    SQLite,
-}
+    SQLite}
 
 /// Convert string to pascal case
 fn to_pascal_case(s: &str) -> String {
@@ -2382,8 +2352,7 @@ fn to_pascal_case(s: &str) -> String {
             let mut chars = word.chars();
             match chars.next() {
                 None => String::new(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
         })
         .collect()
 }

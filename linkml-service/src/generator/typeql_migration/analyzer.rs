@@ -18,8 +18,7 @@ pub enum ChangeCategory {
     /// Changes that might need attention but are generally safe
     Warning,
     /// Breaking changes that require data migration
-    Breaking,
-}
+    Breaking}
 
 /// Impact analysis result
 #[derive(Debug, Clone)]
@@ -39,8 +38,7 @@ pub struct ChangeImpact {
     /// Affected types
     pub affected_types: HashSet<String>,
     /// Recommended migration strategy
-    pub migration_strategy: String,
-}
+    pub migration_strategy: String}
 
 impl Default for ChangeImpact {
     fn default() -> Self {
@@ -59,8 +57,7 @@ impl ChangeImpact {
             complexity_score: 0,
             requires_data_migration: false,
             affected_types: HashSet::new(),
-            migration_strategy: String::new(),
-        }
+            migration_strategy: String::new()}
     }
 
     /// Check if there are breaking changes
@@ -330,7 +327,7 @@ mod tests {
     use super::*;
     use crate::generator::typeql_migration::diff::SchemaDiffer;
     use linkml_core::prelude::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_safe_changes() -> std::result::Result<(), Box<dyn std::error::Error>> {

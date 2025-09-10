@@ -2,8 +2,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use parking_lot::RwLock;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -21,8 +20,7 @@ pub struct ImportResolver {
     /// Base `URL` for `URL` imports
     base_url: Arc<RwLock<Option<String>>>,
     /// Maximum import depth to prevent infinite recursion
-    max_depth: usize,
-}
+    max_depth: usize}
 
 impl Default for ImportResolver {
     fn default() -> Self {
@@ -39,8 +37,7 @@ impl ImportResolver {
             search_paths: Arc::new(RwLock::new(vec![PathBuf::from(".")])),
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
-            max_depth: 10,
-        }
+            max_depth: 10}
     }
 
     /// Create with specific search paths
@@ -51,8 +48,7 @@ impl ImportResolver {
             search_paths: Arc::new(RwLock::new(search_paths)),
             base_path: Arc::new(RwLock::new(None)),
             base_url: Arc::new(RwLock::new(None)),
-            max_depth: 10,
-        }
+            max_depth: 10}
     }
 
     /// Set the base path for relative imports
@@ -125,7 +121,7 @@ impl ImportResolver {
             let imported_schema = self.load_import(&import).await?;
 
             // Merge the imported schema into the current schema
-            self.merge_schema(schema, &imported_schema)?;
+            Self::merge_schema(schema, &imported_schema)?;
         }
 
         Ok(())
@@ -195,8 +191,7 @@ impl ImportResolver {
     }
 
     /// Merge an imported schema into the current schema
-    fn merge_schema(&self, target: &mut SchemaDefinition, source: &SchemaDefinition) -> Result<()> {
-        let _ = self; // Might need configuration in the future
+    fn merge_schema(target: &mut SchemaDefinition, source: &SchemaDefinition) -> Result<()> {
         // Merge prefixes
         for (prefix, def) in &source.prefixes {
             if !target.prefixes.contains_key(prefix) {

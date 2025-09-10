@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -15,8 +14,7 @@ use crate::file_system_adapter::FileSystemOperations;
 
 /// `JSON` parser implementation with file system adapter
 pub struct JsonParserV2<F: FileSystemOperations> {
-    fs: Arc<F>,
-}
+    fs: Arc<F>}
 
 impl<F: FileSystemOperations> JsonParserV2<F> {
     /// Create a new `JSON` parser with file system adapter
@@ -43,10 +41,8 @@ impl<F: FileSystemOperations> SchemaParser for JsonParserV2<F> {
         <Self as SchemaParser>::parse_str(self, &content).map_err(|e| match e {
             LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
                 message: format!("{message} in file {}", path.display()),
-                location,
-            },
-            other => other,
-        })
+                location},
+            other => other})
     }
 }
 
@@ -69,10 +65,8 @@ impl<F: FileSystemOperations> AsyncSchemaParser for JsonParserV2<F> {
             .map_err(|e| match e {
                 LinkMLError::ParseError { message, location } => LinkMLError::ParseError {
                     message: format!("{message} in file {}", path.display()),
-                    location,
-                },
-                other => other,
-            })
+                    location},
+                other => other})
     }
 }
 

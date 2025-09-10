@@ -23,8 +23,7 @@ pub struct ValidatorCacheKey {
     /// Target class name
     pub class_name: String,
     /// Compilation options hash
-    pub options_hash: String,
-}
+    pub options_hash: String}
 
 impl std::fmt::Display for ValidatorCacheKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -50,8 +49,7 @@ impl ValidatorCacheKey {
             schema_id: schema.id.clone(),
             schema_hash,
             class_name: class_name.to_string(),
-            options_hash,
-        }
+            options_hash}
     }
 
     /// Generate hash for schema
@@ -117,8 +115,7 @@ pub struct CacheStats {
     /// Number of validators in cache
     pub cached_validators: usize,
     /// Total memory used (bytes)
-    pub memory_bytes: usize,
-}
+    pub memory_bytes: usize}
 
 impl CacheStats {
     /// Calculate cache hit rate
@@ -129,7 +126,10 @@ impl CacheStats {
         if total == 0 {
             0.0
         } else {
-            self.hits as f64 / total as f64
+            #[allow(clippy::cast_precision_loss)]
+            {
+                self.hits as f64 / total as f64
+            }
         }
     }
 }
@@ -149,8 +149,7 @@ pub struct CompiledValidatorCache {
     max_memory_bytes: usize,
 
     /// Optional `RootReal` `CacheService` integration
-    cache_service: Option<Arc<dyn CacheService>>,
-}
+    cache_service: Option<Arc<dyn CacheService>>}
 
 impl Default for CompiledValidatorCache {
     fn default() -> Self {
@@ -173,8 +172,7 @@ impl CompiledValidatorCache {
             stats: Arc::new(RwLock::new(CacheStats::default())),
             max_validators,
             max_memory_bytes,
-            cache_service: None,
-        }
+            cache_service: None}
     }
 
     /// Set the `CacheService` for distributed caching
@@ -221,7 +219,7 @@ impl CompiledValidatorCache {
     /// Returns a `LinkMLError` if:
     /// - Serialization fails
     /// - Cache operations fail
-    pub async fn put(
+    pub fn put(
         &self,
         key: ValidatorCacheKey,
         validator: CompiledValidator,
@@ -270,7 +268,7 @@ impl CompiledValidatorCache {
     /// # Errors
     ///
     /// Returns a `LinkMLError` if cache clearing fails
-    pub async fn clear(&self) -> LinkMLResult<()> {
+    pub fn clear(&self) -> LinkMLResult<()> {
         {
             let mut cache = self.local_cache.write();
             cache.clear();
@@ -322,7 +320,7 @@ impl CompiledValidatorCache {
                     let validator =
                         CompiledValidator::compile_class(&schema, &class_name, class, options)?;
 
-                    self.put(key, validator).await?;
+                    self.put(key, validator)?;
                 }
             }
         }
@@ -404,7 +402,6 @@ mod tests {
 
         cache
             .put(key.clone(), validator)
-            .await
             .expect("should cache validator: {}");
 
         // Cache hit
@@ -435,7 +432,6 @@ mod tests {
 
             cache
                 .put(key, validator)
-                .await
                 .expect("should cache validator: {}");
         }
 

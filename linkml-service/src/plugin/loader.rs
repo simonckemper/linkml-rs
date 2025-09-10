@@ -39,8 +39,7 @@ pub struct DynamicLoader {
     /// JavaScript plugin loader (requires feature flag)
     js_loader: JavaScriptLoader,
     /// WebAssembly plugin loader (requires feature flag)
-    wasm_loader: WasmLoader,
-}
+    wasm_loader: WasmLoader}
 
 impl Default for DynamicLoader {
     fn default() -> Self {
@@ -56,8 +55,7 @@ impl DynamicLoader {
             native_loader: NativeLoader::new(),
             python_loader: PythonLoader::new(),
             js_loader: JavaScriptLoader::new(),
-            wasm_loader: WasmLoader::new(),
-        }
+            wasm_loader: WasmLoader::new()}
     }
 
     /// Get a built-in plugin by name
@@ -75,13 +73,14 @@ impl DynamicLoader {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::IoError` if the manifest file cannot be read
+    /// Returns `LinkMLError::ParseError` if the manifest format is invalid
     pub fn load_metadata(&self, path: &Path) -> Result<PluginManifest> {
         let content = fs::read_to_string(path)?;
         let manifest: PluginManifest =
             toml::from_str(&content).map_err(|e| LinkMLError::ParseError {
                 message: format!("Invalid plugin manifest: {e}"),
-                location: Some(path.to_string_lossy().to_string()),
-            })?;
+                location: Some(path.to_string_lossy().to_string())})?;
 
         Ok(manifest)
     }
@@ -91,6 +90,7 @@ impl DynamicLoader {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::PluginError` if the plugin cannot be loaded or initialized
     pub async fn load_plugin(
         &self,
         path: &Path,
@@ -223,24 +223,21 @@ pub struct PluginSandbox {
     /// Resource limits
     pub limits: ResourceLimits,
     /// Allowed capabilities
-    pub capabilities: Vec<String>,
-}
+    pub capabilities: Vec<String>}
 
 impl PluginSandbox {
     /// Create a new plugin sandbox with default limits
     #[must_use] pub fn new() -> Self {
         Self {
             limits: ResourceLimits::default(),
-            capabilities: Vec::new(),
-        }
+            capabilities: Vec::new()}
     }
 
     /// Create a sandbox with custom resource limits
     #[must_use] pub fn with_limits(limits: ResourceLimits) -> Self {
         Self {
             limits,
-            capabilities: Vec::new(),
-        }
+            capabilities: Vec::new()}
     }
 
     /// Add a capability to the sandbox
@@ -274,8 +271,7 @@ pub struct ResourceLimits {
     /// Network access allowed
     pub allow_network: bool,
     /// File system access mode
-    pub fs_access: FsAccessMode,
-}
+    pub fs_access: FsAccessMode}
 
 /// File system access mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -287,8 +283,7 @@ pub enum FsAccessMode {
     /// Read-write access to temporary directory only
     TempOnly,
     /// Full read-write access (dangerous!)
-    Full,
-}
+    Full}
 
 impl Default for ResourceLimits {
     fn default() -> Self {
@@ -298,8 +293,7 @@ impl Default for ResourceLimits {
             max_file_size: 100 * 1024 * 1024, // 100 MB
             max_open_files: 100,
             allow_network: false,
-            fs_access: FsAccessMode::TempOnly,
-        }
+            fs_access: FsAccessMode::TempOnly}
     }
 }
 
@@ -312,8 +306,7 @@ pub struct SandboxedPlugin<O: TimeoutService> {
     /// Timeout service for managing execution timeouts
     timeout_service: Arc<O>,
     /// Timestamp service for timing operations
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
-}
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>}
 
 impl<O: TimeoutService> SandboxedPlugin<O> {
     /// Create a new sandboxed plugin with timeout service
@@ -322,8 +315,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             plugin,
             sandbox,
             timeout_service,
-            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
-        }
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service()}
     }
 
     /// Create a new sandboxed plugin with injected dependencies (factory pattern compliant)
@@ -340,8 +332,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             plugin,
             sandbox,
             timeout_service,
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Execute with resource limits using the timeout service
@@ -371,8 +362,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             system_load: None, // Could be populated from monitoring service
             complexity: Some(OperationComplexity::Variable), // Plugin complexity is variable
             network_quality: None,
-            metadata: std::collections::HashMap::new(),
-        };
+            metadata: std::collections::HashMap::new()};
 
         // Calculate adaptive timeout using the timeout service
         let operation_name = format!("plugin_{}", self.plugin.info().name);
@@ -427,8 +417,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             PluginOperation::FileRead(path) => self.check_file_access(&path, false),
             PluginOperation::FileWrite(path) => self.check_file_access(&path, true),
             PluginOperation::NetworkAccess(_) => self.sandbox.limits.allow_network,
-            PluginOperation::MemoryAllocation(size) => size <= self.sandbox.limits.max_memory,
-        }
+            PluginOperation::MemoryAllocation(size) => size <= self.sandbox.limits.max_memory}
     }
 
     /// Check if file access is allowed
@@ -444,8 +433,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
                     }
                 false
             }
-            FsAccessMode::Full => true,
-        }
+            FsAccessMode::Full => true}
     }
 }
 
@@ -459,11 +447,11 @@ pub enum PluginOperation {
     /// Network access operation
     NetworkAccess(String),
     /// Memory allocation operation
-    MemoryAllocation(usize),
-}
+    MemoryAllocation(usize)}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_resource_limits_default() {

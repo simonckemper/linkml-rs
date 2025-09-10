@@ -12,8 +12,7 @@ use std::path::Path;
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
 
 /// Options specific to CSV loading/dumping
 #[derive(Debug, Clone)]
@@ -40,8 +39,7 @@ pub struct CsvOptions {
     pub flexible: bool,
 
     /// Encoding (currently only UTF-8 supported)
-    pub encoding: String,
-}
+    pub encoding: String}
 
 impl Default for CsvOptions {
     fn default() -> Self {
@@ -53,8 +51,7 @@ impl Default for CsvOptions {
             comment: None,
             trim: true,
             flexible: false,
-            encoding: "utf-8".to_string(),
-        }
+            encoding: "utf-8".to_string()}
     }
 }
 
@@ -71,16 +68,14 @@ impl CsvOptions {
 
 /// CSV data loader
 pub struct CsvLoader {
-    options: CsvOptions,
-}
+    options: CsvOptions}
 
 impl CsvLoader {
     /// Create a new CSV loader
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: CsvOptions::default(),
-        }
+            options: CsvOptions::default()}
     }
 
     /// Create a new CSV loader with custom options
@@ -93,8 +88,7 @@ impl CsvLoader {
     #[must_use]
     pub fn tsv() -> Self {
         Self {
-            options: CsvOptions::tsv(),
-        }
+            options: CsvOptions::tsv()}
     }
 
     /// Parse a CSV record into a data instance
@@ -150,8 +144,7 @@ impl CsvLoader {
             class_name: class_name.to_string(),
             data,
             id,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Convert a string value to the appropriate `JSON` type
@@ -236,8 +229,7 @@ impl CsvLoader {
                 "false" | "no" | "n" | "0" => Ok(JsonValue::Bool(false)),
                 _ => Err(LoaderError::TypeConversion(format!(
                     "Cannot parse '{value}' as boolean"
-                ))),
-            },
+                )))},
 
             "date" | "datetime" | "time" => {
                 // For now, keep as string - could validate format
@@ -461,16 +453,14 @@ impl DataLoader for CsvLoader {
 
 /// CSV data dumper
 pub struct CsvDumper {
-    options: CsvOptions,
-}
+    options: CsvOptions}
 
 impl CsvDumper {
     /// Create a new CSV dumper
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: CsvOptions::default(),
-        }
+            options: CsvOptions::default()}
     }
 
     /// Create a new CSV dumper with custom options
@@ -483,8 +473,7 @@ impl CsvDumper {
     #[must_use]
     pub fn tsv() -> Self {
         Self {
-            options: CsvOptions::tsv(),
-        }
+            options: CsvOptions::tsv()}
     }
 
     /// Get headers for a class
@@ -734,7 +723,7 @@ impl DataDumper for CsvDumper {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

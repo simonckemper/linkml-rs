@@ -10,8 +10,7 @@ use std::collections::{HashMap, VecDeque};
 use linkml_core::{
     error::Result,
     hashmap_utils::{collect_keys_for_removal, ArcCache},
-    string_pool::intern,
-};
+    string_pool::intern};
 
 use super::Expression;
 
@@ -25,8 +24,7 @@ struct CacheEntryV2 {
     /// When this entry was last accessed
     last_accessed: Instant,
     /// Number of times accessed
-    hit_count: u64,
-}
+    hit_count: u64}
 
 /// Expression cache statistics
 #[derive(Debug, Clone, Default)]
@@ -40,8 +38,7 @@ pub struct CacheStats {
     /// Current number of entries in the cache
     pub entries: usize,
     /// Approximate memory usage in bytes
-    pub size_bytes: usize,
-}
+    pub size_bytes: usize}
 
 impl CacheStats {
     /// Calculate hit rate
@@ -66,8 +63,7 @@ pub struct ExpressionCacheV2 {
     /// Maximum age for entries
     max_age: Duration,
     /// Cache statistics
-    stats: Arc<RwLock<CacheStats>>,
-}
+    stats: Arc<RwLock<CacheStats>>}
 
 impl ExpressionCacheV2 {
     /// Create a new expression cache
@@ -77,8 +73,7 @@ impl ExpressionCacheV2 {
             lru_order: Arc::new(RwLock::new(VecDeque::with_capacity(capacity))),
             capacity,
             max_age: Duration::from_secs(3600), // 1 hour default
-            stats: Arc::new(RwLock::new(CacheStats::default())),
-        }
+            stats: Arc::new(RwLock::new(CacheStats::default()))}
     }
 
     /// Set maximum age for cache entries
@@ -151,8 +146,7 @@ impl ExpressionCacheV2 {
             expression: Arc::new(parsed),
             created: now,
             last_accessed: now,
-            hit_count: 0,
-        };
+            hit_count: 0};
 
         cache.insert(Arc::clone(&key), entry);
         lru_order.push_back(key);
@@ -230,8 +224,7 @@ pub struct GlobalExpressionCacheV2 {
     /// Access counter for promotion
     access_counts: Arc<RwLock<HashMap<Arc<str>, u64>>>,
     /// Threshold for hot promotion
-    hot_threshold: u64,
-}
+    hot_threshold: u64}
 
 impl GlobalExpressionCacheV2 {
     /// Create a new global cache
@@ -240,8 +233,7 @@ impl GlobalExpressionCacheV2 {
             primary: ArcCache::with_capacity(primary_capacity),
             hot: ArcCache::with_capacity(hot_capacity),
             access_counts: Arc::new(RwLock::new(HashMap::new())),
-            hot_threshold: 10,
-        }
+            hot_threshold: 10}
     }
 
     /// Get or compute an expression
@@ -265,8 +257,7 @@ impl GlobalExpressionCacheV2 {
                 && count >= self.hot_threshold {
                     return match compute() {
                         Ok(parsed) => Ok(self.hot.get_or_compute(&key, || parsed)),
-                        Err(e) => Err(e),
-                    };
+                        Err(e) => Err(e)};
                 }
 
         // Update access count
@@ -278,8 +269,7 @@ impl GlobalExpressionCacheV2 {
         // Use primary cache - handle Result properly
         match compute() {
             Ok(parsed) => Ok(self.primary.get_or_compute(&key, || parsed)),
-            Err(e) => Err(e),
-        }
+            Err(e) => Err(e)}
     }
 
     /// Clear all caches
@@ -299,8 +289,7 @@ impl GlobalExpressionCacheV2 {
 
 /// Thread-safe wrapper for global cache
 pub struct ThreadSafeGlobalCache {
-    inner: Arc<RwLock<GlobalExpressionCacheV2>>,
-}
+    inner: Arc<RwLock<GlobalExpressionCacheV2>>}
 
 impl ThreadSafeGlobalCache {
     /// Create new thread-safe cache
@@ -309,8 +298,7 @@ impl ThreadSafeGlobalCache {
             inner: Arc::new(RwLock::new(GlobalExpressionCacheV2::new(
                 primary_capacity,
                 hot_capacity,
-            ))),
-        }
+            )))}
     }
 
     /// Get or compute with thread safety
@@ -336,7 +324,6 @@ impl ThreadSafeGlobalCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::string_pool::intern;
 
     #[test]
     fn test_expression_cache_v2() {
@@ -345,7 +332,7 @@ use linkml_core::string_pool::intern;
         // Test basic operations
         assert!(cache.get("test").is_none());
 
-        let parsed = Expression::default(); // Assuming default impl
+        let parsed = Expression::Null; // Use Null variant as default
         cache.put("test", parsed.clone());
 
         assert!(cache.get("test").is_some());
@@ -359,9 +346,9 @@ use linkml_core::string_pool::intern;
     fn test_lru_eviction() {
         let cache = ExpressionCacheV2::new(2);
 
-        cache.put("expr1", Expression::default());
-        cache.put("expr2", Expression::default());
-        cache.put("expr3", Expression::default()); // Should evict expr1
+        cache.put("expr1", Expression::Null);
+        cache.put("expr2", Expression::Null);
+        cache.put("expr3", Expression::Null); // Should evict expr1
 
         assert!(cache.get("expr1").is_none());
         assert!(cache.get("expr2").is_some());
@@ -376,7 +363,7 @@ use linkml_core::string_pool::intern;
         let cache = ExpressionCacheV2::new(10)
             .with_max_age(Duration::from_millis(100));
 
-        cache.put("old", Expression::default());
+        cache.put("old", Expression::Null);
 
         // Wait for expiry
         std::thread::sleep(Duration::from_millis(150));

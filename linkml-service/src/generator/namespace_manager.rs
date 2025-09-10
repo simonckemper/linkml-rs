@@ -4,6 +4,7 @@
 //! including prefix expansion/contraction, URI validation, and namespace resolution.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use std::fmt::Write;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{PrefixDefinition, SchemaDefinition};
 
@@ -21,8 +22,7 @@ pub struct NamespaceManagerGeneratorConfig {
     /// Whether to generate thread-safe implementation
     pub thread_safe: bool,
     /// Class name for the generated manager
-    pub class_name: String,
-}
+    pub class_name: String}
 
 /// Supported target languages
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,8 +36,7 @@ pub enum TargetLanguage {
     /// Java namespace manager
     Java,
     /// Go namespace manager
-    Go,
-}
+    Go}
 
 impl Default for NamespaceManagerGeneratorConfig {
     fn default() -> Self {
@@ -47,15 +46,13 @@ impl Default for NamespaceManagerGeneratorConfig {
             include_validation: true,
             include_utilities: true,
             thread_safe: false,
-            class_name: "NamespaceManager".to_string(),
-        }
+            class_name: "NamespaceManager".to_string()}
     }
 }
 
 /// Namespace manager generator
 pub struct NamespaceManagerGenerator {
-    config: NamespaceManagerGeneratorConfig,
-}
+    config: NamespaceManagerGeneratorConfig}
 
 impl NamespaceManagerGenerator {
     /// Create a new namespace manager generator
@@ -69,23 +66,21 @@ impl NamespaceManagerGenerator {
             PrefixDefinition::Simple(url) => url,
             PrefixDefinition::Complex {
                 prefix_reference, ..
-            } => prefix_reference.as_deref().unwrap_or(""),
-        }
+            } => prefix_reference.as_deref().unwrap_or("")}
     }
 
     /// Generate namespace manager for the configured language
-    fn generate_manager(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_manager(&self, schema: &SchemaDefinition) -> String {
         match self.config.target_language {
             TargetLanguage::Python => self.generate_python(schema),
             TargetLanguage::JavaScript => self.generate_javascript(schema),
             TargetLanguage::Rust => self.generate_rust(schema),
             TargetLanguage::Java => self.generate_java(schema),
-            TargetLanguage::Go => self.generate_go(schema),
-        }
+            TargetLanguage::Go => self.generate_go(schema)}
     }
 
     /// Generate Python namespace manager
-    fn generate_python(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_python(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
 
         // Header
@@ -101,7 +96,7 @@ impl NamespaceManagerGenerator {
         output.push_str("\n\n");
 
         // Class definition
-        output.push_str(&format!("class {}:\n", self.config.class_name));
+        writeln!(output, "class {}:", self.config.class_name).unwrap();
         output.push_str(
             "    \"\"\"Manages namespace prefixes and URI expansion/contraction\"\"\"\n\n",
         );
@@ -141,9 +136,9 @@ impl NamespaceManagerGenerator {
 
         // Default prefix
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!(
-                "        self._default_prefix = '{default_prefix}'\n"
-            ));
+            writeln!(output, 
+                "        self._default_prefix = '{default_prefix}'"
+            ).unwrap();
         } else {
             output.push_str("        self._default_prefix = None\n");
         }
@@ -185,7 +180,7 @@ impl NamespaceManagerGenerator {
         }
         output.push('\n');
 
-        Ok(output)
+        output
     }
 
     /// Generate Python expand method
@@ -381,7 +376,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate JavaScript namespace manager
-    fn generate_javascript(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_javascript(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -389,7 +384,7 @@ impl NamespaceManagerGenerator {
         output.push_str(" */\n\n");
 
         // Class definition
-        output.push_str(&format!("class {} {{\n", self.config.class_name));
+        writeln!(output, "class {} {{", self.config.class_name).unwrap();
 
         // Constructor
         output.push_str("  constructor() {\n");
@@ -429,9 +424,9 @@ impl NamespaceManagerGenerator {
 
         // Default prefix
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!(
-                "    this._defaultPrefix = '{default_prefix}';\n"
-            ));
+            writeln!(output, 
+                "    this._defaultPrefix = '{default_prefix}';"
+            ).unwrap();
         } else {
             output.push_str("    this._defaultPrefix = null;\n");
         }
@@ -445,20 +440,20 @@ impl NamespaceManagerGenerator {
         // Export
         output.push_str("// Export for different module systems\n");
         output.push_str("if (typeof module !== 'undefined' && module.exports) {\n");
-        output.push_str(&format!("  module.exports = {};\n", self.config.class_name));
+        writeln!(output, "  module.exports = {};", self.config.class_name).unwrap();
         output.push_str("} else if (typeof define === 'function' && define.amd) {\n");
         output.push_str(&format!(
             "  define([], function() {{ return {}; }});\n",
             self.config.class_name
         ));
         output.push_str("} else if (typeof window !== 'undefined') {\n");
-        output.push_str(&format!(
-            "  window.{} = {};\n",
+        writeln!(output, 
+            "  window.{} = {};",
             self.config.class_name, self.config.class_name
-        ));
+        ).unwrap();
         output.push_str("}\n");
 
-        Ok(output)
+        output
     }
 
     /// Generate JavaScript methods
@@ -556,7 +551,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Rust namespace manager
-    fn generate_rust(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_rust(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
 
         output.push_str("//! Namespace manager generated from LinkML schema\n\n");
@@ -569,7 +564,7 @@ impl NamespaceManagerGenerator {
 
         // Struct definition
         output.push_str("#[derive(Debug, Clone)]\n");
-        output.push_str(&format!("pub struct {} {{\n", self.config.class_name));
+        writeln!(output, "pub struct {} {{", self.config.class_name).unwrap();
         if self.config.thread_safe {
             output.push_str("    prefixes: Arc<RwLock<HashMap<String, String>>>,\n");
             output.push_str("    namespaces: Arc<RwLock<HashMap<String, String>>>,\n");
@@ -581,7 +576,7 @@ impl NamespaceManagerGenerator {
         output.push_str("}\n\n");
 
         // Implementation
-        output.push_str(&format!("impl {} {{\n", self.config.class_name));
+        writeln!(output, "impl {} {{", self.config.class_name).unwrap();
 
         // Constructor
         output.push_str("    /// Create a new namespace manager\n");
@@ -637,13 +632,13 @@ impl NamespaceManagerGenerator {
         output.push_str("}\n\n");
 
         // Default implementation
-        output.push_str(&format!("impl Default for {} {{\n", self.config.class_name));
+        writeln!(output, "impl Default for {} {{", self.config.class_name).unwrap();
         output.push_str("    fn default() -> Self {\n");
         output.push_str("        Self::new()\n");
         output.push_str("    }\n");
         output.push_str("}\n");
 
-        Ok(output)
+        output
     }
 
     /// Generate Rust methods
@@ -750,7 +745,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Java namespace manager
-    fn generate_java(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_java(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -768,7 +763,7 @@ impl NamespaceManagerGenerator {
         output.push('\n');
 
         // Class definition
-        output.push_str(&format!("public class {} {{\n", self.config.class_name));
+        writeln!(output, "public class {} {{", self.config.class_name).unwrap();
 
         if self.config.thread_safe {
             output.push_str(
@@ -814,9 +809,9 @@ impl NamespaceManagerGenerator {
         output.push_str("        \n");
 
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!(
-                "        this.defaultPrefix = \"{default_prefix}\";\n"
-            ));
+            writeln!(output, 
+                "        this.defaultPrefix = \"{default_prefix}\";"
+            ).unwrap();
         } else {
             output.push_str("        this.defaultPrefix = null;\n");
         }
@@ -827,7 +822,7 @@ impl NamespaceManagerGenerator {
 
         output.push_str("}\n");
 
-        Ok(output)
+        output
     }
 
     /// Generate Java methods
@@ -898,7 +893,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Go namespace manager
-    fn generate_go(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
+    fn generate_go(&self, schema: &SchemaDefinition) -> String {
         let mut output = String::new();
 
         output.push_str("// Package namespace provides namespace management for LinkML schemas\n");
@@ -957,7 +952,7 @@ impl NamespaceManagerGenerator {
         output.push_str("\t}\n\n");
 
         if let Some(default_prefix) = &schema.default_prefix {
-            output.push_str(&format!("\tm.defaultPrefix = \"{default_prefix}\"\n"));
+            writeln!(output, "\tm.defaultPrefix = \"{default_prefix}\"").unwrap();
         }
 
         output.push_str("\treturn m\n");
@@ -966,7 +961,7 @@ impl NamespaceManagerGenerator {
         // Core methods
         output.push_str(&self.generate_go_methods());
 
-        Ok(output)
+        output
     }
 
     /// Generate Go methods
@@ -1091,7 +1086,7 @@ impl Generator for NamespaceManagerGenerator {
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<String> {
-        self.generate_manager(schema)
+        Ok(self.generate_manager(schema))
     }
 
     fn get_file_extension(&self) -> &str {
@@ -1100,8 +1095,7 @@ impl Generator for NamespaceManagerGenerator {
             TargetLanguage::JavaScript => "js",
             TargetLanguage::Rust => "rs",
             TargetLanguage::Java => "java",
-            TargetLanguage::Go => "go",
-        }
+            TargetLanguage::Go => "go"}
     }
 
     fn get_default_filename(&self) -> &'static str {
@@ -1127,8 +1121,7 @@ mod tests {
             "ex".to_string(),
             PrefixDefinition::Complex {
                 prefix_prefix: "ex".to_string(),
-                prefix_reference: Some("https://example.com/".to_string()),
-            },
+                prefix_reference: Some("https://example.com/".to_string())},
         );
         schema.prefixes = prefixes;
         schema.default_prefix = Some("ex".to_string());

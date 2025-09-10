@@ -8,8 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
 use super::traits::{
-    AsyncGenerator, GeneratedOutput, Generator, GeneratorError, GeneratorOptions, GeneratorResult,
-};
+    AsyncGenerator, GeneratedOutput, Generator, GeneratorError, GeneratorOptions, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::error::LinkMLError;
 
@@ -21,8 +20,7 @@ pub enum YumlDiagramType {
     /// Use case diagram
     UseCase,
     /// Activity diagram
-    Activity,
-}
+    Activity}
 
 /// Options for yUML generation
 #[derive(Debug, Clone)]
@@ -38,8 +36,7 @@ pub struct YumlOptions {
     /// Diagram style (plain, scruffy, nofunky)
     pub style: String,
     /// Direction (LR, TB, RL, BT)
-    pub direction: String,
-}
+    pub direction: String}
 
 impl Default for YumlOptions {
     fn default() -> Self {
@@ -49,16 +46,14 @@ impl Default for YumlOptions {
             show_inheritance: true,
             show_associations: true,
             style: "plain".to_string(),
-            direction: "TB".to_string(),
-        }
+            direction: "TB".to_string()}
     }
 }
 
 /// yUML generator for simple UML diagrams
 pub struct YumlGenerator {
     /// Generation options
-    options: YumlOptions,
-}
+    options: YumlOptions}
 
 impl YumlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -70,8 +65,7 @@ impl YumlGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: YumlOptions::default(),
-        }
+            options: YumlOptions::default()}
     }
 
     /// Create with custom options
@@ -92,8 +86,7 @@ impl YumlGenerator {
         match self.options.diagram_type {
             YumlDiagramType::Class => self.generate_class_diagram(schema),
             YumlDiagramType::UseCase => self.generate_use_case_diagram(schema),
-            YumlDiagramType::Activity => self.generate_activity_diagram(schema),
-        }
+            YumlDiagramType::Activity => self.generate_activity_diagram(schema)}
     }
 
     /// Generate class diagram
@@ -227,8 +220,7 @@ impl YumlGenerator {
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
                 writeln!(&mut output, "// {} enum: {}", name, values.join(", "))
                     .map_err(Self::fmt_error_to_generator_error)?;
@@ -322,8 +314,7 @@ impl YumlGenerator {
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
 
                 // Create a simple linear workflow
@@ -416,8 +407,7 @@ impl AsyncGenerator for YumlGenerator {
         match self.options.diagram_type {
             YumlDiagramType::Class => "yuml",
             YumlDiagramType::UseCase => "yuml-usecase",
-            YumlDiagramType::Activity => "yuml-activity",
-        }
+            YumlDiagramType::Activity => "yuml-activity"}
     }
 
     fn description(&self) -> &'static str {
@@ -473,8 +463,7 @@ impl AsyncGenerator for YumlGenerator {
         Ok(vec![GeneratedOutput {
             content,
             filename,
-            metadata,
-        }])
+            metadata}])
     }
 }
 
@@ -484,8 +473,7 @@ impl Generator for YumlGenerator {
         match self.options.diagram_type {
             YumlDiagramType::Class => "yuml",
             YumlDiagramType::UseCase => "yuml-usecase",
-            YumlDiagramType::Activity => "yuml-activity",
-        }
+            YumlDiagramType::Activity => "yuml-activity"}
     }
 
     fn description(&self) -> &'static str {
@@ -532,7 +520,7 @@ impl Generator for YumlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

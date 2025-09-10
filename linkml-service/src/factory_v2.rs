@@ -7,8 +7,7 @@ use std::sync::Arc;
 
 use linkml_core::{
     configuration::LinkMLServiceConfig,
-    error::{LinkMLError, Result},
-};
+    error::{LinkMLError, Result}};
 use configuration_core::Validate;
 
 use crate::service::LinkMLServiceImpl;
@@ -136,8 +135,7 @@ where
         dbms_service,
         timeout_service,
         cache,
-        monitor: monitoring,
-    };
+        monitor: monitoring};
 
     // Create and initialize the service with default LinkMLConfig
     // Note: LinkMLServiceConfig from Configuration Service is stored separately
@@ -216,10 +214,11 @@ where
 ///
 /// This factory function creates a service configured for a specific
 /// environment (development, testing, production).
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+///
+/// # Errors
+///
+/// Returns an error if the operation fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_for_environment<C, T, E, D, O>(
     environment: Environment,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -291,16 +290,14 @@ pub enum Environment {
     /// Testing environment
     Testing,
     /// Production environment
-    Production,
-}
+    Production}
 
 impl std::fmt::Display for Environment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Environment::Development => write!(f, "development"),
             Environment::Testing => write!(f, "testing"),
-            Environment::Production => write!(f, "production"),
-        }
+            Environment::Production => write!(f, "production")}
     }
 }
 
@@ -332,8 +329,7 @@ where
     /// DBMS service instance
     pub dbms_service: Arc<D>,
     /// Timeout service instance
-    pub timeout_service: Arc<O>,
-}
+    pub timeout_service: Arc<O>}
 
 #[cfg(test)]
 mod tests {

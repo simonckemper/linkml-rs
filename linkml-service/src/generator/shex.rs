@@ -18,8 +18,7 @@ pub enum ShExStyle {
     /// `JSON` representation (`ShExJ`)
     Json,
     /// RDF representation (`ShExR`)
-    Rdf,
-}
+    Rdf}
 
 /// Options for `ShEx` generation
 #[derive(Debug, Clone)]
@@ -37,8 +36,7 @@ pub struct ShExOptions {
     /// Base URI for shapes
     pub base_uri: String,
     /// Strict cardinality (use exact cardinality when min=max)
-    pub strict_cardinality: bool,
-}
+    pub strict_cardinality: bool}
 
 impl Default for ShExOptions {
     fn default() -> Self {
@@ -49,8 +47,7 @@ impl Default for ShExOptions {
             include_labels: true,
             include_comments: true,
             base_uri: "http://example.org/shapes/".to_string(),
-            strict_cardinality: true,
-        }
+            strict_cardinality: true}
     }
 }
 
@@ -59,8 +56,7 @@ pub struct ShExGenerator {
     /// Generation options
     options: ShExOptions,
     /// Namespace prefixes
-    prefixes: HashMap<String, String>,
-}
+    prefixes: HashMap<String, String>}
 
 impl ShExGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -90,8 +86,7 @@ impl ShExGenerator {
 
         Self {
             options: ShExOptions::default(),
-            prefixes,
-        }
+            prefixes}
     }
 
     /// Create with custom options
@@ -114,8 +109,7 @@ impl ShExGenerator {
         match self.options.style {
             ShExStyle::Compact => self.generate_shexc(schema),
             ShExStyle::Json => self.generate_shexj(schema),
-            ShExStyle::Rdf => self.generate_shexr(schema),
-        }
+            ShExStyle::Rdf => self.generate_shexr(schema)}
     }
 
     /// Generate `ShEx` Compact syntax
@@ -373,8 +367,7 @@ impl ShExGenerator {
         let final_min = min;
         let final_max = match (None::<u32>, max) {
             (Some(m), _) => Some(m),
-            (None, m) => m,
-        };
+            (None, m) => m};
 
         // Write cardinality
         match (final_min, final_max) {
@@ -420,8 +413,7 @@ impl ShExGenerator {
             .map(|pv| {
                 let value = match pv {
                     PermissibleValue::Simple(s) => s,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
+                    PermissibleValue::Complex { text, .. } => text};
                 format!("\"{value}\"")
             })
             .collect();
@@ -529,8 +521,7 @@ ex:MyShape a shex:Shape ;
             "datetime" => "xsd:dateTime",
             "time" => "xsd:time",
             "uri" => "IRI",
-            _ => "xsd:string",
-        }
+            _ => "xsd:string"}
         .to_string()
     }
 
@@ -599,8 +590,7 @@ ex:MyShape a shex:Shape ;
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -617,8 +607,7 @@ impl Generator for ShExGenerator {
         match self.options.style {
             ShExStyle::Compact => "shex",
             ShExStyle::Json => "shexj",
-            ShExStyle::Rdf => "shexr",
-        }
+            ShExStyle::Rdf => "shexr"}
     }
 
     fn description(&self) -> &'static str {
@@ -629,8 +618,7 @@ impl Generator for ShExGenerator {
         match self.options.style {
             ShExStyle::Compact => vec![".shex", ".shexc"],
             ShExStyle::Json => vec![".shexj", ".json"],
-            ShExStyle::Rdf => vec![".shexr", ".ttl"],
-        }
+            ShExStyle::Rdf => vec![".shexr", ".ttl"]}
     }
 
     fn validate_schema(&self, schema: &SchemaDefinition) -> linkml_core::error::Result<()> {
@@ -653,8 +641,7 @@ impl Generator for ShExGenerator {
         match self.options.style {
             ShExStyle::Compact => "shex",
             ShExStyle::Json => "json",
-            ShExStyle::Rdf => "ttl",
-        }
+            ShExStyle::Rdf => "ttl"}
     }
 
     fn get_default_filename(&self) -> &'static str {
@@ -665,7 +652,7 @@ impl Generator for ShExGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();

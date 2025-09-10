@@ -11,16 +11,14 @@ use std::collections::{HashMap, HashSet, VecDeque};
 pub struct RuleInheritanceResolver<'a> {
     schema: &'a SchemaDefinition,
     /// Cache of resolved inheritance chains
-    inheritance_cache: HashMap<String, Vec<String>>,
-}
+    inheritance_cache: HashMap<String, Vec<String>>}
 
 impl<'a> RuleInheritanceResolver<'a> {
     /// Create a new inheritance resolver
     #[must_use] pub fn new(schema: &'a SchemaDefinition) -> Self {
         Self {
             schema,
-            inheritance_cache: HashMap::new(),
-        }
+            inheritance_cache: HashMap::new()}
     }
 
     /// Get all rules for a class including inherited rules
@@ -214,8 +212,7 @@ impl<'a> RuleInheritanceResolver<'a> {
 /// Rule override manager
 pub struct RuleOverrideManager {
     /// Map of class -> rule overrides
-    overrides: HashMap<String, HashMap<String, RuleOverride>>,
-}
+    overrides: HashMap<String, HashMap<String, RuleOverride>>}
 
 /// Specification for overriding an inherited rule
 #[derive(Debug, Clone)]
@@ -227,8 +224,7 @@ pub struct RuleOverride {
     /// Additional conditions to add
     pub additional_preconditions: Option<linkml_core::types::RuleConditions>,
     /// Additional postconditions to add
-    pub additional_postconditions: Option<linkml_core::types::RuleConditions>,
-}
+    pub additional_postconditions: Option<linkml_core::types::RuleConditions>}
 
 impl Default for RuleOverrideManager {
     fn default() -> Self {
@@ -240,8 +236,7 @@ impl RuleOverrideManager {
     /// Create a new override manager
     #[must_use] pub fn new() -> Self {
         Self {
-            overrides: HashMap::new(),
-        }
+            overrides: HashMap::new()}
     }
 
     /// Add an override for a specific rule in a class

@@ -34,8 +34,7 @@ pub struct SecurityLimits {
     pub max_slots_per_class: usize,
 
     /// Maximum number of classes in a schema
-    pub max_classes_per_schema: usize,
-}
+    pub max_classes_per_schema: usize}
 
 impl Default for SecurityLimits {
     fn default() -> Self {
@@ -48,8 +47,7 @@ impl Default for SecurityLimits {
             max_identifier_length: 256,
             max_json_size: 10_000_000,         // 10MB
             max_slots_per_class: 1000,
-            max_classes_per_schema: 10_000,
-        }
+            max_classes_per_schema: 10_000}
     }
 }
 
@@ -84,13 +82,11 @@ pub enum ValidationError {
     DangerousPattern,
 
     #[error("Path traversal attempt detected in: {path}")]
-    PathTraversal { path: String },
-}
+    PathTraversal { path: String }}
 
 /// Input validator with configurable security limits
 pub struct InputValidator {
-    limits: SecurityLimits,
-}
+    limits: SecurityLimits}
 
 impl InputValidator {
     /// Create a new validator with custom limits
@@ -108,12 +104,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::StringTooLarge` if the string exceeds max length
     pub fn validate_string(&self, s: &str) -> Result<(), ValidationError> {
         if s.len() > self.limits.max_string_length {
             return Err(ValidationError::StringTooLarge {
                 size: s.len(),
-                max: self.limits.max_string_length,
-            });
+                max: self.limits.max_string_length});
         }
         Ok(())
     }
@@ -123,19 +119,19 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::IdentifierTooLong` if the identifier exceeds max length
+    /// Returns `ValidationError::PathTraversal` if the identifier contains invalid characters
     pub fn validate_identifier(&self, id: &str) -> Result<(), ValidationError> {
         if id.len() > self.limits.max_identifier_length {
             return Err(ValidationError::IdentifierTooLong {
                 size: id.len(),
-                max: self.limits.max_identifier_length,
-            });
+                max: self.limits.max_identifier_length});
         }
 
         // Additional identifier validation (alphanumeric, underscores, etc.)
         if !id.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
             return Err(ValidationError::PathTraversal {
-                path: id.to_string(),
-            });
+                path: id.to_string()});
         }
 
         Ok(())
@@ -146,12 +142,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::ExpressionTooDeep` if the depth exceeds the configured maximum
     pub fn validate_expression_depth(&self, depth: usize) -> Result<(), ValidationError> {
         if depth > self.limits.max_expression_depth {
             return Err(ValidationError::ExpressionTooDeep {
                 depth,
-                max: self.limits.max_expression_depth,
-            });
+                max: self.limits.max_expression_depth});
         }
         Ok(())
     }
@@ -161,12 +157,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyConstraints` if the count exceeds the configured maximum
     pub fn validate_constraint_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_constraint_count {
             return Err(ValidationError::TooManyConstraints {
                 count,
-                max: self.limits.max_constraint_count,
-            });
+                max: self.limits.max_constraint_count});
         }
         Ok(())
     }
@@ -176,12 +172,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyFunctionArgs` if the argument count exceeds the configured maximum
     pub fn validate_function_args(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_function_args {
             return Err(ValidationError::TooManyFunctionArgs {
                 count,
-                max: self.limits.max_function_args,
-            });
+                max: self.limits.max_function_args});
         }
         Ok(())
     }
@@ -191,12 +187,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::JsonTooLarge` if the JSON size exceeds the configured maximum
     pub fn validate_json_size(&self, size: usize) -> Result<(), ValidationError> {
         if size > self.limits.max_json_size {
             return Err(ValidationError::JsonTooLarge {
                 size,
-                max: self.limits.max_json_size,
-            });
+                max: self.limits.max_json_size});
         }
         Ok(())
     }
@@ -206,12 +202,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManySlots` if the slot count exceeds the configured maximum
     pub fn validate_slot_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_slots_per_class {
             return Err(ValidationError::TooManySlots {
                 count,
-                max: self.limits.max_slots_per_class,
-            });
+                max: self.limits.max_slots_per_class});
         }
         Ok(())
     }
@@ -221,12 +217,12 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::TooManyClasses` if the class count exceeds the configured maximum
     pub fn validate_class_count(&self, count: usize) -> Result<(), ValidationError> {
         if count > self.limits.max_classes_per_schema {
             return Err(ValidationError::TooManyClasses {
                 count,
-                max: self.limits.max_classes_per_schema,
-            });
+                max: self.limits.max_classes_per_schema});
         }
         Ok(())
     }
@@ -236,6 +232,8 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::DangerousPattern` if the pattern contains ReDoS vulnerabilities
+    /// Returns `ValidationError::StringTooLarge` if the pattern exceeds max length
     pub fn validate_pattern(&self, pattern: &str) -> Result<(), ValidationError> {
         // Check for common ReDoS patterns
         if pattern.contains(".*.*") ||
@@ -256,11 +254,11 @@ impl InputValidator {
     ///
     /// # Errors
     ///
+    /// Returns `ValidationError::PathTraversal` if the path contains directory traversal attempts
     pub fn validate_path(&self, path: &str) -> Result<(), ValidationError> {
         if path.contains("..") || path.contains("~") || path.starts_with('/') {
             return Err(ValidationError::PathTraversal {
-                path: path.to_string(),
-            });
+                path: path.to_string()});
         }
         Ok(())
     }

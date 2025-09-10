@@ -9,8 +9,7 @@ use std::fmt::Write;
 /// Documentation generator for `LinkML` schemas
 pub struct DocGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl DocGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -22,8 +21,7 @@ impl DocGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "doc".to_string(),
-        }
+            name: "doc".to_string()}
     }
 
     /// Generate markdown documentation
@@ -80,7 +78,7 @@ impl DocGenerator {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (class_name, class) in &schema.classes {
-                self.generate_class_doc(&mut output, class_name, class, schema)?;
+                Self::generate_class_doc(&mut output, class_name, class, schema)?;
             }
         }
 
@@ -90,7 +88,7 @@ impl DocGenerator {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (slot_name, slot) in &schema.slots {
-                self.generate_slot_doc(&mut output, slot_name, slot)?;
+                Self::generate_slot_doc(&mut output, slot_name, slot)?;
             }
         }
 
@@ -100,7 +98,7 @@ impl DocGenerator {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (type_name, type_def) in &schema.types {
-                self.generate_type_doc(&mut output, type_name, type_def)?;
+                Self::generate_type_doc(&mut output, type_name, type_def)?;
             }
         }
 
@@ -110,7 +108,7 @@ impl DocGenerator {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 
             for (enum_name, enum_def) in &schema.enums {
-                self.generate_enum_doc(&mut output, enum_name, enum_def)?;
+                Self::generate_enum_doc(&mut output, enum_name, enum_def)?;
             }
         }
 
@@ -119,13 +117,11 @@ impl DocGenerator {
 
     /// Generate documentation for a class
     fn generate_class_doc(
-        &self,
         output: &mut String,
         class_name: &str,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        let _ = self;
         writeln!(output, "### {class_name}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -191,12 +187,10 @@ impl DocGenerator {
 
     /// Generate documentation for a slot
     fn generate_slot_doc(
-        &self,
         output: &mut String,
         slot_name: &str,
         slot: &SlotDefinition,
     ) -> GeneratorResult<()> {
-        let _ = self;
         writeln!(output, "### {slot_name}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -243,12 +237,10 @@ impl DocGenerator {
 
     /// Generate documentation for a type
     fn generate_type_doc(
-        &self,
         output: &mut String,
         type_name: &str,
         type_def: &TypeDefinition,
     ) -> GeneratorResult<()> {
-        let _ = self;
         writeln!(output, "### {type_name}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -274,12 +266,10 @@ impl DocGenerator {
 
     /// Generate documentation for an enum
     fn generate_enum_doc(
-        &self,
         output: &mut String,
         enum_name: &str,
         enum_def: &EnumDefinition,
     ) -> GeneratorResult<()> {
-        let _ = self;
         writeln!(output, "### {enum_name}").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
 
@@ -450,7 +440,7 @@ impl CodeFormatter for DocGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_doc_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

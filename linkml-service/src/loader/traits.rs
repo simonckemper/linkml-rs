@@ -40,8 +40,7 @@ pub enum LoaderError {
 
     /// Generic error
     #[error("Error: {0}")]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
-}
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>)}
 
 /// Result type for loader operations
 pub type LoaderResult<T> = std::result::Result<T, LoaderError>;
@@ -71,8 +70,7 @@ pub enum DumperError {
 
     /// Generic error
     #[error("Error: {0}")]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
-}
+    Other(#[from] Box<dyn std::error::Error + Send + Sync>)}
 
 /// Result type for dumper operations
 pub type DumperResult<T> = std::result::Result<T, DumperError>;
@@ -98,16 +96,13 @@ impl From<LoaderError> for linkml_core::LinkMLError {
             LoaderError::TypeConversion(msg) => linkml_core::LinkMLError::CoercionError {
                 from: "unknown".to_string(),
                 to: "unknown".to_string(),
-                context: Some(msg),
-            },
+                context: Some(msg)},
             LoaderError::MissingField(field) => linkml_core::LinkMLError::data_validation(format!("Missing required field: {field}")),
             LoaderError::InvalidFormat(msg) | LoaderError::Parse(msg) => linkml_core::LinkMLError::parse(msg),
             LoaderError::Configuration(msg) => linkml_core::LinkMLError::config(msg),
             LoaderError::Other(boxed_err) => linkml_core::LinkMLError::Other {
                 message: "Loader error".to_string(),
-                source: Some(boxed_err),
-            },
-        }
+                source: Some(boxed_err)}}
     }
 }
 
@@ -120,14 +115,11 @@ impl From<DumperError> for linkml_core::LinkMLError {
             DumperError::TypeConversion(msg) => linkml_core::LinkMLError::CoercionError {
                 from: "unknown".to_string(),
                 to: "unknown".to_string(),
-                context: Some(msg),
-            },
+                context: Some(msg)},
             DumperError::Configuration(msg) => linkml_core::LinkMLError::config(msg),
             DumperError::Other(boxed_err) => linkml_core::LinkMLError::Other {
                 message: "Dumper error".to_string(),
-                source: Some(boxed_err),
-            },
-        }
+                source: Some(boxed_err)}}
     }
 }
 
@@ -144,8 +136,7 @@ pub struct DataInstance {
     pub id: Option<String>,
 
     /// Metadata about the instance
-    pub metadata: HashMap<String, String>,
-}
+    pub metadata: HashMap<String, String>}
 
 /// Options for loading data
 #[derive(Debug, Clone, Default)]
@@ -166,8 +157,7 @@ pub struct LoadOptions {
     pub limit: Option<usize>,
 
     /// Custom field mappings
-    pub field_mappings: HashMap<String, String>,
-}
+    pub field_mappings: HashMap<String, String>}
 
 /// Options for dumping data
 #[derive(Debug, Clone, Default)]
@@ -188,8 +178,7 @@ pub struct DumpOptions {
     pub limit: Option<usize>,
 
     /// Classes to include in dump (None means all)
-    pub include_classes: Option<Vec<String>>,
-}
+    pub include_classes: Option<Vec<String>>}
 
 /// Trait for data loaders
 #[async_trait]
@@ -283,8 +272,7 @@ pub trait DataDumper: Send + Sync {
 /// Registry for loaders and dumpers
 pub struct LoaderRegistry {
     loaders: HashMap<String, Box<dyn DataLoader>>,
-    dumpers: HashMap<String, Box<dyn DataDumper>>,
-}
+    dumpers: HashMap<String, Box<dyn DataDumper>>}
 
 impl LoaderRegistry {
     /// Create a new registry
@@ -292,8 +280,7 @@ impl LoaderRegistry {
     pub fn new() -> Self {
         Self {
             loaders: HashMap::new(),
-            dumpers: HashMap::new(),
-        }
+            dumpers: HashMap::new()}
     }
 
     /// Register a loader

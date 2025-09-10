@@ -5,8 +5,7 @@
 
 use super::{
     ValidationEngine, ValidationIssue, ValidationOptions, ValidationReport,
-    buffer_pool::ValidationBufferPools, context::ValidationContext,
-};
+    buffer_pool::ValidationBufferPools, context::ValidationContext};
 use rayon::prelude::*;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
@@ -18,8 +17,7 @@ pub struct ParallelValidationEngine {
     /// Thread pool for parallel execution
     thread_pool: rayon::ThreadPool,
     /// Shared buffer pools
-    buffer_pools: Arc<ValidationBufferPools>,
-}
+    buffer_pools: Arc<ValidationBufferPools>}
 
 impl ParallelValidationEngine {
     /// Create a new parallel validation engine
@@ -40,8 +38,7 @@ impl ParallelValidationEngine {
         Ok(Self {
             engine: Arc::new(engine),
             thread_pool,
-            buffer_pools: Arc::new(ValidationBufferPools::new()),
-        })
+            buffer_pools: Arc::new(ValidationBufferPools::new())})
     }
 
     /// Create with custom thread pool configuration
@@ -65,8 +62,7 @@ impl ParallelValidationEngine {
         Ok(Self {
             engine: Arc::new(engine),
             thread_pool,
-            buffer_pools: Arc::new(ValidationBufferPools::new()),
-        })
+            buffer_pools: Arc::new(ValidationBufferPools::new())})
     }
 
     /// Validate multiple values in parallel
@@ -238,8 +234,7 @@ pub struct AggregatedValidationReport {
     /// Total number of validation errors across all items
     pub total_errors: usize,
     /// Total number of validation warnings across all items
-    pub total_warnings: usize,
-}
+    pub total_warnings: usize}
 
 impl AggregatedValidationReport {
     /// Create a new aggregated report
@@ -251,8 +246,7 @@ impl AggregatedValidationReport {
             total_valid: 0,
             total_invalid: 0,
             total_errors: 0,
-            total_warnings: 0,
-        }
+            total_warnings: 0}
     }
 
     /// Add a report for an ID
@@ -303,8 +297,7 @@ pub struct StreamValidationResult {
     /// Processing time in milliseconds
     pub duration_ms: u64,
     /// Start time
-    start_time: std::time::Instant,
-}
+    start_time: std::time::Instant}
 
 impl StreamValidationResult {
     /// Create a new stream result
@@ -316,8 +309,7 @@ impl StreamValidationResult {
             invalid_count: 0,
             all_issues: Vec::new(),
             duration_ms: 0,
-            start_time: std::time::Instant::now(),
-        }
+            start_time: std::time::Instant::now()}
     }
 
     /// Add a validation report
@@ -367,8 +359,7 @@ pub struct ParallelConfig {
     /// Whether to fail fast on first error
     pub fail_fast: bool,
     /// Maximum memory per thread
-    pub max_memory_per_thread: usize,
-}
+    pub max_memory_per_thread: usize}
 
 impl Default for ParallelConfig {
     fn default() -> Self {

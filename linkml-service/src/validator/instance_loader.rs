@@ -17,8 +17,7 @@ pub struct InstanceData {
     /// Source of the instance data
     pub source: String,
     /// Timestamp when loaded
-    pub loaded_at: chrono::DateTime<chrono::Utc>,
-}
+    pub loaded_at: chrono::DateTime<chrono::Utc>}
 
 /// Configuration for instance-based validation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,16 +27,14 @@ pub struct InstanceConfig {
     /// Value field in the data (e.g., "name", "label")
     pub value_field: Option<String>,
     /// Filter expression (future enhancement)
-    pub filter: Option<String>,
-}
+    pub filter: Option<String>}
 
 impl Default for InstanceConfig {
     fn default() -> Self {
         Self {
             key_field: "id".to_string(),
             value_field: None,
-            filter: None,
-        }
+            filter: None}
     }
 }
 
@@ -52,16 +49,14 @@ impl InstanceConfig {
 /// Loads instance data from various sources
 pub struct InstanceLoader {
     /// Cache of loaded instance data
-    cache: dashmap::DashMap<String, Arc<InstanceData>>,
-}
+    cache: dashmap::DashMap<String, Arc<InstanceData>>}
 
 impl InstanceLoader {
     /// Create a new instance loader
     #[must_use]
     pub fn new() -> Self {
         Self {
-            cache: dashmap::DashMap::new(),
-        }
+            cache: dashmap::DashMap::new()}
     }
 
     /// Load instance data from a `JSON` file
@@ -96,8 +91,7 @@ impl InstanceLoader {
         let instance_data = Arc::new(InstanceData {
             values,
             source: cache_key.clone(),
-            loaded_at: chrono::Utc::now(),
-        });
+            loaded_at: chrono::Utc::now()});
 
         // Cache the result
         self.cache.insert(cache_key, Arc::clone(&instance_data));
@@ -186,8 +180,7 @@ impl InstanceLoader {
         let instance_data = Arc::new(InstanceData {
             values,
             source: cache_key.clone(),
-            loaded_at: chrono::Utc::now(),
-        });
+            loaded_at: chrono::Utc::now()});
 
         // Cache the result
         self.cache.insert(cache_key, Arc::clone(&instance_data));
@@ -205,7 +198,7 @@ impl InstanceLoader {
         // Handle array of objects
         if let Some(array) = json.as_array() {
             for item in array {
-                self.extract_from_object(item, config, &mut values)?;
+                Self::extract_from_object(item, config, &mut values)?;
             }
         }
         // Handle single object with nested data
@@ -214,14 +207,14 @@ impl InstanceLoader {
             for (_, value) in obj {
                 if let Some(array) = value.as_array() {
                     for item in array {
-                        self.extract_from_object(item, config, &mut values)?;
+                        Self::extract_from_object(item, config, &mut values)?;
                     }
                 }
             }
         }
         // Handle direct object
         else {
-            self.extract_from_object(json, config, &mut values)?;
+            Self::extract_from_object(json, config, &mut values)?;
         }
 
         Ok(values)
@@ -229,12 +222,10 @@ impl InstanceLoader {
 
     /// Extract key-value pair from a `JSON` object
     fn extract_from_object(
-        &self,
         obj: &Value,
         config: &InstanceConfig,
         values: &mut HashMap<String, Vec<String>>,
     ) -> linkml_core::error::Result<()> {
-        let _ = self; // May need loader configuration in the future
         if let Some(obj_map) = obj.as_object() {
             // Get key
             let key = obj_map
@@ -325,8 +316,7 @@ impl InstanceLoader {
                 .cache
                 .iter()
                 .map(|entry| entry.source.clone())
-                .collect(),
-        }
+                .collect()}
     }
 }
 
@@ -336,8 +326,7 @@ pub struct CacheStats {
     /// Number of cached entries
     pub entries: usize,
     /// List of cached sources
-    pub sources: Vec<String>,
-}
+    pub sources: Vec<String>}
 
 impl Default for InstanceLoader {
     fn default() -> Self {
@@ -370,8 +359,7 @@ mod tests {
         let config = InstanceConfig {
             key_field: "code".to_string(),
             value_field: Some("name".to_string()),
-            filter: None,
-        };
+            filter: None};
 
         let instance_data = loader
             .load_json_file(&file_path, &config)
@@ -417,8 +405,7 @@ mod tests {
         let config = InstanceConfig {
             key_field: "code".to_string(),
             value_field: Some("name".to_string()),
-            filter: None,
-        };
+            filter: None};
 
         let instance_data = loader
             .load_csv_file(&file_path, &config)

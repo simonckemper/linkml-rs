@@ -3,6 +3,7 @@
 //! This module provides tools to compare schemas and identify differences.
 
 use linkml_core::annotations::{Annotatable, standard_annotations};
+use std::fmt::Write;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -17,16 +18,14 @@ pub struct DiffOptions {
     pub breaking_changes_only: bool,
 
     /// Number of context lines for unified diff
-    pub context_lines: usize,
-}
+    pub context_lines: usize}
 
 impl Default for DiffOptions {
     fn default() -> Self {
         Self {
             include_documentation: true,
             breaking_changes_only: false,
-            context_lines: 3,
-        }
+            context_lines: 3}
     }
 }
 
@@ -70,8 +69,7 @@ pub struct DiffResult {
     pub modified_enums: Vec<EnumDiff>,
 
     /// Breaking changes detected
-    pub breaking_changes: Vec<String>,
-}
+    pub breaking_changes: Vec<String>}
 
 /// Class difference
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,8 +84,7 @@ pub struct ClassDiff {
     pub removed_slots: Vec<String>,
 
     /// Changed attributes
-    pub changed_attributes: HashMap<String, AttributeChange>,
-}
+    pub changed_attributes: HashMap<String, AttributeChange>}
 
 /// Slot difference
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,8 +93,7 @@ pub struct SlotDiff {
     pub name: String,
 
     /// Changed attributes
-    pub changed_attributes: HashMap<String, AttributeChange>,
-}
+    pub changed_attributes: HashMap<String, AttributeChange>}
 
 /// Type difference
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,8 +102,7 @@ pub struct TypeDiff {
     pub name: String,
 
     /// Changed attributes
-    pub changed_attributes: HashMap<String, AttributeChange>,
-}
+    pub changed_attributes: HashMap<String, AttributeChange>}
 
 /// Enum difference
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,8 +117,7 @@ pub struct EnumDiff {
     pub removed_values: Vec<String>,
 
     /// Changed attributes
-    pub changed_attributes: HashMap<String, AttributeChange>,
-}
+    pub changed_attributes: HashMap<String, AttributeChange>}
 
 /// Attribute change
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,13 +126,11 @@ pub struct AttributeChange {
     pub old_value: Option<serde_json::Value>,
 
     /// New value
-    pub new_value: Option<serde_json::Value>,
-}
+    pub new_value: Option<serde_json::Value>}
 
 /// Schema diff engine
 pub struct SchemaDiff {
-    options: DiffOptions,
-}
+    options: DiffOptions}
 
 impl SchemaDiff {
     /// Create new schema diff engine
@@ -169,8 +161,7 @@ impl SchemaDiff {
             added_enums: Vec::new(),
             removed_enums: Vec::new(),
             modified_enums: Vec::new(),
-            breaking_changes: Vec::new(),
-        };
+            breaking_changes: Vec::new()};
 
         // Compare classes
         self.compare_classes(schema1, schema2, &mut result)?;
@@ -247,15 +238,13 @@ impl SchemaDiff {
                 name: name.to_string(),
                 added_slots: Vec::new(),
                 removed_slots: Vec::new(),
-                changed_attributes: HashMap::new(),
-            });
+                changed_attributes: HashMap::new()});
         }
         let mut diff = ClassDiff {
             name: name.to_string(),
             added_slots: Vec::new(),
             removed_slots: Vec::new(),
-            changed_attributes: HashMap::new(),
-        };
+            changed_attributes: HashMap::new()};
 
         let slots1: HashSet<_> = class1.slots.iter().cloned().collect();
         let slots2: HashSet<_> = class2.slots.iter().cloned().collect();
@@ -282,8 +271,7 @@ impl SchemaDiff {
                     new_value: class2
                         .is_a
                         .as_ref()
-                        .map(|v| serde_json::Value::String(v.clone())),
-                },
+                        .map(|v| serde_json::Value::String(v.clone()))},
             );
         }
 
@@ -305,8 +293,7 @@ impl SchemaDiff {
                     new_value: class2
                         .description
                         .as_ref()
-                        .map(|v| serde_json::Value::String(v.clone())),
-                },
+                        .map(|v| serde_json::Value::String(v.clone()))},
             );
         }
 
@@ -373,8 +360,7 @@ impl SchemaDiff {
     ) -> Result<SlotDiff> {
         let mut diff = SlotDiff {
             name: name.to_string(),
-            changed_attributes: HashMap::new(),
-        };
+            changed_attributes: HashMap::new()};
 
         // Compare range
         if slot1.range != slot2.range {
@@ -388,8 +374,7 @@ impl SchemaDiff {
                     new_value: slot2
                         .range
                         .as_ref()
-                        .map(|v| serde_json::Value::String(v.clone())),
-                },
+                        .map(|v| serde_json::Value::String(v.clone()))},
             );
         }
 
@@ -399,8 +384,7 @@ impl SchemaDiff {
                 "required".to_string(),
                 AttributeChange {
                     old_value: slot1.required.map(serde_json::Value::Bool),
-                    new_value: slot2.required.map(serde_json::Value::Bool),
-                },
+                    new_value: slot2.required.map(serde_json::Value::Bool)},
             );
         }
 
@@ -410,8 +394,7 @@ impl SchemaDiff {
                 "multivalued".to_string(),
                 AttributeChange {
                     old_value: slot1.multivalued.map(serde_json::Value::Bool),
-                    new_value: slot2.multivalued.map(serde_json::Value::Bool),
-                },
+                    new_value: slot2.multivalued.map(serde_json::Value::Bool)},
             );
         }
 
@@ -465,8 +448,7 @@ impl SchemaDiff {
     ) -> Result<TypeDiff> {
         let mut diff = TypeDiff {
             name: name.to_string(),
-            changed_attributes: HashMap::new(),
-        };
+            changed_attributes: HashMap::new()};
 
         // Compare base_type
         if type1.base_type != type2.base_type {
@@ -480,8 +462,7 @@ impl SchemaDiff {
                     new_value: type2
                         .base_type
                         .as_ref()
-                        .map(|v| serde_json::Value::String(v.clone())),
-                },
+                        .map(|v| serde_json::Value::String(v.clone()))},
             );
         }
 
@@ -540,24 +521,21 @@ impl SchemaDiff {
             name: name.to_string(),
             added_values: Vec::new(),
             removed_values: Vec::new(),
-            changed_attributes: HashMap::new(),
-        };
+            changed_attributes: HashMap::new()};
 
         let values1: HashSet<_> = enum1
             .permissible_values
             .iter()
             .map(|pv| match pv {
                 linkml_core::types::PermissibleValue::Simple(s) => s.clone(),
-                linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
         let values2: HashSet<_> = enum2
             .permissible_values
             .iter()
             .map(|pv| match pv {
                 linkml_core::types::PermissibleValue::Simple(s) => s.clone(),
-                linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
 
         // Added values
@@ -598,22 +576,22 @@ impl DiffResult {
             output.push_str("@@ Classes @@\n");
 
             for class in &self.removed_classes {
-                output.push_str(&format!("- class: {class}\n"));
+                writeln!(output, "- class: {class}").unwrap();
             }
 
             for class in &self.added_classes {
-                output.push_str(&format!("+ class: {class}\n"));
+                writeln!(output, "+ class: {class}").unwrap();
             }
 
             for class_diff in &self.modified_classes {
-                output.push_str(&format!("  class: {}\n", class_diff.name));
+                writeln!(output, "  class: {}", class_diff.name).unwrap();
 
                 for slot in &class_diff.removed_slots {
-                    output.push_str(&format!("    - slot: {slot}\n"));
+                    writeln!(output, "    - slot: {slot}").unwrap();
                 }
 
                 for slot in &class_diff.added_slots {
-                    output.push_str(&format!("    + slot: {slot}\n"));
+                    writeln!(output, "    + slot: {slot}").unwrap();
                 }
             }
 
@@ -628,21 +606,21 @@ impl DiffResult {
             output.push_str("@@ Slots @@\n");
 
             for slot in &self.removed_slots {
-                output.push_str(&format!("- slot: {slot}\n"));
+                writeln!(output, "- slot: {slot}").unwrap();
             }
 
             for slot in &self.added_slots {
-                output.push_str(&format!("+ slot: {slot}\n"));
+                writeln!(output, "+ slot: {slot}").unwrap();
             }
 
             for slot_diff in &self.modified_slots {
-                output.push_str(&format!("  slot: {}\n", slot_diff.name));
+                writeln!(output, "  slot: {}", slot_diff.name).unwrap();
 
                 for (attr, change) in &slot_diff.changed_attributes {
-                    output.push_str(&format!(
-                        "    {}: {:?} -> {:?}\n",
+                    writeln!(output, 
+                        "    {}: {:?} -> {:?}",
                         attr, change.old_value, change.new_value
-                    ));
+                    ).unwrap();
                 }
             }
 
@@ -656,16 +634,16 @@ impl DiffResult {
     #[must_use] pub fn to_side_by_side(&self) -> String {
         let mut output = String::new();
 
-        output.push_str(&format!("{:<40} | {:<40}\n", "Schema 1", "Schema 2"));
-        output.push_str(&format!("{:-<40} | {:-<40}\n", "", ""));
+        writeln!(output, "{:<40} | {:<40}", "Schema 1", "Schema 2").unwrap();
+        writeln!(output, "{:-<40} | {:-<40}", "", "").unwrap();
 
         // Classes
         output.push_str("\nClasses:\n");
         for class in &self.removed_classes {
-            output.push_str(&format!("{:<40} | {:<40}\n", class, ""));
+            writeln!(output, "{:<40} | {:<40}", class, "").unwrap();
         }
         for class in &self.added_classes {
-            output.push_str(&format!("{:<40} | {:<40}\n", "", class));
+            writeln!(output, "{:<40} | {:<40}", "", class).unwrap();
         }
 
         output
@@ -736,7 +714,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             html.push_str("<h2>Added Classes</h2>\n<ul>\n");
             for class in &self.added_classes {
-                html.push_str(&format!("<li class='added'>{class}</li>\n"));
+                writeln!(html, "<li class='added'>{class}</li>").unwrap();
             }
             html.push_str("</ul>\n");
         }
@@ -744,7 +722,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             html.push_str("<h2>Removed Classes</h2>\n<ul>\n");
             for class in &self.removed_classes {
-                html.push_str(&format!("<li class='removed'>{class}</li>\n"));
+                writeln!(html, "<li class='removed'>{class}</li>").unwrap();
             }
             html.push_str("</ul>\n");
         }
@@ -782,7 +760,7 @@ impl DiffResult {
         if !self.breaking_changes.is_empty() {
             md.push_str("## ⚠️ Breaking Changes\n\n");
             for change in &self.breaking_changes {
-                md.push_str(&format!("- {change}\n"));
+                writeln!(md, "- {change}").unwrap();
             }
             md.push('\n');
         }
@@ -791,7 +769,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             md.push_str("## Added Classes\n\n");
             for class in &self.added_classes {
-                md.push_str(&format!("- ✅ `{class}`\n"));
+                writeln!(md, "- ✅ `{class}`").unwrap();
             }
             md.push('\n');
         }
@@ -800,7 +778,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             md.push_str("## Removed Classes\n\n");
             for class in &self.removed_classes {
-                md.push_str(&format!("- ❌ `{class}`\n"));
+                writeln!(md, "- ❌ `{class}`").unwrap();
             }
             md.push('\n');
         }
@@ -809,12 +787,12 @@ impl DiffResult {
         if !self.modified_classes.is_empty() {
             md.push_str("## Modified Classes\n\n");
             for class_diff in &self.modified_classes {
-                md.push_str(&format!("### `{}`\n\n", class_diff.name));
+                writeln!(md, "### `{}``\n", class_diff.name).unwrap();
 
                 if !class_diff.added_slots.is_empty() {
                     md.push_str("**Added slots:**\n");
                     for slot in &class_diff.added_slots {
-                        md.push_str(&format!("- ✅ `{slot}`\n"));
+                        writeln!(md, "- ✅ `{slot}`").unwrap();
                     }
                     md.push('\n');
                 }
@@ -822,7 +800,7 @@ impl DiffResult {
                 if !class_diff.removed_slots.is_empty() {
                     md.push_str("**Removed slots:**\n");
                     for slot in &class_diff.removed_slots {
-                        md.push_str(&format!("- ❌ `{slot}`\n"));
+                        writeln!(md, "- ❌ `{slot}`").unwrap();
                     }
                     md.push('\n');
                 }
@@ -836,7 +814,7 @@ impl DiffResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_schema_diff_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {

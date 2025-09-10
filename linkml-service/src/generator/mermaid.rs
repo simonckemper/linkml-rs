@@ -21,8 +21,7 @@ pub enum MermaidDiagramType {
     /// State diagram
     StateDiagram,
     /// Flowchart
-    Flowchart,
-}
+    Flowchart}
 
 /// Options for Mermaid generation
 #[derive(Debug, Clone)]
@@ -40,8 +39,7 @@ pub struct MermaidOptions {
     /// Show data types
     pub show_types: bool,
     /// Theme (default, dark, forest, neutral)
-    pub theme: String,
-}
+    pub theme: String}
 
 impl Default for MermaidOptions {
     fn default() -> Self {
@@ -52,16 +50,14 @@ impl Default for MermaidOptions {
             show_cardinality: true,
             show_inheritance: true,
             show_types: true,
-            theme: "default".to_string(),
-        }
+            theme: "default".to_string()}
     }
 }
 
 /// Mermaid generator for schema visualization
 pub struct MermaidGenerator {
     /// Generation options
-    options: MermaidOptions,
-}
+    options: MermaidOptions}
 
 impl MermaidGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -73,8 +69,7 @@ impl MermaidGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            options: MermaidOptions::default(),
-        }
+            options: MermaidOptions::default()}
     }
 
     /// Create with custom options
@@ -96,8 +91,7 @@ impl MermaidGenerator {
             MermaidDiagramType::EntityRelationship => self.generate_er_diagram(schema),
             MermaidDiagramType::ClassDiagram => self.generate_class_diagram(schema),
             MermaidDiagramType::StateDiagram => self.generate_state_diagram(schema),
-            MermaidDiagramType::Flowchart => self.generate_flowchart(schema),
-        }
+            MermaidDiagramType::Flowchart => self.generate_flowchart(schema)}
     }
 
     /// Generate Entity Relationship diagram
@@ -361,8 +355,7 @@ impl MermaidGenerator {
                 for pv in &enum_def.permissible_values {
                     let value = match pv {
                         PermissibleValue::Simple(s) => s,
-                        PermissibleValue::Complex { text, .. } => text,
-                    };
+                        PermissibleValue::Complex { text, .. } => text};
                     writeln!(&mut output, "        {value}")
                         .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -395,8 +388,7 @@ impl MermaidGenerator {
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
 
                 // Create basic transitions (simplified - in real use, these would be defined)
@@ -542,16 +534,14 @@ impl MermaidGenerator {
             Some("float" | "double" | "decimal") => "float",
             Some("boolean" | "bool") => "bool",
             Some("date" | "datetime" | "time") => "date",
-            _ => "string",
-        }
+            _ => "string"}
     }
 
     /// Get type notation for class diagrams
     fn get_class_diagram_type(&self, range: &Option<String>) -> String {
         match range.as_deref() {
             Some(r) => format!("{r}: "),
-            None => String::new(),
-        }
+            None => String::new()}
     }
 
     /// Collect all slots including inherited ones
@@ -659,6 +649,14 @@ impl MermaidGenerator {
     }
 
     /// Generate with custom formatting options
+    ///
+    /// # Errors
+    ///
+    /// Returns `LinkMLError` if the schema validation fails, if the schema has invalid
+    /// structure for Mermaid generation (e.g., empty name, no classes or enums), or if
+    /// class/enum names contain characters that break Mermaid syntax (quotes, newlines).
+    /// Also returns errors from the underlying Mermaid generation process if diagram
+    /// generation fails due to invalid schema structure or formatting issues.
     pub fn generate_with_options(&self, schema: &SchemaDefinition, options: &GeneratorOptions) -> std::result::Result<String, LinkMLError> {
         let content = self.generate_mermaid(schema)?;
         Ok(self.format_output(content, options))
@@ -677,8 +675,7 @@ impl Generator for MermaidGenerator {
             MermaidDiagramType::EntityRelationship => "mermaid-er",
             MermaidDiagramType::ClassDiagram => "mermaid-class",
             MermaidDiagramType::StateDiagram => "mermaid-state",
-            MermaidDiagramType::Flowchart => "mermaid-flow",
-        }
+            MermaidDiagramType::Flowchart => "mermaid-flow"}
     }
 
     fn description(&self) -> &str {
@@ -692,8 +689,7 @@ impl Generator for MermaidGenerator {
             MermaidDiagramType::StateDiagram => {
                 "Generates Mermaid state diagrams from LinkML schemas"
             }
-            MermaidDiagramType::Flowchart => "Generates Mermaid flowcharts from LinkML schemas",
-        }
+            MermaidDiagramType::Flowchart => "Generates Mermaid flowcharts from LinkML schemas"}
     }
 
     fn file_extensions(&self) -> Vec<&str> {
@@ -745,7 +741,7 @@ impl Generator for MermaidGenerator {
 mod tests {
     use super::*;
     use crate::generator::GeneratorOptions;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -831,9 +827,8 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             include_docs: true,
             generate_tests: false,
             indent: IndentStyle::Spaces(4),
-            output_format: OutputFormat::Markdown,
-            custom: std::collections::HashMap::new(),
-        };
+            output_format: crate::generator::traits::OutputFormat::Markdown,
+            custom: std::collections::HashMap::new()};
 
         let output = generator
             .generate_with_options(&schema, &options)

@@ -21,8 +21,7 @@ pub struct PrefixMapGeneratorConfig {
     /// Whether to validate prefixes
     pub validate_prefixes: bool,
     /// Additional prefixes to include
-    pub additional_prefixes: HashMap<String, String>,
-}
+    pub additional_prefixes: HashMap<String, String>}
 
 /// Output format for prefix maps
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,8 +35,7 @@ pub enum PrefixMapFormat {
     /// `YAML` format
     Yaml,
     /// CSV format
-    Csv,
-}
+    Csv}
 
 impl Default for PrefixMapGeneratorConfig {
     fn default() -> Self {
@@ -46,15 +44,13 @@ impl Default for PrefixMapGeneratorConfig {
             format: PrefixMapFormat::Simple,
             include_metadata: false,
             validate_prefixes: true,
-            additional_prefixes: HashMap::new(),
-        }
+            additional_prefixes: HashMap::new()}
     }
 }
 
 /// Prefix map generator
 pub struct PrefixMapGenerator {
-    config: PrefixMapGeneratorConfig,
-}
+    config: PrefixMapGeneratorConfig}
 
 impl PrefixMapGenerator {
     /// Create a new prefix map generator
@@ -68,8 +64,7 @@ impl PrefixMapGenerator {
             PrefixDefinition::Simple(url) => url.clone(),
             PrefixDefinition::Complex {
                 prefix_reference, ..
-            } => prefix_reference.clone().unwrap_or_default(),
-        }
+            } => prefix_reference.clone().unwrap_or_default()}
     }
 
     /// Generate prefix map in the configured format
@@ -79,8 +74,7 @@ impl PrefixMapGenerator {
             PrefixMapFormat::Extended => self.generate_extended_json(schema),
             PrefixMapFormat::Turtle => self.generate_turtle(schema),
             PrefixMapFormat::Yaml => self.generate_yaml(schema),
-            PrefixMapFormat::Csv => self.generate_csv(schema),
-        }
+            PrefixMapFormat::Csv => self.generate_csv(schema)}
     }
 
     /// Generate simple `JSON` format
@@ -431,8 +425,7 @@ impl Generator for PrefixMapGenerator {
             PrefixMapFormat::Simple | PrefixMapFormat::Extended => "json",
             PrefixMapFormat::Turtle => "ttl",
             PrefixMapFormat::Yaml => "yaml",
-            PrefixMapFormat::Csv => "csv",
-        }
+            PrefixMapFormat::Csv => "csv"}
     }
 
     fn get_default_filename(&self) -> &'static str {

@@ -6,8 +6,7 @@ use serde_json::Value;
 
 /// Validator for numeric range constraints
 pub struct RangeValidator {
-    name: String,
-}
+    name: String}
 
 impl Default for RangeValidator {
     fn default() -> Self {
@@ -20,8 +19,7 @@ impl RangeValidator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "range_validator".to_string(),
-        }
+            name: "range_validator".to_string()}
     }
 
     /// Validate a numeric value against range constraints
@@ -162,6 +160,5 @@ fn value_type(value: &Value) -> &'static str {
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
+        Value::Object(_) => "object"}
 }

@@ -41,8 +41,7 @@ pub use parser::Parser;
 pub struct ExpressionEngine {
     parser: Parser,
     evaluator: Arc<Evaluator>,
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
-}
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>}
 
 impl ExpressionEngine {
     /// Create a new expression engine with default settings
@@ -50,8 +49,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator: Arc::new(Evaluator::new()),
-            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
-        }
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service()}
     }
 
     /// Create an expression engine with custom evaluator
@@ -60,8 +58,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator,
-            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
-        }
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service()}
     }
 
     /// Create an expression engine with injected dependencies (factory pattern compliant)
@@ -75,8 +72,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator,
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Parse an expression string into an AST

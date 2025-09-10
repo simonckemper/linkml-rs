@@ -3,6 +3,7 @@
 //! This module provides tools to check schema quality and compliance.
 
 use linkml_core::prelude::*;
+use std::fmt::Write;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -15,16 +16,14 @@ pub enum Severity {
     /// Warning - should be fixed
     Warning,
     /// Info - suggestion for improvement
-    Info,
-}
+    Info}
 
 impl std::fmt::Display for Severity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Severity::Error => write!(f, "error"),
             Severity::Warning => write!(f, "warning"),
-            Severity::Info => write!(f, "info"),
-        }
+            Severity::Info => write!(f, "info")}
     }
 }
 
@@ -56,8 +55,7 @@ pub struct LintIssue {
     pub suggestion: Option<String>,
 
     /// Whether this can be auto-fixed
-    pub fixable: bool,
-}
+    pub fixable: bool}
 
 /// Lint rule definition
 pub trait LintRule: Send + Sync {
@@ -86,8 +84,7 @@ pub struct LintOptions {
     pub rule_config: HashMap<String, HashMap<String, serde_json::Value>>,
 
     /// Ignore patterns
-    pub ignore_patterns: Vec<Regex>,
-}
+    pub ignore_patterns: Vec<Regex>}
 
 impl Default for LintOptions {
     fn default() -> Self {
@@ -101,8 +98,7 @@ impl Default for LintOptions {
                 Box::new(SchemaMetadataRule),
             ],
             rule_config: HashMap::new(),
-            ignore_patterns: Vec::new(),
-        }
+            ignore_patterns: Vec::new()}
     }
 }
 
@@ -138,8 +134,7 @@ pub struct LintResult {
     pub issues: Vec<LintIssue>,
 
     /// Issues that can be auto-fixed
-    pub fixable_issues: Vec<LintIssue>,
-}
+    pub fixable_issues: Vec<LintIssue>}
 
 impl LintResult {
     /// Count errors
@@ -176,15 +171,15 @@ impl LintResult {
         xml.push_str(&format!(" failures=\"{}\"", self.warning_count()));
         xml.push_str(">\n");
 
-        xml.push_str(&format!("  <testcase name=\"{test_name}\">\n"));
+        writeln!(xml, "  <testcase name=\"{test_name}\">").unwrap();
 
         for issue in &self.issues {
             match issue.severity {
                 Severity::Error => {
-                    xml.push_str(&format!("    <error message=\"{}\"/>\n", issue.message));
+                    writeln!(xml, "    <error message=\"{}\"/>", issue.message).unwrap();
                 }
                 Severity::Warning => {
-                    xml.push_str(&format!("    <failure message=\"{}\"/>\n", issue.message));
+                    writeln!(xml, "    <failure message=\"{}\"/>", issue.message).unwrap();
                 }
                 Severity::Info => {
                     // Info messages are not included in JUnit
@@ -201,8 +196,7 @@ impl LintResult {
 
 /// Schema linter
 pub struct SchemaLinter {
-    options: LintOptions,
-}
+    options: LintOptions}
 
 impl SchemaLinter {
     /// Create new linter
@@ -233,8 +227,7 @@ impl SchemaLinter {
 
         Ok(LintResult {
             issues: all_issues,
-            fixable_issues,
-        })
+            fixable_issues})
     }
 
     /// Fix issues in schema
@@ -304,8 +297,7 @@ impl LintRule for NamingConventionRule {
                     line: None,
                     column: None,
                     suggestion: Some(format!("Rename to '{}'", to_pascal_case(class_name))),
-                    fixable: false,
-                });
+                    fixable: false});
             }
         }
 
@@ -322,8 +314,7 @@ impl LintRule for NamingConventionRule {
                     line: None,
                     column: None,
                     suggestion: Some(format!("Rename to '{}'", to_snake_case(slot_name))),
-                    fixable: false,
-                });
+                    fixable: false});
             }
         }
 
@@ -367,8 +358,7 @@ impl LintRule for MissingDocumentationRule {
                 line: None,
                 column: None,
                 suggestion: Some("Add a description field to the schema".to_string()),
-                fixable: false,
-            });
+                fixable: false});
         }
 
         // Check class descriptions
@@ -383,8 +373,7 @@ impl LintRule for MissingDocumentationRule {
                     line: None,
                     column: None,
                     suggestion: Some("Add a description to the class".to_string()),
-                    fixable: false,
-                });
+                    fixable: false});
             }
         }
 
@@ -400,8 +389,7 @@ impl LintRule for MissingDocumentationRule {
                     line: None,
                     column: None,
                     suggestion: Some("Add a description to the slot".to_string()),
-                    fixable: false,
-                });
+                    fixable: false});
             }
         }
 
@@ -457,8 +445,7 @@ impl LintRule for UnusedDefinitionsRule {
                     suggestion: Some(
                         "Remove the unused slot or reference it in a class".to_string(),
                     ),
-                    fixable: true,
-                });
+                    fixable: true});
             }
         }
 
@@ -484,8 +471,7 @@ impl LintRule for UnusedDefinitionsRule {
                     suggestion: Some(
                         "Remove the unused type or use it in a slot range".to_string(),
                     ),
-                    fixable: true,
-                });
+                    fixable: true});
             }
         }
 
@@ -552,8 +538,7 @@ impl LintRule for SlotConsistencyRule {
                         suggestion: Some(format!(
                             "Define slot '{slot_name}' or remove the reference"
                         )),
-                        fixable: false,
-                    });
+                        fixable: false});
                 }
             }
         }
@@ -621,8 +606,7 @@ impl LintRule for TypeSafetyRule {
                         suggestion: Some(
                             "Use a valid built-in type or define the type".to_string(),
                         ),
-                        fixable: false,
-                    });
+                        fixable: false});
                 }
             }
         }
@@ -667,8 +651,7 @@ impl LintRule for SchemaMetadataRule {
                 line: None,
                 column: None,
                 suggestion: Some("Add a name field to the schema".to_string()),
-                fixable: false,
-            });
+                fixable: false});
         }
 
         // Check for version
@@ -682,8 +665,7 @@ impl LintRule for SchemaMetadataRule {
                 line: None,
                 column: None,
                 suggestion: Some("Add a version field (e.g., '1.0.0')".to_string()),
-                fixable: false,
-            });
+                fixable: false});
         }
 
         // Check for license
@@ -697,8 +679,7 @@ impl LintRule for SchemaMetadataRule {
                 line: None,
                 column: None,
                 suggestion: Some("Add a license field (e.g., 'CC0', 'MIT')".to_string()),
-                fixable: false,
-            });
+                fixable: false});
         }
 
         issues
@@ -718,8 +699,7 @@ fn to_pascal_case(s: &str) -> String {
             let mut chars = word.chars();
             match chars.next() {
                 None => String::new(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
         })
         .collect()
 }
@@ -746,7 +726,7 @@ fn to_snake_case(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_naming_convention_rule() {

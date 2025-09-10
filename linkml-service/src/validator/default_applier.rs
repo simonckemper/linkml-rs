@@ -4,7 +4,7 @@
 //! to slots when values are missing.
 
 use chrono::{Local, Utc};
-use linkml_core::types::{SchemaDefinition, IfAbsentAction};
+use linkml_core::types::{SchemaDefinition, IfAbsentAction, ClassDefinition, SlotDefinition};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -17,8 +17,7 @@ static VARIABLE_PATTERN: std::sync::LazyLock<Result<Regex, regex::Error>> = std:
 
 /// Apply default values to data based on schema definitions
 pub struct DefaultApplier<'a> {
-    schema: &'a SchemaDefinition,
-}
+    schema: &'a SchemaDefinition}
 
 impl<'a> DefaultApplier<'a> {
     /// Create a new default applier
@@ -86,7 +85,7 @@ impl<'a> DefaultApplier<'a> {
                 // Check if slot has ifabsent
                 if let Some(ifabsent) = &slot.ifabsent {
                     let default_value =
-                        self.compute_default_value(ifabsent, slot_name, class_name, data)?;
+                        self.compute_default_value(ifabsent, slot_name, class_name, data);
 
                     if let Some(value) = default_value {
                         data.insert(slot_name.clone(), value);
@@ -103,7 +102,7 @@ impl<'a> DefaultApplier<'a> {
 
             if let Some(ifabsent) = &slot_override.ifabsent {
                 let default_value =
-                    self.compute_default_value(ifabsent, slot_name, class_name, data)?;
+                    self.compute_default_value(ifabsent, slot_name, class_name, data);
 
                 if let Some(value) = default_value {
                     data.insert(slot_name.clone(), value);
@@ -121,56 +120,56 @@ impl<'a> DefaultApplier<'a> {
         slot_name: &str,
         class_name: &str,
         data: &serde_json::Map<String, Value>,
-    ) -> Result<Option<Value>, String> {
+    ) -> Option<Value> {
         match action {
             IfAbsentAction::SlotName => {
                 // Use the slot name as the value
-                Ok(Some(Value::String(slot_name.to_string())))
+                Some(Value::String(slot_name.to_string()))
             }
 
             IfAbsentAction::ClassName => {
                 // Use the class name as the value
-                Ok(Some(Value::String(class_name.to_string())))
+                Some(Value::String(class_name.to_string()))
             }
 
             IfAbsentAction::ClassSlotCurie => {
                 // Create a CURIE from class and slot names
                 let curie = format!("{class_name}:{slot_name}");
-                Ok(Some(Value::String(curie)))
+                Some(Value::String(curie))
             }
 
             IfAbsentAction::Bnode => {
                 // Generate a blank node identifier
                 let bnode = format!("_:b{}", uuid::Uuid::new_v4().simple());
-                Ok(Some(Value::String(bnode)))
+                Some(Value::String(bnode))
             }
 
             IfAbsentAction::DefaultValue => {
                 // This would need to look up a separate default_value field
                 // For now, return None (no default)
-                Ok(None)
+                None
             }
 
             IfAbsentAction::String(s) => {
                 // Use the provided string
-                Ok(Some(Value::String(s.clone())))
+                Some(Value::String(s.clone()))
             }
 
             IfAbsentAction::Date => {
                 // Use current date
                 let current_date = Local::now().format("%Y-%m-%d").to_string();
-                Ok(Some(Value::String(current_date)))
+                Some(Value::String(current_date))
             }
 
             IfAbsentAction::Datetime => {
                 // Use current datetime
                 let datetime = Utc::now().to_rfc3339();
-                Ok(Some(Value::String(datetime)))
+                Some(Value::String(datetime))
             }
 
             IfAbsentAction::Int(n) => {
                 // Use the provided integer
-                Ok(Some(Value::Number((*n).into())))
+                Some(Value::Number((*n).into()))
             }
 
             IfAbsentAction::Expression(expr) => {
@@ -187,7 +186,7 @@ impl<'a> DefaultApplier<'a> {
         &self,
         expression: &str,
         data: &HashMap<String, Value>,
-    ) -> Result<Option<Value>, String> {
+    ) -> Option<Value> {
         // Simple expression evaluation
         // In a real implementation, this would use the expression engine
 
@@ -207,10 +206,10 @@ impl<'a> DefaultApplier<'a> {
                 }
             }
 
-            Ok(Some(Value::String(result)))
+            Some(Value::String(result))
         } else {
             // For now, just return the expression as a string
-            Ok(Some(Value::String(expression.to_string())))
+            Some(Value::String(expression.to_string()))
         }
     }
 }

@@ -12,13 +12,11 @@ use crate::validator::context::ValidationContext;
 use crate::validator::validators::{PatternValidator, RangeValidator, Validator as SlotValidator};
 
 use super::types::{
-    CompiledCompositeCondition, CompiledCondition, CompiledSlotCondition, RuleExecutionContext,
-};
+    CompiledCompositeCondition, CompiledCondition, CompiledSlotCondition, RuleExecutionContext};
 
 /// Matcher for evaluating rule preconditions
 pub struct RuleMatcher {
-    expression_engine: ExpressionEngine,
-}
+    expression_engine: ExpressionEngine}
 
 impl RuleMatcher {
     /// Create a new rule matcher
@@ -49,8 +47,7 @@ impl RuleMatcher {
             CompiledCondition::Combined {
                 slot_conditions,
                 expression_conditions,
-                composite_conditions,
-            } => {
+                composite_conditions} => {
                 // All components must match (AND logic)
                 if let Some(slots) = slot_conditions
                     && !self.match_slot_conditions(slots, context)? {
@@ -294,8 +291,7 @@ impl RuleMatcher {
                 // String comparison
                 Ok(cmp(s1.len() as f64, s2.len() as f64))
             }
-            _ => Ok(false),
-        }
+            _ => Ok(false)}
     }
 }
 
@@ -315,8 +311,7 @@ mod tests {
                 minimum_value: Some(json!(18)),
                 ..Default::default()
             },
-            equals_expression_ast: None,
-        };
+            equals_expression_ast: None};
 
         let mut validation_ctx = ValidationContext::new(Default::default());
         let context = RuleExecutionContext::new(

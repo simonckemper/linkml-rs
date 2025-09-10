@@ -26,8 +26,7 @@ impl BuiltinFunction for UpperFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected string argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -52,8 +51,7 @@ impl BuiltinFunction for LowerFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected string argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -78,8 +76,7 @@ impl BuiltinFunction for TrimFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected string argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -301,14 +298,12 @@ impl BuiltinFunction for JoinFunction {
                 _ => Err(FunctionError::invalid_argument(
                     self.name(),
                     "array must contain only strings",
-                )),
-            })
+                ))})
             .collect();
 
         match strings {
             Ok(strs) => Ok(Value::String(strs.join(delimiter))),
-            Err(e) => Err(e),
-        }
+            Err(e) => Err(e)}
     }
 }
 

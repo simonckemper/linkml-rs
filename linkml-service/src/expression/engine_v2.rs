@@ -33,8 +33,7 @@ pub struct EngineConfig {
     /// Threshold for using compiled vs interpreted evaluation
     pub compilation_threshold: u64,
     /// Whether to collect performance metrics
-    pub collect_metrics: bool,
-}
+    pub collect_metrics: bool}
 
 impl Default for EngineConfig {
     fn default() -> Self {
@@ -45,8 +44,7 @@ impl Default for EngineConfig {
             hot_cache_capacity: 100,
             optimization_level: 2,
             compilation_threshold: 3,
-            collect_metrics: false,
-        }
+            collect_metrics: false}
     }
 }
 
@@ -70,8 +68,7 @@ pub struct PerformanceMetrics {
     /// Average evaluation time (microseconds)
     pub avg_eval_time_us: u64,
     /// Cache hit rate
-    pub cache_hit_rate: f64,
-}
+    pub cache_hit_rate: f64}
 
 /// Enhanced expression engine with compilation and caching
 pub struct ExpressionEngineV2 {
@@ -90,8 +87,7 @@ pub struct ExpressionEngineV2 {
     /// Performance metrics
     metrics: Arc<std::sync::RwLock<PerformanceMetrics>>,
     /// Timestamp service for timing operations
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
-}
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>}
 
 impl ExpressionEngineV2 {
     /// Create a new enhanced expression engine
@@ -113,8 +109,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Create a new enhanced expression engine with injected timestamp service (factory pattern compliant)
@@ -141,8 +136,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Create with custom function registry
@@ -168,8 +162,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Create with custom function registry and injected timestamp service (factory pattern compliant)
@@ -197,8 +190,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
-        }
+            timestamp_service}
     }
 
     /// Evaluate an expression with the given context
@@ -237,8 +229,7 @@ impl ExpressionEngineV2 {
         // Create cache key
         let key = ExpressionKey {
             source: expression.to_string(),
-            schema_id: schema_id.map(std::string::ToString::to_string),
-        };
+            schema_id: schema_id.map(std::string::ToString::to_string)};
 
         // Try to get from cache
         let (ast, compiled) = if self.config.use_caching {
@@ -453,8 +444,7 @@ impl ExpressionEngineV2 {
     ) -> Result<(), ExpressionError> {
         let key = ExpressionKey {
             source: expression.to_string(),
-            schema_id: schema_id.map(std::string::ToString::to_string),
-        };
+            schema_id: schema_id.map(std::string::ToString::to_string)};
 
         // Check if already cached
         if self.cache.get(&key).is_some() {
@@ -484,16 +474,14 @@ impl ExpressionEngineV2 {
 /// Builder for creating configured expression engines
 pub struct EngineBuilder {
     config: EngineConfig,
-    function_registry: Option<Arc<FunctionRegistry>>,
-}
+    function_registry: Option<Arc<FunctionRegistry>>}
 
 impl EngineBuilder {
     /// Create a new builder with default config
     #[must_use] pub fn new() -> Self {
         Self {
             config: EngineConfig::default(),
-            function_registry: None,
-        }
+            function_registry: None}
     }
 
     /// Set whether to use compilation

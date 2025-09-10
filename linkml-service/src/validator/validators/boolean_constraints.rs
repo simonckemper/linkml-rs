@@ -16,8 +16,7 @@ use std::sync::Arc;
 
 use crate::validator::{
     context::ValidationContext,
-    report::{Severity, ValidationIssue},
-};
+    report::{Severity, ValidationIssue}};
 
 use super::{PatternValidator, RangeValidator, RequiredValidator, TypeValidator, Validator};
 
@@ -156,8 +155,7 @@ impl Validator for AnyOfValidator {
 /// - Thread-local context cloning to avoid contention
 pub struct AllOfValidator {
     /// Threshold for parallel evaluation
-    parallel_threshold: usize,
-}
+    parallel_threshold: usize}
 
 impl Default for AllOfValidator {
     fn default() -> Self {
@@ -169,15 +167,13 @@ impl AllOfValidator {
     /// Create a new `all_of` validator
     #[must_use] pub fn new() -> Self {
         Self {
-            parallel_threshold: 3,
-        }
+            parallel_threshold: 3}
     }
 
     /// Create a new `all_of` validator with custom parallel threshold
     #[must_use] pub fn with_parallel_threshold(threshold: usize) -> Self {
         Self {
-            parallel_threshold: threshold,
-        }
+            parallel_threshold: threshold}
     }
 
     /// Validate a single anonymous slot expression
@@ -534,13 +530,8 @@ impl NoneOfValidator {
         // Quick type check if range is specified
         if let Some(range) = &expr.range {
             match (range.as_str(), value) {
-                ("string", Value::String(_)) => {}
                 ("integer", Value::Number(n)) if n.is_i64() || n.is_u64() => {}
-                ("float" | "double" | "number", Value::Number(_)) => {}
-                ("boolean", Value::Bool(_)) => {}
-                ("null", Value::Null) => {}
-                ("array", Value::Array(_)) => {}
-                ("object", Value::Object(_)) => {}
+                ("string", Value::String(_)) | ("boolean", Value::Bool(_)) | ("null", Value::Null) | ("array", Value::Array(_)) | ("object", Value::Object(_)) | ("float" | "double" | "number", Value::Number(_)) => {}
                 _ => return false, // Type mismatch, constraint not satisfied
             }
         }

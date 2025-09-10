@@ -11,8 +11,7 @@ use std::sync::{Arc, Mutex};
 pub struct PatternValidator {
     name: String,
     /// Cache of compiled regex patterns
-    pattern_cache: Arc<Mutex<HashMap<String, Regex>>>,
-}
+    pattern_cache: Arc<Mutex<HashMap<String, Regex>>>}
 
 impl Default for PatternValidator {
     fn default() -> Self {
@@ -26,8 +25,7 @@ impl PatternValidator {
     pub fn new() -> Self {
         Self {
             name: "pattern_validator".to_string(),
-            pattern_cache: Arc::new(Mutex::new(HashMap::new())),
-        }
+            pattern_cache: Arc::new(Mutex::new(HashMap::new()))}
     }
 
     /// Get or compile a regex pattern

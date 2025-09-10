@@ -25,8 +25,7 @@ pub enum PluginError {
 
     /// Plugin not found
     #[error("Plugin not found: {0}")]
-    NotFound(String),
-}
+    NotFound(String)}
 
 /// Plugin metadata
 #[derive(Debug, Clone)]
@@ -44,8 +43,7 @@ pub struct PluginMetadata {
     pub author: String,
 
     /// Generator names provided by this plugin
-    pub generators: Vec<String>,
-}
+    pub generators: Vec<String>}
 
 /// Plugin configuration
 #[derive(Debug, Clone)]
@@ -57,16 +55,14 @@ pub struct PluginConfig {
     pub auto_discover: bool,
 
     /// Plugin-specific configuration
-    pub settings: HashMap<String, serde_json::Value>,
-}
+    pub settings: HashMap<String, serde_json::Value>}
 
 impl Default for PluginConfig {
     fn default() -> Self {
         Self {
             plugin_dir: PathBuf::from("./plugins"),
             auto_discover: true,
-            settings: HashMap::new(),
-        }
+            settings: HashMap::new()}
     }
 }
 
@@ -95,8 +91,7 @@ pub struct PluginManager {
     plugins: HashMap<String, Box<dyn GeneratorPlugin>>,
 
     /// Generator registry
-    registry: Arc<GeneratorRegistry>,
-}
+    registry: Arc<GeneratorRegistry>}
 
 impl PluginManager {
     /// Create a new plugin manager
@@ -104,8 +99,7 @@ impl PluginManager {
         Self {
             config,
             plugins: HashMap::new(),
-            registry,
-        }
+            registry}
     }
 
     /// Load all plugins from the plugin directory
@@ -185,8 +179,7 @@ impl PluginManager {
 /// Example custom generator plugin
 pub struct CustomGeneratorPlugin {
     metadata: PluginMetadata,
-    generators: Vec<Arc<dyn Generator>>,
-}
+    generators: Vec<Arc<dyn Generator>>}
 
 impl CustomGeneratorPlugin {
     /// Create a new custom generator plugin
@@ -201,10 +194,8 @@ impl CustomGeneratorPlugin {
                 version,
                 description: "Custom generator plugin".to_string(),
                 author: "RootReal".to_string(),
-                generators: generator_names,
-            },
-            generators,
-        }
+                generators: generator_names},
+            generators}
     }
 }
 
@@ -241,8 +232,7 @@ mod tests {
 
     /// Test generator for plugin system
     struct TestGenerator {
-        name: String,
-    }
+        name: String}
 
     #[async_trait]
     impl Generator for TestGenerator {
@@ -283,8 +273,7 @@ mod tests {
 
         // Create a test generator
         let test_gen = Arc::new(TestGenerator {
-            name: "test".to_string(),
-        });
+            name: "test".to_string()});
 
         // Create a plugin with the test generator
         let plugin = Box::new(CustomGeneratorPlugin::new(

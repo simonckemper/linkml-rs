@@ -13,8 +13,7 @@
 
 use linkml_core::{
     error::LinkMLError,
-    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition}};
 use serde_json;
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -31,8 +30,7 @@ pub enum RdfFormat {
     /// N-Triples format
     NTriples,
     /// `JSON`-LD format
-    JsonLd,
-}
+    JsonLd}
 
 /// RDF generation mode
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,8 +40,7 @@ pub enum RdfMode {
     /// Simple RDFS schema
     Rdfs,
     /// Plain RDF triples
-    Simple,
-}
+    Simple}
 
 /// RDF generator for semantic web representations
 pub struct RdfGenerator {
@@ -54,8 +51,7 @@ pub struct RdfGenerator {
     /// Output format
     format: RdfFormat,
     /// Generation mode
-    mode: RdfMode,
-}
+    mode: RdfMode}
 
 /// Alias for backward compatibility
 pub type OwlRdfGenerator = RdfGenerator;
@@ -101,8 +97,7 @@ impl RdfGenerator {
             options: GeneratorOptions::default(),
             prefixes,
             format: RdfFormat::Turtle,
-            mode: RdfMode::Owl,
-        }
+            mode: RdfMode::Owl}
     }
 
     /// Create with custom options
@@ -145,8 +140,7 @@ impl RdfGenerator {
             RdfFormat::Turtle => self.generate_turtle_prefixes(schema),
             RdfFormat::RdfXml => self.generate_rdfxml_prefixes(schema),
             RdfFormat::NTriples => Ok(String::new()), // N-Triples doesn't use prefixes
-            RdfFormat::JsonLd => self.generate_jsonld_context(schema),
-        }
+            RdfFormat::JsonLd => self.generate_jsonld_context(schema)}
     }
 
     /// Generate Turtle prefixes
@@ -214,8 +208,7 @@ impl RdfGenerator {
                 "rdfs": self.prefixes["rdfs"],
                 "xsd": self.prefixes["xsd"],
                 "skos": self.prefixes["skos"],
-                "dcterms": self.prefixes["dcterms"],
-            }
+                "dcterms": self.prefixes["dcterms"]}
         });
 
         if self.mode == RdfMode::Owl {
@@ -238,8 +231,7 @@ impl RdfGenerator {
         match self.mode {
             RdfMode::Owl => self.generate_owl_header(schema),
             RdfMode::Rdfs => self.generate_rdfs_header(schema),
-            RdfMode::Simple => self.generate_simple_header(schema),
-        }
+            RdfMode::Simple => self.generate_simple_header(schema)}
     }
 
     /// Generate OWL ontology header
@@ -338,8 +330,7 @@ impl RdfGenerator {
         match self.mode {
             RdfMode::Owl => self.generate_owl_class(name, class, schema),
             RdfMode::Rdfs => self.generate_rdfs_class(name, class, schema),
-            RdfMode::Simple => self.generate_simple_class(name, class, schema),
-        }
+            RdfMode::Simple => self.generate_simple_class(name, class, schema)}
     }
 
     /// Generate OWL class from `LinkML` class
@@ -604,8 +595,7 @@ impl RdfGenerator {
             .map(|pv| {
                 let value = match pv {
                     PermissibleValue::Simple(s) => s,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
+                    PermissibleValue::Complex { text, .. } => text};
                 format!(
                     "{}:{}_{}",
                     schema_prefix,
@@ -630,8 +620,7 @@ impl RdfGenerator {
                 PermissibleValue::Simple(s) => (s.clone(), None),
                 PermissibleValue::Complex {
                     text, description, ..
-                } => (text.clone(), description.clone()),
-            };
+                } => (text.clone(), description.clone())};
 
             let individual_uri = format!(
                 "{}:{}_{}",
@@ -692,8 +681,7 @@ impl RdfGenerator {
             "datetime" => Some("xsd:dateTime".to_string()),
             "time" => Some("xsd:time".to_string()),
             "uri" => Some("xsd:anyURI".to_string()),
-            _ => None,
-        }
+            _ => None}
     }
 
     /// Convert to snake_case
@@ -723,8 +711,7 @@ impl RdfGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -809,16 +796,14 @@ impl Generator for RdfGenerator {
         match self.mode {
             RdfMode::Owl => "owl-rdf",
             RdfMode::Rdfs => "rdfs",
-            RdfMode::Simple => "rdf",
-        }
+            RdfMode::Simple => "rdf"}
     }
 
     fn description(&self) -> &str {
         match self.mode {
             RdfMode::Owl => "Generates OWL ontology in RDF format from LinkML schemas",
             RdfMode::Rdfs => "Generates RDFS schema from LinkML schemas",
-            RdfMode::Simple => "Generates simple RDF triples from LinkML schemas",
-        }
+            RdfMode::Simple => "Generates simple RDF triples from LinkML schemas"}
     }
 
     fn file_extensions(&self) -> Vec<&str> {
@@ -826,8 +811,7 @@ impl Generator for RdfGenerator {
             RdfFormat::Turtle => vec![".ttl", ".owl"],
             RdfFormat::RdfXml => vec![".rdf", ".owl"],
             RdfFormat::NTriples => vec![".nt"],
-            RdfFormat::JsonLd => vec![".jsonld"],
-        }
+            RdfFormat::JsonLd => vec![".jsonld"]}
     }
 
     fn generate(&self, schema: &SchemaDefinition) -> std::result::Result<String, LinkMLError> {
@@ -881,8 +865,7 @@ impl Generator for RdfGenerator {
             (RdfFormat::Turtle, _) => "ttl",
             (RdfFormat::RdfXml, _) => "rdf",
             (RdfFormat::NTriples, _) => "nt",
-            (RdfFormat::JsonLd, _) => "jsonld",
-        }
+            (RdfFormat::JsonLd, _) => "jsonld"}
     }
 
     fn get_default_filename(&self) -> &str {
@@ -901,8 +884,7 @@ impl RdfGenerator {
             RdfFormat::Turtle => Ok(turtle_content.to_string()),
             RdfFormat::RdfXml => self.convert_to_rdfxml(turtle_content, schema),
             RdfFormat::NTriples => self.convert_to_ntriples(turtle_content, schema),
-            RdfFormat::JsonLd => self.convert_to_jsonld(turtle_content, schema),
-        }
+            RdfFormat::JsonLd => self.convert_to_jsonld(turtle_content, schema)}
     }
 
     /// Convert Turtle to RDF/`XML`
@@ -976,8 +958,7 @@ impl RdfGenerator {
                 "@id": format!("{}:{}", self.to_snake_case(&schema.name), self.to_pascal_case(name)),
                 "@type": if self.mode == RdfMode::Owl { "owl:Class" } else { "rdfs:Class" },
                 "rdfs:label": name,
-                "rdfs:comment": class.description,
-            });
+                "rdfs:comment": class.description});
             doc["@graph"]
                 .as_array_mut()
                 .ok_or_else(|| anyhow::anyhow!("@graph should be an array"))?
@@ -993,7 +974,7 @@ impl RdfGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_xsd_datatype_mapping() {

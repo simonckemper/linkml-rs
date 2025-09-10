@@ -13,10 +13,12 @@ use std::env;
 use std::path::Path;
 
 /// Load configuration from `YAML` file with environment variable substitution
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `LinkMLError::IoError` if the file cannot be read
+/// Returns `LinkMLError::ConfigError` if the YAML cannot be parsed
 pub fn load_config<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T> {
     // Read the file
     let contents = std::fs::read_to_string(path).map_err(LinkMLError::IoError)?;
@@ -80,8 +82,7 @@ pub struct LinkMLConfig {
     /// Background services configuration
     pub background_services: BackgroundServicesConfig,
     /// CLI configuration
-    pub cli: CliConfig,
-}
+    pub cli: CliConfig}
 
 /// `TypeDB` configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,8 +104,7 @@ pub struct TypeDBConfig {
     /// Connection pool size
     pub pool_size: usize,
     /// Whether to include inferred facts in query results
-    pub include_inferred: bool,
-}
+    pub include_inferred: bool}
 
 /// Parser configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,8 +120,7 @@ pub struct ParserConfig {
     /// List of supported file formats
     pub supported_formats: Vec<String>,
     /// Maximum import depth for schema imports
-    pub max_import_depth: usize,
-}
+    pub max_import_depth: usize}
 
 /// Validator configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,8 +138,7 @@ pub struct ValidatorConfig {
     /// Whether to stop on first error
     pub fail_fast: bool,
     /// Size of compiled validator cache
-    pub compiled_cache_size: usize,
-}
+    pub compiled_cache_size: usize}
 
 /// Generator configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,8 +150,7 @@ pub struct GeneratorConfig {
     /// Whether to include documentation in generated code
     pub include_docs: bool,
     /// Generator-specific options by generator name
-    pub generator_options: HashMap<String, GeneratorOptions>,
-}
+    pub generator_options: HashMap<String, GeneratorOptions>}
 
 /// Generator-specific options
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,8 +158,7 @@ pub struct GeneratorOptions {
     /// Path to custom template file
     pub template_path: Option<String>,
     /// Additional generator settings
-    pub settings: HashMap<String, serde_json::Value>,
-}
+    pub settings: HashMap<String, serde_json::Value>}
 
 /// Cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -178,8 +174,7 @@ pub struct CacheConfig {
     /// Expression cache settings
     pub expression_cache: CacheSettings,
     /// Rule cache settings
-    pub rule_cache: CacheSettings,
-}
+    pub rule_cache: CacheSettings}
 
 /// Cache settings for specific components
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -187,8 +182,7 @@ pub struct CacheSettings {
     /// Maximum number of entries
     pub max_entries: usize,
     /// Time-to-live in seconds
-    pub ttl_seconds: u64,
-}
+    pub ttl_seconds: u64}
 
 /// Performance configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -214,8 +208,7 @@ pub struct PerformanceConfig {
     /// Memory pool configuration
     pub memory_pool: MemoryPoolConfig,
     /// Cache TTL levels configuration
-    pub cache_ttl_levels: CacheTtlLevels,
-}
+    pub cache_ttl_levels: CacheTtlLevels}
 
 /// String cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -223,8 +216,7 @@ pub struct StringCacheConfig {
     /// Maximum number of cached strings
     pub max_entries: usize,
     /// Maximum length of cached strings
-    pub max_string_length: usize,
-}
+    pub max_string_length: usize}
 
 /// Memory pool configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -232,8 +224,7 @@ pub struct MemoryPoolConfig {
     /// Maximum size of memory pool in bytes
     pub max_size_bytes: u64,
     /// Size of memory chunks in bytes
-    pub chunk_size_bytes: usize,
-}
+    pub chunk_size_bytes: usize}
 
 /// Cache TTL levels
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -247,8 +238,7 @@ pub struct CacheTtlLevels {
     /// Minimum TTL in seconds
     pub min_ttl_seconds: u64,
     /// Maximum TTL in seconds
-    pub max_ttl_seconds: u64,
-}
+    pub max_ttl_seconds: u64}
 
 /// Security limits configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -282,8 +272,7 @@ pub struct SecurityLimits {
     /// Maximum expression evaluation time in milliseconds
     pub max_expression_time_ms: u64,
     /// Maximum validation errors to collect
-    pub max_validation_errors: usize,
-}
+    pub max_validation_errors: usize}
 
 /// Network configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -293,8 +282,7 @@ pub struct NetworkConfig {
     /// Default port number
     pub default_port: u16,
     /// `API` timeout in seconds
-    pub api_timeout_seconds: u64,
-}
+    pub api_timeout_seconds: u64}
 
 /// Expression configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -308,22 +296,19 @@ pub struct ExpressionConfig {
     /// Expression evaluation timeout in seconds
     pub timeout_seconds: u64,
     /// Maximum recursion depth for expressions
-    pub max_recursion_depth: usize,
-}
+    pub max_recursion_depth: usize}
 
 /// Pattern validator configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PatternValidatorConfig {
     /// Default cache size for pattern validators
-    pub default_cache_size: usize,
-}
+    pub default_cache_size: usize}
 
 /// Multi-layer cache configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiLayerCacheConfig {
     /// L3 cache maximum size in bytes
-    pub l3_max_size_bytes: u64,
-}
+    pub l3_max_size_bytes: u64}
 
 /// Background services configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -335,8 +320,7 @@ pub struct BackgroundServicesConfig {
     /// Panic recovery timeout in seconds
     pub panic_recovery_timeout_secs: u64,
     /// Error recovery timeout in seconds
-    pub error_recovery_timeout_secs: u64,
-}
+    pub error_recovery_timeout_secs: u64}
 
 /// CLI configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -346,8 +330,7 @@ pub struct CliConfig {
     /// Progress bar template string
     pub progress_bar_template: String,
     /// Progress bar finish template string
-    pub progress_bar_finish_template: String,
-}
+    pub progress_bar_finish_template: String}
 
 /// Default configuration file path
 pub const DEFAULT_CONFIG_PATH: &str = "config/default.yaml";
@@ -356,37 +339,42 @@ pub const DEFAULT_CONFIG_PATH: &str = "config/default.yaml";
 pub const PRODUCTION_CONFIG_PATH: &str = "config/production.yaml";
 
 /// Load default configuration
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `LinkMLError::IoError` if the default config file cannot be read
+/// Returns `LinkMLError::ConfigError` if the YAML cannot be parsed
 pub fn load_default_config() -> Result<LinkMLConfig> {
     let path = Path::new(DEFAULT_CONFIG_PATH);
     load_config(path)
 }
 
 /// Load production configuration
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `LinkMLError::IoError` if the production config file cannot be read
+/// Returns `LinkMLError::ConfigError` if the YAML cannot be parsed
 pub fn load_production_config() -> Result<LinkMLConfig> {
     let path = Path::new(PRODUCTION_CONFIG_PATH);
     load_config(path)
 }
 
 /// Load configuration based on environment
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `LinkMLError::IoError` if the config file cannot be read
+/// Returns `LinkMLError::ConfigError` if the YAML cannot be parsed
 pub fn load_environment_config() -> Result<LinkMLConfig> {
     let env = env::var("LINKML_ENV").unwrap_or_else(|_| "default".to_string());
 
     match env.as_str() {
         "production" | "prod" => load_production_config(),
-        _ => load_default_config(),
-    }
+        _ => load_default_config()}
 }
 
 /// Get a configuration instance (singleton pattern)
@@ -417,16 +405,14 @@ fn create_fallback_config() -> LinkMLConfig {
             max_retries: 3,
             retry_delay_ms: 1000,
             include_inferred: false,
-            pool_size: 10,
-        },
+            pool_size: 10},
         parser: ParserConfig {
             max_recursion_depth: 100,
             enable_cache: true,
             cache_ttl_seconds: 3600,
             max_file_size_bytes: 10 * 1024 * 1024, // 10MB
             supported_formats: vec!["yaml".to_string(), "json".to_string()],
-            max_import_depth: 10,
-        },
+            max_import_depth: 10},
         validator: ValidatorConfig {
             enable_parallel: true,
             thread_count: 4,
@@ -434,14 +420,12 @@ fn create_fallback_config() -> LinkMLConfig {
             timeout_ms: 5000,
             max_errors: 100,
             fail_fast: false,
-            compiled_cache_size: 100,
-        },
+            compiled_cache_size: 100},
         generator: GeneratorConfig {
             output_directory: "./generated".to_string(),
             enable_formatting: true,
             include_docs: true,
-            generator_options: HashMap::new(),
-        },
+            generator_options: HashMap::new()},
         cache: CacheConfig {
             max_entries: 1000,
             ttl_seconds: 3600,
@@ -449,13 +433,10 @@ fn create_fallback_config() -> LinkMLConfig {
             eviction_policy: "lru".to_string(),
             expression_cache: CacheSettings {
                 max_entries: 500,
-                ttl_seconds: 1800,
-            },
+                ttl_seconds: 1800},
             rule_cache: CacheSettings {
                 max_entries: 250,
-                ttl_seconds: 3600,
-            },
-        },
+                ttl_seconds: 3600}},
         performance: PerformanceConfig {
             enable_monitoring: true,
             memory_limit_bytes: 512 * 1024 * 1024, // 512MB
@@ -467,20 +448,16 @@ fn create_fallback_config() -> LinkMLConfig {
             background_task_interval_secs: 300,
             string_cache: StringCacheConfig {
                 max_entries: 5000,
-                max_string_length: 1000,
-            },
+                max_string_length: 1000},
             memory_pool: MemoryPoolConfig {
                 max_size_bytes: 100 * 1024 * 1024, // 100MB
-                chunk_size_bytes: 4096,
-            },
+                chunk_size_bytes: 4096},
             cache_ttl_levels: CacheTtlLevels {
                 l1_seconds: 300,
                 l2_seconds: 1800,
                 l3_seconds: 7200,
                 min_ttl_seconds: 60,
-                max_ttl_seconds: 86400,
-            },
-        },
+                max_ttl_seconds: 86400}},
         security_limits: SecurityLimits {
             max_string_length: 1_000_000,
             max_expression_depth: 50,
@@ -496,29 +473,24 @@ fn create_fallback_config() -> LinkMLConfig {
             max_parallel_validators: 10,
             max_cache_memory_bytes: 104_857_600,
             max_expression_time_ms: 5_000,
-            max_validation_errors: 100,
-        },
+            max_validation_errors: 100},
         network: NetworkConfig {
             default_host: "localhost".to_string(),
             default_port: 8080,
-            api_timeout_seconds: 30,
-        },
+            api_timeout_seconds: 30},
         expression: ExpressionConfig {
             enable_cache: true,
             enable_compilation: false,
             cache_size: 1000,
             timeout_seconds: 10,
-            max_recursion_depth: 50,
-        },
+            max_recursion_depth: 50},
         pattern_validator: PatternValidatorConfig {
-            default_cache_size: 500,
-        },
+            default_cache_size: 500},
         multi_layer_cache: MultiLayerCacheConfig {
             l3_max_size_bytes: 100 * 1024 * 1024, // 100MB
         },
         background_services: BackgroundServicesConfig::default(),
-        cli: CliConfig::default(),
-    }
+        cli: CliConfig::default()}
 }
 
 #[cfg(test)]

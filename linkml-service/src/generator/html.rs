@@ -8,8 +8,7 @@ use std::fmt::Write;
 /// HTML documentation generator for `LinkML` schemas
 pub struct HtmlGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl HtmlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -21,8 +20,7 @@ impl HtmlGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "html".to_string(),
-        }
+            name: "html".to_string()}
     }
 
     /// Generate HTML page header
@@ -42,13 +40,13 @@ impl HtmlGenerator {
         writeln!(
             &mut output,
             "    <title>{} - LinkML Documentation</title>",
-            self.escape_html(title)
+            Self::escape_html(title)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
         // Add embedded CSS
         writeln!(&mut output, "    <style>").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "{}", self.get_css()).map_err(Self::fmt_error_to_generator_error)?;
+        writeln!(&mut output, "{}", Self::get_css()).map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "    </style>").map_err(Self::fmt_error_to_generator_error)?;
 
         writeln!(&mut output, "</head>").map_err(Self::fmt_error_to_generator_error)?;
@@ -80,8 +78,8 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <li><a href=\"#class-{}\">{}</a></li>",
-                    self.to_anchor(class_name),
-                    self.escape_html(class_name)
+                    Self::to_anchor(class_name),
+                    Self::escape_html(class_name)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -125,8 +123,7 @@ impl HtmlGenerator {
     }
 
     /// Generate HTML page footer
-    fn generate_footer(&self) -> GeneratorResult<String> {
-        let _ = self;
+    fn generate_footer() -> GeneratorResult<String> {
         let mut output = String::new();
 
         writeln!(&mut output, "    </main>").map_err(Self::fmt_error_to_generator_error)?;
@@ -155,7 +152,7 @@ impl HtmlGenerator {
         writeln!(
             &mut output,
             "            <h1>{}</h1>",
-            self.escape_html(&schema.name)
+            Self::escape_html(&schema.name)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -163,7 +160,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <p class=\"description\">{}</p>",
-                self.escape_html(desc)
+                Self::escape_html(desc)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -180,7 +177,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "                    <tr><th>ID:</th><td>{}</td></tr>",
-                self.escape_html(&schema.id)
+                Self::escape_html(&schema.id)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -189,7 +186,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "                    <tr><th>Version:</th><td>{}</td></tr>",
-                self.escape_html(version)
+                Self::escape_html(version)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
         }
@@ -201,7 +198,7 @@ impl HtmlGenerator {
                 schema
                     .imports
                     .iter()
-                    .map(|i| self.escape_html(i))
+                    .map(|i| Self::escape_html(i))
                     .collect::<Vec<_>>()
                     .join(", ")
             )
@@ -236,13 +233,13 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"class-{}\" class=\"class\">",
-                self.to_anchor(class_name)
+                Self::to_anchor(class_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
                 &mut output,
                 "                <h3>{}</h3>",
-                self.escape_html(class_name)
+                Self::escape_html(class_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -250,7 +247,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                <p class=\"description\">{}</p>",
-                    self.escape_html(desc)
+                    Self::escape_html(desc)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -261,8 +258,8 @@ impl HtmlGenerator {
 
             if let Some(parent) = &class.is_a {
                 writeln!(&mut output, "                    <p><strong>Inherits from:</strong> <a href=\"#class-{}\">{}</a></p>",
-                    self.to_anchor(parent),
-                    self.escape_html(parent)
+                    Self::to_anchor(parent),
+                    Self::escape_html(parent)
                 ).map_err(Self::fmt_error_to_generator_error)?;
             }
 
@@ -275,8 +272,8 @@ impl HtmlGenerator {
                         .iter()
                         .map(|m| format!(
                             "<a href=\"#class-{}\">{}</a>",
-                            self.to_anchor(m),
-                            self.escape_html(m)
+                            Self::to_anchor(m),
+                            Self::escape_html(m)
                         ))
                         .collect::<Vec<_>>()
                         .join(", ")
@@ -333,14 +330,14 @@ impl HtmlGenerator {
                         writeln!(
                             &mut output,
                             "                                <td><a href=\"#slot-{}\">{}</a></td>",
-                            self.to_anchor(slot_name),
-                            self.escape_html(slot_name)
+                            Self::to_anchor(slot_name),
+                            Self::escape_html(slot_name)
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
                             &mut output,
                             "                                <td>{}</td>",
-                            self.escape_html(slot.range.as_deref().unwrap_or("string"))
+                            Self::escape_html(slot.range.as_deref().unwrap_or("string"))
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(
@@ -356,7 +353,7 @@ impl HtmlGenerator {
                         writeln!(
                             &mut output,
                             "                                <td>{}</td>",
-                            self.escape_html(slot.description.as_deref().unwrap_or(""))
+                            Self::escape_html(slot.description.as_deref().unwrap_or(""))
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         writeln!(&mut output, "                            </tr>")
@@ -401,13 +398,13 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"slot-{}\" class=\"slot\">",
-                self.to_anchor(slot_name)
+                Self::to_anchor(slot_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
                 &mut output,
                 "                <h3>{}</h3>",
-                self.escape_html(slot_name)
+                Self::escape_html(slot_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -415,7 +412,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                <p class=\"description\">{}</p>",
-                    self.escape_html(desc)
+                    Self::escape_html(desc)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -428,7 +425,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <tr><th>Range:</th><td>{}</td></tr>",
-                    self.escape_html(range)
+                    Self::escape_html(range)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -453,7 +450,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <tr><th>Pattern:</th><td><code>{}</code></td></tr>",
-                    self.escape_html(pattern)
+                    Self::escape_html(pattern)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -462,7 +459,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <tr><th>Minimum:</th><td>{}</td></tr>",
-                    self.escape_html(&minimum.to_string())
+                    Self::escape_html(&minimum.to_string())
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -471,7 +468,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <tr><th>Maximum:</th><td>{}</td></tr>",
-                    self.escape_html(&maximum.to_string())
+                    Self::escape_html(&maximum.to_string())
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -507,13 +504,13 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"enum-{}\" class=\"enum\">",
-                self.to_anchor(enum_name)
+                Self::to_anchor(enum_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
                 &mut output,
                 "                <h3>{}</h3>",
-                self.escape_html(enum_name)
+                Self::escape_html(enum_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -521,7 +518,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                <p class=\"description\">{}</p>",
-                    self.escape_html(desc)
+                    Self::escape_html(desc)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -538,7 +535,7 @@ impl HtmlGenerator {
                         writeln!(
                             &mut output,
                             "                    <li><code>{}</code></li>",
-                            self.escape_html(text)
+                            Self::escape_html(text)
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                     }
@@ -550,14 +547,14 @@ impl HtmlGenerator {
                         writeln!(
                             &mut output,
                             "                        <code>{}</code>",
-                            self.escape_html(text)
+                            Self::escape_html(text)
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                         if let Some(desc) = description {
                             writeln!(
                                 &mut output,
                                 "                        <span class=\"value-desc\"> - {}</span>",
-                                self.escape_html(desc)
+                                Self::escape_html(desc)
                             )
                             .map_err(Self::fmt_error_to_generator_error)?;
                         }
@@ -579,8 +576,7 @@ impl HtmlGenerator {
     }
 
     /// Get embedded CSS styles
-    fn get_css(&self) -> &'static str {
-        let _ = self;
+    fn get_css() -> &'static str {
         r#"
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -745,8 +741,7 @@ impl HtmlGenerator {
     }
 
     /// Convert text to HTML anchor
-    fn to_anchor(&self, text: &str) -> String {
-        let _ = self;
+    fn to_anchor(text: &str) -> String {
         text.to_lowercase()
             .replace([' ', '_'], "-")
             .chars()
@@ -755,8 +750,7 @@ impl HtmlGenerator {
     }
 
     /// Escape HTML special characters
-    fn escape_html(&self, text: &str) -> String {
-        let _ = self;
+    fn escape_html(text: &str) -> String {
         text.replace('&', "&amp;")
             .replace('<', "&lt;")
             .replace('>', "&gt;")
@@ -785,8 +779,7 @@ impl Generator for HtmlGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for HTML documentation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Check for XSS-prone content in names
@@ -797,8 +790,7 @@ impl Generator for HtmlGenerator {
                     message: format!(
                         "Class name '{class_name}' contains potentially unsafe HTML characters"
                     ),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -806,8 +798,7 @@ impl Generator for HtmlGenerator {
         if schema.classes.is_empty() && schema.slots.is_empty() && schema.types.is_empty() && schema.enums.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have at least one class, slot, type, or enum to generate documentation".to_string(),
-                element: Some("schema".to_string()),
-            });
+                element: Some("schema".to_string())});
         }
 
         Ok(())
@@ -838,7 +829,7 @@ impl Generator for HtmlGenerator {
         // Add types section if implemented
         // output.push_str(&self.generate_types(schema)?);
 
-        output.push_str(&self.generate_footer()?);
+        output.push_str(&Self::generate_footer()?);
 
         // Return the generated HTML content
         Ok(output)
@@ -900,7 +891,7 @@ impl CodeFormatter for HtmlGenerator {
         Ok(formatted)
     }
     fn format_doc(&self, doc: &str, _indent: &IndentStyle, _level: usize) -> String {
-        self.escape_html(doc)
+        Self::escape_html(doc)
     }
 
     fn format_list<T: AsRef<str>>(
@@ -912,13 +903,13 @@ impl CodeFormatter for HtmlGenerator {
     ) -> String {
         items
             .iter()
-            .map(|item| self.escape_html(item.as_ref()))
+            .map(|item| Self::escape_html(item.as_ref()))
             .collect::<Vec<_>>()
             .join(separator)
     }
 
     fn escape_string(&self, s: &str) -> String {
-        self.escape_html(s)
+        Self::escape_html(s)
     }
 
     fn convert_identifier(&self, id: &str) -> String {
@@ -929,7 +920,7 @@ impl CodeFormatter for HtmlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
 
     #[tokio::test]

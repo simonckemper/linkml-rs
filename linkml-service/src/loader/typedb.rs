@@ -5,11 +5,9 @@
 
 use super::dbms_executor::DBMSServiceExecutor;
 use super::traits::{
-    DataDumper, DataInstance, DataLoader, DumpOptions, DumperResult, LoadOptions, LoaderResult,
-};
+    DataDumper, DataInstance, DataLoader, DumpOptions, DumperResult, LoadOptions, LoaderResult};
 use super::typedb_integration::{
-    TypeDBIntegrationDumper, TypeDBIntegrationLoader, TypeDBIntegrationOptions,
-};
+    TypeDBIntegrationDumper, TypeDBIntegrationLoader, TypeDBIntegrationOptions};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::HashMap;
@@ -37,8 +35,7 @@ pub struct TypeDBOptions {
     pub create_if_not_exists: bool,
 
     /// Include inferred attributes
-    pub include_inferred: bool,
-}
+    pub include_inferred: bool}
 
 impl Default for TypeDBOptions {
     fn default() -> Self {
@@ -52,8 +49,7 @@ impl Default for TypeDBOptions {
             batch_size: config.typedb.batch_size,
             infer_types: true,
             create_if_not_exists: false,
-            include_inferred: config.typedb.include_inferred,
-        }
+            include_inferred: config.typedb.include_inferred}
     }
 }
 
@@ -61,8 +57,7 @@ impl Default for TypeDBOptions {
 ///
 /// This loader requires a DBMS service instance to perform all `TypeDB` operations.
 pub struct TypeDBLoader<S: dbms_core::DBMSService + 'static> {
-    inner: TypeDBIntegrationLoader<DBMSServiceExecutor<S>>,
-}
+    inner: TypeDBIntegrationLoader<DBMSServiceExecutor<S>>}
 
 impl<S> TypeDBLoader<S>
 where
@@ -86,8 +81,7 @@ where
         let executor = DBMSServiceExecutor::new(dbms_service);
 
         Self {
-            inner: TypeDBIntegrationLoader::new(integration_options, executor),
-        }
+            inner: TypeDBIntegrationLoader::new(integration_options, executor)}
     }
 }
 
@@ -145,8 +139,7 @@ where
 ///
 /// This dumper requires a DBMS service instance to perform all `TypeDB` operations.
 pub struct TypeDBDumper<S: dbms_core::DBMSService + 'static> {
-    inner: TypeDBIntegrationDumper<DBMSServiceExecutor<S>>,
-}
+    inner: TypeDBIntegrationDumper<DBMSServiceExecutor<S>>}
 
 impl<S> TypeDBDumper<S>
 where
@@ -170,8 +163,7 @@ where
         let executor = DBMSServiceExecutor::new(dbms_service);
 
         Self {
-            inner: TypeDBIntegrationDumper::new(integration_options, executor),
-        }
+            inner: TypeDBIntegrationDumper::new(integration_options, executor)}
     }
 }
 

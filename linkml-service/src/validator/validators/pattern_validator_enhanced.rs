@@ -14,16 +14,15 @@ pub struct PatternMatchResult {
     /// Whether the pattern matched
     pub matched: bool,
     /// Named capture groups if any
-    pub captures: Option<Map<String, Value>>,
-}
+    pub captures: Option<Map<String, Value>>}
 
 /// Enhanced pattern validator with named capture group support
 pub struct EnhancedPatternValidator {
     name: String,
     /// LRU cache of compiled regex patterns
     pattern_cache: Arc<Mutex<LruCache<String, Arc<Regex>>>>,
-    /// Maximum cache size (stored for future reference)
-    _cache_size: usize,
+    /// Maximum cache size
+    cache_size: usize,
 }
 
 impl Default for EnhancedPatternValidator {
@@ -51,8 +50,14 @@ impl EnhancedPatternValidator {
         Self {
             name: "enhanced_pattern_validator".to_string(),
             pattern_cache: Arc::new(Mutex::new(LruCache::new(cache_size))),
-            _cache_size: size,
+            cache_size: size,
         }
+    }
+
+    /// Get the configured cache size
+    #[must_use]
+    pub fn cache_size(&self) -> usize {
+        self.cache_size
     }
 
     /// Get or compile a regex pattern with caching
@@ -123,12 +128,10 @@ impl EnhancedPatternValidator {
 
     /// Store capture groups in validation context for cross-field validation
     fn store_captures(
-        &self,
         context: &mut ValidationContext,
         slot_name: &str,
         captures: Map<String, Value>,
     ) {
-        let _ = self; // May use configuration in the future
         // Store captures in context for potential cross-field validation
         context.set_data(&format!("captures.{slot_name}"), Value::Object(captures));
     }
@@ -147,7 +150,7 @@ impl EnhancedPatternValidator {
         // If we have captures and the slot name, store them
         if let Some(capture_map) = captures
             && !capture_map.is_empty() {
-                self.store_captures(context, &slot.name, capture_map.clone());
+                Self::store_captures(context, &slot.name, capture_map.clone());
 
                 // Check if there are any group constraints (future enhancement)
                 // For now, just add info about successful capture

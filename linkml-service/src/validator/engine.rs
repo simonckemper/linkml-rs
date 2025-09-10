@@ -4,8 +4,7 @@ use crate::performance::profiling::Profiler;
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::SchemaSettings,
-    types::{ClassDefinition, SchemaDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, SchemaDefinition, SlotDefinition}};
 use serde_json::Value;
 use std::sync::Arc;
 use timestamp_core::SyncTimestampService;
@@ -20,8 +19,7 @@ use super::{
     default_applier::DefaultApplier,
     recursion_checker::{RecursionTracker, check_recursion},
     report::{ValidationIssue, ValidationReport},
-    validators::{Validator, ValidatorRegistry},
-};
+    validators::{Validator, ValidatorRegistry}};
 use crate::inheritance::InheritanceResolver;
 use crate::namespace::CurieResolver;
 use crate::schema_view::SchemaView;
@@ -43,8 +41,7 @@ use crate::schema_view::SchemaView;
     /// Whether to fail on warnings (treat warnings as errors)
     pub fail_on_warning: Option<bool>,
     /// Custom validators to use
-    pub custom_validators: Vec<Box<dyn Validator>>,
-}
+    pub custom_validators: Vec<Box<dyn Validator>>}
 
 impl Clone for ValidationOptions {
     fn clone(&self) -> Self {
@@ -57,8 +54,7 @@ impl Clone for ValidationOptions {
             allow_additional_properties: self.allow_additional_properties,
             fail_on_warning: self.fail_on_warning,
             // We can't clone custom validators, so we just create an empty vec
-            custom_validators: Vec::new(),
-        }
+            custom_validators: Vec::new()}
     }
 }
 
@@ -130,8 +126,7 @@ pub struct ValidationEngine {
     compiled_cache: Option<Arc<CompiledValidatorCache>>,
     buffer_pools: Arc<ValidationBufferPools>,
     timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
-    profiler: Arc<Profiler>,
-}
+    profiler: Arc<Profiler>}
 
 impl ValidationEngine {
     /// Create a new validation engine for a schema
@@ -151,8 +146,7 @@ impl ValidationEngine {
             compiled_cache: None,
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service,
-            profiler,
-        })
+            profiler})
     }
 
     /// Create a new validation engine with injected timestamp service (factory pattern compliant)
@@ -178,8 +172,7 @@ impl ValidationEngine {
             compiled_cache: None,
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service,
-            profiler,
-        })
+            profiler})
     }
 
     /// Create a new validation engine with a compiled validator cache
@@ -201,8 +194,7 @@ impl ValidationEngine {
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service: timestamp_service.clone(),
-            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new()))),
-        })
+            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new())))})
     }
 
     /// Create a new validation engine with cache and injected timestamp service (factory pattern compliant)
@@ -227,8 +219,7 @@ impl ValidationEngine {
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service: timestamp_service.clone(),
-            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new()))),
-        })
+            profiler: Arc::new(Profiler::new(Arc::new(crate::performance::profiling::SystemTimestampService::new())))})
     }
 
     /// Add a custom validator to the engine
@@ -254,8 +245,7 @@ impl ValidationEngine {
                 (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
                 (Some(opts), None) => opts,
                 (None, Some(settings)) => ValidationOptions::from_settings(settings),
-                (None, None) => ValidationOptions::default(),
-            }
+                (None, None) => ValidationOptions::default()}
         });
 
         // Try to determine the target class from the data
@@ -287,8 +277,7 @@ impl ValidationEngine {
                 (Some(opts), Some(settings)) => opts.merge_with_settings(settings),
                 (Some(opts), None) => opts,
                 (None, Some(settings)) => ValidationOptions::from_settings(settings),
-                (None, None) => ValidationOptions::default(),
-            }
+                (None, None) => ValidationOptions::default()}
         });
 
         // Check that the class exists
@@ -440,7 +429,7 @@ impl ValidationEngine {
                         .as_millis().try_into().unwrap_or(u64::MAX);
 
                     // Store in cache
-                    cache.put(cache_key, validator).await?;
+                    cache.put(cache_key, validator)?;
 
                     // Get back the Arc version
                     let cache_key =
@@ -794,6 +783,5 @@ fn data_type_name(value: &Value) -> &'static str {
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
+        Value::Object(_) => "object"}
 }

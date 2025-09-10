@@ -20,8 +20,7 @@ pub struct GeneratorOptions {
     /// Custom template directory
     pub template_dir: Option<String>,
     /// Additional generator-specific options
-    pub extra: std::collections::HashMap<String, String>,
-}
+    pub extra: std::collections::HashMap<String, String>}
 
 /// Result of code generation
 #[derive(Debug)]
@@ -33,8 +32,7 @@ pub struct GenerationResult {
     /// Any warnings produced
     pub warnings: Vec<String>,
     /// Generation statistics
-    pub stats: GenerationStats,
-}
+    pub stats: GenerationStats}
 
 /// Statistics about the generation process
 #[derive(Debug, Default)]
@@ -50,8 +48,7 @@ pub struct GenerationStats {
     /// Number of files created
     pub files_created: usize,
     /// Number of bytes written
-    pub bytes_written: usize,
-}
+    pub bytes_written: usize}
 
 /// Optimized code generator trait using Arc
 #[async_trait]
@@ -98,30 +95,26 @@ pub trait IncrementalGenerator: CodeGeneratorV2 {
 /// Base implementation helper for generators
 pub struct GeneratorBase {
     _name: &'static str,
-    _extensions: Vec<&'static str>,
-}
+    _extensions: Vec<&'static str>}
 
 impl GeneratorBase {
     /// Create a new generator base with name and supported extensions
     pub fn new(name: &'static str, extensions: Vec<&'static str>) -> Self {
         Self {
             _name: name,
-            _extensions: extensions,
-        }
+            _extensions: extensions}
     }
 }
 
 /// Registry for generators with Arc schema support
 pub struct GeneratorRegistry {
-    generators: dashmap::DashMap<String, Arc<dyn CodeGeneratorV2>>,
-}
+    generators: dashmap::DashMap<String, Arc<dyn CodeGeneratorV2>>}
 
 impl GeneratorRegistry {
     /// Create new registry
     pub fn new() -> Self {
         Self {
-            generators: dashmap::DashMap::new(),
-        }
+            generators: dashmap::DashMap::new()}
     }
 
     /// Register a generator
@@ -168,15 +161,13 @@ macro_rules! impl_generator_v2 {
 
 /// Example of a generator implementation using Arc
 pub struct ExampleGeneratorV2 {
-    _base: GeneratorBase,
-}
+    _base: GeneratorBase}
 
 impl ExampleGeneratorV2 {
     /// Create a new example generator
     pub fn new() -> Self {
         Self {
-            _base: GeneratorBase::new("example", vec!["ex", "example"]),
-        }
+            _base: GeneratorBase::new("example", vec!["ex", "example"])}
     }
 
     async fn generate_impl(
@@ -189,8 +180,7 @@ impl ExampleGeneratorV2 {
             files: Vec::new(),
             content: Some(format!("Generated from schema: {}", schema.name)),
             warnings: Vec::new(),
-            stats: GenerationStats::default(),
-        };
+            stats: GenerationStats::default()};
 
         // Use options to control generation behavior
         if let Some(output_dir) = &options.output_dir {
@@ -216,8 +206,7 @@ impl_generator_v2!(ExampleGeneratorV2, "example", vec!["ex", "example"]);
 
 /// Parallel generator executor
 pub struct ParallelGeneratorExecutor {
-    registry: Arc<GeneratorRegistry>,
-}
+    registry: Arc<GeneratorRegistry>}
 
 impl ParallelGeneratorExecutor {
     /// Create new executor
@@ -251,8 +240,7 @@ impl ParallelGeneratorExecutor {
                             "Generator '{}' not found",
                             name
                         ))),
-                    ),
-                }
+                    )}
             }
         });
 

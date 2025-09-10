@@ -4,6 +4,7 @@
 //! supporting arithmetic, comparison, logical operations, and functions.
 
 use crate::expression::ast::Expression;
+use std::fmt::Write;
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -24,8 +25,7 @@ pub enum TranslationError {
 
     /// Expression requires decomposition for `TypeQL`
     #[error("Complex expression requires decomposition: {0}")]
-    ComplexExpression(String),
-}
+    ComplexExpression(String)}
 
 /// Context for expression translation
 #[derive(Debug, Clone)]
@@ -37,8 +37,7 @@ pub struct TranslationContext {
     /// Counter for generating unique variables
     pub var_counter: usize,
     /// Whether we're in a negation context
-    pub negated: bool,
-}
+    pub negated: bool}
 
 impl TranslationContext {
     /// Create a new translation context
@@ -48,8 +47,7 @@ impl TranslationContext {
             variables: HashMap::new(),
             entity_var,
             var_counter: 0,
-            negated: false,
-        }
+            negated: false}
     }
 
     /// Generate a new unique variable
@@ -78,8 +76,7 @@ pub struct TranslatedExpression {
     /// The variable or value representing the result
     pub result: String,
     /// Additional variables that need to be bound
-    pub bindings: HashMap<String, String>,
-}
+    pub bindings: HashMap<String, String>}
 
 /// Function handler type
 type FunctionHandler = Box<
@@ -91,8 +88,7 @@ type FunctionHandler = Box<
 /// Translates ``LinkML`` expressions to `TypeQL` patterns
 pub struct ExpressionTranslator {
     /// Supported function mappings
-    function_handlers: HashMap<String, FunctionHandler>,
-}
+    function_handlers: HashMap<String, FunctionHandler>}
 
 impl Default for ExpressionTranslator {
     fn default() -> Self {
@@ -105,8 +101,7 @@ impl ExpressionTranslator {
     #[must_use]
     pub fn new() -> Self {
         let mut translator = Self {
-            function_handlers: HashMap::new(),
-        };
+            function_handlers: HashMap::new()};
 
         // Register built-in function handlers
         translator.register_builtin_functions();
@@ -151,13 +146,11 @@ impl ExpressionTranslator {
                         Ok(TranslatedExpression {
                             patterns: vec![pattern],
                             result: "true".to_string(),
-                            bindings: HashMap::new(),
-                        })
+                            bindings: HashMap::new()})
                     }
                     _ => Err(TranslationError::ComplexExpression(
                         "contains() with complex arguments".to_string(),
-                    )),
-                }
+                    ))}
             }),
         );
     }
@@ -207,11 +200,9 @@ impl ExpressionTranslator {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => self.translate_conditional(condition, then_expr, else_expr, ctx),
+                else_expr} => self.translate_conditional(condition, then_expr, else_expr, ctx),
             Expression::Modulo(left, right) => self.translate_binary_op(left, "Modulo", right, ctx),
-            Expression::Negate(operand) => self.translate_unary_op("Negate", operand, ctx),
-        }
+            Expression::Negate(operand) => self.translate_unary_op("Negate", operand, ctx)}
     }
 
     /// Translate a null literal
@@ -226,8 +217,7 @@ impl ExpressionTranslator {
         Ok(TranslatedExpression {
             patterns: vec![],
             result: b.to_string(),
-            bindings: HashMap::new(),
-        })
+            bindings: HashMap::new()})
     }
 
     /// Translate a number literal
@@ -235,8 +225,7 @@ impl ExpressionTranslator {
         Ok(TranslatedExpression {
             patterns: vec![],
             result: n.to_string(),
-            bindings: HashMap::new(),
-        })
+            bindings: HashMap::new()})
     }
 
     /// Translate a string literal
@@ -244,8 +233,7 @@ impl ExpressionTranslator {
         Ok(TranslatedExpression {
             patterns: vec![],
             result: format!("\"{s}\""),
-            bindings: HashMap::new(),
-        })
+            bindings: HashMap::new()})
     }
 
     /// Translate a variable reference
@@ -261,8 +249,7 @@ impl ExpressionTranslator {
         Ok(TranslatedExpression {
             patterns: vec![pattern],
             result: var,
-            bindings: HashMap::new(),
-        })
+            bindings: HashMap::new()})
     }
 
     /// Translate a binary operation
@@ -331,8 +318,7 @@ impl ExpressionTranslator {
         Ok(TranslatedExpression {
             patterns,
             result: "true".to_string(), // Comparison result
-            bindings: HashMap::new(),
-        })
+            bindings: HashMap::new()})
     }
 
     /// Translate a unary operation
@@ -354,8 +340,7 @@ impl ExpressionTranslator {
                 Ok(TranslatedExpression {
                     patterns: vec![negated_pattern],
                     result: "true".to_string(),
-                    bindings: trans.bindings,
-                })
+                    bindings: trans.bindings})
             }
             "Negate" => {
                 // Numeric negation requires computed attributes
@@ -365,8 +350,7 @@ impl ExpressionTranslator {
             }
             _ => Err(TranslationError::UnsupportedExpression(format!(
                 "Unary operator {op} not supported"
-            ))),
-        }
+            )))}
     }
 
     /// Translate a function call
@@ -419,19 +403,19 @@ impl ExpressionTranslator {
         let trans = self.translate(expression, &mut ctx)?;
 
         let mut rule = String::new();
-        rule.push_str(&format!("rule compute-{entity_type}-{attribute}:\n"));
+        writeln!(rule, "rule compute-{entity_type}-{attribute}:").unwrap();
         rule.push_str("when {\n");
-        rule.push_str(&format!("    {entity_var} isa {entity_type};\n"));
+        writeln!(rule, "    {entity_var} isa {entity_type};").unwrap();
 
         for pattern in &trans.patterns {
-            rule.push_str(&format!("    {pattern};\n"));
+            writeln!(rule, "    {pattern};").unwrap();
         }
 
         rule.push_str("} then {\n");
-        rule.push_str(&format!(
-            "    {} has {} {};\n",
+        writeln!(rule, 
+            "    {} has {} {};",
             entity_var, attribute, trans.result
-        ));
+        ).unwrap();
         rule.push_str("};\n");
 
         Ok(rule)
@@ -487,8 +471,7 @@ mod tests {
             args: vec![
                 Expression::Variable("tags".to_string()),
                 Expression::String("important".to_string()),
-            ],
-        };
+            ]};
 
         let result = translator
             .translate(&expr, &mut ctx)

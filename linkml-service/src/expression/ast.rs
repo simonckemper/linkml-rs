@@ -32,8 +32,7 @@ pub enum BinaryOp {
     /// Logical AND operator (&&)
     And,
     /// Logical OR operator (||)
-    Or,
-}
+    Or}
 
 /// Unary operators
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -41,8 +40,7 @@ pub enum UnaryOp {
     /// Negation operator (-)
     Negate,
     /// Logical NOT operator (!)
-    Not,
-}
+    Not}
 
 /// Represents an expression in the `LinkML` expression language
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -98,8 +96,7 @@ pub enum Expression {
         /// Function name
         name: String,
         /// Function arguments
-        args: Vec<Expression>,
-    },
+        args: Vec<Expression>},
 
     /// Conditional expression (ternary)
     Conditional {
@@ -108,9 +105,7 @@ pub enum Expression {
         /// Expression if condition is true
         then_expr: Box<Expression>,
         /// Expression if condition is false
-        else_expr: Box<Expression>,
-    },
-}
+        else_expr: Box<Expression>}}
 
 impl Expression {
     /// Create a new variable expression
@@ -165,8 +160,7 @@ impl Expression {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => {
+                else_expr} => {
                 1 + condition
                     .depth()
                     .max(then_expr.depth())
@@ -207,9 +201,7 @@ impl Expression {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => 1 + condition.node_count() + then_expr.node_count() + else_expr.node_count(),
-        }
+                else_expr} => 1 + condition.node_count() + then_expr.node_count() + else_expr.node_count()}
     }
 }
 
@@ -255,9 +247,7 @@ impl fmt::Display for Expression {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => write!(f, "({then_expr} if {condition} else {else_expr})"),
-        }
+                else_expr} => write!(f, "({then_expr} if {condition} else {else_expr})")}
     }
 }
 
@@ -311,8 +301,7 @@ mod tests {
 
         let func = Expression::FunctionCall {
             name: "len".to_string(),
-            args: vec![Expression::Variable("items".to_string())],
-        };
+            args: vec![Expression::Variable("items".to_string())]};
         assert_eq!(func.to_string(), "len({items})");
     }
 }

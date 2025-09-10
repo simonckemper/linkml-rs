@@ -35,8 +35,7 @@ pub enum PluginCapability {
     /// Can be configured at runtime
     RuntimeConfiguration,
     /// Supports hot reload
-    HotReload,
-}
+    HotReload}
 
 /// Plugin metadata for runtime introspection
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,8 +49,7 @@ pub struct PluginMetadata {
     /// Build host
     pub build_host: Option<String>,
     /// Custom metadata
-    pub custom: HashMap<String, serde_json::Value>,
-}
+    pub custom: HashMap<String, serde_json::Value>}
 
 /// Plugin lifecycle events
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,8 +65,7 @@ pub enum LifecycleEvent {
     /// Configuration changed
     ConfigChanged,
     /// Error occurred
-    Error,
-}
+    Error}
 
 /// Plugin event handler
 #[async_trait]
@@ -85,8 +82,7 @@ pub struct ConfigSchema {
     /// Default configuration values
     pub defaults: HashMap<String, serde_json::Value>,
     /// Configuration examples
-    pub examples: Vec<HashMap<String, serde_json::Value>>,
-}
+    pub examples: Vec<HashMap<String, serde_json::Value>>}
 
 /// Plugin health check interface
 #[async_trait]
@@ -106,8 +102,7 @@ pub struct HealthStatus {
     /// Health check message
     pub message: Option<String>,
     /// Component health details
-    pub components: HashMap<String, HealthState>,
-}
+    pub components: HashMap<String, HealthState>}
 
 /// Health state enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -119,8 +114,7 @@ pub enum HealthState {
     /// Plugin is unhealthy
     Unhealthy,
     /// Plugin health is unknown
-    Unknown,
-}
+    Unknown}
 
 /// Detailed health metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,8 +130,7 @@ pub struct HealthMetrics {
     /// Memory usage in bytes
     pub memory_usage: usize,
     /// Custom metrics
-    pub custom: HashMap<String, f64>,
-}
+    pub custom: HashMap<String, f64>}
 
 /// Plugin extension points
 #[async_trait]
@@ -159,8 +152,7 @@ pub struct ExtensionInput {
     /// Optional schema context
     pub schema: Option<SchemaDefinition>,
     /// Optional data context
-    pub data: Option<serde_json::Value>,
-}
+    pub data: Option<serde_json::Value>}
 
 /// Extension output data
 #[derive(Debug, Clone)]
@@ -172,8 +164,7 @@ pub struct ExtensionOutput {
     /// Error message if failed
     pub error: Option<String>,
     /// Additional metadata
-    pub metadata: HashMap<String, serde_json::Value>,
-}
+    pub metadata: HashMap<String, serde_json::Value>}
 
 /// Plugin SDK helper for plugin developers
 pub struct PluginSDK;
@@ -196,8 +187,7 @@ impl PluginSDK {
             sdk_version: env!("CARGO_PKG_VERSION").to_string(),
             build_time: chrono::Utc::now().to_rfc3339(),
             build_host: hostname::get().ok().and_then(|h| h.into_string().ok()),
-            custom: HashMap::new(),
-        }
+            custom: HashMap::new()}
     }
 }
 
@@ -205,8 +195,7 @@ impl PluginSDK {
 pub struct PluginBuilder {
     info: PluginInfo,
     capabilities: Vec<PluginCapability>,
-    config_schema: Option<ConfigSchema>,
-}
+    config_schema: Option<ConfigSchema>}
 
 impl Default for PluginBuilder {
     fn default() -> Self {
@@ -229,11 +218,9 @@ impl PluginBuilder {
                 homepage: None,
                 linkml_version: VersionReq::parse("*").expect("'*' is a valid version requirement"),
                 dependencies: Vec::new(),
-                capabilities: Vec::new(),
-            },
+                capabilities: Vec::new()},
             capabilities: Vec::new(),
-            config_schema: None,
-        }
+            config_schema: None}
     }
 
     /// Set plugin ID
@@ -329,8 +316,7 @@ mod tests {
         let status = HealthStatus {
             status: HealthState::Healthy,
             message: Some("All systems operational".to_string()),
-            components: HashMap::new(),
-        };
+            components: HashMap::new()};
 
         assert_eq!(status.status, HealthState::Healthy);
         assert!(status.message.is_some());

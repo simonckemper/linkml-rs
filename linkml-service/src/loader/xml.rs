@@ -4,8 +4,8 @@
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
+use std::fmt::Write;
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::Value;
@@ -15,16 +15,14 @@ pub struct XmlLoader {
     /// Input file path
     file_path: Option<String>,
     /// Root element name
-    root_element: String,
-}
+    root_element: String}
 
 impl XmlLoader {
     /// Create a new `XML` loader
     #[must_use] pub fn new() -> Self {
         Self {
             file_path: None,
-            root_element: "data".to_string(),
-        }
+            root_element: "data".to_string()}
     }
 
     /// Set the input file path
@@ -37,6 +35,38 @@ impl XmlLoader {
     #[must_use] pub fn with_root_element(mut self, root: &str) -> Self {
         self.root_element = root.to_string();
         self
+    }
+
+    fn check_circular_references(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+        use std::collections::HashSet;
+
+        for (class_name, _class_def) in &schema.classes {
+            let mut visited = HashSet::new();
+            let mut stack = vec![class_name.clone()];
+
+            while let Some(current_class) = stack.pop() {
+                if visited.contains(&current_class) {
+                    continue;
+                }
+                visited.insert(current_class.clone());
+
+                if let Some(current_def) = schema.classes.get(&current_class) {
+                    // Check parent classes
+                    for parent in &current_def.is_a {
+                        if parent == class_name {
+                            return Err(LoaderError::SchemaValidation(
+                                format!("Circular inheritance detected: class '{}' inherits from itself", class_name)
+                            ));
+                        }
+                        if !visited.contains(parent) {
+                            stack.push(parent.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -102,8 +132,7 @@ impl DataLoader for XmlLoader {
                             id: None,
                             class_name: name.clone(),
                             data: HashMap::new(),
-                            metadata: HashMap::new(),
-                        });
+                            metadata: HashMap::new()});
                         current_values.clear();
                     } else {
                         current_element = name;
@@ -149,9 +178,65 @@ impl DataLoader for XmlLoader {
         self.load_string(&content, schema, options).await
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> LoaderResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> LoaderResult<()> {
+        // Validate schema for XML loading compatibility
+
+        // Check if schema has required basic elements
+        if schema.name.is_empty() {
+            return Err(LoaderError::SchemaValidation(
+                "Schema name is required for XML loading".to_string()
+            ));
+        }
+
+        // Validate that classes have appropriate structures for XML
+        for (class_name, class_def) in &schema.classes {
+            // Check for XML-incompatible characters in class names
+            if class_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+                return Err(LoaderError::SchemaValidation(
+                    format!("Class name '{}' contains XML-incompatible characters", class_name)
+                ));
+            }
+
+            // Validate slots for XML compatibility
+            for slot_name in &class_def.slots {
+                if slot_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+                    return Err(LoaderError::SchemaValidation(
+                        format!("Slot name '{}' in class '{}' contains XML-incompatible characters",
+                                slot_name, class_name)
+                    ));
+                }
+            }
+        }
+
+        // Validate enums for XML compatibility
+        for (enum_name, enum_def) in &schema.enums {
+            if enum_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+                return Err(LoaderError::SchemaValidation(
+                    format!("Enum name '{}' contains XML-incompatible characters", enum_name)
+                ));
+            }
+
+            // Check enum values
+            for pv in &enum_def.permissible_values {
+                let pv_text = match pv {
+                    linkml_core::types::PermissibleValue::Simple(text) | linkml_core::types::PermissibleValue::Complex { text, .. } => text,
+                };
+                if pv_text.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-' && c != '.') {
+                    return Err(LoaderError::SchemaValidation(
+                        format!("Enum value '{}' in enum '{}' contains XML-incompatible characters",
+                                pv_text, enum_name)
+                    ));
+                }
+            }
+        }
+
+        // Check for circular references that could cause issues in XML
+        // This is a basic check - could be enhanced
+        self.check_circular_references(schema)?;
+
         Ok(())
     }
+
 }
 
 /// `XML` dumper for `LinkML` data
@@ -161,8 +246,7 @@ pub struct XmlDumper {
     /// Root element name
     root_element: String,
     /// `XML` namespace
-    namespace: Option<String>,
-}
+    namespace: Option<String>}
 
 impl XmlDumper {
     /// Create a new `XML` dumper
@@ -170,8 +254,7 @@ impl XmlDumper {
         Self {
             pretty,
             root_element: "data".to_string(),
-            namespace: None,
-        }
+            namespace: None}
     }
 
     /// Set the root element name
@@ -232,9 +315,9 @@ impl DataDumper for XmlDumper {
 
         // Root element
         if let Some(ns) = &self.namespace {
-            xml.push_str(&format!("<{} xmlns=\"{}\">\n", self.root_element, ns));
+            writeln!(xml, "<{} xmlns=\"{}\">", self.root_element, ns).unwrap();
         } else {
-            xml.push_str(&format!("<{}>\n", self.root_element));
+            writeln!(xml, "<{}>", self.root_element).unwrap();
         }
 
         // Convert instances to XML
@@ -242,7 +325,7 @@ impl DataDumper for XmlDumper {
             if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
-            xml.push_str(&format!("<{}", instance.class_name));
+            write!(xml, "<{}", instance.class_name).unwrap();
 
             // Add simple attributes
             for (key, value) in &instance.data {
@@ -267,13 +350,13 @@ impl DataDumper for XmlDumper {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        xml.push_str(&format!("<{key}>{n}</{key}>\n"));
+                        writeln!(xml, "<{key}>{n}</{key}>").unwrap();
                     }
                     Value::Bool(b) => {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        xml.push_str(&format!("<{key}>{b}</{key}>\n"));
+                        writeln!(xml, "<{key}>{b}</{key}>").unwrap();
                     }
                     Value::Array(arr) => {
                         for item in arr {
@@ -295,11 +378,11 @@ impl DataDumper for XmlDumper {
             if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
-            xml.push_str(&format!("</{}>\n", instance.class_name));
+            writeln!(xml, "</{}>", instance.class_name).unwrap();
         }
 
         // Close root element
-        xml.push_str(&format!("</{}>\n", self.root_element));
+        writeln!(xml, "</{}>", self.root_element).unwrap();
 
         Ok(xml)
     }
@@ -314,7 +397,107 @@ impl DataDumper for XmlDumper {
         Ok(result.into_bytes())
     }
 
-    fn validate_schema(&self, _schema: &SchemaDefinition) -> DumperResult<()> {
+    fn validate_schema(&self, schema: &SchemaDefinition) -> DumperResult<()> {
+        // Validate schema for XML dumping compatibility
+
+        // Check if schema has required basic elements for XML output
+        if schema.name.is_empty() {
+            return Err(DumperError::SchemaValidation(
+                "Schema name is required for XML dumping".to_string()
+            ));
+        }
+
+        // Validate that classes can be represented as XML elements
+        for (class_name, class_def) in &schema.classes {
+            // Check for XML-incompatible characters in class names
+            if class_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+                return Err(DumperError::SchemaValidation(
+                    format!("Class name '{}' contains XML-incompatible characters", class_name)
+                ));
+            }
+
+            // Check if class name conflicts with XML reserved names
+            if class_name.to_lowercase().starts_with("xml") {
+                return Err(DumperError::SchemaValidation(
+                    format!("Class name '{}' starts with 'xml' which is reserved in XML", class_name)
+                ));
+            }
+
+            // Validate slots for XML attribute/element compatibility
+            for slot_name in &class_def.slots {
+                if slot_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-' && c != '.') {
+                    return Err(DumperError::SchemaValidation(
+                        format!("Slot name '{}' in class '{}' contains XML-incompatible characters",
+                                slot_name, class_name)
+                    ));
+                }
+
+                // Check for XML namespace conflicts
+                if slot_name.contains(':') {
+                    return Err(DumperError::SchemaValidation(
+                        format!("Slot name '{}' contains ':' which conflicts with XML namespaces", slot_name)
+                    ));
+                }
+            }
+        }
+
+        // Validate enums for XML compatibility
+        for (enum_name, enum_def) in &schema.enums {
+            if enum_name.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+                return Err(DumperError::SchemaValidation(
+                    format!("Enum name '{}' contains XML-incompatible characters", enum_name)
+                ));
+            }
+
+            // Check enum values for XML compatibility
+            for pv in &enum_def.permissible_values {
+                let pv_text = match pv {
+                    linkml_core::types::PermissibleValue::Simple(text) | linkml_core::types::PermissibleValue::Complex { text, .. } => text,
+                };
+                if pv_text.is_empty() {
+                    return Err(DumperError::SchemaValidation(
+                        format!("Empty enum value in enum '{}'", enum_name)
+                    ));
+                }
+
+                // Check for XML-unsafe characters in enum values
+                if pv_text.contains(|c: char| c == '<' || c == '>' || c == '&' || c == '"' || c == '\'') {
+                    return Err(DumperError::SchemaValidation(
+                        format!("Enum value '{}' contains XML-unsafe characters", pv_text)
+                    ));
+                }
+            }
+        }
+
+        // Check for potential namespace conflicts if namespace is set
+        if let Some(namespace) = &self.namespace {
+            if namespace.is_empty() {
+                return Err(DumperError::SchemaValidation(
+                    "XML namespace cannot be empty if specified".to_string()
+                ));
+            }
+
+            // Validate namespace URI format (basic check)
+            if !namespace.starts_with("http://") && !namespace.starts_with("https://") && !namespace.starts_with("urn:") {
+                return Err(DumperError::SchemaValidation(
+                    format!("Invalid namespace URI format: {}", namespace)
+                ));
+            }
+        }
+
+        // Validate root element name
+        if self.root_element.is_empty() {
+            return Err(DumperError::SchemaValidation(
+                "Root element name cannot be empty".to_string()
+            ));
+        }
+
+        if self.root_element.contains(|c: char| !c.is_alphanumeric() && c != '_' && c != '-') {
+            return Err(DumperError::SchemaValidation(
+                format!("Root element name '{}' contains XML-incompatible characters", self.root_element)
+            ));
+        }
+
         Ok(())
     }
 }
@@ -335,8 +518,7 @@ fn value_to_xml_string(value: &Value) -> String {
         Value::Number(n) => n.to_string(),
         Value::Bool(b) => b.to_string(),
         Value::Null => String::new(),
-        _ => value.to_string(),
-    }
+        _ => value.to_string()}
 }
 
 #[cfg(test)]
@@ -358,8 +540,7 @@ mod tests {
                 ),
             ]),
             id: Some("person1".to_string()),
-            metadata: std::collections::HashMap::new(),
-        }];
+            metadata: std::collections::HashMap::new()}];
 
         let schema = SchemaDefinition::default();
         let dumper = XmlDumper::new(true);

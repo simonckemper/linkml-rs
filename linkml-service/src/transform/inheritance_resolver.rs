@@ -38,9 +38,7 @@ pub enum InheritanceError {
         /// Name of the conflicting attribute
         attribute: String,
         /// Sources where the attribute is defined
-        sources: Vec<String>,
-    },
-}
+        sources: Vec<String>}}
 
 /// Result type for inheritance operations
 pub type InheritanceResult<T> = std::result::Result<T, InheritanceError>;
@@ -51,24 +49,21 @@ pub struct InheritanceResolver {
     resolved_cache: HashMap<String, Arc<ClassDefinition>>,
 
     /// Inheritance depth limit
-    max_depth: usize,
-}
+    max_depth: usize}
 
 impl InheritanceResolver {
     /// Create a new inheritance resolver
     #[must_use] pub fn new() -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            max_depth: 100,
-        }
+            max_depth: 100}
     }
 
     /// Create with custom depth limit
     #[must_use] pub fn with_max_depth(max_depth: usize) -> Self {
         Self {
             resolved_cache: HashMap::new(),
-            max_depth,
-        }
+            max_depth}
     }
 
     /// Resolve all inheritance in a schema
@@ -480,16 +475,14 @@ impl InheritanceResolver {
         for pv in &target.permissible_values {
             let text = match pv {
                 PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            };
+                PermissibleValue::Complex { text, .. } => text.clone()};
             seen_values.insert(text);
         }
 
         for pv in &source.permissible_values {
             let text = match pv {
                 PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            };
+                PermissibleValue::Complex { text, .. } => text.clone()};
             if !seen_values.contains(&text) {
                 target.permissible_values.push(pv.clone());
             }
@@ -519,7 +512,7 @@ impl Default for InheritanceResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition {

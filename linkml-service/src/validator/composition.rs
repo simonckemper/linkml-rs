@@ -12,8 +12,7 @@ pub struct SchemaComposer {
     /// The schema being composed
     schema: SchemaDefinition,
     /// Cache of resolved classes
-    resolved_cache: HashMap<String, ResolvedClass>,
-}
+    resolved_cache: HashMap<String, ResolvedClass>}
 
 /// A fully resolved class with all inherited properties
 #[derive(Debug, Clone)]
@@ -29,8 +28,7 @@ pub struct ResolvedClass {
     /// Whether this class is abstract
     pub is_abstract: bool,
     /// Whether this class is a tree root
-    pub is_tree_root: bool,
-}
+    pub is_tree_root: bool}
 
 impl SchemaComposer {
     /// Create a new schema composer
@@ -38,8 +36,7 @@ impl SchemaComposer {
     pub fn new(schema: SchemaDefinition) -> Self {
         Self {
             schema,
-            resolved_cache: HashMap::new(),
-        }
+            resolved_cache: HashMap::new()}
     }
 
     /// Resolve a class with all its inherited properties
@@ -170,8 +167,7 @@ impl SchemaComposer {
             ancestors,
             mixins: all_mixins,
             is_abstract: class_def.abstract_.unwrap_or(false),
-            is_tree_root: class_def.tree_root.unwrap_or(false),
-        })
+            is_tree_root: class_def.tree_root.unwrap_or(false)})
     }
 
     /// Apply slot usage overrides to a base slot

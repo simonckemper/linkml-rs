@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use std::path::Path;
 
 pub mod import_resolver;
@@ -49,8 +48,7 @@ pub struct Parser {
     yaml_parser: YamlParser,
     json_parser: JsonParser,
     /// Whether to automatically resolve imports
-    auto_resolve_imports: bool,
-}
+    auto_resolve_imports: bool}
 
 impl Parser {
     /// Create a new parser
@@ -59,8 +57,7 @@ impl Parser {
         Self {
             yaml_parser: YamlParser::new(),
             json_parser: JsonParser::new(),
-            auto_resolve_imports: false,
-        }
+            auto_resolve_imports: false}
     }
 
     /// Create a parser that automatically resolves imports
@@ -69,8 +66,7 @@ impl Parser {
         Self {
             yaml_parser: YamlParser::new(),
             json_parser: JsonParser::new(),
-            auto_resolve_imports: true,
-        }
+            auto_resolve_imports: true}
     }
 
     /// Set whether to automatically resolve imports
@@ -97,8 +93,7 @@ impl Parser {
             "json" => self.json_parser.parse_file(path),
             _ => Err(LinkMLError::parse(format!(
                 "Unsupported file format: {extension}"
-            ))),
-        }
+            )))}
     }
 
     /// Parse schema from string with specified format
@@ -112,8 +107,7 @@ impl Parser {
         match format {
             "yaml" | "yml" => self.yaml_parser.parse_str(content),
             "json" => self.json_parser.parse_str(content),
-            _ => Err(LinkMLError::parse(format!("Unsupported format: {format}"))),
-        }
+            _ => Err(LinkMLError::parse(format!("Unsupported format: {format}")))}
     }
 }
 

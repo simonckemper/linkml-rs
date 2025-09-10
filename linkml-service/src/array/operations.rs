@@ -120,8 +120,7 @@ impl ArrayOperations for ArrayData {
                 let v2 = n2.as_f64().unwrap_or(0.0);
                 Value::Number(serde_json::Number::from_f64(v1 + v2).unwrap_or(n1.clone()))
             }
-            _ => a.clone(),
-        })
+            _ => a.clone()})
     }
 
     fn subtract(&self, other: &ArrayData) -> ArrayResult<ArrayData> {
@@ -131,8 +130,7 @@ impl ArrayOperations for ArrayData {
                 let v2 = n2.as_f64().unwrap_or(0.0);
                 Value::Number(serde_json::Number::from_f64(v1 - v2).unwrap_or(n1.clone()))
             }
-            _ => a.clone(),
-        })
+            _ => a.clone()})
     }
 
     fn multiply(&self, other: &ArrayData) -> ArrayResult<ArrayData> {
@@ -142,8 +140,7 @@ impl ArrayOperations for ArrayData {
                 let v2 = n2.as_f64().unwrap_or(0.0);
                 Value::Number(serde_json::Number::from_f64(v1 * v2).unwrap_or(n1.clone()))
             }
-            _ => a.clone(),
-        })
+            _ => a.clone()})
     }
 
     fn divide(&self, other: &ArrayData) -> ArrayResult<ArrayData> {
@@ -158,8 +155,7 @@ impl ArrayOperations for ArrayData {
                         Value::Number(serde_json::Number::from_f64(v1 / v2).unwrap_or(n1.clone()))
                     }
                 }
-                _ => a.clone(),
-            }
+                _ => a.clone()}
         })
     }
 
@@ -169,8 +165,7 @@ impl ArrayOperations for ArrayData {
                 let val = n.as_f64().unwrap_or(0.0);
                 Value::Number(serde_json::Number::from_f64(val + scalar).unwrap_or(n.clone()))
             }
-            _ => v.clone(),
-        })
+            _ => v.clone()})
     }
 
     fn scalar_multiply(&self, scalar: f64) -> ArrayResult<ArrayData> {
@@ -179,8 +174,7 @@ impl ArrayOperations for ArrayData {
                 let val = n.as_f64().unwrap_or(0.0);
                 Value::Number(serde_json::Number::from_f64(val * scalar).unwrap_or(n.clone()))
             }
-            _ => v.clone(),
-        })
+            _ => v.clone()})
     }
 
     fn sum(&self) -> ArrayResult<f64> {
@@ -212,8 +206,7 @@ impl ArrayOperations for ArrayData {
                 if !val.is_nan() {
                     min_val = Some(match min_val {
                         None => val,
-                        Some(current) => current.min(val),
-                    });
+                        Some(current) => current.min(val)});
                 }
             }
         }
@@ -230,8 +223,7 @@ impl ArrayOperations for ArrayData {
                 if !val.is_nan() {
                     max_val = Some(match max_val {
                         None => val,
-                        Some(current) => current.max(val),
-                    });
+                        Some(current) => current.max(val)});
                 }
             }
         }
@@ -320,8 +312,7 @@ impl ArrayData {
         if self.shape != other.shape {
             return Err(ArrayError::ShapeMismatch {
                 expected: self.shape.clone(),
-                actual: other.shape.clone(),
-            });
+                actual: other.shape.clone()});
         }
 
         let result_data: Vec<Value> = self
@@ -348,8 +339,7 @@ impl ArrayData {
             2 => self.sort_2d(dimension, descending),
             _ => Err(ArrayError::InvalidData(
                 "Sorting only implemented for 1D and 2D arrays".to_string(),
-            )),
-        }
+            ))}
     }
 
     fn sort_1d(&self, descending: bool) -> ArrayResult<ArrayData> {
@@ -425,8 +415,7 @@ fn compare_values(a: &Value, b: &Value) -> Ordering {
             a_f.partial_cmp(&b_f).unwrap_or(Ordering::Equal)
         }
         (Value::String(a), Value::String(b)) => a.cmp(b),
-        _ => Ordering::Equal,
-    }
+        _ => Ordering::Equal}
 }
 
 #[cfg(test)]

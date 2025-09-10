@@ -32,8 +32,7 @@ use std::time::Duration;
     /// Enable bounds checking
     pub check_bounds: bool,
     /// Recovery timeout for poisoned locks
-    pub poison_recovery_timeout: Duration,
-}
+    pub poison_recovery_timeout: Duration}
 
 impl Default for PanicPreventionConfig {
     fn default() -> Self {
@@ -44,16 +43,14 @@ impl Default for PanicPreventionConfig {
             stack_size_limit: 8 * 1024 * 1024, // 8MB
             check_arithmetic: true,
             check_bounds: true,
-            poison_recovery_timeout: Duration::from_secs(5),
-        }
+            poison_recovery_timeout: Duration::from_secs(5)}
     }
 }
 
 /// Stack depth tracker for preventing stack overflow
 pub struct StackDepthTracker {
     depths: DashMap<thread::ThreadId, usize>,
-    max_depth: usize,
-}
+    max_depth: usize}
 
 impl StackDepthTracker {
     /// Create new tracker
@@ -61,8 +58,7 @@ impl StackDepthTracker {
     pub fn new(max_depth: usize) -> Self {
         Self {
             depths: DashMap::new(),
-            max_depth,
-        }
+            max_depth}
     }
 
     /// Enter a recursive operation
@@ -85,8 +81,7 @@ impl StackDepthTracker {
 
         Ok(StackDepthGuard {
             tracker: self,
-            thread_id,
-        })
+            thread_id})
     }
 
     /// Get current depth
@@ -100,8 +95,7 @@ impl StackDepthTracker {
 /// RAII guard for stack depth
 pub struct StackDepthGuard<'a> {
     tracker: &'a StackDepthTracker,
-    thread_id: thread::ThreadId,
-}
+    thread_id: thread::ThreadId}
 
 impl Drop for StackDepthGuard<'_> {
     fn drop(&mut self) {
@@ -115,8 +109,7 @@ impl Drop for StackDepthGuard<'_> {
 pub struct PanicSafeWrapper {
     config: Arc<RwLock<PanicPreventionConfig>>,
     stack_tracker: Arc<StackDepthTracker>,
-    panic_history: Arc<Mutex<Vec<PanicInfo>>>,
-}
+    panic_history: Arc<Mutex<Vec<PanicInfo>>>}
 
 /// Information about a caught panic
 #[derive(Debug, Clone)]
@@ -130,8 +123,7 @@ pub struct PanicInfo {
     /// Timestamp
     pub timestamp: std::time::Instant,
     /// Operation that panicked
-    pub operation: String,
-}
+    pub operation: String}
 
 impl PanicSafeWrapper {
     /// Create new panic-safe wrapper
@@ -142,8 +134,7 @@ impl PanicSafeWrapper {
         Self {
             config: Arc::new(RwLock::new(config)),
             stack_tracker: Arc::new(StackDepthTracker::new(max_depth)),
-            panic_history: Arc::new(Mutex::new(Vec::with_capacity(100))),
-        }
+            panic_history: Arc::new(Mutex::new(Vec::with_capacity(100)))}
     }
 
     /// Execute operation with panic protection
@@ -180,8 +171,7 @@ impl PanicSafeWrapper {
                     message: Some(message.clone()),
                     stack_depth,
                     timestamp: std::time::Instant::now(),
-                    operation,
-                };
+                    operation};
 
                 self.record_panic(info);
 
@@ -276,8 +266,7 @@ impl PanicSafeWrapper {
                 0
             } else {
                 recent_panics.iter().map(|p| p.stack_depth).sum::<usize>() / recent_panics.len()
-            },
-        }
+            }}
     }
 }
 
@@ -286,8 +275,7 @@ impl Clone for PanicSafeWrapper {
         Self {
             config: self.config.clone(),
             stack_tracker: self.stack_tracker.clone(),
-            panic_history: self.panic_history.clone(),
-        }
+            panic_history: self.panic_history.clone()}
     }
 }
 
@@ -301,8 +289,7 @@ pub struct PanicStats {
     /// Panics by operation
     pub panics_by_operation: std::collections::HashMap<String, usize>,
     /// Average stack depth at panic
-    pub average_stack_depth: usize,
-}
+    pub average_stack_depth: usize}
 
 /// Safe arithmetic operations
 pub struct SafeArithmetic;
@@ -585,16 +572,14 @@ impl SafeUtf8 {
 
 /// Panic-safe validation wrapper
 pub struct SafeValidation {
-    wrapper: PanicSafeWrapper,
-}
+    wrapper: PanicSafeWrapper}
 
 impl SafeValidation {
     /// Create new safe validation wrapper
     #[must_use]
     pub fn new(config: PanicPreventionConfig) -> Self {
         Self {
-            wrapper: PanicSafeWrapper::new(config),
-        }
+            wrapper: PanicSafeWrapper::new(config)}
     }
 
     /// Validate with panic protection

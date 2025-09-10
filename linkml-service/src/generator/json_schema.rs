@@ -9,16 +9,14 @@ use std::collections::HashMap;
 /// `JSON` Schema generator for `LinkML` schemas
 pub struct JsonSchemaGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl JsonSchemaGenerator {
     /// Create a new `JSON` Schema generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "json-schema".to_string(),
-        }
+            name: "json-schema".to_string()}
     }
 
     /// Generate `JSON` Schema for a class
@@ -48,8 +46,7 @@ impl JsonSchemaGenerator {
 
         let mut schema_obj = json!({
             "type": "object",
-            "properties": properties,
-        });
+            "properties": properties});
 
         // Add title and description
         schema_obj["title"] = json!(class_name);
@@ -161,8 +158,7 @@ impl JsonSchemaGenerator {
                     Ok(json!({"type": "string"}))
                 }
             }
-            None => Ok(json!({"type": "string"})),
-        }
+            None => Ok(json!({"type": "string"}))}
     }
 
     /// Generate enum schema
@@ -176,9 +172,7 @@ impl JsonSchemaGenerator {
             .permissible_values
             .iter()
             .map(|v| match v {
-                PermissibleValue::Simple(text) => text.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
 
         let mut schema = json!({
@@ -433,7 +427,7 @@ impl CodeFormatter for JsonSchemaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
 
     #[tokio::test]

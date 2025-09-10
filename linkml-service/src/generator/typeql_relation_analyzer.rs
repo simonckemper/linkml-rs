@@ -20,8 +20,7 @@ pub struct RelationInfo {
     /// Whether this is a nested relation (can play roles)
     pub is_nested: bool,
     /// Whether this is a multi-way relation (3+ roles)
-    pub is_multiway: bool,
-}
+    pub is_multiway: bool}
 
 /// Information about a role in a relation
 #[derive(Debug, Clone)]
@@ -35,16 +34,14 @@ pub struct RoleInfo {
     /// Cardinality constraints
     pub cardinality: Option<(usize, Option<usize>)>,
     /// Whether this role is inherited
-    pub is_inherited: bool,
-}
+    pub is_inherited: bool}
 
 /// Analyzes relations in `LinkML` schemas for `TypeQL` generation
 pub struct RelationAnalyzer {
     /// Cache of analyzed relations
     relation_cache: HashMap<String, RelationInfo>,
     /// Map of which entities can play which roles
-    role_player_map: HashMap<String, Vec<String>>,
-}
+    role_player_map: HashMap<String, Vec<String>>}
 
 impl Default for RelationAnalyzer {
     fn default() -> Self {
@@ -58,8 +55,7 @@ impl RelationAnalyzer {
     pub fn new() -> Self {
         Self {
             relation_cache: HashMap::new(),
-            role_player_map: HashMap::new(),
-        }
+            role_player_map: HashMap::new()}
     }
 
     /// Analyze a class to determine if it's a relation and extract roles
@@ -92,8 +88,7 @@ impl RelationAnalyzer {
             roles,
             attributes,
             is_nested,
-            is_multiway,
-        };
+            is_multiway};
 
         // Cache the result
         self.relation_cache
@@ -229,8 +224,7 @@ impl RelationAnalyzer {
         match (min, max) {
             (0, Some(1)) if !slot.required.unwrap_or(false) => None,
             (1, Some(1)) if slot.required.unwrap_or(false) => None,
-            _ => Some((min, max)),
-        }
+            _ => Some((min, max))}
     }
 
     /// Check if this relation can be nested (play roles in other relations)
@@ -339,7 +333,7 @@ impl RelationAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_relation_detection() -> std::result::Result<(), Box<dyn std::error::Error>> {

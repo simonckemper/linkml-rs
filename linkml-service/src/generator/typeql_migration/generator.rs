@@ -23,8 +23,7 @@ pub struct MigrationScript {
     /// Data migration queries
     pub data_migrations: Vec<DataMigration>,
     /// Migration metadata
-    pub metadata: MigrationMetadata,
-}
+    pub metadata: MigrationMetadata}
 
 /// Data migration operation
 #[derive(Debug, Clone)]
@@ -36,8 +35,7 @@ pub struct DataMigration {
     /// Whether this is idempotent
     pub idempotent: bool,
     /// Estimated affected records
-    pub estimated_records: Option<usize>,
-}
+    pub estimated_records: Option<usize>}
 
 /// Migration metadata
 #[derive(Debug, Clone)]
@@ -51,8 +49,7 @@ pub struct MigrationMetadata {
     /// Whether this is a breaking change
     pub is_breaking: bool,
     /// Complexity score
-    pub complexity: u8,
-}
+    pub complexity: u8}
 
 impl MigrationScript {
     /// Create a new migration script
@@ -66,9 +63,7 @@ impl MigrationScript {
                 to_version: to_version.to_string(),
                 generated_at: Utc::now().to_rfc3339(),
                 is_breaking: false,
-                complexity: 0,
-            },
-        }
+                complexity: 0}}
     }
 
     /// Convert fmt::Error to MigrationError
@@ -128,15 +123,13 @@ impl MigrationScript {
 /// Migration script generator
 pub struct MigrationGenerator {
     /// `TypeQL` generator for identifier conversion
-    generator: EnhancedTypeQLGenerator,
-}
+    generator: EnhancedTypeQLGenerator}
 
 impl MigrationGenerator {
     /// Create a new migration generator
     #[must_use] pub fn new() -> Self {
         Self {
-            generator: EnhancedTypeQLGenerator::new(),
-        }
+            generator: EnhancedTypeQLGenerator::new()}
     }
 
     /// Generate migration scripts from a schema diff
@@ -405,8 +398,7 @@ impl MigrationGenerator {
                             description: format!("Convert {} from {} to {}", attr.name, old_range, new_range),
                             query: self.generate_type_conversion_query(&attr.name, old_range, new_range),
                             idempotent: false,
-                            estimated_records: None,
-                        };
+                            estimated_records: None};
                         migration.data_migrations.push(data_migration);
                     }
                 }
@@ -423,8 +415,7 @@ impl MigrationGenerator {
                         description: format!("Add default value for required field {}", attr.name),
                         query: self.generate_default_value_query(&attr.name, &default_value),
                         idempotent: true,
-                        estimated_records: None,
-                    };
+                        estimated_records: None};
                     migration.data_migrations.push(data_migration);
                 }
             }
@@ -469,8 +460,7 @@ insert
             Some("float" | "double") => "0.0".to_string(),
             Some("boolean") => "false".to_string(),
             Some("date" | "datetime") => "2024-01-01T00:00:00".to_string(),
-            _ => "\"\"".to_string(),
-        }
+            _ => "\"\"".to_string()}
     }
 
     /// Map slot type to `TypeQL` value type
@@ -481,8 +471,7 @@ insert
             Some("float" | "double") => "double",
             Some("boolean" | "bool") => "boolean",
             Some("date" | "datetime") => "datetime",
-            _ => "string",
-        }
+            _ => "string"}
     }
 
     /// Escape regex for `TypeQL`
@@ -501,10 +490,9 @@ impl Default for MigrationGenerator {
 mod tests {
     use super::*;
     use crate::generator::typeql_migration::{
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         diff::SchemaDiffer,
-        analyzer::MigrationAnalyzer,
-    };
+        analyzer::MigrationAnalyzer};
 
 
     #[test]

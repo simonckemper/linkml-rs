@@ -18,8 +18,7 @@ pub struct GoGenerator {
     /// Whether to generate `JSON` tags
     generate_json_tags: bool,
     /// Whether to generate interfaces
-    generate_interfaces: bool,
-}
+    generate_interfaces: bool}
 
 impl GoGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -34,8 +33,7 @@ impl GoGenerator {
             package_name: "linkml".to_string(),
             generate_validation: true,
             generate_json_tags: true,
-            generate_interfaces: true,
-        }
+            generate_interfaces: true}
     }
 
     /// Set the package name
@@ -181,8 +179,7 @@ impl GoGenerator {
                     linkml_core::types::PermissibleValue::Simple(s) => (s.as_str(), None),
                     linkml_core::types::PermissibleValue::Complex {
                         text, description, ..
-                    } => (text.as_str(), description.as_ref()),
-                };
+                    } => (text.as_str(), description.as_ref())};
 
                 let const_name = format!("{}{}", go_name, self.to_go_const_name(value));
 
@@ -402,9 +399,7 @@ impl GoGenerator {
 
         for pv in values {
             let value = match pv {
-                linkml_core::types::PermissibleValue::Simple(s) => s.as_str(),
-                linkml_core::types::PermissibleValue::Complex { text, .. } => text.as_str(),
-            };
+                linkml_core::types::PermissibleValue::Simple(s) | linkml_core::types::PermissibleValue::Complex { text: s, .. } => s.as_str()};
             let const_name = format!("{}{}", enum_name, self.to_go_const_name(value));
             writeln!(output, "\tcase {const_name}:")
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -590,9 +585,8 @@ impl GoGenerator {
             "float" | "double" | "decimal" => "float64",
             "boolean" | "bool" => "bool",
             "date" | "datetime" => "time.Time",
-            "uri" | "uriorcurie" => "string",
-            _ => "interface{}",
-        }
+            "uri" | "uriorcurie" | "curie" | "ncname" => "string",
+            _ => "interface{}"}
     }
 
     /// Get the Go type for a slot
@@ -694,8 +688,7 @@ impl Generator for GoGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for Go generation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Validate Go-specific requirements
@@ -707,8 +700,7 @@ impl Generator for GoGenerator {
                         message: format!(
                             "Class name '{class_name}' is not valid for Go: must start with a letter"
                         ),
-                        element: Some(format!("class.{class_name}")),
-                    });
+                        element: Some(format!("class.{class_name}"))});
                 }
 
             // Check for Go reserved words
@@ -722,8 +714,7 @@ impl Generator for GoGenerator {
             ) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Class name '{class_name}' is a Go reserved keyword"),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -735,8 +726,7 @@ impl Generator for GoGenerator {
                         message: format!(
                             "Slot name '{slot_name}' is not valid for Go: must start with letter or underscore"
                         ),
-                        element: Some(format!("slot.{slot_name}")),
-                    });
+                        element: Some(format!("slot.{slot_name}"))});
                 }
         }
 
@@ -793,7 +783,7 @@ impl Generator for GoGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -824,8 +814,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             linkml_core::types::PermissibleValue::Complex {
                 text: "ACTIVE".to_string(),
                 description: Some("Active status".to_string()),
-                meaning: None,
-            },
+                meaning: None},
             linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
         ];
         schema.enums.insert("Status".to_string(), status_enum);

@@ -20,8 +20,7 @@ pub struct RecursionTracker {
     current_depth: usize,
 
     /// Classes that allow recursion
-    recursive_classes: HashMap<String, RecursionOptions>,
-}
+    recursive_classes: HashMap<String, RecursionOptions>}
 
 impl RecursionTracker {
     /// Create a new recursion tracker
@@ -50,8 +49,7 @@ impl RecursionTracker {
             visited_stack: Vec::new(),
             max_depth: 100, // Global default
             current_depth: 0,
-            recursive_classes,
-        }
+            recursive_classes}
     }
 
     /// Check if a class is recursive (references itself directly or indirectly)
@@ -229,7 +227,7 @@ pub fn check_recursion(
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_direct_recursion_detection() {
@@ -266,8 +264,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
         tree_class.slots = vec!["children".to_string()];
         tree_class.recursion_options = Some(RecursionOptions {
             use_box: true,
-            max_depth: Some(3),
-        });
+            max_depth: Some(3)});
         schema.classes.insert("Tree".to_string(), tree_class);
 
         let mut children_slot = SlotDefinition::default();

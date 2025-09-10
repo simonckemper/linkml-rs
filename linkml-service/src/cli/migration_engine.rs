@@ -20,8 +20,7 @@ pub struct MigrationAnalysis {
     /// Risk assessment
     pub risk_level: RiskLevel,
     /// Estimated migration duration
-    pub estimated_duration: String,
-}
+    pub estimated_duration: String}
 
 /// Breaking change types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,15 +28,13 @@ pub enum BreakingChange {
     /// A class was removed from the schema
     ClassRemoved {
         /// Name of the removed class
-        name: String,
-    },
+        name: String},
     /// A slot was removed from a class
     SlotRemoved {
         /// Name of the class containing the slot
         class_name: String,
         /// Name of the removed slot
-        slot_name: String,
-    },
+        slot_name: String},
     /// The type of an entity changed
     TypeChanged {
         /// Name of the entity
@@ -45,15 +42,13 @@ pub enum BreakingChange {
         /// Original type
         from_type: String,
         /// New type
-        to_type: String,
-    },
+        to_type: String},
     /// A required field was added to a class
     RequiredFieldAdded {
         /// Name of the class
         class_name: String,
         /// Name of the new required field
-        field_name: String,
-    },
+        field_name: String},
     /// Cardinality of a slot was reduced
     CardinalityReduced {
         /// Name of the class
@@ -63,15 +58,13 @@ pub enum BreakingChange {
         /// Original cardinality
         from: String,
         /// New cardinality
-        to: String,
-    },
+        to: String},
     /// An enum value was removed
     EnumValueRemoved {
         /// Name of the enum
         enum_name: String,
         /// Removed value
-        value: String,
-    },
+        value: String},
     /// Inheritance hierarchy changed
     InheritanceChanged {
         /// Name of the class
@@ -79,9 +72,7 @@ pub enum BreakingChange {
         /// Original parent class
         old_parent: String,
         /// New parent class
-        new_parent: String,
-    },
-}
+        new_parent: String}}
 
 /// Non-breaking change types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,49 +80,41 @@ pub enum NonBreakingChange {
     /// A new class was added to the schema
     ClassAdded {
         /// Name of the new class
-        name: String,
-    },
+        name: String},
     /// A new slot was added to a class
     SlotAdded {
         /// Name of the class
         class_name: String,
         /// Name of the new slot
-        slot_name: String,
-    },
+        slot_name: String},
     /// An optional field was added to a class
     OptionalFieldAdded {
         /// Name of the class
         class_name: String,
         /// Name of the new optional field
-        field_name: String,
-    },
+        field_name: String},
     /// Description of an entity changed
     DescriptionChanged {
         /// Name of the entity
-        entity: String,
-    },
+        entity: String},
     /// An alias was added to an entity
     AliasAdded {
         /// Name of the entity
         entity: String,
         /// New alias
-        alias: String,
-    },
+        alias: String},
     /// A new enum value was added
     EnumValueAdded {
         /// Name of the enum
         enum_name: String,
         /// New value
-        value: String,
-    },
+        value: String},
     /// Default value of a slot changed
     DefaultValueChanged {
         /// Name of the class
         class_name: String,
         /// Name of the slot
-        slot_name: String,
-    },
-}
+        slot_name: String}}
 
 /// Data migration requirements
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,8 +126,7 @@ pub struct DataMigration {
     /// `SQL` or transformation script
     pub script: String,
     /// Validation query
-    pub validation: String,
-}
+    pub validation: String}
 
 /// Migration types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -160,8 +142,7 @@ pub enum MigrationType {
     /// Delete an entity
     Delete,
     /// Backfill missing data
-    Backfill,
-}
+    Backfill}
 
 /// Risk level assessment
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -173,8 +154,7 @@ pub enum RiskLevel {
     /// High risk - significant impact expected
     High,
     /// Critical risk - major impact expected
-    Critical,
-}
+    Critical}
 
 /// Migration plan
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -198,8 +178,7 @@ pub struct MigrationPlan {
     /// Risk level
     pub risk_level: RiskLevel,
     /// Created timestamp
-    pub created_at: String,
-}
+    pub created_at: String}
 
 /// Individual migration step
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -219,8 +198,7 @@ pub struct MigrationStep {
     /// Can be parallelized
     pub parallel: bool,
     /// Estimated duration
-    pub estimated_duration: String,
-}
+    pub estimated_duration: String}
 
 /// Step types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -236,24 +214,21 @@ pub enum StepType {
     /// Validation step
     Validation,
     /// Backup creation step
-    Backup,
-}
+    Backup}
 
 /// Migration engine
 pub struct MigrationEngine {
     /// Source schema
     from_schema: SchemaDefinition,
     /// Target schema
-    to_schema: SchemaDefinition,
-}
+    to_schema: SchemaDefinition}
 
 impl MigrationEngine {
     /// Create a new migration engine
     #[must_use] pub fn new(from_schema: SchemaDefinition, to_schema: SchemaDefinition) -> Self {
         Self {
             from_schema,
-            to_schema,
-        }
+            to_schema}
     }
 
     /// Analyze schema changes
@@ -299,8 +274,7 @@ impl MigrationEngine {
             non_breaking_changes,
             data_migrations,
             risk_level,
-            estimated_duration,
-        })
+            estimated_duration})
     }
 
     /// Analyze class changes
@@ -315,15 +289,13 @@ impl MigrationEngine {
         // Find removed classes (breaking)
         for removed in from_classes.difference(&to_classes) {
             breaking_changes.push(BreakingChange::ClassRemoved {
-                name: removed.clone(),
-            });
+                name: removed.clone()});
         }
 
         // Find added classes (non-breaking)
         for added in to_classes.difference(&from_classes) {
             non_breaking_changes.push(NonBreakingChange::ClassAdded {
-                name: added.clone(),
-            });
+                name: added.clone()});
         }
 
         // Check for inheritance changes
@@ -337,8 +309,7 @@ impl MigrationEngine {
                         breaking_changes.push(BreakingChange::InheritanceChanged {
                             class_name: class_name.clone(),
                             old_parent: old_parent.clone(),
-                            new_parent: new_parent.clone(),
-                        });
+                            new_parent: new_parent.clone()});
                     }
         }
 
@@ -361,8 +332,7 @@ impl MigrationEngine {
                 for removed in from_slots.difference(&to_slots) {
                     breaking_changes.push(BreakingChange::SlotRemoved {
                         class_name: class_name.clone(),
-                        slot_name: removed.clone(),
-                    });
+                        slot_name: removed.clone()});
                 }
 
                 // Find added slots
@@ -372,13 +342,11 @@ impl MigrationEngine {
                         if slot_def.required.unwrap_or(false) {
                             breaking_changes.push(BreakingChange::RequiredFieldAdded {
                                 class_name: class_name.clone(),
-                                field_name: added.clone(),
-                            });
+                                field_name: added.clone()});
                         } else {
                             non_breaking_changes.push(NonBreakingChange::OptionalFieldAdded {
                                 class_name: class_name.clone(),
-                                field_name: added.clone(),
-                            });
+                                field_name: added.clone()});
                         }
                     }
                 }
@@ -403,8 +371,7 @@ impl MigrationEngine {
                             breaking_changes.push(BreakingChange::TypeChanged {
                                 entity: slot_name.clone(),
                                 from_type: from_range.clone(),
-                                to_type: to_range.clone(),
-                            });
+                                to_type: to_range.clone()});
                         }
 
                 // Check cardinality changes
@@ -416,8 +383,7 @@ impl MigrationEngine {
                         class_name: "global".to_string(),
                         slot_name: slot_name.clone(),
                         from: "multiple".to_string(),
-                        to: "single".to_string(),
-                    });
+                        to: "single".to_string()});
                 }
             }
         }
@@ -438,32 +404,28 @@ impl MigrationEngine {
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
                 let to_values: HashSet<_> = to_enum
                     .permissible_values
                     .iter()
                     .map(|pv| match pv {
                         PermissibleValue::Simple(s) => s.clone(),
-                        PermissibleValue::Complex { text, .. } => text.clone(),
-                    })
+                        PermissibleValue::Complex { text, .. } => text.clone()})
                     .collect();
 
                 // Removed enum values are breaking
                 for removed in from_values.difference(&to_values) {
                     breaking_changes.push(BreakingChange::EnumValueRemoved {
                         enum_name: enum_name.clone(),
-                        value: removed.clone(),
-                    });
+                        value: removed.clone()});
                 }
 
                 // Added enum values are non-breaking
                 for added in to_values.difference(&from_values) {
                     non_breaking_changes.push(NonBreakingChange::EnumValueAdded {
                         enum_name: enum_name.clone(),
-                        value: added.clone(),
-                    });
+                        value: added.clone()});
                 }
             }
         }
@@ -484,14 +446,12 @@ impl MigrationEngine {
                         migration_type: MigrationType::Delete,
                         entity: name.clone(),
                         script: format!("-- Archive data from table {name}\nINSERT INTO archive.{name} SELECT * FROM {name};"),
-                        validation: format!("SELECT COUNT(*) FROM archive.{name};"),
-                    });
+                        validation: format!("SELECT COUNT(*) FROM archive.{name};")});
                 }
                 BreakingChange::TypeChanged {
                     entity,
                     from_type,
-                    to_type,
-                } => {
+                    to_type} => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Transform,
                         entity: entity.clone(),
@@ -500,19 +460,16 @@ impl MigrationEngine {
                         ),
                         validation: format!(
                             "SELECT COUNT(*) FROM data WHERE {entity} IS NOT NULL;"
-                        ),
-                    });
+                        )});
                 }
                 BreakingChange::SlotRemoved {
                     class_name,
-                    slot_name,
-                } => {
+                    slot_name} => {
                     data_migrations.push(DataMigration {
                         migration_type: MigrationType::Delete,
                         entity: format!("{class_name}.{slot_name}"),
                         script: format!("-- Remove column {class_name}.{slot_name}\nALTER TABLE {class_name} DROP COLUMN {slot_name};"),
-                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{class_name}' AND column_name = '{slot_name}';"),
-                    });
+                        validation: format!("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = '{class_name}' AND column_name = '{slot_name}';")});
                 }
                 _ => {}
             }
@@ -572,8 +529,7 @@ impl MigrationEngine {
                 .to_string(),
             depends_on: vec![],
             parallel: false,
-            estimated_duration: "5 minutes".to_string(),
-        });
+            estimated_duration: "5 minutes".to_string()});
 
         // Create schema migration steps
         for change in &analysis.breaking_changes {
@@ -594,8 +550,7 @@ impl MigrationEngine {
                 validation: migration.validation.clone(),
                 depends_on: vec![],
                 parallel: false,
-                estimated_duration: "Variable".to_string(),
-            });
+                estimated_duration: "Variable".to_string()});
         }
 
         // Create validation step
@@ -610,8 +565,7 @@ impl MigrationEngine {
                     .to_string(),
             depends_on: steps.iter().map(|s| s.id.clone()).collect(),
             parallel: false,
-            estimated_duration: "2 minutes".to_string(),
-        });
+            estimated_duration: "2 minutes".to_string()});
 
         Ok(MigrationPlan {
             id: uuid::Uuid::new_v4().to_string(),
@@ -631,8 +585,7 @@ impl MigrationEngine {
             ],
             estimated_duration: analysis.estimated_duration.clone(),
             risk_level: analysis.risk_level,
-            created_at: chrono::Utc::now().to_rfc3339(),
-        })
+            created_at: chrono::Utc::now().to_rfc3339()})
     }
 
     /// Create migration step for a breaking change
@@ -647,8 +600,7 @@ impl MigrationEngine {
             ),
             BreakingChange::SlotRemoved {
                 class_name,
-                slot_name,
-            } => (
+                slot_name} => (
                 format!("Remove slot {slot_name} from {class_name}"),
                 format!("ALTER TABLE {class_name} DROP COLUMN {slot_name};"),
                 format!(
@@ -658,8 +610,7 @@ impl MigrationEngine {
             BreakingChange::TypeChanged {
                 entity,
                 from_type,
-                to_type,
-            } => (
+                to_type} => (
                 format!(
                     "Change type of {entity} from {from_type} to {to_type}"
                 ),
@@ -672,8 +623,7 @@ impl MigrationEngine {
                 "Generic migration step".to_string(),
                 "-- Custom migration required".to_string(),
                 "SELECT 1;".to_string(),
-            ),
-        };
+            )};
 
         Ok(MigrationStep {
             id: format!("step_{id:03}"),
@@ -683,8 +633,7 @@ impl MigrationEngine {
             validation,
             depends_on: vec![],
             parallel: false,
-            estimated_duration: "1 minute".to_string(),
-        })
+            estimated_duration: "1 minute".to_string()})
     }
 
     /// Create rollback step for a breaking change
@@ -699,8 +648,7 @@ impl MigrationEngine {
                 "Rollback migration".to_string(),
                 "-- Restore from backup".to_string(),
                 "SELECT 1;".to_string(),
-            ),
-        };
+            )};
 
         Ok(MigrationStep {
             id: format!("rollback_{id:03}"),
@@ -710,7 +658,6 @@ impl MigrationEngine {
             validation,
             depends_on: vec![],
             parallel: false,
-            estimated_duration: "1 minute".to_string(),
-        })
+            estimated_duration: "1 minute".to_string()})
     }
 }

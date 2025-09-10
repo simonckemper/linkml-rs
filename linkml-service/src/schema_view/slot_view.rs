@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::SlotDefinition,
-};
+    types::SlotDefinition};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -37,8 +36,7 @@ pub struct SlotView {
     mixins: Vec<String>,
 
     /// Slot usage overrides by class
-    class_overrides: HashMap<String, SlotDefinition>,
-}
+    class_overrides: HashMap<String, SlotDefinition>}
 
 impl SlotView {
     /// Create a new `SlotView` for the specified slot
@@ -86,8 +84,7 @@ impl SlotView {
             parent,
             ancestors,
             mixins,
-            class_overrides,
-        })
+            class_overrides})
     }
 
     /// Get slot ancestors recursively
@@ -304,16 +301,14 @@ impl SlotView {
 #[derive(Debug)]
 pub struct SlotViewBuilder {
     schema_view: Arc<SchemaView>,
-    cache: HashMap<String, Arc<SlotView>>,
-}
+    cache: HashMap<String, Arc<SlotView>>}
 
 impl SlotViewBuilder {
     /// Create a new `SlotViewBuilder`
     #[must_use] pub fn new(schema_view: Arc<SchemaView>) -> Self {
         Self {
             schema_view,
-            cache: HashMap::new(),
-        }
+            cache: HashMap::new()}
     }
 
     /// Get or create a `SlotView` for the specified slot

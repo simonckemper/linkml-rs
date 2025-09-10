@@ -9,8 +9,7 @@
 
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
-    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
-};
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use super::typeql_constraints::TypeQLConstraintTranslator;
 use super::typeql_relation_analyzer::RelationAnalyzer;
 use super::typeql_role_inheritance::RoleInheritanceResolver;
@@ -39,8 +38,7 @@ pub enum TypeQLError {
 
     /// Circular inheritance detected in schema
     #[error("Inheritance cycle detected: {0}")]
-    InheritanceCycle(String),
-}
+    InheritanceCycle(String)}
 
 /// Enhanced `TypeQL` schema generator for `TypeDB` 3.0+
 pub struct EnhancedTypeQLGenerator {
@@ -55,14 +53,12 @@ pub struct EnhancedTypeQLGenerator {
     /// Role inheritance resolver
     role_inheritance_resolver: RwLock<RoleInheritanceResolver>,
     /// Identifier mapping table for bidirectional lookups
-    identifier_map: RwLock<HashMap<String, String>>,
-}
+    identifier_map: RwLock<HashMap<String, String>>}
 
 /// Analyzes schema structure for optimal `TypeQL` generation
 struct SchemaAnalyzer {
     /// Cache for entity/relation detection results
-    type_cache: HashMap<String, TypeQLType>,
-}
+    type_cache: HashMap<String, TypeQLType>}
 
 /// Type of `TypeQL` schema element
 #[derive(Debug, Clone, PartialEq)]
@@ -70,8 +66,7 @@ struct SchemaAnalyzer {
 enum TypeQLType {
     Entity,
     Relation,
-    Abstract,
-}
+    Abstract}
 
 
 
@@ -125,8 +120,7 @@ impl EnhancedTypeQLGenerator {
             constraint_translator: RwLock::new(TypeQLConstraintTranslator::new()),
             relation_analyzer: RwLock::new(RelationAnalyzer::new()),
             role_inheritance_resolver: RwLock::new(RoleInheritanceResolver::new()),
-            identifier_map: RwLock::new(HashMap::new()),
-        }
+            identifier_map: RwLock::new(HashMap::new())}
     }
 
     /// Analyze schema and determine optimal `TypeQL` structure
@@ -158,7 +152,7 @@ impl EnhancedTypeQLGenerator {
                     .analyzer
                     .read()
                     .expect("analyzer lock should not be poisoned: {}")
-                    .determine_type(class_def, schema)?;
+                    .determine_type(class_def, schema);
                 self.analyzer
                     .write()
                     .expect("analyzer lock should not be poisoned: {}")
@@ -401,7 +395,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // Build inheritance chain
-        let inheritance = self.build_inheritance_chain(class, schema)?;
+        let inheritance = self.build_inheritance_chain(class, schema);
 
         write!(output, "{type_name} sub").map_err(Self::fmt_error_to_generator_error)?;
         if inheritance.is_empty() {
@@ -412,7 +406,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // Collect all attributes (including constraints)
-        let all_attributes = self.collect_all_attributes(class, schema)?;
+        let all_attributes = self.collect_all_attributes(class, schema);
 
         // Add roles this entity can play
         let roles = self.collect_playable_roles(name, schema);
@@ -491,7 +485,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // Build inheritance chain
-        let inheritance = self.build_inheritance_chain(class, schema)?;
+        let inheritance = self.build_inheritance_chain(class, schema);
 
         write!(output, "{type_name} sub").map_err(Self::fmt_error_to_generator_error)?;
         if inheritance.is_empty() {
@@ -911,7 +905,7 @@ impl EnhancedTypeQLGenerator {
         &self,
         class: &ClassDefinition,
         _schema: &SchemaDefinition,
-    ) -> GeneratorResult<Vec<String>> {
+    ) -> Vec<String> {
         let mut chain = Vec::new();
 
         // Direct parent
@@ -924,7 +918,7 @@ impl EnhancedTypeQLGenerator {
             chain.push(self.convert_identifier(mixin));
         }
 
-        Ok(chain)
+        chain
     }
 
     /// Collect all attributes including inherited ones
@@ -932,7 +926,7 @@ impl EnhancedTypeQLGenerator {
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<Vec<(String, Vec<String>)>> {
+    ) -> Vec<(String, Vec<String>)> {
         let mut attributes = Vec::new();
         let mut seen = HashSet::new();
 
@@ -944,7 +938,7 @@ impl EnhancedTypeQLGenerator {
             }
         }
 
-        Ok(attributes)
+        attributes
     }
 
     /// Collect direct attributes with constraints
@@ -1092,8 +1086,7 @@ impl EnhancedTypeQLGenerator {
                     "string" // Default fallback
                 }
             }
-            None => "string",
-        }
+            None => "string"}
     }
 
     /// Escape regex pattern for `TypeQL`
@@ -1249,7 +1242,7 @@ impl EnhancedTypeQLGenerator {
         // Generate entity/relation insertion based on conditions
         if let Some(slot_conditions) = &condition.slot_conditions {
             // First, determine if we're creating an entity or relation
-            let entity_type = self.infer_entity_type_from_conditions(condition, schema)?;
+            let entity_type = self.infer_entity_type_from_conditions(condition, schema);
 
             // Generate the insertion statement
             writeln!(
@@ -1351,12 +1344,11 @@ impl EnhancedTypeQLGenerator {
 
         // Map LinkML types to TypeQL types
         match range {
-            "string" | "str" | "text" => "string".to_string(),
+            "string" | "str" | "text" | "uri" | "url" => "string".to_string(),
             "integer" | "int" => "long".to_string(),
             "float" | "double" | "decimal" => "double".to_string(),
             "boolean" | "bool" => "boolean".to_string(),
             "date" | "datetime" | "time" => "datetime".to_string(),
-            "uri" | "url" => "string".to_string(),
             _ => "string".to_string(), // Default fallback
         }
     }
@@ -1394,8 +1386,7 @@ impl EnhancedTypeQLGenerator {
                 "<=" => "<=",
                 "==" | "=" => "==",
                 "!=" => "!=",
-                _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {op}"))),
-            };
+                _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {op}")))};
 
             Ok(format!("${}_{} {} {}", var, field, typeql_op, self.format_value_for_typeql(value)))
         } else {
@@ -1452,19 +1443,19 @@ impl EnhancedTypeQLGenerator {
         &self,
         condition: &RuleConditions,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         // Look for type hints in slot conditions
         if let Some(slot_conditions) = &condition.slot_conditions {
             for (_, slot_condition) in slot_conditions {
                 if let Some(range) = &slot_condition.range
                     && schema.classes.contains_key(range) {
-                        return Ok(range.clone());
+                        return range.clone();
                     }
             }
         }
 
         // Default to generic entity
-        Ok("entity".to_string())
+        "entity".to_string()
     }
 
     /// Check if a type is an attribute type
@@ -1534,8 +1525,7 @@ impl Default for EnhancedTypeQLGenerator {
 impl SchemaAnalyzer {
     fn new() -> Self {
         Self {
-            type_cache: HashMap::new(),
-        }
+            type_cache: HashMap::new()}
     }
 
     /// Determine if a class should be an entity, relation, or abstract type
@@ -1543,9 +1533,9 @@ impl SchemaAnalyzer {
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<TypeQLType> {
+    ) -> TypeQLType {
         if class.abstract_.unwrap_or(false) || class.mixin.unwrap_or(false) {
-            return Ok(TypeQLType::Abstract);
+            return TypeQLType::Abstract;
         }
 
         // Count object-valued vs literal-valued slots
@@ -1569,7 +1559,7 @@ impl SchemaAnalyzer {
         // Decision logic for entity vs relation
         if object_slots.len() >= 2 {
             // Multiple object references suggest a relation
-            Ok(TypeQLType::Relation)
+            TypeQLType::Relation
         } else if object_slots.len() == 1 && literal_slots <= 2 {
             // Single object reference with few attributes might be a relation
             // Check if the class name suggests a relationship
@@ -1580,13 +1570,13 @@ impl SchemaAnalyzer {
                 || name_lower.contains("_to_")
                 || name_lower.contains("_has_")
             {
-                Ok(TypeQLType::Relation)
+                TypeQLType::Relation
             } else {
-                Ok(TypeQLType::Entity)
+                TypeQLType::Entity
             }
         } else {
             // Default to entity
-            Ok(TypeQLType::Entity)
+            TypeQLType::Entity
         }
     }
 
@@ -1723,8 +1713,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
                 meta.insert("version".to_string(), "2.0".to_string());
                 meta.insert("schema_name".to_string(), schema.name.clone());
                 meta
-            },
-        }];
+            }}];
 
         // Generate migration script if requested
         if options.get_custom("generate_migration").map(std::string::String::as_str) == Some("true") {
@@ -1732,8 +1721,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
             outputs.push(GeneratedOutput {
                 filename: format!("{filename_base}-migration.tql"),
                 content: migration,
-                metadata: HashMap::new(),
-            });
+                metadata: HashMap::new()});
         }
 
         Ok(outputs)
@@ -2120,7 +2108,7 @@ impl EnhancedTypeQLGenerator {
 mod tests {
     use super::*;
     use serde_json::json;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_enhanced_typeql_generation() -> anyhow::Result<()> {

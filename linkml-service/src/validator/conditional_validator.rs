@@ -15,8 +15,7 @@ pub struct ConditionalValidator {
     rules: HashMap<String, Vec<ConditionalRule>>,
 
     /// Expression engine for evaluating complex conditions
-    expression_engine: Arc<ExpressionEngine>,
-}
+    expression_engine: Arc<ExpressionEngine>}
 
 /// A conditional validation rule
 #[derive(Clone, Debug)]
@@ -34,8 +33,7 @@ pub struct ConditionalRule {
     pub else_requirements: Option<Vec<Requirement>>,
 
     /// Error message when rule is violated
-    pub message: Option<String>,
-}
+    pub message: Option<String>}
 
 /// A condition that can be evaluated
 #[derive(Clone, Debug)]
@@ -45,67 +43,58 @@ pub enum Condition {
         /// The slot name to check
         slot: String,
         /// The expected value
-        value: Value,
-    },
+        value: Value},
 
     /// Slot does not have a specific value
     NotEquals {
         /// The slot name to check
         slot: String,
         /// The value that should not match
-        value: Value,
-    },
+        value: Value},
 
     /// Slot value is in a set
     In {
         /// The slot name to check
         slot: String,
         /// The set of acceptable values
-        values: Vec<Value>,
-    },
+        values: Vec<Value>},
 
     /// Slot value is not in a set
     NotIn {
         /// The slot name to check
         slot: String,
         /// The set of values that should not match
-        values: Vec<Value>,
-    },
+        values: Vec<Value>},
 
     /// Slot has any value (not null)
     Present {
         /// The slot name to check
-        slot: String,
-    },
+        slot: String},
 
     /// Slot is null or missing
     Absent {
         /// The slot name to check
-        slot: String,
-    },
+        slot: String},
 
     /// Slot matches a pattern
     Matches {
         /// The slot name to check
         slot: String,
         /// The regex pattern to match
-        pattern: String,
-    },
+        pattern: String},
 
     /// Numeric comparison
     GreaterThan {
         /// The slot name to check
         slot: String,
         /// The threshold value
-        value: f64,
-    },
+        value: f64},
     /// Less than comparison
     LessThan {
         /// The slot name to check
         slot: String,
         /// The threshold value
-        value: f64,
-    },
+        value: f64},
 
     /// Logical combinations
     /// All conditions must be true
@@ -116,8 +105,7 @@ pub enum Condition {
     Not(Box<Condition>),
 
     /// Expression-based condition
-    Expression(String),
-}
+    Expression(String)}
 
 /// A requirement that must be satisfied
 #[derive(Clone, Debug)]
@@ -151,8 +139,7 @@ pub enum Requirement {
     },
 
     /// Custom validation expression
-    Expression(String),
-}
+    Expression(String)}
 
 
 impl Default for ConditionalValidator {
@@ -166,8 +153,7 @@ impl ConditionalValidator {
     #[must_use] pub fn new() -> Self {
         Self {
             rules: HashMap::new(),
-            expression_engine: Arc::new(ExpressionEngine::new()),
-        }
+            expression_engine: Arc::new(ExpressionEngine::new())}
     }
 
     /// Create from `LinkML` schema
@@ -186,22 +172,18 @@ impl ConditionalValidator {
                             // Convert SlotCondition to our Condition enum
                             let our_condition = if condition.required == Some(true) {
                                 Condition::Present {
-                                    slot: trigger_slot.clone(),
-                                }
+                                    slot: trigger_slot.clone()}
                             } else if let Some(equals_string) = &condition.equals_string {
                                 Condition::Equals {
                                     slot: trigger_slot.clone(),
-                                    value: json!(equals_string),
-                                }
+                                    value: json!(equals_string)}
                             } else if let Some(equals_number) = &condition.equals_number {
                                 Condition::Equals {
                                     slot: trigger_slot.clone(),
-                                    value: json!(equals_number),
-                                }
+                                    value: json!(equals_number)}
                             } else {
                                 Condition::Present {
-                                    slot: trigger_slot.clone(),
-                                }
+                                    slot: trigger_slot.clone()}
                             };
 
                             let rule = ConditionalRule {
@@ -216,8 +198,7 @@ impl ConditionalValidator {
                                     "When '{}' meets condition, the following fields are required: {}",
                                     trigger_slot,
                                     then_required.join(", ")
-                                )),
-                            };
+                                ))};
                             class_rules.push(rule);
                         }
                 }
@@ -249,22 +230,18 @@ impl ConditionalValidator {
                     if let Some((slot_name, slot_condition)) = slot_conditions.iter().next() {
                         if slot_condition.required == Some(true) {
                             Condition::Present {
-                                slot: slot_name.clone(),
-                            }
+                                slot: slot_name.clone()}
                         } else if let Some(equals_string) = &slot_condition.equals_string {
                             Condition::Equals {
                                 slot: slot_name.clone(),
-                                value: json!(equals_string),
-                            }
+                                value: json!(equals_string)}
                         } else if let Some(equals_number) = &slot_condition.equals_number {
                             Condition::Equals {
                                 slot: slot_name.clone(),
-                                value: json!(equals_number),
-                            }
+                                value: json!(equals_number)}
                         } else {
                             Condition::Present {
-                                slot: slot_name.clone(),
-                            }
+                                slot: slot_name.clone()}
                         }
                     } else {
                         return None;
@@ -279,8 +256,7 @@ impl ConditionalValidator {
                     for (slot_name, slot_condition) in slot_conditions {
                         if slot_condition.required == Some(true) {
                             then_requirements.push(Requirement::Required {
-                                slot: slot_name.clone(),
-                            });
+                                slot: slot_name.clone()});
                         }
                     }
                 }
@@ -292,8 +268,7 @@ impl ConditionalValidator {
                         for (slot_name, slot_condition) in slot_conditions {
                             if slot_condition.required == Some(true) {
                                 else_reqs.push(Requirement::Required {
-                                    slot: slot_name.clone(),
-                                });
+                                    slot: slot_name.clone()});
                             }
                         }
                         if else_reqs.is_empty() {
@@ -314,8 +289,7 @@ impl ConditionalValidator {
                     condition,
                     then_requirements,
                     else_requirements,
-                    message: rule.description.clone(),
-                })
+                    message: rule.description.clone()})
             } else {
                 None
             }
@@ -390,8 +364,7 @@ impl ConditionalValidator {
                 condition: rule.condition.clone(),
                 condition_met,
                 failed_requirements,
-                message: rule.message.clone(),
-            }))
+                message: rule.message.clone()}))
         }
     }
 
@@ -399,8 +372,7 @@ impl ConditionalValidator {
     fn evaluate_condition(&self, instance: &Value, condition: &Condition) -> Result<bool> {
         let obj = match instance {
             Value::Object(o) => o,
-            _ => return Ok(false),
-        };
+            _ => return Ok(false)};
 
         match condition {
             Condition::Equals { slot, value } => Ok(obj.get(slot) == Some(value)),
@@ -468,7 +440,7 @@ impl ConditionalValidator {
             Condition::Expression(expr) => {
                 // Use the expression engine to evaluate complex conditions
                 // Convert instance to context map
-                let context = Self::value_to_context(instance)?;
+                let context = Self::value_to_context(instance);
                 self.expression_engine
                     .evaluate(expr, &context)
                     .map(|result| matches!(result, Value::Bool(true)))
@@ -480,8 +452,7 @@ impl ConditionalValidator {
     fn check_requirement(&self, instance: &Value, requirement: &Requirement) -> Result<bool> {
         let obj = match instance {
             Value::Object(o) => o,
-            _ => return Ok(false),
-        };
+            _ => return Ok(false)};
 
         match requirement {
             Requirement::Required { slot } => {
@@ -503,7 +474,7 @@ impl ConditionalValidator {
             Requirement::Expression(expr) => {
                 // Use the expression engine to evaluate complex requirements
                 // Convert instance to context map
-                let context = Self::value_to_context(instance)?;
+                let context = Self::value_to_context(instance);
                 self.expression_engine
                     .evaluate(expr, &context)
                     .map(|result| matches!(result, Value::Bool(true)))
@@ -512,19 +483,19 @@ impl ConditionalValidator {
     }
 
     /// Convert a `JSON` Value to a context map for expression evaluation
-    fn value_to_context(value: &Value) -> Result<HashMap<String, Value>> {
+    fn value_to_context(value: &Value) -> HashMap<String, Value> {
         if let Value::Object(map) = value {
             // Convert the serde_json::Map to a HashMap
             let mut context = HashMap::new();
             for (key, val) in map {
                 context.insert(key.clone(), val.clone());
             }
-            Ok(context)
+            context
         } else {
             // For non-object values, create a context with a single "value" key
             let mut context = HashMap::new();
             context.insert("value".to_string(), value.clone());
-            Ok(context)
+            context
         }
     }
 }
@@ -545,8 +516,7 @@ pub struct ConditionalViolation {
     pub failed_requirements: Vec<Requirement>,
 
     /// Custom error message
-    pub message: Option<String>,
-}
+    pub message: Option<String>}
 
 impl ConditionalViolation {
     /// Format as user-friendly message
@@ -579,14 +549,11 @@ mod tests {
                 name: "us_requires_state".to_string(),
                 condition: Condition::Equals {
                     slot: "country".to_string(),
-                    value: json!("US"),
-                },
+                    value: json!("US")},
                 then_requirements: vec![Requirement::Required {
-                    slot: "state".to_string(),
-                }],
+                    slot: "state".to_string()}],
                 else_requirements: None,
-                message: Some("US addresses require a state".to_string()),
-            },
+                message: Some("US addresses require a state".to_string())},
         );
 
         // Valid US address
@@ -632,19 +599,15 @@ mod tests {
                 condition: Condition::And(vec![
                     Condition::GreaterThan {
                         slot: "age".to_string(),
-                        value: 17.99,
-                    },
+                        value: 17.99},
                     Condition::Equals {
                         slot: "country".to_string(),
-                        value: json!("US"),
-                    },
+                        value: json!("US")},
                 ]),
                 then_requirements: vec![Requirement::Required {
-                    slot: "ssn".to_string(),
-                }],
+                    slot: "ssn".to_string()}],
                 else_requirements: None,
-                message: Some("US adults require SSN".to_string()),
-            },
+                message: Some("US adults require SSN".to_string())},
         );
 
         // US adult without SSN - should fail

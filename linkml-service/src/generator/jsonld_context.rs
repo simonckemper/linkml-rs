@@ -24,8 +24,7 @@ pub struct JsonLdContextGeneratorConfig {
     /// Whether to use compact IRIs
     pub use_curies: bool,
     /// Whether to include container mappings
-    pub include_containers: bool,
-}
+    pub include_containers: bool}
 
 impl Default for JsonLdContextGeneratorConfig {
     fn default() -> Self {
@@ -36,15 +35,13 @@ impl Default for JsonLdContextGeneratorConfig {
             include_language_maps: false,
             default_language: None,
             use_curies: true,
-            include_containers: true,
-        }
+            include_containers: true}
     }
 }
 
 /// `JSON`-LD Context generator
 pub struct JsonLdContextGenerator {
-    config: JsonLdContextGeneratorConfig,
-}
+    config: JsonLdContextGeneratorConfig}
 
 impl JsonLdContextGenerator {
     /// Create a new `JSON`-LD Context generator
@@ -74,8 +71,7 @@ impl JsonLdContextGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.clone().unwrap_or_default(),
-                    };
+                        } => prefix_reference.clone().unwrap_or_default()};
                     context.insert(prefix.clone(), json!(reference));
                 }
             }
@@ -88,8 +84,7 @@ impl JsonLdContextGenerator {
                     PrefixDefinition::Simple(url) => url.clone(),
                     PrefixDefinition::Complex {
                         prefix_reference, ..
-                    } => prefix_reference.clone().unwrap_or_default(),
-                };
+                    } => prefix_reference.clone().unwrap_or_default()};
                 context.insert("@vocab".to_string(), json!(reference));
             }
 
@@ -253,8 +248,7 @@ impl JsonLdContextGenerator {
                         Some("datetime") => Some(json!("xsd:dateTime")),
                         Some("time") => Some(json!("xsd:time")),
                         Some("uri") => Some(json!("@id")),
-                        _ => None,
-                    };
+                        _ => None};
                 }
 
             // Direct type mapping
@@ -267,8 +261,7 @@ impl JsonLdContextGenerator {
                 "datetime" => Some(json!("xsd:dateTime")),
                 "time" => Some(json!("xsd:time")),
                 "uri" | "uriorcurie" => Some(json!("@id")),
-                _ => None,
-            }
+                _ => None}
         } else {
             None
         }
@@ -300,8 +293,7 @@ impl JsonLdContextGenerator {
                         PrefixDefinition::Simple(url) => url.clone(),
                         PrefixDefinition::Complex {
                             prefix_reference, ..
-                        } => prefix_reference.clone().unwrap_or_default(),
-                    };
+                        } => prefix_reference.clone().unwrap_or_default()};
                     return format!("{reference}{name}");
                 }
 
@@ -366,7 +358,7 @@ impl Generator for JsonLdContextGenerator {
 mod tests {
     use super::*;
     use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_jsonld_context_generation() -> anyhow::Result<()> {

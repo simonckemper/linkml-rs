@@ -58,8 +58,7 @@ pub enum PatchOperation {
         path: String,
         /// The expected value
         value: Value
-    },
-}
+    }}
 
 /// A collection of patch operations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,8 +76,7 @@ pub struct SchemaPatch {
     pub to_version: Option<String>,
 
     /// Whether this is a breaking change
-    pub breaking: bool,
-}
+    pub breaking: bool}
 
 /// Options for applying patches
 #[derive(Debug, Clone)]
@@ -93,8 +91,7 @@ pub struct PatchOptions {
     pub create_backup: bool,
 
     /// Strict mode - fail on any warning
-    pub strict: bool,
-}
+    pub strict: bool}
 
 impl Default for PatchOptions {
     fn default() -> Self {
@@ -102,8 +99,7 @@ impl Default for PatchOptions {
             validate_after_each: false,
             allow_breaking: false,
             create_backup: true,
-            strict: false,
-        }
+            strict: false}
     }
 }
 
@@ -120,13 +116,11 @@ pub struct PatchResult {
     pub skipped_operations: Vec<(PatchOperation, String)>,
 
     /// Warnings generated during patching
-    pub warnings: Vec<String>,
-}
+    pub warnings: Vec<String>}
 
 /// Schema patcher for applying patches to schemas
 pub struct SchemaPatcher {
-    options: PatchOptions,
-}
+    options: PatchOptions}
 
 impl SchemaPatcher {
     /// Create a new schema patcher
@@ -155,8 +149,7 @@ impl SchemaPatcher {
             schema: schema.clone(),
             applied_operations: Vec::new(),
             skipped_operations: Vec::new(),
-            warnings: Vec::new(),
-        };
+            warnings: Vec::new()};
 
         // Apply each operation
         for operation in &patch.operations {
@@ -202,8 +195,7 @@ impl SchemaPatcher {
             PatchOperation::Replace { path, value } => self.apply_replace(schema, path, value),
             PatchOperation::Move { from, path } => self.apply_move(schema, from, path),
             PatchOperation::Copy { from, path } => self.apply_copy(schema, from, path),
-            PatchOperation::Test { path, value } => self.apply_test(schema, path, value),
-        }
+            PatchOperation::Test { path, value } => self.apply_test(schema, path, value)}
     }
 
     /// Apply an add operation
@@ -247,8 +239,7 @@ impl SchemaPatcher {
             }
             _ => Err(LinkMLError::service(format!(
                 "Unsupported path for add: {path}"
-            ))),
-        }
+            )))}
     }
 
     /// Apply a remove operation
@@ -292,8 +283,7 @@ impl SchemaPatcher {
             }
             _ => Err(LinkMLError::service(format!(
                 "Unsupported path for remove: {path}"
-            ))),
-        }
+            )))}
     }
 
     /// Apply a replace operation
@@ -334,8 +324,7 @@ impl SchemaPatcher {
             }
             _ => Err(LinkMLError::service(format!(
                 "Unsupported path for replace: {path}"
-            ))),
-        }
+            )))}
     }
 
     /// Apply a move operation
@@ -393,8 +382,7 @@ impl SchemaPatcher {
                 .ok_or_else(|| LinkMLError::service(format!("Slot '{slot_name}' not found")))
                 .and_then(|s| serde_json::to_value(s)
                     .map_err(|e| LinkMLError::service(format!("Failed to serialize slot '{slot_name}': {e}")))),
-            _ => Err(LinkMLError::service(format!("Unsupported path: {path}"))),
-        }
+            _ => Err(LinkMLError::service(format!("Unsupported path: {path}")))}
     }
 
     /// Validate a schema
@@ -415,15 +403,13 @@ impl SchemaPatcher {
     for class_name in &diff.added_classes {
         operations.push(PatchOperation::Add {
             path: format!("/classes/{class_name}"),
-            value: Value::Object(serde_json::Map::new()),
-        });
+            value: Value::Object(serde_json::Map::new())});
     }
 
     // Remove operations for deleted classes
     for class_name in &diff.removed_classes {
         operations.push(PatchOperation::Remove {
-            path: format!("/classes/{class_name}"),
-        });
+            path: format!("/classes/{class_name}")});
     }
 
     // Modify operations for changed classes
@@ -432,15 +418,13 @@ impl SchemaPatcher {
         for slot in &class_diff.added_slots {
             operations.push(PatchOperation::Add {
                 path: format!("/classes/{}/slots/{}", class_diff.name, slot),
-                value: Value::String(slot.clone()),
-            });
+                value: Value::String(slot.clone())});
         }
 
         // Remove deleted slots
         for slot in &class_diff.removed_slots {
             operations.push(PatchOperation::Remove {
-                path: format!("/classes/{}/slots/{}", class_diff.name, slot),
-            });
+                path: format!("/classes/{}/slots/{}", class_diff.name, slot)});
         }
 
         // Replace changed attributes
@@ -448,8 +432,7 @@ impl SchemaPatcher {
             if let Some(new_value) = &change.new_value {
                 operations.push(PatchOperation::Replace {
                     path: format!("/classes/{}/{}", class_diff.name, attr),
-                    value: new_value.clone(),
-                });
+                    value: new_value.clone()});
             }
         }
     }
@@ -458,14 +441,12 @@ impl SchemaPatcher {
     for slot_name in &diff.added_slots {
         operations.push(PatchOperation::Add {
             path: format!("/slots/{slot_name}"),
-            value: Value::Object(serde_json::Map::new()),
-        });
+            value: Value::Object(serde_json::Map::new())});
     }
 
     for slot_name in &diff.removed_slots {
         operations.push(PatchOperation::Remove {
-            path: format!("/slots/{slot_name}"),
-        });
+            path: format!("/slots/{slot_name}")});
     }
 
     SchemaPatch {
@@ -473,14 +454,13 @@ impl SchemaPatcher {
         description: Some("Auto-generated patch from diff".to_string()),
         from_version: None,
         to_version: None,
-        breaking: !diff.breaking_changes.is_empty(),
-    }
+        breaking: !diff.breaking_changes.is_empty()}
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_add_class() {
@@ -496,13 +476,11 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                     "name": "Person",
                     "description": "A person",
                     "slots": ["name", "age"]
-                }),
-            }],
+                })}],
             description: None,
             from_version: None,
             to_version: None,
-            breaking: false,
-        };
+            breaking: false};
 
         let result = patcher.apply_patch(schema, &patch).expect("Should apply patch");
         assert_eq!(result.applied_operations.len(), 1);
@@ -520,13 +498,11 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
 
         let patch = SchemaPatch {
             operations: vec![PatchOperation::Remove {
-                path: "/slots/old_slot".to_string(),
-            }],
+                path: "/slots/old_slot".to_string()}],
             description: None,
             from_version: None,
             to_version: None,
-            breaking: true,
-        };
+            breaking: true};
 
         let mut options = PatchOptions::default();
         options.allow_breaking = true;

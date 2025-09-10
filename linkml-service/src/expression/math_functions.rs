@@ -39,8 +39,7 @@ impl BuiltinFunction for AbsFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -74,8 +73,7 @@ impl BuiltinFunction for SqrtFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -146,8 +144,7 @@ impl BuiltinFunction for SinFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -175,8 +172,7 @@ impl BuiltinFunction for CosFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -204,8 +200,7 @@ impl BuiltinFunction for TanFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -299,8 +294,7 @@ impl BuiltinFunction for ExpFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -328,8 +322,7 @@ impl BuiltinFunction for FloorFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 
@@ -357,8 +350,7 @@ impl BuiltinFunction for CeilFunction {
             _ => Err(FunctionError::invalid_argument(
                 self.name(),
                 "expected numeric argument",
-            )),
-        }
+            ))}
     }
 }
 

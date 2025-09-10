@@ -10,8 +10,7 @@ use super::{
     ValidationEngine,
     cache::ValidatorCacheKey,
     compiled::{CompilationOptions, CompiledValidator},
-    multi_layer_cache::MultiLayerCache,
-};
+    multi_layer_cache::MultiLayerCache};
 use dashmap::DashMap;
 use linkml_core::prelude::*;
 use smallvec::SmallVec;
@@ -38,8 +37,7 @@ pub struct CacheWarmingConfig {
     /// Enable predictive warming
     pub predictive_warming: bool,
     /// History size for predictions
-    pub history_size: usize,
-}
+    pub history_size: usize}
 
 impl Default for CacheWarmingConfig {
     fn default() -> Self {
@@ -50,8 +48,7 @@ impl Default for CacheWarmingConfig {
             warming_interval: Duration::from_secs(300), // 5 minutes
             priority_threshold: 0.5,
             predictive_warming: true,
-            history_size: 1000,
-        }
+            history_size: 1000}
     }
 }
 
@@ -65,13 +62,12 @@ impl CacheWarmingConfig {
 
         Self {
             auto_warm: max_entries > 100, // Enable if cache is large enough
-            batch_size: (max_entries / 20).max(10).min(100), // 5% of max entries
+            batch_size: (max_entries / 20).clamp(10, 100), // 5% of max entries
             max_concurrent: 4,
             warming_interval: Duration::from_secs(ttl_seconds), // Use TTL as warming interval
             priority_threshold: 0.5,
             predictive_warming: !enable_compression, // Predictive warming if not compressing
-            history_size: 1000,
-        }
+            history_size: 1000}
     }
 }
 
@@ -83,8 +79,7 @@ pub struct AccessEntry {
     /// Access timestamp
     pub timestamp: std::time::Instant,
     /// Access count
-    pub count: u32,
-}
+    pub count: u32}
 
 /// Priority entry for warming queue
 #[derive(Debug, Clone)]
@@ -94,8 +89,7 @@ struct WarmingEntry {
     /// Priority score (higher is better)
     priority: f64,
     /// Estimated compilation time
-    estimated_time: Duration,
-}
+    estimated_time: Duration}
 
 impl PartialEq for WarmingEntry {
     fn eq(&self, other: &Self) -> bool {
@@ -136,8 +130,7 @@ pub trait WarmingStrategy: Send + Sync {
 /// Frequency-based warming strategy
 pub struct FrequencyBasedStrategy {
     /// Time window for frequency calculation
-    window: Duration,
-}
+    window: Duration}
 
 impl FrequencyBasedStrategy {
     /// Create a new frequency-based strategy
@@ -204,8 +197,7 @@ pub struct PredictiveStrategy {
     /// Pattern detection window
     pattern_window: Duration,
     /// Prediction lookahead
-    lookahead: Duration,
-}
+    lookahead: Duration}
 
 impl PredictiveStrategy {
     /// Create a new predictive strategy
@@ -213,8 +205,7 @@ impl PredictiveStrategy {
     pub fn new(pattern_window: Duration, lookahead: Duration) -> Self {
         Self {
             pattern_window,
-            lookahead,
-        }
+            lookahead}
     }
 
     /// Detect access patterns
@@ -363,8 +354,7 @@ pub struct CacheWarmer {
     /// Currently warming keys
     warming_in_progress: Arc<DashMap<ValidatorCacheKey, std::time::Instant>>,
     /// Timestamp service
-    timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
-}
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
 impl CacheWarmer {
     /// Create a new cache warmer
@@ -392,8 +382,7 @@ impl CacheWarmer {
             strategies,
             warming_queue: Arc::new(RwLock::new(BinaryHeap::new())),
             warming_in_progress: Arc::new(DashMap::new()),
-            timestamp,
-        }
+            timestamp}
     }
 
     /// Record a cache access
@@ -405,8 +394,7 @@ impl CacheWarmer {
         history.push(AccessEntry {
             key: key.clone(),
             timestamp: std::time::Instant::now(),
-            count: 1,
-        });
+            count: 1});
 
         // Trim history if needed
         if history.len() > config.history_size {
@@ -440,8 +428,7 @@ impl CacheWarmer {
                     all_candidates.push(WarmingEntry {
                         key,
                         priority,
-                        estimated_time,
-                    });
+                        estimated_time});
                 }
             }
         }
@@ -472,8 +459,7 @@ impl CacheWarmer {
                 optimize_ranges: true,
                 optimize_types: true,
                 precompute_inheritance: true,
-                cache_permissible_values: true,
-            };
+                cache_permissible_values: true};
             let validator = CompiledValidator::compile_class(
                 &engine.schema,
                 &key.class_name,
@@ -599,8 +585,7 @@ impl Clone for CacheWarmer {
             ],
             warming_queue: self.warming_queue.clone(),
             warming_in_progress: self.warming_in_progress.clone(),
-            timestamp: self.timestamp.clone(),
-        }
+            timestamp: self.timestamp.clone()}
     }
 }
 
@@ -621,11 +606,9 @@ mod tests {
                     schema_id: "test".to_string(),
                     schema_hash: "hash".to_string(),
                     class_name: format!("Class{}", i % 2),
-                    options_hash: "opts".to_string(),
-                },
+                    options_hash: "opts".to_string()},
                 timestamp: now.checked_sub(Duration::from_secs(i * 60)).unwrap_or(now),
-                count: i as u32 + 1,
-            });
+                count: i as u32 + 1});
         }
 
         let current_cache = DashMap::new();
@@ -642,22 +625,18 @@ mod tests {
                 schema_id: "test".to_string(),
                 schema_hash: "hash".to_string(),
                 class_name: "Class1".to_string(),
-                options_hash: "opts".to_string(),
-            },
+                options_hash: "opts".to_string()},
             priority: 0.8,
-            estimated_time: Duration::from_millis(50),
-        };
+            estimated_time: Duration::from_millis(50)};
 
         let entry2 = WarmingEntry {
             key: ValidatorCacheKey {
                 schema_id: "test".to_string(),
                 schema_hash: "hash".to_string(),
                 class_name: "Class2".to_string(),
-                options_hash: "opts".to_string(),
-            },
+                options_hash: "opts".to_string()},
             priority: 0.9,
-            estimated_time: Duration::from_millis(50),
-        };
+            estimated_time: Duration::from_millis(50)};
 
         assert!(entry2 > entry1);
     }

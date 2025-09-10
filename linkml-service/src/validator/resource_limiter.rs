@@ -34,8 +34,7 @@ pub struct ResourceLimits {
     /// Rate limit (requests per second)
     pub rate_limit_rps: Option<f64>,
     /// Enable resource monitoring
-    pub monitoring_enabled: bool,
-}
+    pub monitoring_enabled: bool}
 
 impl Default for ResourceLimits {
     fn default() -> Self {
@@ -48,8 +47,7 @@ impl Default for ResourceLimits {
             max_document_size: 100 * 1024 * 1024, // 100MB
             max_nested_depth: 100,
             rate_limit_rps: Some(1000.0),
-            monitoring_enabled: true,
-        }
+            monitoring_enabled: true}
     }
 }
 
@@ -65,8 +63,7 @@ pub struct ResourceUsage {
     /// Current request rate
     pub request_rate: f64,
     /// Timestamp
-    pub timestamp: Instant,
-}
+    pub timestamp: Instant}
 
 /// Resource monitor trait
 pub trait ResourceMonitor: Send + Sync {
@@ -94,8 +91,7 @@ pub struct ResourceRequirements {
     /// Estimated duration
     pub duration: Duration,
     /// Document size
-    pub document_size: usize,
-}
+    pub document_size: usize}
 
 impl ResourceRequirements {
     /// Estimate requirements from document size
@@ -106,8 +102,7 @@ impl ResourceRequirements {
             memory_bytes: document_size * 10, // 10x for processing overhead
             cpu_percent: 10.0,
             duration: Duration::from_millis((document_size / 1000) as u64),
-            document_size,
-        }
+            document_size}
     }
 }
 
@@ -116,8 +111,7 @@ struct TokenBucket {
     capacity: f64,
     tokens: f64,
     refill_rate: f64,
-    last_refill: Instant,
-}
+    last_refill: Instant}
 
 impl TokenBucket {
     fn new(capacity: f64, refill_rate: f64) -> Self {
@@ -125,8 +119,7 @@ impl TokenBucket {
             capacity,
             tokens: capacity,
             refill_rate,
-            last_refill: Instant::now(),
-        }
+            last_refill: Instant::now()}
     }
 
     fn try_consume(&mut self, tokens: f64) -> bool {
@@ -156,16 +149,14 @@ pub struct ResourceLimiter {
     rate_limiter: Arc<Mutex<Option<TokenBucket>>>,
     active_operations: Arc<DashMap<String, ActiveOperation>>,
     usage_history: Arc<RwLock<Vec<ResourceUsage>>>,
-    monitor: Option<Arc<dyn ResourceMonitor>>,
-}
+    monitor: Option<Arc<dyn ResourceMonitor>>}
 
 /// Active operation tracking
 struct ActiveOperation {
     id: String,
     start_time: Instant,
     _requirements: ResourceRequirements,
-    timeout_handle: Option<tokio::task::JoinHandle<()>>,
-}
+    timeout_handle: Option<tokio::task::JoinHandle<()>>}
 
 impl ResourceLimiter {
     /// Create new resource limiter
@@ -180,8 +171,7 @@ impl ResourceLimiter {
             rate_limiter: Arc::new(Mutex::new(rate_limit)),
             active_operations: Arc::new(DashMap::new()),
             usage_history: Arc::new(RwLock::new(Vec::with_capacity(1000))),
-            monitor: None,
-        }
+            monitor: None}
     }
 
     /// Set resource monitor
@@ -260,8 +250,7 @@ impl ResourceLimiter {
                 id: operation_id.clone(),
                 start_time: Instant::now(),
                 _requirements: requirements.clone(),
-                timeout_handle: Some(timeout_handle),
-            },
+                timeout_handle: Some(timeout_handle)},
         );
 
         // Record usage
@@ -271,8 +260,7 @@ impl ResourceLimiter {
             operation_id,
             limiter: self.clone(),
             _permit: Some(permit),
-            start_time: Instant::now(),
-        })
+            start_time: Instant::now()})
     }
 
     /// Check if operation would exceed limits
@@ -329,16 +317,14 @@ impl ResourceLimiter {
                 cpu_percent: monitor.get_cpu_usage(),
                 active_validations: self.active_operations.len(),
                 request_rate: self.calculate_request_rate(),
-                timestamp: Instant::now(),
-            }
+                timestamp: Instant::now()}
         } else {
             ResourceUsage {
                 memory_bytes: 0,
                 cpu_percent: 0.0,
                 active_validations: self.active_operations.len(),
                 request_rate: self.calculate_request_rate(),
-                timestamp: Instant::now(),
-            }
+                timestamp: Instant::now()}
         };
 
         let mut history = self.usage_history.write();
@@ -428,8 +414,7 @@ impl ResourceLimiter {
             average_cpu: avg_cpu,
             peak_memory,
             peak_cpu,
-            request_rate: latest.request_rate,
-        }
+            request_rate: latest.request_rate}
     }
 
     /// Cleanup expired operations
@@ -464,8 +449,7 @@ impl Clone for ResourceLimiter {
             rate_limiter: self.rate_limiter.clone(),
             active_operations: self.active_operations.clone(),
             usage_history: self.usage_history.clone(),
-            monitor: self.monitor.clone(),
-        }
+            monitor: self.monitor.clone()}
     }
 }
 
@@ -474,8 +458,7 @@ pub struct ResourceGuard {
     operation_id: String,
     limiter: ResourceLimiter,
     _permit: Option<tokio::sync::OwnedSemaphorePermit>,
-    start_time: Instant,
-}
+    start_time: Instant}
 
 impl Drop for ResourceGuard {
     fn drop(&mut self) {
@@ -515,14 +498,12 @@ pub struct ResourceStats {
     /// Peak CPU usage
     pub peak_cpu: f32,
     /// Current request rate
-    pub request_rate: f64,
-}
+    pub request_rate: f64}
 
 /// System resource monitor implementation
 pub struct SystemResourceMonitor {
     /// Process handle for monitoring (kept for future RAII use)
-    _process: sysinfo::System,
-}
+    _process: sysinfo::System}
 
 impl Default for SystemResourceMonitor {
     fn default() -> Self {
@@ -535,8 +516,7 @@ impl SystemResourceMonitor {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            _process: sysinfo::System::new(),
-        }
+            _process: sysinfo::System::new()}
     }
 }
 
@@ -566,8 +546,7 @@ impl ResourceMonitor for SystemResourceMonitor {
 /// Validation-specific resource limiter
 pub struct ValidationResourceLimiter {
     base_limiter: ResourceLimiter,
-    depth_tracker: DashMap<String, usize>,
-}
+    depth_tracker: DashMap<String, usize>}
 
 impl ValidationResourceLimiter {
     /// Create new validation resource limiter
@@ -575,8 +554,7 @@ impl ValidationResourceLimiter {
     pub fn new(limits: ResourceLimits) -> Self {
         Self {
             base_limiter: ResourceLimiter::new(limits),
-            depth_tracker: DashMap::new(),
-        }
+            depth_tracker: DashMap::new()}
     }
 
     /// Check nested depth limit

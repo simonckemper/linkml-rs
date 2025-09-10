@@ -18,8 +18,7 @@ pub enum DiffError {
 
     /// Invalid comparison
     #[error("Invalid comparison: {0}")]
-    InvalidComparison(String),
-}
+    InvalidComparison(String)}
 
 /// Result type for diff operations
 pub type DiffResult<T> = std::result::Result<T, DiffError>;
@@ -35,8 +34,7 @@ pub enum ChangeType {
     /// Element was modified
     Modified,
     /// Element was renamed
-    Renamed,
-}
+    Renamed}
 
 /// Severity of a change
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -47,16 +45,14 @@ pub enum ChangeSeverity {
     /// Minor breaking change
     Minor,
     /// Major breaking change
-    Major,
-}
+    Major}
 
 impl std::fmt::Display for ChangeSeverity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ChangeSeverity::Compatible => write!(f, "Compatible"),
             ChangeSeverity::Minor => write!(f, "Minor"),
-            ChangeSeverity::Major => write!(f, "Major"),
-        }
+            ChangeSeverity::Major => write!(f, "Major")}
     }
 }
 
@@ -88,8 +84,7 @@ pub struct SchemaChange {
     pub new_value: Option<String>,
 
     /// Additional details
-    pub details: HashMap<String, String>,
-}
+    pub details: HashMap<String, String>}
 
 /// Result of comparing two schemas
 #[derive(Debug, Clone)]
@@ -104,8 +99,7 @@ pub struct SchemaDiff {
     pub breaking_changes: Vec<SchemaChange>,
 
     /// Compatible changes
-    pub compatible_changes: Vec<SchemaChange>,
-}
+    pub compatible_changes: Vec<SchemaChange>}
 
 /// Statistics about a schema diff
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -129,8 +123,7 @@ pub struct DiffStats {
     pub breaking_changes: usize,
 
     /// Number of compatible changes
-    pub compatible_changes: usize,
-}
+    pub compatible_changes: usize}
 
 /// Schema differ
 pub struct SchemaDiffer {
@@ -138,8 +131,7 @@ pub struct SchemaDiffer {
     config: DiffConfig,
 
     /// Detected renames
-    renames: HashMap<String, String>,
-}
+    renames: HashMap<String, String>}
 
 /// Configuration for schema diffing
 #[derive(Debug, Clone)]
@@ -157,8 +149,7 @@ pub struct DiffConfig {
     pub analyze_breaking: bool,
 
     /// Whether to include detailed descriptions
-    pub detailed_descriptions: bool,
-}
+    pub detailed_descriptions: bool}
 
 impl Default for DiffConfig {
     fn default() -> Self {
@@ -167,8 +158,7 @@ impl Default for DiffConfig {
             rename_threshold: 0.8,
             include_compatible: true,
             analyze_breaking: true,
-            detailed_descriptions: true,
-        }
+            detailed_descriptions: true}
     }
 }
 
@@ -177,8 +167,7 @@ impl SchemaDiffer {
     #[must_use] pub fn new(config: DiffConfig) -> Self {
         Self {
             config,
-            renames: HashMap::new(),
-        }
+            renames: HashMap::new()}
     }
 
     /// Create with default configuration
@@ -237,8 +226,7 @@ impl SchemaDiffer {
             changes,
             stats,
             breaking_changes,
-            compatible_changes,
-        })
+            compatible_changes})
     }
 
     /// Detect renames between schemas
@@ -340,8 +328,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: old_schema.version.clone(),
                 new_value: new_schema.version.clone(),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare license
@@ -355,8 +342,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: old_schema.license.clone(),
                 new_value: new_schema.license.clone(),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare imports
@@ -373,8 +359,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(removed.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for added in new_imports.difference(&old_imports) {
@@ -387,8 +372,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
     }
 
@@ -415,8 +399,7 @@ impl SchemaDiffer {
                     severity: ChangeSeverity::Major,
                     old_value: Some(name.clone()),
                     new_value: Some(new_name.clone()),
-                    details: HashMap::new(),
-                });
+                    details: HashMap::new()});
             } else {
                 // Class was removed
                 changes.push(SchemaChange {
@@ -428,8 +411,7 @@ impl SchemaDiffer {
                     severity: ChangeSeverity::Major,
                     old_value: Some(name.clone()),
                     new_value: None,
-                    details: HashMap::new(),
-                });
+                    details: HashMap::new()});
             }
         }
 
@@ -446,8 +428,7 @@ impl SchemaDiffer {
                     severity: ChangeSeverity::Compatible,
                     old_value: None,
                     new_value: Some(name.clone()),
-                    details: HashMap::new(),
-                });
+                    details: HashMap::new()});
             }
         }
 
@@ -495,8 +476,7 @@ impl SchemaDiffer {
                 severity,
                 old_value: old_class.is_a.clone(),
                 new_value: new_class.is_a.clone(),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare attributes
@@ -516,8 +496,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(removed.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for added in new_attrs.difference(&old_attrs) {
@@ -533,8 +512,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare mixins
@@ -554,8 +532,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Minor,
                 old_value: Some(removed.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for added in new_mixins.difference(&old_mixins) {
@@ -571,8 +548,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         Ok(())
@@ -599,8 +575,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(name.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for name in new_names.difference(&old_names) {
@@ -613,8 +588,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(name.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare modified slots
@@ -653,8 +627,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: old_slot.range.clone(),
                 new_value: new_slot.range.clone(),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare required
@@ -677,8 +650,7 @@ impl SchemaDiffer {
                 severity,
                 old_value: old_slot.required.map(|v| v.to_string()),
                 new_value: new_slot.required.map(|v| v.to_string()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare multivalued
@@ -695,8 +667,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: old_slot.multivalued.map(|v| v.to_string()),
                 new_value: new_slot.multivalued.map(|v| v.to_string()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         Ok(())
@@ -722,8 +693,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(name.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for name in new_names.difference(&old_names) {
@@ -736,8 +706,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(name.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         Ok(())
@@ -763,8 +732,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(name.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for name in new_names.difference(&old_names) {
@@ -777,8 +745,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(name.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         // Compare modified enums
@@ -809,16 +776,14 @@ impl SchemaDiffer {
             .iter()
             .map(|pv| match pv {
                 PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
         let new_values: HashSet<String> = new_enum
             .permissible_values
             .iter()
             .map(|pv| match pv {
                 PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
 
         for removed in old_values.difference(&new_values) {
@@ -834,8 +799,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Major,
                 old_value: Some(removed.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for added in new_values.difference(&old_values) {
@@ -851,8 +815,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(added.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         Ok(())
@@ -878,8 +841,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Minor,
                 old_value: Some(name.clone()),
                 new_value: None,
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         for name in new_names.difference(&old_names) {
@@ -892,8 +854,7 @@ impl SchemaDiffer {
                 severity: ChangeSeverity::Compatible,
                 old_value: None,
                 new_value: Some(name.clone()),
-                details: HashMap::new(),
-            });
+                details: HashMap::new()});
         }
 
         Ok(())
@@ -910,13 +871,11 @@ impl SchemaDiffer {
                 ChangeType::Added => stats.additions += 1,
                 ChangeType::Removed => stats.removals += 1,
                 ChangeType::Modified => stats.modifications += 1,
-                ChangeType::Renamed => stats.renames += 1,
-            }
+                ChangeType::Renamed => stats.renames += 1}
 
             match change.severity {
                 ChangeSeverity::Compatible => stats.compatible_changes += 1,
-                _ => stats.breaking_changes += 1,
-            }
+                _ => stats.breaking_changes += 1}
         }
 
         stats
@@ -954,7 +913,7 @@ impl fmt::Display for SchemaDiff {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema(name: &str) -> SchemaDefinition {
         let mut schema = SchemaDefinition {

@@ -21,8 +21,7 @@ pub struct ParallelResult {
     pub failed: HashMap<String, String>,
 
     /// Total evaluation time in milliseconds
-    pub total_time_ms: u64,
-}
+    pub total_time_ms: u64}
 
 /// Options for parallel evaluation
 #[derive(Debug, Clone)]
@@ -34,16 +33,14 @@ pub struct ParallelOptions {
     pub fail_fast: bool,
 
     /// Timeout for each expression in milliseconds (0 = use default)
-    pub timeout_ms: u64,
-}
+    pub timeout_ms: u64}
 
 impl Default for ParallelOptions {
     fn default() -> Self {
         Self {
             max_concurrency: num_cpus::get(),
             fail_fast: false,
-            timeout_ms: 0,
-        }
+            timeout_ms: 0}
     }
 }
 
@@ -114,10 +111,8 @@ impl ParallelEvaluator for ExpressionEngine {
                 let result = match engine.parse(&expr) {
                     Ok(ast) => match engine.evaluate_ast(&ast, &context) {
                         Ok(value) => Ok(value),
-                        Err(e) => Err(e.to_string()),
-                    },
-                    Err(e) => Err(e.to_string()),
-                };
+                        Err(e) => Err(e.to_string())},
+                    Err(e) => Err(e.to_string())};
 
                 (key_clone, result)
             });
@@ -159,8 +154,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     let duration = end_time.duration_since(start_time)
                         .unwrap_or_else(|_| std::time::Duration::from_millis(0));
                     duration.as_millis() as u64
-                },
-            }
+                }}
         } else {
             // Collect all results
             let all_results = join_all(tasks).await;
@@ -190,8 +184,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     let duration = end_time.duration_since(start_time)
                         .unwrap_or_else(|_| std::time::Duration::from_millis(0));
                     duration.as_millis() as u64
-                },
-            }
+                }}
         }
     }
 
@@ -229,8 +222,7 @@ impl ParallelEvaluator for ExpressionEngine {
 
                 let result = match engine.evaluate_ast(&ast, &context) {
                     Ok(value) => Ok(value),
-                    Err(e) => Err(e.to_string()),
-                };
+                    Err(e) => Err(e.to_string())};
 
                 (key_clone, result)
             });
@@ -264,8 +256,7 @@ impl ParallelEvaluator for ExpressionEngine {
         ParallelResult {
             successful,
             failed,
-            total_time_ms: duration.as_millis() as u64,
-        }
+            total_time_ms: duration.as_millis() as u64}
     }
 
     async fn evaluate_with_contexts(
@@ -282,8 +273,7 @@ impl ParallelEvaluator for ExpressionEngine {
             Err(e) => {
                 // Return error for all contexts
                 let error = Err(EvaluationError::TypeError {
-                    message: format!("Parse error: {e}"),
-                });
+                    message: format!("Parse error: {e}")});
                 return (0..contexts.len()).map(|_| error.clone()).collect();
             }
         };
@@ -303,8 +293,7 @@ impl ParallelEvaluator for ExpressionEngine {
                         return (
                             idx,
                             Err(EvaluationError::TypeError {
-                                message: format!("semaphore should not be closed: {e}"),
-                            }),
+                                message: format!("semaphore should not be closed: {e}")}),
                         )
                     }
                 };
@@ -312,8 +301,7 @@ impl ParallelEvaluator for ExpressionEngine {
                     engine
                         .evaluate_ast(&ast, &context)
                         .map_err(|e| EvaluationError::TypeError {
-                            message: e.to_string(),
-                        });
+                            message: e.to_string()});
                 (idx, result)
             });
 
@@ -324,8 +312,7 @@ impl ParallelEvaluator for ExpressionEngine {
         let mut results: Vec<Result<Value, EvaluationError>> = (0..tasks.len())
             .map(|_| {
                 Err(EvaluationError::TypeError {
-                    message: "Unprocessed".to_string(),
-                })
+                    message: "Unprocessed".to_string()})
             })
             .collect();
 
@@ -334,8 +321,7 @@ impl ParallelEvaluator for ExpressionEngine {
                 Ok((task_idx, result)) => results[task_idx] = result,
                 Err(e) => {
                     results[idx] = Err(EvaluationError::TypeError {
-                        message: format!("Task join error: {e}"),
-                    });
+                        message: format!("Task join error: {e}")});
                 }
             }
         }
@@ -347,16 +333,14 @@ impl ParallelEvaluator for ExpressionEngine {
 /// Batch evaluation helper for common patterns
 pub struct BatchEvaluator {
     engine: Arc<ExpressionEngine>,
-    options: ParallelOptions,
-}
+    options: ParallelOptions}
 
 impl BatchEvaluator {
     /// Create a new batch evaluator
     #[must_use] pub fn new(engine: ExpressionEngine) -> Self {
         Self {
             engine: Arc::new(engine),
-            options: ParallelOptions::default(),
-        }
+            options: ParallelOptions::default()}
     }
 
     /// Set parallel options
@@ -439,8 +423,7 @@ impl BatchEvaluator {
         self.engine
             .evaluate(reduce_expression, &reduce_context)
             .map_err(|e| EvaluationError::TypeError {
-                message: e.to_string(),
-            })
+                message: e.to_string()})
     }
 }
 
@@ -487,9 +470,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref()?, &json!(2.0));
-        assert_eq!(results[1].as_ref()?, &json!(4.0));
-        assert_eq!(results[2].as_ref()?, &json!(6.0));
+        assert_eq!(results[0].as_ref()?, json!(2.0));
+        assert_eq!(results[1].as_ref()?, json!(4.0));
+        assert_eq!(results[2].as_ref()?, json!(6.0));
         Ok(())
     }
 
@@ -509,9 +492,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref()?, &json!(50.0));
-        assert_eq!(results[1].as_ref()?, &json!(60.0));
-        assert_eq!(results[2].as_ref()?, &json!(60.0));
+        assert_eq!(results[0].as_ref()?, json!(50.0));
+        assert_eq!(results[1].as_ref()?, json!(60.0));
+        assert_eq!(results[2].as_ref()?, json!(60.0));
 
         // Test map-reduce
         let total = batch

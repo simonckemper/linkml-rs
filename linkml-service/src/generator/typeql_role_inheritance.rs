@@ -16,8 +16,7 @@ pub struct RoleInheritance {
     /// Relation where specialization occurs
     pub relation: String,
     /// Constraints on the specialization
-    pub constraints: Vec<String>,
-}
+    pub constraints: Vec<String>}
 
 /// Tracks role hierarchy and specialization
 #[derive(Debug, Clone)]
@@ -29,16 +28,14 @@ pub struct RoleHierarchy {
     /// Abstract roles
     pub abstract_roles: HashSet<String>,
     /// Role specializations (relation:role -> `base_role`)
-    pub specializations: HashMap<String, String>,
-}
+    pub specializations: HashMap<String, String>}
 
 /// Resolves role inheritance in `TypeQL` schemas
 pub struct RoleInheritanceResolver {
     /// Role hierarchies by relation
     pub hierarchies: HashMap<String, RoleHierarchy>,
     /// Global role registry
-    global_roles: HashMap<String, RoleDefinition>,
-}
+    global_roles: HashMap<String, RoleDefinition>}
 
 /// Definition of a role
 #[derive(Debug, Clone)]
@@ -53,8 +50,7 @@ struct RoleDefinition {
     /// Base role if specialized (kept for future use)
     _base_role: Option<String>,
     /// Allowed player types
-    allowed_players: Vec<String>,
-}
+    allowed_players: Vec<String>}
 
 impl Default for RoleInheritanceResolver {
     fn default() -> Self {
@@ -68,8 +64,7 @@ impl RoleInheritanceResolver {
     pub fn new() -> Self {
         Self {
             hierarchies: HashMap::new(),
-            global_roles: HashMap::new(),
-        }
+            global_roles: HashMap::new()}
     }
 
     /// Analyze role inheritance for a relation
@@ -83,8 +78,7 @@ impl RoleInheritanceResolver {
             children: HashMap::new(),
             parent: HashMap::new(),
             abstract_roles: HashSet::new(),
-            specializations: HashMap::new(),
-        };
+            specializations: HashMap::new()};
 
         // Check if relation inherits from another
         if let Some(parent_name) = &relation_class.is_a

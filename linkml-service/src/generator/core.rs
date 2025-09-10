@@ -2,8 +2,7 @@
 
 use super::base::BaseCodeFormatter;
 use super::traits::{
-    CodeFormatter, Generator, GeneratorError, GeneratorResult,
-};
+    CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use super::GeneratorOptions;
 
 use linkml_core::prelude::*;
@@ -14,8 +13,7 @@ pub struct RustGenerator {
     /// Generator name
     pub name: String,
     /// Generator description
-    pub description: String,
-}
+    pub description: String}
 
 impl RustGenerator {
     /// Create a new Rust generator
@@ -23,8 +21,7 @@ impl RustGenerator {
     pub fn new() -> Self {
         Self {
             name: "rust".to_string(),
-            description: "Generate idiomatic Rust code from LinkML schemas with serde support, comprehensive validation, and zero-tolerance for unwrap()".to_string(),
-        }
+            description: "Generate idiomatic Rust code from LinkML schemas with serde support, comprehensive validation, and zero-tolerance for unwrap()".to_string()}
     }
 
     /// Get the generator name
@@ -75,8 +72,7 @@ impl RustGenerator {
             "date" => "chrono::NaiveDate",
             "datetime" => "chrono::DateTime<chrono::Utc>",
             "time" => "chrono::NaiveTime",
-            "uri" | "uriorcurie" | "curie" => "String",
-            "ncname" => "String",
+            "uri" | "uriorcurie" | "curie" | "ncname" => "String",
             _ => "String", // Default to String for unknown types
         }
     }

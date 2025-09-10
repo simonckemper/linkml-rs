@@ -2,8 +2,7 @@
 
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
-    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
-};
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -12,16 +11,14 @@ use std::fmt::Write;
 /// `TypeQL` schema generator for `TypeDB`
 pub struct TypeQLGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl TypeQLGenerator {
     /// Create a new `TypeQL` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "typeql".to_string(),
-        }
+            name: "typeql".to_string()}
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -153,7 +150,7 @@ impl TypeQLGenerator {
         writeln!(output, ",").map_err(Self::fmt_error_to_generator_error)?;
 
         // Add roles based on slots
-        let roles = self.collect_relation_roles(class, schema)?;
+        let roles = self.collect_relation_roles(class, schema);
         for (i, (role, _types)) in roles.iter().enumerate() {
             write!(output, "{}relates {}", indent.single(), role)
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -227,7 +224,7 @@ impl TypeQLGenerator {
         slot: &SlotDefinition,
     ) -> GeneratorResult<()> {
         let attr_name = self.convert_identifier(name);
-        let value_type = self.map_range_to_typeql(&slot.range);
+        let value_type = Self::map_range_to_typeql(&slot.range);
 
         // Add documentation if present
         if let Some(desc) = &slot.description {
@@ -347,7 +344,7 @@ impl TypeQLGenerator {
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<Vec<(String, Vec<String>)>> {
+    ) -> Vec<(String, Vec<String>)> {
         let mut roles = Vec::new();
 
         if !class.slots.is_empty() {
@@ -364,12 +361,11 @@ impl TypeQLGenerator {
             }
         }
 
-        Ok(roles)
+        roles
     }
 
     /// Map `LinkML` range to `TypeQL` value type
-    fn map_range_to_typeql(&self, range: &Option<String>) -> &'static str {
-        let _ = self;
+    fn map_range_to_typeql(range: &Option<String>) -> &'static str {
         match range.as_deref() {
             Some("string" | "str" | "uri" | "url") => "string",
             Some("integer" | "int") => "long",
@@ -513,8 +509,7 @@ impl AsyncGenerator for TypeQLGenerator {
         Ok(vec![GeneratedOutput {
             content: output,
             filename,
-            metadata,
-        }])
+            metadata}])
     }
 }
 
@@ -656,7 +651,7 @@ impl CodeFormatter for TypeQLGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_typeql_generation() -> anyhow::Result<()> {

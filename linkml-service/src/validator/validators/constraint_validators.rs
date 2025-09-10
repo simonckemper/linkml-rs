@@ -10,8 +10,7 @@ use linkml_core::types::{SlotDefinition, SchemaDefinition, ClassDefinition};
 
 /// Validator for required fields
 pub struct RequiredValidator {
-    name: String,
-}
+    name: String}
 
 impl Default for RequiredValidator {
     fn default() -> Self {
@@ -24,8 +23,7 @@ impl RequiredValidator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "required_validator".to_string(),
-        }
+            name: "required_validator".to_string()}
     }
 }
 
@@ -58,8 +56,7 @@ impl Validator for RequiredValidator {
 
 /// Validator for multivalued slots
 pub struct MultivaluedValidator {
-    name: String,
-}
+    name: String}
 
 impl Default for MultivaluedValidator {
     fn default() -> Self {
@@ -72,8 +69,7 @@ impl MultivaluedValidator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "multivalued_validator".to_string(),
-        }
+            name: "multivalued_validator".to_string()}
     }
 }
 
@@ -121,8 +117,7 @@ impl Validator for MultivaluedValidator {
 /// Validator for permissible values (enums)
 pub struct PermissibleValueValidator {
     name: String,
-    schema: SchemaDefinition,
-}
+    schema: SchemaDefinition}
 
 impl PermissibleValueValidator {
     /// Create a new permissible value validator
@@ -133,8 +128,7 @@ impl PermissibleValueValidator {
     pub fn new(schema: &SchemaDefinition) -> Result<Self, linkml_core::error::LinkMLError> {
         Ok(Self {
             name: "permissible_value_validator".to_string(),
-            schema: schema.clone(),
-        })
+            schema: schema.clone()})
     }
 
     fn get_enum_values(&self, enum_name: &str) -> Option<HashSet<String>> {
@@ -144,8 +138,7 @@ impl PermissibleValueValidator {
                 .iter()
                 .map(|pv| match pv {
                     linkml_core::types::PermissibleValue::Simple(s) => s.clone(),
-                    linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone(),
-                })
+                    linkml_core::types::PermissibleValue::Complex { text, .. } => text.clone()})
                 .collect()
         })
     }
@@ -216,8 +209,7 @@ impl Validator for PermissibleValueValidator {
 pub struct CrossReferenceValidator {
     name: String,
     /// Cache of resolved references for performance
-    reference_cache: parking_lot::RwLock<HashMap<String, HashSet<String>>>,
-}
+    reference_cache: parking_lot::RwLock<HashMap<String, HashSet<String>>>}
 
 impl Default for CrossReferenceValidator {
     fn default() -> Self {
@@ -231,8 +223,7 @@ impl CrossReferenceValidator {
     pub fn new() -> Self {
         Self {
             name: "cross_reference_validator".to_string(),
-            reference_cache: parking_lot::RwLock::new(HashMap::new()),
-        }
+            reference_cache: parking_lot::RwLock::new(HashMap::new())}
     }
 
     /// Get cached references for a given type
@@ -388,8 +379,7 @@ impl CrossReferenceValidator {
                     AnnotationValue::Number(n) => &n.to_string(),
                     AnnotationValue::Array(_) => "array",
                     AnnotationValue::Object(_) => "object",
-                    AnnotationValue::Null => "null",
-                };
+                    AnnotationValue::Null => "null"};
                 self.check_dependency_constraint(value, dependency_str, context, issues);
             }
 

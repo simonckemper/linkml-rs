@@ -2,8 +2,7 @@
 
 use super::base::{
     BaseCodeFormatter, ImportManager, TypeMapper, collect_all_slots, get_default_value_str,
-    is_optional_slot,
-};
+    is_optional_slot};
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::prelude::*;
@@ -12,8 +11,7 @@ use std::fmt::Write;
 /// Python dataclass generator
 pub struct PythonDataclassGenerator {
     name: String,
-    description: String,
-}
+    description: String}
 
 impl Default for PythonDataclassGenerator {
     fn default() -> Self {
@@ -26,8 +24,7 @@ impl PythonDataclassGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "python-dataclass".to_string(),
-            description: "Generate Python dataclasses from LinkML schemas".to_string(),
-        }
+            description: "Generate Python dataclasses from LinkML schemas".to_string()}
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -334,8 +331,7 @@ impl PythonDataclassGenerator {
                     let values: Vec<String> = slot.permissible_values.iter().map(|pv| {
                         let text = match pv {
                             linkml_core::types::PermissibleValue::Simple(s) => s,
-                            linkml_core::types::PermissibleValue::Complex { text, .. } => text,
-                        };
+                            linkml_core::types::PermissibleValue::Complex { text, .. } => text};
                         format!("'{text}'")
                     }).collect();
                     writeln!(
@@ -397,8 +393,7 @@ impl Generator for PythonDataclassGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for Python generation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Validate classes have valid Python identifiers
@@ -406,8 +401,7 @@ impl Generator for PythonDataclassGenerator {
             if !Self::is_valid_python_identifier(class_name) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Class name '{class_name}' is not a valid Python identifier"),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -416,8 +410,7 @@ impl Generator for PythonDataclassGenerator {
             if !Self::is_valid_python_identifier(slot_name) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Slot name '{slot_name}' is not a valid Python identifier"),
-                    element: Some(format!("slot.{slot_name}")),
-                });
+                    element: Some(format!("slot.{slot_name}"))});
             }
         }
 
@@ -527,12 +520,7 @@ impl PythonDataclassGenerator {
 
         for value in &slot.permissible_values {
             match value {
-                PermissibleValue::Simple(text) => {
-                    let const_name = text.to_uppercase().replace([' ', '-'], "_");
-                    writeln!(output, "    {const_name} = \"{text}\"")
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                }
-                PermissibleValue::Complex { text, .. } => {
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => {
                     let const_name = text.to_uppercase().replace([' ', '-'], "_");
                     writeln!(output, "    {const_name} = \"{text}\"")
                         .map_err(Self::fmt_error_to_generator_error)?;
@@ -649,7 +637,7 @@ impl CodeFormatter for PythonDataclassGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

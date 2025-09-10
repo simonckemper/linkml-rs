@@ -7,8 +7,7 @@ use std::sync::Arc;
 
 use linkml_core::{
     config::LinkMLConfig,
-    error::{LinkMLError, Result},
-};
+    error::{LinkMLError, Result}};
 
 use crate::factory::LinkMLServiceDependencies;
 use crate::service::LinkMLServiceImpl;
@@ -44,6 +43,7 @@ use timestamp_core::TimestampService;
 /// # Errors
 ///
 /// Returns an error if service creation or initialization fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_with_dbms<C, T, E, D, O>(
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
@@ -73,8 +73,7 @@ where
         task_manager: task_manager.clone(),
         error_handler: error_handler.clone(),
         dbms_service: dbms_service.clone(),
-        timeout_service: timeout_service.clone(),
-    };
+        timeout_service: timeout_service.clone()};
 
     // Load configuration from configuration service
     let config = match configuration_service
@@ -127,6 +126,7 @@ where
 /// # Errors
 ///
 /// Returns an error if service creation or initialization fails
+#[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_with_dbms_and_config<C, T, E, D, O>(
     config: LinkMLConfig,
     logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
@@ -157,8 +157,7 @@ where
         task_manager: task_manager.clone(),
         error_handler: error_handler.clone(),
         dbms_service: dbms_service.clone(),
-        timeout_service: timeout_service.clone(),
-    };
+        timeout_service: timeout_service.clone()};
 
     // Create service with provided configuration
     let service = LinkMLServiceImpl::with_config(config, deps)?;

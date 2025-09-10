@@ -4,8 +4,7 @@
 //! enabling cross-language serialization and RPC support.
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
-};
+    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
@@ -17,8 +16,7 @@ pub struct ProtobufGenerator {
     /// Generator options
     options: GeneratorOptions,
     /// Type mapping from `LinkML` to Proto
-    type_map: HashMap<String, String>,
-}
+    type_map: HashMap<String, String>}
 
 impl ProtobufGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -51,8 +49,7 @@ impl ProtobufGenerator {
 
         Self {
             options: GeneratorOptions::default(),
-            type_map,
-        }
+            type_map}
     }
 
     /// Create with custom options
@@ -133,8 +130,7 @@ impl ProtobufGenerator {
         for (index, pv) in enum_def.permissible_values.iter().enumerate() {
             let text = match pv {
                 PermissibleValue::Simple(s) => s,
-                PermissibleValue::Complex { text, .. } => text,
-            };
+                PermissibleValue::Complex { text, .. } => text};
             // For enum values, keep them uppercase if they already are
             let enum_value = if text.chars().all(|c| c.is_uppercase() || !c.is_alphabetic()) {
                 text.to_string()
@@ -293,8 +289,7 @@ impl ProtobufGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -405,7 +400,7 @@ impl Generator for ProtobufGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_protobuf_generation() -> anyhow::Result<()> {
@@ -421,13 +416,11 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                 PermissibleValue::Complex {
                     text: "pending".to_string(),
                     description: Some("Pending status".to_string()),
-                    meaning: None,
-                },
+                    meaning: None},
                 PermissibleValue::Complex {
                     text: "approved".to_string(),
                     description: Some("Approved status".to_string()),
-                    meaning: None,
-                },
+                    meaning: None},
             ],
             ..Default::default()
         };

@@ -11,6 +11,5 @@ pub fn value_type(value: &Value) -> &'static str {
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
+        Value::Object(_) => "object"}
 }

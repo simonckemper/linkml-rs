@@ -13,8 +13,7 @@ pub struct UniqueKeyValidator {
     unique_keys: HashMap<String, Vec<UniqueKeyDefinition>>,
 
     /// Case sensitivity settings by class
-    case_sensitive: HashMap<String, bool>,
-}
+    case_sensitive: HashMap<String, bool>}
 
 /// Definition of a unique key constraint
 #[derive(Clone, Debug)]
@@ -32,8 +31,7 @@ pub struct UniqueKeyDefinition {
     pub case_sensitive: bool,
 
     /// Whether nulls are considered equal
-    pub nulls_equal: bool,
-}
+    pub nulls_equal: bool}
 
 impl Default for UniqueKeyValidator {
     fn default() -> Self {
@@ -46,8 +44,7 @@ impl UniqueKeyValidator {
     #[must_use] pub fn new() -> Self {
         Self {
             unique_keys: HashMap::new(),
-            case_sensitive: HashMap::new(),
-        }
+            case_sensitive: HashMap::new()}
     }
 
     /// Create from a `LinkML` schema
@@ -65,8 +62,7 @@ impl UniqueKeyValidator {
                     unique_key_slots: key_def.unique_key_slots.clone(),
                     is_primary: key_name == "primary_key" || key_name.contains("_pk"),
                     case_sensitive: !key_def.consider_nulls_inequal.unwrap_or(true),
-                    nulls_equal: !key_def.consider_nulls_inequal.unwrap_or(true),
-                });
+                    nulls_equal: !key_def.consider_nulls_inequal.unwrap_or(true)});
             }
 
             // Check for identifier slots (implicit unique key)
@@ -78,8 +74,7 @@ impl UniqueKeyValidator {
                             unique_key_slots: vec![slot_name.clone()],
                             is_primary: true,
                             case_sensitive: true,
-                            nulls_equal: false,
-                        });
+                            nulls_equal: false});
                     }
             }
 
@@ -119,7 +114,7 @@ impl UniqueKeyValidator {
 
         if let Some(key_defs) = self.unique_keys.get(class_name) {
             for key_def in key_defs {
-                let key_violations = self.check_unique_key(instances, key_def)?;
+                let key_violations = self.check_unique_key(instances, key_def);
                 violations.extend(key_violations);
             }
         }
@@ -132,7 +127,7 @@ impl UniqueKeyValidator {
         &self,
         instances: &[Value],
         key_def: &UniqueKeyDefinition,
-    ) -> Result<Vec<UniqueKeyViolation>> {
+    ) -> Vec<UniqueKeyViolation> {
         let mut violations = Vec::new();
         let mut seen_keys: HashMap<Vec<Value>, Vec<usize>> = HashMap::new();
 
@@ -178,20 +173,18 @@ impl UniqueKeyValidator {
                     key_name: key_def.name.clone(),
                     key_slots: key_def.unique_key_slots.clone(),
                     key_values,
-                    duplicate_indices: indices,
-                });
+                    duplicate_indices: indices});
             }
         }
 
-        Ok(violations)
+        violations
     }
 
     /// Normalize a value for comparison
     fn normalize_value(&self, value: &Value, case_sensitive: bool) -> Value {
         match value {
             Value::String(s) if !case_sensitive => Value::String(s.to_lowercase()),
-            _ => value.clone(),
-        }
+            _ => value.clone()}
     }
 
     /// Validate a single instance for uniqueness (when adding to collection)
@@ -253,8 +246,7 @@ pub struct UniqueKeyViolation {
     pub key_values: Vec<Value>,
 
     /// Indices of instances with duplicate keys
-    pub duplicate_indices: Vec<usize>,
-}
+    pub duplicate_indices: Vec<usize>}
 
 impl UniqueKeyViolation {
     /// Format the violation as a user-friendly message
@@ -268,8 +260,7 @@ impl UniqueKeyViolation {
                 Value::Number(n) => n.to_string(),
                 Value::Bool(b) => b.to_string(),
                 Value::Null => "null".to_string(),
-                _ => serde_json::to_string(v).unwrap_or_else(|_| "?".to_string()),
-            })
+                _ => serde_json::to_string(v).unwrap_or_else(|_| "?".to_string())})
             .collect::<Vec<_>>()
             .join(", ");
 
@@ -286,16 +277,14 @@ pub struct UniqueKeyIndex {
     indices: HashMap<Vec<Value>, usize>,
 
     /// Key definition
-    key_def: UniqueKeyDefinition,
-}
+    key_def: UniqueKeyDefinition}
 
 impl UniqueKeyIndex {
     /// Create a new index
     #[must_use] pub fn new(key_def: UniqueKeyDefinition) -> Self {
         Self {
             indices: HashMap::new(),
-            key_def,
-        }
+            key_def}
     }
 
     /// Build index from instances
@@ -353,8 +342,7 @@ mod tests {
                 unique_key_slots: vec!["id".to_string()],
                 is_primary: true,
                 case_sensitive: true,
-                nulls_equal: false,
-            },
+                nulls_equal: false},
         );
 
         let instances = vec![
@@ -382,8 +370,7 @@ mod tests {
                 unique_key_slots: vec!["student_id".to_string(), "course_id".to_string()],
                 is_primary: true,
                 case_sensitive: true,
-                nulls_equal: false,
-            },
+                nulls_equal: false},
         );
 
         let instances = vec![
@@ -413,8 +400,7 @@ mod tests {
                 unique_key_slots: vec!["username".to_string()],
                 is_primary: false,
                 case_sensitive: false, // Case-insensitive
-                nulls_equal: false,
-            },
+                nulls_equal: false},
         );
 
         let instances = vec![
@@ -437,8 +423,7 @@ mod tests {
             unique_key_slots: vec!["id".to_string()],
             is_primary: true,
             case_sensitive: true,
-            nulls_equal: false,
-        };
+            nulls_equal: false};
 
         let mut index = UniqueKeyIndex::new(key_def);
 

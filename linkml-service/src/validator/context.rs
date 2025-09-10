@@ -35,8 +35,7 @@ pub struct ValidationContext {
     /// All instances for cross-reference validation
     pub all_instances: Option<Vec<serde_json::Value>>,
     /// Current instance ID for circular reference detection
-    pub current_instance_id: Option<String>,
-}
+    pub current_instance_id: Option<String>}
 
 impl ValidationContext {
     /// Create a new validation context
@@ -55,8 +54,7 @@ impl ValidationContext {
             parent_value: None,
             root_value: None,
             all_instances: None,
-            current_instance_id: None,
-        }
+            current_instance_id: None}
     }
 
     /// Create a new validation context with shared buffer pools
@@ -78,8 +76,7 @@ impl ValidationContext {
             parent_value: None,
             root_value: None,
             all_instances: None,
-            current_instance_id: None,
-        }
+            current_instance_id: None}
     }
 
     /// Get the current `JSON` path as a string

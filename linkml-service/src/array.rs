@@ -22,8 +22,7 @@ pub enum ArrayError {
         /// Expected shape
         expected: Vec<usize>,
         /// Actual shape
-        actual: Vec<usize>,
-    },
+        actual: Vec<usize>},
 
     /// Invalid dimension
     #[error("Invalid dimension: {0}")]
@@ -35,8 +34,7 @@ pub enum ArrayError {
         /// Expected type
         expected: String,
         /// Actual type
-        actual: String,
-    },
+        actual: String},
 
     /// Index out of bounds
     #[error("Index out of bounds: {index} >= {size}")]
@@ -44,13 +42,11 @@ pub enum ArrayError {
         /// Index that was accessed
         index: usize,
         /// Size of the dimension
-        size: usize,
-    },
+        size: usize},
 
     /// Invalid data
     #[error("Invalid data: {0}")]
-    InvalidData(String),
-}
+    InvalidData(String)}
 
 /// Result type for array operations
 pub type ArrayResult<T> = std::result::Result<T, ArrayError>;
@@ -71,8 +67,7 @@ pub struct ArrayDimension {
     pub max_size: Option<usize>,
 
     /// Description of the dimension
-    pub description: Option<String>,
-}
+    pub description: Option<String>}
 
 impl ArrayDimension {
     /// Create a fixed-size dimension
@@ -82,8 +77,7 @@ impl ArrayDimension {
             size: Some(size),
             min_size: None,
             max_size: None,
-            description: None,
-        }
+            description: None}
     }
 
     /// Create a dynamic dimension
@@ -93,8 +87,7 @@ impl ArrayDimension {
             size: None,
             min_size: None,
             max_size: None,
-            description: None,
-        }
+            description: None}
     }
 
     /// Set minimum size
@@ -119,13 +112,17 @@ impl ArrayDimension {
     }
 
     /// Validate a size against this dimension
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::ShapeMismatch` if the size doesn't match a fixed dimension size.
+    /// Returns `ArrayError::InvalidDimension` if the size is below the minimum or above the maximum for dynamic dimensions.
     pub fn validate_size(&self, size: usize) -> ArrayResult<()> {
         if let Some(fixed_size) = self.size
             && size != fixed_size {
                 return Err(ArrayError::ShapeMismatch {
                     expected: vec![fixed_size],
-                    actual: vec![size],
-                });
+                    actual: vec![size]});
             }
 
         if let Some(min) = self.min_size
@@ -164,8 +161,7 @@ pub struct ArraySpec {
     pub allow_missing: bool,
 
     /// Value to use for missing elements
-    pub missing_value: Option<serde_json::Value>,
-}
+    pub missing_value: Option<serde_json::Value>}
 
 impl Default for ArraySpec {
     fn default() -> Self {
@@ -174,8 +170,7 @@ impl Default for ArraySpec {
             element_type: "float".to_string(),
             row_major: true,
             allow_missing: false,
-            missing_value: None,
-        }
+            missing_value: None}
     }
 }
 
@@ -237,6 +232,11 @@ impl ArraySpec {
     }
 
     /// Validate a shape against this specification
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidShape` if the shape has a different number of dimensions
+    /// than expected, or if any dimension fails validation according to the dimension specification.
     pub fn validate_shape(&self, shape: &[usize]) -> ArrayResult<()> {
         if shape.len() != self.dimensions.len() {
             return Err(ArrayError::InvalidShape(format!(
@@ -283,6 +283,11 @@ impl ArraySpec {
     }
 
     /// Convert multi-dimensional indices to flat index
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidShape` if the indices length doesn't match the shape length.
+    /// Returns `ArrayError::IndexOutOfBounds` if any index is greater than or equal to the corresponding dimension size.
     pub fn indices_to_flat(&self, indices: &[usize], shape: &[usize]) -> ArrayResult<usize> {
         if indices.len() != shape.len() {
             return Err(ArrayError::InvalidShape(format!(
@@ -297,8 +302,7 @@ impl ArraySpec {
             if idx >= dim_size {
                 return Err(ArrayError::IndexOutOfBounds {
                     index: idx,
-                    size: dim_size,
-                });
+                    size: dim_size});
             }
         }
 
@@ -334,11 +338,15 @@ pub struct ArrayData {
     pub shape: Vec<usize>,
 
     /// Flattened data
-    pub data: Vec<serde_json::Value>,
-}
+    pub data: Vec<serde_json::Value>}
 
 impl ArrayData {
     /// Create new array data
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError` if the shape validation fails against the spec, or if the
+    /// data length doesn't match the expected number of elements calculated from the shape.
     pub fn new(
         spec: ArraySpec,
         shape: Vec<usize>,
@@ -361,6 +369,10 @@ impl ArrayData {
     }
 
     /// Create array filled with a value
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError` if the shape validation fails against the spec.
     pub fn filled(
         spec: ArraySpec,
         shape: Vec<usize>,
@@ -373,30 +385,46 @@ impl ArrayData {
     }
 
     /// Get element at indices
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidShape` if indices length doesn't match shape dimensions.
+    /// Returns `ArrayError::IndexOutOfBounds` if any index is out of bounds for its dimension,
+    /// or if the calculated flat index exceeds the data array length.
     pub fn get(&self, indices: &[usize]) -> ArrayResult<&serde_json::Value> {
         let flat_index = self.spec.indices_to_flat(indices, &self.shape)?;
         self.data
             .get(flat_index)
             .ok_or(ArrayError::IndexOutOfBounds {
                 index: flat_index,
-                size: self.data.len(),
-            })
+                size: self.data.len()})
     }
 
     /// Set element at indices
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidShape` if indices length doesn't match shape dimensions.
+    /// Returns `ArrayError::IndexOutOfBounds` if any index is out of bounds for its dimension,
+    /// or if the calculated flat index exceeds the data array length.
     pub fn set(&mut self, indices: &[usize], value: serde_json::Value) -> ArrayResult<()> {
         let flat_index = self.spec.indices_to_flat(indices, &self.shape)?;
         if flat_index >= self.data.len() {
             return Err(ArrayError::IndexOutOfBounds {
                 index: flat_index,
-                size: self.data.len(),
-            });
+                size: self.data.len()});
         }
         self.data[flat_index] = value;
         Ok(())
     }
 
     /// Get a slice along a dimension
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidDimension` if the dimension index is out of range.
+    /// Returns `ArrayError::IndexOutOfBounds` if the slice index is greater than or equal to the dimension size.
+    /// Returns `ArrayError` if creating the new ArrayData fails during slice extraction.
     pub fn slice(&self, dimension: usize, index: usize) -> ArrayResult<ArrayData> {
         if dimension >= self.shape.len() {
             return Err(ArrayError::InvalidDimension(format!(
@@ -411,8 +439,7 @@ impl ArrayData {
         if index >= dim_size {
             return Err(ArrayError::IndexOutOfBounds {
                 index,
-                size: dim_size,
-            });
+                size: dim_size});
         }
 
         // Create new shape without the sliced dimension
@@ -441,6 +468,12 @@ impl ArrayData {
     }
 
     /// Reshape the array
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError::InvalidShape` if the new shape has a different total number
+    /// of elements than the current shape. Also returns errors from shape validation
+    /// against the updated specification.
     pub fn reshape(&self, new_shape: Vec<usize>) -> ArrayResult<ArrayData> {
         let new_size = ArraySpec::calculate_size(&new_shape);
         let current_size = ArraySpec::calculate_size(&self.shape);
@@ -466,15 +499,15 @@ impl ArrayData {
         Ok(ArrayData {
             spec: new_spec,
             shape: new_shape,
-            data: self.data.clone(),
-        })
+            data: self.data.clone()})
     }
 
     /// Transpose the array (reverse dimensions)
-    /// Returns an error if the operation fails
     ///
     /// # Errors
     ///
+    /// Returns an error if the transposition fails due to invalid array structure
+    /// or if index calculations during data reordering are invalid.
     pub fn transpose(&self) -> Result<ArrayData, Box<dyn std::error::Error>> {
         let mut new_spec = self.spec.clone();
         new_spec.dimensions.reverse();
@@ -499,8 +532,7 @@ impl ArrayData {
         Ok(ArrayData {
             spec: new_spec,
             shape: new_shape,
-            data: new_data,
-        })
+            data: new_data})
     }
 }
 
@@ -526,6 +558,12 @@ pub struct ArrayValidator;
 
 impl ArrayValidator {
     /// Validate array data against specification
+    ///
+    /// # Errors
+    ///
+    /// Returns `ArrayError` if the array shape doesn't match the specification,
+    /// or if any element has a type that doesn't match the expected element type
+    /// defined in the specification.
     pub fn validate(data: &ArrayData, spec: &ArraySpec) -> ArrayResult<()> {
         // Validate shape
         spec.validate_shape(&data.shape)?;
@@ -556,8 +594,7 @@ impl ArrayValidator {
             }
             serde_json::Value::String(_) => "string",
             serde_json::Value::Array(_) => "array",
-            serde_json::Value::Object(_) => "object",
-        };
+            serde_json::Value::Object(_) => "object"};
 
         // Type checking (simplified)
         let valid = match expected_type {
@@ -567,14 +604,12 @@ impl ArrayValidator {
             "integer" => actual_type == "integer",
             "string" => actual_type == "string",
             "boolean" => actual_type == "boolean",
-            _ => actual_type == expected_type,
-        };
+            _ => actual_type == expected_type};
 
         if !valid {
             return Err(ArrayError::TypeMismatch {
                 expected: expected_type.to_string(),
-                actual: actual_type.to_string(),
-            });
+                actual: actual_type.to_string()});
         }
 
         Ok(())
@@ -585,6 +620,7 @@ impl ArrayValidator {
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::sync::Arc;
 
     #[test]
     fn test_array_dimension() {
@@ -648,7 +684,7 @@ mod tests {
         assert_eq!(spec.flat_to_indices(11, &[3, 4]), vec![2, 3]);
 
         // Column-major indexing
-        let col_spec = Arc::clone(&spec).column_major();
+        let col_spec = spec.column_major();
         assert_eq!(
             col_spec
                 .indices_to_flat(&[0, 0], &[3, 4])

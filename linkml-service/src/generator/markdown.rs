@@ -15,8 +15,7 @@ pub struct MarkdownGenerator {
     /// Whether to include inheritance diagrams
     include_diagrams: bool,
     /// Whether to include examples
-    include_examples: bool,
-}
+    include_examples: bool}
 
 impl MarkdownGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -30,8 +29,7 @@ impl MarkdownGenerator {
         Self {
             include_toc: true,
             include_diagrams: true,
-            include_examples: true,
-        }
+            include_examples: true}
     }
 
     /// Configure table of contents generation
@@ -400,8 +398,7 @@ impl MarkdownGenerator {
                     linkml_core::types::PermissibleValue::Simple(s) => (s.as_str(), ""),
                     linkml_core::types::PermissibleValue::Complex {
                         text, description, ..
-                    } => (text.as_str(), description.as_deref().unwrap_or("")),
-                };
+                    } => (text.as_str(), description.as_deref().unwrap_or(""))};
                 writeln!(&mut output, "| {value} | {description} |")
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -462,8 +459,7 @@ impl MarkdownGenerator {
             Some("date") => "2024-01-01",
             Some("datetime") => "2024-01-01T12:00:00Z",
             Some("uri") => "https://example.com",
-            _ => "\"example value\"",
-        }
+            _ => "\"example value\""}
     }
 }
 
@@ -534,7 +530,7 @@ impl Generator for MarkdownGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
@@ -570,16 +566,14 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
             .push(PermissibleValue::Complex {
                 text: "ACTIVE".to_string(),
                 description: Some("Currently employed".to_string()),
-                meaning: None,
-            });
+                meaning: None});
 
         status_enum
             .permissible_values
             .push(PermissibleValue::Complex {
                 text: "INACTIVE".to_string(),
                 description: Some("Not currently employed".to_string()),
-                meaning: None,
-            });
+                meaning: None});
 
         schema
             .enums

@@ -45,8 +45,7 @@ pub enum ValidationError {
         /// Actual size in bytes
         size: usize,
         /// Maximum allowed size
-        max: usize,
-    },
+        max: usize},
 
     /// Identifier exceeds maximum allowed length
     #[error("Identifier too long: {size} characters (max: {max})")]
@@ -54,8 +53,7 @@ pub enum ValidationError {
         /// Actual size in characters
         size: usize,
         /// Maximum allowed size
-        max: usize,
-    },
+        max: usize},
 
     /// Expression nesting depth exceeds limit
     #[error("Expression too deep: {depth} levels (max: {max})")]
@@ -63,8 +61,7 @@ pub enum ValidationError {
         /// Actual depth
         depth: usize,
         /// Maximum allowed depth
-        max: usize,
-    },
+        max: usize},
 
     /// Too many constraints in validation
     #[error("Too many constraints: {count} (max: {max})")]
@@ -72,8 +69,7 @@ pub enum ValidationError {
         /// Actual count
         count: usize,
         /// Maximum allowed count
-        max: usize,
-    },
+        max: usize},
 
     /// Too many function arguments
     #[error("Too many function arguments: {count} (max: {max})")]
@@ -81,8 +77,7 @@ pub enum ValidationError {
         /// Actual count
         count: usize,
         /// Maximum allowed count
-        max: usize,
-    },
+        max: usize},
 
     /// Invalid UTF-8 in string
     #[error("Invalid UTF-8 in string")]
@@ -102,22 +97,22 @@ pub enum ValidationError {
         /// Actual size in bytes
         size: usize,
         /// Maximum allowed size
-        max: usize,
-    },
-}
+        max: usize}}
 
 /// Validate a general string input
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `ValidationError::StringTooLarge` if the string exceeds max length
+/// Returns `ValidationError::NullBytes` if the string contains null bytes
+/// Returns `ValidationError::ControlCharacters` if the string contains control characters
 pub fn validate_string_input(s: &str) -> Result<(), ValidationError> {
     // Check length
     if s.len() > limits::MAX_STRING_LENGTH {
         return Err(ValidationError::StringTooLarge {
             size: s.len(),
-            max: limits::MAX_STRING_LENGTH,
-        });
+            max: limits::MAX_STRING_LENGTH});
     }
 
     // Check for null bytes
@@ -136,17 +131,19 @@ pub fn validate_string_input(s: &str) -> Result<(), ValidationError> {
 }
 
 /// Validate an identifier (name, key, etc.)
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `ValidationError::IdentifierTooLong` if the identifier exceeds max length
+/// Returns `ValidationError::ControlCharacters` if the identifier contains control characters
+/// Returns `ValidationError::NullBytes` if the identifier contains null bytes
 pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
     // Check length
     if id.len() > limits::MAX_IDENTIFIER_LENGTH {
         return Err(ValidationError::IdentifierTooLong {
             size: id.len(),
-            max: limits::MAX_IDENTIFIER_LENGTH,
-        });
+            max: limits::MAX_IDENTIFIER_LENGTH});
     }
 
     // Identifiers should not contain control characters
@@ -163,16 +160,16 @@ pub fn validate_identifier(id: &str) -> Result<(), ValidationError> {
 }
 
 /// Validate `JSON` size before parsing
-    /// Returns an error if the operation fails
-    ///
-    /// # Errors
-    ///
+/// Returns an error if the operation fails
+///
+/// # Errors
+///
+/// Returns `ValidationError::JsonTooLarge` if the JSON string exceeds max size
 pub fn validate_json_size(json_str: &str) -> Result<(), ValidationError> {
     if json_str.len() > limits::MAX_JSON_SIZE {
         return Err(ValidationError::JsonTooLarge {
             size: json_str.len(),
-            max: limits::MAX_JSON_SIZE,
-        });
+            max: limits::MAX_JSON_SIZE});
     }
     Ok(())
 }

@@ -15,8 +15,7 @@ use linkml_core::prelude::*;
 /// `XML` loader implementation
 pub struct XmlLoader {
     /// Parser configuration
-    config: XmlConfig,
-}
+    config: XmlConfig}
 
 /// `XML` parser configuration
 #[derive(Debug, Clone)]
@@ -28,8 +27,7 @@ pub struct XmlConfig {
     /// Namespace handling
     pub handle_namespaces: bool,
     /// Preserve element order
-    pub preserve_order: bool,
-}
+    pub preserve_order: bool}
 
 impl Default for XmlConfig {
     fn default() -> Self {
@@ -37,8 +35,7 @@ impl Default for XmlConfig {
             trim_text: true,
             attributes_as_properties: true,
             handle_namespaces: true,
-            preserve_order: false,
-        }
+            preserve_order: false}
     }
 }
 
@@ -52,8 +49,7 @@ impl XmlLoader {
     /// Create a new `XML` loader with default configuration
     #[must_use] pub fn new() -> Self {
         Self {
-            config: XmlConfig::default(),
-        }
+            config: XmlConfig::default()}
     }
 
     /// Create `XML` loader with custom configuration
@@ -143,8 +139,7 @@ impl XmlLoader {
             name,
             attributes,
             children: Vec::new(),
-            text: None,
-        })
+            text: None})
     }
 
     /// Convert `XML` element to `JSON` value
@@ -226,8 +221,7 @@ impl XmlLoader {
             class_name: target_class.to_string(),
             data,
             id: None,
-            metadata: HashMap::new(),
-        }
+            metadata: HashMap::new()}
     }
 }
 
@@ -236,8 +230,7 @@ struct XmlElement {
     name: String,
     attributes: HashMap<String, String>,
     children: Vec<Value>,
-    text: Option<String>,
-}
+    text: Option<String>}
 
 impl XmlElement {
     fn add_child(&mut self, child: Value) {

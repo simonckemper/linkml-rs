@@ -18,8 +18,7 @@ pub enum ResourceError {
         /// Elapsed time in seconds
         elapsed: f64,
         /// Maximum allowed time in seconds
-        max: f64,
-    },
+        max: f64},
 
     /// Memory limit exceeded
     #[error("Memory limit exceeded: {used} bytes (max: {max} bytes)")]
@@ -27,8 +26,7 @@ pub enum ResourceError {
         /// Memory used in bytes
         used: usize,
         /// Maximum allowed memory in bytes
-        max: usize,
-    },
+        max: usize},
 
     /// Too many parallel operations
     #[error("Too many parallel operations: {current} (max: {max})")]
@@ -36,8 +34,7 @@ pub enum ResourceError {
         /// Current number of operations
         current: usize,
         /// Maximum allowed operations
-        max: usize,
-    },
+        max: usize},
 
     /// Cache memory exceeded
     #[error("Cache memory exceeded: {used} bytes (max: {max} bytes)")]
@@ -45,16 +42,13 @@ pub enum ResourceError {
         /// Cache memory used in bytes
         used: usize,
         /// Maximum allowed cache memory in bytes
-        max: usize,
-    },
+        max: usize},
 
     /// Validation error
     #[error("Validation error: {message}")]
     ValidationError {
         /// Error message
-        message: String,
-    },
-}
+        message: String}}
 
 /// Resource limits configuration
 #[derive(Debug, Clone)]
@@ -75,8 +69,7 @@ pub struct ResourceLimits {
     pub max_expression_time: Duration,
 
     /// Maximum number of validation errors to collect
-    pub max_validation_errors: usize,
-}
+    pub max_validation_errors: usize}
 
 impl Default for ResourceLimits {
     fn default() -> Self {
@@ -86,8 +79,7 @@ impl Default for ResourceLimits {
             max_parallel_validators: 100,
             max_cache_memory: 100_000_000, // 100MB
             max_expression_time: Duration::from_secs(1),
-            max_validation_errors: 1000,
-        }
+            max_validation_errors: 1000}
     }
 }
 
@@ -102,8 +94,7 @@ impl ResourceLimits {
             max_parallel_validators: config.max_parallel_validators,
             max_cache_memory: config.max_cache_memory_bytes,
             max_expression_time: Duration::from_millis(config.max_expression_time_ms),
-            max_validation_errors: config.max_validation_errors,
-        }
+            max_validation_errors: config.max_validation_errors}
     }
 }
 
@@ -115,8 +106,7 @@ pub struct ResourceMonitor {
     memory_used: AtomicUsize,
     parallel_ops: AtomicUsize,
     cache_memory: AtomicUsize,
-    validation_errors: AtomicUsize,
-}
+    validation_errors: AtomicUsize}
 
 impl ResourceMonitor {
     /// Create a new resource monitor
@@ -132,8 +122,7 @@ impl ResourceMonitor {
             memory_used: AtomicUsize::new(0),
             parallel_ops: AtomicUsize::new(0),
             cache_memory: AtomicUsize::new(0),
-            validation_errors: AtomicUsize::new(0),
-        }
+            validation_errors: AtomicUsize::new(0)}
     }
 
     /// Initialize the start timestamp for tracking
@@ -147,8 +136,7 @@ impl ResourceMonitor {
                 .map(|d| d.as_secs() as i64)
                 .unwrap_or(0))
             .map_err(|e| ResourceError::ValidationError {
-                message: format!("Failed to get initial timestamp: {e}"),
-            })?;
+                message: format!("Failed to get initial timestamp: {e}")})?;
         Ok(())
     }
 
@@ -166,8 +154,7 @@ impl ResourceMonitor {
         if elapsed > self.limits.max_validation_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
-                max: self.limits.max_validation_time.as_secs_f64(),
-            });
+                max: self.limits.max_validation_time.as_secs_f64()});
         }
         Ok(())
     }
@@ -186,8 +173,7 @@ impl ResourceMonitor {
         if elapsed > self.limits.max_expression_time {
             return Err(ResourceError::Timeout {
                 elapsed: elapsed.as_secs_f64(),
-                max: self.limits.max_expression_time.as_secs_f64(),
-            });
+                max: self.limits.max_expression_time.as_secs_f64()});
         }
         Ok(())
     }
@@ -197,14 +183,14 @@ impl ResourceMonitor {
     ///
     /// # Errors
     ///
+    /// Returns `ResourceError::MemoryExceeded` if the allocation would exceed maximum memory usage
     pub fn allocate_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.memory_used.fetch_add(bytes, Ordering::Relaxed) + bytes;
         if new_total > self.limits.max_memory_usage {
             self.memory_used.fetch_sub(bytes, Ordering::Relaxed);
             return Err(ResourceError::MemoryExceeded {
                 used: new_total,
-                max: self.limits.max_memory_usage,
-            });
+                max: self.limits.max_memory_usage});
         }
         Ok(())
     }
@@ -219,14 +205,14 @@ impl ResourceMonitor {
     ///
     /// # Errors
     ///
+    /// Returns `ResourceError::TooManyParallelOps` if the maximum number of parallel operations is exceeded
     pub fn start_parallel_op(&self) -> Result<ParallelOpGuard<'_>, ResourceError> {
         let current = self.parallel_ops.fetch_add(1, Ordering::Relaxed) + 1;
         if current > self.limits.max_parallel_validators {
             self.parallel_ops.fetch_sub(1, Ordering::Relaxed);
             return Err(ResourceError::TooManyParallelOps {
                 current,
-                max: self.limits.max_parallel_validators,
-            });
+                max: self.limits.max_parallel_validators});
         }
         Ok(ParallelOpGuard { monitor: self })
     }
@@ -236,14 +222,14 @@ impl ResourceMonitor {
     ///
     /// # Errors
     ///
+    /// Returns `ResourceError::CacheMemoryExceeded` if the allocation would exceed maximum cache memory usage
     pub fn allocate_cache_memory(&self, bytes: usize) -> Result<(), ResourceError> {
         let new_total = self.cache_memory.fetch_add(bytes, Ordering::Relaxed) + bytes;
         if new_total > self.limits.max_cache_memory {
             self.cache_memory.fetch_sub(bytes, Ordering::Relaxed);
             return Err(ResourceError::CacheMemoryExceeded {
                 used: new_total,
-                max: self.limits.max_cache_memory,
-            });
+                max: self.limits.max_cache_memory});
         }
         Ok(())
     }
@@ -270,15 +256,13 @@ impl ResourceMonitor {
             memory_used: self.memory_used.load(Ordering::Relaxed),
             parallel_ops: self.parallel_ops.load(Ordering::Relaxed),
             cache_memory: self.cache_memory.load(Ordering::Relaxed),
-            validation_errors: self.validation_errors.load(Ordering::Relaxed),
-        }
+            validation_errors: self.validation_errors.load(Ordering::Relaxed)}
     }
 }
 
 /// RAII guard for parallel operations
 pub struct ParallelOpGuard<'a> {
-    monitor: &'a ResourceMonitor,
-}
+    monitor: &'a ResourceMonitor}
 
 impl Drop for ParallelOpGuard<'_> {
     fn drop(&mut self) {
@@ -298,8 +282,7 @@ pub struct ResourceUsage {
     /// Amount of cache memory used in bytes
     pub cache_memory: usize,
     /// Number of validation errors encountered
-    pub validation_errors: usize,
-}
+    pub validation_errors: usize}
 
 impl ResourceUsage {
     /// Format usage as a human-readable string

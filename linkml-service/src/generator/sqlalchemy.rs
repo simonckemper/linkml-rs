@@ -8,8 +8,7 @@ use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
-    TypeDefinition,
-};
+    TypeDefinition};
 use std::collections::HashSet;
 
 /// `SQL`Alchemy generator configuration
@@ -34,8 +33,7 @@ pub struct SQLAlchemyGeneratorConfig {
     /// Table name prefix
     pub table_prefix: String,
     /// Whether to generate alembic migration support
-    pub alembic_support: bool,
-}
+    pub alembic_support: bool}
 
 impl Default for SQLAlchemyGeneratorConfig {
     fn default() -> Self {
@@ -49,15 +47,13 @@ impl Default for SQLAlchemyGeneratorConfig {
             use_declarative_base: true,
             base_class: "Base".to_string(),
             table_prefix: String::new(),
-            alembic_support: false,
-        }
+            alembic_support: false}
     }
 }
 
 /// `SQL`Alchemy ORM model generator
 pub struct SQLAlchemyGenerator {
-    config: SQLAlchemyGeneratorConfig,
-}
+    config: SQLAlchemyGeneratorConfig}
 
 impl SQLAlchemyGenerator {
     /// Create a new `SQL`Alchemy generator
@@ -120,8 +116,7 @@ impl SQLAlchemyGenerator {
             "time" => "Time",
             "uri" | "uriorcurie" | "curie" => "String(512)",
             "ncname" => "String(255)",
-            _ => "String",
-        }
+            _ => "String"}
         .to_string()
     }
 
@@ -140,9 +135,8 @@ impl SQLAlchemyGenerator {
             for value in &enum_def.permissible_values {
                 let value_name = match value {
                     PermissibleValue::Simple(name) => name,
-                    PermissibleValue::Complex { text, .. } => text,
-                };
-                let safe_name = self.to_python_name(value_name);
+                    PermissibleValue::Complex { text, .. } => text};
+                let safe_name = self.to_python_name(&value_name);
                 lines.push(format!(
                     "    {} = \"{}\"",
                     safe_name.to_uppercase(),
@@ -510,8 +504,7 @@ impl SQLAlchemyGenerator {
                 "boolean" | "bool" => "bool",
                 "date" => "date",
                 "datetime" => "datetime",
-                _ => "str",
-            }
+                _ => "str"}
         } else {
             "str"
         };
@@ -530,8 +523,7 @@ impl SQLAlchemyGenerator {
                 let mut chars = part.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().chain(chars).collect(),
-                }
+                    Some(first) => first.to_uppercase().chain(chars).collect()}
             })
             .collect()
     }
@@ -545,8 +537,7 @@ impl SQLAlchemyGenerator {
             "import" => "import_",
             "from" => "from_",
             "return" => "return_",
-            _ => name,
-        }
+            _ => name}
         .to_string()
     }
 
@@ -735,7 +726,7 @@ impl SQLAlchemyGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_sqlalchemy_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

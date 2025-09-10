@@ -7,8 +7,7 @@ pub mod curie_resolver;
 
 pub use curie_resolver::{
     CurieResolver, NamespaceContext,
-    utils::{is_absolute_uri, join_uri, local_from_uri, make_curie, split_curie},
-};
+    utils::{is_absolute_uri, join_uri, local_from_uri, make_curie, split_curie}};
 
 use linkml_core::prelude::*;
 
@@ -26,8 +25,7 @@ use linkml_core::prelude::*;
                 PrefixDefinition::Simple(uri) => uri.clone(),
                 PrefixDefinition::Complex {
                     prefix_reference, ..
-                } => prefix_reference.clone().unwrap_or_default(),
-            };
+                } => prefix_reference.clone().unwrap_or_default()};
 
             // Don't override existing prefixes
             if resolver.get_prefix(prefix).is_none() {

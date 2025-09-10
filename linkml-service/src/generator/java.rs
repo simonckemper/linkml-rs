@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::LinkMLError,
-    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition}};
 use std::collections::HashMap;
 use std::fmt::Write;
 
@@ -17,8 +16,7 @@ pub struct JavaGenerator {
     /// Generator options
     options: GeneratorOptions,
     /// Type mapping from `LinkML` to Java
-    type_map: HashMap<String, String>,
-}
+    type_map: HashMap<String, String>}
 
 impl JavaGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -51,8 +49,7 @@ impl JavaGenerator {
 
         Self {
             options: GeneratorOptions::default(),
-            type_map,
-        }
+            type_map}
     }
 
     /// Create with custom options
@@ -139,8 +136,7 @@ impl JavaGenerator {
                 PermissibleValue::Simple(s) => (s.as_str(), None),
                 PermissibleValue::Complex {
                     text, description, ..
-                } => (text.as_str(), description.as_ref()),
-            };
+                } => (text.as_str(), description.as_ref())};
 
             if let Some(desc) = description {
                 writeln!(&mut output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
@@ -431,8 +427,7 @@ impl JavaGenerator {
                     self.to_pascal_case(r)
                 }
             }
-            None => "String".to_string(),
-        };
+            None => "String".to_string()};
 
         if multivalued {
             Ok(format!("List<{base_type}>"))
@@ -497,8 +492,7 @@ impl JavaGenerator {
                 let mut chars = word.chars();
                 match chars.next() {
                     None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
             })
             .collect()
     }
@@ -529,8 +523,7 @@ impl Generator for JavaGenerator {
         if schema.name.is_empty() {
             return Err(LinkMLError::SchemaValidationError {
                 message: "Schema must have a name for Java generation".to_string(),
-                element: Some("schema.name".to_string()),
-            });
+                element: Some("schema.name".to_string())});
         }
 
         // Validate Java identifier requirements
@@ -542,8 +535,7 @@ impl Generator for JavaGenerator {
                         message: format!(
                             "Class name '{class_name}' is not valid for Java: must start with letter, underscore, or $"
                         ),
-                        element: Some(format!("class.{class_name}")),
-                    });
+                        element: Some(format!("class.{class_name}"))});
                 }
 
             // Check for Java reserved keywords
@@ -559,8 +551,7 @@ impl Generator for JavaGenerator {
             ) {
                 return Err(LinkMLError::SchemaValidationError {
                     message: format!("Class name '{class_name}' is a Java reserved keyword"),
-                    element: Some(format!("class.{class_name}")),
-                });
+                    element: Some(format!("class.{class_name}"))});
             }
         }
 
@@ -572,8 +563,7 @@ impl Generator for JavaGenerator {
                         message: format!(
                             "Slot name '{slot_name}' is not valid for Java fields"
                         ),
-                        element: Some(format!("slot.{slot_name}")),
-                    });
+                        element: Some(format!("slot.{slot_name}"))});
                 }
         }
 
@@ -627,7 +617,7 @@ impl Generator for JavaGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_case_conversion() {

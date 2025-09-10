@@ -20,8 +20,7 @@ pub struct IcebergIntegration {
     /// Integration configuration
     config: IcebergIntegrationConfig,
     /// Schema mapping cache
-    schema_cache: HashMap<String, IcebergTableSchema>,
-}
+    schema_cache: HashMap<String, IcebergTableSchema>}
 
 /// Configuration for Iceberg integration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,8 +40,7 @@ pub struct IcebergIntegrationConfig {
     /// Default file format
     pub file_format: String,
     /// Compression codec
-    pub compression: String,
-}
+    pub compression: String}
 
 impl Default for IcebergIntegrationConfig {
     fn default() -> Self {
@@ -54,8 +52,7 @@ impl Default for IcebergIntegrationConfig {
             auto_compaction: true,
             enable_partition_evolution: true,
             file_format: "parquet".to_string(),
-            compression: "snappy".to_string(),
-        }
+            compression: "snappy".to_string()}
     }
 }
 
@@ -77,8 +74,7 @@ pub struct IcebergTableSchema {
     /// Table properties
     pub properties: HashMap<String, String>,
     /// Schema version
-    pub version: i32,
-}
+    pub version: i32}
 
 /// Iceberg field definition
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,8 +88,7 @@ pub struct IcebergField {
     /// Field documentation
     pub doc: Option<String>,
     /// Field metadata
-    pub metadata: HashMap<String, String>,
-}
+    pub metadata: HashMap<String, String>}
 
 impl IcebergIntegration {
     /// Create a new Iceberg integration instance
@@ -101,8 +96,7 @@ impl IcebergIntegration {
     pub fn new(config: IcebergIntegrationConfig) -> Self {
         Self {
             config,
-            schema_cache: HashMap::new(),
-        }
+            schema_cache: HashMap::new()}
     }
 
     /// Convert `LinkML` schema to Iceberg table schema
@@ -147,8 +141,7 @@ impl IcebergIntegration {
             partition_spec,
             sort_order,
             properties,
-            version: 1,
-        };
+            version: 1};
 
         // Cache the schema
         self.schema_cache.insert(class_name.to_string(), table_schema.clone());
@@ -168,14 +161,13 @@ impl IcebergIntegration {
             data_type,
             nullable: !slot_def.required.unwrap_or(false),
             doc: slot_def.description.clone(),
-            metadata: HashMap::new(),
-        }
+            metadata: HashMap::new()}
     }
 
     /// Map `LinkML` type to Iceberg data type
     fn map_linkml_type_to_iceberg(linkml_type: &str, multivalued: bool) -> String {
         let base_type = match linkml_type {
-            "string" | "uri" | "uriorcurie" => "string",
+            "string" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             "integer" => "long",
             "float" => "double",
             "boolean" => "boolean",

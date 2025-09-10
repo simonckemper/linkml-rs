@@ -11,8 +11,7 @@ use url::Url;
 /// Main type validator that delegates to specific type validators
 pub struct TypeValidator {
     name: String,
-    issue_builder: IssueBuilder,
-}
+    issue_builder: IssueBuilder}
 
 impl Default for TypeValidator {
     fn default() -> Self {
@@ -26,12 +25,11 @@ impl TypeValidator {
     pub fn new() -> Self {
         Self {
             name: "type_validator".to_string(),
-            issue_builder: IssueBuilder::new(),
-        }
+            issue_builder: IssueBuilder::new()}
     }
 
     /// Validate a value against a `LinkML` type
-    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Result<Vec<ValidationIssue>, Box<dyn std::error::Error>> {
+    fn validate_type(&self, value: &Value, type_name: &str, path: &str) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
 
         // Use interned strings for common cases
@@ -233,7 +231,7 @@ impl TypeValidator {
             }
         }
 
-        Ok(issues)
+        issues
     }
 }
 
@@ -255,14 +253,8 @@ impl Validator for TypeValidator {
                 // Validate each element
                 for (i, element) in array.iter().enumerate() {
                     let element_path = format!("{}[{}]", context.path(), i);
-                    match self.validate_type(element, type_name, &element_path) {
-                        Ok(type_issues) => issues.extend(type_issues),
-                        Err(e) => issues.push(ValidationIssue::error(
-                            &element_path,
-                            format!("Type validation error: {e}"),
-                            "TypeValidator",
-                        )),
-                    }
+                    let type_issues = self.validate_type(element, type_name, &element_path);
+                    issues.extend(type_issues);
                 }
             } else {
                 issues.push(ValidationIssue::error(
@@ -276,14 +268,8 @@ impl Validator for TypeValidator {
             }
         } else {
             // Single valued slot
-            match self.validate_type(value, type_name, &context.path()) {
-                Ok(type_issues) => issues.extend(type_issues),
-                Err(e) => issues.push(ValidationIssue::error(
-                    context.path(),
-                    format!("Type validation error: {e}"),
-                    "TypeValidator",
-                )),
-            }
+            let type_issues = self.validate_type(value, type_name, &context.path());
+            issues.extend(type_issues);
         }
 
         issues
@@ -302,6 +288,5 @@ fn value_type_name(value: &Value) -> &'static str {
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
+        Value::Object(_) => "object"}
 }

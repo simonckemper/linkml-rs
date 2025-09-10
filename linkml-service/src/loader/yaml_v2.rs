@@ -19,16 +19,14 @@ use crate::file_system_adapter::FileSystemOperations;
 pub struct YamlLoaderV2 {
     /// Options for loading
     validate: bool,
-    strict: bool,
-}
+    strict: bool}
 
 impl YamlLoaderV2 {
     /// Create a new `YAML` loader
     #[must_use] pub fn new() -> Self {
         Self {
             validate: true,
-            strict: false,
-        }
+            strict: false}
     }
 
     /// Set validation enabled
@@ -139,8 +137,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
                                 class_name,
                                 data: obj.into_iter().collect(),
                                 id,
-                                metadata: HashMap::new(),
-                            })
+                                metadata: HashMap::new()})
                         } else {
                             None
                         }
@@ -161,8 +158,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
                     class_name,
                     data: obj.into_iter().collect(),
                     id,
-                    metadata: HashMap::new(),
-                }]
+                    metadata: HashMap::new()}]
             }
             _ => {
                 return Err(LoaderError::Parse(
@@ -187,8 +183,7 @@ impl DataLoaderV2 for YamlLoaderV2 {
 #[derive(Default)]
 pub struct YamlDumperV2 {
     /// Pretty print output
-    pretty: bool,
-}
+    pretty: bool}
 
 impl YamlDumperV2 {
     /// Create a new `YAML` dumper
@@ -274,7 +269,7 @@ mod tests {
     use super::*;
     use crate::file_system_adapter::TokioFileSystemAdapter;
     use tempfile::TempDir;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[tokio::test]
     async fn test_yaml_loader_v2() -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -323,8 +318,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                 },
                 class_name: "Person".to_string(),
                 id: None,
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
             DataInstance {
                 data: {
                     let mut map = HashMap::new();
@@ -334,8 +328,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, Enum
                 },
                 class_name: "Person".to_string(),
                 id: None,
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
         ];
 
         let file_path = Path::new("output.yaml");

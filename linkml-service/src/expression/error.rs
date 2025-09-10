@@ -17,8 +17,7 @@ pub enum ExpressionError {
 
     /// Other errors
     #[error("{0}")]
-    Other(String),
-}
+    Other(String)}
 
 impl From<anyhow::Error> for ExpressionError {
     fn from(err: anyhow::Error) -> Self {
@@ -70,8 +69,7 @@ pub enum ParseError {
     WrongArity {
         name: String,
         expected: String,
-        actual: usize,
-    },
+        actual: usize},
 
     /// Trailing input after expression
     #[error("Unexpected input after expression: '{input}'")]
@@ -79,8 +77,7 @@ pub enum ParseError {
 
     /// System error (e.g., time operations)
     #[error("System error: {message}")]
-    SystemError { message: String },
-}
+    SystemError { message: String }}
 
 /// Errors that can occur during evaluation
 #[derive(Debug, Clone, Error)]
@@ -131,22 +128,19 @@ pub enum EvaluationError {
 
     /// Invalid regex pattern
     #[error("Invalid regex pattern: {pattern}")]
-    InvalidRegex { pattern: String },
-}
+    InvalidRegex { pattern: String }}
 
 impl EvaluationError {
     /// Create a type error for binary operations
     #[must_use] pub fn binary_type_error(op: &str, left: &str, right: &str) -> Self {
         Self::TypeError {
-            message: format!("Cannot {op} values of type {left} and {right}"),
-        }
+            message: format!("Cannot {op} values of type {left} and {right}")}
     }
 
     /// Create a type error for unary operations
     #[must_use] pub fn unary_type_error(op: &str, value: &str) -> Self {
         Self::TypeError {
-            message: format!("Cannot {op} value of type {value}"),
-        }
+            message: format!("Cannot {op} value of type {value}")}
     }
 }
 
@@ -158,13 +152,11 @@ mod tests {
     fn test_error_display() {
         let err = ParseError::UnexpectedToken {
             token: "+".to_string(),
-            position: 5,
-        };
+            position: 5};
         assert_eq!(err.to_string(), "Unexpected token '+' at position 5");
 
         let err = EvaluationError::UndefinedVariable {
-            name: "foo".to_string(),
-        };
+            name: "foo".to_string()};
         assert_eq!(err.to_string(), "Undefined variable 'foo'");
     }
 

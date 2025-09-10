@@ -18,8 +18,7 @@ pub struct PluginRegistry {
     /// Dependency graph
     dep_graph: Arc<RwLock<DiGraph<String, ()>>>,
     /// Node index mapping
-    node_map: Arc<RwLock<HashMap<String, NodeIndex>>>,
-}
+    node_map: Arc<RwLock<HashMap<String, NodeIndex>>>}
 
 /// Plugin registration entry
 pub struct PluginRegistration {
@@ -30,8 +29,7 @@ pub struct PluginRegistration {
     /// Initialization status
     pub initialized: bool,
     /// Plugin metadata
-    pub metadata: PluginMetadata,
-}
+    pub metadata: PluginMetadata}
 
 impl Default for PluginRegistry {
     fn default() -> Self {
@@ -46,8 +44,7 @@ impl PluginRegistry {
             plugins: Arc::new(RwLock::new(HashMap::new())),
             by_type: Arc::new(RwLock::new(HashMap::new())),
             dep_graph: Arc::new(RwLock::new(DiGraph::new())),
-            node_map: Arc::new(RwLock::new(HashMap::new())),
-        }
+            node_map: Arc::new(RwLock::new(HashMap::new()))}
     }
 
     /// Register a plugin
@@ -55,6 +52,7 @@ impl PluginRegistry {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::ServiceError` if the plugin is already registered or the registry lock is poisoned
     pub fn register(&self, plugin: Box<dyn Plugin>) -> Result<()> {
         let info = plugin.info();
         let id = info.id.clone();
@@ -104,8 +102,7 @@ impl PluginRegistry {
             plugin: Arc::new(Mutex::new(plugin)),
             registered_at: chrono::Utc::now(),
             initialized: false,
-            metadata: PluginSDK::metadata(),
-        };
+            metadata: PluginSDK::metadata()};
 
         // Register the plugin
         {
@@ -134,6 +131,7 @@ impl PluginRegistry {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::ServiceError` if the plugin is not found or the registry lock is poisoned
     pub fn unregister(&self, id: &str) -> Result<()> {
         // Remove from main registry
         let registration = {
@@ -227,8 +225,7 @@ impl PluginRegistry {
                 version: plugin.info().version.clone(),
                 registered_at: reg.registered_at,
                 initialized: reg.initialized,
-                status: plugin.status(),
-            })
+                status: plugin.status()})
         })
     }
 
@@ -365,8 +362,7 @@ impl PluginRegistry {
             }
             Err(_) => Err(LinkMLError::ServiceError(
                 "Plugin error: Circular dependency detected in plugins".to_string(),
-            )),
-        }
+            ))}
     }
 
     /// Check if all plugin dependencies are satisfied
@@ -374,6 +370,7 @@ impl PluginRegistry {
     ///
     /// # Errors
     ///
+    /// Returns `LinkMLError::ServiceError` if the registry lock is poisoned
     pub fn check_dependencies(&self) -> Result<Vec<DependencyError>> {
         let mut errors = Vec::new();
         let plugins = self
@@ -395,8 +392,7 @@ impl PluginRegistry {
                         dependency_id: dep.id.clone(),
                         required_version: dep.version.clone(),
                         found_version: None,
-                        reason: "Dependency not found".to_string(),
-                    });
+                        reason: "Dependency not found".to_string()});
                 } else if let Some(dep_reg) = plugins.get(&dep.id)
                     && let Ok(dep_plugin) = dep_reg.plugin.lock() {
                         let dep_version = &dep_plugin.info().version;
@@ -406,8 +402,7 @@ impl PluginRegistry {
                                 dependency_id: dep.id.clone(),
                                 required_version: dep.version.clone(),
                                 found_version: Some(dep_version.clone()),
-                                reason: "Version mismatch".to_string(),
-                            });
+                                reason: "Version mismatch".to_string()});
                         }
                     }
             }
@@ -431,8 +426,7 @@ pub struct PluginRegistrationInfo {
     /// Whether the plugin is initialized
     pub initialized: bool,
     /// Current plugin status
-    pub status: PluginStatus,
-}
+    pub status: PluginStatus}
 
 /// Dependency error information
 #[derive(Debug, Clone)]
@@ -446,18 +440,17 @@ pub struct DependencyError {
     /// Found version (if any)
     pub found_version: Option<Version>,
     /// Error reason
-    pub reason: String,
-}
+    pub reason: String}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use async_trait::async_trait;
+    use crate::plugin::PluginInfo;
 
     // Mock plugin for testing
     struct MockPlugin {
-        info: PluginInfo,
-    }
+        info: PluginInfo}
 
     #[async_trait]
     impl Plugin for MockPlugin {
@@ -489,27 +482,27 @@ mod tests {
     impl logger_core::LoggerService for TestLogger {
         type Error = logger_core::LoggerError;
 
-        async fn debug<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
+        async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn info<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
+        async fn info(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn warn<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
+        async fn warn(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn error<'a>(&'a self, _message: &'a str) -> std::result::Result<(), Self::Error> {
+        async fn error(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn log<'a>(&'a self, _level: logger_core::LogLevel, _message: &'a str) -> std::result::Result<(), Self::Error> {
+        async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 
-        async fn log_entry<'a>(&'a self, _entry: &'a logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
+        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
     }
@@ -530,9 +523,7 @@ mod tests {
                 homepage: None,
                 linkml_version: VersionReq::parse("*")?,
                 dependencies: vec![],
-                capabilities: vec![],
-            },
-        });
+                capabilities: vec![]}});
 
         registry.register(plugin)?;
 
@@ -563,9 +554,7 @@ mod tests {
                 homepage: None,
                 linkml_version: VersionReq::parse("*")?,
                 dependencies: vec![],
-                capabilities: vec![],
-            },
-        });
+                capabilities: vec![]}});
 
         registry.register(plugin)?;
 
@@ -574,8 +563,7 @@ mod tests {
             config: HashMap::new(),
             working_dir: std::env::current_dir()?,
             temp_dir: std::env::temp_dir(),
-            logger: Arc::new(TestLogger),
-        };
+            logger: Arc::new(TestLogger)};
 
         // Test initialization
         registry.initialize_all(context.clone()).await?;

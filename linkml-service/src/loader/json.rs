@@ -4,8 +4,7 @@
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::{Map, Value};
@@ -14,8 +13,7 @@ use std::collections::HashMap;
 /// `JSON` loader for `LinkML` data
 pub struct JsonLoader {
     /// Input file path
-    file_path: Option<String>,
-}
+    file_path: Option<String>}
 
 impl JsonLoader {
     /// Create a new `JSON` loader
@@ -164,8 +162,7 @@ impl JsonLoader {
             class_name,
             data: obj.into_iter().collect(),
             id: None,
-            metadata: HashMap::new(),
-        })
+            metadata: HashMap::new()})
     }
 
     /// Infer class from object structure
@@ -200,8 +197,7 @@ impl JsonLoader {
 /// `JSON` dumper for `LinkML` data
 pub struct JsonDumper {
     /// Pretty print output
-    pretty: bool,
-}
+    pretty: bool}
 
 impl JsonDumper {
     /// Create a new `JSON` dumper
@@ -348,14 +344,12 @@ mod tests {
                 class_name: "Person".to_string(),
                 data: alice_data,
                 id: None,
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
             DataInstance {
                 class_name: "Person".to_string(),
                 data: bob_data,
                 id: None,
-                metadata: HashMap::new(),
-            },
+                metadata: HashMap::new()},
         ];
 
         let schema = SchemaDefinition::default();

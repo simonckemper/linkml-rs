@@ -28,8 +28,7 @@ pub struct EvaluatorConfig {
     /// Enable expression result caching
     pub enable_cache: bool,
     /// Maximum cache size (number of entries)
-    pub cache_size: usize,
-}
+    pub cache_size: usize}
 
 impl Default for EvaluatorConfig {
     fn default() -> Self {
@@ -39,8 +38,7 @@ impl Default for EvaluatorConfig {
             timeout: Duration::from_secs(1),
             max_memory: 10 * 1024 * 1024, // 10MB
             enable_cache: true,
-            cache_size: 1000,
-        }
+            cache_size: 1000}
     }
 }
 
@@ -50,8 +48,7 @@ struct CacheKey {
     /// Serialized expression AST
     expression_hash: u64,
     /// Serialized context hash
-    context_hash: u64,
-}
+    context_hash: u64}
 
 impl CacheKey {
     fn new(expr: &Expression, context: &HashMap<String, Value>) -> Self {
@@ -60,8 +57,7 @@ impl CacheKey {
 
         Self {
             expression_hash,
-            context_hash,
-        }
+            context_hash}
     }
 }
 
@@ -172,8 +168,7 @@ fn hash_expression(expr: &Expression) -> u64 {
         Expression::Conditional {
             condition,
             then_expr,
-            else_expr,
-        } => {
+            else_expr} => {
             21u8.hash(&mut hasher);
             hash_expression(condition).hash(&mut hasher);
             hash_expression(then_expr).hash(&mut hasher);
@@ -249,8 +244,7 @@ fn hash_value<H: Hasher>(value: &Value, hasher: &mut H) {
 pub struct Evaluator {
     config: EvaluatorConfig,
     function_registry: FunctionRegistry,
-    cache: Option<Arc<Mutex<LruCache<CacheKey, Value>>>>,
-}
+    cache: Option<Arc<Mutex<LruCache<CacheKey, Value>>>>}
 
 impl Evaluator {
     /// Create a new evaluator with default configuration
@@ -268,8 +262,7 @@ impl Evaluator {
         Self {
             config,
             function_registry: FunctionRegistry::new(),
-            cache,
-        }
+            cache}
     }
 
     /// Create a new evaluator with custom function registry
@@ -287,8 +280,7 @@ impl Evaluator {
         Self {
             config,
             function_registry,
-            cache,
-        }
+            cache}
     }
 
     /// Get mutable reference to function registry for custom function registration
@@ -328,8 +320,7 @@ impl Evaluator {
         Self {
             config,
             function_registry: FunctionRegistry::new(),
-            cache,
-        }
+            cache}
     }
 
     /// Evaluate an expression with the given variable context
@@ -360,8 +351,7 @@ impl Evaluator {
                 start_time: Instant::now(),
                 memory_used: 0,
                 config: &self.config,
-                functions: &self.function_registry,
-            };
+                functions: &self.function_registry};
 
             let result = eval_context.evaluate_expr(expr)?;
 
@@ -380,8 +370,7 @@ impl Evaluator {
                 start_time: Instant::now(),
                 memory_used: 0,
                 config: &self.config,
-                functions: &self.function_registry,
-            };
+                functions: &self.function_registry};
 
             eval_context.evaluate_expr(expr)
         }
@@ -402,8 +391,7 @@ struct EvalContext<'a> {
     start_time: Instant,
     memory_used: usize,
     config: &'a EvaluatorConfig,
-    functions: &'a FunctionRegistry,
-}
+    functions: &'a FunctionRegistry}
 
 impl EvalContext<'_> {
     fn check_limits(&mut self) -> Result<(), EvaluationError> {
@@ -411,30 +399,26 @@ impl EvalContext<'_> {
         self.iterations += 1;
         if self.iterations > self.config.max_iterations {
             return Err(EvaluationError::TooManyIterations {
-                max: self.config.max_iterations,
-            });
+                max: self.config.max_iterations});
         }
 
         // Check timeout
         let elapsed = self.start_time.elapsed();
         if elapsed > self.config.timeout {
             return Err(EvaluationError::Timeout {
-                seconds: elapsed.as_secs_f64(),
-            });
+                seconds: elapsed.as_secs_f64()});
         }
 
         // Check call depth
         if self.call_depth > self.config.max_call_depth {
             return Err(EvaluationError::CallStackTooDeep {
-                max: self.config.max_call_depth,
-            });
+                max: self.config.max_call_depth});
         }
 
         // Check memory (approximate)
         if self.memory_used > self.config.max_memory {
             return Err(EvaluationError::MemoryLimitExceeded {
-                limit: self.config.max_memory,
-            });
+                limit: self.config.max_memory});
         }
 
         Ok(())
@@ -460,8 +444,7 @@ impl EvalContext<'_> {
                     let parts: Vec<&str> = name.split('.').collect();
                     let mut current = self.variables.get(parts[0]).ok_or_else(|| {
                         EvaluationError::UndefinedVariable {
-                            name: parts[0].to_string(),
-                        }
+                            name: parts[0].to_string()}
                     })?;
 
                     for part in &parts[1..] {
@@ -469,16 +452,14 @@ impl EvalContext<'_> {
                             Value::Object(map) => {
                                 current = map.get(*part).ok_or_else(|| {
                                     EvaluationError::UndefinedVariable {
-                                        name: format!("{part} (in {name})"),
-                                    }
+                                        name: format!("{part} (in {name})")}
                                 })?;
                             }
                             _ => {
                                 return Err(EvaluationError::TypeError {
                                     message: format!(
                                         "Cannot access property '{part}' on non-object"
-                                    ),
-                                });
+                                    )});
                             }
                         }
                     }
@@ -515,9 +496,7 @@ impl EvalContext<'_> {
             Expression::Conditional {
                 condition,
                 then_expr,
-                else_expr,
-            } => self.evaluate_conditional(condition, then_expr, else_expr),
-        };
+                else_expr} => self.evaluate_conditional(condition, then_expr, else_expr)};
 
         self.call_depth -= 1;
         result
@@ -536,11 +515,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 let result = left_num + right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -555,8 +532,7 @@ impl EvalContext<'_> {
                 "add",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_subtract(
@@ -570,11 +546,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 let result = left_num - right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -584,8 +558,7 @@ impl EvalContext<'_> {
                 "subtract",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_multiply(
@@ -599,11 +572,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 let result = left_num * right_num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -613,8 +584,7 @@ impl EvalContext<'_> {
                 "multiply",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_divide(
@@ -628,14 +598,12 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let divisor = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
                 let dividend = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let result = dividend / divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -645,8 +613,7 @@ impl EvalContext<'_> {
                 "divide",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_modulo(
@@ -660,14 +627,12 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let divisor = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 if divisor == 0.0 {
                     return Err(EvaluationError::DivisionByZero);
                 }
                 let dividend = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let result = dividend % divisor;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -677,8 +642,7 @@ impl EvalContext<'_> {
                 "modulo",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_negate(&mut self, expr: &Expression) -> Result<Value, EvaluationError> {
@@ -687,8 +651,7 @@ impl EvalContext<'_> {
         match val {
             Value::Number(n) => {
                 let num = n.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Operand is not a valid number".to_string(),
-                })?;
+                    message: "Operand is not a valid number".to_string()})?;
                 let result = -num;
                 Ok(Value::Number(
                     serde_json::Number::from_f64(result).ok_or(EvaluationError::NumericOverflow)?,
@@ -697,8 +660,7 @@ impl EvalContext<'_> {
             _ => Err(EvaluationError::unary_type_error(
                 "negate",
                 &value_type_name(&val),
-            )),
-        }
+            ))}
     }
 
     // Comparison operations
@@ -734,11 +696,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 Ok(Value::Bool(left_num < right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l < r)),
@@ -746,8 +706,7 @@ impl EvalContext<'_> {
                 "compare",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_greater(
@@ -761,11 +720,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 Ok(Value::Bool(left_num > right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l > r)),
@@ -773,8 +730,7 @@ impl EvalContext<'_> {
                 "compare",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_less_or_equal(
@@ -788,11 +744,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 Ok(Value::Bool(left_num <= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l <= r)),
@@ -800,8 +754,7 @@ impl EvalContext<'_> {
                 "compare",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     fn evaluate_greater_or_equal(
@@ -815,11 +768,9 @@ impl EvalContext<'_> {
         match (&left_val, &right_val) {
             (Value::Number(l), Value::Number(r)) => {
                 let left_num = l.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Left operand is not a valid number".to_string(),
-                })?;
+                    message: "Left operand is not a valid number".to_string()})?;
                 let right_num = r.as_f64().ok_or_else(|| EvaluationError::TypeError {
-                    message: "Right operand is not a valid number".to_string(),
-                })?;
+                    message: "Right operand is not a valid number".to_string()})?;
                 Ok(Value::Bool(left_num >= right_num))
             }
             (Value::String(l), Value::String(r)) => Ok(Value::Bool(l >= r)),
@@ -827,8 +778,7 @@ impl EvalContext<'_> {
                 "compare",
                 &value_type_name(&left_val),
                 &value_type_name(&right_val),
-            )),
-        }
+            ))}
     }
 
     // Logical operations
@@ -888,8 +838,7 @@ impl EvalContext<'_> {
             .call(name, arg_values)
             .map_err(|e| EvaluationError::FunctionError {
                 name: name.to_string(),
-                message: e.to_string(),
-            })
+                message: e.to_string()})
     }
 
     // Conditional
@@ -919,8 +868,7 @@ fn value_type_name(value: &Value) -> String {
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",
-        Value::Object(_) => "object",
-    }
+        Value::Object(_) => "object"}
     .to_string()
 }
 
@@ -930,8 +878,7 @@ fn values_equal(left: &Value, right: &Value) -> bool {
         (Value::Bool(l), Value::Bool(r)) => l == r,
         (Value::Number(l), Value::Number(r)) => l.as_f64() == r.as_f64(),
         (Value::String(l), Value::String(r)) => l == r,
-        _ => false,
-    }
+        _ => false}
 }
 
 fn is_truthy(value: &Value) -> bool {
@@ -941,8 +888,7 @@ fn is_truthy(value: &Value) -> bool {
         Value::Number(n) => n.as_f64().unwrap_or(0.0) != 0.0,
         Value::String(s) => !s.is_empty(),
         Value::Array(a) => !a.is_empty(),
-        Value::Object(o) => !o.is_empty(),
-    }
+        Value::Object(o) => !o.is_empty()}
 }
 
 #[cfg(test)]
@@ -980,6 +926,7 @@ mod tests {
                 .expect("Should evaluate string: {}"),
             json!("hello")
         );
+        Ok(())
     }
 
     #[test]
@@ -1007,6 +954,7 @@ mod tests {
             evaluator.evaluate(&Expression::Variable("undefined".to_string()), &context),
             Err(EvaluationError::UndefinedVariable { .. })
         ));
+        Ok(())
     }
 
     #[test]
@@ -1071,6 +1019,7 @@ mod tests {
             evaluator.evaluate(&expr, &context),
             Err(EvaluationError::DivisionByZero)
         ));
+        Ok(())
     }
 
     #[test]
@@ -1113,6 +1062,7 @@ mod tests {
                 .expect("Test evaluation should succeed: {}"),
             json!(true)
         );
+        Ok(())
     }
 
     #[test]
@@ -1152,6 +1102,7 @@ mod tests {
                 .expect("Test evaluation should succeed: {}"),
             json!(false)
         );
+        Ok(())
     }
 
     #[test]
@@ -1167,8 +1118,7 @@ mod tests {
                 Box::new(Expression::Number(5.0)),
             )),
             then_expr: Box::new(Expression::String("big".to_string())),
-            else_expr: Box::new(Expression::String("small".to_string())),
-        };
+            else_expr: Box::new(Expression::String("small".to_string()))};
 
         assert_eq!(
             evaluator
@@ -1185,5 +1135,6 @@ mod tests {
                 .expect("Test evaluation should succeed: {}"),
             json!("small")
         );
+        Ok(())
     }
 }

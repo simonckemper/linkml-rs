@@ -13,22 +13,19 @@ use crate::validator::{context::ValidationContext, report::ValidationIssue};
 /// Validator for class-level rules
 pub struct RuleValidator {
     /// The rule engine
-    rule_engine: Arc<RuleEngine>,
-}
+    rule_engine: Arc<RuleEngine>}
 
 impl RuleValidator {
     /// Create a new rule validator
     #[must_use] pub fn new(schema: Arc<SchemaDefinition>) -> Self {
         Self {
-            rule_engine: Arc::new(RuleEngine::new(schema)),
-        }
+            rule_engine: Arc::new(RuleEngine::new(schema))}
     }
 
     /// Create a rule validator with custom execution strategy
-    #[must_use] pub fn with_strategy(schema: Arc<SchemaDefinition>, _strategy: RuleExecutionStrategy) -> Self {
+    #[must_use] pub fn with_strategy(schema: Arc<SchemaDefinition>, strategy: RuleExecutionStrategy) -> Self {
         Self {
-            rule_engine: Arc::new(RuleEngine::new(schema)),
-        }
+            rule_engine: Arc::new(RuleEngine::with_strategy(schema, strategy))}
     }
 
     /// Validate an instance against class rules

@@ -48,7 +48,7 @@ impl RustGenerator {
                 }
 
                 // Field definition
-                let field_type = self.get_rust_type(slot, schema)?;
+                let field_type = self.get_rust_type(slot, schema);
                 writeln!(
                     output,
                     "{}pub {}: {},",
@@ -68,15 +68,15 @@ impl RustGenerator {
         &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
-        let base_type = self.get_base_type(&slot.range, schema)?;
+    ) -> String {
+        let base_type = self.get_base_type(&slot.range, schema);
 
         if slot.multivalued.unwrap_or(false) {
-            Ok(format!("Vec<{base_type}>"))
+            format!("Vec<{base_type}>")
         } else if slot.required.unwrap_or(false) {
-            Ok(base_type)
+            base_type
         } else {
-            Ok(format!("Option<{base_type}>"))
+            format!("Option<{base_type}>")
         }
     }
 
@@ -85,35 +85,34 @@ impl RustGenerator {
         &self,
         range: &Option<String>,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         match range {
             Some(range_name) => {
                 // Check if it's a built-in type
                 match range_name.as_str() {
-                    "string" | "str" => Ok("String".to_string()),
-                    "integer" | "int" => Ok("i64".to_string()),
-                    "float" | "double" => Ok("f64".to_string()),
-                    "boolean" | "bool" => Ok("bool".to_string()),
-                    "date" => Ok("chrono::NaiveDate".to_string()),
-                    "datetime" => Ok("chrono::DateTime<chrono::Utc>".to_string()),
-                    "time" => Ok("chrono::NaiveTime".to_string()),
-                    "uri" | "uriorcurie" => Ok("String".to_string()),
-                    "decimal" => Ok("rust_decimal::Decimal".to_string()),
+                    "string" | "str" => "String".to_string(),
+                    "integer" | "int" => "i64".to_string(),
+                    "float" | "double" => "f64".to_string(),
+                    "boolean" | "bool" => "bool".to_string(),
+                    "date" => "chrono::NaiveDate".to_string(),
+                    "datetime" => "chrono::DateTime<chrono::Utc>".to_string(),
+                    "time" => "chrono::NaiveTime".to_string(),
+                    "uri" | "uriorcurie" => "String".to_string(),
+                    "decimal" => "rust_decimal::Decimal".to_string(),
                     _ => {
                         // Check if it's a class in the schema
                         if schema.classes.contains_key(range_name) {
-                            Ok(BaseCodeFormatter::to_pascal_case(range_name))
+                            BaseCodeFormatter::to_pascal_case(range_name)
                         } else if schema.enums.contains_key(range_name) {
-                            Ok(BaseCodeFormatter::to_pascal_case(range_name))
+                            BaseCodeFormatter::to_pascal_case(range_name)
                         } else {
                             // Unknown type, default to String with a comment
-                            Ok("String".to_string()) // Default fallback
+                            "String".to_string() // Default fallback
                         }
                     }
                 }
             }
-            None => Ok("String".to_string()),
-        }
+            None => "String".to_string()}
     }
 
     /// Get default value for a field
@@ -121,20 +120,19 @@ impl RustGenerator {
         &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         // Multivalued fields always use Vec::new() as default
         if slot.multivalued.unwrap_or(false) {
-            Ok("Vec::new()".to_string())
+            "Vec::new()".to_string()
         } else if slot.required.unwrap_or(false) {
-            match self.get_base_type(&slot.range, schema)?.as_str() {
-                "String" => Ok("String::new()".to_string()),
-                "i64" => Ok("0".to_string()),
-                "f64" => Ok("0.0".to_string()),
-                "bool" => Ok("false".to_string()),
-                _ => Ok("Default::default()".to_string()),
-            }
+            match self.get_base_type(&slot.range, schema).as_str() {
+                "String" => "String::new()".to_string(),
+                "i64" => "0".to_string(),
+                "f64" => "0.0".to_string(),
+                "bool" => "false".to_string(),
+                _ => "Default::default()".to_string()}
         } else {
-            Ok("None".to_string())
+            "None".to_string()
         }
     }
 
@@ -171,8 +169,7 @@ impl RustGenerator {
             for value_def in permissible_values {
                 let (value_name, description) = match value_def {
                     PermissibleValue::Simple(text) => (text.as_str(), None),
-                    PermissibleValue::Complex { text, description, .. } => (text.as_str(), description.as_deref()),
-                };
+                    PermissibleValue::Complex { text, description, .. } => (text.as_str(), description.as_deref())};
 
                 if options.include_docs
                     && let Some(desc) = description {
@@ -206,9 +203,7 @@ impl RustGenerator {
             let permissible_values = &enum_def.permissible_values;
             for value_def in permissible_values {
                 let value_name = match value_def {
-                    PermissibleValue::Simple(text) => text.as_str(),
-                    PermissibleValue::Complex { text, .. } => text.as_str(),
-                };
+                    PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => text.as_str()};
                 let variant_name = BaseCodeFormatter::to_pascal_case(value_name);
                 writeln!(
                     &mut output,

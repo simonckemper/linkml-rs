@@ -2,8 +2,7 @@
 
 use linkml_core::{
     error::{LinkMLError, Result},
-    types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition},
-};
+    types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition}};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
@@ -26,8 +25,7 @@ pub enum ElementType {
     /// Enum definition
     Enum,
     /// Subset definition
-    Subset,
-}
+    Subset}
 
 /// Error type for `SchemaView` operations
 #[derive(Debug, thiserror::Error)]
@@ -46,8 +44,7 @@ pub enum SchemaViewError {
 
     /// Error accessing cached data
     #[error("Cache error: {0}")]
-    CacheError(String),
-}
+    CacheError(String)}
 
 impl From<SchemaViewError> for LinkMLError {
     fn from(err: SchemaViewError) -> Self {
@@ -74,8 +71,7 @@ pub struct SchemaView {
     nav_cache: Arc<RwLock<NavigationCache>>,
 
     /// Usage index for finding element references
-    usage_index: Arc<RwLock<Option<UsageIndex>>>,
-}
+    usage_index: Arc<RwLock<Option<UsageIndex>>>}
 
 impl SchemaView {
     /// Create a new `SchemaView` from a schema definition
@@ -95,8 +91,7 @@ impl SchemaView {
             merged_schema: merged_arc,
             _import_resolver: Arc::new(import_resolver),
             nav_cache: Arc::new(RwLock::new(NavigationCache::new())),
-            usage_index: Arc::new(RwLock::new(None)),
-        })
+            usage_index: Arc::new(RwLock::new(None))})
     }
 
 

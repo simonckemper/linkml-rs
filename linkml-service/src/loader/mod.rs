@@ -23,8 +23,7 @@ pub mod yaml_v2;
 
 pub use api::{
     ApiDumper, ApiLoader, ApiOptions, AuthConfig, EndpointConfig, PaginationConfig,
-    PaginationStyle, RetryConfig,
-};
+    PaginationStyle, RetryConfig};
 pub use csv::{CsvDumper, CsvLoader, CsvOptions};
 #[cfg(feature = "database")]
 pub use database::{DatabaseDumper, DatabaseLoader, DatabaseOptions, ForeignKeyRelation};
@@ -33,12 +32,10 @@ pub use json::{JsonDumper, JsonLoader};
 pub use rdf::{RdfDumper, RdfLoader, RdfOptions, RdfSerializationFormat};
 pub use traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
 pub use typedb::{TypeDBDumper, TypeDBLoader, TypeDBOptions};
 pub use typedb_integration::{
     TypeDBIntegrationDumper, TypeDBIntegrationLoader,
-    TypeDBIntegrationOptions, TypeDBQueryExecutor,
-};
+    TypeDBIntegrationOptions, TypeDBQueryExecutor};
 pub use xml::{XmlDumper, XmlLoader};
 pub use yaml::{YamlDumper, YamlLoader};

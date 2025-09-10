@@ -3,8 +3,7 @@
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::ImportSettings,
-    types::SchemaDefinition,
-};
+    types::SchemaDefinition};
 use reqwest;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -14,16 +13,14 @@ use super::{ImportResolverV2, Parser};
 /// Loader for `LinkML` schemas from various sources
 pub struct SchemaLoader {
     parser: Parser,
-    http_client: reqwest::Client,
-}
+    http_client: reqwest::Client}
 
 impl SchemaLoader {
     /// Create a new schema loader
     #[must_use] pub fn new() -> Self {
         Self {
             parser: Parser::new(),
-            http_client: reqwest::Client::new(),
-        }
+            http_client: reqwest::Client::new()}
     }
 
     /// Load a schema from a file path

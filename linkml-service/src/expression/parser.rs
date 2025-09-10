@@ -53,23 +53,20 @@ enum Token {
     Else,
 
     // End of input
-    Eof,
-}
+    Eof}
 
 /// Tokenizer for breaking input into tokens
 struct Tokenizer<'a> {
     input: &'a str,
     chars: Peekable<Chars<'a>>,
-    position: usize,
-}
+    position: usize}
 
 impl<'a> Tokenizer<'a> {
     fn new(input: &'a str) -> Self {
         Self {
             input,
             chars: input.chars().peekable(),
-            position: 0,
-        }
+            position: 0}
     }
 
     fn next_token(&mut self) -> Result<Token, ParseError> {
@@ -124,8 +121,7 @@ impl<'a> Tokenizer<'a> {
                     } else {
                         Err(ParseError::UnexpectedToken {
                             token: "=".to_string(),
-                            position: self.position - 1,
-                        })
+                            position: self.position - 1})
                     }
                 }
                 '!' => {
@@ -136,8 +132,7 @@ impl<'a> Tokenizer<'a> {
                     } else {
                         Err(ParseError::UnexpectedToken {
                             token: "!".to_string(),
-                            position: self.position - 1,
-                        })
+                            position: self.position - 1})
                     }
                 }
                 '<' => {
@@ -160,9 +155,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 _ => Err(ParseError::UnexpectedToken {
                     token: ch.to_string(),
-                    position: self.position,
-                }),
-            }
+                    position: self.position})}
         } else {
             Ok(Token::Eof)
         }
@@ -221,9 +214,7 @@ impl<'a> Tokenizer<'a> {
             Ok(num) => Ok(Token::Number(num)),
             Err(_) => Err(ParseError::InvalidNumber {
                 value: num_str,
-                position: start,
-            }),
-        }
+                position: start})}
     }
 
     fn read_string(&mut self) -> Result<Token, ParseError> {
@@ -254,8 +245,7 @@ impl<'a> Tokenizer<'a> {
                             _ => {
                                 return Err(ParseError::InvalidString {
                                     position: self.position,
-                                    reason: format!("Invalid escape sequence \\{ch}"),
-                                });
+                                    reason: format!("Invalid escape sequence \\{ch}")});
                             }
                         };
                         string.push(escaped_char);
@@ -268,14 +258,14 @@ impl<'a> Tokenizer<'a> {
                 None => {
                     return Err(ParseError::InvalidString {
                         position: start,
-                        reason: "Unterminated string".to_string(),
-                    });
+                        reason: "Unterminated string".to_string()});
                 }
             }
         }
     }
 
-    fn read_identifier(&mut self) -> Result<Token, ParseError> {
+    fn read_identifier(&mut self) -> Token {
+
         let mut ident = String::new();
 
         while let Some(&ch) = self.chars.peek() {
@@ -297,10 +287,10 @@ impl<'a> Tokenizer<'a> {
             "not" => Token::Not,
             "if" => Token::If,
             "else" => Token::Else,
-            _ => Token::Identifier(ident),
-        };
+            _ => Token::Identifier(ident)};
 
-        Ok(token)
+        token
+
     }
 
     fn read_variable(&mut self) -> Result<Token, ParseError> {
@@ -315,8 +305,7 @@ impl<'a> Tokenizer<'a> {
             } else if ch == '}' {
                 return Err(ParseError::InvalidVariable {
                     name: var_name,
-                    position: start,
-                });
+                    position: start});
             } else {
                 // Consume invalid characters until we hit }
                 while let Some(&ch) = self.chars.peek() {
@@ -329,8 +318,7 @@ impl<'a> Tokenizer<'a> {
                 }
                 return Err(ParseError::InvalidVariable {
                     name: var_name,
-                    position: start,
-                });
+                    position: start});
             }
         }
 
@@ -344,15 +332,13 @@ impl<'a> Tokenizer<'a> {
             } else {
                 return Err(ParseError::InvalidVariable {
                     name: var_name,
-                    position: start,
-                });
+                    position: start});
             }
         }
 
         Err(ParseError::MissingDelimiter {
             delimiter: '}',
-            position: start,
-        })
+            position: start})
     }
 }
 
@@ -360,24 +346,21 @@ impl<'a> Tokenizer<'a> {
 #[derive(Clone)]
 pub struct Parser {
     max_depth: usize,
-    max_length: usize,
-}
+    max_length: usize}
 
 impl Parser {
     /// Create a new parser with default settings
     #[must_use] pub fn new() -> Self {
         Self {
             max_depth: 100,
-            max_length: 10_000,
-        }
+            max_length: 10_000}
     }
 
     /// Create a parser with custom limits
     #[must_use] pub fn with_limits(max_depth: usize, max_length: usize) -> Self {
         Self {
             max_depth,
-            max_length,
-        }
+            max_length}
     }
 
     /// Parse an expression string
@@ -389,8 +372,7 @@ impl Parser {
         if input.len() > self.max_length {
             return Err(ParseError::TooLong {
                 length: input.len(),
-                max: self.max_length,
-            });
+                max: self.max_length});
         }
 
         let tokenizer = Tokenizer::new(input);
@@ -398,16 +380,14 @@ impl Parser {
             tokenizer,
             current: Token::Eof,
             depth: 0,
-            max_depth: self.max_depth,
-        };
+            max_depth: self.max_depth};
 
         parser.advance()?;
         let expr = parser.parse_expression()?;
 
         if parser.current != Token::Eof {
             return Err(ParseError::TrailingInput {
-                input: input[parser.tokenizer.position..].to_string(),
-            });
+                input: input[parser.tokenizer.position..].to_string()});
         }
 
         Ok(expr)
@@ -436,8 +416,7 @@ struct ParserState<'a> {
     tokenizer: Tokenizer<'a>,
     current: Token,
     depth: usize,
-    max_depth: usize,
-}
+    max_depth: usize}
 
 impl ParserState<'_> {
     fn advance(&mut self) -> Result<(), ParseError> {
@@ -450,8 +429,7 @@ impl ParserState<'_> {
         if self.depth > self.max_depth {
             return Err(ParseError::TooDeep {
                 depth: self.depth,
-                max: self.max_depth,
-            });
+                max: self.max_depth});
         }
         Ok(())
     }
@@ -472,8 +450,7 @@ impl ParserState<'_> {
             if self.current != Token::Else {
                 return Err(ParseError::UnexpectedToken {
                     token: format!("{:?}", self.current),
-                    position: self.tokenizer.position,
-                });
+                    position: self.tokenizer.position});
             }
             self.advance()?;
 
@@ -483,8 +460,7 @@ impl ParserState<'_> {
             Ok(Expression::Conditional {
                 condition: Box::new(condition),
                 then_expr: Box::new(expr),
-                else_expr: Box::new(else_expr),
-            })
+                else_expr: Box::new(else_expr)})
         } else {
             Ok(expr)
         }
@@ -529,8 +505,7 @@ impl ParserState<'_> {
                 Token::Greater => Expression::Greater,
                 Token::LessEqual => Expression::LessOrEqual,
                 Token::GreaterEqual => Expression::GreaterOrEqual,
-                _ => break,
-            };
+                _ => break};
 
             self.check_depth()?;
             self.advance()?;
@@ -549,8 +524,7 @@ impl ParserState<'_> {
             let op = match self.current {
                 Token::Plus => Expression::Add,
                 Token::Minus => Expression::Subtract,
-                _ => break,
-            };
+                _ => break};
 
             self.check_depth()?;
             self.advance()?;
@@ -570,8 +544,7 @@ impl ParserState<'_> {
                 Token::Star => Expression::Multiply,
                 Token::Slash => Expression::Divide,
                 Token::Percent => Expression::Modulo,
-                _ => break,
-            };
+                _ => break};
 
             self.check_depth()?;
             self.advance()?;
@@ -599,8 +572,7 @@ impl ParserState<'_> {
                 self.depth -= 1;
                 Ok(Expression::Negate(Box::new(expr)))
             }
-            _ => self.parse_primary(),
-        }
+            _ => self.parse_primary()}
     }
 
     fn parse_primary(&mut self) -> Result<Expression, ParseError> {
@@ -648,8 +620,7 @@ impl ParserState<'_> {
                 if self.current != Token::RightParen {
                     return Err(ParseError::MissingDelimiter {
                         delimiter: ')',
-                        position: self.tokenizer.position,
-                    });
+                        position: self.tokenizer.position});
                 }
                 self.advance()?;
                 self.depth -= 1;
@@ -658,9 +629,7 @@ impl ParserState<'_> {
             }
             _ => Err(ParseError::UnexpectedToken {
                 token: format!("{:?}", self.current),
-                position: self.tokenizer.position,
-            }),
-        }
+                position: self.tokenizer.position})}
     }
 
     fn parse_function_call(&mut self, name: String) -> Result<Expression, ParseError> {
@@ -681,8 +650,7 @@ impl ParserState<'_> {
                     _ => {
                         return Err(ParseError::UnexpectedToken {
                             token: format!("{:?}", self.current),
-                            position: self.tokenizer.position,
-                        });
+                            position: self.tokenizer.position});
                     }
                 }
             }
@@ -691,8 +659,7 @@ impl ParserState<'_> {
         if self.current != Token::RightParen {
             return Err(ParseError::MissingDelimiter {
                 delimiter: ')',
-                position: self.tokenizer.position,
-            });
+                position: self.tokenizer.position});
         }
         self.advance()?;
         self.depth -= 1;
@@ -827,8 +794,7 @@ mod tests {
             expr,
             Expression::FunctionCall {
                 name: "len".to_string(),
-                args: vec![Expression::Variable("items".to_string())],
-            }
+                args: vec![Expression::Variable("items".to_string())]}
         );
 
         let expr = parser
@@ -842,8 +808,7 @@ mod tests {
                     Expression::Number(1.0),
                     Expression::Number(2.0),
                     Expression::Number(3.0),
-                ],
-            }
+                ]}
         );
         Ok(())
     }

@@ -21,15 +21,12 @@ pub mod unique_key_validator;
 pub mod utils;
 
 pub use boolean_constraints::{
-    AllOfValidator, AnyOfValidator, ExactlyOneOfValidator, NoneOfValidator,
-};
+    AllOfValidator, AnyOfValidator, ExactlyOneOfValidator, NoneOfValidator};
 pub use conditional_requirements::ConditionalRequirementValidator;
 pub use constraint_validators::{
-    MultivaluedValidator, PermissibleValueValidator, RequiredValidator,
-};
+    MultivaluedValidator, PermissibleValueValidator, RequiredValidator};
 pub use custom_validator::{
-    AppliesTo, CustomValidator, CustomValidatorBuilder, ValidationFunction, helpers,
-};
+    AppliesTo, CustomValidator, CustomValidatorBuilder, ValidationFunction, helpers};
 pub use expression_validator::ExpressionValidator;
 pub use instance_validator::InstanceValidator;
 pub use pattern_validator::PatternValidator;
@@ -59,8 +56,7 @@ pub struct ValidatorRegistry {
     validators: Vec<Box<dyn Validator>>,
     rule_validator: Option<RuleValidator>,
     conditional_requirement_validator: Option<ConditionalRequirementValidator>,
-    unique_key_validator: Option<UniqueKeyValidator>,
-}
+    unique_key_validator: Option<UniqueKeyValidator>}
 
 impl ValidatorRegistry {
     /// Create a new validator registry
@@ -119,17 +115,41 @@ impl ValidatorRegistry {
             validators,
             rule_validator,
             conditional_requirement_validator,
-            unique_key_validator,
-        })
+            unique_key_validator})
     }
 
     /// Get all validators that apply to a slot
     #[must_use]
-    pub fn get_validators_for_slot(&self, _slot: &SlotDefinition) -> Vec<&dyn Validator> {
-        // For now, return all validators and let them decide if they apply
+    pub fn get_validators_for_slot(&self, slot: &SlotDefinition) -> Vec<&dyn Validator> {
         self.validators
             .iter()
-            .map(std::convert::AsRef::as_ref)
+            .filter_map(|validator| {
+                // Only include validators that are relevant for this slot
+                match validator.name() {
+                    "RequiredValidator" => Some(validator.as_ref()),
+                    "MultivaluedValidator" if slot.multivalued.is_some() => Some(validator.as_ref()),
+                    "TypeValidator" if slot.range.is_some() => Some(validator.as_ref()),
+                    "EnhancedPatternValidator" | "PatternValidator" 
+                        if slot.pattern.is_some() 
+                            || slot.structured_pattern.is_some()
+                            || (slot.range.is_some() && slot.range.as_ref().map_or(false, |r| !r.is_empty())) 
+                        => Some(validator.as_ref()),
+                    "RangeValidator" 
+                        if slot.minimum_value.is_some() 
+                            || slot.maximum_value.is_some()
+                        => Some(validator.as_ref()),
+                    "PermissibleValueValidator" | "AnyOfValidator" 
+                        if slot.any_of.is_some()
+                        => Some(validator.as_ref()),
+                    "AllOfValidator" if slot.all_of.is_some() => Some(validator.as_ref()),
+                    "ExactlyOneOfValidator" if slot.exactly_one_of.is_some() => Some(validator.as_ref()),
+                    "NoneOfValidator" if slot.none_of.is_some() => Some(validator.as_ref()),
+                    "ExpressionValidator" if slot.ifabsent.is_some() => Some(validator.as_ref()),
+                    "EqualsStringInValidator" if slot.equals_string_in.is_some() => Some(validator.as_ref()),
+                    "StructuredPatternValidator" if slot.structured_pattern.is_some() => Some(validator.as_ref()),
+                    _ => None, // Skip validators that don't apply to this slot
+                }
+            })
             .collect()
     }
 
@@ -161,11 +181,19 @@ impl ValidatorRegistry {
 
 /// Base implementation for validators
 pub struct BaseValidator {
+    name: String,
 }
 
 impl BaseValidator {
     /// Create a new base validator
-    pub fn new(_name: impl Into<String>) -> Self {
-        Self {}
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+        }
+    }
+
+    /// Get the validator name
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }

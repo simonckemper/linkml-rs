@@ -26,8 +26,7 @@ pub struct InternedValidationIssue {
     /// Optional error code for programmatic handling (interned)
     pub code: Option<InternedString>,
     /// Additional context information (keys are interned)
-    pub context: HashMap<InternedString, serde_json::Value>,
-}
+    pub context: HashMap<InternedString, serde_json::Value>}
 
 impl InternedValidationIssue {
     /// Create a new validation issue using the global interner
@@ -44,8 +43,7 @@ impl InternedValidationIssue {
             path: interner.intern(path.as_ref()),
             validator: interner.intern(validator.as_ref()),
             code: None,
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create an error issue
@@ -160,8 +158,7 @@ pub struct InternedValidationReport {
     /// Schema ID that was validated against (interned)
     pub schema_id: InternedString,
     /// Optional target class if specified (interned)
-    pub target_class: Option<InternedString>,
-}
+    pub target_class: Option<InternedString>}
 
 impl InternedValidationReport {
     /// Create a new validation report
@@ -172,8 +169,7 @@ impl InternedValidationReport {
             issues: Vec::new(),
             stats: ValidationStats::default(),
             schema_id: interner.intern(schema_id.as_ref()),
-            target_class: None,
-        }
+            target_class: None}
     }
 
     /// Add an issue to the report
@@ -184,8 +180,7 @@ impl InternedValidationReport {
                 self.stats.error_count += 1;
             }
             Severity::Warning => self.stats.warning_count += 1,
-            Severity::Info => self.stats.info_count += 1,
-        }
+            Severity::Info => self.stats.info_count += 1}
         self.issues.push(issue);
     }
 
@@ -247,15 +242,13 @@ impl InternedValidationReport {
 
 /// Builder for creating validation issues with commonly used strings
 pub struct IssueBuilder {
-    interner: &'static StringInterner,
-}
+    interner: &'static StringInterner}
 
 impl IssueBuilder {
     /// Create a new issue builder
     #[must_use] pub fn new() -> Self {
         Self {
-            interner: global_interner(),
-        }
+            interner: global_interner()}
     }
 
     /// Create a required field missing error
@@ -267,8 +260,7 @@ impl IssueBuilder {
             path: self.interner.intern(path),
             validator: self.interner.intern("RequiredValidator"),
             code: Some(common.error_required),
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create a type mismatch error
@@ -287,8 +279,7 @@ impl IssueBuilder {
             path: self.interner.intern(path),
             validator: self.interner.intern("TypeValidator"),
             code: Some(common.error_type_mismatch),
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create a pattern mismatch error
@@ -302,8 +293,7 @@ impl IssueBuilder {
             path: self.interner.intern(path),
             validator: self.interner.intern("PatternValidator"),
             code: Some(common.error_pattern_mismatch),
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create a range violation error
@@ -315,8 +305,7 @@ impl IssueBuilder {
             path: self.interner.intern(path),
             validator: self.interner.intern("RangeValidator"),
             code: Some(common.error_range_violation),
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 
     /// Create an enum violation error
@@ -332,8 +321,7 @@ impl IssueBuilder {
             path: self.interner.intern(path),
             validator: self.interner.intern("EnumValidator"),
             code: Some(common.error_enum_violation),
-            context: HashMap::new(),
-        }
+            context: HashMap::new()}
     }
 }
 
@@ -353,8 +341,7 @@ pub struct InternedMemoryStats {
     /// Number of string references
     pub reference_count: usize,
     /// Average string length
-    pub avg_string_length: f64,
-}
+    pub avg_string_length: f64}
 
 impl InternedMemoryStats {
     /// Calculate memory statistics for the current interner state
@@ -372,15 +359,13 @@ impl InternedMemoryStats {
             unique_strings: stats.total_strings,
             bytes_saved,
             reference_count: estimated_references,
-            avg_string_length: stats.average_length,
-        }
+            avg_string_length: stats.average_length}
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::string_pool::intern;
 
     #[test]
     fn test_interned_validation_issue() {

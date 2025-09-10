@@ -5,8 +5,8 @@
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumpOptions, DumperError, DumperResult, LoadOptions,
-    LoaderError, LoaderResult,
-};
+    LoaderError, LoaderResult};
+use std::fmt::Write;
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::{Map, Value};
@@ -35,8 +35,7 @@ pub struct TypeDBIntegrationOptions {
     pub include_inferred: bool,
 
     /// Query timeout in milliseconds
-    pub query_timeout_ms: u64,
-}
+    pub query_timeout_ms: u64}
 
 impl Default for TypeDBIntegrationOptions {
     fn default() -> Self {
@@ -48,8 +47,7 @@ impl Default for TypeDBIntegrationOptions {
             batch_size: config.typedb.batch_size,
             infer_types: true,
             include_inferred: config.typedb.include_inferred,
-            query_timeout_ms: config.typedb.query_timeout_ms,
-        }
+            query_timeout_ms: config.typedb.query_timeout_ms}
     }
 }
 
@@ -84,8 +82,7 @@ pub trait TypeDBQueryExecutor: Send + Sync {
 /// `TypeDB` loader using an abstract query executor
 pub struct TypeDBIntegrationLoader<E: TypeDBQueryExecutor> {
     options: TypeDBIntegrationOptions,
-    executor: E,
-}
+    executor: E}
 
 impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
     /// Create a new `TypeDB` integration loader
@@ -147,8 +144,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                                     abstract_: x
                                         .get("abstract")
                                         .and_then(linkml_core::Value::as_bool)
-                                        .unwrap_or(false),
-                                });
+                                        .unwrap_or(false)});
                             }
             }
         }
@@ -195,8 +191,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
 
                             attributes.push(AttributeInfo {
                                 name: label.clone(),
-                                _value_type: value_type,
-                            });
+                                _value_type: value_type});
                         }
             }
         }
@@ -236,8 +231,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                     && let Some(Value::Object(role)) = obj.get("role")
                         && let Some(Value::String(label)) = role.get("label") {
                             roles.push(RoleInfo {
-                                _name: label.clone(),
-                            });
+                                _name: label.clone()});
                         }
             }
         }
@@ -266,11 +260,11 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         // Build the match query
         let mut query = format!("match $x isa {};", type_info.name);
         for attr in attributes {
-            query.push_str(&format!(" $x has {} $attr_{};", attr.name, attr.name));
+            write!(query, " $x has {} $attr_{};", attr.name, attr.name).unwrap();
         }
         query.push_str(" get $x");
         for attr in attributes {
-            query.push_str(&format!(", $attr_{}", attr.name));
+            write!(query, ", $attr_{}", attr.name).unwrap();
         }
         query.push(';');
 
@@ -331,8 +325,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
                         class_name: class_name.to_string(),
                         data: data.into_iter().collect(),
                         id: None,
-                        metadata: HashMap::new(),
-                    });
+                        metadata: HashMap::new()});
                 }
             }
         }
@@ -452,8 +445,7 @@ impl<E: TypeDBQueryExecutor> DataLoader for TypeDBIntegrationLoader<E> {
 /// `TypeDB` dumper using an abstract query executor
 pub struct TypeDBIntegrationDumper<E: TypeDBQueryExecutor> {
     options: TypeDBIntegrationOptions,
-    executor: E,
-}
+    executor: E}
 
 impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
     /// Create a new `TypeDB` integration dumper
@@ -480,7 +472,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
         let mut define_query = String::new();
 
         if is_relation {
-            define_query.push_str(&format!("define {type_name} sub relation"));
+            write!(define_query, "define {type_name} sub relation").unwrap();
 
             // Add roles based on object-valued slots
             for slot_name in &class_def.slots {
@@ -488,11 +480,11 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                     && let Some(range) = &slot_def.range
                         && schema.classes.contains_key(range) {
                             let role_name = to_snake_case(slot_name);
-                            define_query.push_str(&format!(", relates {role_name}"));
+                            write!(define_query, ", relates {role_name}").unwrap();
                         }
             }
         } else {
-            define_query.push_str(&format!("define {type_name} sub entity"));
+            write!(define_query, "define {type_name} sub entity").unwrap();
         }
 
         // Add attributes
@@ -504,12 +496,12 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                         let value_type = linkml_range_to_typedb_value_type(range);
 
                         // Define attribute type if needed
-                        define_query.push_str(&format!(
+                        write!(define_query, 
                             "; {attr_name} sub attribute, value {value_type}"
-                        ));
+                        ).unwrap();
 
                         // Type owns attribute
-                        define_query.push_str(&format!("; {type_name} owns {attr_name}"));
+                        write!(define_query, "; {type_name} owns {attr_name}").unwrap();
                     }
         }
 
@@ -610,7 +602,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            query.push_str(&format!(", has {attr_name} {typeql_value}"));
+            write!(query, ", has {attr_name} {typeql_value}").unwrap();
         }
 
         query.push(';');
@@ -636,9 +628,9 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                         if let Value::Object(obj) = value
                             && let Some(Value::String(id)) = obj.get("id") {
                                 let role_type = to_snake_case(range);
-                                match_part.push_str(&format!(
+                                write!(match_part, 
                                     "${slot_name} isa {role_type}, has id \"{id}\"; "
-                                ));
+                                ).unwrap();
                                 role_players.push((to_snake_case(slot_name), slot_name.clone()));
                             }
                     }
@@ -670,7 +662,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            insert_part.push_str(&format!(", has {attr_name} {typeql_value}"));
+            write!(insert_part, ", has {attr_name} {typeql_value}").unwrap();
         }
 
         Ok(format!("{match_part} {insert_part}"))
@@ -767,19 +759,16 @@ impl<E: TypeDBQueryExecutor> DataDumper for TypeDBIntegrationDumper<E> {
 #[derive(Debug, Clone)]
 struct TypeInfo {
     name: String,
-    abstract_: bool,
-}
+    abstract_: bool}
 
 #[derive(Debug, Clone)]
 struct AttributeInfo {
     name: String,
-    _value_type: String,
-}
+    _value_type: String}
 
 #[derive(Debug, Clone)]
 struct RoleInfo {
-    _name: String,
-}
+    _name: String}
 
 // Helper functions
 fn to_pascal_case(s: &str) -> String {
@@ -788,8 +777,7 @@ fn to_pascal_case(s: &str) -> String {
             let mut chars = word.chars();
             match chars.next() {
                 None => String::new(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str()}
         })
         .collect()
 }
@@ -822,8 +810,7 @@ fn linkml_range_to_typedb_value_type(range: &str) -> &str {
         "string" => "string",
         "date" | "datetime" => "datetime",
         "time" => "datetime",
-        _ => "string",
-    }
+        _ => "string"}
 }
 
 fn json_value_to_typeql(value: &Value) -> DumperResult<String> {
@@ -836,8 +823,7 @@ fn json_value_to_typeql(value: &Value) -> DumperResult<String> {
         )),
         _ => Err(DumperError::TypeConversion(format!(
             "Unsupported value type: {value:?}"
-        ))),
-    }
+        )))}
 }
 
 #[cfg(test)]

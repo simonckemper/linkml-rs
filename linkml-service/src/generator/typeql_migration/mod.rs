@@ -39,8 +39,7 @@ pub enum MigrationError {
 
     /// Validation error
     #[error("Migration validation failed: {0}")]
-    ValidationError(String),
-}
+    ValidationError(String)}
 
 /// Result type for migration operations
 pub type MigrationResult<T> = Result<T, MigrationError>;

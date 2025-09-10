@@ -34,8 +34,7 @@ pub struct ErrorRecoveryConfig {
     /// Maximum retry delay
     pub max_retry_delay: Duration,
     /// Enable partial results
-    pub allow_partial_results: bool,
-}
+    pub allow_partial_results: bool}
 
 impl Default for ErrorRecoveryConfig {
     fn default() -> Self {
@@ -48,8 +47,7 @@ impl Default for ErrorRecoveryConfig {
             initial_retry_delay: Duration::from_millis(100),
             backoff_multiplier: 2.0,
             max_retry_delay: Duration::from_secs(10),
-            allow_partial_results: true,
-        }
+            allow_partial_results: true}
     }
 }
 
@@ -67,8 +65,7 @@ pub enum RecoverableErrorType {
     /// Partial data available
     PartialData,
     /// Schema not cached
-    SchemaNotCached,
-}
+    SchemaNotCached}
 
 /// Circuit breaker states
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -78,16 +75,14 @@ enum CircuitState {
     /// Circuit is open (failing fast)
     Open,
     /// Circuit is half-open (testing recovery)
-    HalfOpen,
-}
+    HalfOpen}
 
 /// Circuit breaker for a specific service
 struct CircuitBreaker {
     state: CircuitState,
     failure_count: u32,
     last_failure: Option<Instant>,
-    success_count: u32,
-}
+    success_count: u32}
 
 impl Default for CircuitBreaker {
     fn default() -> Self {
@@ -95,8 +90,7 @@ impl Default for CircuitBreaker {
             state: CircuitState::Closed,
             failure_count: 0,
             last_failure: None,
-            success_count: 0,
-        }
+            success_count: 0}
     }
 }
 
@@ -114,8 +108,7 @@ pub struct ErrorContext {
     /// Partial results if available
     pub partial_results: Option<serde_json::Value>,
     /// Timestamp
-    pub timestamp: Instant,
-}
+    pub timestamp: Instant}
 
 impl ErrorContext {
     /// Create new error context
@@ -127,8 +120,7 @@ impl ErrorContext {
             retry_count: 0,
             suggestions: SmallVec::new(),
             partial_results: None,
-            timestamp: Instant::now(),
-        }
+            timestamp: Instant::now()}
     }
 
     /// Add a recovery suggestion
@@ -148,8 +140,7 @@ pub struct ErrorRecoveryManager {
     config: Arc<RwLock<ErrorRecoveryConfig>>,
     circuit_breakers: DashMap<String, RwLock<CircuitBreaker>>,
     error_history: Arc<RwLock<Vec<ErrorContext>>>,
-    recovery_strategies: DashMap<RecoverableErrorType, Box<dyn RecoveryStrategy>>,
-}
+    recovery_strategies: DashMap<RecoverableErrorType, Box<dyn RecoveryStrategy>>}
 
 /// Recovery strategy trait
 pub trait RecoveryStrategy: Send + Sync {
@@ -170,28 +161,23 @@ pub enum RecoveryAction {
     /// Retry the operation
     Retry {
         /// Delay before retry
-        delay: Duration,
-    },
+        delay: Duration},
     /// Use fallback value
     Fallback {
         /// Fallback value to use
-        value: serde_json::Value,
-    },
+        value: serde_json::Value},
     /// Skip and continue
     Skip,
     /// Use cached value
     UseCache {
         /// Cache key to use
-        key: String,
-    },
+        key: String},
     /// Degrade to partial functionality
     Degrade {
         /// Feature to degrade
-        feature: String,
-    },
+        feature: String},
     /// Fail permanently
-    Fail,
-}
+    Fail}
 
 impl ErrorRecoveryManager {
     /// Create new error recovery manager
@@ -201,8 +187,7 @@ impl ErrorRecoveryManager {
             config: Arc::new(RwLock::new(config)),
             circuit_breakers: DashMap::new(),
             error_history: Arc::new(RwLock::new(Vec::with_capacity(1000))),
-            recovery_strategies: DashMap::new(),
-        };
+            recovery_strategies: DashMap::new()};
 
         // Register default recovery strategies
         manager.register_default_strategies();
@@ -246,7 +231,7 @@ impl ErrorRecoveryManager {
         F: Fn() -> Result<T> + Clone + Send,
         T: Send,
     {
-        let mut context = self.analyze_error(error);
+        let mut context = Self::analyze_error(error);
 
         // Check circuit breaker
         if self.config.read().circuit_breaker_enabled
@@ -333,8 +318,7 @@ impl ErrorRecoveryManager {
     }
 
     /// Analyze error to determine if it's recoverable
-    fn analyze_error(&self, error: LinkMLError) -> ErrorContext {
-        let _ = self;
+    fn analyze_error(error: LinkMLError) -> ErrorContext {
         // Analyze error message for patterns
         let error_string = error.to_string();
         let mut context = ErrorContext::new(error);
@@ -464,8 +448,7 @@ pub struct ErrorStats {
     /// Open circuit breakers
     pub open_circuits: Vec<String>,
     /// Half-open circuit breakers
-    pub half_open_circuits: Vec<String>,
-}
+    pub half_open_circuits: Vec<String>}
 
 // Recovery strategy implementations
 
@@ -491,8 +474,7 @@ impl RecoveryStrategy for CacheUnavailableStrategy {
     fn recover(&self, _context: &ErrorContext) -> Result<RecoveryAction> {
         // Degrade to direct validation without cache
         Ok(RecoveryAction::Degrade {
-            feature: "cache-acceleration".to_string(),
-        })
+            feature: "cache-acceleration".to_string()})
     }
 
     fn can_recover(&self, _context: &ErrorContext) -> bool {
@@ -519,8 +501,7 @@ impl RecoveryStrategy for RateLimitStrategy {
 pub struct RecoverableValidation<T> {
     operation: Arc<dyn Fn() -> Result<T> + Send + Sync>,
     recovery_manager: Arc<ErrorRecoveryManager>,
-    service_name: String,
-}
+    service_name: String}
 
 impl<T> RecoverableValidation<T>
 where
@@ -539,8 +520,7 @@ where
         Self {
             operation: Arc::new(operation),
             recovery_manager,
-            service_name: service_name.into(),
-        }
+            service_name: service_name.into()}
     }
 
     /// Execute with recovery
@@ -611,8 +591,7 @@ mod tests {
             RecoveryAction::Retry { delay } => {
                 assert!(delay.as_millis() >= 100);
             }
-            _ => panic!("Expected retry action"),
-        }
+            _ => panic!("Expected retry action")}
         Ok(())
     }
 }

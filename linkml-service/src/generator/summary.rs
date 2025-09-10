@@ -4,11 +4,11 @@
 //! providing insights into schema structure, complexity, and usage patterns.
 
 use crate::generator::traits::{Generator, GeneratorConfig};
+use std::fmt::Write;
 use indexmap::IndexMap;
 use linkml_core::error::LinkMLError;
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition,
-};
+    ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition};
 use std::collections::{HashMap, HashSet};
 
 /// Summary generator configuration
@@ -25,8 +25,7 @@ pub struct SummaryGeneratorConfig {
     /// Include usage patterns
     pub analyze_usage: bool,
     /// Include complexity metrics
-    pub complexity_metrics: bool,
-}
+    pub complexity_metrics: bool}
 
 /// Summary output format
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,8 +37,7 @@ pub enum SummaryFormat {
     /// `JSON` statistics
     Json,
     /// HTML report
-    Html,
-}
+    Html}
 
 impl Default for SummaryGeneratorConfig {
     fn default() -> Self {
@@ -49,15 +47,13 @@ impl Default for SummaryGeneratorConfig {
             detailed: false,
             include_viz_data: false,
             analyze_usage: true,
-            complexity_metrics: true,
-        }
+            complexity_metrics: true}
     }
 }
 
 /// Summary generator
 pub struct SummaryGenerator {
-    config: SummaryGeneratorConfig,
-}
+    config: SummaryGeneratorConfig}
 
 /// Schema statistics
 #[derive(Debug, Default)]
@@ -109,8 +105,7 @@ struct SchemaStats {
     documented_slots: usize,
     documented_types: usize,
     documented_enums: usize,
-    documentation_coverage: f64,
-}
+    documentation_coverage: f64}
 
 impl SummaryGenerator {
     /// Create a new summary generator
@@ -126,12 +121,12 @@ impl SummaryGenerator {
             SummaryFormat::Tsv => self.generate_tsv(&stats, schema),
             SummaryFormat::Markdown => self.generate_markdown(&stats, schema),
             SummaryFormat::Json => self.generate_json(&stats, schema),
-            SummaryFormat::Html => self.generate_html(&stats, schema),
-        }
+            SummaryFormat::Html => self.generate_html(&stats, schema)}
     }
 
     /// Calculate schema statistics
-    fn calculate_statistics(&self, schema: &SchemaDefinition) -> Result<SchemaStats, LinkMLError> {
+    fn calculate_statistics(&self, schema: &SchemaDefinition) -> SchemaStats {
+
         let mut stats = SchemaStats::default();
 
         // Basic counts
@@ -161,7 +156,8 @@ impl SummaryGenerator {
             self.calculate_complexity_metrics(&mut stats, schema);
         }
 
-        Ok(stats)
+        stats
+
     }
 
     /// Analyze classes
@@ -375,7 +371,8 @@ impl SummaryGenerator {
         &self,
         stats: &SchemaStats,
         schema: &SchemaDefinition,
-    ) -> Result<String, LinkMLError> {
+    ) -> String {
+
         let mut output = String::new();
 
         // Header
@@ -383,78 +380,78 @@ impl SummaryGenerator {
 
         // Basic information
         if !schema.name.is_empty() {
-            output.push_str(&format!("Schema Name\t{}\n", schema.name));
+            writeln!(output, "Schema Name\t{}", schema.name).unwrap();
         }
         if let Some(version) = &schema.version {
-            output.push_str(&format!("Schema Version\t{version}\n"));
+            writeln!(output, "Schema Version\t{version}").unwrap();
         }
 
         // Basic counts
-        output.push_str(&format!("Total Classes\t{}\n", stats.class_count));
-        output.push_str(&format!("Total Slots\t{}\n", stats.slot_count));
-        output.push_str(&format!("Total Types\t{}\n", stats.type_count));
-        output.push_str(&format!("Total Enums\t{}\n", stats.enum_count));
-        output.push_str(&format!("Total Subsets\t{}\n", stats.subset_count));
+        writeln!(output, "Total Classes\t{}", stats.class_count).unwrap();
+        writeln!(output, "Total Slots\t{}", stats.slot_count).unwrap();
+        writeln!(output, "Total Types\t{}", stats.type_count).unwrap();
+        writeln!(output, "Total Enums\t{}", stats.enum_count).unwrap();
+        writeln!(output, "Total Subsets\t{}", stats.subset_count).unwrap();
 
         // Class statistics
-        output.push_str(&format!(
-            "Abstract Classes\t{}\n",
+        writeln!(output, 
+            "Abstract Classes\t{}",
             stats.abstract_class_count
-        ));
-        output.push_str(&format!("Mixin Classes\t{}\n", stats.mixin_class_count));
-        output.push_str(&format!(
-            "Classes with Slots\t{}\n",
+        ).unwrap();
+        writeln!(output, "Mixin Classes\t{}", stats.mixin_class_count).unwrap();
+        writeln!(output, 
+            "Classes with Slots\t{}",
             stats.classes_with_slots
-        ));
-        output.push_str(&format!(
-            "Classes with Attributes\t{}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Classes with Attributes\t{}",
             stats.classes_with_attributes
-        ));
-        output.push_str(&format!(
-            "Max Inheritance Depth\t{}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Max Inheritance Depth\t{}",
             stats.max_inheritance_depth
-        ));
-        output.push_str(&format!(
-            "Avg Slots per Class\t{:.2}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Avg Slots per Class\t{:.2}",
             stats.avg_slots_per_class
-        ));
+        ).unwrap();
 
         // Slot statistics
-        output.push_str(&format!("Required Slots\t{}\n", stats.required_slot_count));
-        output.push_str(&format!(
-            "Multivalued Slots\t{}\n",
+        writeln!(output, "Required Slots\t{}", stats.required_slot_count).unwrap();
+        writeln!(output, 
+            "Multivalued Slots\t{}",
             stats.multivalued_slot_count
-        ));
-        output.push_str(&format!(
-            "Identifier Slots\t{}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Identifier Slots\t{}",
             stats.identifier_slot_count
-        ));
-        output.push_str(&format!(
-            "Slots with Patterns\t{}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Slots with Patterns\t{}",
             stats.slots_with_patterns
-        ));
-        output.push_str(&format!(
-            "Slots with Constraints\t{}\n",
+        ).unwrap();
+        writeln!(output, 
+            "Slots with Constraints\t{}",
             stats.slots_with_constraints
-        ));
+        ).unwrap();
 
         // Documentation
-        output.push_str(&format!(
-            "Documentation Coverage\t{:.1}%\n",
+        writeln!(output, 
+            "Documentation Coverage\t{:.1}%",
             stats.documentation_coverage * 100.0
-        ));
+        ).unwrap();
 
         if self.config.complexity_metrics {
-            output.push_str(&format!(
-                "Schema Complexity Score\t{:.2}\n",
+            writeln!(output, 
+                "Schema Complexity Score\t{:.2}",
                 stats.schema_complexity_score
-            ));
-            output.push_str(&format!(
-                "Cyclomatic Complexity\t{}\n",
+            ).unwrap();
+            writeln!(output, 
+                "Cyclomatic Complexity\t{}",
                 stats.cyclomatic_complexity
-            ));
-            output.push_str(&format!("Coupling Score\t{:.2}\n", stats.coupling_score));
-            output.push_str(&format!("Cohesion Score\t{:.2}\n", stats.cohesion_score));
+            ).unwrap();
+            writeln!(output, "Coupling Score\t{:.2}", stats.coupling_score).unwrap();
+            writeln!(output, "Cohesion Score\t{:.2}", stats.cohesion_score).unwrap();
         }
 
         // Detailed slot usage if requested
@@ -466,11 +463,12 @@ impl SummaryGenerator {
             slot_usage.sort_by(|a, b| b.1.cmp(a.1));
 
             for (slot, count) in slot_usage {
-                output.push_str(&format!("{slot}\t{count}\n"));
+                writeln!(output, "{slot}\t{count}").unwrap();
             }
         }
 
-        Ok(output)
+        output
+
     }
 
     /// Generate Markdown format
@@ -485,11 +483,11 @@ impl SummaryGenerator {
         output.push_str("# LinkML Schema Summary Report\n\n");
 
         if !schema.name.is_empty() {
-            output.push_str(&format!("## Schema: {}\n\n", schema.name));
+            writeln!(output, "## Schema: {}\n", schema.name).unwrap();
         }
 
         if let Some(description) = &schema.description {
-            output.push_str(&format!("{description}\n\n"));
+            writeln!(output, "{description}\n").unwrap();
         }
 
         // Basic information
@@ -498,81 +496,81 @@ impl SummaryGenerator {
         output.push_str("|--------|-------|\n");
 
         if let Some(version) = &schema.version {
-            output.push_str(&format!("| Version | {version} |\n"));
+            writeln!(output, "| Version | {version} |").unwrap();
         }
 
-        output.push_str(&format!("| Total Classes | {} |\n", stats.class_count));
-        output.push_str(&format!("| Total Slots | {} |\n", stats.slot_count));
-        output.push_str(&format!("| Total Types | {} |\n", stats.type_count));
-        output.push_str(&format!("| Total Enums | {} |\n", stats.enum_count));
-        output.push_str(&format!(
-            "| Documentation Coverage | {:.1}% |\n",
+        writeln!(output, "| Total Classes | {} |", stats.class_count).unwrap();
+        writeln!(output, "| Total Slots | {} |", stats.slot_count).unwrap();
+        writeln!(output, "| Total Types | {} |", stats.type_count).unwrap();
+        writeln!(output, "| Total Enums | {} |", stats.enum_count).unwrap();
+        writeln!(output, 
+            "| Documentation Coverage | {:.1}% |",
             stats.documentation_coverage * 100.0
-        ));
+        ).unwrap();
 
         // Class analysis
         output.push_str("\n## Class Analysis\n\n");
         output.push_str("| Metric | Value |\n");
         output.push_str("|--------|-------|\n");
-        output.push_str(&format!(
-            "| Abstract Classes | {} |\n",
+        writeln!(output, 
+            "| Abstract Classes | {} |",
             stats.abstract_class_count
-        ));
-        output.push_str(&format!(
-            "| Mixin Classes | {} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Mixin Classes | {} |",
             stats.mixin_class_count
-        ));
-        output.push_str(&format!(
-            "| Max Inheritance Depth | {} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Max Inheritance Depth | {} |",
             stats.max_inheritance_depth
-        ));
-        output.push_str(&format!(
-            "| Average Slots per Class | {:.2} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Average Slots per Class | {:.2} |",
             stats.avg_slots_per_class
-        ));
+        ).unwrap();
 
         // Slot analysis
         output.push_str("\n## Slot Analysis\n\n");
         output.push_str("| Metric | Value |\n");
         output.push_str("|--------|-------|\n");
-        output.push_str(&format!(
-            "| Required Slots | {} |\n",
+        writeln!(output, 
+            "| Required Slots | {} |",
             stats.required_slot_count
-        ));
-        output.push_str(&format!(
-            "| Multivalued Slots | {} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Multivalued Slots | {} |",
             stats.multivalued_slot_count
-        ));
-        output.push_str(&format!(
-            "| Identifier Slots | {} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Identifier Slots | {} |",
             stats.identifier_slot_count
-        ));
-        output.push_str(&format!(
-            "| Slots with Constraints | {} |\n",
+        ).unwrap();
+        writeln!(output, 
+            "| Slots with Constraints | {} |",
             stats.slots_with_constraints
-        ));
+        ).unwrap();
 
         // Complexity metrics
         if self.config.complexity_metrics {
             output.push_str("\n## Complexity Metrics\n\n");
             output.push_str("| Metric | Value |\n");
             output.push_str("|--------|-------|\n");
-            output.push_str(&format!(
-                "| Schema Complexity Score | {:.2} |\n",
+            writeln!(output, 
+                "| Schema Complexity Score | {:.2} |",
                 stats.schema_complexity_score
-            ));
-            output.push_str(&format!(
-                "| Cyclomatic Complexity | {} |\n",
+            ).unwrap();
+            writeln!(output, 
+                "| Cyclomatic Complexity | {} |",
                 stats.cyclomatic_complexity
-            ));
-            output.push_str(&format!(
-                "| Coupling Score | {:.2} |\n",
+            ).unwrap();
+            writeln!(output, 
+                "| Coupling Score | {:.2} |",
                 stats.coupling_score
-            ));
-            output.push_str(&format!(
-                "| Cohesion Score | {:.2} |\n",
+            ).unwrap();
+            writeln!(output, 
+                "| Cohesion Score | {:.2} |",
                 stats.cohesion_score
-            ));
+            ).unwrap();
         }
 
         // Most used slots
@@ -586,7 +584,7 @@ impl SummaryGenerator {
             output.push_str("|------|-------------|\n");
 
             for (slot, count) in slot_usage.iter().take(10) {
-                output.push_str(&format!("| {slot} | {count} |\n"));
+                writeln!(output, "| {slot} | {count} |").unwrap();
             }
         }
 
@@ -758,56 +756,56 @@ impl SummaryGenerator {
         html.push_str("    <h1>LinkML Schema Summary Report</h1>\n");
 
         if !schema.name.is_empty() {
-            html.push_str(&format!("    <h2>Schema: {}</h2>\n", schema.name));
+            writeln!(html, "    <h2>Schema: {}</h2>", schema.name).unwrap();
         }
 
         if let Some(description) = &schema.description {
-            html.push_str(&format!("    <p>{description}</p>\n"));
+            writeln!(html, "    <p>{description}</p>").unwrap();
         }
 
         // Overview cards
         html.push_str("    <div class=\"overview\">\n");
-        html.push_str(&format!("        <div class=\"metric-card\">Classes: <span class=\"metric-value\">{}</span></div>\n", stats.class_count));
-        html.push_str(&format!("        <div class=\"metric-card\">Slots: <span class=\"metric-value\">{}</span></div>\n", stats.slot_count));
-        html.push_str(&format!("        <div class=\"metric-card\">Types: <span class=\"metric-value\">{}</span></div>\n", stats.type_count));
-        html.push_str(&format!("        <div class=\"metric-card\">Enums: <span class=\"metric-value\">{}</span></div>\n", stats.enum_count));
-        html.push_str(&format!("        <div class=\"metric-card\">Documentation: <span class=\"metric-value\">{:.1}%</span></div>\n", stats.documentation_coverage * 100.0));
+        writeln!(html, "        <div class=\"metric-card\">Classes: <span class=\"metric-value\">{}</span></div>", stats.class_count).unwrap();
+        writeln!(html, "        <div class=\"metric-card\">Slots: <span class=\"metric-value\">{}</span></div>", stats.slot_count).unwrap();
+        writeln!(html, "        <div class=\"metric-card\">Types: <span class=\"metric-value\">{}</span></div>", stats.type_count).unwrap();
+        writeln!(html, "        <div class=\"metric-card\">Enums: <span class=\"metric-value\">{}</span></div>", stats.enum_count).unwrap();
+        writeln!(html, "        <div class=\"metric-card\">Documentation: <span class=\"metric-value\">{:.1}%</span></div>", stats.documentation_coverage * 100.0).unwrap();
         html.push_str("    </div>\n");
 
         // Detailed statistics table
         html.push_str("    <h2>Detailed Statistics</h2>\n");
         html.push_str("    <table>\n");
         html.push_str("        <tr><th>Metric</th><th>Value</th></tr>\n");
-        html.push_str(&format!(
-            "        <tr><td>Abstract Classes</td><td>{}</td></tr>\n",
+        writeln!(html, 
+            "        <tr><td>Abstract Classes</td><td>{}</td></tr>",
             stats.abstract_class_count
-        ));
-        html.push_str(&format!(
-            "        <tr><td>Mixin Classes</td><td>{}</td></tr>\n",
+        ).unwrap();
+        writeln!(html, 
+            "        <tr><td>Mixin Classes</td><td>{}</td></tr>",
             stats.mixin_class_count
-        ));
-        html.push_str(&format!(
-            "        <tr><td>Max Inheritance Depth</td><td>{}</td></tr>\n",
+        ).unwrap();
+        writeln!(html, 
+            "        <tr><td>Max Inheritance Depth</td><td>{}</td></tr>",
             stats.max_inheritance_depth
-        ));
-        html.push_str(&format!(
-            "        <tr><td>Required Slots</td><td>{}</td></tr>\n",
+        ).unwrap();
+        writeln!(html, 
+            "        <tr><td>Required Slots</td><td>{}</td></tr>",
             stats.required_slot_count
-        ));
-        html.push_str(&format!(
-            "        <tr><td>Multivalued Slots</td><td>{}</td></tr>\n",
+        ).unwrap();
+        writeln!(html, 
+            "        <tr><td>Multivalued Slots</td><td>{}</td></tr>",
             stats.multivalued_slot_count
-        ));
+        ).unwrap();
 
         if self.config.complexity_metrics {
-            html.push_str(&format!(
-                "        <tr><td>Schema Complexity Score</td><td>{:.2}</td></tr>\n",
+            writeln!(html, 
+                "        <tr><td>Schema Complexity Score</td><td>{:.2}</td></tr>",
                 stats.schema_complexity_score
-            ));
-            html.push_str(&format!(
-                "        <tr><td>Cyclomatic Complexity</td><td>{}</td></tr>\n",
+            ).unwrap();
+            writeln!(html, 
+                "        <tr><td>Cyclomatic Complexity</td><td>{}</td></tr>",
                 stats.cyclomatic_complexity
-            ));
+            ).unwrap();
         }
 
         html.push_str("    </table>\n");
@@ -847,8 +845,7 @@ impl Generator for SummaryGenerator {
             SummaryFormat::Tsv => "tsv",
             SummaryFormat::Markdown => "md",
             SummaryFormat::Json => "json",
-            SummaryFormat::Html => "html",
-        }
+            SummaryFormat::Html => "html"}
     }
 
     fn get_default_filename(&self) -> &'static str {
@@ -859,7 +856,7 @@ impl Generator for SummaryGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_summary_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

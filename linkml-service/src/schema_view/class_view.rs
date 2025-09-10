@@ -5,8 +5,7 @@
 
 use linkml_core::{
     error::Result,
-    types::{ClassDefinition, SlotDefinition},
-};
+    types::{ClassDefinition, SlotDefinition}};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -40,8 +39,7 @@ pub struct ClassView {
     descendants: HashSet<String>,
 
     /// Mixin classes applied to this class
-    mixins: Vec<String>,
-}
+    mixins: Vec<String>}
 
 impl ClassView {
     /// Create a new `ClassView` for the specified class
@@ -49,6 +47,7 @@ impl ClassView {
     ///
     /// # Errors
     ///
+    /// Returns schema view errors if class induction or slot resolution fails
     pub fn new(class_name: &str, schema_view: Arc<SchemaView>) -> Result<Self> {
         // Get the induced (fully resolved) class
         let definition = schema_view.induced_class(class_name)?;
@@ -81,8 +80,7 @@ impl ClassView {
             parent,
             ancestors,
             descendants,
-            mixins,
-        })
+            mixins})
     }
 
     /// Get the class name
@@ -253,16 +251,14 @@ impl ClassView {
 #[derive(Debug)]
 pub struct ClassViewBuilder {
     schema_view: Arc<SchemaView>,
-    cache: HashMap<String, Arc<ClassView>>,
-}
+    cache: HashMap<String, Arc<ClassView>>}
 
 impl ClassViewBuilder {
     /// Create a new `ClassViewBuilder`
     #[must_use] pub fn new(schema_view: Arc<SchemaView>) -> Self {
         Self {
             schema_view,
-            cache: HashMap::new(),
-        }
+            cache: HashMap::new()}
     }
 
     /// Get or create a `ClassView` for the specified class
@@ -270,6 +266,7 @@ impl ClassViewBuilder {
     ///
     /// # Errors
     ///
+    /// Returns schema view errors if class view creation fails
     pub fn get_or_create(&mut self, class_name: &str) -> Result<Arc<ClassView>> {
         if let Some(view) = self.cache.get(class_name) {
             return Ok(Arc::clone(view));

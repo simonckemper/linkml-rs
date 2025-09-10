@@ -12,14 +12,12 @@ use serde_json::Value;
 use linkml_core::{
     error::{LinkMLError, Result},
     types::SchemaDefinition,
-    schema_arc::{ArcSchema, SchemaProvider},
-};
+    schema_arc::{ArcSchema, SchemaProvider}};
 
 use crate::traits::ValidationEngine as ValidationEngineTrait;
 use super::{
     ValidationContext, ValidationResult, ValidationError,
-    validators::{RequiredValidator, RangeValidator, PatternValidator},
-};
+    validators::{RequiredValidator, RangeValidator, PatternValidator}};
 
 /// Optimized validation engine using Arc for schema sharing
 pub struct ValidationEngineV2 {
@@ -30,8 +28,7 @@ pub struct ValidationEngineV2 {
     /// Cached validation contexts
     context_cache: dashmap::DashMap<String, Arc<ValidationContext>>,
     /// Configuration
-    config: ValidationConfig,
-}
+    config: ValidationConfig}
 
 /// Validation configuration
 #[derive(Clone, Debug)]
@@ -43,8 +40,7 @@ pub struct ValidationConfig {
     /// Whether to validate recursively
     pub recursive_validation: bool,
     /// Whether to collect all errors or stop on first
-    pub collect_all_errors: bool,
-}
+    pub collect_all_errors: bool}
 
 impl Default for ValidationConfig {
     fn default() -> Self {
@@ -52,8 +48,7 @@ impl Default for ValidationConfig {
             cache_contexts: true,
             max_cached_contexts: 100,
             recursive_validation: true,
-            collect_all_errors: true,
-        }
+            collect_all_errors: true}
     }
 }
 
@@ -71,8 +66,7 @@ impl ValidationEngineV2 {
             schema,
             validators,
             context_cache: dashmap::DashMap::new(),
-            config,
-        }
+            config}
     }
 
     /// Create from owned schema
@@ -153,8 +147,7 @@ impl ValidationEngineV2 {
                     errors.push(ValidationError {
                         path: "/".to_string(),
                         message: format!("Validator error: {e}"),
-                        severity: super::Severity::Error,
-                    });
+                        severity: super::Severity::Error});
                     if !self.config.collect_all_errors {
                         break;
                     }
@@ -165,8 +158,7 @@ impl ValidationEngineV2 {
         Ok(ValidationResult {
             valid: errors.is_empty(),
             errors,
-            warnings: Vec::new(),
-        })
+            warnings: Vec::new()})
     }
 
     /// Clear context cache
@@ -179,8 +171,7 @@ impl ValidationEngineV2 {
         CacheStats {
             contexts_cached: self.context_cache.len(),
             cache_enabled: self.config.cache_contexts,
-            max_contexts: self.config.max_cached_contexts,
-        }
+            max_contexts: self.config.max_cached_contexts}
     }
 }
 
@@ -189,8 +180,7 @@ impl ValidationEngineV2 {
 pub struct CacheStats {
     pub contexts_cached: usize,
     pub cache_enabled: bool,
-    pub max_contexts: usize,
-}
+    pub max_contexts: usize}
 
 impl SchemaProvider for ValidationEngineV2 {
     fn schema(&self) -> &ArcSchema {
@@ -210,15 +200,13 @@ trait Validator: Send + Sync {
 
 /// Factory for creating validation engines with proper Arc handling
 pub struct ValidationEngineFactory {
-    schema_cache: Arc<linkml_core::schema_arc::SchemaCache>,
-}
+    schema_cache: Arc<linkml_core::schema_arc::SchemaCache>}
 
 impl ValidationEngineFactory {
     /// Create new factory
     pub fn new() -> Self {
         Self {
-            schema_cache: Arc::new(linkml_core::schema_arc::SchemaCache::new()),
-        }
+            schema_cache: Arc::new(linkml_core::schema_arc::SchemaCache::new())}
     }
 
     /// Create engine from schema name (uses cache)
@@ -249,15 +237,13 @@ impl ValidationEngineFactory {
 
 /// Batch validation using shared engine
 pub struct BatchValidator {
-    engine: Arc<ValidationEngineV2>,
-}
+    engine: Arc<ValidationEngineV2>}
 
 impl BatchValidator {
     /// Create new batch validator
     pub fn new(engine: ValidationEngineV2) -> Self {
         Self {
-            engine: Arc::new(engine),
-        }
+            engine: Arc::new(engine)}
     }
 
     /// Validate multiple items in parallel

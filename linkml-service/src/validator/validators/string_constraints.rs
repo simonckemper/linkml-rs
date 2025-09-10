@@ -6,8 +6,7 @@
 use linkml_core::{
     Value,
     error::{LinkMLError, Result},
-    types::SlotDefinition,
-};
+    types::SlotDefinition};
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -39,8 +38,7 @@ impl Validator for EqualsStringInValidator {
         // Only validate if equals_string_in is specified
         let allowed_values = match &slot.equals_string_in {
             Some(values) if !values.is_empty() => values,
-            _ => return issues,
-        };
+            _ => return issues};
 
         // Convert to HashSet for O(1) lookup
         let allowed_set: HashSet<&str> = allowed_values.iter().map(std::string::String::as_str).collect();
@@ -178,8 +176,7 @@ impl StructuredPatternValidator {
                                 Value::String(s) => s.clone(),
                                 Value::Number(n) => n.to_string(),
                                 Value::Bool(b) => b.to_string(),
-                                _ => continue,
-                            };
+                                _ => continue};
                             result = result.replace(&format!("{{{var_name}}}"), &replacement);
                             continue;
                         }
@@ -192,8 +189,7 @@ impl StructuredPatternValidator {
                                 Value::String(s) => s.clone(),
                                 Value::Number(n) => n.to_string(),
                                 Value::Bool(b) => b.to_string(),
-                                _ => continue,
-                            };
+                                _ => continue};
                             result = result.replace(&format!("{{{var_name}}}"), &replacement);
                         }
 
@@ -218,7 +214,7 @@ impl StructuredPatternValidator {
     }
 
     /// Validate using glob syntax
-    fn validate_glob(&self, value: &str, pattern: &str, _partial: bool) -> Result<bool> {
+    fn validate_glob(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
         // Simple glob implementation
         // In production, use a proper glob library
         let regex_pattern = pattern
@@ -226,7 +222,14 @@ impl StructuredPatternValidator {
             .replace('*', ".*")
             .replace('?', ".");
 
-        let regex = Regex::new(&format!("^{regex_pattern}$"))
+        // Use anchors for full match, or no anchors for partial match
+        let final_pattern = if partial {
+            regex_pattern
+        } else {
+            format!("^{regex_pattern}$")
+        };
+
+        let regex = Regex::new(&final_pattern)
             .map_err(|e| LinkMLError::data_validation(format!("Invalid glob pattern: {e}")))?;
 
         Ok(regex.is_match(value))
@@ -245,8 +248,7 @@ impl Validator for StructuredPatternValidator {
         // Only validate if structured_pattern is specified
         let structured_pattern = match &slot.structured_pattern {
             Some(sp) => sp,
-            None => return issues,
-        };
+            None => return issues};
 
         let pattern = match &structured_pattern.pattern {
             Some(p) => p,
@@ -404,11 +406,8 @@ impl Validator for StructuredPatternValidator {
                     context.pop_path();
                 }
             }
-            Value::Null => {
-                // Null is allowed unless required
-            }
-            _ => {
-                // Only validate strings
+            Value::Null | _ => {
+                // Null is allowed unless required, and we only validate strings
             }
         }
 
@@ -436,6 +435,7 @@ impl Default for StructuredPatternValidator {
 mod tests {
     use super::*;
     use std::sync::Arc;
+    use linkml_core::types::{SchemaDefinition, StructuredPattern};
 
     #[test]
     fn test_equals_string_in_basic() {
@@ -502,10 +502,9 @@ mod tests {
         let mut slot = SlotDefinition::new("email");
         slot.structured_pattern = Some(StructuredPattern {
             syntax: Some("regular_expression".to_string()),
-            pattern: Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$".to_string()),
+            pattern: Some(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2}$".to_string()),
             interpolated: Some(false),
-            partial_match: Some(false),
-        });
+            partial_match: Some(false)});
 
         // Valid email
         let value = Value::String("test@example.com".to_string());
@@ -530,8 +529,7 @@ mod tests {
             syntax: Some("glob".to_string()),
             pattern: Some("*.txt".to_string()),
             interpolated: Some(false),
-            partial_match: Some(false),
-        });
+            partial_match: Some(false)});
 
         // Valid filename
         let value = Value::String("document.txt".to_string());
@@ -555,8 +553,7 @@ mod tests {
             syntax: Some("regular_expression".to_string()),
             pattern: Some(r"error|warning|info".to_string()),
             interpolated: Some(false),
-            partial_match: Some(true),
-        });
+            partial_match: Some(true)});
 
         // Contains keyword
         let value = Value::String("This is an error message".to_string());
@@ -584,8 +581,7 @@ mod tests {
             syntax: Some("regular_expression".to_string()),
             pattern: Some("{prefix}-{suffix}".to_string()),
             interpolated: Some(true),
-            partial_match: Some(false),
-        });
+            partial_match: Some(false)});
 
         // Should match TEST-123
         let value = Value::String("TEST-123".to_string());
@@ -621,8 +617,7 @@ mod tests {
             syntax: Some("regular_expression".to_string()),
             pattern: Some(r"^[\w\.-]+@{domain}$".to_string()),
             interpolated: Some(true),
-            partial_match: Some(false),
-        });
+            partial_match: Some(false)});
 
         // Should match user@example.com
         let value = Value::String("user@example.com".to_string());

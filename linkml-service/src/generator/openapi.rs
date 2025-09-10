@@ -8,16 +8,14 @@ use serde_json::{Value as JsonValue, json};
 /// `OpenAPI` schema generator for `LinkML` schemas
 pub struct OpenApiGenerator {
     /// Generator name
-    name: String,
-}
+    name: String}
 
 impl OpenApiGenerator {
     /// Create a new `OpenAPI` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "openapi".to_string(),
-        }
+            name: "openapi".to_string()}
     }
 
     /// Generate `OpenAPI` schema component for a class
@@ -60,8 +58,7 @@ impl OpenApiGenerator {
 
         let mut schema_obj = json!({
             "type": "object",
-            "properties": properties,
-        });
+            "properties": properties});
 
         // Add description
         if let Some(desc) = &class.description {
@@ -219,8 +216,7 @@ impl OpenApiGenerator {
                     Ok(json!({"type": "string"}))
                 }
             }
-            None => Ok(json!({"type": "string"})),
-        }
+            None => Ok(json!({"type": "string"}))}
     }
 
     /// Generate enum schema for `OpenAPI`
@@ -234,9 +230,7 @@ impl OpenApiGenerator {
             .permissible_values
             .iter()
             .map(|v| match v {
-                PermissibleValue::Simple(text) => text.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            })
+                PermissibleValue::Simple(text) | PermissibleValue::Complex { text, .. } => text.clone()})
             .collect();
 
         let mut schema = json!({
@@ -664,8 +658,7 @@ impl Generator for OpenApiGenerator {
             "openapi": "3.0.3",
             "info": {
                 "title": schema.name.clone(),
-                "version": schema.version.as_deref().unwrap_or("1.0.0"),
-            },
+                "version": schema.version.as_deref().unwrap_or("1.0.0")},
             "paths": paths,
             "components": components
         });
@@ -766,7 +759,7 @@ impl CodeFormatter for OpenApiGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
 
     #[test]
     fn test_openapi_generation() -> anyhow::Result<()> {
