@@ -237,6 +237,7 @@ pub fn merge_slot_definitions(
             .clone()
             .or_else(|| base.equals_expression.clone()),
         rules: override_def.rules.clone().or_else(|| base.rules.clone()),
+        // The equals string in
         equals_string_in: override_def
             .equals_string_in
             .clone()

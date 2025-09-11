@@ -341,6 +341,7 @@ pub fn camel_to_snake(s: &str) -> String {
         prev_upper = ch.is_uppercase();
     }
 
+    // result variant
     result
 }
 
