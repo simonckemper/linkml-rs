@@ -221,7 +221,7 @@ impl CompiledValidatorCache {
     /// - Cache operations fail
     pub fn put(
         &self,
-        key: ValidatorCacheKey,
+        key: &ValidatorCacheKey,
         validator: CompiledValidator,
     ) -> LinkMLResult<()> {
         let validator_memory = Self::estimate_validator_memory(&validator);
@@ -320,7 +320,7 @@ impl CompiledValidatorCache {
                     let validator =
                         CompiledValidator::compile_class(&schema, &class_name, class, options)?;
 
-                    self.put(key, validator)?;
+                    self.put(&key, validator)?;
                 }
             }
         }
@@ -401,7 +401,7 @@ mod tests {
             .expect("should compile validator: {}");
 
         cache
-            .put(key.clone(), validator)
+            .put(&key, validator)
             .expect("should cache validator: {}");
 
         // Cache hit
@@ -431,7 +431,7 @@ mod tests {
                     .expect("should compile validator: {}");
 
             cache
-                .put(key, validator)
+                .put(&key, validator)
                 .expect("should cache validator: {}");
         }
 

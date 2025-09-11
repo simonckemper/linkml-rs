@@ -429,7 +429,7 @@ impl ValidationEngine {
                         .as_millis().try_into().unwrap_or(u64::MAX);
 
                     // Store in cache
-                    cache.put(cache_key, validator)?;
+                    cache.put(&cache_key, validator)?;
 
                     // Get back the Arc version
                     let cache_key =
@@ -750,7 +750,7 @@ impl ValidationEngine {
             .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
         let duration = end.duration_since(start)
             .map_err(|e| LinkMLError::service(format!("Time calculation error: {e}")))?;
-        report.stats.duration_ms = duration.as_millis() as u64;
+        report.stats.duration_ms = duration.as_millis().min(u64::MAX as u128) as u64;
         Ok(report)
     }
 

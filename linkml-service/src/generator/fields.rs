@@ -22,7 +22,7 @@ impl RustGenerator {
 
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                let rust_name = self.convert_field_name(slot_name);
+                let rust_name = Self::convert_field_name(slot_name);
                 let mut attrs = Vec::new();
 
                 // Documentation

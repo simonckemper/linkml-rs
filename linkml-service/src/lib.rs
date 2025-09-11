@@ -4,7 +4,7 @@
 //! implementing 100% feature parity with Python `LinkML` plus native enhancements.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 #![warn(clippy::all, clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 

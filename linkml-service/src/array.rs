@@ -620,7 +620,7 @@ impl ArrayValidator {
 mod tests {
     use super::*;
     use serde_json::json;
-    use std::sync::Arc;
+
 
     #[test]
     fn test_array_dimension() {

@@ -920,7 +920,7 @@ impl CodeFormatter for HtmlGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
 
     #[tokio::test]

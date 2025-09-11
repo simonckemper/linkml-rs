@@ -45,8 +45,8 @@ pub trait SchemaParser: Send + Sync {
 
 /// Main parser that delegates to format-specific parsers
 pub struct Parser {
-    yaml_parser: YamlParser,
-    json_parser: JsonParser,
+    yaml: YamlParser,
+    json: JsonParser,
     /// Whether to automatically resolve imports
     auto_resolve_imports: bool}
 
@@ -55,8 +55,8 @@ impl Parser {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            yaml_parser: YamlParser::new(),
-            json_parser: JsonParser::new(),
+            yaml: YamlParser::new(),
+            json: JsonParser::new(),
             auto_resolve_imports: false}
     }
 
@@ -64,8 +64,8 @@ impl Parser {
     #[must_use]
     pub fn with_import_resolution() -> Self {
         Self {
-            yaml_parser: YamlParser::new(),
-            json_parser: JsonParser::new(),
+            yaml: YamlParser::new(),
+            json: JsonParser::new(),
             auto_resolve_imports: true}
     }
 
@@ -89,8 +89,8 @@ impl Parser {
             .ok_or_else(|| LinkMLError::parse("No file extension found"))?;
 
         match extension {
-            "yaml" | "yml" => self.yaml_parser.parse_file(path),
-            "json" => self.json_parser.parse_file(path),
+            "yaml" | "yml" => self.yaml.parse_file(path),
+            "json" => self.json.parse_file(path),
             _ => Err(LinkMLError::parse(format!(
                 "Unsupported file format: {extension}"
             )))}
@@ -105,8 +105,8 @@ impl Parser {
     /// - Parsing fails
     pub fn parse_str(&self, content: &str, format: &str) -> Result<SchemaDefinition> {
         match format {
-            "yaml" | "yml" => self.yaml_parser.parse_str(content),
-            "json" => self.json_parser.parse_str(content),
+            "yaml" | "yml" => self.yaml.parse_str(content),
+            "json" => self.json.parse_str(content),
             _ => Err(LinkMLError::parse(format!("Unsupported format: {format}")))}
     }
 }

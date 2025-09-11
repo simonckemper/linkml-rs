@@ -115,9 +115,9 @@ impl NamespaceManagerGenerator {
         if !schema.prefixes.is_empty() {
             use std::fmt::Write;
             for (prefix, expansion) in &schema.prefixes {
-                let _ = write!(
+                let _ = writeln!(
                     output,
-                    "            '{}': '{}',\n",
+                    "            '{}': '{}',",
                     prefix,
                     Self::get_prefix_reference(expansion)
                 );
@@ -379,6 +379,7 @@ impl NamespaceManagerGenerator {
 
     /// Generate JavaScript namespace manager
     fn generate_javascript(&self, schema: &SchemaDefinition) -> String {
+        use std::fmt::Write;
         let mut output = String::new();
 
         output.push_str("/**\n");
@@ -400,9 +401,9 @@ impl NamespaceManagerGenerator {
         if !schema.prefixes.is_empty() {
             use std::fmt::Write;
             for (prefix, expansion) in &schema.prefixes {
-                let _ = write!(
+                let _ = writeln!(
                     output,
-                    "      ['{}', '{}'],\n",
+                    "      ['{}', '{}'],",
                     prefix,
                     Self::get_prefix_reference(expansion)
                 );
@@ -446,13 +447,12 @@ impl NamespaceManagerGenerator {
         output.push_str("if (typeof module !== 'undefined' && module.exports) {\n");
         let _ = writeln!(output, "  module.exports = {};", self.config.class_name);
         output.push_str("} else if (typeof define === 'function' && define.amd) {\n");
-        use std::fmt::Write;
 
-        let _ = write!(
+        let _ = writeln!(
 
             output,
 
-            "  define([], function() {{ return {}; }});\n",
+            "  define([], function() {{ return {}; }});",
 
             self.config.class_name
 
@@ -598,9 +598,9 @@ impl NamespaceManagerGenerator {
         {
             use std::fmt::Write;
             for (prefix, expansion) in &schema.prefixes {
-                let _ = write!(
+                let _ = writeln!(
                     output,
-                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());\n",
+                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());",
                     prefix,
                     Self::get_prefix_reference(expansion)
                 );
@@ -633,9 +633,9 @@ impl NamespaceManagerGenerator {
 
         if let Some(default_prefix) = &schema.default_prefix {
             use std::fmt::Write;
-            let _ = write!(
+            let _ = writeln!(
                 output,
-                "            default_prefix: Some(\"{default_prefix}\".to_string()),\n"
+                "            default_prefix: Some(\"{default_prefix}\".to_string()),"
             );
         } else {
             output.push_str("            default_prefix: None,\n");
@@ -797,13 +797,12 @@ impl NamespaceManagerGenerator {
         output.push_str("    private final String defaultPrefix;\n\n");
 
         // Constructor
-        use std::fmt::Write;
 
-        let _ = write!(
+        let _ = writeln!(
 
             output,
 
-            "    public {}() {{\n",
+            "    public {}() {{",
 
             self.config.class_name
 

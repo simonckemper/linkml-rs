@@ -460,7 +460,7 @@ impl SchemaPatcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, SlotDefinition};
 
     #[test]
     fn test_add_class() {

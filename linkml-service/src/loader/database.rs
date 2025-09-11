@@ -1,7 +1,7 @@
-//! Database loader and dumper for LinkML
+//! Database loader and dumper for `LinkML`
 //!
 //! This module provides functionality to load data from SQL databases
-//! and dump LinkML instances back to databases.
+//! and dump `LinkML` instances back to databases.
 
 use super::traits::{
     DataDumper, DataInstance, DataLoader, DumperError, DumperResult, LoaderError, LoaderResult,
@@ -11,9 +11,9 @@ use linkml_core::prelude::*;
 use serde_json::{json, Value};
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use sqlx::{Column, Row, Database, Execute, Transaction};
-use sqlx::postgres::{PgRow, PgConnection};
-use sqlx::mysql::{MySqlRow, MySqlConnection};
+use sqlx::{Column, Row};
+use sqlx::postgres::PgRow;
+use sqlx::mysql::MySqlRow;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use tracing::{debug, info};
@@ -107,7 +107,7 @@ pub struct DatabaseLoader {
 
 impl DatabaseLoader {
     /// Create a new database loader
-    pub fn new(options: DatabaseOptions) -> Self {
+    #[must_use] pub fn new(options: DatabaseOptions) -> Self {
         Self {
             options,
             pool: None}
@@ -120,8 +120,7 @@ impl DatabaseLoader {
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await
-                    .map_err(|e| LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| LoaderError::Io(std::io::Error::other(
                         format!("PostgreSQL query failed: {e}"),
                     )))?;
 
@@ -140,8 +139,7 @@ impl DatabaseLoader {
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await
-                    .map_err(|e| LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| LoaderError::Io(std::io::Error::other(
                         format!("MySQL query failed: {e}"),
                     )))?;
 
@@ -218,9 +216,8 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'
-                         ORDER BY table_name",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'
+                         ORDER BY table_name"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -232,9 +229,8 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'
-                         ORDER BY table_name",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'
+                         ORDER BY table_name"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -259,11 +255,10 @@ impl DatabaseLoader {
                     continue;
                 }
 
-                if let Some(ref include_tables) = self.options.include_tables {
-                    if !include_tables.contains(table_name) {
+                if let Some(ref include_tables) = self.options.include_tables
+                    && !include_tables.contains(table_name) {
                         continue;
                     }
-                }
 
                 tables.push(table_name.clone());
             }
@@ -282,8 +277,7 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -295,8 +289,7 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -307,19 +300,13 @@ impl DatabaseLoader {
             DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table'
                  AND name NOT LIKE 'sqlite_%'"
                 .to_string(),
-            _ => {
-                return Err(LoaderError::Configuration(
-                    "Unsupported database type".to_string(),
-                ));
-            }
         };
 
         let mut tables = Vec::new();
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query tables: {e}"),
                     ))
                 })?;
@@ -331,11 +318,10 @@ impl DatabaseLoader {
                             continue;
                         }
 
-                        if let Some(include) = &self.options.include_tables {
-                            if !include.contains(&table_name) {
+                        if let Some(include) = &self.options.include_tables
+                            && !include.contains(&table_name) {
                                 continue;
                             }
-                        }
 
                         tables.push(table_name);
                     }
@@ -343,8 +329,7 @@ impl DatabaseLoader {
             }
             DatabasePool::MySQL(mysql_pool) => {
                 let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query tables: {e}"),
                     ))
                 })?;
@@ -356,11 +341,10 @@ impl DatabaseLoader {
                             continue;
                         }
 
-                        if let Some(include) = &self.options.include_tables {
-                            if !include.contains(&table_name) {
+                        if let Some(include) = &self.options.include_tables
+                            && !include.contains(&table_name) {
                                 continue;
                             }
-                        }
 
                         tables.push(table_name);
                     }
@@ -381,8 +365,7 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -394,8 +377,7 @@ impl DatabaseLoader {
                 if let Some(schema) = &self.options.schema_name {
                     format!(
                         "SELECT table_name FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_type = 'BASE TABLE'",
-                        schema
+                         WHERE table_schema = '{schema}' AND table_type = 'BASE TABLE'"
                     )
                 } else {
                     "SELECT table_name FROM information_schema.tables
@@ -406,19 +388,13 @@ impl DatabaseLoader {
             DatabaseType::SQLite => "SELECT name FROM sqlite_master WHERE type='table'
                  AND name NOT LIKE 'sqlite_%'"
                 .to_string(),
-            _ => {
-                return Err(LoaderError::Configuration(
-                    "Unsupported database type".to_string(),
-                ));
-            }
         };
 
         let mut tables = Vec::new();
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query tables: {e}"),
                     ))
                 })?;
@@ -430,11 +406,10 @@ impl DatabaseLoader {
                             continue;
                         }
 
-                        if let Some(include) = &self.options.include_tables {
-                            if !include.contains(&table_name) {
+                        if let Some(include) = &self.options.include_tables
+                            && !include.contains(&table_name) {
                                 continue;
                             }
-                        }
 
                         tables.push(table_name);
                     }
@@ -442,8 +417,7 @@ impl DatabaseLoader {
             }
             DatabasePool::MySQL(mysql_pool) => {
                 let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query tables: {e}"),
                     ))
                 })?;
@@ -455,11 +429,10 @@ impl DatabaseLoader {
                             continue;
                         }
 
-                        if let Some(include) = &self.options.include_tables {
-                            if !include.contains(&table_name) {
+                        if let Some(include) = &self.options.include_tables
+                            && !include.contains(&table_name) {
                                 continue;
                             }
-                        }
 
                         tables.push(table_name);
                     }
@@ -501,9 +474,8 @@ impl DatabaseLoader {
                         is_nullable,
                         column_default
                      FROM information_schema.columns
-                     WHERE table_schema = '{}' AND table_name = '{}'
-                     ORDER BY ordinal_position",
-                    schema, table_name
+                     WHERE table_schema = '{schema}' AND table_name = '{table_name}'
+                     ORDER BY ordinal_position"
                 )
             }
             DatabaseType::MySQL => {
@@ -521,9 +493,8 @@ impl DatabaseLoader {
                             is_nullable,
                             column_default
                          FROM information_schema.columns
-                         WHERE table_schema = DATABASE() AND table_name = '{}'
-                         ORDER BY ordinal_position",
-                        table_name
+                         WHERE table_schema = DATABASE() AND table_name = '{table_name}'
+                         ORDER BY ordinal_position"
                     )
                 } else {
                     format!(
@@ -533,9 +504,8 @@ impl DatabaseLoader {
                             is_nullable,
                             column_default
                          FROM information_schema.columns
-                         WHERE table_schema = '{}' AND table_name = '{}'
-                         ORDER BY ordinal_position",
-                        schema, table_name
+                         WHERE table_schema = '{schema}' AND table_name = '{table_name}'
+                         ORDER BY ordinal_position"
                     )
                 }
             }
@@ -609,11 +579,6 @@ impl DatabaseLoader {
             DatabaseType::SQLite => {
                 format!("PRAGMA table_info({table_name})")
             }
-            _ => {
-                return Err(LoaderError::Configuration(
-                    "Unsupported database type".to_string(),
-                ));
-            }
         };
 
         let mut columns = Vec::new();
@@ -621,8 +586,7 @@ impl DatabaseLoader {
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query columns: {e}"),
                     ))
                 })?;
@@ -630,13 +594,13 @@ impl DatabaseLoader {
                 for row in rows {
                     columns.push(ColumnInfo {
                         name: row.try_get::<String, _>(0).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get column name: {e}"))
+                            std::io::Error::other(format!("Failed to get column name: {e}"))
                         ))?,
                         data_type: row.try_get::<String, _>(1).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get data type: {e}"))
+                            std::io::Error::other(format!("Failed to get data type: {e}"))
                         ))?,
                         is_nullable: row.try_get::<String, _>(2).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get nullable: {e}"))
+                            std::io::Error::other(format!("Failed to get nullable: {e}"))
                         ))? == "YES",
                         is_primary_key: false, // Will be determined separately
                     });
@@ -647,8 +611,7 @@ impl DatabaseLoader {
             }
             DatabasePool::MySQL(mysql_pool) => {
                 let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query columns: {e}"),
                     ))
                 })?;
@@ -656,13 +619,13 @@ impl DatabaseLoader {
                 for row in rows {
                     columns.push(ColumnInfo {
                         name: row.try_get::<String, _>(0).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get column name: {e}"))
+                            std::io::Error::other(format!("Failed to get column name: {e}"))
                         ))?,
                         data_type: row.try_get::<String, _>(1).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get data type: {e}"))
+                            std::io::Error::other(format!("Failed to get data type: {e}"))
                         ))?,
                         is_nullable: row.try_get::<String, _>(2).map_err(|e| LoaderError::Io(
-                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get nullable: {e}"))
+                            std::io::Error::other(format!("Failed to get nullable: {e}"))
                         ))? == "YES",
                         is_primary_key: false, // Will be determined separately
                     });
@@ -688,14 +651,13 @@ impl DatabaseLoader {
                 format!(
                     "SELECT column_name
                      FROM information_schema.key_column_usage
-                     WHERE table_schema = '{}' AND table_name = '{}'
+                     WHERE table_schema = '{schema}' AND table_name = '{table_name}'
                        AND constraint_name IN (
                            SELECT constraint_name
                            FROM information_schema.table_constraints
-                           WHERE table_schema = '{}' AND table_name = '{}'
+                           WHERE table_schema = '{schema}' AND table_name = '{table_name}'
                              AND constraint_type = 'PRIMARY KEY'
-                       )",
-                    schema, table_name, schema, table_name
+                       )"
                 )
             }
             DatabaseType::MySQL => {
@@ -709,17 +671,15 @@ impl DatabaseLoader {
                     format!(
                         "SELECT column_name
                          FROM information_schema.key_column_usage
-                         WHERE table_schema = DATABASE() AND table_name = '{}'
-                           AND constraint_name = 'PRIMARY'",
-                        table_name
+                         WHERE table_schema = DATABASE() AND table_name = '{table_name}'
+                           AND constraint_name = 'PRIMARY'"
                     )
                 } else {
                     format!(
                         "SELECT column_name
                          FROM information_schema.key_column_usage
-                         WHERE table_schema = '{}' AND table_name = '{}'
-                           AND constraint_name = 'PRIMARY'",
-                        schema, table_name
+                         WHERE table_schema = '{schema}' AND table_name = '{table_name}'
+                           AND constraint_name = 'PRIMARY'"
                     )
                 }
             }
@@ -795,8 +755,7 @@ impl DatabaseLoader {
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let rows = sqlx::query(&query).fetch_all(pg_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query primary keys: {e}"),
                     ))
                 })?;
@@ -809,8 +768,7 @@ impl DatabaseLoader {
             }
             DatabasePool::MySQL(mysql_pool) => {
                 let rows = sqlx::query(&query).fetch_all(mysql_pool).await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to query primary keys: {e}"),
                     ))
                 })?;
@@ -932,7 +890,7 @@ impl DatabaseLoader {
                     .or_else(|_| raw_value.parse::<i32>().map(Value::from))
                     .map_err(|e| LoaderError::Io(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
-                        format!("Failed to parse integer '{}': {}", raw_value, e),
+                        format!("Failed to parse integer '{raw_value}': {e}"),
                     )))
             }
             "real" | "double" | "float" | "float4" | "float8" | "decimal" | "numeric" => {
@@ -940,7 +898,7 @@ impl DatabaseLoader {
                     .map(Value::from)
                     .map_err(|e| LoaderError::Io(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
-                        format!("Failed to parse float '{}': {}", raw_value, e),
+                        format!("Failed to parse float '{raw_value}': {e}"),
                     )))
             }
             "boolean" | "bool" => {
@@ -984,8 +942,7 @@ impl DatabaseLoader {
                 let mut batch = Vec::new();
 
                 while let Some(row) = rows.try_next().await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to fetch row: {e}"),
                     ))
                 })? {
@@ -993,7 +950,7 @@ impl DatabaseLoader {
                     batch.push(instance);
 
                     if batch.len() >= self.options.batch_size {
-                        instances.extend(batch.drain(..));
+                        instances.append(&mut batch);
                     }
                 }
                 instances.extend(batch);
@@ -1003,8 +960,7 @@ impl DatabaseLoader {
                 let mut batch = Vec::new();
 
                 while let Some(row) = rows.try_next().await.map_err(|e| {
-                    LoaderError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    LoaderError::Io(std::io::Error::other(
                         format!("Failed to fetch row: {e}"),
                     ))
                 })? {
@@ -1012,7 +968,7 @@ impl DatabaseLoader {
                     batch.push(instance);
 
                     if batch.len() >= self.options.batch_size {
-                        instances.extend(batch.drain(..));
+                        instances.append(&mut batch);
                     }
                 }
                 instances.extend(batch);
@@ -1041,7 +997,7 @@ impl DatabaseLoader {
         Ok(instances)
     }
 
-    /// Convert a database row to a DataInstance (simplified version)
+    /// Convert a database row to a `DataInstance` (simplified version)
     fn create_instance_from_data(
         &self,
         table_name: &str,
@@ -1062,7 +1018,7 @@ impl DatabaseLoader {
             metadata: HashMap::new()})
     }
 
-    /// Convert a database row to a DataInstance (PostgreSQL version)
+    /// Convert a database row to a `DataInstance` (`PostgreSQL` version)
     fn pg_row_to_instance(
         &self,
         row: &PgRow,
@@ -1104,7 +1060,7 @@ impl DatabaseLoader {
             metadata: HashMap::new()})
     }
 
-    /// Convert a database row to a DataInstance (MySQL version)
+    /// Convert a database row to a `DataInstance` (`MySQL` version)
     fn mysql_row_to_instance(
         &self,
         row: &MySqlRow,
@@ -1146,7 +1102,7 @@ impl DatabaseLoader {
             metadata: HashMap::new()})
     }
 
-    /// Get column value with proper type conversion (PostgreSQL)
+    /// Get column value with proper type conversion (`PostgreSQL`)
     fn get_pg_column_value(&self, row: &PgRow, idx: usize, db_type: &str) -> LoaderResult<Value> {
         use sqlx::Row;
         
@@ -1154,37 +1110,37 @@ impl DatabaseLoader {
         match db_type.to_lowercase().as_str() {
             "integer" | "int" | "int4" | "smallint" => {
                 if let Ok(val) = row.try_get::<Option<i32>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "bigint" | "int8" => {
                 if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "real" | "float" | "float4" => {
                 if let Ok(val) = row.try_get::<Option<f32>, _>(idx) {
-                    Ok(val.map(|v| Value::from(v as f64)).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, |v| Value::from(f64::from(v))))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "double" | "float8" | "decimal" | "numeric" => {
                 if let Ok(val) = row.try_get::<Option<f64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "boolean" | "bool" => {
                 if let Ok(val) = row.try_get::<Option<bool>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
@@ -1192,7 +1148,7 @@ impl DatabaseLoader {
             _ => {
                 // Default to string
                 if let Ok(val) = row.try_get::<Option<String>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
@@ -1200,7 +1156,7 @@ impl DatabaseLoader {
         }
     }
 
-    /// Get column value with proper type conversion (MySQL)
+    /// Get column value with proper type conversion (`MySQL`)
     fn get_mysql_column_value(&self, row: &MySqlRow, idx: usize, db_type: &str) -> LoaderResult<Value> {
         use sqlx::Row;
         
@@ -1208,37 +1164,37 @@ impl DatabaseLoader {
         match db_type.to_lowercase().as_str() {
             "integer" | "int" | "int4" | "smallint" => {
                 if let Ok(val) = row.try_get::<Option<i32>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "bigint" | "int8" => {
                 if let Ok(val) = row.try_get::<Option<i64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "real" | "float" | "float4" => {
                 if let Ok(val) = row.try_get::<Option<f32>, _>(idx) {
-                    Ok(val.map(|v| Value::from(v as f64)).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, |v| Value::from(f64::from(v))))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "double" | "float8" | "decimal" | "numeric" => {
                 if let Ok(val) = row.try_get::<Option<f64>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
             }
             "boolean" | "bool" => {
                 if let Ok(val) = row.try_get::<Option<bool>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
@@ -1246,7 +1202,7 @@ impl DatabaseLoader {
             _ => {
                 // Default to string
                 if let Ok(val) = row.try_get::<Option<String>, _>(idx) {
-                    Ok(val.map(Value::from).unwrap_or(Value::Null))
+                    Ok(val.map_or(Value::Null, Value::from))
                 } else {
                     Ok(Value::Null)
                 }
@@ -1346,11 +1302,11 @@ impl DatabaseLoader {
 
 #[async_trait]
 impl DataLoader for DatabaseLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Database Loader"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Loads data from SQL databases (PostgreSQL and MySQL)"
     }
 
@@ -1419,7 +1375,7 @@ pub struct DatabaseDumper {
 
 impl DatabaseDumper {
     /// Create a new database dumper
-    pub fn new(options: DatabaseOptions) -> Self {
+    #[must_use] pub fn new(options: DatabaseOptions) -> Self {
         Self {
             options,
             pool: None}
@@ -1432,8 +1388,7 @@ impl DatabaseDumper {
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await
-                    .map_err(|e| DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| DumperError::Io(std::io::Error::other(
                         format!("PostgreSQL query failed: {e}"),
                     )))?;
 
@@ -1452,8 +1407,7 @@ impl DatabaseDumper {
                 let rows = sqlx::query(query)
                     .fetch_all(pool)
                     .await
-                    .map_err(|e| DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| DumperError::Io(std::io::Error::other(
                         format!("MySQL query failed: {e}"),
                     )))?;
 
@@ -1478,8 +1432,7 @@ impl DatabaseDumper {
                 sqlx::query(statement)
                     .execute(pool)
                     .await
-                    .map_err(|e| DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| DumperError::Io(std::io::Error::other(
                         format!("PostgreSQL statement failed: {e}"),
                     )))?;
                 Ok(())
@@ -1488,8 +1441,7 @@ impl DatabaseDumper {
                 sqlx::query(statement)
                     .execute(pool)
                     .await
-                    .map_err(|e| DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    .map_err(|e| DumperError::Io(std::io::Error::other(
                         format!("MySQL statement failed: {e}"),
                     )))?;
                 Ok(())
@@ -1584,9 +1536,7 @@ impl DatabaseDumper {
             .options
             .table_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         // Check if table already exists
         let exists_query = match self.get_database_type()? {
@@ -1595,9 +1545,8 @@ impl DatabaseDumper {
                 format!(
                     "SELECT EXISTS (
                         SELECT FROM information_schema.tables
-                        WHERE table_schema = '{}' AND table_name = '{}'
-                    )",
-                    schema_name, table_name
+                        WHERE table_schema = '{schema_name}' AND table_name = '{table_name}'
+                    )"
                 )
             }
             DatabaseType::MySQL => {
@@ -1610,14 +1559,12 @@ impl DatabaseDumper {
                 if schema_name == "DATABASE()" {
                     format!(
                         "SELECT COUNT(*) as count FROM information_schema.tables
-                         WHERE table_schema = DATABASE() AND table_name = '{}'",
-                        table_name
+                         WHERE table_schema = DATABASE() AND table_name = '{table_name}'"
                     )
                 } else {
                     format!(
                         "SELECT COUNT(*) as count FROM information_schema.tables
-                         WHERE table_schema = '{}' AND table_name = '{}'",
-                        schema_name, table_name
+                         WHERE table_schema = '{schema_name}' AND table_name = '{table_name}'"
                     )
                 }
             }
@@ -1632,7 +1579,7 @@ impl DatabaseDumper {
         let table_exists = if let Some(row) = rows.first() {
             match self.get_database_type()? {
                 DatabaseType::PostgreSQL => {
-                    row.get("exists").map(|v| v == "t" || v == "true").unwrap_or(false)
+                    row.get("exists").is_some_and(|v| v == "t" || v == "true")
                 }
                 DatabaseType::MySQL => {
                     row.get("count").and_then(|v| v.parse::<i32>().ok()).unwrap_or(0) > 0
@@ -1670,8 +1617,7 @@ impl DatabaseDumper {
         // Add ID column if not explicitly defined
         let has_id_slot = class_def.slots.iter().any(|slot_name| {
             schema.slots.get(slot_name)
-                .map(|slot| slot.identifier.unwrap_or(false))
-                .unwrap_or(false)
+                .is_some_and(|slot| slot.identifier.unwrap_or(false))
         });
 
         if !has_id_slot {
@@ -1693,7 +1639,7 @@ impl DatabaseDumper {
 
                 let db_type = self.linkml_range_to_db_type(&slot_def.range.clone().unwrap_or_else(|| "string".to_string()))?;
 
-                let mut column_def = format!("{} {}", column_name, db_type);
+                let mut column_def = format!("{column_name} {db_type}");
 
                 // Add constraints
                 if slot_def.required.unwrap_or(false) {
@@ -1770,9 +1716,7 @@ impl DatabaseDumper {
             .options
             .table_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         // Build CREATE TABLE statement
         let mut columns = Vec::new();
@@ -1794,7 +1738,7 @@ impl DatabaseDumper {
                 };
 
                 columns.push(
-                    format!("{} {} {}", column_name, column_type, nullable)
+                    format!("{column_name} {column_type} {nullable}")
                         .trim()
                         .to_string(),
                 );
@@ -1810,16 +1754,14 @@ impl DatabaseDumper {
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 sqlx::query(&create_sql).execute(pg_pool).await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to create table: {e}"),
                     ))
                 })?;
             }
             DatabasePool::MySQL(mysql_pool) => {
                 sqlx::query(&create_sql).execute(mysql_pool).await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to create table: {e}"),
                     ))
                 })?;
@@ -1846,9 +1788,7 @@ impl DatabaseDumper {
             .options
             .table_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         // Verify class exists in schema
         let _class_def = schema.classes.get(class_name)
@@ -1913,8 +1853,7 @@ impl DatabaseDumper {
         match self.pool.as_ref() {
             Some(DatabasePool::PostgreSQL(pool)) => {
                 let mut tx = pool.begin().await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to begin PostgreSQL transaction: {e}"),
                     ))
                 })?;
@@ -1930,24 +1869,21 @@ impl DatabaseDumper {
                     }
 
                     query.execute(&mut *tx).await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to insert PostgreSQL row: {e}"),
                         ))
                     })?;
                 }
 
                 tx.commit().await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to commit PostgreSQL transaction: {e}"),
                     ))
                 })?;
             }
             Some(DatabasePool::MySQL(pool)) => {
                 let mut tx = pool.begin().await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to begin MySQL transaction: {e}"),
                     ))
                 })?;
@@ -1963,16 +1899,14 @@ impl DatabaseDumper {
                     }
 
                     query.execute(&mut *tx).await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to insert MySQL row: {e}"),
                         ))
                     })?;
                 }
 
                 tx.commit().await.map_err(|e| {
-                    DumperError::Io(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    DumperError::Io(std::io::Error::other(
                         format!("Failed to commit MySQL transaction: {e}"),
                     ))
                 })?;
@@ -2004,8 +1938,7 @@ impl DatabaseDumper {
                     }
 
                     query.execute(pool).await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to insert PostgreSQL row: {e}"),
                         ))
                     })?;
@@ -2023,8 +1956,7 @@ impl DatabaseDumper {
                     }
 
                     query.execute(pool).await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to insert MySQL row: {e}"),
                         ))
                     })?;
@@ -2061,9 +1993,7 @@ impl DatabaseDumper {
             .options
             .table_mapping
             .iter()
-            .find(|(_, cn)| cn == &class_name)
-            .map(|(tn, _)| tn.clone())
-            .unwrap_or_else(|| to_snake_case(class_name));
+            .find(|(_, cn)| cn == &class_name).map_or_else(|| to_snake_case(class_name), |(tn, _)| tn.clone());
 
         // Get class definition
         let class_def = schema.classes.get(class_name).ok_or_else(|| {
@@ -2079,8 +2009,7 @@ impl DatabaseDumper {
             match pool {
                 DatabasePool::PostgreSQL(pg_pool) => {
                     let mut tx = pg_pool.begin().await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to begin PostgreSQL transaction: {e}"),
                         ))
                     })?;
@@ -2133,24 +2062,21 @@ impl DatabaseDumper {
                         }
 
                         query.execute(&mut *tx).await.map_err(|e| {
-                            DumperError::Io(std::io::Error::new(
-                                std::io::ErrorKind::Other,
+                            DumperError::Io(std::io::Error::other(
                                 format!("Failed to insert row: {e}"),
                             ))
                         })?;
                     }
 
                     tx.commit().await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to commit transaction: {e}"),
                         ))
                     })?;
                 }
                 DatabasePool::MySQL(mysql_pool) => {
                     let mut tx = mysql_pool.begin().await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to begin MySQL transaction: {e}"),
                         ))
                     })?;
@@ -2203,16 +2129,14 @@ impl DatabaseDumper {
                         }
 
                         query.execute(&mut *tx).await.map_err(|e| {
-                            DumperError::Io(std::io::Error::new(
-                                std::io::ErrorKind::Other,
+                            DumperError::Io(std::io::Error::other(
                                 format!("Failed to insert row: {e}"),
                             ))
                         })?;
                     }
 
                     tx.commit().await.map_err(|e| {
-                        DumperError::Io(std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        DumperError::Io(std::io::Error::other(
                             format!("Failed to commit transaction: {e}"),
                         ))
                     })?;
@@ -2276,11 +2200,11 @@ impl DatabaseDumper {
 
 #[async_trait]
 impl DataDumper for DatabaseDumper {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Database Dumper"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Dumps data to SQL databases (PostgreSQL and MySQL)"
     }
 

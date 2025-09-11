@@ -103,7 +103,7 @@ impl PluginManager {
     }
 
     /// Load all plugins from the plugin directory
-    pub async fn load_plugins(&mut self) -> GeneratorResult<()> {
+    pub fn load_plugins(&mut self) -> GeneratorResult<()> {
         if self.config.auto_discover {
             self.discover_plugins()?;
         }

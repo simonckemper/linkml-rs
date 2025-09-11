@@ -367,7 +367,7 @@ impl Default for PatternMatcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use linkml_core::error::Result;
+
 
     #[test]
     fn test_basic_pattern_matching() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -3,8 +3,8 @@
 //! This module defines the API contracts that plugins must implement
 //! and provides helper utilities for plugin development.
 
-use super::{Serialize, Deserialize, async_trait, HashMap, Result, SchemaDefinition, PluginInfo, Version, PluginType, VersionReq};
 use std::any::Any;
+use super::{Serialize, Deserialize, async_trait, HashMap, Result, SchemaDefinition, PluginInfo, Version, PluginType, VersionReq};
 
 /// Plugin `API` version
 pub const PLUGIN_API_VERSION: u32 = 1;

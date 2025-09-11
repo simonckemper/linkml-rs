@@ -298,9 +298,10 @@ pub fn collect_all_slots(
     if is_optional_slot(slot) {
         match language {
             "python" => Some("None".to_string()),
-            "typescript" => None, // TypeScript uses ? for optional
             "javascript" => Some("null".to_string()),
-            _ => None}
+            "typescript" => None, // TypeScript uses ? for optional
+            _ => None, // Default to None for other languages
+        }
     } else {
         None
     }
@@ -309,7 +310,7 @@ pub fn collect_all_slots(
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+
 
     #[test]
     fn test_type_mapping() {

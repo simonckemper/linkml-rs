@@ -93,8 +93,8 @@ impl SlotView {
         let mut current = slot.is_a.clone();
         let mut visited = HashSet::new();
 
-        while let Some(parent_name) = current {
-            if visited.contains(&parent_name) {
+        while let Some(ref parent_name) = current.clone() {
+            if visited.contains(parent_name) {
                 return Err(LinkMLError::service(format!(
                     "Circular inheritance detected in slot '{parent_name}'"
                 )));
@@ -102,7 +102,7 @@ impl SlotView {
             visited.insert(parent_name.clone());
             ancestors.push(parent_name.clone());
 
-            if let Some(parent_slot) = schema_view.get_slot(&parent_name)? {
+            if let Some(parent_slot) = schema_view.get_slot(parent_name)? {
                 current = parent_slot.is_a.clone();
             } else {
                 current = None;

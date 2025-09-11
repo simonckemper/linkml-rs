@@ -268,7 +268,7 @@ impl MultiLayerCache {
     /// # Errors
     ///
     /// Returns an error if cache operations fail.
-    pub async fn put(
+    pub fn put(
         &self,
         key: ValidatorCacheKey,
         validator: Arc<CompiledValidator>,
@@ -404,7 +404,7 @@ impl MultiLayerCache {
         validators: Vec<(ValidatorCacheKey, Arc<CompiledValidator>)>,
     ) -> Result<()> {
         for (key, validator) in validators {
-            self.put(key, validator).await?;
+            self.put(key, validator)?;
         }
         Ok(())
     }
@@ -446,7 +446,7 @@ impl MultiLayerCache {
             let _ = l2; // Use the variable to avoid warnings
 
             // Also prefetch related validators based on schema relationships
-            if let Some(related_keys) = self.find_related_validator_keys(key) {
+            if let Some(related_keys) = Self::find_related_validator_keys(key) {
                 for related_key in related_keys {
                     // In a real implementation, we'd compile the related validator here
                     // For now, we mark it for background compilation
@@ -472,7 +472,7 @@ impl MultiLayerCache {
     }
 
     /// Find related validator keys based on schema relationships
-    fn find_related_validator_keys(&self, key: &ValidatorCacheKey) -> Option<Vec<ValidatorCacheKey>> {
+    fn find_related_validator_keys(key: &ValidatorCacheKey) -> Option<Vec<ValidatorCacheKey>> {
         // Look for related schemas, parent classes, or referenced types
         // This would analyze the schema structure to find relationships
 

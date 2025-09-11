@@ -482,7 +482,7 @@ impl SchemaMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_merge_union() -> Result<()> {

@@ -400,7 +400,7 @@ pub fn is_subclass_of(child: &str, parent: &str, schema: &SchemaDefinition) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_simple_inheritance() -> std::result::Result<(), Box<dyn std::error::Error>> {

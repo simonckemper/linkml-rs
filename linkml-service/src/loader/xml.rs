@@ -52,7 +52,7 @@ impl XmlLoader {
 
                 if let Some(current_def) = schema.classes.get(&current_class) {
                     // Check parent classes
-                    for parent in &current_def.is_a {
+                    if let Some(parent) = &current_def.is_a {
                         if parent == class_name {
                             return Err(LoaderError::SchemaValidation(
                                 format!("Circular inheritance detected: class '{class_name}' inherits from itself")

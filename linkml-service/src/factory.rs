@@ -69,7 +69,7 @@ where
 
 /// Service dependencies for `LinkML` service creation
 ///
-/// This structure groups all service dependencies required to create a LinkML service instance.
+/// This structure groups all service dependencies required to create a `LinkML` service instance.
 /// Generic parameters for non-dyn-compatible services:
 /// - `T`: `TaskManagementService` implementation
 /// - `E`: `ErrorHandlingService` implementation
@@ -107,7 +107,7 @@ pub struct LinkMLServiceDependencies<T, E, C, D, O> {
 ///
 /// # Parameters
 ///
-/// * `config` - Custom LinkML configuration
+/// * `config` - Custom `LinkML` configuration
 /// * `deps` - Service dependencies struct
 ///
 /// # Errors

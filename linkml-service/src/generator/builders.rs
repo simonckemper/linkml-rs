@@ -35,7 +35,7 @@ impl RustGenerator {
         let all_slots = collect_all_slots(class, schema)?;
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                let field_name = self.convert_field_name(slot_name);
+                let field_name = Self::convert_field_name(slot_name);
                 let field_type = self.get_rust_type(slot, schema);
 
                 writeln!(
@@ -114,7 +114,7 @@ impl RustGenerator {
         options: &GeneratorOptions,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        let field_name = self.convert_field_name(slot_name);
+        let field_name = Self::convert_field_name(slot_name);
         let field_type = self.get_rust_type(slot, schema);
 
         // Documentation
@@ -183,7 +183,7 @@ impl RustGenerator {
         let all_slots = collect_all_slots(class, schema)?;
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                let field_name = self.convert_field_name(slot_name);
+                let field_name = Self::convert_field_name(slot_name);
 
                 // Handle required fields validation
                 if slot.required.unwrap_or(false) {

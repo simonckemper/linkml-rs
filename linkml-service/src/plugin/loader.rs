@@ -104,20 +104,17 @@ impl DynamicLoader {
             EntryPoint::Native { library, symbol } => {
                 self.native_loader
                     .load_plugin(base_dir, library, symbol.as_deref())
-                    .await
             }
             EntryPoint::Python { module, class } => {
-                self.python_loader.load_plugin(module, class).await
+                self.python_loader.load_plugin(module, class)
             }
             EntryPoint::JavaScript { module, export } => {
                 self.js_loader
                     .load_plugin(base_dir, module, export.as_deref())
-                    .await
             }
             EntryPoint::Wasm { module, config } => {
                 self.wasm_loader
                     .load_plugin(base_dir, module, config.as_ref())
-                    .await
             }
         }
     }
@@ -131,7 +128,7 @@ impl NativeLoader {
         Self
     }
 
-    async fn load_plugin(
+    fn load_plugin(
         &self,
         base_dir: &Path,
         library: &str,
@@ -160,7 +157,7 @@ impl PythonLoader {
         Self
     }
 
-    async fn load_plugin(&self, _module: &str, _class: &str) -> Result<Box<dyn Plugin>> {
+    fn load_plugin(&self, _module: &str, _class: &str) -> Result<Box<dyn Plugin>> {
         // Python integration would require PyO3
         // For now, return an error indicating Python plugins need PyO3 integration
         Err(LinkMLError::ServiceError(
@@ -179,7 +176,7 @@ impl JavaScriptLoader {
         Self
     }
 
-    async fn load_plugin(
+    fn load_plugin(
         &self,
         _base_dir: &Path,
         _module: &str,
@@ -202,7 +199,7 @@ impl WasmLoader {
         Self
     }
 
-    async fn load_plugin(
+    fn load_plugin(
         &self,
         _base_dir: &Path,
         _module: &str,

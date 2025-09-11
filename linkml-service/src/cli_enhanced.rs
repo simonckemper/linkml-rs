@@ -778,7 +778,7 @@ println ! (" {
 }
 " ,
      "=================" . blue ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 println ! ("✓ Schema loaded:  {
 
 }
@@ -794,7 +794,7 @@ println ! ("\nValidating:  {
 }
 " ,
      data_path . display ()) ;
-let data = self . load_data_file (data_path) . await ? ;
+let data = self . load_data_file (data_path) ? ;
 let target_class = class_name . unwrap_or ("Root") ;
 let report =
     if parallel  {
@@ -964,7 +964,7 @@ println ! (" {
 }
 " ,
      "===============" . blue ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 println ! ("Schema:  {
 
 }
@@ -1057,7 +1057,7 @@ println ! ("Converting:  {input_format:?
 ->  {to_format:?
 }
 ") ;
-let schema = self . load_schema_file (input) . await ? ;
+let schema = self . load_schema_file (input) ? ;
 if validate  {
 println ! ("Validating schema...") ;
 if schema . name . is_empty ()  {
@@ -1134,7 +1134,7 @@ println ! ("Loading:  {
 }
 " ,
      schema_path . display ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 loaded_schemas . push (schema) ;
 
 }
@@ -1145,7 +1145,7 @@ println ! ("Loading base schema:  {
 }
 " ,
      base_path . display ()) ;
-Some (self . load_schema_file (base_path) . await ?)
+Some (self . load_schema_file (base_path)  ?)
 }
 else  {
 None
@@ -1203,8 +1203,8 @@ println ! (" {
 " ,
      "===========" . blue ()) ;
 println ! ("Loading schemas...") ;
-let schema1 = self . load_schema_file (schema1_path) . await ? ;
-let schema2 = self . load_schema_file (schema2_path) . await ? ;
+let schema1 = self . load_schema_file (schema1_path)  ? ;
+let schema2 = self . load_schema_file (schema2_path)  ? ;
 println ! ("Schema 1:  {
 
 }
@@ -1318,7 +1318,7 @@ println ! (" {
 }
 " ,
      "==============" . blue ()) ;
-let mut schema = self . load_schema_file (schema_path) . await ? ;
+let mut schema = self . load_schema_file (schema_path)  ? ;
 println ! ("Schema:  {
 
 }
@@ -1450,7 +1450,7 @@ println ! (" {
 }
 " ,
      "=================" . blue ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 println ! ("Schema:  {
 
 }
@@ -1546,7 +1546,7 @@ println ! (" {
 }
 " ,
      "============" . blue ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 println ! ("Schema:  {
 
 }
@@ -1658,7 +1658,7 @@ return Err (LinkMLError ::  config ("Database support not compiled in" . to_stri
 }
 LoadFormat ::  Api =>  {
 let mut api_options = ApiOptions ::  default () ;
-api_options.base_url = load_options.get("url").ok_or_else(|| LinkMLError::config("API URL required".to_string()))?.clone();
+api_options.base_url.clone_from(load_options.get("url").ok_or_else(|| LinkMLError::config("API URL required".to_string()))?);
 let loader = ApiLoader ::  new (api_options) ;
 let load_opts = LoadOptions ::  default () ;
 loader . load_file (input ,
@@ -1737,7 +1737,7 @@ println ! (" {
 }
 " ,
      "============" . blue ()) ;
-let schema = self . load_schema_file (schema_path) . await ? ;
+let schema = self . load_schema_file (schema_path) ? ;
 println ! ("Schema:  {
 
 }
@@ -1844,7 +1844,7 @@ db_options . connection_string = dump_options . get ("connection") . ok_or_else 
 LinkMLError ::  config ("Database connection string required" . to_string ())
 }
 ) ? . clone () ;
-db_options . create_if_not_exists = dump_options . get ("create_tables") . map (| v | v == "true") . unwrap_or (false) ;
+db_options . create_if_not_exists = dump_options . get ("create_tables") . is_some_and (| v | v == "true") ;
 let dumper = DatabaseDumper ::  new (db_options) ;
 let dump_opts = DumpOptions ::  default () ;
 let _ = dumper . dump_string (& instances ,
@@ -1925,7 +1925,7 @@ println ! ("Loading initial schema:  {
 }
 " ,
      schema_path . display ()) ;
-Some (self . load_schema_file (schema_path) . await ?)
+Some (self . load_schema_file (schema_path)  ?)
 }
 else  {
 None
@@ -2013,7 +2013,7 @@ println ! ("\nGoodbye!") ;
 Ok (())
 }
 
-#[doc = " Load schema from file"] async
+#[doc = " Load schema from file"]
 fn load_schema_file (& self ,
      path : & Path) -> Result < SchemaDefinition >  {
 let content = std ::  fs ::  read_to_string (path) ? ;
@@ -2028,7 +2028,7 @@ serde_yaml ::  from_str (& content) ?
 Ok (schema)
 }
 
-#[doc = " Load data from file"] async
+#[doc = " Load data from file"]
 fn load_data_file (& self ,
      path : & Path) -> Result < serde_json ::  Value >  {
 let content = std ::  fs ::  read_to_string (path) ? ;
@@ -2237,7 +2237,7 @@ println ! ("Usage: load <schema_file>") ;
 
 }
 else  {
-match self . load_schema_file (Path ::  new (parts [1])) . await  {
+match self . load_schema_file (Path ::  new (parts [1]))   {
 Ok (schema) =>  {
 println ! ("✓ Loaded schema:  {
 

@@ -72,7 +72,7 @@ impl RustGenerator {
         _schema: &SchemaDefinition,
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
-        let field_name = self.convert_field_name(slot_name);
+        let field_name = Self::convert_field_name(slot_name);
 
         // Required field validation
         if slot.required.unwrap_or(false) {

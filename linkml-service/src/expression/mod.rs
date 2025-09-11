@@ -128,7 +128,7 @@ impl Default for ExpressionEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::error::LinkMLError;
+
 
     #[test]
     fn test_expression_engine_creation() -> std::result::Result<(), anyhow::Error> {

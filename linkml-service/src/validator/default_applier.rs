@@ -185,7 +185,7 @@ impl<'a> DefaultApplier<'a> {
                 // Evaluate the expression
                 let data_hashmap: HashMap<String, Value> =
                     data.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-                self.evaluate_expression(expr, &data_hashmap)
+                Some(self.evaluate_expression(expr, &data_hashmap))
             }
         }
     }
@@ -195,10 +195,10 @@ impl<'a> DefaultApplier<'a> {
         &self,
         expression: &str,
         data: &HashMap<String, Value>,
-    ) -> Option<Value> {
+    ) -> Value {
         // Use the real expression engine for evaluation
         match self.expression_engine.evaluate(expression, data) {
-            Ok(value) => Some(value),
+            Ok(value) => value,
             Err(_) => {
                 // Fallback: Handle simple variable references like "{id}_derived" 
                 // for backwards compatibility with expressions that don't use full engine syntax
@@ -217,10 +217,10 @@ impl<'a> DefaultApplier<'a> {
                         }
                     }
 
-                    Some(Value::String(result))
+                    Value::String(result)
                 } else {
                     // Return the expression as-is if no variables found
-                    Some(Value::String(expression.to_string()))
+                    Value::String(expression.to_string())
                 }
             }
         }
@@ -249,6 +249,8 @@ pub fn apply_defaults_to_instance(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use linkml_core::{ClassDefinition, SlotDefinition, SchemaDefinition};
+    use linkml_core::types::IfAbsentAction;
 
     #[test]
     fn test_slot_name_default() {

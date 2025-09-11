@@ -66,7 +66,7 @@ impl ParallelValidationEngine {
     }
 
     /// Validate multiple values in parallel
-    pub async fn validate_batch(
+    #[must_use] pub fn validate_batch(
         &self,
         values: &[Value],
         class_name: &str,
@@ -109,7 +109,7 @@ impl ParallelValidationEngine {
     }
 
     /// Validate values in parallel with result aggregation
-    pub async fn validate_batch_aggregated(
+    pub fn validate_batch_aggregated(
         &self,
         values: &[(String, Value)], // (id, value) pairs
         class_name: &str,
@@ -120,8 +120,7 @@ impl ParallelValidationEngine {
                 &values.iter().map(|(_, v)| v.clone()).collect::<Vec<_>>(),
                 class_name,
                 options,
-            )
-            .await;
+            );
 
         // Aggregate results
         let mut aggregated = AggregatedValidationReport::new(&self.engine.schema.id);

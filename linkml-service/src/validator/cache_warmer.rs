@@ -424,7 +424,8 @@ impl CacheWarmer {
 
                 if priority >= config.priority_threshold {
                     // Estimate time based on priority (higher priority = likely more complex)
-                    let estimated_time = Duration::from_millis((50.0 * (1.0 + priority)) as u64);
+                    let time_millis = 50.0 * (1.0 + priority);
+                    let estimated_time = Duration::from_millis(time_millis.max(0.0) as u64);
                     all_candidates.push(WarmingEntry {
                         key,
                         priority,
@@ -468,7 +469,7 @@ impl CacheWarmer {
             )?;
 
             // Put in cache
-            self.cache.put(key.clone(), Arc::new(validator)).await?;
+            self.cache.put(key.clone(), Arc::new(validator))?;
 
             let duration = start.elapsed();
             tracing::debug!("Warmed validator for {} in {:?}", key.class_name, duration);

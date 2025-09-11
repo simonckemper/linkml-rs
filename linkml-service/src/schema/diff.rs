@@ -814,7 +814,7 @@ impl DiffResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_schema_diff_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {

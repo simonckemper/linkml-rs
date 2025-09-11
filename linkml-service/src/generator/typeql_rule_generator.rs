@@ -529,7 +529,7 @@ impl RuleGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::SlotDefinition;
 
     #[test]
     fn test_required_rule_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

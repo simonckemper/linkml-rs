@@ -61,7 +61,7 @@ impl JsonLoaderV2 {
 
             if intersection_count > best_score {
                 best_score = intersection_count;
-                best_match.clone_from(&class_name);
+                best_match.clone_from(class_name);
             }
         }
 

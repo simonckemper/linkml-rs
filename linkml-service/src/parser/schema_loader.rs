@@ -116,9 +116,13 @@ impl SchemaLoader {
 
         // Determine format from URL extension or content type (case-insensitive)
         let url_lower = url.to_lowercase();
-        let format = if url_lower.ends_with(".json") {
+        let format = if std::path::Path::new(&url_lower)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("json")) {
             "json"
-        } else if url_lower.ends_with(".yaml") || url_lower.ends_with(".yml") {
+        } else if std::path::Path::new(&url_lower)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("yaml") || ext.eq_ignore_ascii_case("yml")) {
             "yaml"
         } else {
             // Default to YAML as it's more common for LinkML

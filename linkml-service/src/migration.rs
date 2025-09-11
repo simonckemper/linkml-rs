@@ -519,7 +519,7 @@ where
     ///
     /// # Errors
     ///
-    pub async fn execute_plan(
+    pub fn execute_plan(
         &self,
         plan: &MigrationPlan,
         data_path: &Path,

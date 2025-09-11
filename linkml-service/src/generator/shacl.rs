@@ -448,7 +448,7 @@ impl Generator for ShaclGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+
 
     #[test]
     fn test_xsd_datatype_mapping() {

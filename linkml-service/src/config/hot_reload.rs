@@ -59,7 +59,7 @@ impl ConfigHotReloader {
     /// Returns an error if:
     /// - The file watcher cannot be created
     /// - The configuration file path cannot be watched
-    pub async fn start_watching(&mut self) -> linkml_core::error::Result<()> {
+    pub fn start_watching(&mut self) -> linkml_core::error::Result<()> {
         let config_path = self.config_path.clone();
         let tx = self.tx.clone();
         let config = self.config.clone();
@@ -171,7 +171,7 @@ static HOT_RELOADER: std::sync::OnceLock<Arc<tokio::sync::Mutex<ConfigHotReloade
     /// - The global reloader is already initialized
 pub async fn init_hot_reload(config_path: impl AsRef<Path>) -> linkml_core::error::Result<()> {
     let mut reloader = ConfigHotReloader::new(config_path)?;
-    reloader.start_watching().await?;
+    reloader.start_watching()?;
 
     HOT_RELOADER
         .set(Arc::new(tokio::sync::Mutex::new(reloader)))

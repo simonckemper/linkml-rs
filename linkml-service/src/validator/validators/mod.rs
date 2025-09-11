@@ -132,7 +132,7 @@ impl ValidatorRegistry {
                     "EnhancedPatternValidator" | "PatternValidator" 
                         if slot.pattern.is_some() 
                             || slot.structured_pattern.is_some()
-                            || (slot.range.is_some() && slot.range.as_ref().is_some_and(|r| !r.is_empty())) 
+                            || slot.range.as_ref().is_some_and(|r| !r.is_empty()) 
                         => Some(validator.as_ref()),
                     "RangeValidator" 
                         if slot.minimum_value.is_some() 

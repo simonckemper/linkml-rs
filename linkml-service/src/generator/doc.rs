@@ -440,7 +440,7 @@ impl CodeFormatter for DocGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_doc_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

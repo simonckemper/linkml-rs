@@ -595,7 +595,7 @@ impl Generator for SssomGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {

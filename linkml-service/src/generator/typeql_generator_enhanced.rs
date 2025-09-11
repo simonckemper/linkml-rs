@@ -77,7 +77,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Check if a string is a valid `TypeQL` identifier
-    fn is_valid_identifier(&self, name: &str) -> bool {
+    fn is_valid_identifier(name: &str) -> bool {
         // TypeQL identifiers must:
         // - Start with a letter or underscore
         // - Contain only letters, numbers, underscores, or hyphens
@@ -180,7 +180,7 @@ impl EnhancedTypeQLGenerator {
         let indent = &options.indent;
 
         // Header with metadata
-        self.write_header(&mut output, schema)?;
+        Self::write_header(&mut output, schema)?;
 
         // Define section
         writeln!(&mut output, "\ndefine\n").map_err(Self::fmt_error_to_generator_error)?;
@@ -239,7 +239,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Write schema header with metadata
-    fn write_header(&self, output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
+    fn write_header(output: &mut String, schema: &SchemaDefinition) -> GeneratorResult<()> {
         writeln!(output, "# TypeQL Schema generated from LinkML")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "# Generator: Enhanced TypeQL Generator v2.0")
@@ -1664,7 +1664,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
 
         // Validate class names are valid TypeQL identifiers
         for (class_name, _) in &schema.classes {
-            if !self.is_valid_identifier(class_name) {
+            if !Self::is_valid_identifier(class_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Class name '{class_name}' is not a valid TypeQL identifier"
                 )));
@@ -1673,7 +1673,7 @@ impl AsyncGenerator for EnhancedTypeQLGenerator {
 
         // Validate slot names
         for (slot_name, _) in &schema.slots {
-            if !self.is_valid_identifier(slot_name) {
+            if !Self::is_valid_identifier(slot_name) {
                 return Err(GeneratorError::Validation(format!(
                     "Slot name '{slot_name}' is not a valid TypeQL identifier"
                 )));

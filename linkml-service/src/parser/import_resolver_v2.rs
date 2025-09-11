@@ -198,7 +198,7 @@ impl ImportResolverV2 {
                     .await?;
 
                 // Merge into current schema
-                self.merge_schema(schema, imported, &spec)?;
+                Self::merge_schema(schema, imported, &spec);
 
                 // Remove from visited stack
                 self.visited_stack.write().pop();
@@ -388,11 +388,10 @@ impl ImportResolverV2 {
 
     /// Merge imported schema into target schema
     fn merge_schema(
-        &self,
         target: &mut SchemaDefinition,
         mut source: SchemaDefinition,
         spec: &ImportSpec,
-    ) -> Result<()> {
+    ) {
         // Apply prefix if specified
         if let Some(prefix) = &spec.prefix {
             Self::apply_prefix(&mut source, prefix);
@@ -400,7 +399,7 @@ impl ImportResolverV2 {
 
         // Filter elements based on only/exclude
         if spec.only.is_some() || spec.exclude.is_some() {
-            self.filter_schema(&mut source, spec);
+            Self::filter_schema(&mut source, spec);
         }
 
         // Merge prefixes
@@ -459,8 +458,6 @@ impl ImportResolverV2 {
                 target.enums.insert(name, enum_def);
             }
         }
-
-        Ok(())
     }
 
     /// Apply prefix to all elements in schema
@@ -500,7 +497,7 @@ impl ImportResolverV2 {
     }
 
     /// Filter schema elements based on only/exclude lists
-    fn filter_schema(&self, schema: &mut SchemaDefinition, spec: &ImportSpec) {
+    fn filter_schema(schema: &mut SchemaDefinition, spec: &ImportSpec) {
         if let Some(only) = &spec.only {
             // Keep only specified elements
             schema.classes.retain(|name, _| only.contains(name));

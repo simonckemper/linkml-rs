@@ -2085,7 +2085,7 @@ pub fn run() -> linkml_core::error::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+
 
     #[test]
     fn test_cli_parsing() {

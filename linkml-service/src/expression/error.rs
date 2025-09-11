@@ -1,6 +1,6 @@
 //! Error types for the expression language
 //!
-//! This module provides comprehensive error handling for the LinkML expression language,
+//! This module provides comprehensive error handling for the `LinkML` expression language,
 //! including parse-time errors and runtime evaluation errors.
 
 use thiserror::Error;

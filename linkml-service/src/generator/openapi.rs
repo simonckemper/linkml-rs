@@ -759,7 +759,7 @@ impl CodeFormatter for OpenApiGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
+use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[test]
     fn test_openapi_generation() -> anyhow::Result<()> {

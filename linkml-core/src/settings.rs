@@ -422,9 +422,8 @@ mod tests {
     #[test]
     fn test_strict_settings() {
         let settings = SchemaSettings::strict();
-        let validation = match settings.validation {
-            Some(v) => v,
-            None => panic!("validation settings should be present in strict settings - test invariant"),
+        let Some(validation) = settings.validation else {
+            panic!("validation settings should be present in strict settings - test invariant")
         };
         assert_eq!(validation.strict, Some(true));
         assert_eq!(validation.check_permissibles, Some(true));
@@ -434,9 +433,8 @@ mod tests {
     #[test]
     fn test_generation_settings() {
         let settings = SchemaSettings::for_generation();
-        let generation = match settings.generation {
-            Some(g) => g,
-            None => panic!("generation settings should be present"),
+        let Some(generation) = settings.generation else {
+            panic!("generation settings should be present")
         };
         assert_eq!(generation.generate_builders, Some(true));
         assert_eq!(generation.generate_validation, Some(true));
@@ -488,9 +486,8 @@ mod tests {
 
         assert!(merged.validation.is_some());
         assert!(merged.generation.is_some());
-        let generation = match merged.generation {
-            Some(ref g) => g,
-            None => panic!("generation settings should be present after merge - test invariant"),
+        let Some(ref generation) = merged.generation else {
+            panic!("generation settings should be present after merge - test invariant")
         };
         assert_eq!(generation.generate_builders, Some(false));
     }

@@ -53,7 +53,7 @@ impl RustGenerator {
     }
 
     /// Convert field name to Rust naming convention
-    pub(super) fn convert_field_name(&self, name: &str) -> String {
+    pub(super) fn convert_field_name(name: &str) -> String {
         BaseCodeFormatter::to_snake_case(name)
     }
 
@@ -156,7 +156,7 @@ impl RustGenerator {
         }
         
         // Add serde rename if needed (to preserve original casing)
-        let rust_field_name = self.convert_field_name(slot_name);
+        let rust_field_name = Self::convert_field_name(slot_name);
         if rust_field_name != slot_name {
             writeln!(output, "    #[serde(rename = \"{slot_name}\")]").map_err(Self::fmt_error_to_generator_error)?;
         }

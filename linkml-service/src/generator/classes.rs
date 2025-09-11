@@ -159,7 +159,7 @@ impl RustGenerator {
         let all_slots = super::base::collect_all_slots(class, schema)?;
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                let field_name = self.convert_field_name(slot_name);
+                let field_name = Self::convert_field_name(slot_name);
                 let default_value = self.get_default_value(slot, schema);
 
                 writeln!(

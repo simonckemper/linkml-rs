@@ -834,7 +834,7 @@ impl SchemaView {
                     .into());
                 }
                 ancestors.push(parent.clone());
-                current.clone_from(&parent);
+                current.clone_from(parent);
             } else {
                 break;
             }
