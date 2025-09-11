@@ -389,6 +389,7 @@ impl JavaScriptGenerator {
         } else {
             Ok(base_type)
         }
+    }
 
     /// Get JavaScript typeof check string
     fn get_js_type_check(&self, range: &Option<String>) -> &'static str {
@@ -397,10 +398,12 @@ impl JavaScriptGenerator {
                 "string" | "str" => "string",
                 "integer" | "int" | "float" | "double" | "decimal" => "number",
                 "boolean" | "bool" => "boolean",
-                _ => "object"}
+                _ => "object",
+            }
         } else {
             "object"
         }
+    }
 
     /// Get JavaScript type name for error messages
     fn get_js_type_name(&self, range: &Option<String>) -> &'static str {
@@ -409,10 +412,12 @@ impl JavaScriptGenerator {
                 "string" | "str" => "string",
                 "integer" | "int" | "float" | "double" | "decimal" => "number",
                 "boolean" | "bool" => "boolean",
-                _ => "object"}
+                _ => "object",
+            }
         } else {
             "value"
         }
+    }
 
     /// Generate enum constants
     fn generate_enum(

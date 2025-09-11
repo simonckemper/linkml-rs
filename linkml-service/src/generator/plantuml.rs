@@ -23,7 +23,8 @@ pub enum PlantUmlDiagramType {
     /// Mind map
     MindMap,
     /// Component diagram
-    Component}
+    Component,
+}
 
 /// `PlantUML` skin parameters
 #[derive(Debug, Clone)]
@@ -39,7 +40,8 @@ pub struct PlantUmlSkin {
     /// Font size
     pub font_size: u8,
     /// Arrow color
-    pub arrow_color: String}
+    pub arrow_color: String,
+}
 
 impl Default for PlantUmlSkin {
     fn default() -> Self {
@@ -71,7 +73,8 @@ pub struct PlantUmlOptions {
     /// Show cardinality on relationships
     pub show_cardinality: bool,
     /// Direction (top to bottom, left to right)
-    pub direction: String}
+    pub direction: String,
+}
 
 impl Default for PlantUmlOptions {
     fn default() -> Self {
@@ -90,7 +93,8 @@ impl Default for PlantUmlOptions {
 /// `PlantUML` generator
 pub struct PlantUmlGenerator {
     /// Generation options
-    options: PlantUmlOptions}
+    options: PlantUmlOptions,
+}
 
 impl PlantUmlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -982,5 +986,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("** Classes"));
         Ok(())
     }
-}
 }

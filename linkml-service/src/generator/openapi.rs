@@ -530,6 +530,7 @@ impl OpenApiGenerator {
         } else {
             format!("{kebab}s")
         }
+    }
 
     /// Collect all slots including inherited ones
     fn collect_all_slots(
@@ -548,8 +549,8 @@ impl OpenApiGenerator {
         }
 
         // Add inherited slots
-        if let Some(parent) = &class.is_a
-            && let Some(parent_class) = schema.classes.get(parent) {
+        if let Some(parent) = &class.is_a {
+            if let Some(parent_class) = schema.classes.get(parent) {
                 let parent_slots = self.collect_all_slots(parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
@@ -557,6 +558,7 @@ impl OpenApiGenerator {
                     }
                 }
             }
+        }
 
         all_slots
     }
@@ -806,5 +808,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition};
         assert!(parsed["components"]["schemas"]["UserCreateRequest"].is_object());
         Ok(())
     }
-}
 }

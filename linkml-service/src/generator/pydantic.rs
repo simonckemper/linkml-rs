@@ -318,6 +318,7 @@ impl PydanticGenerator {
             imports.add_import("typing", "Any");
             Ok("Any".to_string())
         }
+    }
 
     /// Generate example value for a slot
     fn get_example_value(&self, slot: &SlotDefinition) -> String {
@@ -343,6 +344,7 @@ impl PydanticGenerator {
         } else {
             "null".to_string()
         }
+    }
 
     /// Generate validators for slots that need them
     fn generate_validators(
@@ -601,6 +603,7 @@ impl CodeFormatter for PydanticGenerator {
             result.push_str("\"\"\"");
             result
         }
+    }
 
     fn format_list<T: AsRef<str>>(
         &self,
@@ -667,8 +670,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("model_config ="));
     }
 }
-}
-
-}
-
 }

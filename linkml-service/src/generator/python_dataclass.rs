@@ -265,6 +265,7 @@ impl PythonDataclassGenerator {
         } else {
             Ok("Any".to_string())
         }
+    }
 
     /// Generate __`post_init`__ method for validation
     fn generate_post_init(

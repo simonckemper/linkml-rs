@@ -55,12 +55,16 @@ impl Default for SQLAlchemyGeneratorConfig {
 pub struct SQLAlchemyGenerator {
     config: SQLAlchemyGeneratorConfig,
     /// Generator options
-    options: super::traits::GeneratorOptions}
+    options: super::traits::GeneratorOptions,
+}
 
 impl SQLAlchemyGenerator {
     /// Create a new `SQL`Alchemy generator
     #[must_use] pub fn new(config: SQLAlchemyGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default(),
+        }
     }
 
     /// Generate imports section
