@@ -785,6 +785,7 @@ impl HtmlGenerator {
                 .replace('<', "&lt;")
                 .replace('>', "&gt;")
         }
+    }
 }
 
 impl Default for HtmlGenerator {
@@ -1004,5 +1005,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition};
         assert_eq!(generator.to_anchor("test_class"), "test-class");
         assert_eq!(generator.to_anchor("Test123!@#"), "test123");
     }
-}
 }
