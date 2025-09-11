@@ -265,7 +265,95 @@ impl RuleOverrideManager {
                     rule.priority = Some(priority);
                 }
 
-                // TODO: Merge additional conditions
+                // Merge additional preconditions
+                if let Some(ref additional_pre) = override_spec.additional_preconditions {
+                    if let Some(ref mut existing_pre) = rule.preconditions {
+                        // Merge the conditions
+                        if let Some(ref add_any) = additional_pre.any_of {
+                            existing_pre.any_of = Some(
+                                existing_pre.any_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_any.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_all) = additional_pre.all_of {
+                            existing_pre.all_of = Some(
+                                existing_pre.all_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_all.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_none) = additional_pre.none_of {
+                            existing_pre.none_of = Some(
+                                existing_pre.none_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_none.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_exactly) = additional_pre.exactly_one_of {
+                            existing_pre.exactly_one_of = Some(
+                                existing_pre.exactly_one_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_exactly.clone())
+                                    .collect()
+                            );
+                        }
+                    } else {
+                        rule.preconditions = Some(additional_pre.clone());
+                    }
+                }
+
+                // Merge additional postconditions
+                if let Some(ref additional_post) = override_spec.additional_postconditions {
+                    if let Some(ref mut existing_post) = rule.postconditions {
+                        // Merge the conditions
+                        if let Some(ref add_any) = additional_post.any_of {
+                            existing_post.any_of = Some(
+                                existing_post.any_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_any.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_all) = additional_post.all_of {
+                            existing_post.all_of = Some(
+                                existing_post.all_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_all.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_none) = additional_post.none_of {
+                            existing_post.none_of = Some(
+                                existing_post.none_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_none.clone())
+                                    .collect()
+                            );
+                        }
+                        if let Some(ref add_exactly) = additional_post.exactly_one_of {
+                            existing_post.exactly_one_of = Some(
+                                existing_post.exactly_one_of.clone()
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .chain(add_exactly.clone())
+                                    .collect()
+                            );
+                        }
+                    } else {
+                        rule.postconditions = Some(additional_post.clone());
+                    }
+                }
 
                 return true;
             }

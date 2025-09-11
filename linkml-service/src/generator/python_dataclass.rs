@@ -11,7 +11,10 @@ use std::fmt::Write;
 /// Python dataclass generator
 pub struct PythonDataclassGenerator {
     name: String,
-    description: String}
+    description: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for PythonDataclassGenerator {
     fn default() -> Self {
@@ -24,7 +27,17 @@ impl PythonDataclassGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "python-dataclass".to_string(),
-            description: "Generate Python dataclasses from LinkML schemas".to_string()}
+            description: "Generate Python dataclasses from LinkML schemas".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -252,7 +265,6 @@ impl PythonDataclassGenerator {
         } else {
             Ok("Any".to_string())
         }
-    }
 
     /// Generate __`post_init`__ method for validation
     fn generate_post_init(
@@ -604,7 +616,6 @@ impl CodeFormatter for PythonDataclassGenerator {
             result.push_str("\"\"\"");
             result
         }
-    }
 
     fn format_list<T: AsRef<str>>(
         &self,
@@ -674,4 +685,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("age: Optional[int] = None"));
         Ok(())
     }
+}
+}
+
 }

@@ -32,7 +32,6 @@ pub struct ValidationIssue {
     pub message: String,
     /// `JSON` path to the problematic value
     pub path: String,
-    /// The validator that raised this issue
     pub validator: String,
     /// Optional error code for programmatic handling
     pub code: Option<String>,

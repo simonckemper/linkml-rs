@@ -8,7 +8,10 @@ use std::fmt::Write;
 /// HTML documentation generator for `LinkML` schemas
 pub struct HtmlGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl HtmlGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -20,7 +23,16 @@ impl HtmlGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "html".to_string()}
+            name: "html".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+    /// Create a new HTML generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        Self {
+            name: "html".to_string(),
+            options}
     }
 
     /// Generate HTML page header
@@ -78,7 +90,7 @@ impl HtmlGenerator {
                 writeln!(
                     &mut output,
                     "                    <li><a href=\"#class-{}\">{}</a></li>",
-                    self.to_anchor(class_name),
+                    Self::to_anchor(class_name),
                     self.escape_html(class_name)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -156,13 +168,16 @@ impl HtmlGenerator {
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
-        if let Some(desc) = &schema.description {
-            writeln!(
-                &mut output,
-                "            <p class=\"description\">{}</p>",
-                self.escape_html(desc)
-            )
-            .map_err(Self::fmt_error_to_generator_error)?;
+        // Only include description if documentation is enabled
+        if self.options.include_docs {
+            if let Some(desc) = &schema.description {
+                writeln!(
+                    &mut output,
+                    "            <p class=\"description\">{}</p>",
+                    self.escape_html(desc)
+                )
+                .map_err(Self::fmt_error_to_generator_error)?;
+            }
         }
 
         // Schema metadata
@@ -233,7 +248,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"class-{}\" class=\"class\">",
-                self.to_anchor(class_name)
+                Self::to_anchor(class_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
@@ -258,7 +273,7 @@ impl HtmlGenerator {
 
             if let Some(parent) = &class.is_a {
                 writeln!(&mut output, "                    <p><strong>Inherits from:</strong> <a href=\"#class-{}\">{}</a></p>",
-                    self.to_anchor(parent),
+                    Self::to_anchor(parent),
                     self.escape_html(parent)
                 ).map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -272,7 +287,7 @@ impl HtmlGenerator {
                         .iter()
                         .map(|m| format!(
                             "<a href=\"#class-{}\">{}</a>",
-                            self.to_anchor(m),
+                            Self::to_anchor(m),
                             self.escape_html(m)
                         ))
                         .collect::<Vec<_>>()
@@ -330,7 +345,7 @@ impl HtmlGenerator {
                         writeln!(
                             &mut output,
                             "                                <td><a href=\"#slot-{}\">{}</a></td>",
-                            self.to_anchor(slot_name),
+                            Self::to_anchor(slot_name),
                             self.escape_html(slot_name)
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
@@ -398,7 +413,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"slot-{}\" class=\"slot\">",
-                self.to_anchor(slot_name)
+                Self::to_anchor(slot_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
@@ -504,7 +519,7 @@ impl HtmlGenerator {
             writeln!(
                 &mut output,
                 "            <div id=\"enum-{}\" class=\"enum\">",
-                self.to_anchor(enum_name)
+                Self::to_anchor(enum_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             writeln!(
@@ -741,7 +756,7 @@ impl HtmlGenerator {
     }
 
     /// Convert text to HTML anchor
-    fn to_anchor(&self, text: &str) -> String {
+    fn to_anchor(text: &str) -> String {
         text.to_lowercase()
             .replace([' ', '_'], "-")
             .chars()
@@ -749,14 +764,27 @@ impl HtmlGenerator {
             .collect()
     }
 
-    /// Escape HTML special characters
+    /// Escape HTML special characters based on options
     fn escape_html(&self, text: &str) -> String {
-        text.replace('&', "&amp;")
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', "&quot;")
-            .replace('\'', "&#39;")
-    }
+        // Check if strict escaping is enabled via custom options
+        let strict_mode = self.options.custom.get("strict_escaping")
+            .map(|v| v == "true")
+            .unwrap_or(true); // Default to strict for security
+        
+        if strict_mode {
+            // Full HTML entity escaping for maximum security
+            text.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .replace('"', "&quot;")
+                .replace('\'', "&#39;")
+                .replace('/', "&#x2F;") // Also escape forward slash in strict mode
+        } else {
+            // Basic escaping only
+            text.replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+        }
 }
 
 impl Default for HtmlGenerator {
@@ -976,4 +1004,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition};
         assert_eq!(generator.to_anchor("test_class"), "test-class");
         assert_eq!(generator.to_anchor("Test123!@#"), "test123");
     }
+}
 }

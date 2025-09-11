@@ -8,14 +8,26 @@ use serde_json::{Value as JsonValue, json};
 /// `OpenAPI` schema generator for `LinkML` schemas
 pub struct OpenApiGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl OpenApiGenerator {
     /// Create a new `OpenAPI` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "openapi".to_string()}
+            name: "openapi".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+    /// Create a new `OpenAPI` generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        Self {
+            name: "openapi".to_string(),
+            options}
     }
 
     /// Generate `OpenAPI` schema component for a class
@@ -43,7 +55,7 @@ impl OpenApiGenerator {
         }
 
         // Collect all slots including inherited ones
-        let slots = self.collect_all_slots(class, schema)?;
+        let slots = self.collect_all_slots(class, schema);
 
         for slot_name in &slots {
             if let Some(slot) = schema.slots.get(slot_name) {
@@ -147,7 +159,7 @@ impl OpenApiGenerator {
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<JsonValue> {
-        let base_schema = self.get_base_type_schema(&slot.range, schema)?;
+        let base_schema = Self::get_base_type_schema(&slot.range, schema);
 
         let mut property = if slot.multivalued == Some(true) {
             json!({
@@ -184,48 +196,46 @@ impl OpenApiGenerator {
 
     /// Get base type schema for `OpenAPI`
     fn get_base_type_schema(
-        &self,
         range: &Option<String>,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<JsonValue> {
+    ) -> JsonValue {
         match range.as_deref() {
-            Some("string" | "str") => Ok(json!({"type": "string"})),
-            Some("integer" | "int") => Ok(json!({"type": "integer", "format": "int64"})),
-            Some("float" | "double") => Ok(json!({"type": "number", "format": "double"})),
-            Some("decimal") => Ok(json!({"type": "string", "format": "decimal"})),
-            Some("boolean" | "bool") => Ok(json!({"type": "boolean"})),
-            Some("date") => Ok(json!({
+            Some("string" | "str") => json!({"type": "string"}),
+            Some("integer" | "int") => json!({"type": "integer", "format": "int64"}),
+            Some("float" | "double") => json!({"type": "number", "format": "double"}),
+            Some("decimal") => json!({"type": "string", "format": "decimal"}),
+            Some("boolean" | "bool") => json!({"type": "boolean"}),
+            Some("date") => json!({
                 "type": "string",
                 "format": "date"
-            })),
-            Some("datetime") => Ok(json!({
+            }),
+            Some("datetime") => json!({
                 "type": "string",
                 "format": "date-time"
-            })),
-            Some("uri" | "url") => Ok(json!({
+            }),
+            Some("uri" | "url") => json!({
                 "type": "string",
                 "format": "uri"
-            })),
+            }),
             Some(other) => {
                 // Check if it's an enum or class reference
                 if schema.enums.contains_key(other) || schema.classes.contains_key(other) {
-                    Ok(json!({
+                    json!({
                         "$ref": format!("#/components/schemas/{other}")
-                    }))
+                    })
                 } else {
-                    Ok(json!({"type": "string"}))
+                    json!({"type": "string"})
                 }
             }
-            None => Ok(json!({"type": "string"}))}
+            None => json!({"type": "string"})}
     }
 
     /// Generate enum schema for `OpenAPI`
     fn generate_enum_component(
-        &self,
         enum_name: &str,
         enum_def: &EnumDefinition,
         schemas: &mut serde_json::Map<String, JsonValue>,
-    ) -> GeneratorResult<()> {
+    ) {
         let values: Vec<String> = enum_def
             .permissible_values
             .iter()
@@ -243,14 +253,13 @@ impl OpenApiGenerator {
         }
 
         schemas.insert(enum_name.to_string(), schema);
-        Ok(())
     }
 
     /// Generate paths for REST `API` operations
     fn generate_paths(
         &self,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<serde_json::Map<String, JsonValue>> {
+    ) -> serde_json::Map<String, JsonValue> {
         let mut paths = serde_json::Map::new();
 
         for (class_name, class) in &schema.classes {
@@ -496,7 +505,7 @@ impl OpenApiGenerator {
             paths.insert(item_path, json!(item_ops));
         }
 
-        Ok(paths)
+        paths
     }
 
     /// Convert to plural kebab-case
@@ -521,14 +530,13 @@ impl OpenApiGenerator {
         } else {
             format!("{kebab}s")
         }
-    }
 
     /// Collect all slots including inherited ones
     fn collect_all_slots(
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<Vec<String>> {
+    ) -> Vec<String> {
         let mut all_slots = Vec::new();
         let mut seen = std::collections::HashSet::new();
 
@@ -542,7 +550,7 @@ impl OpenApiGenerator {
         // Add inherited slots
         if let Some(parent) = &class.is_a
             && let Some(parent_class) = schema.classes.get(parent) {
-                let parent_slots = self.collect_all_slots(parent_class, schema)?;
+                let parent_slots = self.collect_all_slots(parent_class, schema);
                 for slot in parent_slots {
                     if seen.insert(slot.clone()) {
                         all_slots.push(slot);
@@ -550,7 +558,7 @@ impl OpenApiGenerator {
                 }
             }
 
-        Ok(all_slots)
+        all_slots
     }
 }
 
@@ -592,7 +600,7 @@ impl Generator for OpenApiGenerator {
 
         // Generate enum components
         for (enum_name, enum_def) in &schema.enums {
-            self.generate_enum_component(enum_name, enum_def, &mut schemas)?;
+            Self::generate_enum_component(enum_name, enum_def, &mut schemas);
         }
 
         // Generate class components
@@ -651,7 +659,7 @@ impl Generator for OpenApiGenerator {
         components.insert("responses".to_string(), responses);
 
         // Generate paths
-        let paths = self.generate_paths(schema)?;
+        let paths = self.generate_paths(schema);
 
         // Build OpenAPI document
         let mut openapi = json!({
@@ -798,4 +806,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition};
         assert!(parsed["components"]["schemas"]["UserCreateRequest"].is_object());
         Ok(())
     }
+}
 }

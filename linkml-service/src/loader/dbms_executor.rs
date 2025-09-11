@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 /// DBMS service executor that integrates with `RootReal`'s DBMS service
 pub struct DBMSServiceExecutor<S: dbms_core::DBMSService> {
-    /// The DBMS service instance
     service: Arc<S>}
 
 impl<S: dbms_core::DBMSService> DBMSServiceExecutor<S> {

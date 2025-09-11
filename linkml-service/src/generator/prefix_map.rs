@@ -50,7 +50,9 @@ impl Default for PrefixMapGeneratorConfig {
 
 /// Prefix map generator
 pub struct PrefixMapGenerator {
-    config: PrefixMapGeneratorConfig}
+    config: PrefixMapGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions}
 
 impl PrefixMapGenerator {
     /// Create a new prefix map generator

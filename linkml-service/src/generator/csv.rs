@@ -17,7 +17,10 @@ pub struct CsvGenerator {
     /// Quote character for escaping
     quote_char: char,
     /// Whether to generate TSV instead of CSV
-    use_tabs: bool}
+    use_tabs: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl CsvGenerator {
     /// Create a new CSV generator
@@ -27,7 +30,17 @@ impl CsvGenerator {
             delimiter: ',',
             include_headers: true,
             quote_char: '"',
-            use_tabs: false}
+            use_tabs: false,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Create a TSV generator
@@ -37,7 +50,9 @@ impl CsvGenerator {
             delimiter: '\t',
             include_headers: true,
             quote_char: '"',
-            use_tabs: true}
+            use_tabs: true,
+            options: super::traits::GeneratorOptions::default(),
+        }
     }
 
     /// Set custom delimiter

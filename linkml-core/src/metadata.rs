@@ -59,7 +59,6 @@ pub struct ElementMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<String>,
 
-    /// The element that replaces this deprecated element
     #[serde(skip_serializing_if = "Option::is_none")]
     pub replaced_by: Option<String>,
 
@@ -71,7 +70,6 @@ pub struct ElementMetadata {
 /// An example of how to use an element
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Example {
-    /// The example value
     pub value: String,
 
     /// Optional description of the example

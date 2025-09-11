@@ -17,10 +17,8 @@ use super::view::SchemaView;
 /// making it easier to work with classes without manually resolving inheritance.
 #[derive(Debug, Clone)]
 pub struct ClassView {
-    /// The base class name
     name: String,
 
-    /// The resolved class definition with all inherited properties
     definition: ClassDefinition,
 
     /// All slots applicable to this class (including inherited)

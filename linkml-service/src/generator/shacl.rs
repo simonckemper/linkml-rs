@@ -71,7 +71,7 @@ impl ShaclGenerator {
         }
 
         // Schema-specific prefix
-        let schema_prefix = self.to_snake_case(&schema.name);
+        let schema_prefix = Self::to_snake_case(&schema.name);
         writeln!(&mut output, "@prefix {}: <{}#> .", schema_prefix, schema.id)
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -112,8 +112,8 @@ impl ShaclGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
-        let schema_prefix = self.to_snake_case(&schema.name);
-        let shape_name = format!("{}:{}Shape", schema_prefix, self.to_pascal_case(name));
+        let schema_prefix = Self::to_snake_case(&schema.name);
+        let shape_name = format!("{}:{}Shape", schema_prefix, Self::to_pascal_case(name));
 
         // Shape declaration
         writeln!(&mut output, "{shape_name}").map_err(Self::fmt_error_to_generator_error)?;
@@ -123,7 +123,7 @@ impl ShaclGenerator {
             &mut output,
             "    sh:targetClass {}:{} ;",
             schema_prefix,
-            self.to_pascal_case(name)
+            Self::to_pascal_case(name)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -134,7 +134,7 @@ impl ShaclGenerator {
         }
 
         // Collect all slots (including inherited)
-        let all_slots = self.collect_all_slots(class, schema);
+        let all_slots = Self::collect_all_slots(class, schema);
 
         // Generate property shapes
         let mut property_shapes = Vec::new();
@@ -156,7 +156,7 @@ impl ShaclGenerator {
                         &mut output,
                         " {}-{} ,",
                         shape_name,
-                        self.to_snake_case(&all_slots[i])
+                        Self::to_snake_case(&all_slots[i])
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 } else if i < property_shapes.len() - 1 {
@@ -164,7 +164,7 @@ impl ShaclGenerator {
                         &mut output,
                         "                {}-{} ,",
                         shape_name,
-                        self.to_snake_case(&all_slots[i])
+                        Self::to_snake_case(&all_slots[i])
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 } else {
@@ -172,7 +172,7 @@ impl ShaclGenerator {
                         &mut output,
                         "                {}-{} .",
                         shape_name,
-                        self.to_snake_case(&all_slots[i])
+                        Self::to_snake_case(&all_slots[i])
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -187,7 +187,7 @@ impl ShaclGenerator {
                 &mut output,
                 "{}-{}",
                 shape_name,
-                self.to_snake_case(slot_name)
+                Self::to_snake_case(slot_name)
             )
             .map_err(Self::fmt_error_to_generator_error)?;
             write!(&mut output, "{prop_shape}").map_err(Self::fmt_error_to_generator_error)?;
@@ -205,7 +205,7 @@ impl ShaclGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<String> {
         let mut output = String::new();
-        let schema_prefix = self.to_snake_case(&schema.name);
+        let schema_prefix = Self::to_snake_case(&schema.name);
 
         writeln!(&mut output, "    a sh:PropertyShape ;")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -213,7 +213,7 @@ impl ShaclGenerator {
             &mut output,
             "    sh:path {}:{} ;",
             schema_prefix,
-            self.to_snake_case(slot_name)
+            Self::to_snake_case(slot_name)
         )
         .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -225,7 +225,7 @@ impl ShaclGenerator {
 
         // Datatype or class reference
         if let Some(range) = &slot.range {
-            if let Some(datatype) = self.get_xsd_datatype(range) {
+            if let Some(datatype) = Self::get_xsd_datatype(range) {
                 writeln!(&mut output, "    sh:datatype {datatype} ;")
                     .map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.classes.contains_key(range) {
@@ -233,7 +233,7 @@ impl ShaclGenerator {
                     &mut output,
                     "    sh:class {}:{} ;",
                     schema_prefix,
-                    self.to_pascal_case(range)
+                    Self::to_pascal_case(range)
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
             } else if schema.enums.contains_key(range) {
@@ -319,13 +319,13 @@ impl ShaclGenerator {
     }
 
     /// Collect all slots including inherited ones
-    fn collect_all_slots(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
+    fn collect_all_slots(class: &ClassDefinition, schema: &SchemaDefinition) -> Vec<String> {
         let mut all_slots = Vec::new();
 
         // First, get slots from parent if any
         if let Some(parent_name) = &class.is_a
             && let Some(parent_class) = schema.classes.get(parent_name) {
-                all_slots.extend(self.collect_all_slots(parent_class, schema));
+                all_slots.extend(Self::collect_all_slots(parent_class, schema));
             }
 
         // Then add direct slots
@@ -339,7 +339,7 @@ impl ShaclGenerator {
     }
 
     /// Get XSD datatype for `LinkML` range
-    fn get_xsd_datatype(&self, range: &str) -> Option<String> {
+    fn get_xsd_datatype(range: &str) -> Option<String> {
         match range {
             "string" | "str" => Some("xsd:string".to_string()),
             "integer" | "int" => Some("xsd:integer".to_string()),
@@ -354,7 +354,7 @@ impl ShaclGenerator {
     }
 
     /// Convert to `snake_case`
-    fn to_snake_case(&self, s: &str) -> String {
+    fn to_snake_case(s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
 
@@ -374,7 +374,7 @@ impl ShaclGenerator {
     }
 
     /// Convert to `PascalCase`
-    fn to_pascal_case(&self, s: &str) -> String {
+    fn to_pascal_case(s: &str) -> String {
         s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
@@ -452,32 +452,28 @@ mod tests {
 
     #[test]
     fn test_xsd_datatype_mapping() {
-        let generator = ShaclGenerator::new();
-
         assert_eq!(
-            generator.get_xsd_datatype("string"),
+            ShaclGenerator::get_xsd_datatype("string"),
             Some("xsd:string".to_string())
         );
         assert_eq!(
-            generator.get_xsd_datatype("integer"),
+            ShaclGenerator::get_xsd_datatype("integer"),
             Some("xsd:integer".to_string())
         );
         assert_eq!(
-            generator.get_xsd_datatype("boolean"),
+            ShaclGenerator::get_xsd_datatype("boolean"),
             Some("xsd:boolean".to_string())
         );
         assert_eq!(
-            generator.get_xsd_datatype("datetime"),
+            ShaclGenerator::get_xsd_datatype("datetime"),
             Some("xsd:dateTime".to_string())
         );
-        assert_eq!(generator.get_xsd_datatype("CustomType"), None);
+        assert_eq!(ShaclGenerator::get_xsd_datatype("CustomType"), None);
     }
 
     #[test]
     fn test_case_conversion() {
-        let generator = ShaclGenerator::new();
-
-        assert_eq!(generator.to_snake_case("PersonName"), "person_name");
-        assert_eq!(generator.to_pascal_case("person_name"), "PersonName");
+        assert_eq!(ShaclGenerator::to_snake_case("PersonName"), "person_name");
+        assert_eq!(ShaclGenerator::to_pascal_case("person_name"), "PersonName");
     }
 }

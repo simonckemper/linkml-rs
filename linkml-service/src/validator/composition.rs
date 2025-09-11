@@ -9,7 +9,6 @@ use std::collections::{HashMap, HashSet};
 
 /// Resolves schema composition including inheritance and mixins
 pub struct SchemaComposer {
-    /// The schema being composed
     schema: SchemaDefinition,
     /// Cache of resolved classes
     resolved_cache: HashMap<String, ResolvedClass>}
@@ -17,7 +16,6 @@ pub struct SchemaComposer {
 /// A fully resolved class with all inherited properties
 #[derive(Debug, Clone)]
 pub struct ResolvedClass {
-    /// The base class definition
     pub base: ClassDefinition,
     /// All effective slots (including inherited)
     pub effective_slots: IndexMap<String, SlotDefinition>,

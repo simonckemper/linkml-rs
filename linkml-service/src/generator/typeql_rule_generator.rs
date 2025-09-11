@@ -39,6 +39,13 @@ pub struct TypeQLRule {
 
 impl TypeQLRule {
     /// Generate `TypeQL` string for this rule
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - String formatting fails
+    /// - I/O operations fail during generation
+    /// - Rule structure is invalid
     pub fn to_typeql(&self) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -104,7 +111,10 @@ pub struct RuleGenerator {
     /// Generated rules
     rules: Vec<TypeQLRule>,
     /// Rule name counter for uniqueness
-    rule_counter: usize}
+    rule_counter: usize,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for RuleGenerator {
     fn default() -> Self {
@@ -119,7 +129,17 @@ impl RuleGenerator {
         Self {
             expression_translator: ExpressionTranslator::new(),
             rules: Vec::new(),
-            rule_counter: 0}
+            rule_counter: 0,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Generate a unique rule name
@@ -420,7 +440,6 @@ impl RuleGenerator {
             // No then_required fields, no rule needed
             None
         }
-    }
 
     /// Generate a rule from a ``LinkML`` rule definition
     fn generate_from_linkml_rule(&mut self, class_name: &str, rule: &Rule) -> Option<TypeQLRule> {
@@ -462,6 +481,13 @@ impl RuleGenerator {
     }
 
     /// Generate `TypeQL` string for all rules
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - String formatting fails during generation
+    /// - I/O operations fail
+    /// - Rule generation fails for any individual rule
     pub fn generate_typeql(&self) -> GeneratorResult<String> {
         let mut output = String::new();
 
@@ -588,4 +614,5 @@ use linkml_core::types::SlotDefinition;
         assert!(typeql.contains("};"));
         Ok(())
     }
+}
 }

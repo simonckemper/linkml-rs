@@ -73,7 +73,6 @@ impl TranslationContext {
 pub struct TranslatedExpression {
     /// `TypeQL` patterns for the 'when' clause
     pub patterns: Vec<String>,
-    /// The variable or value representing the result
     pub result: String,
     /// Additional variables that need to be bound
     pub bindings: HashMap<String, String>}

@@ -13,7 +13,10 @@ use std::fmt::Write;
 /// TypeScript generator
 pub struct TypeScriptGenerator {
     name: String,
-    description: String}
+    description: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for TypeScriptGenerator {
     fn default() -> Self {
@@ -78,7 +81,17 @@ impl TypeScriptGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "typescript".to_string(),
-            description: "Generate TypeScript interfaces and types from LinkML schemas".to_string()}
+            description: "Generate TypeScript interfaces and types from LinkML schemas".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Generate code for a single interface
@@ -229,7 +242,6 @@ impl TypeScriptGenerator {
         } else {
             Ok("unknown".to_string())
         }
-    }
 
     /// Generate a type guard function
     fn generate_type_guard(
@@ -760,4 +772,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.content.contains("age?: number;"));
         assert!(output.content.contains("export function isPerson"));
     }
+}
 }

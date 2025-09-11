@@ -323,16 +323,16 @@ impl ShExGenerator {
                     facets.push(format!("MAXINCLUSIVE {max_val}"));
                 }
 
-                // TODO: min_length and max_length not available, using minimum_value/maximum_value as approximation
-                if let Some(min_val) = &slot_def.minimum_value
-                    && range == "string" {
-                        facets.push(format!("MINLENGTH {min_val}"));
+                // Use proper min_length and max_length fields for string constraints
+                if range == "string" {
+                    if let Some(min_len) = slot_def.min_length {
+                        facets.push(format!("MINLENGTH {min_len}"));
                     }
 
-                if let Some(max_val) = &slot_def.maximum_value
-                    && range == "string" {
-                        facets.push(format!("MAXLENGTH {max_val}"));
+                    if let Some(max_len) = slot_def.max_length {
+                        facets.push(format!("MAXLENGTH {max_len}"));
                     }
+                }
 
                 if !facets.is_empty() {
                     write!(output, " {}", facets.join(" "))

@@ -103,7 +103,6 @@ where
 /// Helper to run async operations in sync context with file system access
 ///
 /// This variant accepts a file system adapter that can be used within the future.
-/// The fs is passed to ensure proper dependency injection when needed.
 /// Returns an error if the operation fails
 ///
 /// # Errors

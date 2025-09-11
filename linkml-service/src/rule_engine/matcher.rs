@@ -184,7 +184,125 @@ impl RuleMatcher {
                 return Ok(false);
             }
 
-        // TODO: Implement any_of, all_of, exactly_one_of, none_of checks
+        // Check any_of constraint (at least one must match)
+        if let Some(ref any_of) = original.any_of {
+            let mut any_matched = false;
+            for condition in any_of {
+                // Create a temporary SlotCondition from AnonymousSlotExpression
+                let temp_condition = SlotCondition {
+                    range: condition.range.clone(),
+                    required: condition.required,
+                    pattern: condition.pattern.clone(),
+                    equals_string: condition.equals_string.clone(),
+                    equals_number: condition.equals_number,
+                    equals_expression: condition.equals_expression.clone(),
+                    minimum_value: condition.minimum_value.clone(),
+                    maximum_value: condition.maximum_value.clone(),
+                    any_of: condition.any_of.clone(),
+                    all_of: condition.all_of.clone(),
+                    exactly_one_of: condition.exactly_one_of.clone(),
+                    none_of: condition.none_of.clone(),
+                };
+                
+                // Compile and check the condition
+                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                if self.match_slot_condition(value, &compiled, context)? {
+                    any_matched = true;
+                    break;
+                }
+            }
+            if !any_matched {
+                return Ok(false);
+            }
+        }
+
+        // Check all_of constraint (all must match)
+        if let Some(ref all_of) = original.all_of {
+            for condition in all_of {
+                // Create a temporary SlotCondition from AnonymousSlotExpression
+                let temp_condition = SlotCondition {
+                    range: condition.range.clone(),
+                    required: condition.required,
+                    pattern: condition.pattern.clone(),
+                    equals_string: condition.equals_string.clone(),
+                    equals_number: condition.equals_number,
+                    equals_expression: condition.equals_expression.clone(),
+                    minimum_value: condition.minimum_value.clone(),
+                    maximum_value: condition.maximum_value.clone(),
+                    any_of: condition.any_of.clone(),
+                    all_of: condition.all_of.clone(),
+                    exactly_one_of: condition.exactly_one_of.clone(),
+                    none_of: condition.none_of.clone(),
+                };
+                
+                // Compile and check the condition
+                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                if !self.match_slot_condition(value, &compiled, context)? {
+                    return Ok(false);
+                }
+            }
+        }
+
+        // Check exactly_one_of constraint (exactly one must match)
+        if let Some(ref exactly_one) = original.exactly_one_of {
+            let mut match_count = 0;
+            for condition in exactly_one {
+                // Create a temporary SlotCondition from AnonymousSlotExpression
+                let temp_condition = SlotCondition {
+                    range: condition.range.clone(),
+                    required: condition.required,
+                    pattern: condition.pattern.clone(),
+                    equals_string: condition.equals_string.clone(),
+                    equals_number: condition.equals_number,
+                    equals_expression: condition.equals_expression.clone(),
+                    minimum_value: condition.minimum_value.clone(),
+                    maximum_value: condition.maximum_value.clone(),
+                    any_of: condition.any_of.clone(),
+                    all_of: condition.all_of.clone(),
+                    exactly_one_of: condition.exactly_one_of.clone(),
+                    none_of: condition.none_of.clone(),
+                };
+                
+                // Compile and check the condition
+                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                if self.match_slot_condition(value, &compiled, context)? {
+                    match_count += 1;
+                    if match_count > 1 {
+                        return Ok(false); // More than one matched
+                    }
+                }
+            }
+            if match_count != 1 {
+                return Ok(false); // Either none or more than one matched
+            }
+        }
+
+        // Check none_of constraint (none must match)
+        if let Some(ref none_of) = original.none_of {
+            for condition in none_of {
+                // Create a temporary SlotCondition from AnonymousSlotExpression
+                let temp_condition = SlotCondition {
+                    range: condition.range.clone(),
+                    required: condition.required,
+                    pattern: condition.pattern.clone(),
+                    equals_string: condition.equals_string.clone(),
+                    equals_number: condition.equals_number,
+                    equals_expression: condition.equals_expression.clone(),
+                    minimum_value: condition.minimum_value.clone(),
+                    maximum_value: condition.maximum_value.clone(),
+                    any_of: condition.any_of.clone(),
+                    all_of: condition.all_of.clone(),
+                    exactly_one_of: condition.exactly_one_of.clone(),
+                    none_of: condition.none_of.clone(),
+                };
+                
+                // Compile and check the condition
+                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                if self.match_slot_condition(value, &compiled, context)? {
+                    return Ok(false); // One matched when none should
+                }
+            }
+        }
 
         Ok(true)
     }

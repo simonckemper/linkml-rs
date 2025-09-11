@@ -53,7 +53,9 @@ impl Default for SummaryGeneratorConfig {
 
 /// Summary generator
 pub struct SummaryGenerator {
-    config: SummaryGeneratorConfig}
+    config: SummaryGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions}
 
 /// Schema statistics
 #[derive(Debug, Default)]

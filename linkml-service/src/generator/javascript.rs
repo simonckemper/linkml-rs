@@ -9,7 +9,10 @@ use std::fmt::Write;
 /// JavaScript generator
 pub struct JavaScriptGenerator {
     name: String,
-    description: String}
+    description: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for JavaScriptGenerator {
     fn default() -> Self {
@@ -27,7 +30,17 @@ impl JavaScriptGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "javascript".to_string(),
-            description: "Generate JavaScript ES6 classes from LinkML schemas".to_string()}
+            description: "Generate JavaScript ES6 classes from LinkML schemas".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Generate code for a single class
@@ -376,7 +389,6 @@ impl JavaScriptGenerator {
         } else {
             Ok(base_type)
         }
-    }
 
     /// Get JavaScript typeof check string
     fn get_js_type_check(&self, range: &Option<String>) -> &'static str {
@@ -389,7 +401,6 @@ impl JavaScriptGenerator {
         } else {
             "object"
         }
-    }
 
     /// Get JavaScript type name for error messages
     fn get_js_type_name(&self, range: &Option<String>) -> &'static str {
@@ -402,7 +413,6 @@ impl JavaScriptGenerator {
         } else {
             "value"
         }
-    }
 
     /// Generate enum constants
     fn generate_enum(
@@ -680,4 +690,13 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("toJSON()"));
         Ok(())
     }
+}
+}
+
+}
+
+}
+
+}
+
 }

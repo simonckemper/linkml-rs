@@ -205,6 +205,10 @@ impl Default for PluginBuilder {
 
 impl PluginBuilder {
     /// Create a new plugin builder
+    ///
+    /// # Panics
+    ///
+    /// Panics if the default version requirement "*" cannot be parsed (should never happen)
     #[must_use] pub fn new() -> Self {
         Self {
             info: PluginInfo {
@@ -292,7 +296,7 @@ macro_rules! export_plugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dbms_core::{HealthStatus, HealthState};
+    use dbms_core::{HealthStatus as DbmsHealthStatus, HealthState as DbmsHealthState};
 
     #[test]
     fn test_plugin_builder() {
@@ -320,5 +324,23 @@ mod tests {
 
         assert_eq!(status.status, HealthState::Healthy);
         assert!(status.message.is_some());
+    }
+
+    #[test]
+    fn test_dbms_health_status() {
+        use chrono::Utc;
+        use std::collections::HashMap;
+
+        let status = DbmsHealthStatus {
+            status: DbmsHealthState::Healthy,
+            timestamp: Utc::now(),
+            database: "test_db".to_string(),
+            components: HashMap::new(),
+            details: Some("All systems operational".to_string()),
+            check_duration_ms: 50,
+        };
+
+        assert_eq!(status.status, DbmsHealthState::Healthy);
+        assert!(status.details.is_some());
     }
 }

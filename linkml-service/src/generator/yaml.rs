@@ -19,7 +19,10 @@ pub struct YamlGenerator {
     /// Whether to inline simple definitions
     inline_simple: bool,
     /// Whether to include null values in output
-    include_nulls: bool}
+    include_nulls: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for YamlGenerator {
     fn default() -> Self {
@@ -35,7 +38,17 @@ impl YamlGenerator {
             include_metadata: true,
             sort_keys: false,
             inline_simple: true,
-            include_nulls: false}
+            include_nulls: false,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Configure metadata inclusion
@@ -398,7 +411,6 @@ impl YamlGenerator {
                     .map(|(k, v)| (serde_yaml::Value::String(k), v)),
             ))
         }
-    }
 
     /// Convert type to `YAML`
     fn type_to_yaml(&self, type_def: &TypeDefinition) -> serde_yaml::Value {
@@ -526,7 +538,6 @@ impl YamlGenerator {
                 }
             }
         }
-    }
 
     /// Convert slot to `YAML`
     fn slot_to_yaml(&self, slot: &SlotDefinition) -> serde_yaml::Value {
@@ -748,4 +759,7 @@ impl Generator for YamlGenerator {
     fn get_default_filename(&self) -> &'static str {
         "schema.yaml"
     }
+}
+}
+
 }

@@ -10,11 +10,23 @@ use std::cmp::Ordering;
 /// Array operations trait
 pub trait ArrayOperations {
     /// Apply a function to each element
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Array operation fails
+    /// - Function application fails for any element
     fn map<F>(&self, f: F) -> ArrayResult<ArrayData>
     where
         F: Fn(&Value) -> Value;
 
     /// Filter elements based on a predicate
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Array filtering operation fails
+    /// - Predicate evaluation fails for any element
     fn filter<F>(&self, f: F) -> ArrayResult<Vec<(Vec<usize>, Value)>>
     where
         F: Fn(&Value) -> bool;
@@ -25,36 +37,80 @@ pub trait ArrayOperations {
         F: Fn(Value, &Value) -> Value;
 
     /// Element-wise addition
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if arrays have incompatible shapes or addition fails
     fn add(&self, other: &ArrayData) -> ArrayResult<ArrayData>;
 
     /// Element-wise subtraction
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if arrays have incompatible shapes or subtraction fails
     fn subtract(&self, other: &ArrayData) -> ArrayResult<ArrayData>;
 
     /// Element-wise multiplication
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if arrays have incompatible shapes or multiplication fails
     fn multiply(&self, other: &ArrayData) -> ArrayResult<ArrayData>;
 
     /// Element-wise division
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if arrays have incompatible shapes, division by zero, or division fails
     fn divide(&self, other: &ArrayData) -> ArrayResult<ArrayData>;
 
     /// Scalar addition
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if scalar addition operation fails
     fn scalar_add(&self, scalar: f64) -> ArrayResult<ArrayData>;
 
     /// Scalar multiplication
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if scalar multiplication operation fails
     fn scalar_multiply(&self, scalar: f64) -> ArrayResult<ArrayData>;
 
     /// Sum all elements
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if summation fails or elements cannot be converted to numbers
     fn sum(&self) -> ArrayResult<f64>;
 
     /// Mean of all elements
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if mean calculation fails or array is empty
     fn mean(&self) -> ArrayResult<f64>;
 
     /// Find minimum element
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if minimum calculation fails or array is empty
     fn min(&self) -> ArrayResult<f64>;
 
     /// Find maximum element
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if maximum calculation fails or array is empty
     fn max(&self) -> ArrayResult<f64>;
 
     /// Standard deviation
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if standard deviation calculation fails or array is empty
     fn std_dev(&self) -> ArrayResult<f64>;
 
     /// Flatten to 1D array

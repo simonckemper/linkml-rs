@@ -22,7 +22,6 @@ pub struct PluginRegistry {
 
 /// Plugin registration entry
 pub struct PluginRegistration {
-    /// The plugin instance (wrapped in Mutex for interior mutability)
     pub plugin: Arc<Mutex<Box<dyn Plugin>>>,
     /// Registration timestamp
     pub registered_at: chrono::DateTime<chrono::Utc>,

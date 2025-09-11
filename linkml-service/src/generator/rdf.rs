@@ -23,7 +23,10 @@ pub struct RdfGenerator {
     /// Whether to use compact Turtle syntax
     compact_syntax: bool,
     /// Whether to include `LinkML`-specific properties
-    include_linkml_props: bool}
+    include_linkml_props: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for RdfGenerator {
     fn default() -> Self {
@@ -39,7 +42,17 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: true,
             compact_syntax: true,
-            include_linkml_props: true}
+            include_linkml_props: true,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Create a new RDF generator in RDFS mode

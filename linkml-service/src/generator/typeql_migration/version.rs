@@ -137,7 +137,6 @@ impl PartialOrd for SchemaVersion {
 /// A schema with version information
 #[derive(Debug, Clone)]
 pub struct VersionedSchema {
-    /// The schema definition
     pub schema: SchemaDefinition,
     /// Version information
     pub version: SchemaVersion}

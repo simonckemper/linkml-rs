@@ -16,47 +16,36 @@ pub enum PatchOperation {
     /// Add a new element
     #[serde(rename = "add")]
     Add {
-        /// The path where to add the element
         path: String,
-        /// The value to add
         value: Value
     },
     /// Remove an element
     #[serde(rename = "remove")]
     Remove {
-        /// The path of the element to remove
         path: String
     },
     /// Replace an element
     #[serde(rename = "replace")]
     Replace {
-        /// The path of the element to replace
         path: String,
-        /// The new value
         value: Value
     },
     /// Move an element
     #[serde(rename = "move")]
     Move {
-        /// The source path
         from: String,
-        /// The destination path
         path: String
     },
     /// Copy an element
     #[serde(rename = "copy")]
     Copy {
-        /// The source path
         from: String,
-        /// The destination path
         path: String
     },
     /// Test a value (for conditional patches)
     #[serde(rename = "test")]
     Test {
-        /// The path to test
         path: String,
-        /// The expected value
         value: Value
     }}
 
@@ -106,7 +95,6 @@ impl Default for PatchOptions {
 /// Result of applying a patch
 #[derive(Debug)]
 pub struct PatchResult {
-    /// The modified schema
     pub schema: SchemaDefinition,
 
     /// Operations that were applied

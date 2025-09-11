@@ -17,7 +17,6 @@ use super::Expression;
 /// Cached expression entry with metadata
 #[derive(Clone)]
 struct CacheEntryV2 {
-    /// The parsed expression (using Arc for sharing)
     expression: Arc<Expression>,
     /// When this entry was created
     created: Instant,
@@ -54,7 +53,6 @@ impl CacheStats {
 
 /// Optimized expression cache using Arc and efficient eviction
 pub struct ExpressionCacheV2 {
-    /// The actual cache storage
     cache: Arc<RwLock<HashMap<Arc<str>, CacheEntryV2>>>,
     /// LRU order tracking
     lru_order: Arc<RwLock<VecDeque<Arc<str>>>>,

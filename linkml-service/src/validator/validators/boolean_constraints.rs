@@ -233,16 +233,16 @@ impl AllOfValidator {
 
     /// Validate a single expression with thread-safe context
     fn validate_expression_parallel(
-        value: Arc<Value>,
+        value: &Arc<Value>,
         expr: &AnonymousSlotExpression,
-        path: String,
-        schema: Arc<linkml_core::types::SchemaDefinition>,
+        path: &str,
+        schema: &Arc<linkml_core::types::SchemaDefinition>,
     ) -> Vec<ValidationIssue> {
         // Create a new context for this thread
-        let mut context = ValidationContext::new(schema);
-        context.push_path(&path);
+        let mut context = ValidationContext::new(Arc::clone(schema));
+        context.push_path(path);
 
-        let issues = Self::validate_expression(&value, expr, &mut context);
+        let issues = Self::validate_expression(value, expr, &mut context);
 
         context.pop_path();
         issues
@@ -279,10 +279,10 @@ impl Validator for AllOfValidator {
                     .map(|(i, constraint)| {
                         let path = format!("{base_path}/all_of[{i}]");
                         let issues = Self::validate_expression_parallel(
-                            Arc::clone(&value_arc),
+                            &value_arc,
                             constraint,
-                            path,
-                            Arc::clone(&schema_arc),
+                            &path,
+                            &schema_arc,
                         );
                         (i, issues)
                     })
@@ -524,26 +524,67 @@ impl NoneOfValidator {
     /// Check if expression is satisfied without full validation
     /// Returns true if the expression is satisfied (which means `none_of` should fail)
     fn is_expression_satisfied(&self, value: &Value, expr: &AnonymousSlotExpression) -> bool {
-        // Quick type check if range is specified
+        // Type check if range is specified
         if let Some(range) = &expr.range {
-            match (range.as_str(), value) {
-                ("integer", Value::Number(n)) if n.is_i64() || n.is_u64() => {}
-                ("string", Value::String(_)) | ("boolean", Value::Bool(_)) | ("null", Value::Null) | ("array", Value::Array(_)) | ("object", Value::Object(_)) | ("float" | "double" | "number", Value::Number(_)) => {}
-                _ => return false, // Type mismatch, constraint not satisfied
+            let type_matches = match (range.as_str(), value) {
+                ("integer", Value::Number(n)) => n.is_i64() || n.is_u64(),
+                ("string", Value::String(_)) => true,
+                ("boolean", Value::Bool(_)) => true,
+                ("null", Value::Null) => true,
+                ("array", Value::Array(_)) => true,
+                ("object", Value::Object(_)) => true,
+                ("float" | "double" | "number", Value::Number(_)) => true,
+                _ => false,
+            };
+            if !type_matches {
+                return false;
             }
         }
 
-        // If we get here and only type was checked, it's satisfied
-        if expr.pattern.is_none()
-            && expr.minimum_value.is_none()
-            && expr.maximum_value.is_none()
-            && expr.required.is_none()
-        {
-            return true;
+        // Check pattern constraint
+        if let Some(pattern) = &expr.pattern {
+            if let Value::String(s) = value {
+                if let Ok(re) = regex::Regex::new(pattern) {
+                    if !re.is_match(s) {
+                        return false;
+                    }
+                }
+            } else {
+                return false; // Pattern only applies to strings
+            }
         }
 
-        // For more complex constraints, we need full validation
-        false
+        // Check minimum value constraint
+        if let Some(min_val) = &expr.minimum_value {
+            if let Value::Number(n) = value {
+                if let (Some(actual), Some(min)) = (n.as_f64(), min_val.as_number().and_then(|v| v.as_f64())) {
+                    if actual < min {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Check maximum value constraint
+        if let Some(max_val) = &expr.maximum_value {
+            if let Value::Number(n) = value {
+                if let (Some(actual), Some(max)) = (n.as_f64(), max_val.as_number().and_then(|v| v.as_f64())) {
+                    if actual > max {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Check required constraint
+        if let Some(required) = expr.required {
+            if required && value == &Value::Null {
+                return false;
+            }
+        }
+
+        // All constraints satisfied
+        true
     }
 
     /// Validate a single anonymous slot expression

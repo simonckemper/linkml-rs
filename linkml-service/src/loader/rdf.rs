@@ -398,10 +398,12 @@ impl RdfLoader {
             Term::NamedNode(n) => n.as_str().to_string(),
             Term::BlankNode(b) => format!("_:{}", b.as_str()),
             Term::Literal(l) => l.value().to_string(),
-            Term::Triple(_) => {
-                // TODO: Add proper Triple support when RDF-star is needed
-                // For now, return a placeholder representation
-                "[RDF-star triple not yet supported]".to_string()
+            Term::Triple(triple) => {
+                // RDF-star support: convert triple to reified statement representation
+                let subj = self._term_to_string(&triple.subject.into());
+                let pred = triple.predicate.as_str();
+                let obj = self._term_to_string(&triple.object.clone());
+                format!("<<{subj} {pred} {obj}>>")
             }
         }
     }
@@ -466,10 +468,23 @@ impl RdfLoader {
                         )))},
                     _ => Ok(JsonValue::String(value.to_string()))}
             }
-            Term::Triple(_) => {
-                // TODO: Add proper Triple support when RDF-star is needed
-                // For now, return a string representation
-                Ok(JsonValue::String("[RDF-star triple not yet supported]".to_string()))
+            Term::Triple(triple) => {
+                // RDF-star support: convert triple to a nested JSON object representation
+                let subj_term: Term = triple.subject.clone().into();
+                let obj_term = triple.object.clone();
+                
+                let subj_value = self.term_to_json(&subj_term)?;
+                let pred_name = self.predicate_to_property(&triple.predicate);
+                let obj_value = self.term_to_json(&obj_term)?;
+                
+                // Represent as a reified statement object
+                let mut triple_obj = serde_json::Map::new();
+                triple_obj.insert("@type".to_string(), JsonValue::String("rdf:Statement".to_string()));
+                triple_obj.insert("rdf:subject".to_string(), subj_value);
+                triple_obj.insert("rdf:predicate".to_string(), JsonValue::String(pred_name));
+                triple_obj.insert("rdf:object".to_string(), obj_value);
+                
+                Ok(JsonValue::Object(triple_obj))
             }
         }
     }

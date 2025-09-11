@@ -58,7 +58,6 @@ impl From<SchemaViewError> for LinkMLError {
 /// inheritance, imports, and slot usage patterns to make schema analysis easier.
 #[derive(Clone, Debug)]
 pub struct SchemaView {
-    /// The root schema (kept for future reference)
     _schema: Arc<SchemaDefinition>,
 
     /// Merged view of all imported schemas

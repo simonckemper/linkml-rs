@@ -270,8 +270,8 @@ impl MultiLayerCache {
     /// Returns an error if cache operations fail.
     pub fn put(
         &self,
-        key: ValidatorCacheKey,
-        validator: Arc<CompiledValidator>,
+        key: &ValidatorCacheKey,
+        validator: &Arc<CompiledValidator>,
     ) -> Result<()> {
         let start = Instant::now();
         let mut stats = self.stats.write();
@@ -284,7 +284,7 @@ impl MultiLayerCache {
             l1.put(
                 key.clone(),
                 L1Entry {
-                    validator: validator.clone(),
+                    validator: Arc::clone(validator),
                     inserted_at: Instant::now()},
             );
         }
@@ -293,7 +293,7 @@ impl MultiLayerCache {
         if let Some(l2) = &self.l2_cache {
             let cache_key = CacheKey::new(format!("linkml:validator:{key}"))
                 .map_err(|e| LinkMLError::service(format!("Failed to create cache key: {e}")))?;
-            let serialized = Self::serialize_validator(&validator)?;
+            let serialized = Self::serialize_validator(validator)?;
             let cache_value = CacheValue::from_bytes(serialized);
             let ttl = Some(CacheTtl::Seconds(self.config.l2_ttl.as_secs()));
 
@@ -309,9 +309,9 @@ impl MultiLayerCache {
             // Fire and forget for async L3 write
             let l3_clone = l3.clone();
             let key_clone = key.clone();
-            let validator_clone = validator.clone();
+            let validator_clone = Arc::clone(validator);
             tokio::spawn(async move {
-                let _ = l3_clone.put(key_clone, &validator_clone).await;
+                let _ = l3_clone.put(&key_clone, validator_clone.as_ref()).await;
             });
         }
 
@@ -404,7 +404,7 @@ impl MultiLayerCache {
         validators: Vec<(ValidatorCacheKey, Arc<CompiledValidator>)>,
     ) -> Result<()> {
         for (key, validator) in validators {
-            self.put(key, validator)?;
+            self.put(&key, &validator)?;
         }
         Ok(())
     }
@@ -450,7 +450,7 @@ impl MultiLayerCache {
                 for related_key in related_keys {
                     // In a real implementation, we'd compile the related validator here
                     // For now, we mark it for background compilation
-                    self.mark_for_background_compilation(related_key);
+                    self.mark_for_background_compilation(&related_key);
                 }
             }
         }
@@ -496,7 +496,7 @@ impl MultiLayerCache {
     }
 
     /// Mark a validator for background compilation
-    fn mark_for_background_compilation(&self, key: ValidatorCacheKey) {
+    fn mark_for_background_compilation(&self, key: &ValidatorCacheKey) {
         // In production, this would queue the compilation task
         // For now, just track that we want to compile this
         let mut stats = self.stats.write();
@@ -576,7 +576,7 @@ impl DiskCache {
             )))}
     }
 
-    async fn put(&self, key: ValidatorCacheKey, validator: &CompiledValidator) -> Result<()> {
+    async fn put(&self, key: &ValidatorCacheKey, validator: &CompiledValidator) -> Result<()> {
         let path = self.key_to_path(&key);
         let data = bincode::serialize(validator)
             .map_err(|e| LinkMLError::service(format!("Failed to serialize for disk: {e}")))?;
@@ -731,7 +731,7 @@ mod tests {
 
         // Put and get
         cache
-            .put(key.clone(), validator.clone())
+            .put(&key, &validator)
             .await
             .expect("should put into cache: {}");
         let retrieved = cache.get(&key).await;
@@ -760,7 +760,7 @@ mod tests {
 
         // Put, invalidate, and try to get
         cache
-            .put(key.clone(), validator)
+            .put(&key, &validator)
             .await
             .expect("should put into cache: {}");
         cache

@@ -71,11 +71,9 @@ pub struct CompactInstruction {
 pub enum InstructionVariant {
     /// Check required field
     CheckRequired {
-        /// The field name to check
         field: String},
     /// Pattern validation
     ValidatePattern {
-        /// The pattern ID to validate against
         pattern_id: u32},
     /// Range validation
     ValidateRange {
@@ -93,11 +91,9 @@ pub enum InstructionVariant {
         max: Option<u32>},
     /// Enum validation
     ValidateEnum {
-        /// The enum ID to validate against
         enum_id: u32},
     /// Type validation
     ValidateType {
-        /// The expected type
         expected: CompiledType},
     /// Array validation
     ValidateArray {

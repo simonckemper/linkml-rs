@@ -41,7 +41,9 @@ impl Default for JsonLdContextGeneratorConfig {
 
 /// `JSON`-LD Context generator
 pub struct JsonLdContextGenerator {
-    config: JsonLdContextGeneratorConfig}
+    config: JsonLdContextGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions}
 
 impl JsonLdContextGenerator {
     /// Create a new `JSON`-LD Context generator

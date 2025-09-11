@@ -17,10 +17,8 @@ use super::view::SchemaView;
 /// making it easier to work with slots without manually resolving inheritance.
 #[derive(Debug, Clone)]
 pub struct SlotView {
-    /// The slot name
     name: String,
 
-    /// The base slot definition
     definition: SlotDefinition,
 
     /// Classes that use this slot

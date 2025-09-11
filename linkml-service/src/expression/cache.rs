@@ -14,7 +14,6 @@ use std::time::{Duration, Instant};
 /// Key for caching expressions
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ExpressionKey {
-    /// The expression source code
     pub source: String,
     /// Optional context schema for validation
     pub schema_id: Option<String>}
@@ -49,7 +48,6 @@ pub struct CacheStats {
 
 /// Expression cache with LRU eviction
 pub struct ExpressionCache {
-    /// The actual cache storage
     cache: Arc<RwLock<LruCache<ExpressionKey, CachedExpression>>>,
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,

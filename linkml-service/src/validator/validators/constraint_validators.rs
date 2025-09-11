@@ -239,7 +239,7 @@ impl CrossReferenceValidator {
     }
 
     /// Build reference cache from all instances
-    fn build_reference_cache(&self, instances: &[Value]) -> HashMap<String, HashSet<String>> {
+    fn build_reference_cache(instances: &[Value]) -> HashMap<String, HashSet<String>> {
         let mut type_refs = HashMap::new();
 
         for instance in instances {
@@ -278,7 +278,7 @@ impl CrossReferenceValidator {
                         cached_refs.contains(ref_id)
                     } else if let Some(ref all_instances) = context.all_instances {
                         // Build cache if we have instances
-                        let type_refs = self.build_reference_cache(all_instances);
+                        let type_refs = Self::build_reference_cache(all_instances);
 
                         // Cache all discovered references for future use
                         for (ref_type, refs) in &type_refs {
@@ -731,19 +731,35 @@ impl CrossReferenceValidator {
 
     /// Helper to validate date format
     fn validate_date_format(&self, date_str: &str, format: &str) -> bool {
+        use chrono::NaiveDate;
+        
         match format {
             "YYYY-MM-DD" => {
-                // Simple validation - check format structure
-                date_str.len() == 10 &&
-                date_str.chars().nth(4) == Some('-') &&
-                date_str.chars().nth(7) == Some('-')
+                // Parse ISO 8601 date format
+                NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_ok()
             }
             "MM/DD/YYYY" => {
-                date_str.len() == 10 &&
-                date_str.chars().nth(2) == Some('/') &&
-                date_str.chars().nth(5) == Some('/')
+                // Parse US date format
+                NaiveDate::parse_from_str(date_str, "%m/%d/%Y").is_ok()
             }
-            _ => true // Unknown format, allow
+            "DD/MM/YYYY" => {
+                // Parse European date format
+                NaiveDate::parse_from_str(date_str, "%d/%m/%Y").is_ok()
+            }
+            "YYYY-MM-DD HH:MM:SS" => {
+                // Parse datetime format
+                chrono::NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S").is_ok()
+            }
+            "ISO8601" => {
+                // Parse full ISO 8601 datetime
+                chrono::DateTime::parse_from_rfc3339(date_str).is_ok()
+            }
+            _ => {
+                // Try common formats as fallback
+                NaiveDate::parse_from_str(date_str, "%Y-%m-%d").is_ok() ||
+                NaiveDate::parse_from_str(date_str, "%m/%d/%Y").is_ok() ||
+                NaiveDate::parse_from_str(date_str, "%d/%m/%Y").is_ok()
+            }
         }
     }
 

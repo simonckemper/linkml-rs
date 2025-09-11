@@ -35,7 +35,6 @@ pub enum BreakingChange {
         class_name: String,
         /// Name of the removed slot
         slot_name: String},
-    /// The type of an entity changed
     TypeChanged {
         /// Name of the entity
         entity: String,

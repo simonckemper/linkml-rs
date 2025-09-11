@@ -39,7 +39,6 @@ pub enum ParseError {
     /// Unexpected token
     #[error("Unexpected token '{token}' at position {position}")]
     UnexpectedToken {
-        /// The unexpected token found
         token: String,
         /// Position in the input where the token was found
         position: usize
@@ -48,7 +47,6 @@ pub enum ParseError {
     /// Invalid number format
     #[error("Invalid number '{value}' at position {position}")]
     InvalidNumber {
-        /// The invalid number string
         value: String,
         /// Position in the input where the number was found
         position: usize
@@ -66,7 +64,6 @@ pub enum ParseError {
     /// Invalid variable name
     #[error("Invalid variable name '{name}' at position {position}")]
     InvalidVariable {
-        /// The invalid variable name
         name: String,
         /// Position in the input where the variable was found
         position: usize
@@ -75,7 +72,6 @@ pub enum ParseError {
     /// Missing closing delimiter
     #[error("Missing closing '{delimiter}' at position {position}")]
     MissingDelimiter {
-        /// The expected delimiter character
         delimiter: char,
         /// Position in the input where the delimiter was expected
         position: usize
@@ -102,7 +98,6 @@ pub enum ParseError {
     /// Unknown function
     #[error("Unknown function '{name}' at position {position}")]
     UnknownFunction {
-        /// The unknown function name
         name: String,
         /// Position in the input where the function was found
         position: usize
@@ -111,7 +106,6 @@ pub enum ParseError {
     /// Wrong number of arguments
     #[error("Function '{name}' expects {expected} arguments, got {actual}")]
     WrongArity {
-        /// The function name
         name: String,
         /// Expected number of arguments (as string for flexibility)
         expected: String,
@@ -122,7 +116,6 @@ pub enum ParseError {
     /// Trailing input after expression
     #[error("Unexpected input after expression: '{input}'")]
     TrailingInput {
-        /// The unexpected trailing input
         input: String
     },
 
@@ -139,7 +132,6 @@ pub enum EvaluationError {
     /// Variable not found in context
     #[error("Undefined variable '{name}'")]
     UndefinedVariable {
-        /// The undefined variable name
         name: String
     },
 
@@ -161,7 +153,6 @@ pub enum EvaluationError {
     /// Function evaluation error
     #[error("Function '{name}' error: {message}")]
     FunctionError {
-        /// The function name that caused the error
         name: String,
         /// Error message from the function
         message: String
@@ -170,7 +161,6 @@ pub enum EvaluationError {
     /// Invalid argument for function
     #[error("Invalid argument for function '{function}': {message}")]
     InvalidArgument {
-        /// The function name with invalid argument
         function: String,
         /// Description of why the argument is invalid
         message: String
@@ -211,7 +201,6 @@ pub enum EvaluationError {
     /// Invalid regex pattern
     #[error("Invalid regex pattern: {pattern}")]
     InvalidRegex {
-        /// The invalid regex pattern
         pattern: String
     }}
 

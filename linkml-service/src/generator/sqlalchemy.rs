@@ -53,7 +53,9 @@ impl Default for SQLAlchemyGeneratorConfig {
 
 /// `SQL`Alchemy ORM model generator
 pub struct SQLAlchemyGenerator {
-    config: SQLAlchemyGeneratorConfig}
+    config: SQLAlchemyGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions}
 
 impl SQLAlchemyGenerator {
     /// Create a new `SQL`Alchemy generator
@@ -773,4 +775,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(result.contains("age"));
         Ok(())
     }
+}
 }

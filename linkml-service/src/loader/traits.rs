@@ -126,10 +126,8 @@ impl From<DumperError> for linkml_core::LinkMLError {
 /// Represents a loaded data instance
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DataInstance {
-    /// The class this instance belongs to
     pub class_name: String,
 
-    /// The instance data as key-value pairs
     pub data: HashMap<String, JsonValue>,
 
     /// Optional instance identifier

@@ -197,6 +197,10 @@ pub fn merge_slot_definitions(
         } else {
             override_def.permissible_values.clone()
         },
+        min_length: override_def.min_length.or(base.min_length),
+        max_length: override_def.max_length.or(base.max_length),
+        key: override_def.key.or(base.key),
+        readonly: override_def.readonly.or(base.readonly),
         slot_uri: override_def
             .slot_uri
             .clone()

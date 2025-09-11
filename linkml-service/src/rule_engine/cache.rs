@@ -13,7 +13,6 @@ use super::types::CompiledRule;
 /// Cache entry for compiled rules
 #[derive(Debug, Clone)]
 struct CacheEntry {
-    /// The compiled rules
     rules: Vec<CompiledRule>,
     /// When this entry was created
     created_at: Instant,
@@ -54,7 +53,6 @@ impl CacheConfig {
 
 /// Cache for compiled rules
 pub struct RuleCache {
-    /// The actual cache storage
     cache: Arc<RwLock<HashMap<String, CacheEntry>>>,
     /// Cache configuration
     config: CacheConfig,

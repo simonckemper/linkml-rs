@@ -296,7 +296,6 @@ impl Default for ResourceLimits {
 
 /// Plugin wrapper that enforces sandboxing
 pub struct SandboxedPlugin<O: TimeoutService> {
-    /// The actual plugin
     plugin: Box<dyn Plugin>,
     /// Sandbox configuration
     sandbox: PluginSandbox,

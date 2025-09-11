@@ -51,7 +51,9 @@ impl Default for SssomGeneratorConfig {
 
 /// SSSOM generator
 pub struct SssomGenerator {
-    config: SssomGeneratorConfig}
+    config: SssomGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions}
 
 /// SSSOM mapping structure
 #[derive(Debug, Clone)]

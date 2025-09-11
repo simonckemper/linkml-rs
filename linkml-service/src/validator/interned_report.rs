@@ -21,7 +21,6 @@ pub struct InternedValidationIssue {
     pub message: InternedString,
     /// `JSON` path to the problematic value (interned)
     pub path: InternedString,
-    /// The validator that raised this issue (interned)
     pub validator: InternedString,
     /// Optional error code for programmatic handling (interned)
     pub code: Option<InternedString>,

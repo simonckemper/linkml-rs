@@ -13,7 +13,6 @@ type CustomValidator<'a> = Box<dyn Fn(&Value) -> Result<(), String> + 'a>;
 
 /// Array validation context
 pub struct ArrayValidationContext<'a> {
-    /// The slot definition being validated
     pub slot: &'a SlotDefinition,
 
     /// Type definitions for type checking

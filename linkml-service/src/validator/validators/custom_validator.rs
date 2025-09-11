@@ -24,7 +24,6 @@ pub struct CustomValidator {
     name: String,
     /// Description of what this validator does
     description: Option<String>,
-    /// The validation function
     validation_fn: ValidationFunction,
     /// Whether this validator applies to all slots or specific ones
     applies_to: AppliesTo}

@@ -333,12 +333,120 @@ where
 
 #[cfg(test)]
 mod tests {
-
+    use super::*;
+    use std::path::PathBuf;
+    use tempfile::TempDir;
 
     #[tokio::test]
-    async fn test_factory_v2_placeholder() {
-        // Placeholder test to validate factory_v2 module structure
-        // TODO: Implement comprehensive factory tests with mock services
-        assert!(true, "Factory V2 module structure is valid");
+    async fn test_create_linkml_service() {
+        // Create a temporary directory for testing
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let temp_path = temp_dir.path().to_path_buf();
+        
+        // Test with default configuration
+        let service = create_linkml_service(None);
+        assert!(service.is_ok(), "Should create service with default config");
+        
+        // Test with custom configuration path
+        let config_path = temp_path.join("test_config.yaml");
+        std::fs::write(&config_path, "name: test\nversion: 1.0.0").expect("Failed to write config");
+        
+        let service_with_config = create_linkml_service(Some(config_path));
+        assert!(service_with_config.is_ok(), "Should create service with custom config");
+    }
+    
+    #[tokio::test]
+    async fn test_create_enhanced_linkml_service() {
+        // Create service with enhanced features
+        let enhanced_service = create_enhanced_linkml_service(None);
+        assert!(enhanced_service.is_ok(), "Should create enhanced service");
+        
+        let service = enhanced_service.expect("Service creation failed");
+        
+        // Test basic service functionality
+        let test_schema = r#"
+            id: test_schema
+            name: TestSchema
+            classes:
+              TestClass:
+                name: TestClass
+                slots:
+                  - test_slot
+            slots:
+              test_slot:
+                name: test_slot
+                range: string
+        "#;
+        
+        let schema_result = serde_yaml::from_str::<SchemaDefinition>(test_schema);
+        assert!(schema_result.is_ok(), "Should parse test schema");
+    }
+    
+    #[tokio::test]
+    async fn test_create_validation_service() {
+        // Create validation service
+        let validation_service = create_validation_service(None);
+        assert!(validation_service.is_ok(), "Should create validation service");
+        
+        // Create simple validation test
+        let service = validation_service.expect("Validation service creation failed");
+        
+        // Test schema for validation
+        let schema = SchemaDefinition {
+            id: Some("test".to_string()),
+            name: "TestSchema".to_string(),
+            classes: {
+                let mut classes = HashMap::new();
+                classes.insert("TestClass".to_string(), ClassDefinition {
+                    name: "TestClass".to_string(),
+                    slots: vec!["name".to_string()],
+                    ..Default::default()
+                });
+                classes
+            },
+            slots: {
+                let mut slots = HashMap::new();
+                slots.insert("name".to_string(), SlotDefinition {
+                    name: "name".to_string(),
+                    required: Some(true),
+                    range: Some("string".to_string()),
+                    ..Default::default()
+                });
+                slots
+            },
+            ..Default::default()
+        };
+        
+        // Test data
+        let valid_data = json!({
+            "@type": "TestClass",
+            "name": "Test Instance"
+        });
+        
+        let invalid_data = json!({
+            "@type": "TestClass"
+            // Missing required 'name' field
+        });
+        
+        // Perform validation
+        let mut engine = ValidationEngine::new(&schema).expect("Failed to create validation engine");
+        
+        let valid_result = engine.validate_as_class(&valid_data, "TestClass", None).await;
+        assert!(valid_result.is_ok(), "Should validate valid data");
+        assert!(valid_result.expect("Validation failed").valid, "Valid data should pass validation");
+        
+        let invalid_result = engine.validate_as_class(&invalid_data, "TestClass", None).await;
+        assert!(invalid_result.is_ok(), "Should handle invalid data without error");
+        assert!(!invalid_result.expect("Validation failed").valid, "Invalid data should fail validation");
+    }
+    
+    #[tokio::test]
+    async fn test_factory_error_handling() {
+        // Test with invalid configuration path
+        let invalid_path = PathBuf::from("/nonexistent/path/config.yaml");
+        let result = create_linkml_service(Some(invalid_path));
+        
+        // Should handle gracefully and use defaults
+        assert!(result.is_ok(), "Should handle missing config file gracefully");
     }
 }

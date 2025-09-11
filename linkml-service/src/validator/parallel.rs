@@ -12,7 +12,6 @@ use std::sync::{Arc, Mutex};
 
 /// Parallel validation engine for bulk validation
 pub struct ParallelValidationEngine {
-    /// The underlying validation engine
     engine: Arc<ValidationEngine>,
     /// Thread pool for parallel execution
     thread_pool: rayon::ThreadPool,

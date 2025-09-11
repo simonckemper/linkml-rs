@@ -470,14 +470,11 @@ impl ValidationEngine {
             return Ok(());
         }
 
-        let obj = match data.as_object() {
-            Some(obj) => obj,
-            None => {
-                // This should not happen as we already checked is_object()
-                return Err(LinkMLError::service(
-                    "Unexpected non-object after is_object check",
-                ));
-            }
+        let Some(obj) = data.as_object() else {
+            // This should not happen as we already checked is_object()
+            return Err(LinkMLError::service(
+                "Unexpected non-object after is_object check",
+            ));
         };
 
         // Set the parent context for cross-field validation

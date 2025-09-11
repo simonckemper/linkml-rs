@@ -241,7 +241,6 @@ pub struct UniqueKeyViolation {
     /// Slots that comprise the key
     pub key_slots: Vec<String>,
 
-    /// The duplicate key values
     pub key_values: Vec<Value>,
 
     /// Indices of instances with duplicate keys

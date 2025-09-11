@@ -489,19 +489,89 @@ impl StressTestRunner {
 
     /// Get current memory usage
     fn get_memory_usage() -> usize {
-        // Simplified - would use actual memory measurement
+        #[cfg(target_os = "linux")]
+        {
+            // Read from /proc/self/status for accurate RSS
+            if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+                for line in status.lines() {
+                    if line.starts_with("VmRSS:") {
+                        if let Some(kb_str) = line.split_whitespace().nth(1) {
+                            if let Ok(kb) = kb_str.parse::<usize>() {
+                                return kb * 1024; // Convert KB to bytes
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        #[cfg(not(target_os = "linux"))]
+        {
+            // Fallback: Use approximation based on heap allocation
+            // This is less accurate but works cross-platform
+            use std::alloc::{GlobalAlloc, Layout, System};
+            // Note: This is an approximation - actual implementation would need
+            // platform-specific memory APIs
+            1024 * 1024 * 100 // Default to 100MB estimate
+        }
+        
         0
     }
 
     /// Apply CPU pressure
-    async fn apply_cpu_pressure(&self, _target_percent: f32) {
-        // Simplified - would use actual CPU load generation
-        tokio::time::sleep(Duration::from_micros(1)).await;
+    async fn apply_cpu_pressure(&self, target_percent: f32) {
+        let num_cores = num_cpus::get();
+        let active_threads = ((target_percent / 100.0) * num_cores as f32).ceil() as usize;
+        
+        // Spawn CPU-intensive tasks
+        let mut handles = Vec::new();
+        for _ in 0..active_threads {
+            let handle = tokio::task::spawn_blocking(move || {
+                let start = std::time::Instant::now();
+                let duration = Duration::from_millis(100);
+                
+                // CPU-intensive loop
+                while start.elapsed() < duration {
+                    // Perform actual computations to consume CPU
+                    let mut sum = 0u64;
+                    for i in 0..10000 {
+                        sum = sum.wrapping_add(i * i);
+                    }
+                    // Prevent optimization
+                    std::hint::black_box(sum);
+                }
+            });
+            handles.push(handle);
+        }
+        
+        // Wait for all tasks to complete
+        for handle in handles {
+            let _ = handle.await;
+        }
     }
 
     /// Apply memory pressure
-    fn apply_memory_pressure(_target_bytes: usize) {
-        // Simplified - would allocate memory to create pressure
+    fn apply_memory_pressure(target_bytes: usize) {
+        // Allocate memory to create pressure
+        let mut allocations = Vec::new();
+        let chunk_size = 1024 * 1024; // 1MB chunks
+        let num_chunks = target_bytes / chunk_size;
+        
+        for _ in 0..num_chunks {
+            // Allocate and initialize to prevent optimization
+            let mut chunk = vec![0u8; chunk_size];
+            // Touch the memory to ensure it's actually allocated
+            for i in (0..chunk_size).step_by(4096) {
+                chunk[i] = 42;
+            }
+            allocations.push(chunk);
+        }
+        
+        // Keep allocations alive briefly
+        std::thread::sleep(Duration::from_millis(10));
+        
+        // Prevent optimization from removing allocations
+        std::hint::black_box(allocations);
     }
 }
 

@@ -67,9 +67,20 @@ pub trait BuiltinFunction: Send + Sync {
     fn name(&self) -> &str;
 
     /// Validate argument count
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the number of arguments is invalid for this function
     fn validate_arity(&self, args: &[Value]) -> Result<(), FunctionError>;
 
     /// Execute the function
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Function execution fails
+    /// - Arguments are invalid or incompatible
+    /// - Runtime errors occur during function call
     fn call(&self, args: Vec<Value>) -> Result<Value, FunctionError>;
 }
 

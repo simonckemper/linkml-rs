@@ -9,7 +9,10 @@ use std::fmt::Write;
 /// Documentation generator for `LinkML` schemas
 pub struct DocGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl DocGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -21,11 +24,21 @@ impl DocGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "doc".to_string()}
+            name: "doc".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Generate markdown documentation
-    fn generate_markdown(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
+    fn generate_markdown(schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
 
         // Title
@@ -344,7 +357,7 @@ impl Generator for DocGenerator {
         self.validate_schema(schema)?;
 
         // For now, always generate markdown
-        self.generate_markdown(schema)
+        Self::generate_markdown(schema)
             .map_err(|e| LinkMLError::service(format!("Documentation generation error: {e}")))
     }
 

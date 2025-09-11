@@ -28,7 +28,10 @@ pub struct ExcelGenerator {
     /// Whether to freeze header rows
     freeze_headers: bool,
     /// Whether to add filters
-    add_filters: bool}
+    add_filters: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl ExcelGenerator {
     /// Create a new Excel generator
@@ -38,7 +41,17 @@ impl ExcelGenerator {
             include_summary: true,
             add_validation: true,
             freeze_headers: true,
-            add_filters: true}
+            add_filters: true,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Configure summary sheet generation

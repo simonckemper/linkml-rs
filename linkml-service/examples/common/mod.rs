@@ -99,7 +99,6 @@ pub async fn init_example_linkml_service() -> Result<
 /// the full service infrastructure.
 ///
 /// Note: Returns a concrete type instead of trait object due to dyn-compatibility issues.
-/// The LinkMLService trait contains generic methods that make it non-dyn-compatible.
 pub async fn create_example_service() -> Result<
     LinkMLServiceImpl<
         example_services::ExampleTaskManager,

@@ -232,6 +232,13 @@ impl BaseCodeFormatter {
 }
 
 /// Helper to collect all slots for a class including inherited ones
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - Schema validation fails during slot collection
+/// - Circular inheritance is detected
+/// - Required class definitions are missing from schema
 pub fn collect_all_slots(
     class: &ClassDefinition,
     schema: &SchemaDefinition,

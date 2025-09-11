@@ -271,6 +271,14 @@ pub struct SlotDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier: Option<bool>,
 
+    /// Is this slot a key (unique within its container)?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<bool>,
+
+    /// Is this slot readonly (cannot be modified after creation)?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub readonly: Option<bool>,
+
     /// Pattern for validation
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
@@ -282,6 +290,14 @@ pub struct SlotDefinition {
     /// Maximum value
     #[serde(skip_serializing_if = "Option::is_none")]
     pub maximum_value: Option<Value>,
+
+    /// Minimum length for string values
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min_length: Option<usize>,
+
+    /// Maximum length for string values
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_length: Option<usize>,
 
     /// Permissible values
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -404,11 +420,9 @@ pub struct SlotDefinition {
 /// Structured pattern for advanced pattern matching
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct StructuredPattern {
-    /// The pattern syntax (e.g., "`regular_expression`", "glob")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub syntax: Option<String>,
 
-    /// The pattern itself
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
 
@@ -495,7 +509,6 @@ pub enum PermissibleValue {
     Simple(String),
     /// Complex value with metadata
     Complex {
-        /// The text value
         text: String,
         /// Description
         #[serde(skip_serializing_if = "Option::is_none")]

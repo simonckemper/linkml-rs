@@ -10,7 +10,6 @@ use std::fmt;
 /// Compiled `JSON` path for efficient navigation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsonPath {
-    /// The path segments
     segments: Vec<PathSegment>,
     /// String representation for display
     string_repr: String}

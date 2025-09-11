@@ -130,8 +130,28 @@ impl<'a> Tokenizer<'a> {
                         self.advance();
                         Ok(Token::NotEqual)
                     } else {
+                        Ok(Token::Not)
+                    }
+                }
+                '&' => {
+                    self.advance();
+                    if self.chars.peek() == Some(&'&') {
+                        self.advance();
+                        Ok(Token::And)
+                    } else {
                         Err(ParseError::UnexpectedToken {
-                            token: "!".to_string(),
+                            token: "&".to_string(),
+                            position: self.position - 1})
+                    }
+                }
+                '|' => {
+                    self.advance();
+                    if self.chars.peek() == Some(&'|') {
+                        self.advance();
+                        Ok(Token::Or)
+                    } else {
+                        Err(ParseError::UnexpectedToken {
+                            token: "|".to_string(),
                             position: self.position - 1})
                     }
                 }

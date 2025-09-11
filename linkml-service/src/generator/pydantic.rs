@@ -11,7 +11,10 @@ use std::fmt::Write;
 /// Pydantic v2 generator
 pub struct PydanticGenerator {
     name: String,
-    description: String}
+    description: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl Default for PydanticGenerator {
     fn default() -> Self {
@@ -24,7 +27,17 @@ impl PydanticGenerator {
     #[must_use] pub fn new() -> Self {
         Self {
             name: "pydantic".to_string(),
-            description: "Generate Pydantic v2 models from LinkML schemas".to_string()}
+            description: "Generate Pydantic v2 models from LinkML schemas".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -305,7 +318,6 @@ impl PydanticGenerator {
             imports.add_import("typing", "Any");
             Ok("Any".to_string())
         }
-    }
 
     /// Generate example value for a slot
     fn get_example_value(&self, slot: &SlotDefinition) -> String {
@@ -331,7 +343,6 @@ impl PydanticGenerator {
         } else {
             "null".to_string()
         }
-    }
 
     /// Generate validators for slots that need them
     fn generate_validators(
@@ -590,7 +601,6 @@ impl CodeFormatter for PydanticGenerator {
             result.push_str("\"\"\"");
             result
         }
-    }
 
     fn format_list<T: AsRef<str>>(
         &self,
@@ -656,4 +666,9 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("age: Optional[int] = Field(None)"));
         assert!(output.contains("model_config ="));
     }
+}
+}
+
+}
+
 }

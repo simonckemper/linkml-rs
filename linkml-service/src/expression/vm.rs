@@ -212,7 +212,8 @@ impl VirtualMachine {
                 Instruction::MakeArray(size) => Self::execute_make_array(state, *size)?,
                 Instruction::MakeObject(size) => Self::execute_make_object(state, *size)?,
                 Instruction::Index => Self::execute_index(state)?,
-                Instruction::GetField(field) => Self::execute_get_field(state, field)?
+                Instruction::GetField(field) => Self::execute_get_field(state, field)?,
+                Instruction::LoadField(var, field) => Self::execute_load_field(state, var, field)?
             }
 
         Ok(true)
@@ -288,6 +289,19 @@ impl VirtualMachine {
         let result = match obj {
             Value::Object(map) => map.get(field).cloned().unwrap_or(Value::Null),
             _ => Value::Null};
+
+        state.push(result)
+    }
+
+    fn execute_load_field(state: &mut VMState, var: &str, field: &str) -> Result<(), ExpressionError> {
+        // Load the variable value
+        let obj = state.context.get(var).cloned().unwrap_or(Value::Null);
+        
+        // Get the field from the object
+        let result = match obj {
+            Value::Object(map) => map.get(field).cloned().unwrap_or(Value::Null),
+            _ => Value::Null
+        };
 
         state.push(result)
     }
@@ -726,23 +740,31 @@ mod tests {
     }
 
     #[test]
-    fn test_vm_functions() {
-        // Skip this test as the parser doesn't support function calls yet
-        // This is a known limitation of the current expression parser
+    fn test_vm_functions() -> Result<(), ExpressionError> {
+        use crate::expression::parser::Parser;
+        use crate::expression::functions::FunctionRegistry;
+        use crate::expression::compiler::Compiler;
+        
+        let registry = Arc::new(FunctionRegistry::new());
+        let compiler = Compiler::new(Arc::clone(&registry));
+        let vm = VirtualMachine::new(registry);
+        let parser = Parser::new();
 
-        // TODO: Re-enable when function calls are implemented in the parser
-        // let registry = Arc::new(FunctionRegistry::new());
-        // let compiler = Compiler::new(Arc::clone(&registry));
-        // let vm = VirtualMachine::new(registry);
-        // let parser = Parser::new();
-        //
-        // let mut context = HashMap::new();
-        // context.insert("text".to_string(), Value::String("hello".to_string());
-        //
-        // let expr = parser.parse("upper(text)")?;
-        // let compiled = compiler.compile(&expr, "upper(text)")?;
-        // let result = vm.execute(&compiled, &context)?;
-        //
-        // assert_eq!(result, Value::String("HELLO".to_string());
+        let mut context = HashMap::new();
+        context.insert("text".to_string(), Value::String("hello".to_string()));
+
+        // Test len function
+        let expr = parser.parse("len(text)")?;
+        let compiled = compiler.compile(&expr, "len(text)")?;
+        let result = vm.execute(&compiled, &context)?;
+        assert_eq!(result, Value::Number(5.0));
+
+        // Test max function
+        let expr = parser.parse("max(1, 5, 3)")?;
+        let compiled = compiler.compile(&expr, "max(1, 5, 3)")?;
+        let result = vm.execute(&compiled, &context)?;
+        assert_eq!(result, Value::Number(5.0));
+
+        Ok(())
     }
 }

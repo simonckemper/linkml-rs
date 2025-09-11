@@ -747,35 +747,45 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         );
 
         let mut durations = Vec::with_capacity(iterations);
-        let memory_usage = if memory {
-            // TODO: Enable memory service when all dependencies are properly connected
-            // For now, collect basic memory usage information
-            eprintln!("Warning: Memory profiling is currently limited. Full service dependencies need to be properly wired up.");
-
-            // Collect basic memory information for each iteration
-            let mut usage = Vec::with_capacity(iterations);
-            for _ in 0..iterations {
-                // Basic memory usage tracking - this is a placeholder
-                // In a full implementation, this would use a proper memory service
-                let memory_info = std::collections::HashMap::from([
-                    ("rss".to_string(), 0u64), // Resident Set Size
-                    ("vms".to_string(), 0u64), // Virtual Memory Size
-                    ("heap".to_string(), 0u64), // Heap usage
-                ]);
-                usage.push(memory_info);
+        // Create memory service if memory profiling is requested
+        let memory_service = if memory {
+            // Import memory service factory
+            use memory_service::create_memory_service;
+            use memory_core::traits::MemoryService;
+            
+            match create_memory_service() {
+                Ok(service) => {
+                    println!("Memory profiling enabled");
+                    Some(service)
+                },
+                Err(e) => {
+                    eprintln!("Warning: Failed to create memory service: {e}");
+                    eprintln!("Continuing without memory profiling");
+                    None
+                }
             }
-            usage
         } else {
-            Vec::new()
+            None
         };
-
-        // Memory service placeholder - will be replaced when dependencies are wired up
-        let _memory_service: Option<std::sync::Arc<dyn std::any::Any>> = None;
+        
+        let mut memory_usage = Vec::with_capacity(if memory { iterations } else { 0 });
 
         for _ in 0..iterations {
             let start = std::time::Instant::now();
 
-            // Memory tracking is currently disabled
+            // Collect memory before validation if service is available
+            if let Some(ref service) = memory_service {
+                use memory_core::traits::MemoryService;
+                
+                if let Ok(usage) = service.get_memory_usage().await {
+                    let mut memory_info = std::collections::HashMap::new();
+                    memory_info.insert("rss".to_string(), usage.rss);
+                    memory_info.insert("vms".to_string(), usage.vms);
+                    memory_info.insert("heap".to_string(), usage.heap_allocated);
+                    memory_usage.push(memory_info);
+                }
+            }
+
             self.service.validate(&data, &schema, "Root").await?;
 
             durations.push(start.elapsed());

@@ -9,14 +9,26 @@ use std::collections::HashMap;
 /// `JSON` Schema generator for `LinkML` schemas
 pub struct JsonSchemaGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl JsonSchemaGenerator {
     /// Create a new `JSON` Schema generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "json-schema".to_string()}
+            name: "json-schema".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+    /// Create a new `JSON` Schema generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        Self {
+            name: "json-schema".to_string(),
+            options}
     }
 
     /// Generate `JSON` Schema for a class
@@ -51,8 +63,11 @@ impl JsonSchemaGenerator {
         // Add title and description
         schema_obj["title"] = json!(class_name);
 
-        if let Some(desc) = &class.description {
-            schema_obj["description"] = json!(desc);
+        // Only include description if documentation is enabled
+        if self.options.include_docs {
+            if let Some(desc) = &class.description {
+                schema_obj["description"] = json!(desc);
+            }
         }
 
         // Add required array if not empty
@@ -154,8 +169,19 @@ impl JsonSchemaGenerator {
                         "$ref": format!("#/definitions/{other}")
                     }))
                 } else {
-                    // Default to string
-                    Ok(json!({"type": "string"}))
+                    // Check if we should error on unknown types
+                    if self.options.custom.get("strict_types").map(|v| v == "true").unwrap_or(false) {
+                        Err(GeneratorError::SchemaValidation(format!(
+                            "Unknown type '{}' - not found in enums, classes, or types",
+                            other
+                        )))
+                    } else {
+                        // Default to string with warning comment
+                        Ok(json!({
+                            "type": "string",
+                            "description": format!("Warning: Unknown type '{}' - defaulted to string", other)
+                        }))
+                    }
                 }
             }
             None => Ok(json!({"type": "string"}))}

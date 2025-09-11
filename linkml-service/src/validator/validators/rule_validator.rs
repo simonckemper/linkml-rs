@@ -12,7 +12,6 @@ use crate::validator::{context::ValidationContext, report::ValidationIssue};
 
 /// Validator for class-level rules
 pub struct RuleValidator {
-    /// The rule engine
     rule_engine: Arc<RuleEngine>}
 
 impl RuleValidator {

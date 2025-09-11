@@ -76,7 +76,9 @@ pub enum Instruction {
     /// Index into array or object
     Index,
     /// Get field from object by name
-    GetField(String)}
+    GetField(String),
+    /// Load variable and get field in one operation
+    LoadField(String, String)}
 
 /// Compiled expression ready for execution
 #[derive(Debug, Clone)]
@@ -519,8 +521,8 @@ impl Compiler {
         let mut i = 0;
         while i + 1 < ctx.instructions.len() {
             match (&ctx.instructions[i], &ctx.instructions[i + 1]) {
-                // Combine consecutive field accesses: Load(x), GetField(a), GetField(b) -> optimized sequence
-                (Instruction::Load(_var), Instruction::GetField(field)) => {
+                // Combine consecutive field accesses: Load(x), GetField(a) -> LoadField(x, a)
+                (Instruction::Load(var), Instruction::GetField(field)) => {
                     // Check if this is part of a chain of field accesses
                     let mut field_chain = vec![field.clone()];
                     let mut j = i + 2;
@@ -534,9 +536,14 @@ impl Compiler {
                         }
                     }
 
-                    // If we have multiple field accesses, we could optimize this further
-                    // For now, just leave the original instructions
-                    // TODO: Add LoadField variant to Instruction enum for better optimization
+                    // Optimize single field access to LoadField
+                    if field_chain.len() == 1 {
+                        ctx.instructions[i] = Instruction::LoadField(var.clone(), field.clone());
+                        ctx.instructions.drain(i + 1..i + 2);
+                        continue; // Don't increment i, check this position again
+                    }
+                    // For multiple field accesses, keep as is for now
+                    // Future optimization: chain field accesses
                 }
 
                 // Combine duplicate loads: Load(x), Load(x) -> Load(x), Dup
@@ -740,28 +747,28 @@ mod tests {
 
     #[test]
     fn test_short_circuit() {
-        // Skip this test as the parser doesn't support && operator yet
-        // This is a known limitation of the current expression parser
+        use crate::expression::parser::Parser;
+        use crate::expression::functions::FunctionRegistry;
+        
+        let registry = Arc::new(FunctionRegistry::new());
+        let compiler = Compiler::new(registry).with_optimization_level(2);
+        let parser = Parser::new();
 
-        // TODO: Re-enable when logical operators are implemented in the parser
-        // let registry = Arc::new(FunctionRegistry::new());
-        // let compiler = Compiler::new(registry).with_optimization_level(2);
-        // let parser = Parser::new();
-        //
-        // // Test short-circuit AND
-        // let expr = parser
-        //     .parse("false && expensive_func()")
-        //     .expect("should parse short-circuit expression: {}");
-        // let compiled = compiler
-        //     .compile(&expr, "false && expensive_func()")
-        //     .expect("should compile short-circuit expression: {}");
-        //
-        // // Should have jump instruction for short-circuit
-        // assert!(
-        //     compiled
-        //         .instructions
-        //         .iter()
-        //         .any(|inst| matches!(inst, Instruction::JumpIfFalse(_)))
-        // );
+        // Test short-circuit AND
+        let expr = parser
+            .parse("false && true")
+            .expect("should parse short-circuit expression");
+        let compiled = compiler
+            .compile(&expr, "false && true")
+            .expect("should compile short-circuit expression");
+
+        // Should have jump instruction for short-circuit
+        assert!(
+            compiled
+                .instructions
+                .iter()
+                .any(|inst| matches!(inst, Instruction::JumpIfFalse(_))),
+            "Should have short-circuit jump for AND"
+        );
     }
 }

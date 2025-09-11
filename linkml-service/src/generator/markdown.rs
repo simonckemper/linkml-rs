@@ -15,7 +15,10 @@ pub struct MarkdownGenerator {
     /// Whether to include inheritance diagrams
     include_diagrams: bool,
     /// Whether to include examples
-    include_examples: bool}
+    include_examples: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl MarkdownGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -29,7 +32,17 @@ impl MarkdownGenerator {
         Self {
             include_toc: true,
             include_diagrams: true,
-            include_examples: true}
+            include_examples: true,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Configure table of contents generation

@@ -12,14 +12,27 @@ use std::fmt::Write;
 /// `SQL` DDL generator for `LinkML` schemas
 pub struct SQLGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl SQLGenerator {
     /// Create a new `SQL` generator
     #[must_use]
     pub fn new() -> Self {
         Self {
-            name: "sql".to_string()}
+            name: "sql".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -513,7 +526,6 @@ impl SQLGenerator {
         } else {
             Ok(base_type)
         }
-    }
 
     /// Get base `SQL` type from `LinkML` range
     ///
@@ -911,4 +923,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert_eq!(generator.convert_table_name("HTTPResponse"), "httpresponse");
         assert_eq!(generator.convert_table_name("person_name"), "person_name");
     }
+}
 }

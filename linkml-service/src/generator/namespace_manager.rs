@@ -22,7 +22,8 @@ pub struct NamespaceManagerGeneratorConfig {
     /// Whether to generate thread-safe implementation
     pub thread_safe: bool,
     /// Class name for the generated manager
-    pub class_name: String}
+    pub class_name: String,
+}
 
 /// Supported target languages
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,7 +37,8 @@ pub enum TargetLanguage {
     /// Java namespace manager
     Java,
     /// Go namespace manager
-    Go}
+    Go,
+}
 
 impl Default for NamespaceManagerGeneratorConfig {
     fn default() -> Self {
@@ -46,18 +48,25 @@ impl Default for NamespaceManagerGeneratorConfig {
             include_validation: true,
             include_utilities: true,
             thread_safe: false,
-            class_name: "NamespaceManager".to_string()}
+            class_name: "NamespaceManager".to_string(),
+        }
     }
 }
 
 /// Namespace manager generator
 pub struct NamespaceManagerGenerator {
-    config: NamespaceManagerGeneratorConfig}
+    config: NamespaceManagerGeneratorConfig,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl NamespaceManagerGenerator {
     /// Create a new namespace manager generator
     #[must_use] pub fn new(config: NamespaceManagerGeneratorConfig) -> Self {
-        Self { config }
+        Self { 
+            config,
+            options: super::traits::GeneratorOptions::default(),
+        }
     }
 
     /// Get prefix reference from `PrefixDefinition`
@@ -66,7 +75,8 @@ impl NamespaceManagerGenerator {
             PrefixDefinition::Simple(url) => url,
             PrefixDefinition::Complex {
                 prefix_reference, ..
-            } => prefix_reference.as_deref().unwrap_or("")}
+            } => prefix_reference.as_deref().unwrap_or(""),
+        }
     }
 
     /// Generate namespace manager for the configured language
@@ -76,7 +86,8 @@ impl NamespaceManagerGenerator {
             TargetLanguage::JavaScript => self.generate_javascript(schema),
             TargetLanguage::Rust => self.generate_rust(schema),
             TargetLanguage::Java => self.generate_java(schema),
-            TargetLanguage::Go => self.generate_go(schema)}
+            TargetLanguage::Go => self.generate_go(schema),
+        }
     }
 
     /// Generate Python namespace manager
@@ -600,7 +611,15 @@ impl NamespaceManagerGenerator {
             for (prefix, expansion) in &schema.prefixes {
                 let _ = writeln!(
                     output,
-                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());",
+                    "        prefixes.insert(\"{}
+    
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
+    }\".to_string(), \"{}\".to_string());",
                     prefix,
                     Self::get_prefix_reference(expansion)
                 );

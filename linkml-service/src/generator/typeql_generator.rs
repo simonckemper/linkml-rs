@@ -2,7 +2,8 @@
 
 use super::options::{GeneratorOptions, IndentStyle};
 use super::traits::{
-    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult};
+    AsyncGenerator, CodeFormatter, GeneratedOutput, Generator, GeneratorError, GeneratorResult,
+};
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use std::collections::{HashMap, HashSet};
@@ -11,14 +12,52 @@ use std::fmt::Write;
 /// `TypeQL` schema generator for `TypeDB`
 pub struct TypeQLGenerator {
     /// Generator name
-    name: String}
+    name: String,
+    /// Type mapping configuration
+    type_mappings: HashMap<String, String>,
+    /// Default type for unknown mappings
+    default_type: String,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl TypeQLGenerator {
     /// Create a new `TypeQL` generator
     #[must_use]
     pub fn new() -> Self {
+        let mut type_mappings = HashMap::new();
+        // Initialize standard LinkML to TypeQL type mappings
+        type_mappings.insert("string".to_string(), "string".to_string());
+        type_mappings.insert("str".to_string(), "string".to_string());
+        type_mappings.insert("uri".to_string(), "string".to_string());
+        type_mappings.insert("url".to_string(), "string".to_string());
+        type_mappings.insert("ncname".to_string(), "string".to_string());
+        type_mappings.insert("curie".to_string(), "string".to_string());
+        type_mappings.insert("integer".to_string(), "long".to_string());
+        type_mappings.insert("int".to_string(), "long".to_string());
+        type_mappings.insert("float".to_string(), "double".to_string());
+        type_mappings.insert("double".to_string(), "double".to_string());
+        type_mappings.insert("decimal".to_string(), "double".to_string());
+        type_mappings.insert("boolean".to_string(), "boolean".to_string());
+        type_mappings.insert("bool".to_string(), "boolean".to_string());
+        type_mappings.insert("date".to_string(), "datetime".to_string());
+        type_mappings.insert("datetime".to_string(), "datetime".to_string());
+        type_mappings.insert("time".to_string(), "datetime".to_string());
+        
         Self {
-            name: "typeql".to_string()}
+            name: "typeql".to_string(),
+            type_mappings,
+            default_type: "string".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+    
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Convert `fmt::Error` to `GeneratorError`
@@ -224,7 +263,7 @@ impl TypeQLGenerator {
         slot: &SlotDefinition,
     ) -> GeneratorResult<()> {
         let attr_name = self.convert_identifier(name);
-        let value_type = Self::map_range_to_typeql(&slot.range);
+        let value_type = self.map_range_to_typeql(&slot.range);
 
         // Add documentation if present
         if let Some(desc) = &slot.description {
@@ -365,15 +404,21 @@ impl TypeQLGenerator {
     }
 
     /// Map `LinkML` range to `TypeQL` value type
-    fn map_range_to_typeql(range: &Option<String>) -> &'static str {
-        match range.as_deref() {
-            Some("string" | "str" | "uri" | "url") => "string",
-            Some("integer" | "int") => "long",
-            Some("float" | "double" | "decimal") => "double",
-            Some("boolean" | "bool") => "boolean",
-            Some("date" | "datetime") => "datetime",
-            Some(_) | None => "string", // Default to string for unknown types
-        }
+    fn map_range_to_typeql(&self, range: &Option<String>) -> String {
+        range.as_ref()
+            .and_then(|r| self.type_mappings.get(r))
+            .cloned()
+            .unwrap_or_else(|| self.default_type.clone())
+    }
+    
+    /// Add custom type mapping
+    pub fn add_type_mapping(&mut self, linkml_type: String, typeql_type: String) {
+        self.type_mappings.insert(linkml_type, typeql_type);
+    }
+    
+    /// Set default type for unknown mappings
+    pub fn set_default_type(&mut self, default_type: String) {
+        self.default_type = default_type;
     }
 }
 

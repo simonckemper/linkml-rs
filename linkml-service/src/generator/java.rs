@@ -65,7 +65,7 @@ impl JavaGenerator {
         let mut output = String::new();
 
         // Package declaration
-        let package_name = self.to_snake_case(&schema.name);
+        let package_name = Self::to_snake_case(&schema.name);
         writeln!(&mut output, "package com.example.{package_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -126,7 +126,7 @@ impl JavaGenerator {
         }
         writeln!(&mut output, " */").map_err(Self::fmt_error_to_generator_error)?;
 
-        writeln!(&mut output, "public enum {} {{", self.to_pascal_case(name))
+        writeln!(&mut output, "public enum {} {{", Self::to_pascal_case(name))
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Generate enum values
@@ -178,7 +178,7 @@ impl JavaGenerator {
 
         // Class declaration with inheritance
         let extends = if let Some(parent) = &class_def.is_a {
-            format!(" extends {}", self.to_pascal_case(parent))
+            format!(" extends {}", Self::to_pascal_case(parent))
         } else {
             String::new()
         };
@@ -186,7 +186,7 @@ impl JavaGenerator {
         writeln!(
             &mut output,
             "public class {}{} {{",
-            self.to_pascal_case(name),
+            Self::to_pascal_case(name),
             extends
         )
         .map_err(Self::fmt_error_to_generator_error)?;
@@ -210,13 +210,13 @@ impl JavaGenerator {
         writeln!(&mut output, "     * Default constructor")
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "     */").map_err(Self::fmt_error_to_generator_error)?;
-        writeln!(&mut output, "    public {}() {{", self.to_pascal_case(name))
+        writeln!(&mut output, "    public {}() {{", Self::to_pascal_case(name))
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(&mut output, "        // Initialize collections")
             .map_err(Self::fmt_error_to_generator_error)?;
         for (slot_name, slot) in &slots {
             if slot.multivalued.unwrap_or(false) {
-                let field_name = self.to_camel_case(slot_name);
+                let field_name = Self::to_camel_case(slot_name);
                 writeln!(
                     &mut output,
                     "        this.{field_name} = new ArrayList<>();"
@@ -285,7 +285,7 @@ impl JavaGenerator {
         // Field declaration
         let java_type =
             self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
-        let field_name = self.to_camel_case(slot_name);
+        let field_name = Self::to_camel_case(slot_name);
         writeln!(output, "    private {java_type} {field_name};")
             .map_err(Self::fmt_error_to_generator_error)?;
 
@@ -302,8 +302,8 @@ impl JavaGenerator {
     ) -> GeneratorResult<()> {
         let java_type =
             self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
-        let field_name = self.to_camel_case(slot_name);
-        let method_name = format!("get{}", self.to_pascal_case(slot_name));
+        let field_name = Self::to_camel_case(slot_name);
+        let method_name = format!("get{}", Self::to_pascal_case(slot_name));
 
         writeln!(output, "    public {java_type} {method_name}() {{")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -324,8 +324,8 @@ impl JavaGenerator {
     ) -> GeneratorResult<()> {
         let java_type =
             self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
-        let field_name = self.to_camel_case(slot_name);
-        let method_name = format!("set{}", self.to_pascal_case(slot_name));
+        let field_name = Self::to_camel_case(slot_name);
+        let method_name = format!("set{}", Self::to_pascal_case(slot_name));
 
         writeln!(
             output,
@@ -347,7 +347,7 @@ impl JavaGenerator {
         slots: &[(&String, &SlotDefinition)],
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
-        let class_pascal = self.to_pascal_case(class_name);
+        let class_pascal = Self::to_pascal_case(class_name);
 
         writeln!(output, "    /**").map_err(Self::fmt_error_to_generator_error)?;
         writeln!(output, "     * Builder for {class_pascal}")
@@ -366,8 +366,8 @@ impl JavaGenerator {
         for (slot_name, slot) in slots {
             let java_type =
                 self.get_java_type(&slot.range, slot.multivalued.unwrap_or(false), schema)?;
-            let field_name = self.to_camel_case(slot_name);
-            let method_name = format!("with{}", self.to_pascal_case(slot_name));
+            let field_name = Self::to_camel_case(slot_name);
+            let method_name = format!("with{}", Self::to_pascal_case(slot_name));
 
             writeln!(
                 output,
@@ -377,7 +377,7 @@ impl JavaGenerator {
             writeln!(
                 output,
                 "            instance.set{}({});",
-                self.to_pascal_case(slot_name),
+                Self::to_pascal_case(slot_name),
                 field_name
             )
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -424,7 +424,7 @@ impl JavaGenerator {
                     return self.get_java_type(&type_def.base_type, multivalued, schema);
                 } else {
                     // Assume it's a class or enum
-                    self.to_pascal_case(r)
+                    Self::to_pascal_case(r)
                 }
             }
             None => "String".to_string()};
@@ -437,7 +437,7 @@ impl JavaGenerator {
     }
 
     /// Convert to `snake_case`
-    fn to_snake_case(&self, s: &str) -> String {
+    fn to_snake_case(s: &str) -> String {
         let mut result = String::new();
         let mut prev_upper = false;
 
@@ -457,7 +457,7 @@ impl JavaGenerator {
     }
 
     /// Convert to camelCase
-    fn to_camel_case(&self, s: &str) -> String {
+    fn to_camel_case(s: &str) -> String {
         let mut result = String::new();
         let mut capitalize_next = false;
 
@@ -486,7 +486,7 @@ impl JavaGenerator {
     }
 
     /// Convert to `PascalCase`
-    fn to_pascal_case(&self, s: &str) -> String {
+    fn to_pascal_case(s: &str) -> String {
         s.split(['_', '-'])
             .map(|word| {
                 let mut chars = word.chars();
@@ -499,7 +499,7 @@ impl JavaGenerator {
 
     /// Convert to `SCREAMING_SNAKE_CASE`
     fn to_screaming_snake_case(&self, s: &str) -> String {
-        self.to_snake_case(s).to_uppercase()
+        Self::to_snake_case(s).to_uppercase()
     }
 }
 
@@ -624,17 +624,17 @@ mod tests {
         let generator = JavaGenerator::new();
 
         // snake_case
-        assert_eq!(generator.to_snake_case("PersonName"), "person_name");
-        assert_eq!(generator.to_snake_case("HTTPRequest"), "httprequest");
+        assert_eq!(JavaGenerator::to_snake_case("PersonName"), "person_name");
+        assert_eq!(JavaGenerator::to_snake_case("HTTPRequest"), "httprequest");
 
         // camelCase
-        assert_eq!(generator.to_camel_case("person_name"), "personName");
-        assert_eq!(generator.to_camel_case("http_request"), "httpRequest");
-        assert_eq!(generator.to_camel_case("is-active"), "isActive");
+        assert_eq!(JavaGenerator::to_camel_case("person_name"), "personName");
+        assert_eq!(JavaGenerator::to_camel_case("http_request"), "httpRequest");
+        assert_eq!(JavaGenerator::to_camel_case("is-active"), "isActive");
 
         // PascalCase
-        assert_eq!(generator.to_pascal_case("person_name"), "PersonName");
-        assert_eq!(generator.to_pascal_case("http-request"), "HttpRequest");
+        assert_eq!(JavaGenerator::to_pascal_case("person_name"), "PersonName");
+        assert_eq!(JavaGenerator::to_pascal_case("http-request"), "HttpRequest");
 
         // SCREAMING_SNAKE_CASE
         assert_eq!(

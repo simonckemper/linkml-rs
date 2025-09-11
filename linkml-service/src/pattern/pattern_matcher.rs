@@ -34,10 +34,8 @@ pub type PatternResult<T> = Result<T, PatternError>;
 /// A compiled pattern ready for matching
 #[derive(Debug, Clone)]
 pub struct CompiledPattern {
-    /// The original pattern string
     pub pattern: String,
 
-    /// The compiled regex
     pub regex: Arc<Regex>,
 
     /// Named capture groups
@@ -85,6 +83,13 @@ impl PatternMatcher {
     }
 
     /// Compile a pattern
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern syntax is invalid
+    /// - Pattern compilation fails
+    /// - Pattern name conflicts with existing patterns
     pub fn compile(
         &mut self,
         name: &str,
@@ -119,6 +124,13 @@ impl PatternMatcher {
     }
 
     /// Compile a structured pattern with interpolation
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Variable interpolation fails
+    /// - Resulting pattern is invalid
+    /// - Pattern compilation fails
     pub fn compile_structured(
         &mut self,
         name: &str,
@@ -131,6 +143,12 @@ impl PatternMatcher {
     }
 
     /// Interpolate variables in a pattern
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern contains unresolved placeholders
+    /// - Variable substitution fails
     fn interpolate_pattern(
         &self,
         pattern: &str,
@@ -156,6 +174,12 @@ impl PatternMatcher {
     }
 
     /// Match a string against a compiled pattern
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern with the given name is not found
+    /// - Pattern matching fails
     pub fn matches(&self, pattern_name: &str, text: &str) -> PatternResult<bool> {
         let pattern = self
             .patterns
@@ -166,6 +190,12 @@ impl PatternMatcher {
     }
 
     /// Find all matches for a pattern
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern with the given name is not found
+    /// - Pattern matching operation fails
     pub fn find_all<'t>(&self, pattern_name: &str, text: &'t str) -> PatternResult<Vec<Match<'t>>> {
         let pattern = self
             .patterns
@@ -186,6 +216,13 @@ impl PatternMatcher {
     }
 
     /// Extract captures from a match
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern with the given name is not found
+    /// - Capture extraction fails
+    /// - Regex matching operation fails
     pub fn capture<'t>(
         &self,
         pattern_name: &str,
@@ -231,6 +268,12 @@ impl PatternMatcher {
     }
 
     /// Replace matches with a replacement string
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern with the given name is not found
+    /// - Replacement operation fails
     pub fn replace(
         &self,
         pattern_name: &str,
@@ -282,7 +325,6 @@ impl PatternMatcher {
 /// A match result
 #[derive(Debug, Clone)]
 pub struct Match<'t> {
-    /// The matched text
     pub text: &'t str,
 
     /// Start position in the original text
@@ -297,7 +339,6 @@ pub struct Match<'t> {
 /// A match with captures
 #[derive(Debug, Clone)]
 pub struct CaptureMatch<'t> {
-    /// The full match
     pub full_match: Match<'t>,
 
     /// All captures (named and numbered)
@@ -347,6 +388,13 @@ impl PatternMatcherBuilder {
     }
 
     /// Build the pattern matcher
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Pattern compilation fails for any added pattern
+    /// - Invalid pattern syntax is detected
+    /// - Pattern metadata is invalid
     pub fn build(self) -> PatternResult<PatternMatcher> {
         let mut matcher = PatternMatcher::with_defaults(self.default_metadata);
 

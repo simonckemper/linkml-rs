@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 /// Validation context that tracks state during validation
 pub struct ValidationContext {
-    /// The schema being validated against
     pub schema: Arc<SchemaDefinition>,
     /// Current `JSON` path being validated
     pub current_path: Vec<String>,

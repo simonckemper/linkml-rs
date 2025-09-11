@@ -308,14 +308,14 @@ impl PlantUmlGenerator {
                 stereotypes.push("id");
             }
 
-            // TODO: key and readonly fields not available in current SlotDefinition
-            // if slot_def.key == Some(true) {
-            //     stereotypes.push("key");
-            // }
+            // Use the now-available key and readonly fields
+            if slot_def.key == Some(true) {
+                stereotypes.push("key");
+            }
 
-            // if slot_def.readonly == Some(true) {
-            //     stereotypes.push("readonly");
-            // }
+            if slot_def.readonly == Some(true) {
+                stereotypes.push("readonly");
+            }
 
             if !stereotypes.is_empty() {
                 write!(output, " <<{}>>", stereotypes.join(", "))
@@ -982,4 +982,5 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("** Classes"));
         Ok(())
     }
+}
 }

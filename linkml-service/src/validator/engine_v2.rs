@@ -21,7 +21,6 @@ use super::{
 
 /// Optimized validation engine using Arc for schema sharing
 pub struct ValidationEngineV2 {
-    /// The schema wrapped in Arc for efficient sharing
     schema: ArcSchema,
     /// Validator instances
     validators: Vec<Box<dyn Validator>>,

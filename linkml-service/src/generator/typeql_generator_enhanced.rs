@@ -53,7 +53,10 @@ pub struct EnhancedTypeQLGenerator {
     /// Role inheritance resolver
     role_inheritance_resolver: RwLock<RoleInheritanceResolver>,
     /// Identifier mapping table for bidirectional lookups
-    identifier_map: RwLock<HashMap<String, String>>}
+    identifier_map: RwLock<HashMap<String, String>>,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 /// Analyzes schema structure for optimal `TypeQL` generation
 struct SchemaAnalyzer {
@@ -66,7 +69,8 @@ struct SchemaAnalyzer {
 enum TypeQLType {
     Entity,
     Relation,
-    Abstract}
+    Abstract,
+}
 
 
 
@@ -120,7 +124,17 @@ impl EnhancedTypeQLGenerator {
             constraint_translator: RwLock::new(TypeQLConstraintTranslator::new()),
             relation_analyzer: RwLock::new(RelationAnalyzer::new()),
             role_inheritance_resolver: RwLock::new(RoleInheritanceResolver::new()),
-            identifier_map: RwLock::new(HashMap::new())}
+            identifier_map: RwLock::new(HashMap::new()),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Analyze schema and determine optimal `TypeQL` structure

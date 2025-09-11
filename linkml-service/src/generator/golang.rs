@@ -18,7 +18,10 @@ pub struct GoGenerator {
     /// Whether to generate `JSON` tags
     generate_json_tags: bool,
     /// Whether to generate interfaces
-    generate_interfaces: bool}
+    generate_interfaces: bool,
+    /// Generator options
+    options: super::traits::GeneratorOptions,
+}
 
 impl GoGenerator {
     /// Convert `fmt::Error` to `GeneratorError`
@@ -33,7 +36,17 @@ impl GoGenerator {
             package_name: "linkml".to_string(),
             generate_validation: true,
             generate_json_tags: true,
-            generate_interfaces: true}
+            generate_interfaces: true,
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Set the package name

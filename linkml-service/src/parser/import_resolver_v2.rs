@@ -22,7 +22,6 @@ use tokio::fs;
 /// Import specification with advanced options
 #[derive(Debug, Clone)]
 pub struct ImportSpec {
-    /// The import path/`URL`
     pub path: String,
     /// Alias for the imported schema
     pub alias: Option<String>,

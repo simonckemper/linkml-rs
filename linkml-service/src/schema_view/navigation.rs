@@ -80,7 +80,6 @@ impl NavigationCache {
 /// Represents an inheritance chain from a class to its root ancestor
 #[derive(Debug, Clone)]
 pub struct InheritanceChain {
-    /// The starting class
     pub start_class: String,
 
     /// Chain of classes from start to root (excluding start)

@@ -508,6 +508,10 @@ impl ArrayData {
     ///
     /// Returns an error if the transposition fails due to invalid array structure
     /// or if index calculations during data reordering are invalid.
+    ///
+    /// # Panics
+    ///
+    /// Panics if transposed indices cannot be converted to flat index (should never happen)
     pub fn transpose(&self) -> Result<ArrayData, Box<dyn std::error::Error>> {
         let mut new_spec = self.spec.clone();
         new_spec.dimensions.reverse();

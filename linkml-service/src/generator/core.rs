@@ -13,7 +13,10 @@ pub struct RustGenerator {
     /// Generator name
     pub name: String,
     /// Generator description
-    pub description: String}
+    pub description: String,
+    /// Generator options
+    pub options: super::traits::GeneratorOptions,
+}
 
 impl RustGenerator {
     /// Create a new Rust generator
@@ -21,7 +24,17 @@ impl RustGenerator {
     pub fn new() -> Self {
         Self {
             name: "rust".to_string(),
-            description: "Generate idiomatic Rust code from LinkML schemas with serde support, comprehensive validation, and zero-tolerance for unwrap()".to_string()}
+            description: "Generate idiomatic Rust code from LinkML schemas with serde support, comprehensive validation, and zero-tolerance for unwrap()".to_string(),
+            options: super::traits::GeneratorOptions::default(),
+        }
+    }
+    
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let mut generator = Self::new();
+        generator.options = options;
+        generator
     }
 
     /// Get the generator name

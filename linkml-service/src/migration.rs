@@ -334,8 +334,8 @@ where
 {
     config: Arc<RwLock<MigrationConfig>>,
     versions: Arc<RwLock<Vec<SchemaVersion>>>,
-    _service: Arc<S>, // Reserved for future async validation
-    _timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
+    service: Arc<S>, // Used for schema validation
+    timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
 impl<S> MigrationEngine<S>
 where
@@ -350,8 +350,18 @@ where
         Self {
             config: Arc::new(RwLock::new(config)),
             versions: Arc::new(RwLock::new(Vec::new())),
-            _service: service,
-            _timestamp: timestamp}
+            service,
+            timestamp}
+    }
+    
+    /// Get the LinkML service
+    pub fn service(&self) -> &Arc<S> {
+        &self.service
+    }
+    
+    /// Get the timestamp service
+    pub fn timestamp_service(&self) -> &Arc<dyn TimestampService<Error = TimestampError>> {
+        &self.timestamp
     }
 
     /// Register a schema version
@@ -1443,13 +1453,55 @@ where
         }
     }
 
-    /// Validate data against a schema
+    /// Validate data against a schema using proper LinkML validation
     fn validate_against_schema(&self, data: &Value, schema: &SchemaDefinition) -> linkml_core::error::Result<Vec<String>> {
+        use crate::validator::ValidationEngine;
+        
         let mut errors = Vec::new();
         
-        // Check if data matches any defined classes
-        if let Value::Object(map) = data {
+        // Create a validation engine with the schema
+        let mut validator = ValidationEngine::new(schema)?;
+        
+        // Use tokio's block_on to run async validation in sync context
+        let runtime = tokio::runtime::Handle::try_current()
+            .or_else(|_| {
+                // Create a minimal runtime if we're not in an async context
+                tokio::runtime::Runtime::new().map(|rt| rt.handle().clone())
+            })
+            .map_err(|e| LinkMLError::service(format!("Failed to get tokio runtime: {e}")))?;
+        
+        // Determine the target class for validation
+        let target_class = if let Value::Object(map) = data {
             // Look for a type field to identify the class
+            if let Some(type_field) = map.get("type").or_else(|| map.get("@type"))
+                && let Some(type_name) = type_field.as_str() {
+                    type_name.to_string()
+                } else {
+                    // Try to find a default root class
+                    schema.classes.keys().next().cloned().unwrap_or_else(|| "Root".to_string())
+                }
+        } else {
+            "Root".to_string()
+        };
+        
+        // Run async validation synchronously using block_on
+        let validation_future = validator.validate_as_class(data, &target_class, None);
+        let report = runtime.block_on(validation_future)?;
+        
+        // Convert validation issues to error strings
+        if !report.valid {
+            for issue in report.issues {
+                let error_msg = if let Some(path) = issue.path {
+                    format!("{}: {}", path, issue.message)
+                } else {
+                    issue.message
+                };
+                errors.push(error_msg);
+            }
+        }
+        
+        // Keep the detailed validation logic as a fallback for additional checks
+        if errors.is_empty() && let Value::Object(map) = data {
             if let Some(type_field) = map.get("type").or_else(|| map.get("@type"))
                 && let Some(type_name) = type_field.as_str() {
                     if let Some(class_def) = schema.classes.get(type_name) {
@@ -1461,10 +1513,44 @@ where
                                 }
                         }
                         
-                        // Check for unknown fields
-                        for field in map.keys() {
-                            if field != "type" && field != "@type" && !class_def.slots.contains(field) {
-                                errors.push(format!("Unknown field '{field}' in class '{type_name}'"));
+                        // Validate slot types and constraints
+                        for (field_name, field_value) in map {
+                            if field_name == "type" || field_name == "@type" {
+                                continue;
+                            }
+                            
+                            if let Some(slot_def) = schema.slots.get(field_name) {
+                                // Type validation
+                                if let Some(range) = &slot_def.range {
+                                    let type_valid = match (range.as_str(), field_value) {
+                                        ("string", Value::String(_)) => true,
+                                        ("integer", Value::Number(n)) => n.is_i64() || n.is_u64(),
+                                        ("float" | "double", Value::Number(_)) => true,
+                                        ("boolean", Value::Bool(_)) => true,
+                                        _ => false,
+                                    };
+                                    
+                                    if !type_valid {
+                                        errors.push(format!(
+                                            "Field '{}' expects type '{}' but got '{:?}'",
+                                            field_name, range, field_value
+                                        ));
+                                    }
+                                }
+                                
+                                // Pattern validation for strings
+                                if let (Some(pattern), Value::String(s)) = (&slot_def.pattern, field_value) {
+                                    if let Ok(re) = regex::Regex::new(pattern) {
+                                        if !re.is_match(s) {
+                                            errors.push(format!(
+                                                "Field '{}' value '{}' doesn't match pattern '{}'",
+                                                field_name, s, pattern
+                                            ));
+                                        }
+                                    }
+                                }
+                            } else if !class_def.slots.contains(field_name) {
+                                errors.push(format!("Unknown field '{field_name}' in class '{type_name}'"));
                             }
                         }
                     } else {
