@@ -103,7 +103,7 @@ impl PatternValidator {
             }
 
             // Check for structured pattern hints
-            if let Some(structured) = validator.detect_structured_pattern(slot_def) {
+            if let Some(structured) = Self::detect_structured_pattern(slot_def) {
                 validator.add_structured_pattern(slot_name, &structured);
             }
         }
@@ -151,7 +151,7 @@ impl PatternValidator {
     }
 
     /// Detect structured pattern from slot definition
-    fn detect_structured_pattern(&self, slot: &SlotDefinition) -> Option<String> {
+    fn detect_structured_pattern(slot: &SlotDefinition) -> Option<String> {
         // Check slot name hints
         let name_lower = slot.name.to_lowercase();
         if name_lower.contains("email") || name_lower.contains("mail") {

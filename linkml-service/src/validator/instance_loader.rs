@@ -86,7 +86,7 @@ impl InstanceLoader {
             .map_err(|e| LinkMLError::parse(format!("Invalid JSON in instance file: {e}")))?;
 
         // Extract values based on config
-        let values = self.extract_values_from_json(&json, config)?;
+        let values = Self::extract_values_from_json(&json, config)?;
 
         let instance_data = Arc::new(InstanceData {
             values,
@@ -189,7 +189,6 @@ impl InstanceLoader {
 
     /// Extract values from `JSON` based on configuration
     fn extract_values_from_json(
-        &self,
         json: &Value,
         config: &InstanceConfig,
     ) -> Result<HashMap<String, Vec<String>>> {

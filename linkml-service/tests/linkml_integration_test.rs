@@ -9,12 +9,8 @@ mod mock_services;
 use crate::factory::create_logger_service;
 use linkml_core::prelude::*;
 use linkml_service::{
-    LinkMLServiceImpl,
-    create_linkml_service,
     // TODO: Fix generator API - generator::{Generator, GeneratorOptions},
-    parser::Parser,
     schema_view::SchemaView,
-    validator::ValidationOptions,
 };
 use mock_services::*;
 use serde_json::{Value, json};

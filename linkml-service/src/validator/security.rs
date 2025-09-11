@@ -393,7 +393,7 @@ impl InjectionPrevention {
         }
 
         // Check query depth
-        let depth = self.calculate_query_depth(query);
+        let depth = Self::calculate_query_depth(query);
         if depth > 10 {
             return Err(LinkMLError::service(format!(
                 "GraphQL query depth {depth} exceeds maximum 10"
@@ -404,7 +404,7 @@ impl InjectionPrevention {
     }
 
     /// Calculate GraphQL query depth
-    fn calculate_query_depth(&self, query: &str) -> usize {
+    fn calculate_query_depth(query: &str) -> usize {
         let mut depth = 0;
         let mut current_depth: usize = 0;
 

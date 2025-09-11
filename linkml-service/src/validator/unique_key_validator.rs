@@ -114,7 +114,7 @@ impl UniqueKeyValidator {
 
         if let Some(key_defs) = self.unique_keys.get(class_name) {
             for key_def in key_defs {
-                let key_violations = self.check_unique_key(instances, key_def);
+                let key_violations = Self::check_unique_key(instances, key_def);
                 violations.extend(key_violations);
             }
         }
@@ -124,7 +124,6 @@ impl UniqueKeyValidator {
 
     /// Check a single unique key constraint
     fn check_unique_key(
-        &self,
         instances: &[Value],
         key_def: &UniqueKeyDefinition,
     ) -> Vec<UniqueKeyViolation> {
@@ -149,7 +148,7 @@ impl UniqueKeyValidator {
                     }
 
                     // Normalize value for comparison
-                    let normalized = self.normalize_value(value, key_def.case_sensitive);
+                    let normalized = Self::normalize_value(value, key_def.case_sensitive);
                     key_values.push(normalized);
                 }
 
@@ -181,7 +180,7 @@ impl UniqueKeyValidator {
     }
 
     /// Normalize a value for comparison
-    fn normalize_value(&self, value: &Value, case_sensitive: bool) -> Value {
+    fn normalize_value(value: &Value, case_sensitive: bool) -> Value {
         match value {
             Value::String(s) if !case_sensitive => Value::String(s.to_lowercase()),
             _ => value.clone()}

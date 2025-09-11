@@ -37,7 +37,6 @@ impl AnyOfValidator {
 
     /// Validate a single anonymous slot expression
     fn validate_expression(
-        &self,
         value: &Value,
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
@@ -102,7 +101,7 @@ impl Validator for AnyOfValidator {
             // Check if at least one constraint is satisfied
             for (i, constraint) in constraints.iter().enumerate() {
                 context.push_path(format!("any_of[{i}]"));
-                let sub_issues = self.validate_expression(value, constraint, context);
+                let sub_issues = Self::validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
                     satisfied = true;
@@ -178,7 +177,6 @@ impl AllOfValidator {
 
     /// Validate a single anonymous slot expression
     fn validate_expression(
-        &self,
         value: &Value,
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
@@ -235,7 +233,6 @@ impl AllOfValidator {
 
     /// Validate a single expression with thread-safe context
     fn validate_expression_parallel(
-        &self,
         value: Arc<Value>,
         expr: &AnonymousSlotExpression,
         path: String,
@@ -245,7 +242,7 @@ impl AllOfValidator {
         let mut context = ValidationContext::new(schema);
         context.push_path(&path);
 
-        let issues = self.validate_expression(&value, expr, &mut context);
+        let issues = Self::validate_expression(&value, expr, &mut context);
 
         context.pop_path();
         issues
@@ -281,7 +278,7 @@ impl Validator for AllOfValidator {
                     .enumerate()
                     .map(|(i, constraint)| {
                         let path = format!("{base_path}/all_of[{i}]");
-                        let issues = self.validate_expression_parallel(
+                        let issues = Self::validate_expression_parallel(
                             Arc::clone(&value_arc),
                             constraint,
                             path,
@@ -329,7 +326,7 @@ impl Validator for AllOfValidator {
                 // Check that all constraints are satisfied
                 for (i, constraint) in constraints.iter().enumerate() {
                     context.push_path(format!("all_of[{i}]"));
-                    let sub_issues = self.validate_expression(value, constraint, context);
+                    let sub_issues = Self::validate_expression(value, constraint, context);
 
                     if !sub_issues.is_empty() {
                         failed_count += 1;

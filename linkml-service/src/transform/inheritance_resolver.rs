@@ -89,7 +89,7 @@ impl InheritanceResolver {
         self.resolve_slots(schema)?;
 
         // Resolve enums
-        self.resolve_enums(schema)?;
+        self.resolve_enums(schema);
 
         Ok(())
     }
@@ -462,10 +462,9 @@ impl InheritanceResolver {
     }
 
     /// Resolve enum inheritance
-    fn resolve_enums(&self, _schema: &mut SchemaDefinition) -> InheritanceResult<()> {
+    fn resolve_enums(&self, _schema: &mut SchemaDefinition) {
         // EnumDefinition doesn't support inheritance (no is_a or mixins fields)
         // So nothing to resolve here
-        Ok(())
     }
 
     /// Merge enum attributes

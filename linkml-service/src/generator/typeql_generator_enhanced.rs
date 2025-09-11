@@ -344,7 +344,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // Determine base type
-        let base_type = if self.is_relation_like(class, schema) {
+        let base_type = if Self::is_relation_like(class, schema) {
             "relation"
         } else {
             "entity"
@@ -661,7 +661,7 @@ impl EnhancedTypeQLGenerator {
             let mut range_parts = Vec::new();
 
             if let Some(min) = &slot.minimum_value {
-                if let Some(min_num) = self.value_to_number(min) {
+                if let Some(min_num) = Self::value_to_number(min) {
                     range_parts.push(format!("{min_num}"));
                 }
             } else {
@@ -671,7 +671,7 @@ impl EnhancedTypeQLGenerator {
             range_parts.push("..".to_string());
 
             if let Some(max) = &slot.maximum_value
-                && let Some(max_num) = self.value_to_number(max) {
+                && let Some(max_num) = Self::value_to_number(max) {
                     range_parts.push(format!("{max_num}"));
                 }
 
@@ -1026,7 +1026,7 @@ impl EnhancedTypeQLGenerator {
 
 
     /// Determine if a class should be a relation
-    fn is_relation_like(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> bool {
+    fn is_relation_like(class: &ClassDefinition, schema: &SchemaDefinition) -> bool {
         // A class is relation-like if:
         // 1. It has multiple object-valued slots
         // 2. It represents a relationship concept
@@ -1090,13 +1090,13 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Escape regex pattern for `TypeQL`
-    fn _escape_regex(&self, pattern: &str) -> String {
+    fn _escape_regex(pattern: &str) -> String {
         // TypeQL uses Java regex syntax, escape accordingly
         pattern.replace('\\', "\\\\").replace('"', "\\\"")
     }
 
     /// Convert `LinkML` Value to number
-    fn value_to_number(&self, value: &linkml_core::Value) -> Option<f64> {
+    fn value_to_number(value: &linkml_core::Value) -> Option<f64> {
         // Try to convert LinkML Value (serde_json::Value) to number
         if let Some(n) = value.as_f64() {
             Some(n)
@@ -1139,7 +1139,7 @@ impl EnhancedTypeQLGenerator {
                         indent.single(),
                         var,
                         slot_name,
-                        self.get_typeql_type_for_range(range, schema)
+                        Self::get_typeql_type_for_range(range, schema)
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -1152,7 +1152,7 @@ impl EnhancedTypeQLGenerator {
                         indent.single(),
                         var,
                         slot_name,
-                        self.format_value_for_typeql(equals_string)
+                        Self::format_value_for_typeql(equals_string)
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 }
@@ -1211,7 +1211,7 @@ impl EnhancedTypeQLGenerator {
         if let Some(expressions) = &condition.expression_conditions {
             for expr in expressions {
                 // Parse and translate LinkML expressions to TypeQL predicates
-                let typeql_expr = self.translate_expression_to_typeql(expr, var)?;
+                let typeql_expr = Self::translate_expression_to_typeql(expr, var)?;
                 writeln!(
                     output,
                     "{}{};",
@@ -1258,7 +1258,7 @@ impl EnhancedTypeQLGenerator {
             for (slot_name, slot_condition) in slot_conditions {
                 if let Some(range) = &slot_condition.range {
                     // Determine if this is an attribute or relation
-                    if self.is_attribute_type(range, schema) {
+                    if Self::is_attribute_type(range, schema) {
                         writeln!(
                             output,
                             "{}${}_new has {}: ${}_{}_;",
@@ -1278,7 +1278,7 @@ impl EnhancedTypeQLGenerator {
                             var,
                             var,
                             slot_name,
-                            self.get_relation_name(slot_name, range)
+                            Self::get_relation_name(slot_name, range)
                         )
                         .map_err(Self::fmt_error_to_generator_error)?;
                     }
@@ -1292,7 +1292,7 @@ impl EnhancedTypeQLGenerator {
                         indent.single(),
                         var,
                         slot_name,
-                        self.format_value_for_typeql(equals_string)
+                        Self::format_value_for_typeql(equals_string)
                     )
                     .map_err(Self::fmt_error_to_generator_error)?;
                 } else if let Some(equals_number) = &slot_condition.equals_number {
@@ -1336,7 +1336,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Get `TypeQL` type for a `LinkML` range
-    fn get_typeql_type_for_range(&self, range: &str, schema: &SchemaDefinition) -> String {
+    fn get_typeql_type_for_range(range: &str, schema: &SchemaDefinition) -> String {
         // Check if it's a class reference
         if schema.classes.contains_key(range) {
             return range.to_string();
@@ -1356,7 +1356,7 @@ impl EnhancedTypeQLGenerator {
     // Removed duplicate is_valid_identifier method - using the one defined earlier at line 85
 
     /// Format a value for `TypeQL` syntax
-    fn format_value_for_typeql(&self, value: &str) -> String {
+    fn format_value_for_typeql(value: &str) -> String {
         // Check if it's a numeric value
         if value.parse::<f64>().is_ok() {
             value.to_string()
@@ -1369,7 +1369,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Translate `LinkML` expression to `TypeQL` predicate
-    fn translate_expression_to_typeql(&self, expr: &str, var: &str) -> GeneratorResult<String> {
+    fn translate_expression_to_typeql(expr: &str, var: &str) -> GeneratorResult<String> {
         // Parse basic comparison expressions
         if let Some(caps) = regex::Regex::new(r"(\w+)\s*([><=!]+)\s*(.+)")
             .map_err(|e| GeneratorError::Generation(format!("expression parsing: {e}")))?
@@ -1388,7 +1388,7 @@ impl EnhancedTypeQLGenerator {
                 "!=" => "!=",
                 _ => return Err(GeneratorError::Generation(format!("operator translation: Unknown operator: {op}")))};
 
-            Ok(format!("${}_{} {} {}", var, field, typeql_op, self.format_value_for_typeql(value)))
+            Ok(format!("${}_{} {} {}", var, field, typeql_op, Self::format_value_for_typeql(value)))
         } else {
             // Complex expression - return as comment for manual translation
             Ok(format!("# Expression: {expr}"))
@@ -1459,13 +1459,13 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Check if a type is an attribute type
-    fn is_attribute_type(&self, range: &str, schema: &SchemaDefinition) -> bool {
+    fn is_attribute_type(range: &str, schema: &SchemaDefinition) -> bool {
         // If it's not a class, it's an attribute type
         !schema.classes.contains_key(range)
     }
 
     /// Get relation name for a slot
-    fn get_relation_name(&self, slot_name: &str, _range: &str) -> String {
+    fn get_relation_name(slot_name: &str, _range: &str) -> String {
         format!("has_{slot_name}")
     }
 
@@ -1477,7 +1477,7 @@ impl EnhancedTypeQLGenerator {
             .captures(expr)
         {
             let field = caps[1].to_string();
-            let value = self.format_value_for_typeql(&caps[2]);
+            let value = Self::format_value_for_typeql(&caps[2]);
             Ok(Some((field, value)))
         } else {
             Ok(None)

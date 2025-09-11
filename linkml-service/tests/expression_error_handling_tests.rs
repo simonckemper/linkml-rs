@@ -3,17 +3,12 @@
 //! Verifies that the expression evaluation system properly handles errors
 //! without panicking after unwrap() removal.
 
-use chrono::{DateTime, Utc};
-use linkml_core::error::LinkMLError;
 use linkml_service::expression::{
-    Value,
     cache::ExpressionCache,
     evaluator::Evaluator,
-    functions::{CaseFunction, FunctionRegistry, MaxFunction, MinFunction},
-    parallel::ParallelEvaluator,
+    functions::FunctionRegistry,
     parser::Parser,
 };
-use std::collections::HashMap;
 
 /// Test function error handling
 #[test]

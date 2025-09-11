@@ -1,12 +1,10 @@
 //! Tests for SHACL generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
-    TypeDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, 
+    SchemaDefinition, SlotDefinition, TypeDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, ShaclGenerator};
-use linkml_core::types::SchemaDefinition;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_shacl_generation() {
     let mut schema = SchemaDefinition::new("person_schema");
