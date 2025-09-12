@@ -423,7 +423,7 @@ impl From<crate::types::SlotDefinition> for SlotDefinitionV2 {
             extensions: HashMap::new(), // Not in v1
             from_schema: None,          // Not in v1
             imported_from: None,        // Not in v1
-            /// Source of the data or error
+            // Source of the data or error
             source: None,               // Not in v1
             in_language: None,          // Not in v1
             rank: v1.rank,
