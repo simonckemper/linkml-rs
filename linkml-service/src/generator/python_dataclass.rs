@@ -617,6 +617,7 @@ impl CodeFormatter for PythonDataclassGenerator {
             result.push_str("\"\"\"");
             result
         }
+    }
 
     fn format_list<T: AsRef<str>>(
         &self,
@@ -686,7 +687,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("age: Optional[int] = None"));
         Ok(())
     }
-}
-}
-
 }

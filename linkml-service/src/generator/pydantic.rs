@@ -670,4 +670,3 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.contains("model_config ="));
     }
 }
-}
