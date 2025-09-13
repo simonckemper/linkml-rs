@@ -5,7 +5,7 @@ use std::process;
 use tracing::{error, info, warn};
 
 use super::types::{LinkMLCli, LinkMLCommand, OutputFormat};
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::Result;
 
 /// Main LinkML CLI application
 pub struct LinkMLApp {
