@@ -57,7 +57,8 @@ impl Default for YamlValidatorGeneratorConfig {
 pub struct YamlValidatorGenerator {
     config: YamlValidatorGeneratorConfig,
     /// Generator options
-    options: super::traits::GeneratorOptions}
+    options: super::traits::GeneratorOptions,
+}
 
 impl YamlValidatorGenerator {
     /// Create a new `YAML` validator generator
@@ -815,11 +816,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(result.contains("Person"));
         Ok(())
     }
-}
-}
-
-}
-
-}
-
 }

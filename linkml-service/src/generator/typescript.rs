@@ -242,6 +242,7 @@ impl TypeScriptGenerator {
         } else {
             Ok("unknown".to_string())
         }
+    }
 
     /// Generate a type guard function
     fn generate_type_guard(
@@ -772,5 +773,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert!(output.content.contains("age?: number;"));
         assert!(output.content.contains("export function isPerson"));
     }
-}
 }

@@ -526,6 +526,7 @@ impl SQLGenerator {
         } else {
             Ok(base_type)
         }
+    }
 
     /// Get base `SQL` type from `LinkML` range
     ///
@@ -923,5 +924,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert_eq!(generator.convert_table_name("HTTPResponse"), "httpresponse");
         assert_eq!(generator.convert_table_name("person_name"), "person_name");
     }
-}
 }
