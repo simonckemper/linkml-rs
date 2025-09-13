@@ -32,8 +32,6 @@ telemetry-core = { path = "../../telemetry/telemetry-core" }
 dbms-core = { path = "../../dbms/dbms-core" }
 parse-core = { path = "../../parse/parse-core" }
 timeout-core = { path = "../../timeout/timeout-core" }
-memory-core = { path = "../../memory/memory-core" }
-memory-service = { path = "../../memory/memory-service" }
 
 # Async runtime
 tokio = { version = "1.42", features = ["full"] }

@@ -758,7 +758,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             None
         };
         
-        let mut memory_usage: Vec<std::collections::HashMap<String, u64>> = Vec::with_capacity(if memory { iterations } else { 0 });
+        let memory_usage: Vec<std::collections::HashMap<String, u64>> = Vec::with_capacity(if memory { iterations } else { 0 });
 
         for _ in 0..iterations {
             let start = std::time::Instant::now();

@@ -11,3 +11,9 @@ pub use types::{
     AuthType, ConflictResolution, DiffFormat, DumpFormat, LinkMLCli, LinkMLCommand, LintFormat,
     LoadFormat, MergeStrategy, OutputFormat, SchemaFormat,
 };
+
+/// Main entry point for the enhanced CLI
+pub async fn run() -> linkml_core::error::Result<()> {
+    let app = LinkMLApp::from_args();
+    app.run().await
+}

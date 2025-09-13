@@ -1460,7 +1460,7 @@ where
         let mut errors = Vec::new();
         
         // Create a validation engine with the schema
-        let mut validator = ValidationEngine::new(schema)?;
+        let validator = ValidationEngine::new(schema)?;
         
         // Use tokio's block_on to run async validation in sync context
         let runtime = tokio::runtime::Handle::try_current()
