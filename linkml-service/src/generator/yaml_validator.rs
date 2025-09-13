@@ -10,6 +10,7 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
     TypeDefinition};
 use serde_json::{Map, Value, json};
+use regex;
 
 /// `YAML` validator generator configuration
 #[derive(Debug, Clone)]
@@ -162,6 +163,12 @@ impl YamlValidatorGenerator {
             Some("string") => {
                 schema.insert("type".to_string(), json!("string"));
                 if let Some(pattern) = &type_def.pattern {
+                    // Validate that the pattern is a valid regex
+                    regex::Regex::new(pattern).map_err(|e| {
+                        LinkMLError::data_validation(format!(
+                            "Invalid regex pattern '{}': {}", pattern, e
+                        ))
+                    })?;
                     schema.insert("pattern".to_string(), json!(pattern));
                 }
                 if let Some(min_length) = &type_def.minimum_value {
