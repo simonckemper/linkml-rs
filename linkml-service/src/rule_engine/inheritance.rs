@@ -268,45 +268,49 @@ impl RuleOverrideManager {
                 // Merge additional preconditions
                 if let Some(ref additional_pre) = override_spec.additional_preconditions {
                     if let Some(ref mut existing_pre) = rule.preconditions {
-                        // Merge the conditions
-                        if let Some(ref add_any) = additional_pre.any_of {
-                            existing_pre.any_of = Some(
-                                existing_pre.any_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_any.clone())
-                                    .collect()
-                            );
-                        }
-                        if let Some(ref additional_composite) = additional_pre.composite_conditions {
-                            if let Some(ref add_all) = additional_composite.all_of {
-                                let existing_composite = existing_pre.composite_conditions.get_or_insert_with(Default::default);
-                                existing_composite.all_of = Some(
-                                    existing_composite.all_of.clone()
-                                        .unwrap_or_default()
-                                        .into_iter()
-                                        .chain(add_all.clone())
-                                        .collect()
-                                );
+                        // Merge the composite conditions
+                        if let Some(ref add_composite) = additional_pre.composite_conditions {
+                            if existing_pre.composite_conditions.is_none() {
+                                existing_pre.composite_conditions = Some(Default::default());
                             }
-                        }
-                        if let Some(ref add_none) = additional_pre.none_of {
-                            existing_pre.none_of = Some(
-                                existing_pre.none_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_none.clone())
-                                    .collect()
-                            );
-                        }
-                        if let Some(ref add_exactly) = additional_pre.exactly_one_of {
-                            existing_pre.exactly_one_of = Some(
-                                existing_pre.exactly_one_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_exactly.clone())
-                                    .collect()
-                            );
+                            if let Some(ref mut existing_composite) = existing_pre.composite_conditions {
+                                if let Some(ref add_any) = add_composite.any_of {
+                                    existing_composite.any_of = Some(
+                                        existing_composite.any_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_any.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_all) = add_composite.all_of {
+                                    existing_composite.all_of = Some(
+                                        existing_composite.all_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_all.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_none) = add_composite.none_of {
+                                    existing_composite.none_of = Some(
+                                        existing_composite.none_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_none.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_exactly) = add_composite.exactly_one_of {
+                                    existing_composite.exactly_one_of = Some(
+                                        existing_composite.exactly_one_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_exactly.clone())
+                                            .collect()
+                                    );
+                                }
+                            }
                         }
                     } else {
                         rule.preconditions = Some(additional_pre.clone());
@@ -316,42 +320,49 @@ impl RuleOverrideManager {
                 // Merge additional postconditions
                 if let Some(ref additional_post) = override_spec.additional_postconditions {
                     if let Some(ref mut existing_post) = rule.postconditions {
-                        // Merge the conditions
-                        if let Some(ref add_any) = additional_post.any_of {
-                            existing_post.any_of = Some(
-                                existing_post.any_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_any.clone())
-                                    .collect()
-                            );
-                        }
-                        if let Some(ref add_all) = additional_post.all_of {
-                            existing_post.all_of = Some(
-                                existing_post.all_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_all.clone())
-                                    .collect()
-                            );
-                        }
-                        if let Some(ref add_none) = additional_post.none_of {
-                            existing_post.none_of = Some(
-                                existing_post.none_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_none.clone())
-                                    .collect()
-                            );
-                        }
-                        if let Some(ref add_exactly) = additional_post.exactly_one_of {
-                            existing_post.exactly_one_of = Some(
-                                existing_post.exactly_one_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_exactly.clone())
-                                    .collect()
-                            );
+                        // Merge the composite conditions
+                        if let Some(ref add_composite) = additional_post.composite_conditions {
+                            if existing_post.composite_conditions.is_none() {
+                                existing_post.composite_conditions = Some(Default::default());
+                            }
+                            if let Some(ref mut existing_composite) = existing_post.composite_conditions {
+                                if let Some(ref add_any) = add_composite.any_of {
+                                    existing_composite.any_of = Some(
+                                        existing_composite.any_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_any.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_all) = add_composite.all_of {
+                                    existing_composite.all_of = Some(
+                                        existing_composite.all_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_all.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_none) = add_composite.none_of {
+                                    existing_composite.none_of = Some(
+                                        existing_composite.none_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_none.clone())
+                                            .collect()
+                                    );
+                                }
+                                if let Some(ref add_exactly) = add_composite.exactly_one_of {
+                                    existing_composite.exactly_one_of = Some(
+                                        existing_composite.exactly_one_of.clone()
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .chain(add_exactly.clone())
+                                            .collect()
+                                    );
+                                }
+                            }
                         }
                     } else {
                         rule.postconditions = Some(additional_post.clone());

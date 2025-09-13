@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
-use crate::validator::report::{ValidationIssue, Severity};
+use crate::validator::report::ValidationIssue;
 
 use super::evaluator::RuleEvaluator;
 use super::matcher::RuleMatcher;
@@ -71,42 +71,10 @@ impl RuleExecutor {
         rules: &[CompiledRule],
         context: &mut RuleExecutionContext,
     ) -> linkml_core::error::Result<Vec<ValidationIssue>> {
-        use rayon::prelude::*;
-        use std::sync::{Arc, Mutex};
-        
-        // Create thread-safe context wrapper
-        let shared_context = Arc::new(Mutex::new(context.clone()));
-        
-        // Execute rules in parallel using rayon
-        let all_issues: Vec<Vec<ValidationIssue>> = rules
-            .par_iter()
-            .filter(|rule| !rule.deactivated)
-            .map(|rule| {
-                // Clone context for this thread
-                let thread_context = {
-                    let ctx = shared_context.lock().unwrap();
-                    ctx.clone()
-                };
-                
-                // Execute rule with thread-local context
-                let mut local_context = thread_context;
-                self.execute_single_rule(rule, &mut local_context)
-                    .unwrap_or_else(|e| {
-                        // Convert error to validation issue
-                        vec![ValidationIssue {
-                            severity: Severity::Error,
-                            path: "".to_string(),
-                            message: format!("Rule execution failed: {}", e),
-                            validator: "rule_executor".to_string(),
-                            code: None,
-                            context: std::collections::HashMap::new(),
-                        }]
-                    })
-            })
-            .collect();
-        
-        // Flatten results
-        Ok(all_issues.into_iter().flatten().collect())
+        // Note: Parallel execution is not possible with RuleExecutionContext due to mutable references
+        // Falling back to sequential execution for now
+        // TODO: Implement proper parallel execution with context isolation
+        self.execute_sequential(rules, context)
     }
 
     /// Execute rules but stop on first failure

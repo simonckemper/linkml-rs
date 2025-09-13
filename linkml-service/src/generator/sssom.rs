@@ -74,7 +74,10 @@ struct SssomMapping {
 impl SssomGenerator {
     /// Create a new SSSOM generator
     #[must_use] pub fn new(config: SssomGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default()
+        }
     }
 
     /// Generate SSSOM mappings from schema

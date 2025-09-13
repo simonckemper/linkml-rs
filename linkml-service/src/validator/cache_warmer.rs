@@ -555,14 +555,12 @@ impl CacheWarmer {
             
             // If at limit, abort oldest tasks
             while handles.len() + tasks.len() > 5 && !handles.is_empty() {
-                if !handles.is_empty() {
-                    let oldest = handles.remove(0);
-                    oldest.abort();
-                }
+                let oldest = handles.remove(0);
+                oldest.abort();
             }
             
             // Convert spawn_blocking tasks to regular tasks for storage
-            for task in &tasks {
+            for _task in &tasks {
                 // Create a wrapper task that we can store
                 let task_handle = tokio::spawn(async {
                     // This wrapper just waits for the spawn_blocking task

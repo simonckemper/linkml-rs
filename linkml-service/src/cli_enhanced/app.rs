@@ -98,14 +98,14 @@ impl LinkMLApp {
             LinkMLCommand::Serve { schema, port, .. } => {
                 self.serve_command(schema, *port).await
             }
-            LinkMLCommand::Shell { .. } => {
-                self.shell_command().await
+            LinkMLCommand::Shell { schema, history, init, highlight } => {
+                self.shell_command(schema, history, init, *highlight).await
             }
         }
     }
 
     /// Validate data against a schema
-    async fn validate_command(&self, schema: &std::path::Path, data: &[std::path::Path]) -> Result<()> {
+    async fn validate_command(&self, schema: &std::path::Path, data: &[std::path::PathBuf]) -> Result<()> {
         info!("Validating data against schema: {:?}", schema);
         
         // TODO: Implement actual validation logic
@@ -121,7 +121,7 @@ impl LinkMLApp {
     }
 
     /// Generate code from schema
-    async fn generate_command(&self, schema: &std::path::Path, generator: &str, output: &std::path::PathBuf) -> Result<()> {
+    async fn generate_command(&self, schema: &std::path::Path, generator: &str, output: &std::path::Path) -> Result<()> {
         info!("Generating {} from schema: {:?}", generator, schema);
 
         // TODO: Implement actual generation logic
@@ -234,16 +234,16 @@ impl LinkMLApp {
     }
 
     /// Start interactive shell
-    async fn shell_command(&self) -> Result<()> {
-        info!("Starting interactive shell");
-        
+    async fn shell_command(&self, schema: &Option<std::path::PathBuf>, _history: &Option<std::path::PathBuf>, _init: &Option<std::path::PathBuf>, highlight: bool) -> Result<()> {
+        info!("Starting interactive shell with schema: {:?}, highlight: {}", schema, highlight);
+
         // TODO: Implement actual shell logic
         warn!("Shell command not yet fully implemented");
-        
+
         if !self.cli.quiet {
-            println!("Would start interactive LinkML shell");
+            println!("Would start interactive LinkML shell with schema: {:?}, highlight: {}", schema, highlight);
         }
-        
+
         Ok(())
     }
 

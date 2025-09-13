@@ -1491,8 +1491,8 @@ where
         // Convert validation issues to error strings
         if !report.valid {
             for issue in report.issues {
-                let error_msg = if let Some(path) = issue.path {
-                    format!("{}: {}", path, issue.message)
+                let error_msg = if !issue.path.is_empty() {
+                    format!("{}: {}", issue.path, issue.message)
                 } else {
                     issue.message
                 };

@@ -48,7 +48,10 @@ pub struct JsonLdContextGenerator {
 impl JsonLdContextGenerator {
     /// Create a new `JSON`-LD Context generator
     #[must_use] pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default()
+        }
     }
 
     /// Generate the context object

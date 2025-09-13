@@ -57,7 +57,10 @@ pub struct PrefixMapGenerator {
 impl PrefixMapGenerator {
     /// Create a new prefix map generator
     #[must_use] pub fn new(config: PrefixMapGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default()
+        }
     }
 
     /// Get prefix reference from `PrefixDefinition`

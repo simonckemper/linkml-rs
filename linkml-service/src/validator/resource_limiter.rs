@@ -255,10 +255,8 @@ impl ResourceLimiter {
                 
                 // If still at limit, abort oldest
                 if handles.len() >= 5 {
-                    if !handles.is_empty() {
-                        let oldest = handles.remove(0);
-                        oldest.abort();
-                    }
+                    let oldest = handles.remove(0);
+                    oldest.abort();
                 }
             }
             handles.push(timeout_handle);

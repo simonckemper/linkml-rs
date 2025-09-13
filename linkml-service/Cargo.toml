@@ -23,6 +23,8 @@ timestamp-core = { path = "../../timestamp/timestamp-core" }
 timestamp-service = { path = "../../timestamp/timestamp-service" }
 task-management-core = { path = "../../task-management/task-management-core" }
 error-handling-core = { path = "../../error-handling/error-handling-core" }
+memory-core = { path = "../../memory/memory-core" }
+memory-service = { path = "../../memory/memory-service" }
 configuration-core = { path = "../../configuration/configuration-core" }
 cache-core = { path = "../../cache/cache-core" }
 monitoring-core = { path = "../../monitoring/monitoring-core" }
