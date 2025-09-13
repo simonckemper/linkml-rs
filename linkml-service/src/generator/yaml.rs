@@ -761,6 +761,3 @@ impl Generator for YamlGenerator {
         "schema.yaml"
     }
 }
-}
-
-}

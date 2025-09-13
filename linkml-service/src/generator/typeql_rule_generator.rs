@@ -616,4 +616,3 @@ use linkml_core::types::SlotDefinition;
         Ok(())
     }
 }
-}
