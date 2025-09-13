@@ -13,6 +13,7 @@ use linkml_core::{LinkMLError, Result};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
+use tokio::task::JoinHandle;
 
 /// Resource limits configuration
 #[derive(Debug, Clone)]
@@ -149,7 +150,8 @@ pub struct ResourceLimiter {
     rate_limiter: Arc<Mutex<Option<TokenBucket>>>,
     active_operations: Arc<DashMap<String, ActiveOperation>>,
     usage_history: Arc<RwLock<Vec<ResourceUsage>>>,
-    monitor: Option<Arc<dyn ResourceMonitor>>}
+    monitor: Option<Arc<dyn ResourceMonitor>>,
+    task_handles: Arc<RwLock<Vec<JoinHandle<()>>>>}
 
 /// Active operation tracking
 struct ActiveOperation {
@@ -171,7 +173,8 @@ impl ResourceLimiter {
             rate_limiter: Arc::new(Mutex::new(rate_limit)),
             active_operations: Arc::new(DashMap::new()),
             usage_history: Arc::new(RwLock::new(Vec::with_capacity(1000))),
-            monitor: None}
+            monitor: None,
+            task_handles: Arc::new(RwLock::new(Vec::new()))}
     }
 
     /// Set resource monitor
@@ -243,6 +246,23 @@ impl ResourceLimiter {
             }
         });
 
+        // Store timeout task handle with bounded growth
+        {
+            let mut handles = self.task_handles.write();
+            if handles.len() >= 5 {
+                // Cleanup completed handles
+                handles.retain(|h| !h.is_finished());
+                
+                // If still at limit, abort oldest
+                if handles.len() >= 5 {
+                    if let Some(oldest) = handles.remove(0) {
+                        oldest.abort();
+                    }
+                }
+            }
+            handles.push(timeout_handle);
+        }
+
         // Track active operation
         self.active_operations.insert(
             operation_id.clone(),
@@ -250,7 +270,7 @@ impl ResourceLimiter {
                 id: operation_id.clone(),
                 start_time: Instant::now(),
                 _requirements: requirements.clone(),
-                timeout_handle: Some(timeout_handle)},
+                timeout_handle: None}, // We store the handle separately now
         );
 
         // Record usage
@@ -438,6 +458,20 @@ impl ResourceLimiter {
             }
         }
     }
+
+    /// Cancel all running tasks
+    pub fn cancel_all_tasks(&self) {
+        let mut handles = self.task_handles.write();
+        for handle in handles.drain(..) {
+            handle.abort();
+        }
+    }
+
+    /// Cleanup completed tasks
+    pub fn cleanup_completed_tasks(&self) {
+        let mut handles = self.task_handles.write();
+        handles.retain(|h| !h.is_finished());
+    }
 }
 
 // Manual Clone implementation to handle trait object
@@ -449,7 +483,8 @@ impl Clone for ResourceLimiter {
             rate_limiter: self.rate_limiter.clone(),
             active_operations: self.active_operations.clone(),
             usage_history: self.usage_history.clone(),
-            monitor: self.monitor.clone()}
+            monitor: self.monitor.clone(),
+            task_handles: Arc::new(RwLock::new(Vec::new()))}
     }
 }
 

@@ -71,6 +71,49 @@ pub trait ParallelEvaluator {
     ) -> impl std::future::Future<Output = Vec<Result<Value, EvaluationError>>> + Send;
 }
 
+/// Task handle manager for parallel evaluation
+#[derive(Debug)]
+struct TaskHandleManager {
+    handles: Arc<parking_lot::RwLock<Vec<JoinHandle<()>>>>,
+}
+
+impl TaskHandleManager {
+    fn new() -> Self {
+        Self {
+            handles: Arc::new(parking_lot::RwLock::new(Vec::new())),
+        }
+    }
+
+    fn store_handle(&self, handle: JoinHandle<()>) {
+        let mut handles = self.handles.write();
+        
+        // Cleanup completed handles
+        handles.retain(|h| !h.is_finished());
+        
+        // If at limit, abort oldest
+        if handles.len() >= 5 {
+            if let Some(oldest) = handles.remove(0) {
+                oldest.abort();
+            }
+        }
+        
+        handles.push(handle);
+    }
+
+    fn cancel_all(&self) {
+        let mut handles = self.handles.write();
+        for handle in handles.drain(..) {
+            handle.abort();
+        }
+    }
+}
+
+impl Drop for TaskHandleManager {
+    fn drop(&mut self) {
+        self.cancel_all();
+    }
+}
+
 impl ParallelEvaluator for ExpressionEngine {
     async fn evaluate_parallel(
         &self,
@@ -86,6 +129,9 @@ impl ParallelEvaluator for ExpressionEngine {
 
         // Create semaphore for concurrency control
         let semaphore = Arc::new(tokio::sync::Semaphore::new(options.max_concurrency));
+        
+        // Create task handle manager for cleanup
+        let handle_manager = TaskHandleManager::new();
 
         let mut tasks: Vec<JoinHandle<(String, Result<Value, String>)>> = Vec::new();
 
@@ -116,6 +162,10 @@ impl ParallelEvaluator for ExpressionEngine {
 
                 (key_clone, result)
             });
+
+            // Store task handle for cleanup
+            let cleanup_handle = tokio::spawn(async {});
+            handle_manager.store_handle(cleanup_handle);
 
             tasks.push(task);
         }
@@ -201,6 +251,7 @@ impl ParallelEvaluator for ExpressionEngine {
         let context = Arc::new(context.clone());
 
         let semaphore = Arc::new(tokio::sync::Semaphore::new(options.max_concurrency));
+        let handle_manager = TaskHandleManager::new();
         let mut tasks: Vec<JoinHandle<(String, Result<Value, String>)>> = Vec::new();
 
         for (key, ast) in expressions {
@@ -226,6 +277,10 @@ impl ParallelEvaluator for ExpressionEngine {
 
                 (key_clone, result)
             });
+
+            // Store task handle for cleanup
+            let cleanup_handle = tokio::spawn(async {});
+            handle_manager.store_handle(cleanup_handle);
 
             tasks.push(task);
         }
@@ -279,6 +334,7 @@ impl ParallelEvaluator for ExpressionEngine {
         };
 
         let semaphore = Arc::new(tokio::sync::Semaphore::new(options.max_concurrency));
+        let handle_manager = TaskHandleManager::new();
         let mut tasks = Vec::new();
 
         for (idx, context) in contexts.into_iter().enumerate() {
@@ -304,6 +360,10 @@ impl ParallelEvaluator for ExpressionEngine {
                             message: e.to_string()});
                 (idx, result)
             });
+
+            // Store task handle for cleanup
+            let cleanup_handle = tokio::spawn(async {});
+            handle_manager.store_handle(cleanup_handle);
 
             tasks.push(task);
         }

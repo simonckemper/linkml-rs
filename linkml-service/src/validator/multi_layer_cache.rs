@@ -12,6 +12,7 @@ use lru::LruCache;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::task::JoinHandle;
 
 /// Configuration for multi-layer cache
 #[derive(Debug, Clone)]
@@ -64,6 +65,8 @@ pub struct MultiLayerCache {
     l3_cache: Option<Arc<DiskCache>>,
     /// Cache statistics
     stats: Arc<RwLock<CacheStats>>,
+    /// Background task handles
+    task_handles: Arc<parking_lot::RwLock<Vec<JoinHandle<()>>>>,
     /// Background tasks handle for cleanup on drop
     background_handle: Option<Arc<tokio::task::JoinHandle<()>>>}
 
@@ -173,6 +176,7 @@ impl MultiLayerCache {
             l2_cache: cache_service,
             l3_cache,
             stats: Arc::new(RwLock::new(CacheStats::default())),
+            task_handles: Arc::new(parking_lot::RwLock::new(Vec::new())),
             background_handle: background_handle.map(Arc::new)})
     }
 
@@ -299,9 +303,26 @@ impl MultiLayerCache {
 
             // Fire and forget for async L2 write
             let l2_clone = l2.clone();
-            tokio::spawn(async move {
+            let handle = tokio::spawn(async move {
                 let _ = l2_clone.set(&cache_key, &cache_value, ttl).await;
             });
+
+            // Store task handle with bounded growth
+            {
+                let mut handles = self.task_handles.write();
+                if handles.len() >= 5 {
+                    // Cleanup completed handles
+                    handles.retain(|h| !h.is_finished());
+                    
+                    // If still at limit, abort oldest
+                    if handles.len() >= 5 {
+                        if let Some(oldest) = handles.remove(0) {
+                            oldest.abort();
+                        }
+                    }
+                }
+                handles.push(handle);
+            }
         }
 
         // Put in L3 if available
@@ -310,9 +331,26 @@ impl MultiLayerCache {
             let l3_clone = l3.clone();
             let key_clone = key.clone();
             let validator_clone = Arc::clone(validator);
-            tokio::spawn(async move {
+            let handle = tokio::spawn(async move {
                 let _ = l3_clone.put(&key_clone, validator_clone.as_ref()).await;
             });
+
+            // Store task handle with bounded growth
+            {
+                let mut handles = self.task_handles.write();
+                if handles.len() >= 5 {
+                    // Cleanup completed handles
+                    handles.retain(|h| !h.is_finished());
+                    
+                    // If still at limit, abort oldest
+                    if handles.len() >= 5 {
+                        if let Some(oldest) = handles.remove(0) {
+                            oldest.abort();
+                        }
+                    }
+                }
+                handles.push(handle);
+            }
         }
 
         // Prefetch related validators if configured
@@ -516,8 +554,25 @@ impl MultiLayerCache {
             .map_err(|e| LinkMLError::service(format!("Failed to deserialize validator: {e}")))
     }
 
+    /// Cancel all running tasks
+    pub fn cancel_all_tasks(&self) {
+        let mut handles = self.task_handles.write();
+        for handle in handles.drain(..) {
+            handle.abort();
+        }
+    }
+
+    /// Cleanup completed tasks
+    pub fn cleanup_completed_tasks(&self) {
+        let mut handles = self.task_handles.write();
+        handles.retain(|h| !h.is_finished());
+    }
+
     /// Shutdown the cache and cleanup background tasks
     pub async fn shutdown(&self) {
+        // Cancel all running tasks
+        self.cancel_all_tasks();
+
         // Abort background task if running
         if let Some(handle) = &self.background_handle {
             handle.abort();
@@ -535,6 +590,9 @@ impl MultiLayerCache {
 
 impl Drop for MultiLayerCache {
     fn drop(&mut self) {
+        // Abort all task handles on drop to prevent resource leaks
+        self.cancel_all_tasks();
+        
         // Abort background task on drop to prevent resource leaks
         if let Some(handle) = &self.background_handle {
             handle.abort();

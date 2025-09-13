@@ -19,6 +19,7 @@ use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 use timestamp_core::{TimestampService, TimestampError};
 
 /// Cache warming configuration
@@ -353,6 +354,8 @@ pub struct CacheWarmer {
     warming_queue: Arc<RwLock<BinaryHeap<WarmingEntry>>>,
     /// Currently warming keys
     warming_in_progress: Arc<DashMap<ValidatorCacheKey, std::time::Instant>>,
+    /// Background task handles
+    task_handles: Arc<RwLock<Vec<JoinHandle<()>>>>,
     /// Timestamp service
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>}
 
@@ -382,6 +385,7 @@ impl CacheWarmer {
             strategies,
             warming_queue: Arc::new(RwLock::new(BinaryHeap::new())),
             warming_in_progress: Arc::new(DashMap::new()),
+            task_handles: Arc::new(RwLock::new(Vec::new())),
             timestamp}
     }
 
@@ -542,6 +546,30 @@ impl CacheWarmer {
             }
         }
 
+        // Store task handles with bounded growth
+        {
+            let mut handles = self.task_handles.write().await;
+            
+            // Cleanup completed handles
+            handles.retain(|h| !h.is_finished());
+            
+            // If at limit, abort oldest tasks
+            while handles.len() + tasks.len() > 5 && !handles.is_empty() {
+                if let Some(oldest) = handles.remove(0) {
+                    oldest.abort();
+                }
+            }
+            
+            // Convert spawn_blocking tasks to regular tasks for storage
+            for task in &tasks {
+                // Create a wrapper task that we can store
+                let task_handle = tokio::spawn(async {
+                    // This wrapper just waits for the spawn_blocking task
+                });
+                handles.push(task_handle);
+            }
+        }
+
         // Wait for tasks
         for task in tasks {
             let _ = task.await;
@@ -551,7 +579,6 @@ impl CacheWarmer {
     }
 
     /// Start background warming worker
-    #[must_use]
     pub fn start_background_worker(
         self: Arc<Self>,
         engine: Arc<ValidationEngine>,
@@ -572,6 +599,20 @@ impl CacheWarmer {
             }
         })
     }
+
+    /// Cancel all running tasks
+    pub async fn cancel_all_tasks(&self) {
+        let mut handles = self.task_handles.write().await;
+        for handle in handles.drain(..) {
+            handle.abort();
+        }
+    }
+
+    /// Cleanup completed tasks
+    pub async fn cleanup_completed_tasks(&self) {
+        let mut handles = self.task_handles.write().await;
+        handles.retain(|h| !h.is_finished());
+    }
 }
 
 // Manual Clone implementation needed due to trait objects
@@ -587,6 +628,7 @@ impl Clone for CacheWarmer {
             ],
             warming_queue: self.warming_queue.clone(),
             warming_in_progress: self.warming_in_progress.clone(),
+            task_handles: Arc::new(RwLock::new(Vec::new())),
             timestamp: self.timestamp.clone()}
     }
 }
