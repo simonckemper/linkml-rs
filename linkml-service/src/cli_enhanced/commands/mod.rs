@@ -1,6 +1,6 @@
 //! Command implementations
-//! TODO: Implement missing command modules
 
+// TODO: Implement remaining command modules
 // mod convert;
 // mod diff;
 // mod dump;
@@ -8,9 +8,10 @@
 // mod lint;
 // mod load;
 // mod merge;
-// mod serve;
-// mod shell;
-// mod validate;
+
+mod serve;
+mod shell;
+mod validate;
 
 // pub use convert::ConvertCommand;
 // pub use diff::DiffCommand;
