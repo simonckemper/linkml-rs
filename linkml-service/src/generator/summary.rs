@@ -11,6 +11,35 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition};
 use std::collections::{HashMap, HashSet};
 
+/// Utility functions for safe numeric casting
+mod safe_cast {
+    /// Safely cast usize to f64 with precision checking
+    /// For values that exceed f64's precision, returns the maximum representable value
+    pub fn usize_to_f64(value: usize) -> f64 {
+        // f64 can precisely represent integers up to 2^53 - 1
+        const MAX_PRECISE_F64: u64 = (1_u64 << 53) - 1;
+
+        if value as u64 <= MAX_PRECISE_F64 {
+            value as f64
+        } else {
+            // For very large values in schema statistics, use max precise value
+            // This is reasonable since schemas are unlikely to have > 2^53 elements
+            MAX_PRECISE_F64 as f64
+        }
+    }
+
+    /// Safely cast u64 to f64 with precision checking
+    pub fn u64_to_f64(value: u64) -> f64 {
+        const MAX_PRECISE_F64: u64 = (1_u64 << 53) - 1;
+
+        if value <= MAX_PRECISE_F64 {
+            value as f64
+        } else {
+            MAX_PRECISE_F64 as f64
+        }
+    }
+}
+
 /// Summary generator configuration
 #[derive(Debug, Clone)]
 pub struct SummaryGeneratorConfig {
@@ -54,8 +83,10 @@ impl Default for SummaryGeneratorConfig {
 /// Summary generator
 pub struct SummaryGenerator {
     config: SummaryGeneratorConfig,
-    /// Generator options
-    options: super::traits::GeneratorOptions}
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
+    options: super::traits::GeneratorOptions,
+}
 
 /// Schema statistics
 #[derive(Debug, Default)]
@@ -114,9 +145,11 @@ impl SummaryGenerator {
     #[must_use] pub fn new(config: SummaryGeneratorConfig) -> Self {
         Self {
             config,
-            options: super::traits::GeneratorOptions::default()
+            options: super::traits::GeneratorOptions::default(),
         }
     }
+
+
 
     /// Generate summary from schema
     fn generate_summary(&self, schema: &SchemaDefinition) -> Result<String, LinkMLError> {
@@ -209,7 +242,7 @@ impl SummaryGenerator {
         let total_slots: usize = classes.values().map(|c| c.slots.len()).sum();
 
         if stats.class_count > 0 {
-            stats.avg_slots_per_class = total_slots as f64 / stats.class_count as f64;
+            stats.avg_slots_per_class = safe_cast::usize_to_f64(total_slots) / safe_cast::usize_to_f64(stats.class_count);
         }
     }
 
@@ -275,7 +308,7 @@ impl SummaryGenerator {
 
         if stats.enum_count > 0 {
             stats.avg_values_per_enum =
-                stats.total_permissible_values as f64 / stats.enum_count as f64;
+                safe_cast::usize_to_f64(stats.total_permissible_values) / safe_cast::usize_to_f64(stats.enum_count);
         }
     }
 
@@ -337,11 +370,11 @@ impl SummaryGenerator {
     /// Calculate complexity metrics
     fn calculate_complexity_metrics(&self, stats: &mut SchemaStats, schema: &SchemaDefinition) {
         // Schema complexity score (simple heuristic)
-        stats.schema_complexity_score = (stats.class_count as f64 * 1.0)
-            + (stats.slot_count as f64 * 0.5)
-            + (stats.inheritance_relationships as f64 * 2.0)
-            + (stats.mixin_relationships as f64 * 1.5)
-            + (stats.slots_with_constraints as f64 * 0.8);
+        stats.schema_complexity_score = (safe_cast::usize_to_f64(stats.class_count) * 1.0)
+            + (safe_cast::usize_to_f64(stats.slot_count) * 0.5)
+            + (safe_cast::usize_to_f64(stats.inheritance_relationships) * 2.0)
+            + (safe_cast::usize_to_f64(stats.mixin_relationships) * 1.5)
+            + (safe_cast::usize_to_f64(stats.slots_with_constraints) * 0.8);
 
         // Cyclomatic complexity (simplified)
         stats.cyclomatic_complexity = stats.inheritance_relationships

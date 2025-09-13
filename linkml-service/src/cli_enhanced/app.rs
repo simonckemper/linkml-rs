@@ -248,6 +248,7 @@ impl LinkMLApp {
     }
 
     /// Format output according to the specified format
+    #[allow(dead_code)]
     fn format_output(&self, data: &str) -> String {
         match self.cli.format {
             OutputFormat::Pretty => data.to_string(),

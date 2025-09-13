@@ -51,15 +51,17 @@ impl Default for PrefixMapGeneratorConfig {
 /// Prefix map generator
 pub struct PrefixMapGenerator {
     config: PrefixMapGeneratorConfig,
-    /// Generator options
-    options: super::traits::GeneratorOptions}
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
+    options: super::traits::GeneratorOptions,
+}
 
 impl PrefixMapGenerator {
     /// Create a new prefix map generator
     #[must_use] pub fn new(config: PrefixMapGeneratorConfig) -> Self {
         Self {
             config,
-            options: super::traits::GeneratorOptions::default()
+            options: super::traits::GeneratorOptions::default(),
         }
     }
 

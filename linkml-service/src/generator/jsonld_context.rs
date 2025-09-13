@@ -42,15 +42,17 @@ impl Default for JsonLdContextGeneratorConfig {
 /// `JSON`-LD Context generator
 pub struct JsonLdContextGenerator {
     config: JsonLdContextGeneratorConfig,
-    /// Generator options
-    options: super::traits::GeneratorOptions}
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
+    options: super::traits::GeneratorOptions,
+}
 
 impl JsonLdContextGenerator {
     /// Create a new `JSON`-LD Context generator
     #[must_use] pub fn new(config: JsonLdContextGeneratorConfig) -> Self {
         Self {
             config,
-            options: super::traits::GeneratorOptions::default()
+            options: super::traits::GeneratorOptions::default(),
         }
     }
 

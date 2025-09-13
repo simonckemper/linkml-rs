@@ -56,7 +56,8 @@ impl Default for NamespaceManagerGeneratorConfig {
 /// Namespace manager generator
 pub struct NamespaceManagerGenerator {
     config: NamespaceManagerGeneratorConfig,
-    /// Generator options
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
     options: super::traits::GeneratorOptions,
 }
 
@@ -173,7 +174,7 @@ impl NamespaceManagerGenerator {
         output.push_str(&self.generate_python_bind_method());
 
         if self.config.include_validation {
-            output.push_str(&self.generate_python_validation_methods());
+            output.push_str(&Self::generate_python_validation_methods());
         }
 
         if self.config.include_utilities {
@@ -313,7 +314,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Python validation methods
-    fn generate_python_validation_methods(&self) -> String {
+    fn generate_python_validation_methods() -> String {
         let mut methods = String::new();
 
         // Validate URI
@@ -831,11 +832,13 @@ impl NamespaceManagerGenerator {
 
         // Add schema prefixes
         for (prefix, expansion) in &schema.prefixes {
-            output.push_str(&format!(
-                "        prefixes.put(\"{}\", \"{}\");\n",
+            use std::fmt::Write;
+            let _ = writeln!(
+                output,
+                "        prefixes.put(\"{}\", \"{}\");",
                 prefix,
                 Self::get_prefix_reference(expansion)
-            ));
+            );
         }
 
         // Add common prefixes
@@ -865,7 +868,7 @@ impl NamespaceManagerGenerator {
         output.push_str("    }\n\n");
 
         // Core methods
-        output.push_str(&self.generate_java_methods());
+        output.push_str(&Self::generate_java_methods());
 
         output.push_str("}\n");
 
@@ -873,7 +876,7 @@ impl NamespaceManagerGenerator {
     }
 
     /// Generate Java methods
-    fn generate_java_methods(&self) -> String {
+    fn generate_java_methods() -> String {
         let mut methods = String::new();
 
         // Expand method
@@ -975,11 +978,13 @@ impl NamespaceManagerGenerator {
 
         // Add schema prefixes
         for (prefix, expansion) in &schema.prefixes {
-            output.push_str(&format!(
-                "\tm.prefixes[\"{}\"] = \"{}\"\n",
+            use std::fmt::Write;
+            let _ = writeln!(
+                output,
+                "\tm.prefixes[\"{}\"] = \"{}\"",
                 prefix,
                 Self::get_prefix_reference(expansion)
-            ));
+            );
         }
         if !schema.prefixes.is_empty() {
             output.push('\n');

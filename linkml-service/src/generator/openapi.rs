@@ -9,7 +9,8 @@ use serde_json::{Value as JsonValue, json};
 pub struct OpenApiGenerator {
     /// Generator name
     name: String,
-    /// Generator options
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
     options: super::traits::GeneratorOptions,
 }
 
@@ -27,7 +28,8 @@ impl OpenApiGenerator {
     pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
         Self {
             name: "openapi".to_string(),
-            options}
+            options,
+        }
     }
 
     /// Generate `OpenAPI` schema component for a class

@@ -54,7 +54,8 @@ impl Default for SQLAlchemyGeneratorConfig {
 /// `SQL`Alchemy ORM model generator
 pub struct SQLAlchemyGenerator {
     config: SQLAlchemyGeneratorConfig,
-    /// Generator options
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
     options: super::traits::GeneratorOptions,
 }
 

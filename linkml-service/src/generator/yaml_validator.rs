@@ -56,7 +56,8 @@ impl Default for YamlValidatorGeneratorConfig {
 /// `YAML` validator generator
 pub struct YamlValidatorGenerator {
     config: YamlValidatorGeneratorConfig,
-    /// Generator options
+    /// Generator options (stub for future configuration)
+    #[allow(dead_code)]
     options: super::traits::GeneratorOptions,
 }
 
@@ -65,7 +66,7 @@ impl YamlValidatorGenerator {
     #[must_use] pub fn new(config: YamlValidatorGeneratorConfig) -> Self {
         Self {
             config,
-            options: super::traits::GeneratorOptions::default()
+            options: super::traits::GeneratorOptions::default(),
         }
     }
 

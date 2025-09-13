@@ -19,6 +19,39 @@ use rust_xlsxwriter::{
     Worksheet};
 use std::collections::BTreeMap;
 
+/// Safe casting utilities for Excel generation
+mod excel_cast {
+    use super::GeneratorError;
+
+    /// Safely cast usize to u16 for Excel column indices
+    /// Excel has a maximum of 16,384 columns (2^14)
+    pub fn usize_to_u16_column(value: usize) -> Result<u16, GeneratorError> {
+        const MAX_EXCEL_COLUMNS: usize = 16_384;
+
+        if value >= MAX_EXCEL_COLUMNS {
+            return Err(GeneratorError::Generation(
+                format!("Too many columns for Excel: {} (max: {})", value, MAX_EXCEL_COLUMNS)
+            ));
+        }
+
+        u16::try_from(value).map_err(|_| {
+            GeneratorError::Generation(
+                format!("Column index {} cannot fit in u16", value)
+            )
+        })
+    }
+
+    /// Safely cast i64 to i32 for Excel data validation
+    /// Excel data validation uses i32 ranges
+    pub fn i64_to_i32_validation(value: i64) -> Result<i32, GeneratorError> {
+        i32::try_from(value).map_err(|_| {
+            GeneratorError::Generation(
+                format!("Validation value {} is outside i32 range", value)
+            )
+        })
+    }
+}
+
 /// Excel generator
 pub struct ExcelGenerator {
     /// Whether to include a summary sheet
@@ -368,15 +401,18 @@ impl ExcelGenerator {
 
         // Add filters if enabled
         if self.add_filters {
+            let max_col = excel_cast::usize_to_u16_column(slots.len())?
+                .saturating_sub(1);
             worksheet
-                .autofilter(0, 0, row - 1, slots.len() as u16 - 1)
+                .autofilter(0, 0, row - 1, max_col)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Auto-fit columns
         for (i, _) in slots.iter().enumerate() {
+            let col_index = excel_cast::usize_to_u16_column(i)?;
             worksheet
-                .set_column_width(i as u16, 15)
+                .set_column_width(col_index, 15)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
@@ -468,7 +504,7 @@ impl ExcelGenerator {
         start_row: u32,
     ) -> GeneratorResult<()> {
         for (col, (_slot_name, slot_def)) in slots.iter().enumerate() {
-            let col = col as u16;
+            let col = excel_cast::usize_to_u16_column(col)?;
 
             // Check if this is an enum field
             if let Some(range) = &slot_def.range
@@ -501,20 +537,24 @@ impl ExcelGenerator {
                         (&slot_def.minimum_value, &slot_def.maximum_value)
                     {
                         if let (Some(min_val), Some(max_val)) = (min.as_i64(), max.as_i64()) {
+                            let min_i32 = excel_cast::i64_to_i32_validation(min_val)?;
+                            let max_i32 = excel_cast::i64_to_i32_validation(max_val)?;
                             validation = validation.allow_whole_number(
-                                DataValidationRule::Between(min_val as i32, max_val as i32),
+                                DataValidationRule::Between(min_i32, max_i32),
                             );
                         }
                     } else if let Some(min) = &slot_def.minimum_value {
                         if let Some(min_val) = min.as_i64() {
+                            let min_i32 = excel_cast::i64_to_i32_validation(min_val)?;
                             validation = validation.allow_whole_number(
-                                DataValidationRule::GreaterThanOrEqualTo(min_val as i32),
+                                DataValidationRule::GreaterThanOrEqualTo(min_i32),
                             );
                         }
                     } else if let Some(max) = &slot_def.maximum_value {
                         if let Some(max_val) = max.as_i64() {
+                            let max_i32 = excel_cast::i64_to_i32_validation(max_val)?;
                             validation = validation.allow_whole_number(
-                                DataValidationRule::LessThanOrEqualTo(max_val as i32),
+                                DataValidationRule::LessThanOrEqualTo(max_i32),
                             );
                         }
                     } else {
