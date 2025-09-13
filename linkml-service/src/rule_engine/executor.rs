@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
-use crate::validator::report::ValidationIssue;
+use crate::validator::report::{ValidationIssue, Severity};
 
 use super::evaluator::RuleEvaluator;
 use super::matcher::RuleMatcher;
@@ -94,10 +94,12 @@ impl RuleExecutor {
                     .unwrap_or_else(|e| {
                         // Convert error to validation issue
                         vec![ValidationIssue {
-                            severity: linkml_core::Severity::Error,
-                            path: None,
+                            severity: Severity::Error,
+                            path: "".to_string(),
                             message: format!("Rule execution failed: {}", e),
-                            context: None,
+                            validator: "rule_executor".to_string(),
+                            code: None,
+                            context: std::collections::HashMap::new(),
                         }]
                     })
             })

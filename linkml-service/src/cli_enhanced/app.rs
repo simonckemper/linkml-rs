@@ -74,8 +74,8 @@ impl LinkMLApp {
             LinkMLCommand::Validate { schema, data, .. } => {
                 self.validate_command(schema, data).await
             }
-            LinkMLCommand::Generate { schema, target, output, .. } => {
-                self.generate_command(schema, target, output).await
+            LinkMLCommand::Generate { schema, generator, output, .. } => {
+                self.generate_command(schema, generator, output).await
             }
             LinkMLCommand::Convert { input, output, .. } => {
                 self.convert_command(input, output).await
@@ -98,7 +98,7 @@ impl LinkMLApp {
             LinkMLCommand::Serve { schema, port, .. } => {
                 self.serve_command(schema, *port).await
             }
-            LinkMLCommand::Shell => {
+            LinkMLCommand::Shell { .. } => {
                 self.shell_command().await
             }
         }
@@ -121,15 +121,15 @@ impl LinkMLApp {
     }
 
     /// Generate code from schema
-    async fn generate_command(&self, schema: &std::path::Path, target: &str, output: &Option<std::path::PathBuf>) -> Result<()> {
-        info!("Generating {} from schema: {:?}", target, schema);
-        
+    async fn generate_command(&self, schema: &std::path::Path, generator: &str, output: &std::path::PathBuf) -> Result<()> {
+        info!("Generating {} from schema: {:?}", generator, schema);
+
         // TODO: Implement actual generation logic
         warn!("Generate command not yet fully implemented");
-        
+
         if !self.cli.quiet {
-            println!("Would generate {} from schema: {:?} to output: {:?}", 
-                     target, schema, output);
+            println!("Would generate {} from schema: {:?} to output: {:?}",
+                     generator, schema, output);
         }
         
         Ok(())

@@ -5,6 +5,7 @@
 
 use serde_json::Value;
 use linkml_core::error::LinkMLError;
+use linkml_core::types::SlotCondition;
 use std::collections::HashMap;
 
 use crate::expression::ExpressionEngine;
@@ -193,9 +194,9 @@ impl RuleMatcher {
                     range: condition.range.clone(),
                     required: condition.required,
                     pattern: condition.pattern.clone(),
-                    equals_string: condition.equals_string.clone(),
-                    equals_number: condition.equals_number,
-                    equals_expression: condition.equals_expression.clone(),
+                    equals_string: None, // Not available on AnonymousSlotExpression
+                    equals_number: None, // Not available on AnonymousSlotExpression
+                    equals_expression: None, // Not available on AnonymousSlotExpression
                     minimum_value: condition.minimum_value.clone(),
                     maximum_value: condition.maximum_value.clone(),
                     any_of: condition.any_of.clone(),
@@ -205,7 +206,7 @@ impl RuleMatcher {
                 };
                 
                 // Compile and check the condition
-                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                let compiled = CompiledSlotCondition::compile(&temp_condition)?;
                 if self.match_slot_condition(value, &compiled, context)? {
                     any_matched = true;
                     break;
@@ -224,9 +225,9 @@ impl RuleMatcher {
                     range: condition.range.clone(),
                     required: condition.required,
                     pattern: condition.pattern.clone(),
-                    equals_string: condition.equals_string.clone(),
-                    equals_number: condition.equals_number,
-                    equals_expression: condition.equals_expression.clone(),
+                    equals_string: None, // Not available on AnonymousSlotExpression
+                    equals_number: None, // Not available on AnonymousSlotExpression
+                    equals_expression: None, // Not available on AnonymousSlotExpression
                     minimum_value: condition.minimum_value.clone(),
                     maximum_value: condition.maximum_value.clone(),
                     any_of: condition.any_of.clone(),
@@ -234,9 +235,9 @@ impl RuleMatcher {
                     exactly_one_of: condition.exactly_one_of.clone(),
                     none_of: condition.none_of.clone(),
                 };
-                
+
                 // Compile and check the condition
-                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                let compiled = CompiledSlotCondition::compile(&temp_condition)?;
                 if !self.match_slot_condition(value, &compiled, context)? {
                     return Ok(false);
                 }
@@ -252,9 +253,9 @@ impl RuleMatcher {
                     range: condition.range.clone(),
                     required: condition.required,
                     pattern: condition.pattern.clone(),
-                    equals_string: condition.equals_string.clone(),
-                    equals_number: condition.equals_number,
-                    equals_expression: condition.equals_expression.clone(),
+                    equals_string: None, // Not available on AnonymousSlotExpression
+                    equals_number: None, // Not available on AnonymousSlotExpression
+                    equals_expression: None, // Not available on AnonymousSlotExpression
                     minimum_value: condition.minimum_value.clone(),
                     maximum_value: condition.maximum_value.clone(),
                     any_of: condition.any_of.clone(),
@@ -262,9 +263,9 @@ impl RuleMatcher {
                     exactly_one_of: condition.exactly_one_of.clone(),
                     none_of: condition.none_of.clone(),
                 };
-                
+
                 // Compile and check the condition
-                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                let compiled = CompiledSlotCondition::compile(&temp_condition)?;
                 if self.match_slot_condition(value, &compiled, context)? {
                     match_count += 1;
                     if match_count > 1 {
@@ -285,9 +286,9 @@ impl RuleMatcher {
                     range: condition.range.clone(),
                     required: condition.required,
                     pattern: condition.pattern.clone(),
-                    equals_string: condition.equals_string.clone(),
-                    equals_number: condition.equals_number,
-                    equals_expression: condition.equals_expression.clone(),
+                    equals_string: None, // Not available on AnonymousSlotExpression
+                    equals_number: None, // Not available on AnonymousSlotExpression
+                    equals_expression: None, // Not available on AnonymousSlotExpression
                     minimum_value: condition.minimum_value.clone(),
                     maximum_value: condition.maximum_value.clone(),
                     any_of: condition.any_of.clone(),
@@ -295,9 +296,9 @@ impl RuleMatcher {
                     exactly_one_of: condition.exactly_one_of.clone(),
                     none_of: condition.none_of.clone(),
                 };
-                
+
                 // Compile and check the condition
-                let compiled = CompiledSlotCondition::from_slot_condition(&temp_condition)?;
+                let compiled = CompiledSlotCondition::compile(&temp_condition)?;
                 if self.match_slot_condition(value, &compiled, context)? {
                     return Ok(false); // One matched when none should
                 }

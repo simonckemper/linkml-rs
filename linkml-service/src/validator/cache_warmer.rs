@@ -555,7 +555,8 @@ impl CacheWarmer {
             
             // If at limit, abort oldest tasks
             while handles.len() + tasks.len() > 5 && !handles.is_empty() {
-                if let Some(oldest) = handles.remove(0) {
+                if !handles.is_empty() {
+                    let oldest = handles.remove(0);
                     oldest.abort();
                 }
             }

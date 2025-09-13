@@ -748,22 +748,13 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         let mut durations = Vec::with_capacity(iterations);
         // Create memory service if memory profiling is requested
-        let memory_service = if memory {
-            // Import memory service factory
-            use memory_service::create_memory_service;
-            use memory_core::traits::MemoryService;
-            
-            match create_memory_service() {
-                Ok(service) => {
-                    println!("Memory profiling enabled");
-                    Some(service)
-                },
-                Err(e) => {
-                    eprintln!("Warning: Failed to create memory service: {e}");
-                    eprintln!("Continuing without memory profiling");
-                    None
-                }
-            }
+        let memory_service: Option<()> = if memory {
+            // Memory service creation requires multiple dependencies that may not be available in CLI context
+            // For now, we'll skip memory service creation and just log a warning
+            eprintln!("Warning: Memory profiling requested but not available in CLI context");
+            eprintln!("Memory service requires logger, flamegraph, error handler, system info, task manager, and timestamp services");
+            eprintln!("Continuing without memory profiling");
+            None
         } else {
             None
         };
@@ -774,16 +765,14 @@ impl<S: LinkMLService + 'static> CliApp<S> {
             let start = std::time::Instant::now();
 
             // Collect memory before validation if service is available
-            if let Some(ref service) = memory_service {
-                use memory_core::traits::MemoryService;
-                
-                if let Ok(usage) = service.get_memory_usage().await {
-                    let mut memory_info = std::collections::HashMap::new();
-                    memory_info.insert("rss".to_string(), usage.rss);
-                    memory_info.insert("vms".to_string(), usage.vms);
-                    memory_info.insert("heap".to_string(), usage.heap_allocated);
-                    memory_usage.push(memory_info);
-                }
+            // Memory service is not available in CLI context, so skip memory collection
+            if memory_service.is_some() {
+                // Would collect memory usage here if service was available
+                let mut memory_info = std::collections::HashMap::new();
+                memory_info.insert("rss".to_string(), 0);
+                memory_info.insert("vms".to_string(), 0);
+                memory_info.insert("heap".to_string(), 0);
+                memory_usage.push(memory_info);
             }
 
             self.service.validate(&data, &schema, "Root").await?;

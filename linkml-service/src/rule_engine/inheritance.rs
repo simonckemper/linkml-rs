@@ -278,14 +278,17 @@ impl RuleOverrideManager {
                                     .collect()
                             );
                         }
-                        if let Some(ref add_all) = additional_pre.all_of {
-                            existing_pre.all_of = Some(
-                                existing_pre.all_of.clone()
-                                    .unwrap_or_default()
-                                    .into_iter()
-                                    .chain(add_all.clone())
-                                    .collect()
-                            );
+                        if let Some(ref additional_composite) = additional_pre.composite_conditions {
+                            if let Some(ref add_all) = additional_composite.all_of {
+                                let existing_composite = existing_pre.composite_conditions.get_or_insert_with(Default::default);
+                                existing_composite.all_of = Some(
+                                    existing_composite.all_of.clone()
+                                        .unwrap_or_default()
+                                        .into_iter()
+                                        .chain(add_all.clone())
+                                        .collect()
+                                );
+                            }
                         }
                         if let Some(ref add_none) = additional_pre.none_of {
                             existing_pre.none_of = Some(
