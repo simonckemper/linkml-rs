@@ -411,6 +411,7 @@ impl YamlGenerator {
                     .map(|(k, v)| (serde_yaml::Value::String(k), v)),
             ))
         }
+    }
 
     /// Convert type to `YAML`
     fn type_to_yaml(&self, type_def: &TypeDefinition) -> serde_yaml::Value {
