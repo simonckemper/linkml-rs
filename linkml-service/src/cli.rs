@@ -748,7 +748,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         let mut durations = Vec::with_capacity(iterations);
         // Create memory service if memory profiling is requested
-        let memory_service: Option<()> = if memory {
+        let _memory_service: Option<()> = if memory {
             // Memory service requires many dependencies not available in CLI context
             eprintln!("Warning: Memory profiling requested but not available in CLI context");
             eprintln!("Memory service requires logger, flamegraph, error handler, system info, task manager, and timestamp services");
