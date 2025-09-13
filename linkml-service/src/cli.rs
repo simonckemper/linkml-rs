@@ -748,43 +748,23 @@ impl<S: LinkMLService + 'static> CliApp<S> {
 
         let mut durations = Vec::with_capacity(iterations);
         // Create memory service if memory profiling is requested
-        let memory_service = if memory {
-            // Import memory service factory
-            use memory_service::create_memory_service;
-            use memory_core::traits::MemoryService;
-            
-            match create_memory_service() {
-                Ok(service) => {
-                    println!("Memory profiling enabled");
-                    Some(service)
-                },
-                Err(e) => {
-                    eprintln!("Warning: Failed to create memory service: {e}");
-                    eprintln!("Continuing without memory profiling");
-                    None
-                }
-            }
+        let memory_service: Option<()> = if memory {
+            // Memory service requires many dependencies not available in CLI context
+            eprintln!("Warning: Memory profiling requested but not available in CLI context");
+            eprintln!("Memory service requires logger, flamegraph, error handler, system info, task manager, and timestamp services");
+            eprintln!("Continuing without memory profiling");
+            None
         } else {
             None
         };
         
-        let mut memory_usage = Vec::with_capacity(if memory { iterations } else { 0 });
+        let mut memory_usage: Vec<std::collections::HashMap<String, u64>> = Vec::with_capacity(if memory { iterations } else { 0 });
 
         for _ in 0..iterations {
             let start = std::time::Instant::now();
 
             // Collect memory before validation if service is available
-            if let Some(ref service) = memory_service {
-                use memory_core::traits::MemoryService;
-                
-                if let Ok(usage) = service.get_memory_usage().await {
-                    let mut memory_info = std::collections::HashMap::new();
-                    memory_info.insert("rss".to_string(), usage.rss);
-                    memory_info.insert("vms".to_string(), usage.vms);
-                    memory_info.insert("heap".to_string(), usage.heap_allocated);
-                    memory_usage.push(memory_info);
-                }
-            }
+            // Memory service not available in CLI context, skip memory collection
 
             self.service.validate(&data, &schema, "Root").await?;
 
@@ -818,7 +798,7 @@ impl<S: LinkMLService + 'static> CliApp<S> {
         if memory && !memory_usage.is_empty() {
             // Extract RSS (Resident Set Size) values for analysis
             let rss_values: Vec<u64> = memory_usage.iter()
-                .filter_map(|usage| usage.get("rss").copied())
+                .filter_map(|usage: &std::collections::HashMap<String, u64>| usage.get("rss").copied())
                 .collect();
 
             if rss_values.is_empty() {

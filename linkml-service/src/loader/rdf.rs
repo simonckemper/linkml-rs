@@ -400,9 +400,9 @@ impl RdfLoader {
             Term::Literal(l) => l.value().to_string(),
             Term::Triple(triple) => {
                 // RDF-star support: convert triple to reified statement representation
-                let subj = self._term_to_string(&triple.subject.into());
+                let subj = self._term_to_string(&triple.subject.clone().into());
                 let pred = triple.predicate.as_str();
-                let obj = self._term_to_string(&triple.object.clone());
+                let obj = self._term_to_string(&triple.object.clone().into());
                 format!("<<{subj} {pred} {obj}>>")
             }
         }

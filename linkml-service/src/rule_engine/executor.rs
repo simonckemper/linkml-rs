@@ -94,10 +94,12 @@ impl RuleExecutor {
                     .unwrap_or_else(|e| {
                         // Convert error to validation issue
                         vec![ValidationIssue {
-                            severity: linkml_core::Severity::Error,
-                            path: None,
+                            severity: crate::validator::report::Severity::Error,
+                            path: String::new(),
                             message: format!("Rule execution failed: {}", e),
-                            context: None,
+                            validator: "rule_executor".to_string(),
+                            code: None,
+                            context: std::collections::HashMap::new(),
                         }]
                     })
             })

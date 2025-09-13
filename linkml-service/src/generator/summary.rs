@@ -112,7 +112,10 @@ struct SchemaStats {
 impl SummaryGenerator {
     /// Create a new summary generator
     #[must_use] pub fn new(config: SummaryGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default()
+        }
     }
 
     /// Generate summary from schema

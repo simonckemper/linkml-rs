@@ -63,7 +63,10 @@ pub struct YamlValidatorGenerator {
 impl YamlValidatorGenerator {
     /// Create a new `YAML` validator generator
     #[must_use] pub fn new(config: YamlValidatorGeneratorConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            options: super::traits::GeneratorOptions::default()
+        }
     }
 
     /// Generate validation schema for the configured framework

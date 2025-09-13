@@ -62,7 +62,8 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: true,
             compact_syntax: false,
-            include_linkml_props: false}
+            include_linkml_props: false,
+            options: super::traits::GeneratorOptions::default()}
     }
 
     /// Create a new RDF generator in simple mode
@@ -72,7 +73,8 @@ impl RdfGenerator {
             base_uri: None,
             include_metadata: false,
             compact_syntax: true,
-            include_linkml_props: false}
+            include_linkml_props: false,
+            options: super::traits::GeneratorOptions::default()}
     }
 
     /// Set the base URI

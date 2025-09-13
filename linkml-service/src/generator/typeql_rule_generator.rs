@@ -440,6 +440,7 @@ impl RuleGenerator {
             // No then_required fields, no rule needed
             None
         }
+    }
 
     /// Generate a rule from a ``LinkML`` rule definition
     fn generate_from_linkml_rule(&mut self, class_name: &str, rule: &Rule) -> Option<TypeQLRule> {
@@ -614,5 +615,4 @@ use linkml_core::types::SlotDefinition;
         assert!(typeql.contains("};"));
         Ok(())
     }
-}
 }

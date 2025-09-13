@@ -5,7 +5,7 @@ use std::process;
 use tracing::{error, info, warn};
 
 use super::types::{LinkMLCli, LinkMLCommand, OutputFormat};
-use linkml_core::error::{LinkMLError, Result};
+use linkml_core::error::Result;
 
 /// Main LinkML CLI application
 pub struct LinkMLApp {
@@ -74,8 +74,8 @@ impl LinkMLApp {
             LinkMLCommand::Validate { schema, data, .. } => {
                 self.validate_command(schema, data).await
             }
-            LinkMLCommand::Generate { schema, target, output, .. } => {
-                self.generate_command(schema, target, output).await
+            LinkMLCommand::Generate { schema, generator, output, .. } => {
+                self.generate_command(schema, generator, output).await
             }
             LinkMLCommand::Convert { input, output, .. } => {
                 self.convert_command(input, output).await
@@ -98,14 +98,14 @@ impl LinkMLApp {
             LinkMLCommand::Serve { schema, port, .. } => {
                 self.serve_command(schema, *port).await
             }
-            LinkMLCommand::Shell => {
-                self.shell_command().await
+            LinkMLCommand::Shell { schema, history, init, highlight } => {
+                self.shell_command(schema, history, init, *highlight).await
             }
         }
     }
 
     /// Validate data against a schema
-    async fn validate_command(&self, schema: &std::path::Path, data: &[std::path::Path]) -> Result<()> {
+    async fn validate_command(&self, schema: &std::path::Path, data: &[std::path::PathBuf]) -> Result<()> {
         info!("Validating data against schema: {:?}", schema);
         
         // TODO: Implement actual validation logic
@@ -121,15 +121,15 @@ impl LinkMLApp {
     }
 
     /// Generate code from schema
-    async fn generate_command(&self, schema: &std::path::Path, target: &str, output: &Option<std::path::PathBuf>) -> Result<()> {
-        info!("Generating {} from schema: {:?}", target, schema);
-        
+    async fn generate_command(&self, schema: &std::path::Path, generator: &str, output: &std::path::Path) -> Result<()> {
+        info!("Generating {} from schema: {:?}", generator, schema);
+
         // TODO: Implement actual generation logic
         warn!("Generate command not yet fully implemented");
-        
+
         if !self.cli.quiet {
-            println!("Would generate {} from schema: {:?} to output: {:?}", 
-                     target, schema, output);
+            println!("Would generate {} from schema: {:?} to output: {:?}",
+                     generator, schema, output);
         }
         
         Ok(())
@@ -234,16 +234,16 @@ impl LinkMLApp {
     }
 
     /// Start interactive shell
-    async fn shell_command(&self) -> Result<()> {
-        info!("Starting interactive shell");
-        
+    async fn shell_command(&self, schema: &Option<std::path::PathBuf>, _history: &Option<std::path::PathBuf>, _init: &Option<std::path::PathBuf>, highlight: bool) -> Result<()> {
+        info!("Starting interactive shell with schema: {:?}, highlight: {}", schema, highlight);
+
         // TODO: Implement actual shell logic
         warn!("Shell command not yet fully implemented");
-        
+
         if !self.cli.quiet {
-            println!("Would start interactive LinkML shell");
+            println!("Would start interactive LinkML shell with schema: {:?}, highlight: {}", schema, highlight);
         }
-        
+
         Ok(())
     }
 

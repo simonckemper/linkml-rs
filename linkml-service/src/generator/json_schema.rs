@@ -1,7 +1,7 @@
 //! JSON Schema generation for `LinkML` schemas
 
 use super::options::IndentStyle;
-use super::traits::{CodeFormatter, Generator, GeneratorResult};
+use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::prelude::*;
 use serde_json::{Value as JsonValue, json};
 use std::collections::HashMap;

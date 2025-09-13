@@ -610,6 +610,7 @@ impl GraphQLGenerator {
         } else {
             Ok(base_type)
         }
+    }
 
     /// Get base GraphQL type from `LinkML` range
     fn get_base_graphql_type(&self, range: &Option<String>) -> String {
@@ -652,6 +653,7 @@ impl GraphQLGenerator {
         } else {
             format!("{s}s")
         }
+    }
 
     /// Convert enum values to GraphQL format
     fn convert_enum_value(value: &str) -> String {
@@ -1012,7 +1014,4 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         assert_eq!(GraphQLGenerator::convert_enum_value("not-started"), "NOT_STARTED");
         assert_eq!(GraphQLGenerator::convert_enum_value("completed"), "COMPLETED");
     }
-}
-}
-
 }

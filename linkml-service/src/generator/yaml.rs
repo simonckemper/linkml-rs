@@ -411,6 +411,7 @@ impl YamlGenerator {
                     .map(|(k, v)| (serde_yaml::Value::String(k), v)),
             ))
         }
+    }
 
     /// Convert type to `YAML`
     fn type_to_yaml(&self, type_def: &TypeDefinition) -> serde_yaml::Value {
@@ -538,6 +539,7 @@ impl YamlGenerator {
                 }
             }
         }
+    }
 
     /// Convert slot to `YAML`
     fn slot_to_yaml(&self, slot: &SlotDefinition) -> serde_yaml::Value {
@@ -759,7 +761,4 @@ impl Generator for YamlGenerator {
     fn get_default_filename(&self) -> &'static str {
         "schema.yaml"
     }
-}
-}
-
 }
