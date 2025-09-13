@@ -63,9 +63,19 @@ pub struct NamespaceManagerGenerator {
 impl NamespaceManagerGenerator {
     /// Create a new namespace manager generator
     #[must_use] pub fn new(config: NamespaceManagerGeneratorConfig) -> Self {
-        Self { 
+        Self {
             config,
             options: super::traits::GeneratorOptions::default(),
+        }
+    }
+
+    /// Create generator with options
+    #[must_use]
+    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
+        let config = NamespaceManagerGeneratorConfig::default();
+        Self {
+            config,
+            options,
         }
     }
 
@@ -611,15 +621,7 @@ impl NamespaceManagerGenerator {
             for (prefix, expansion) in &schema.prefixes {
                 let _ = writeln!(
                     output,
-                    "        prefixes.insert(\"{}
-    
-    /// Create generator with options
-    #[must_use]
-    pub fn with_options(options: super::traits::GeneratorOptions) -> Self {
-        let mut generator = Self::new();
-        generator.options = options;
-        generator
-    }\".to_string(), \"{}\".to_string());",
+                    "        prefixes.insert(\"{}\".to_string(), \"{}\".to_string());",
                     prefix,
                     Self::get_prefix_reference(expansion)
                 );
