@@ -539,6 +539,7 @@ impl YamlGenerator {
                 }
             }
         }
+    }
 
     /// Convert slot to `YAML`
     fn slot_to_yaml(&self, slot: &SlotDefinition) -> serde_yaml::Value {
