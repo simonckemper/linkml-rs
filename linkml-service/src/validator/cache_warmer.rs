@@ -474,7 +474,7 @@ impl CacheWarmer {
 
             // Put in cache
             let validator_arc = Arc::new(validator);
-            self.cache.put(key, validator_arc)?;
+            self.cache.put(key, &validator_arc)?;
 
             let duration = start.elapsed();
             tracing::debug!("Warmed validator for {} in {:?}", key.class_name, duration);
