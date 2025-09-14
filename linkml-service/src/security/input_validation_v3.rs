@@ -51,6 +51,7 @@ pub struct InputValidator {
 
 impl InputValidator {
     /// Create a new input validator with configuration
+    #[must_use]
     pub fn new(limits: SecurityLimitsConfig) -> Self {
         Self { limits }
     }

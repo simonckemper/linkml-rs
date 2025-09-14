@@ -108,6 +108,7 @@ impl ParallelValidationEngine {
     }
 
     /// Validate values in parallel with result aggregation
+    #[must_use]
     pub fn validate_batch_aggregated(
         &self,
         values: &[(String, Value)], // (id, value) pairs

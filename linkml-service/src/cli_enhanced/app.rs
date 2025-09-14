@@ -15,12 +15,14 @@ pub struct LinkMLApp {
 
 impl LinkMLApp {
     /// Create a new LinkML application from command line arguments
+    #[must_use]
     pub fn from_args() -> Self {
         let cli = LinkMLCli::parse();
         Self { cli }
     }
 
     /// Create a new LinkML application with custom CLI configuration
+    #[must_use]
     pub fn new(cli: LinkMLCli) -> Self {
         Self { cli }
     }

@@ -90,11 +90,13 @@ pub struct InputValidator {
 
 impl InputValidator {
     /// Create a new validator with custom limits
+    #[must_use]
     pub fn new(limits: SecurityLimits) -> Self {
         Self { limits }
     }
 
     /// Create a validator with default limits
+    #[must_use]
     pub fn with_defaults() -> Self {
         Self::new(SecurityLimits::default())
     }
