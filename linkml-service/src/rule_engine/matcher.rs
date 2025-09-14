@@ -383,9 +383,9 @@ impl RuleMatcher {
         let slot_def = linkml_core::types::SlotDefinition {
             name: "temp".to_string(),
             range: Some(range.to_string()),
-            ..Default::default()
+            ..SlotDefinition::default()
         };
-        let mut validation_context = ValidationContext::new(Default::default());
+        let mut validation_context = ValidationContext::new(Arc::default());
         let issues = validator.validate(value, &slot_def, &mut validation_context);
         Ok(issues.is_empty())
     }
@@ -425,11 +425,11 @@ mod tests {
         let condition = CompiledSlotCondition {
             original: SlotCondition {
                 minimum_value: Some(json!(18)),
-                ..Default::default()
+                ..SlotCondition::default()
             },
             equals_expression_ast: None};
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20}),
             "Person".to_string(),
@@ -459,7 +459,7 @@ mod tests {
             .parse("{age} >= 18 and {status} == \"active\"")
             .expect("should parse expression: {}");
 
-        let mut validation_ctx = ValidationContext::new(Default::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20, "status": "active"}),
             "Person".to_string(),
