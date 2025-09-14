@@ -107,16 +107,19 @@ impl LinkMLApp {
     /// Validate data against a schema
     async fn validate_command(&self, schema: &std::path::Path, data: &[std::path::PathBuf]) -> Result<()> {
         info!("Validating data against schema: {:?}", schema);
-        
+
         // TODO: Implement actual validation logic
         // For now, return a placeholder implementation
         warn!("Validation command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
-            println!("Validation would check {} data files against schema: {:?}", 
+            println!("Validation would check {} data files against schema: {:?}",
                      data.len(), schema);
         }
-        
+
         Ok(())
     }
 
@@ -127,109 +130,133 @@ impl LinkMLApp {
         // TODO: Implement actual generation logic
         warn!("Generate command not yet fully implemented");
 
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would generate {} from schema: {:?} to output: {:?}",
                      generator, schema, output);
         }
-        
+
         Ok(())
     }
 
     /// Convert between schema formats
     async fn convert_command(&self, input: &std::path::Path, output: &std::path::Path) -> Result<()> {
         info!("Converting schema from {:?} to {:?}", input, output);
-        
+
         // TODO: Implement actual conversion logic
         warn!("Convert command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would convert schema from {:?} to {:?}", input, output);
         }
-        
+
         Ok(())
     }
 
     /// Lint a schema for issues
     async fn lint_command(&self, schema: &std::path::Path) -> Result<()> {
         info!("Linting schema: {:?}", schema);
-        
+
         // TODO: Implement actual linting logic
         warn!("Lint command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would lint schema: {:?}", schema);
         }
-        
+
         Ok(())
     }
 
     /// Compare two schemas
     async fn diff_command(&self, schema1: &std::path::Path, schema2: &std::path::Path) -> Result<()> {
         info!("Comparing schemas: {:?} vs {:?}", schema1, schema2);
-        
+
         // TODO: Implement actual diff logic
         warn!("Diff command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would compare schemas: {:?} vs {:?}", schema1, schema2);
         }
-        
+
         Ok(())
     }
 
     /// Merge multiple schemas
     async fn merge_command(&self, schemas: &[std::path::PathBuf], output: &std::path::Path) -> Result<()> {
         info!("Merging {} schemas to {:?}", schemas.len(), output);
-        
+
         // TODO: Implement actual merge logic
         warn!("Merge command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would merge {} schemas to {:?}", schemas.len(), output);
         }
-        
+
         Ok(())
     }
 
     /// Dump schema information
     async fn dump_command(&self, schema: &std::path::Path) -> Result<()> {
         info!("Dumping schema: {:?}", schema);
-        
+
         // TODO: Implement actual dump logic
         warn!("Dump command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would dump schema information for: {:?}", schema);
         }
-        
+
         Ok(())
     }
 
     /// Load and process schema
     async fn load_command(&self, input: &std::path::Path) -> Result<()> {
         info!("Loading schema: {:?}", input);
-        
+
         // TODO: Implement actual load logic
         warn!("Load command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async file I/O
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would load and process schema: {:?}", input);
         }
-        
+
         Ok(())
     }
 
     /// Start schema server
     async fn serve_command(&self, schema: &std::path::Path, port: u16) -> Result<()> {
         info!("Starting server for schema: {:?} on port {}", schema, port);
-        
+
         // TODO: Implement actual server logic
         warn!("Serve command not yet fully implemented");
-        
+
+        // Placeholder async operation - will be replaced with actual async server logic
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would start server for schema: {:?} on port {}", schema, port);
         }
-        
+
         Ok(())
     }
 
