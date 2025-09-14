@@ -222,22 +222,24 @@ impl YamlGenerator {
                                 serde_yaml::Value::String(reference.clone()),
                             );
                         }
-                        serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                        serde_yaml::Value::Mapping(
                             prefix_map
                                 .into_iter()
-                                .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                        ))
+                                .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                                .collect::<serde_yaml::Mapping>(),
+                        )
                     }
                 };
                 prefixes.insert(name.clone(), value);
             }
             root.insert(
                 "prefixes".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     prefixes
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
@@ -263,11 +265,12 @@ impl YamlGenerator {
             }
             root.insert(
                 "subsets".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     subsets
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
@@ -279,11 +282,12 @@ impl YamlGenerator {
             }
             root.insert(
                 "types".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     types
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
@@ -295,11 +299,12 @@ impl YamlGenerator {
             }
             root.insert(
                 "enums".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     enums
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
@@ -311,11 +316,12 @@ impl YamlGenerator {
             }
             root.insert(
                 "slots".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     slots
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
@@ -327,11 +333,12 @@ impl YamlGenerator {
             }
             root.insert(
                 "classes".to_string(),
-                serde_yaml::Value::Mapping(serde_yaml::Mapping::from_iter(
+                serde_yaml::Value::Mapping(
                     classes
                         .into_iter()
-                        .map(|(k, v)| (serde_yaml::Value::String(k), v)),
-                )),
+                        .map(|(k, v)| (serde_yaml::Value::String(k), v))
+                        .collect::<serde_yaml::Mapping>(),
+                ),
             );
         }
 
