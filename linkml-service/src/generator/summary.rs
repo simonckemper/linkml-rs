@@ -312,7 +312,7 @@ impl SummaryGenerator {
             + stats.documented_enums;
 
         if total_elements > 0 {
-            stats.documentation_coverage = documented_elements as f64 / total_elements as f64;
+            stats.documentation_coverage = safe_cast::usize_to_f64(documented_elements) / safe_cast::usize_to_f64(total_elements);
         }
 
         // Calculate max inheritance depth
@@ -377,7 +377,7 @@ impl SummaryGenerator {
         }
 
         if stats.class_count > 0 {
-            stats.coupling_score = references as f64 / stats.class_count as f64;
+            stats.coupling_score = safe_cast::usize_to_f64(references) / safe_cast::usize_to_f64(stats.class_count);
         }
 
         // Cohesion score (based on shared slots)
@@ -389,7 +389,7 @@ impl SummaryGenerator {
         }
 
         if stats.slot_count > 0 {
-            stats.cohesion_score = f64::from(shared_slots) / stats.slot_count as f64;
+            stats.cohesion_score = f64::from(shared_slots) / safe_cast::usize_to_f64(stats.slot_count);
         }
     }
 
