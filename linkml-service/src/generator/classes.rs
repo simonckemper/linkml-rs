@@ -23,7 +23,7 @@ impl RustGenerator {
 
         // Generate trait first if this class has children or is abstract
         if generate_traits
-            && (class.abstract_.unwrap_or(false) || self.has_subclasses(class_name, schema))
+            && (class.abstract_.unwrap_or(false) || Self::has_subclasses(class_name, schema))
         {
             output.push_str(
                 &self.generate_trait_for_class(class_name, class, schema, options, indent)?,
@@ -80,7 +80,7 @@ impl RustGenerator {
         // Generate trait implementation if needed
         if generate_traits
             && (class.abstract_.unwrap_or(false)
-                || self.has_subclasses(class_name, schema)
+                || Self::has_subclasses(class_name, schema)
                 || class.is_a.is_some())
         {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
@@ -96,7 +96,7 @@ impl RustGenerator {
         }
 
         // Generate enum for polymorphic types if this is a parent class
-        if generate_traits && self.has_subclasses(class_name, schema) {
+        if generate_traits && Self::has_subclasses(class_name, schema) {
             writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
             self.generate_polymorphic_enum(&mut output, class_name, schema, options)?;
         }
@@ -126,7 +126,7 @@ impl RustGenerator {
 
         // Generate additional utility methods
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
-        self.generate_utility_methods(output, struct_name, class, schema, options, indent)?;
+        Self::generate_utility_methods(output, struct_name, class, schema, options, indent)?;
 
         writeln!(output, "}}")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -183,7 +183,6 @@ impl RustGenerator {
 
     /// Generate utility methods
     fn generate_utility_methods(
-        &self,
         output: &mut String,
         _struct_name: &str,
         _class: &ClassDefinition,

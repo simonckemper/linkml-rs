@@ -99,7 +99,7 @@ impl RustGenerator {
     ) -> GeneratorResult<()> {
         // Find the trait to implement (could be from parent class)
         let trait_class =
-            if class.abstract_.unwrap_or(false) || self.has_subclasses(class_name, schema) {
+            if class.abstract_.unwrap_or(false) || Self::has_subclasses(class_name, schema) {
                 class_name
             } else if let Some(parent) = &class.is_a {
                 parent
@@ -153,7 +153,7 @@ impl RustGenerator {
         options: &GeneratorOptions,
     ) -> GeneratorResult<()> {
         let enum_name = format!("{}Variants", BaseCodeFormatter::to_pascal_case(class_name));
-        let subclasses = self.get_subclasses(class_name, schema);
+        let subclasses = Self::get_subclasses(class_name, schema);
 
         if subclasses.is_empty() {
             return Ok(());

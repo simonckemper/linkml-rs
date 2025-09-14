@@ -69,7 +69,7 @@ impl RustGenerator {
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> String {
-        let base_type = self.get_base_type(&slot.range, schema);
+        let base_type = Self::get_base_type(&slot.range, schema);
 
         if slot.multivalued.unwrap_or(false) {
             format!("Vec<{base_type}>")
@@ -82,7 +82,6 @@ impl RustGenerator {
 
     /// Get base Rust type for a range
     pub(super) fn get_base_type(
-        &self,
         range: &Option<String>,
         schema: &SchemaDefinition,
     ) -> String {
@@ -125,7 +124,7 @@ impl RustGenerator {
         if slot.multivalued.unwrap_or(false) {
             "Vec::new()".to_string()
         } else if slot.required.unwrap_or(false) {
-            match self.get_base_type(&slot.range, schema).as_str() {
+            match Self::get_base_type(&slot.range, schema).as_str() {
                 "String" => "String::new()".to_string(),
                 "i64" => "0".to_string(),
                 "f64" => "0.0".to_string(),
@@ -138,7 +137,6 @@ impl RustGenerator {
 
     /// Generate enum from `LinkML` enum definition
     pub(super) fn generate_enum_rust(
-        &self,
         enum_name: &str,
         enum_def: &EnumDefinition,
         options: &GeneratorOptions,

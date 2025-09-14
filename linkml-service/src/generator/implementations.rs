@@ -71,14 +71,14 @@ impl AsyncGenerator for RustGenerator {
         let mut main_output = String::new();
 
         // File header
-        main_output.push_str(&self.generate_header(schema)?);
+        main_output.push_str(&Self::generate_header(schema)?);
 
         // Generate validation error enum
-        main_output.push_str(&self.generate_validation_error()?);
+        main_output.push_str(&Self::generate_validation_error()?);
 
         // Generate enums first
         for (enum_name, enum_def) in &schema.enums {
-            let enum_code = self.generate_enum_rust(enum_name, enum_def, options, indent)?;
+            let enum_code = Self::generate_enum_rust(enum_name, enum_def, options, indent)?;
             main_output.push_str(&enum_code);
         }
 

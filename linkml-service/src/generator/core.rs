@@ -48,7 +48,7 @@ impl RustGenerator {
     }
 
     /// Check if a class has subclasses
-    pub(super) fn has_subclasses(&self, class_name: &str, schema: &SchemaDefinition) -> bool {
+    pub(super) fn has_subclasses(class_name: &str, schema: &SchemaDefinition) -> bool {
         schema
             .classes
             .values()
@@ -56,7 +56,7 @@ impl RustGenerator {
     }
 
     /// Get all direct subclasses of a class
-    pub(super) fn get_subclasses(&self, class_name: &str, schema: &SchemaDefinition) -> Vec<String> {
+    pub(super) fn get_subclasses(class_name: &str, schema: &SchemaDefinition) -> Vec<String> {
         schema
             .classes
             .iter()
@@ -76,7 +76,7 @@ impl RustGenerator {
     }
 
     /// Map `LinkML` type to Rust type
-    pub(super) fn linkml_type_to_rust(&self, linkml_type: &str) -> &str {
+    pub(super) fn linkml_type_to_rust(linkml_type: &str) -> &str {
         match linkml_type {
             "string" | "str" => "String",
             "integer" | "int" => "i64",
@@ -91,7 +91,7 @@ impl RustGenerator {
     }
 
     /// Generate an enum from `LinkML` enum definition
-    pub(super) fn generate_enum(&self, enum_name: &str, enum_def: &EnumDefinition) -> GeneratorResult<String> {
+    pub(super) fn generate_enum(enum_name: &str, enum_def: &EnumDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
         
         // Add documentation if available
@@ -186,7 +186,7 @@ impl RustGenerator {
             }
             // Otherwise treat as primitive
             else {
-                self.linkml_type_to_rust(range).to_string()
+                Self::linkml_type_to_rust(range).to_string()
             }
         } else {
             "String".to_string() // Default type
@@ -233,7 +233,7 @@ impl RustGenerator {
     }
 
     /// Generate file header with imports
-    pub(super) fn generate_header(&self, schema: &SchemaDefinition) -> GeneratorResult<String> {
+    pub(super) fn generate_header(schema: &SchemaDefinition) -> GeneratorResult<String> {
         let mut output = String::new();
 
         // File header
@@ -264,7 +264,7 @@ impl RustGenerator {
     }
 
     /// Generate validation error enum
-    pub(super) fn generate_validation_error(&self) -> GeneratorResult<String> {
+    pub(super) fn generate_validation_error() -> GeneratorResult<String> {
         let mut output = String::new();
 
         writeln!(&mut output, "/// Validation errors for generated types").map_err(Self::fmt_error_to_generator_error)?;
@@ -313,14 +313,14 @@ impl Generator for RustGenerator {
         let mut output = String::new();
 
         // Generate header
-        output.push_str(&self.generate_header(schema).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
+        output.push_str(&Self::generate_header(schema).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
 
         // Generate validation error enum
-        output.push_str(&self.generate_validation_error().map_err(|e| LinkMLError::data_validation(e.to_string()))?);
+        output.push_str(&Self::generate_validation_error().map_err(|e| LinkMLError::data_validation(e.to_string()))?);
 
         // Generate enums first
         for (enum_name, enum_def) in &schema.enums {
-            output.push_str(&self.generate_enum(enum_name, enum_def).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
+            output.push_str(&Self::generate_enum(enum_name, enum_def).map_err(|e| LinkMLError::data_validation(e.to_string()))?);
         }
 
         // Generate basic structs for classes
