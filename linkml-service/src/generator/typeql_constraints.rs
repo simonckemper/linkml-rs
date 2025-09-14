@@ -37,7 +37,7 @@ impl TypeQLConstraintTranslator {
 
         // 2. Unique constraint (@unique) - for non-key unique fields
         // Note: LinkML doesn't have explicit unique flag, but we can infer from patterns
-        if slot.identifier != Some(true) && self.is_unique_constraint(slot) {
+        if slot.identifier != Some(true) && Self::is_unique_constraint(slot) {
             constraints.push("@unique".to_string());
         }
 
@@ -56,7 +56,7 @@ impl TypeQLConstraintTranslator {
     }
 
     /// Determine if a slot should have unique constraint
-    fn is_unique_constraint(&self, slot: &SlotDefinition) -> bool {
+    fn is_unique_constraint(slot: &SlotDefinition) -> bool {
         // Check if slot name or description indicates uniqueness
         if let Some(desc) = &slot.description {
             let desc_lower = desc.to_lowercase();
@@ -80,8 +80,8 @@ impl TypeQLConstraintTranslator {
 
     /// Translate `LinkML` cardinality to `TypeQL` @card constraint
     fn translate_cardinality(&self, slot: &SlotDefinition) -> Option<String> {
-        let min = self.get_min_cardinality(slot);
-        let max = self.get_max_cardinality(slot);
+        let min = Self::get_min_cardinality(slot);
+        let max = Self::get_max_cardinality(slot);
 
         // Default cardinality is 0..1 for optional single-valued
         // or 1..1 for required single-valued
@@ -94,12 +94,12 @@ impl TypeQLConstraintTranslator {
     }
 
     /// Get minimum cardinality for a slot
-    fn get_min_cardinality(&self, slot: &SlotDefinition) -> usize {
+    fn get_min_cardinality(slot: &SlotDefinition) -> usize {
         usize::from(slot.required == Some(true))
     }
 
     /// Get maximum cardinality for a slot
-    fn get_max_cardinality(&self, slot: &SlotDefinition) -> Option<usize> {
+    fn get_max_cardinality(slot: &SlotDefinition) -> Option<usize> {
         if slot.multivalued == Some(true) {
             // Check for explicit max cardinality
             if let Some(serde_json::Value::Number(max)) = &slot.maximum_value {
@@ -121,10 +121,10 @@ impl TypeQLConstraintTranslator {
 
         // TypeQL uses Java regex syntax, which is mostly compatible with LinkML patterns
         // But we need to escape certain characters
-        let typeql_pattern = self.escape_regex_for_typeql(pattern);
+        let typeql_pattern = Self::escape_regex_for_typeql(pattern);
 
         // Validate the pattern
-        if self.is_valid_regex(&typeql_pattern) {
+        if Self::is_valid_regex(&typeql_pattern) {
             let constraint = format!("regex \"{typeql_pattern}\"");
             self.regex_cache
                 .insert(pattern.to_string(), constraint.clone());
@@ -135,13 +135,13 @@ impl TypeQLConstraintTranslator {
     }
 
     /// Escape regex pattern for `TypeQL`
-    fn escape_regex_for_typeql(&self, pattern: &str) -> String {
+    fn escape_regex_for_typeql(pattern: &str) -> String {
         // TypeQL requires double quotes to be escaped in regex
         pattern.replace('"', "\\\"")
     }
 
     /// Validate regex pattern
-    fn is_valid_regex(&self, pattern: &str) -> bool {
+    fn is_valid_regex(pattern: &str) -> bool {
         // Try to compile the regex using Rust's regex crate
         regex::Regex::new(pattern).is_ok()
     }

@@ -96,7 +96,7 @@ impl RustGenerator {
         }
 
         // Generate build() method
-        self.generate_build_method(output, struct_name, class, schema, options, indent)?;
+        Self::generate_build_method(output, struct_name, class, schema, options, indent)?;
 
         writeln!(output, "}}")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -155,7 +155,6 @@ impl RustGenerator {
 
     /// Generate `build()` method
     fn generate_build_method(
-        &self,
         output: &mut String,
         struct_name: &str,
         class: &ClassDefinition,

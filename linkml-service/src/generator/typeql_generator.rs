@@ -113,7 +113,7 @@ impl TypeQLGenerator {
         }
 
         // Determine if this is an entity or relation
-        let is_relation = self.is_relation_class(class, schema);
+        let is_relation = Self::is_relation_class(class, schema);
 
         if is_relation {
             self.generate_relation(&mut output, class_name, class, schema, indent)?;
@@ -339,7 +339,7 @@ impl TypeQLGenerator {
     }
 
     /// Check if a class represents a relation
-    fn is_relation_class(&self, class: &ClassDefinition, schema: &SchemaDefinition) -> bool {
+    fn is_relation_class(class: &ClassDefinition, schema: &SchemaDefinition) -> bool {
         // A class is a relation if it has slots that reference other classes
         if !class.slots.is_empty() {
             for slot_name in &class.slots {
