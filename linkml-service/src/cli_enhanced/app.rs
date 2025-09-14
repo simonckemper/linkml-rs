@@ -267,6 +267,9 @@ impl LinkMLApp {
         // TODO: Implement actual shell logic
         warn!("Shell command not yet fully implemented");
 
+        // Placeholder async operation - will be replaced with actual async shell logic
+        tokio::task::yield_now().await;
+
         if !self.cli.quiet {
             println!("Would start interactive LinkML shell with schema: {:?}, highlight: {}", schema, highlight);
         }

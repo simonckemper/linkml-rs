@@ -204,9 +204,10 @@ impl MultiLayerCache {
             }
         }
 
-        let mut stats = self.stats.write();
-        stats.l1_misses += 1;
-        drop(stats);
+        {
+            let mut stats = self.stats.write();
+            stats.l1_misses += 1;
+        } // Ensure stats lock is dropped before await
 
         // Try L2 (distributed cache)
         if let Some(l2) = &self.l2_cache {
@@ -234,9 +235,10 @@ impl MultiLayerCache {
                     }
         }
 
-        let mut stats = self.stats.write();
-        stats.l2_misses += 1;
-        drop(stats);
+        {
+            let mut stats = self.stats.write();
+            stats.l2_misses += 1;
+        } // Ensure stats lock is dropped before await
 
         // Try L3 (disk cache)
         if let Some(l3) = &self.l3_cache
