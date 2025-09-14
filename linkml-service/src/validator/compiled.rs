@@ -209,8 +209,48 @@ impl CompiledValidator {
         issues
     }
 
+    /// Create a validation issue for range violations
+    fn create_range_violation_issue(
+        &self,
+        path: &str,
+        num: f64,
+        min: &Option<f64>,
+        max: &Option<f64>,
+    ) -> ValidationIssue {
+        let mut context = HashMap::new();
+        if let Some(json_num) = serde_json::Number::from_f64(num) {
+            context.insert(
+                "value".to_string(),
+                serde_json::Value::Number(json_num),
+            );
+        }
+        if let Some(min_val) = min
+            && let Some(json_min) = serde_json::Number::from_f64(*min_val) {
+                context.insert(
+                    "min".to_string(),
+                    serde_json::Value::Number(json_min),
+                );
+            }
+        if let Some(max_val) = max
+            && let Some(json_max) = serde_json::Number::from_f64(*max_val) {
+                context.insert(
+                    "max".to_string(),
+                    serde_json::Value::Number(json_max),
+                );
+            }
+        ValidationIssue {
+            severity: Severity::Error,
+            path: path.to_string(),
+            message: format!("Value {num} is out of range"),
+            validator: self.name.clone(),
+            code: Some("range_violation".to_string()),
+            context,
+        }
+    }
+
     /// Execute a single validation instruction
-        fn execute_instruction(
+    #[allow(clippy::only_used_in_recursion)]
+    fn execute_instruction(
         &self,
         instruction: &ValidationInstruction,
         value: &JsonValue,
@@ -290,34 +330,7 @@ impl CompiledValidator {
                             (None, None) => true};
 
                         if !valid {
-                            let mut context = HashMap::new();
-                            if let Some(json_num) = serde_json::Number::from_f64(num) {
-                                context.insert(
-                                    "value".to_string(),
-                                    serde_json::Value::Number(json_num),
-                                );
-                            }
-                            if let Some(min_val) = min
-                                && let Some(json_min) = serde_json::Number::from_f64(*min_val) {
-                                    context.insert(
-                                        "min".to_string(),
-                                        serde_json::Value::Number(json_min),
-                                    );
-                                }
-                            if let Some(max_val) = max
-                                && let Some(json_max) = serde_json::Number::from_f64(*max_val) {
-                                    context.insert(
-                                        "max".to_string(),
-                                        serde_json::Value::Number(json_max),
-                                    );
-                                }
-                            issues.push(ValidationIssue {
-                                severity: Severity::Error,
-                                path: path.clone(),
-                                message: format!("Value {num} is out of range"),
-                                validator: self.name.clone(),
-                                code: Some("range_violation".to_string()),
-                                context});
+                            issues.push(self.create_range_violation_issue(path, num, min, max));
                         }
                     }
             }

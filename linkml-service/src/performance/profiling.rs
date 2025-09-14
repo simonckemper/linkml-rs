@@ -5,6 +5,7 @@
 
 use parking_lot::Mutex;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -193,7 +194,7 @@ impl Profiler {
         });
 
         for (key, counter) in entries {
-            report.push_str(&format!("{}: {}\n", key, counter.summary()));
+            write!(report, "{}: {}\n", key, counter.summary()).unwrap();
         }
 
         report

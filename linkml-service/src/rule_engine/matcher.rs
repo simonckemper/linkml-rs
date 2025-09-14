@@ -76,10 +76,7 @@ impl RuleMatcher {
         conditions: &HashMap<String, CompiledSlotCondition>,
         context: &RuleExecutionContext,
     ) -> linkml_core::error::Result<bool> {
-        let instance_obj = match &context.instance {
-            Value::Object(map) => map,
-            _ => return Ok(false), // Non-object instances can't match slot conditions
-        };
+        let Value::Object(instance_obj) = &context.instance else { return Ok(false) };
 
         for (slot_name, condition) in conditions {
             let slot_value = instance_obj.get(slot_name).unwrap_or(&Value::Null);

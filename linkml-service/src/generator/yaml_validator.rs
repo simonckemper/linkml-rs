@@ -429,7 +429,7 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 writeln!(output, "# Validation schema for {class_name}").unwrap();
-                output.push_str(&format!("{}_SCHEMA = {{\n", class_name.to_uppercase()));
+                write!(output, "{}_SCHEMA = {{\n", class_name.to_uppercase()).unwrap();
 
                 // Process slots
                 for slot_name in &class_def.slots {
@@ -450,11 +450,12 @@ impl YamlValidatorGenerator {
         // Generate validator functions
         output.push_str("# Validator instances\n");
         for class_name in schema.classes.keys() {
-            output.push_str(&format!(
+            write!(
+                output,
                 "{}_validator = Validator({}_SCHEMA)\n",
                 class_name.to_lowercase(),
                 class_name.to_uppercase()
-            ));
+            ).unwrap();
         }
 
         Ok(output)
@@ -519,10 +520,11 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 writeln!(output, "// Validation schema for {class_name}").unwrap();
-                output.push_str(&format!(
+                write!(
+                    output,
                     "const {}SchemaDefinition = Joi.object({{\n",
                     self.to_camel_case(class_name)
-                ));
+                ).unwrap();
 
                 // Process all slots
                 let mut slot_rules = Vec::new();
@@ -585,16 +587,17 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            rule.push_str(&format!(".pattern(/{pattern}/)"));
+            write!(rule, ".pattern(/{pattern}/)").unwrap();
         }
 
         // Description
         if let Some(description) = &slot_def.description
             && self.config.include_docs {
-                rule.push_str(&format!(
+                write!(
+                    rule,
                     ".description('{}')",
                     description.replace('\'', "\\'")
-                ));
+                ).unwrap();
             }
 
         rule
@@ -625,10 +628,11 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 writeln!(output, "// Validation schema for {class_name}").unwrap();
-                output.push_str(&format!(
+                write!(
+                    output,
                     "export const {}SchemaDefinition = yup.object({{\n",
                     self.to_camel_case(class_name)
-                ));
+                ).unwrap();
 
                 // Process all slots
                 let mut slot_rules = Vec::new();
@@ -683,13 +687,13 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            rule.push_str(&format!(".matches(/{pattern}/)"));
+            write!(rule, ".matches(/{pattern}/)").unwrap();
         }
 
         // Custom error message
         if self.config.custom_error_messages
             && let Some(_description) = &slot_def.description {
-                rule.push_str(&format!(".label('{name}')"));
+                write!(rule, ".label('{name}')").unwrap();
             }
 
         rule

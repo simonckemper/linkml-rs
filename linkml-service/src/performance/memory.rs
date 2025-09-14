@@ -164,7 +164,7 @@ impl MemoryProfiler {
             writeln!(report, "{}: {:.2} MB", name, usage as f64 / 1_048_576.0).unwrap();
         }
 
-        report.push_str(&format!("\n{}\n", self.stats.summary()));
+        write!(report, "\n{}\n", self.stats.summary()).unwrap();
         report
     }
 

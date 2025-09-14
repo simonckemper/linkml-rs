@@ -246,14 +246,9 @@ impl Validator for StructuredPatternValidator {
         let mut issues = Vec::new();
 
         // Only validate if structured_pattern is specified
-        let structured_pattern = match &slot.structured_pattern {
-            Some(sp) => sp,
-            None => return issues};
+        let Some(structured_pattern) = &slot.structured_pattern else { return issues };
 
-        let pattern = match &structured_pattern.pattern {
-            Some(p) => p,
-            None => return issues, // No pattern specified
-        };
+        let Some(pattern) = &structured_pattern.pattern else { return issues };
 
         // Apply interpolation if enabled
         let final_pattern = if structured_pattern.interpolated.unwrap_or(false) {
