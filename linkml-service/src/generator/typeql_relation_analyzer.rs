@@ -79,7 +79,7 @@ impl RelationAnalyzer {
         let (roles, attributes) = self.extract_roles_and_attributes(class, schema);
 
         // Check if this is a nested relation
-        let is_nested = self.is_nested_relation(class_name, schema);
+        let is_nested = Self::is_nested_relation(class_name, schema);
 
         // Create relation info
         let is_multiway = roles.len() > 2;
@@ -119,7 +119,7 @@ impl RelationAnalyzer {
         }
 
         // Count object-valued slots
-        let object_slots = self.count_object_valued_slots(class, schema);
+        let object_slots = Self::count_object_valued_slots(class, schema);
 
         // If has 2+ object-valued slots, likely a relation
         if object_slots >= 2 {
@@ -143,7 +143,6 @@ impl RelationAnalyzer {
 
     /// Count object-valued slots in a class
     fn count_object_valued_slots(
-        &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
     ) -> usize {
@@ -186,7 +185,7 @@ impl RelationAnalyzer {
                             name: slot_name.clone(),
                             player_type: range.clone(),
                             required: slot.required.unwrap_or(false),
-                            cardinality: self.get_slot_cardinality(slot),
+                            cardinality: Self::get_slot_cardinality(slot),
                             is_inherited: false, // Will be set later
                         };
                         roles.push(role_info);
@@ -208,7 +207,7 @@ impl RelationAnalyzer {
     }
 
     /// Get cardinality for a slot
-    fn get_slot_cardinality(&self, slot: &SlotDefinition) -> Option<(usize, Option<usize>)> {
+    fn get_slot_cardinality(slot: &SlotDefinition) -> Option<(usize, Option<usize>)> {
         let min = usize::from(slot.required.unwrap_or(false));
         let max = if slot.multivalued.unwrap_or(false) {
             if let Some(Value::Number(max_card)) = &slot.maximum_value {
@@ -228,7 +227,7 @@ impl RelationAnalyzer {
     }
 
     /// Check if this relation can be nested (play roles in other relations)
-    fn is_nested_relation(&self, class_name: &str, schema: &SchemaDefinition) -> bool {
+    fn is_nested_relation(class_name: &str, schema: &SchemaDefinition) -> bool {
         // Check if any other class has a slot with this class as range
         for (_, other_class) in &schema.classes {
             for slot_name in &other_class.slots {

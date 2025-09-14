@@ -67,7 +67,7 @@ impl GraphQLGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
 
         // Implements interfaces
-        let interfaces = self.collect_interfaces(class, schema)?;
+        let interfaces = self.collect_interfaces(class, schema);
         if !interfaces.is_empty() {
             write!(&mut output, " implements {}", interfaces.join(" & "))
                 .map_err(Self::fmt_error_to_generator_error)?;
@@ -112,7 +112,7 @@ impl GraphQLGenerator {
 
                 // Field definition
                 let field_name = self.convert_field_name(slot_name);
-                let field_type = self.get_graphql_type(slot, schema)?;
+                let field_type = self.get_graphql_type(slot, schema);
                 let nullable = if slot.required == Some(true) { "!" } else { "" };
 
                 writeln!(
@@ -212,7 +212,7 @@ impl GraphQLGenerator {
                 for slot_name in &slots {
                     if let Some(slot) = schema.slots.get(slot_name) {
                         let field_name = self.convert_field_name(slot_name);
-                        let field_type = self.get_graphql_type(slot, schema)?;
+                        let field_type = self.get_graphql_type(slot, schema);
 
                         // Make all fields optional in input types
                         writeln!(output, "{}{}: {}", indent.single(), field_name, field_type)
@@ -231,7 +231,7 @@ impl GraphQLGenerator {
                 for slot_name in &slots {
                     if let Some(slot) = schema.slots.get(slot_name) {
                         let field_name = self.convert_field_name(slot_name);
-                        let field_type = self.get_graphql_type(slot, schema)?;
+                        let field_type = self.get_graphql_type(slot, schema);
 
                         writeln!(output, "{}{}: {}", indent.single(), field_name, field_type)
                             .map_err(Self::fmt_error_to_generator_error)?;
@@ -546,7 +546,7 @@ impl GraphQLGenerator {
         &self,
         class: &ClassDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<Vec<String>> {
+    ) -> Vec<String> {
         let mut interfaces = Vec::new();
 
         // Add parent if it's abstract
@@ -564,7 +564,7 @@ impl GraphQLGenerator {
                 }
         }
 
-        Ok(interfaces)
+        interfaces
     }
 
     /// Collect all slots including inherited ones
@@ -602,13 +602,13 @@ impl GraphQLGenerator {
         &self,
         slot: &SlotDefinition,
         _schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         let base_type = self.get_base_graphql_type(&slot.range);
 
         if slot.multivalued == Some(true) {
-            Ok(format!("[{base_type}!]"))
+            format!("[{base_type}!]")
         } else {
-            Ok(base_type)
+            base_type
         }
     }
 
