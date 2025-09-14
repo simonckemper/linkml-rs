@@ -765,6 +765,7 @@ impl ExcelGenerator {
     }
 
     /// Collect all slots for a class
+    #[allow(clippy::only_used_in_recursion)]
     fn collect_class_slots(
         &self,
         _class_name: &str,

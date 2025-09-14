@@ -235,6 +235,26 @@ impl SchemaDiffer {
         old_schema: &SchemaDefinition,
         new_schema: &SchemaDefinition,
     ) -> DiffResult<()> {
+        // Validate schemas are comparable
+        if old_schema.name.is_empty() || new_schema.name.is_empty() {
+            return Err(DiffError::InvalidComparison(
+                "Cannot detect renames: schemas must have names".to_string()
+            ));
+        }
+
+        // Validate schemas have some content to compare
+        if old_schema.classes.is_empty() && old_schema.slots.is_empty() && old_schema.types.is_empty() {
+            return Err(DiffError::AnalysisError(
+                "Old schema is empty - no elements to compare".to_string()
+            ));
+        }
+
+        if new_schema.classes.is_empty() && new_schema.slots.is_empty() && new_schema.types.is_empty() {
+            return Err(DiffError::AnalysisError(
+                "New schema is empty - no elements to compare".to_string()
+            ));
+        }
+
         // Detect class renames
         let old_classes: HashSet<_> = old_schema.classes.keys().cloned().collect();
         let new_classes: HashSet<_> = new_schema.classes.keys().cloned().collect();
@@ -247,7 +267,22 @@ impl SchemaDiffer {
                 if let Some(old_class) = old_schema.classes.get(*removed)
                     && let Some(new_class) = new_schema.classes.get(*added) {
                         let similarity = self.calculate_class_similarity(old_class, new_class);
+
+                        // Validate similarity threshold is reasonable
+                        if self.config.rename_threshold < 0.0 || self.config.rename_threshold > 1.0 {
+                            return Err(DiffError::InvalidComparison(
+                                format!("Invalid rename threshold: {} (must be between 0.0 and 1.0)",
+                                       self.config.rename_threshold)
+                            ));
+                        }
+
                         if similarity >= self.config.rename_threshold {
+                            // Validate we're not creating duplicate renames
+                            if self.renames.contains_key(*removed) {
+                                return Err(DiffError::AnalysisError(
+                                    format!("Ambiguous rename detected: class '{}' matches multiple targets", removed)
+                                ));
+                            }
                             self.renames.insert((*removed).to_string(), (*added).to_string());
                         }
                     }
@@ -383,8 +418,27 @@ impl SchemaDiffer {
         new_schema: &SchemaDefinition,
         changes: &mut Vec<SchemaChange>,
     ) -> DiffResult<()> {
+        // Validate schemas have valid structure for comparison
+        if old_schema.name.is_empty() {
+            return Err(DiffError::InvalidComparison(
+                "Old schema must have a name for comparison".to_string()
+            ));
+        }
+        if new_schema.name.is_empty() {
+            return Err(DiffError::InvalidComparison(
+                "New schema must have a name for comparison".to_string()
+            ));
+        }
+
         let old_names: HashSet<_> = old_schema.classes.keys().cloned().collect();
         let new_names: HashSet<_> = new_schema.classes.keys().cloned().collect();
+
+        // Validate we have classes to compare
+        if old_names.is_empty() && new_names.is_empty() {
+            return Err(DiffError::AnalysisError(
+                "No classes found in either schema to compare".to_string()
+            ));
+        }
 
         // Removed classes
         for name in old_names.difference(&new_names) {

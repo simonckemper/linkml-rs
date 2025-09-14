@@ -163,6 +163,20 @@ impl JsonLdContextGenerator {
         context: &mut Map<String, Value>,
         schema: &SchemaDefinition,
     ) -> Result<(), LinkMLError> {
+        // Validate slot name is not empty
+        if slot_name.trim().is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Slot name cannot be empty".to_string()
+            ));
+        }
+
+        // Validate slot name doesn't conflict with JSON-LD keywords
+        if ["@context", "@id", "@type", "@value", "@language", "@index", "@reverse", "@graph"].contains(&slot_name) {
+            return Err(LinkMLError::data_validation(
+                format!("Slot name '{}' conflicts with JSON-LD keyword", slot_name)
+            ));
+        }
+
         // Skip if already added
         if context.contains_key(slot_name) {
             return Ok(());

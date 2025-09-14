@@ -223,12 +223,31 @@ impl YamlValidatorGenerator {
     fn enum_to_json_schema(&self, enum_def: &EnumDefinition) -> Result<Value, LinkMLError> {
         let mut schema = Map::new();
 
+        // Validate enum has a name
+        if enum_def.name.is_empty() {
+            return Err(LinkMLError::data_validation(
+                "Enum definition must have a name".to_string()
+            ));
+        }
+
         if let Some(description) = &enum_def.description
             && self.config.include_docs {
                 schema.insert("description".to_string(), json!(description));
             }
 
         if !enum_def.permissible_values.is_empty() {
+            // Validate permissible values are not empty
+            for pv in &enum_def.permissible_values {
+                let value_text = match pv {
+                    PermissibleValue::Simple(s) => s,
+                    PermissibleValue::Complex { text, .. } => text,
+                };
+                if value_text.trim().is_empty() {
+                    return Err(LinkMLError::data_validation(
+                        format!("Enum '{}' has empty permissible value", enum_def.name)
+                    ));
+                }
+            }
             let enum_values: Vec<String> = enum_def
                 .permissible_values
                 .iter()
@@ -349,6 +368,13 @@ impl YamlValidatorGenerator {
         schema: &SchemaDefinition,
     ) -> Result<Value, LinkMLError> {
         if let Some(range) = &slot_def.range {
+            // Validate range is not empty
+            if range.trim().is_empty() {
+                return Err(LinkMLError::data_validation(
+                    format!("Slot '{}' has empty range", slot_def.name)
+                ));
+            }
+
             // Check if it's a type
             if !schema.types.is_empty() && schema.types.contains_key(range) {
                 return Ok(json!({ "$ref": format!("#/definitions/{range}") }));
@@ -364,16 +390,29 @@ impl YamlValidatorGenerator {
                 return Ok(json!({ "$ref": format!("#/definitions/{range}") }));
             }
 
+            // Validate built-in types
+            let is_builtin = matches!(range.as_str(),
+                "string" | "integer" | "int" | "float" | "double" |
+                "boolean" | "bool" | "date" | "datetime" | "uri"
+            );
+
+            if !is_builtin {
+                return Err(LinkMLError::data_validation(
+                    format!("Unknown range type '{}' for slot '{}': not found in schema types, enums, classes, or built-in types",
+                           range, slot_def.name)
+                ));
+            }
+
             // Built-in types
             match range.as_str() {
-                "string" => Ok(json!({ "type": "string" })),
                 "integer" | "int" => Ok(json!({ "type": "integer" })),
                 "float" | "double" => Ok(json!({ "type": "number" })),
                 "boolean" | "bool" => Ok(json!({ "type": "boolean" })),
                 "date" => Ok(json!({ "type": "string", "format": "date" })),
                 "datetime" => Ok(json!({ "type": "string", "format": "date-time" })),
                 "uri" => Ok(json!({ "type": "string", "format": "uri" })),
-                _ => Ok(json!({ "type": "string" }))}
+                // String types (including unknown types as fallback)
+                "string" | _ => Ok(json!({ "type": "string" }))}
         } else {
             Ok(json!({ "type": "string" }))
         }
@@ -461,12 +500,12 @@ impl YamlValidatorGenerator {
     /// Convert range to Cerberus type
     fn range_to_cerberus_type(&self, range: &str, _schema: &SchemaDefinition) -> &'static str {
         match range {
-            "string" => "string",
             "integer" | "int" => "integer",
             "float" | "double" => "float",
             "boolean" | "bool" => "boolean",
             "date" | "datetime" => "datetime",
-            _ => "string"}
+            // String types (including unknown types as fallback)
+            "string" | _ => "string"}
     }
 
     /// Generate Joi validation schema (JavaScript)

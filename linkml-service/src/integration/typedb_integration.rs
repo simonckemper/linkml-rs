@@ -261,12 +261,15 @@ where
     /// Map `LinkML` range to `TypeDB` value type
     fn map_range_to_typedb_type(range: &str) -> &str {
         match range {
-            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
+            // Numeric types
             "integer" | "int" => "long",
             "float" | "double" | "decimal" => "double",
+            // Boolean type
             "boolean" | "bool" => "boolean",
+            // Temporal types
             "date" | "datetime" | "time" => "datetime",
-            _ => "string", // Default to string for unknown types
+            // String types (including unknown types as fallback)
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" | _ => "string",
         }
     }
 

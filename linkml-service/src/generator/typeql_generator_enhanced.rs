@@ -302,6 +302,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Visit type for dependency ordering (DFS)
+    #[allow(clippy::only_used_in_recursion)]
     fn visit_type(
         &self,
         type_name: &str,
@@ -1080,6 +1081,7 @@ impl EnhancedTypeQLGenerator {
     }
 
     /// Map `LinkML` range to `TypeQL` value type
+    #[allow(clippy::only_used_in_recursion)]
     fn map_range_to_typeql(
         &self,
         range: &Option<String>,

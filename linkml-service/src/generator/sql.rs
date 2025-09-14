@@ -547,14 +547,15 @@ impl SQLGenerator {
             Some("float" | "double") => Ok("DOUBLE PRECISION".to_string()),
             Some("decimal") => Ok("DECIMAL(19,4)".to_string()),
             Some("boolean" | "bool") => match dialect {
-                "postgresql" => Ok("BOOLEAN".to_string()),
                 "mysql" => Ok("TINYINT(1)".to_string()),
-                _ => Ok("BOOLEAN".to_string())},
+                // PostgreSQL and standard SQL both use BOOLEAN
+                "postgresql" | _ => Ok("BOOLEAN".to_string())},
             Some("date") => Ok("DATE".to_string()),
             Some("datetime") => match dialect {
                 "postgresql" => Ok("TIMESTAMP WITH TIME ZONE".to_string()),
                 _ => Ok("TIMESTAMP".to_string())},
-            Some("uri" | "url") => Ok("TEXT".to_string()),
+            // Text types (including URIs and unknown/missing types as fallback)
+            Some("uri" | "url") | None => Ok("TEXT".to_string()),
             Some(other) => {
                 // Check if it's an enum
                 if schema.enums.contains_key(other) {
@@ -567,8 +568,7 @@ impl SQLGenerator {
                 } else {
                     Ok("TEXT".to_string())
                 }
-            }
-            None => Ok("TEXT".to_string())}
+            }}
     }
 
     /// Get the ID column type based on options

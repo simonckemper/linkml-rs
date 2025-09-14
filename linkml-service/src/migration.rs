@@ -1055,6 +1055,7 @@ where
     }
 
     /// Apply field mappings to data
+    #[allow(clippy::only_used_in_recursion)]
     fn apply_field_mappings(&self, data: &mut Value, mappings: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
@@ -1092,6 +1093,7 @@ where
     }
 
     /// Recursively apply type conversions
+    #[allow(clippy::only_used_in_recursion)]
     fn apply_type_conversion_recursive(&self, data: &mut Value, conversions: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
@@ -1187,6 +1189,7 @@ where
     }
 
     /// Transform a field recursively
+    #[allow(clippy::only_used_in_recursion)]
     fn transform_field_recursive<F>(&self, data: &mut Value, field: &str, transform: F) -> linkml_core::error::Result<()>
     where
         F: Fn(&mut Value) + Copy,
@@ -1212,6 +1215,7 @@ where
     }
 
     /// Apply default values for new fields
+    #[allow(clippy::only_used_in_recursion)]
     fn apply_default_values(&self, data: &mut Value, defaults: &HashMap<String, String>) -> linkml_core::error::Result<()> {
         match data {
             Value::Object(map) => {
@@ -1571,6 +1575,7 @@ where
     }
 
     /// Check data integrity
+    #[allow(clippy::only_used_in_recursion)]
     fn check_data_integrity(&self, data: &Value) -> linkml_core::error::Result<Vec<String>> {
         let mut errors = Vec::new();
         

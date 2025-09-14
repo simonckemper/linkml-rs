@@ -282,17 +282,45 @@ impl MigrationEngine {
         breaking_changes: &mut Vec<BreakingChange>,
         non_breaking_changes: &mut Vec<NonBreakingChange>,
     ) -> crate::Result<()> {
+        // Validate schemas have class definitions
+        if self.from_schema.classes.is_empty() && self.to_schema.classes.is_empty() {
+            return Err(linkml_core::error::LinkMLError::data_validation(
+                "Cannot analyze class changes: both schemas have no classes defined".to_string()
+            ));
+        }
+
         let from_classes: HashSet<_> = self.from_schema.classes.keys().cloned().collect();
         let to_classes: HashSet<_> = self.to_schema.classes.keys().cloned().collect();
 
         // Find removed classes (breaking)
         for removed in from_classes.difference(&to_classes) {
+            // Validate that removed class exists in from_schema
+            if let Some(removed_class) = self.from_schema.classes.get(removed) {
+                // Check if class has dependencies that would make removal dangerous
+                if !removed_class.slots.is_empty() {
+                    return Err(linkml_core::error::LinkMLError::data_validation(
+                        format!("Cannot remove class '{}': class has {} slots that would be orphaned",
+                               removed, removed_class.slots.len())
+                    ));
+                }
+            }
             breaking_changes.push(BreakingChange::ClassRemoved {
                 name: removed.clone()});
         }
 
         // Find added classes (non-breaking)
         for added in to_classes.difference(&from_classes) {
+            // Validate that added class is properly defined
+            if let Some(added_class) = self.to_schema.classes.get(added) {
+                // Check for circular inheritance
+                if let Some(parent) = &added_class.is_a {
+                    if parent == added {
+                        return Err(linkml_core::error::LinkMLError::data_validation(
+                            format!("Invalid class '{}': cannot inherit from itself", added)
+                        ));
+                    }
+                }
+            }
             non_breaking_changes.push(NonBreakingChange::ClassAdded {
                 name: added.clone()});
         }
@@ -329,6 +357,23 @@ impl MigrationEngine {
 
                 // Find removed slots (breaking)
                 for removed in from_slots.difference(&to_slots) {
+                    // Validate that removed slot exists in schema definition
+                    if let Some(removed_slot) = self.from_schema.slots.get(removed) {
+                        // Check if removing a required slot
+                        if removed_slot.required.unwrap_or(false) {
+                            return Err(linkml_core::error::LinkMLError::data_validation(
+                                format!("Cannot remove required slot '{}' from class '{}': would break existing data",
+                                       removed, class_name)
+                            ));
+                        }
+                        // Check if slot has constraints that indicate it's critical
+                        if removed_slot.identifier.unwrap_or(false) {
+                            return Err(linkml_core::error::LinkMLError::data_validation(
+                                format!("Cannot remove identifier slot '{}' from class '{}': would break data integrity",
+                                       removed, class_name)
+                            ));
+                        }
+                    }
                     breaking_changes.push(BreakingChange::SlotRemoved {
                         class_name: class_name.clone(),
                         slot_name: removed.clone()});
@@ -336,8 +381,16 @@ impl MigrationEngine {
 
                 // Find added slots
                 for added in to_slots.difference(&from_slots) {
-                    // Check if the new slot is required
+                    // Validate that added slot is properly defined
                     if let Some(slot_def) = self.to_schema.slots.get(added) {
+                        // Check for invalid slot configurations
+                        if slot_def.required.unwrap_or(false) && slot_def.range.is_none() {
+                            return Err(linkml_core::error::LinkMLError::data_validation(
+                                format!("Invalid required slot '{}' in class '{}': required slots must have a range",
+                                       added, class_name)
+                            ));
+                        }
+
                         if slot_def.required.unwrap_or(false) {
                             breaking_changes.push(BreakingChange::RequiredFieldAdded {
                                 class_name: class_name.clone(),
@@ -347,6 +400,11 @@ impl MigrationEngine {
                                 class_name: class_name.clone(),
                                 field_name: added.clone()});
                         }
+                    } else {
+                        return Err(linkml_core::error::LinkMLError::data_validation(
+                            format!("Added slot '{}' in class '{}' is not defined in schema slots",
+                                   added, class_name)
+                        ));
                     }
                 }
             }
@@ -367,6 +425,13 @@ impl MigrationEngine {
                 if from_slot.range != to_slot.range
                     && let (Some(from_range), Some(to_range)) = (&from_slot.range, &to_slot.range)
                         && from_range != to_range {
+                            // Validate type compatibility
+                            if !self.are_types_compatible(from_range, to_range)? {
+                                return Err(linkml_core::error::LinkMLError::data_validation(
+                                    format!("Incompatible type change for slot '{}': {} -> {} requires data migration",
+                                           slot_name, from_range, to_range)
+                                ));
+                            }
                             breaking_changes.push(BreakingChange::TypeChanged {
                                 entity: slot_name.clone(),
                                 from_type: from_range.clone(),
@@ -378,6 +443,13 @@ impl MigrationEngine {
                 let to_multivalued = to_slot.multivalued.unwrap_or(false);
 
                 if from_multivalued && !to_multivalued {
+                    // Validate that reducing cardinality is safe
+                    if from_slot.required.unwrap_or(false) {
+                        return Err(linkml_core::error::LinkMLError::data_validation(
+                            format!("Cannot reduce cardinality of required slot '{}' from multiple to single: data loss risk",
+                                   slot_name)
+                        ));
+                    }
                     breaking_changes.push(BreakingChange::CardinalityReduced {
                         class_name: "global".to_string(),
                         slot_name: slot_name.clone(),
@@ -388,6 +460,66 @@ impl MigrationEngine {
         }
 
         Ok(())
+    }
+
+    /// Check if two types are compatible for migration
+    fn are_types_compatible(&self, from_type: &str, to_type: &str) -> crate::Result<bool> {
+        // Define type compatibility matrix
+        let compatible_conversions = [
+            // Numeric widening is generally safe
+            ("integer", "float"),
+            ("integer", "double"),
+            ("float", "double"),
+            // String conversions are usually safe
+            ("integer", "string"),
+            ("float", "string"),
+            ("boolean", "string"),
+            // URI/IRI conversions
+            ("uri", "string"),
+            ("iri", "string"),
+        ];
+
+        // Same type is always compatible
+        if from_type == to_type {
+            return Ok(true);
+        }
+
+        // Check if conversion is in our safe list
+        for (from, to) in &compatible_conversions {
+            if from_type == *from && to_type == *to {
+                return Ok(true);
+            }
+        }
+
+        // Check if both types exist in schemas
+        let from_exists = self.from_schema.types.contains_key(from_type) ||
+                         self.from_schema.enums.contains_key(from_type) ||
+                         self.is_builtin_type(from_type);
+        let to_exists = self.to_schema.types.contains_key(to_type) ||
+                       self.to_schema.enums.contains_key(to_type) ||
+                       self.is_builtin_type(to_type);
+
+        if !from_exists {
+            return Err(linkml_core::error::LinkMLError::data_validation(
+                format!("Source type '{}' not found in schema", from_type)
+            ));
+        }
+        if !to_exists {
+            return Err(linkml_core::error::LinkMLError::data_validation(
+                format!("Target type '{}' not found in schema", to_type)
+            ));
+        }
+
+        // Default to incompatible for safety
+        Ok(false)
+    }
+
+    /// Check if a type is a built-in LinkML type
+    fn is_builtin_type(&self, type_name: &str) -> bool {
+        matches!(type_name,
+            "string" | "integer" | "float" | "double" | "boolean" |
+            "date" | "datetime" | "time" | "uri" | "iri" | "decimal"
+        )
     }
 
     /// Analyze enum changes

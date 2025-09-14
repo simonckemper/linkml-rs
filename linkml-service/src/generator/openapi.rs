@@ -1,9 +1,10 @@
 //! `OpenAPI` schema generation for `LinkML` schemas
 
 use super::options::IndentStyle;
-use super::traits::{CodeFormatter, Generator, GeneratorResult};
+use super::traits::{CodeFormatter, Generator, GeneratorError, GeneratorResult};
 use linkml_core::{error::LinkMLError, prelude::*};
 use serde_json::{Value as JsonValue, json};
+use regex;
 
 /// `OpenAPI` schema generator for `LinkML` schemas
 pub struct OpenApiGenerator {
@@ -161,6 +162,13 @@ impl OpenApiGenerator {
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> GeneratorResult<JsonValue> {
+        // Validate slot has a range
+        if slot.range.is_none() {
+            return Err(GeneratorError::Generation(
+                format!("Slot '{}' must have a range specified", slot.name)
+            ));
+        }
+
         let base_schema = Self::get_base_type_schema(&slot.range, schema);
 
         let mut property = if slot.multivalued == Some(true) {
@@ -178,6 +186,12 @@ impl OpenApiGenerator {
         }
 
         if let Some(pattern) = &slot.pattern {
+            // Validate pattern is a valid regex for OpenAPI
+            regex::Regex::new(pattern).map_err(|e| {
+                GeneratorError::Generation(
+                    format!("Invalid regex pattern '{}' for OpenAPI: {}", pattern, e)
+                )
+            })?;
             property["pattern"] = json!(pattern);
         }
 

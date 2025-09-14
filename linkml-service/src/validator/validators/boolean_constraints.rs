@@ -528,11 +528,11 @@ impl NoneOfValidator {
         if let Some(range) = &expr.range {
             let type_matches = match (range.as_str(), value) {
                 ("integer", Value::Number(n)) => n.is_i64() || n.is_u64(),
-                ("string", Value::String(_)) => true,
-                ("boolean", Value::Bool(_)) => true,
-                ("null", Value::Null) => true,
-                ("array", Value::Array(_)) => true,
-                ("object", Value::Object(_)) => true,
+                ("string", Value::String(_)) |
+                ("boolean", Value::Bool(_)) |
+                ("null", Value::Null) |
+                ("array", Value::Array(_)) |
+                ("object", Value::Object(_)) |
                 ("float" | "double" | "number", Value::Number(_)) => true,
                 _ => false,
             };
