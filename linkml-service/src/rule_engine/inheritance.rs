@@ -271,7 +271,7 @@ impl RuleOverrideManager {
                         // Merge the composite conditions
                         if let Some(ref add_composite) = additional_pre.composite_conditions {
                             if existing_pre.composite_conditions.is_none() {
-                                existing_pre.composite_conditions = Some(Default::default());
+                                existing_pre.composite_conditions = Some(linkml_core::types::CompositeConditions::default());
                             }
                             if let Some(ref mut existing_composite) = existing_pre.composite_conditions {
                                 if let Some(ref add_any) = add_composite.any_of {
@@ -323,7 +323,7 @@ impl RuleOverrideManager {
                         // Merge the composite conditions
                         if let Some(ref add_composite) = additional_post.composite_conditions {
                             if existing_post.composite_conditions.is_none() {
-                                existing_post.composite_conditions = Some(Default::default());
+                                existing_post.composite_conditions = Some(linkml_core::types::CompositeConditions::default());
                             }
                             if let Some(ref mut existing_composite) = existing_post.composite_conditions {
                                 if let Some(ref add_any) = add_composite.any_of {
@@ -387,26 +387,26 @@ mod tests {
         // Base class with a rule
         let mut base_class = ClassDefinition {
             name: "Base".to_string(),
-            ..Default::default()
+            ..linkml_core::types::ClassDefinition::default()
         };
         base_class.rules.push(Rule {
             title: Some("base_rule".to_string()),
             description: Some("Base validation rule".to_string()),
             priority: Some(100),
-            ..Default::default()
+            ..linkml_core::types::Rule::default()
         });
 
         // Derived class with override
         let mut derived_class = ClassDefinition {
             name: "Derived".to_string(),
             is_a: Some("Base".to_string()),
-            ..Default::default()
+            ..linkml_core::types::ClassDefinition::default()
         };
         derived_class.rules.push(Rule {
             title: Some("derived_rule".to_string()),
             description: Some("Derived validation rule".to_string()),
             priority: Some(50),
-            ..Default::default()
+            ..linkml_core::types::Rule::default()
         });
 
         schema.classes.insert("Base".to_string(), base_class);
