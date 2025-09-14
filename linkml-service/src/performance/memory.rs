@@ -161,10 +161,12 @@ impl MemoryProfiler {
         entries.sort_by(|a, b| b.1.cmp(&a.1));
 
         for (name, usage) in entries {
-            writeln!(report, "{}: {:.2} MB", name, usage as f64 / 1_048_576.0).unwrap();
+            // Writing to a String should never fail, but handle gracefully
+            let _ = writeln!(report, "{}: {:.2} MB", name, usage as f64 / 1_048_576.0);
         }
 
-        write!(report, "\n{}\n", self.stats.summary()).unwrap();
+        // Writing to a String should never fail, but handle gracefully
+        let _ = write!(report, "\n{}\n", self.stats.summary());
         report
     }
 
