@@ -401,8 +401,9 @@ impl Validator for StructuredPatternValidator {
                     context.pop_path();
                 }
             }
-            Value::Null | _ => {
+            Value::Null | Value::Bool(_) | Value::Number(_) | Value::Object(_) | Value::Array(_) => {
                 // Null is allowed unless required, and we only validate strings
+                // Other types are not validated by this string pattern validator
             }
         }
 

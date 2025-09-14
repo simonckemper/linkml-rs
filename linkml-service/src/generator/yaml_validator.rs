@@ -412,7 +412,9 @@ impl YamlValidatorGenerator {
                 "datetime" => Ok(json!({ "type": "string", "format": "date-time" })),
                 "uri" => Ok(json!({ "type": "string", "format": "uri" })),
                 // String types (including unknown types as fallback)
-                "string" | _ => Ok(json!({ "type": "string" }))}
+                "string" | "str" | "text" => Ok(json!({ "type": "string" })),
+                _ => Ok(json!({ "type": "string" })) // Default to string for unknown types
+            }
         } else {
             Ok(json!({ "type": "string" }))
         }

@@ -549,7 +549,9 @@ impl SQLGenerator {
             Some("boolean" | "bool") => match dialect {
                 "mysql" => Ok("TINYINT(1)".to_string()),
                 // PostgreSQL and standard SQL both use BOOLEAN
-                "postgresql" | _ => Ok("BOOLEAN".to_string())},
+                "postgresql" | "sqlite" | "standard" => Ok("BOOLEAN".to_string()),
+                _ => Ok("BOOLEAN".to_string()) // Default to standard SQL BOOLEAN
+            },
             Some("date") => Ok("DATE".to_string()),
             Some("datetime") => match dialect {
                 "postgresql" => Ok("TIMESTAMP WITH TIME ZONE".to_string()),

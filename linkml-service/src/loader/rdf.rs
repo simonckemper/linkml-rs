@@ -215,7 +215,7 @@ impl RdfLoader {
             .filter_map(|quad| match quad.subject {
                 Subject::NamedNode(node) => Some(NamedOrBlankNode::NamedNode(node)),
                 Subject::BlankNode(node) => Some(NamedOrBlankNode::BlankNode(node)),
-                _ => None})
+                Subject::Triple(_) => None})
             .collect();
 
         // Process each subject
@@ -298,7 +298,7 @@ impl RdfLoader {
                 let subject_str = match &quad.subject {
                     Subject::NamedNode(node) => self.subject_to_string(&NamedOrBlankNode::NamedNode(node.clone())),
                     Subject::BlankNode(node) => self.subject_to_string(&NamedOrBlankNode::BlankNode(node.clone())),
-                    _ => continue, // Skip triple subjects
+                    Subject::Triple(_) => continue, // Skip triple subjects
                 };
 
                 // Skip if already processed
@@ -310,7 +310,7 @@ impl RdfLoader {
                 let subject_node = match &quad.subject {
                     Subject::NamedNode(node) => NamedOrBlankNode::NamedNode(node.clone()),
                     Subject::BlankNode(node) => NamedOrBlankNode::BlankNode(node.clone()),
-                    _ => continue, // Skip triple subjects
+                    Subject::Triple(_) => continue, // Skip triple subjects
                 };
                 if let Some(class_name) =
                     self.infer_class_from_properties(&subject_node, store, schema)
