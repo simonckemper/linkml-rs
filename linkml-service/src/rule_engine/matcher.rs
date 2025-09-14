@@ -5,8 +5,9 @@
 
 use serde_json::Value;
 use linkml_core::error::LinkMLError;
-use linkml_core::types::SlotCondition;
+use linkml_core::types::{SlotCondition, SlotDefinition};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::expression::ExpressionEngine;
 use crate::validator::context::ValidationContext;

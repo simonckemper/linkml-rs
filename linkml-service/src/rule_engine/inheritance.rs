@@ -4,7 +4,7 @@
 //! managing priority adjustments, and handling rule overrides.
 
 use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{Rule, SchemaDefinition};
+use linkml_core::types::{Rule, SchemaDefinition, CompositeConditions, ClassDefinition};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Resolver for rule inheritance

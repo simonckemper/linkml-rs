@@ -396,8 +396,7 @@ mod tests {
         ];
 
         let reports = parallel_engine
-            .validate_batch(&values, "TestClass", None)
-            .await;
+            .validate_batch(&values, "TestClass", None);
 
         assert_eq!(reports.len(), 3);
         Ok(())
@@ -421,8 +420,7 @@ mod tests {
         ];
 
         let aggregated = parallel_engine
-            .validate_batch_aggregated(&values, "TestClass", None)
-            .await;
+            .validate_batch_aggregated(&values, "TestClass", None);
 
         assert_eq!(aggregated.reports.len(), 2);
         assert!(aggregated.reports.contains_key("id1"));

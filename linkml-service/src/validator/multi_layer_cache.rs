@@ -790,7 +790,6 @@ mod tests {
         // Put and get
         cache
             .put(&key, &validator)
-            .await
             .expect("should put into cache: {}");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_some());
@@ -819,11 +818,9 @@ mod tests {
         // Put, invalidate, and try to get
         cache
             .put(&key, &validator)
-            .await
             .expect("should put into cache: {}");
         cache
             .invalidate(&key)
-            .await
             .expect("should invalidate cache: {}");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());
