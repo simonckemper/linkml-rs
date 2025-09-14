@@ -108,7 +108,7 @@ impl JavaScriptGenerator {
         // Document constructor parameters
         for slot_name in &direct_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
-                let type_str = self.get_jsdoc_type(slot, schema)?;
+                let type_str = self.get_jsdoc_type(slot, schema);
                 let optional = if is_optional_slot(slot) { "[" } else { "" };
                 let optional_close = if is_optional_slot(slot) { "]" } else { "" };
 
@@ -371,7 +371,7 @@ impl JavaScriptGenerator {
         &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         let base_type = if !slot.permissible_values.is_empty() {
             "string".to_string()
         } else if let Some(ref range) = slot.range {
@@ -385,9 +385,9 @@ impl JavaScriptGenerator {
         };
 
         if slot.multivalued.unwrap_or(false) {
-            Ok(format!("{base_type}[]"))
+            format!("{base_type}[]")
         } else {
-            Ok(base_type)
+            base_type
         }
     }
 

@@ -412,7 +412,7 @@ impl JsonLdGenerator {
             if let Some(slot) = schema.slots.get(slot_name)
                 && slot.required == Some(true) {
                     let property_id = self.to_snake_case(slot_name);
-                    let example_value = self.get_example_value(slot, schema)?;
+                    let example_value = self.get_example_value(slot, schema);
                     instance.insert(property_id, example_value);
                 }
         }
@@ -425,16 +425,16 @@ impl JsonLdGenerator {
         &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
-    ) -> GeneratorResult<JsonValue> {
+    ) -> JsonValue {
         if let Some(range) = &slot.range {
             match range.as_str() {
-                "string" | "str" => Ok(json!("example string")),
-                "integer" | "int" => Ok(json!(42)),
-                "float" | "double" => Ok(json!(3.14)),
-                "boolean" | "bool" => Ok(json!(true)),
-                "date" => Ok(json!("2024-01-15")),
-                "datetime" => Ok(json!("2024-01-15T10:30:00Z")),
-                "uri" => Ok(json!("https://example.org/resource")),
+                "string" | "str" => json!("example string"),
+                "integer" | "int" => json!(42),
+                "float" | "double" => json!(3.14),
+                "boolean" | "bool" => json!(true),
+                "date" => json!("2024-01-15"),
+                "datetime" => json!("2024-01-15T10:30:00Z"),
+                "uri" => json!("https://example.org/resource"),
                 _ => {
                     if schema.enums.contains_key(range) {
                         // Return first enum value
@@ -443,23 +443,23 @@ impl JsonLdGenerator {
                                 let value = match first_value {
                                     PermissibleValue::Simple(s) => s,
                                     PermissibleValue::Complex { text, .. } => text};
-                                Ok(json!(value))
+                                json!(value)
                             } else {
-                                Ok(json!(null))
+                                json!(null)
                             }
                         } else {
-                            Ok(json!(null))
+                            json!(null)
                         }
                     } else if schema.classes.contains_key(range) {
                         // Return reference to another object
-                        Ok(json!({"@id": format!("#example-{}", self.to_snake_case(range))}))
+                        json!({"@id": format!("#example-{}", self.to_snake_case(range))})
                     } else {
-                        Ok(json!("example"))
+                        json!("example")
                     }
                 }
             }
         } else {
-            Ok(json!("example"))
+            json!("example")
         }
     }
 

@@ -190,7 +190,7 @@ impl PydanticGenerator {
             }
 
         // Determine the type
-        let base_type = self.get_field_type(slot, schema, imports)?;
+        let base_type = self.get_field_type(slot, schema, imports);
 
         // Handle optional and multivalued
         let field_type = if slot.multivalued.unwrap_or(false) {
@@ -258,19 +258,19 @@ impl PydanticGenerator {
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
         imports: &mut ImportManager,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         // Check if it's an enum
         if !slot.permissible_values.is_empty() {
             imports.add_import("enum", "Enum");
             let enum_name = BaseCodeFormatter::to_pascal_case(&slot.name);
-            return Ok(enum_name);
+            return enum_name;
         }
 
         // Check range
         if let Some(ref range) = slot.range {
             // Check if it's a class
             if schema.classes.contains_key(range) {
-                return Ok(range.clone());
+                return range.clone();
             }
 
             // Check if it's a type
@@ -290,7 +290,7 @@ impl PydanticGenerator {
                         }
                         _ => {}
                     }
-                    return Ok(py_type.to_string());
+                    return py_type.to_string();
                 }
 
             // Otherwise map as primitive
@@ -313,10 +313,10 @@ impl PydanticGenerator {
             if py_type == "Any" {
                 imports.add_import("typing", "Any");
             }
-            Ok(py_type.to_string())
+            py_type.to_string()
         } else {
             imports.add_import("typing", "Any");
-            Ok("Any".to_string())
+            "Any".to_string()
         }
     }
 
