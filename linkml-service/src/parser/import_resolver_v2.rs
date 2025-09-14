@@ -13,8 +13,6 @@ use linkml_core::{
     types::{ClassDefinition, SchemaDefinition, SlotDefinition}};
 use parking_lot::RwLock;
 use std::collections::HashMap;
-
-use crate::parser::SchemaParser;
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;

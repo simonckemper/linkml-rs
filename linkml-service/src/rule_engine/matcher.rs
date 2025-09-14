@@ -120,12 +120,12 @@ impl RuleMatcher {
         if let Some(ref pattern) = original.pattern {
             if let Value::String(_s) = value {
                 let validator = PatternValidator::new();
-                let slot_def = linkml_core::types::SlotDefinition {
+                let slot_def = SlotDefinition {
                     name: "temp".to_string(),
                     pattern: Some(pattern.clone()),
-                    ..linkml_core::types::SlotDefinition::default()
+                    ..SlotDefinition::default()
                 };
-                let mut validation_context = ValidationContext::new(std::sync::Arc::default());
+                let mut validation_context = ValidationContext::new(Arc::default());
                 let issues = validator.validate(value, &slot_def, &mut validation_context);
                 if !issues.is_empty() {
                     return Ok(false);
@@ -381,12 +381,12 @@ impl RuleMatcher {
     fn check_range(&self, value: &Value, range: &str) -> linkml_core::error::Result<bool> {
         // Use RangeValidator for consistency
         let validator = RangeValidator::new();
-        let slot_def = linkml_core::types::SlotDefinition {
+        let slot_def = SlotDefinition {
             name: "temp".to_string(),
             range: Some(range.to_string()),
-            ..linkml_core::types::SlotDefinition::default()
+            ..SlotDefinition::default()
         };
-        let mut validation_context = ValidationContext::new(std::sync::Arc::default());
+        let mut validation_context = ValidationContext::new(Arc::default());
         let issues = validator.validate(value, &slot_def, &mut validation_context);
         Ok(issues.is_empty())
     }
@@ -430,7 +430,7 @@ mod tests {
             },
             equals_expression_ast: None};
 
-        let mut validation_ctx = ValidationContext::new(std::sync::Arc::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20}),
             "Person".to_string(),
@@ -460,7 +460,7 @@ mod tests {
             .parse("{age} >= 18 and {status} == \"active\"")
             .expect("should parse expression: {}");
 
-        let mut validation_ctx = ValidationContext::new(std::sync::Arc::default());
+        let mut validation_ctx = ValidationContext::new(Arc::default());
         let context = RuleExecutionContext::new(
             json!({"age": 20, "status": "active"}),
             "Person".to_string(),
@@ -473,7 +473,7 @@ mod tests {
                 .expect("should match expression: {}")
         );
 
-        let mut validation_ctx2 = ValidationContext::new(std::sync::Arc::default());
+        let mut validation_ctx2 = ValidationContext::new(Arc::default());
         let context2 = RuleExecutionContext::new(
             json!({"age": 16, "status": "active"}),
             "Person".to_string(),
