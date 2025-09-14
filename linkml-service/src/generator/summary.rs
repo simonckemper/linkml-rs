@@ -27,17 +27,6 @@ mod safe_cast {
             MAX_PRECISE_F64 as f64
         }
     }
-
-    /// Safely cast u64 to f64 with precision checking
-    pub fn u64_to_f64(value: u64) -> f64 {
-        const MAX_PRECISE_F64: u64 = (1_u64 << 53) - 1;
-
-        if value <= MAX_PRECISE_F64 {
-            value as f64
-        } else {
-            MAX_PRECISE_F64 as f64
-        }
-    }
 }
 
 /// Summary generator configuration

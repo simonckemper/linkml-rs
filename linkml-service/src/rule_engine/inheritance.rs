@@ -4,7 +4,7 @@
 //! managing priority adjustments, and handling rule overrides.
 
 use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{Rule, SchemaDefinition, CompositeConditions, ClassDefinition};
+use linkml_core::types::{Rule, SchemaDefinition, CompositeConditions};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Resolver for rule inheritance
@@ -379,6 +379,7 @@ impl RuleOverrideManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use linkml_core::types::ClassDefinition;
 
     fn create_test_schema() -> SchemaDefinition {
         let mut schema = SchemaDefinition::default();
