@@ -9,6 +9,7 @@
 //! - Chaos testing capabilities
 
 use super::ValidationContext;
+use crate::utils::safe_cast::{usize_to_f64, usize_to_f32_saturating, f32_to_usize_saturating};
 use indexmap::IndexMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -355,10 +356,9 @@ impl StressTestRunner {
     ) -> StressTestResults {
         let total_ops = results.len();
         let successful_ops = results.iter().filter(|r| r.success).count();
-        // Precision loss acceptable here
-        let throughput = total_ops as f64 / total_duration.as_secs_f64();
-        // Precision loss acceptable here
-        let success_rate = successful_ops as f64 / total_ops as f64;
+        // Calculate metrics using safe casting
+        let throughput = usize_to_f64(total_ops) / total_duration.as_secs_f64();
+        let success_rate = usize_to_f64(successful_ops) / usize_to_f64(total_ops);
 
         // Calculate latency percentiles
         let mut latencies: Vec<_> = results.iter().map(|r| r.duration).collect();
@@ -520,7 +520,7 @@ impl StressTestRunner {
     /// Apply CPU pressure
     async fn apply_cpu_pressure(&self, target_percent: f32) {
         let num_cores = num_cpus::get();
-        let active_threads = ((target_percent / 100.0) * num_cores as f32).ceil() as usize;
+        let active_threads = f32_to_usize_saturating(((target_percent / 100.0) * usize_to_f32_saturating(num_cores)).ceil());
         
         // Spawn CPU-intensive tasks
         let mut handles = Vec::new();

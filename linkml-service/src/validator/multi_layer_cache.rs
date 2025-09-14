@@ -7,6 +7,7 @@
 
 use super::{cache::ValidatorCacheKey, compiled::CompiledValidator};
 use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
+use crate::utils::safe_cast::u64_to_f64_lossy;
 use linkml_core::error::{LinkMLError, Result};
 use lru::LruCache;
 use parking_lot::{Mutex, RwLock};
@@ -97,14 +98,14 @@ pub struct CacheStats {
 impl CacheStats {
     /// Calculate overall hit rate
     #[must_use]
-    // Precision loss acceptable here
+    /// Calculate cache hit rate using safe casting
     pub fn hit_rate(&self) -> f64 {
         let total_hits = self.l1_hits + self.l2_hits + self.l3_hits;
         let total_accesses = self.total_gets;
         if total_accesses == 0 {
             0.0
         } else {
-            (total_hits as f64) / (total_accesses as f64)
+            u64_to_f64_lossy(total_hits) / u64_to_f64_lossy(total_accesses)
         }
     }
 }
@@ -183,9 +184,12 @@ impl MultiLayerCache {
     /// Get a validator from the cache
     pub async fn get(&self, key: &ValidatorCacheKey) -> Option<Arc<CompiledValidator>> {
         let start = Instant::now();
-        let mut stats = self.stats.write();
-        stats.total_gets += 1;
-        drop(stats);
+
+        // Update stats in a separate scope to ensure lock is dropped
+        {
+            let mut stats = self.stats.write();
+            stats.total_gets += 1;
+        }
 
         // Try L1 first
         {

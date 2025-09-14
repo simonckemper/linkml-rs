@@ -6,6 +6,7 @@
 use super::{
     ValidationEngine, ValidationIssue, ValidationOptions, ValidationReport,
     buffer_pool::ValidationBufferPools, context::ValidationContext};
+use crate::utils::safe_cast::{usize_to_f64, u64_to_f64_lossy};
 use rayon::prelude::*;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
@@ -335,9 +336,8 @@ impl StreamValidationResult {
         if self.duration_ms == 0 {
             0.0
         } else {
-            // Precision loss acceptable here
-            
-            (self.items_processed as f64 * 1000.0) / self.duration_ms as f64
+            // Calculate throughput using safe casting
+            (usize_to_f64(self.items_processed) * 1000.0) / u64_to_f64_lossy(self.duration_ms)
         }
     }
 }

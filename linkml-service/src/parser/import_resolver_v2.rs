@@ -132,13 +132,14 @@ impl ImportResolverV2 {
             }
 
         // Check if imports should be followed
-        let settings = self.settings.read();
-        if !settings.should_follow_imports() {
+        let (should_follow, max_depth) = {
+            let settings = self.settings.read();
+            (settings.should_follow_imports(), settings.max_import_depth.unwrap_or(10))
+        };
+
+        if !should_follow {
             return Ok(resolved);
         }
-
-        let max_depth = settings.max_import_depth.unwrap_or(10);
-        drop(settings);
 
         // Resolve imports recursively
         self.resolve_imports_recursive(&mut resolved, 0, max_depth)

@@ -260,6 +260,9 @@ impl PluginRegistry {
         };
 
         // Initialize the plugin
+        // Note: Using std::sync::Mutex across await points is not ideal, but required here
+        // due to the plugin trait design. Consider using tokio::sync::Mutex in future versions.
+        #[allow(clippy::await_holding_lock)]
         {
             let mut plugin_guard = plugin
                 .lock()
@@ -313,6 +316,9 @@ impl PluginRegistry {
         };
 
         // Shutdown the plugin
+        // Note: Using std::sync::Mutex across await points is not ideal, but required here
+        // due to the plugin trait design. Consider using tokio::sync::Mutex in future versions.
+        #[allow(clippy::await_holding_lock)]
         {
             let mut plugin_guard = plugin
                 .lock()

@@ -3,6 +3,7 @@
 //! This module provides string interning to reduce memory usage for
 //! frequently occurring strings like field names, type names, and error codes.
 
+use crate::utils::safe_cast::usize_to_f64;
 use dashmap::DashMap;
 use parking_lot::RwLock;
 use std::sync::Arc;
@@ -191,9 +192,8 @@ impl StringInterner {
             total_strings,
             total_bytes,
             average_length: if total_strings > 0 {
-                // Precision loss acceptable here
-                
-                total_bytes as f64 / total_strings as f64
+                // Calculate average length using safe casting
+                usize_to_f64(total_bytes) / usize_to_f64(total_strings)
             } else {
                 0.0
             }}

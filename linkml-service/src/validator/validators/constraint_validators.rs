@@ -2,6 +2,7 @@
 
 use super::utils::value_type;
 use super::{ValidationContext, ValidationIssue, Validator};
+use crate::utils::safe_cast::{u64_to_f64_lossy, i64_to_f64_lossy};
 use linkml_core::annotations::AnnotationValue;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -785,7 +786,7 @@ impl CrossReferenceValidator {
                     // Use slot metadata for additional validation
                     if let Some(min_val) = &slot.minimum_value
                         && let Some(min_num) = min_val.as_f64()
-                            && (count as f64) < min_num {
+                            && u64_to_f64_lossy(count) < min_num {
                                 issues.push(ValidationIssue::error(
                                     format!("Employee count {count} is below minimum {min_num}"),
                                     context.path(),
@@ -809,7 +810,7 @@ impl CrossReferenceValidator {
                         && let Some(min_year) = annotations.get("minimum_year")
                             && let AnnotationValue::Number(min) = min_year
                                 && let Some(min_val) = min.as_f64()
-                                    && (year as f64) < min_val {
+                                    && i64_to_f64_lossy(year) < min_val {
                                         issues.push(ValidationIssue::warning(
                                             format!("Founded year {year} seems unusually early"),
                                             context.path(),

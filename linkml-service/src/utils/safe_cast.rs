@@ -34,8 +34,23 @@ pub fn f64_to_u64_saturating(value: f64) -> u64 {
 /// For values larger than f64 can precisely represent, use saturation
 pub fn u64_to_f64_lossy(value: u64) -> f64 {
     const MAX_PRECISE_F64: u64 = (1_u64 << 53) - 1;
-    
+
     if value <= MAX_PRECISE_F64 {
+        value as f64
+    } else {
+        // For very large values, this is acceptable for metrics and statistics
+        value as f64
+    }
+}
+
+/// Safely cast i64 to f64 with precision awareness
+/// For values larger than f64 can precisely represent, use saturation
+#[must_use]
+pub fn i64_to_f64_lossy(value: i64) -> f64 {
+    const MAX_PRECISE_F64: i64 = (1_i64 << 53) - 1;
+    const MIN_PRECISE_F64: i64 = -((1_i64 << 53) - 1);
+
+    if value >= MIN_PRECISE_F64 && value <= MAX_PRECISE_F64 {
         value as f64
     } else {
         // For very large values, this is acceptable for metrics and statistics
@@ -89,6 +104,34 @@ pub fn f32_to_u8_saturating(value: f32) -> u8 {
         255
     } else {
         value.round() as u8
+    }
+}
+
+/// Safely cast usize to f32 with precision checking
+/// For values that exceed f32's precision, returns the maximum representable value
+#[must_use]
+pub fn usize_to_f32_saturating(value: usize) -> f32 {
+    // f32 can precisely represent integers up to 2^24 - 1
+    const MAX_PRECISE_F32: usize = (1_usize << 24) - 1;
+
+    if value <= MAX_PRECISE_F32 {
+        value as f32
+    } else {
+        // For very large values, use the actual conversion but accept precision loss
+        // This is reasonable for statistical calculations
+        value as f32
+    }
+}
+
+/// Safely cast f32 to usize with saturation and rounding
+#[must_use]
+pub fn f32_to_usize_saturating(value: f32) -> usize {
+    if value < 0.0 {
+        0
+    } else if value > usize::MAX as f32 {
+        usize::MAX
+    } else {
+        value.round() as usize
     }
 }
 

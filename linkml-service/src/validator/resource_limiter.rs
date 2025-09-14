@@ -7,6 +7,7 @@
 //! - Request rate limiting
 //! - Timeout enforcement
 
+use crate::utils::safe_cast::{usize_to_f64, usize_to_f32_saturating};
 use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
 use linkml_core::{LinkMLError, Result};
@@ -192,21 +193,23 @@ impl ResourceLimiter {
         operation_id: String,
         requirements: ResourceRequirements,
     ) -> Result<ResourceGuard> {
-        let limits = self.limits.read();
+        // Check static limits in a separate scope to ensure lock is dropped
+        {
+            let limits = self.limits.read();
 
-        // Check static limits
-        if requirements.document_size > limits.max_document_size {
-            return Err(LinkMLError::service(format!(
-                "Document size {} exceeds limit {}",
-                requirements.document_size, limits.max_document_size
-            )));
-        }
+            if requirements.document_size > limits.max_document_size {
+                return Err(LinkMLError::service(format!(
+                    "Document size {} exceeds limit {}",
+                    requirements.document_size, limits.max_document_size
+                )));
+            }
 
-        if requirements.memory_bytes > limits.max_memory_bytes {
-            return Err(LinkMLError::service(format!(
-                "Memory requirement {} exceeds limit {}",
-                requirements.memory_bytes, limits.max_memory_bytes
-            )));
+            if requirements.memory_bytes > limits.max_memory_bytes {
+                return Err(LinkMLError::service(format!(
+                    "Memory requirement {} exceeds limit {}",
+                    requirements.memory_bytes, limits.max_memory_bytes
+                )));
+            }
         }
 
         // Check rate limit
@@ -221,8 +224,6 @@ impl ResourceLimiter {
         if let Some(monitor) = &self.monitor {
             monitor.check_resources(&requirements)?;
         }
-
-        drop(limits);
 
         // Acquire semaphore permit
         let permit = self
@@ -372,9 +373,8 @@ impl ResourceLimiter {
             .filter(|u| now.duration_since(u.timestamp) <= window)
             .count();
 
-        // Precision loss acceptable here
-        
-        count as f64 / window.as_secs_f64()
+        // Calculate rate using safe casting
+        usize_to_f64(count) / window.as_secs_f64()
     }
 
     /// Get resource statistics
@@ -409,9 +409,9 @@ impl ResourceLimiter {
         let avg_memory =
             window_history.iter().map(|u| u.memory_bytes).sum::<usize>() / window_history.len();
 
-        // Precision loss acceptable here
+        // Calculate average CPU using safe casting
         let avg_cpu =
-            window_history.iter().map(|u| u.cpu_percent).sum::<f32>() / window_history.len() as f32;
+            window_history.iter().map(|u| u.cpu_percent).sum::<f32>() / usize_to_f32_saturating(window_history.len());
 
         let peak_memory = window_history
             .iter()
