@@ -355,7 +355,7 @@ impl MultiLayerCache {
 
         // Prefetch related validators if configured
         if self.config.prefetch_related {
-            self.prefetch_related_validators(&key, &validator);
+            self.prefetch_related_validators(key, validator);
         }
 
         let mut stats = self.stats.write();
