@@ -191,7 +191,7 @@ impl PythonDataclassGenerator {
             }
 
         // Determine the type
-        let base_type = self.get_field_type(slot, schema, imports)?;
+        let base_type = self.get_field_type(slot, schema, imports);
 
         // Handle optional and multivalued with advanced type annotations
         let field_type = if slot.multivalued.unwrap_or(false) {
@@ -239,31 +239,31 @@ impl PythonDataclassGenerator {
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
         imports: &mut ImportManager,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         // Check if it's an enum
         if !slot.permissible_values.is_empty() {
             imports.add_import("enum", "Enum");
             let enum_name = BaseCodeFormatter::to_pascal_case(&slot.name);
-            return Ok(enum_name);
+            return enum_name;
         }
 
         // Check range
         if let Some(ref range) = slot.range {
             // Check if it's a class
             if schema.classes.contains_key(range) {
-                return Ok(range.clone());
+                return range.clone();
             }
 
             // Check if it's a type
             if let Some(type_def) = schema.types.get(range)
                 && let Some(ref base_type) = type_def.base_type {
-                    return Ok(TypeMapper::to_python(base_type).to_string());
+                    return TypeMapper::to_python(base_type).to_string();
                 }
 
             // Otherwise map as primitive
-            Ok(TypeMapper::to_python(range).to_string())
+            TypeMapper::to_python(range).to_string()
         } else {
-            Ok("Any".to_string())
+            "Any".to_string()
         }
     }
 

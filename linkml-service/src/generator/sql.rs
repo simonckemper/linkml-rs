@@ -514,7 +514,7 @@ impl SQLGenerator {
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> GeneratorResult<String> {
-        let base_type = self.get_base_sql_type(&slot.range, schema, options)?;
+        let base_type = self.get_base_sql_type(&slot.range, schema, options);
 
         // Handle multivalued slots (arrays)
         if slot.multivalued == Some(true) {
@@ -529,46 +529,42 @@ impl SQLGenerator {
     }
 
     /// Get base `SQL` type from `LinkML` range
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the range type cannot be mapped to `SQL`.
     fn get_base_sql_type(
         &self,
         range: &Option<String>,
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
-    ) -> GeneratorResult<String> {
+    ) -> String {
         let dialect = options.get_custom("dialect").map_or("standard", std::string::String::as_str);
 
         match range.as_deref() {
-            Some("string" | "str") => Ok("VARCHAR(255)".to_string()),
-            Some("integer" | "int") => Ok("INTEGER".to_string()),
-            Some("float" | "double") => Ok("DOUBLE PRECISION".to_string()),
-            Some("decimal") => Ok("DECIMAL(19,4)".to_string()),
+            Some("string" | "str") => "VARCHAR(255)".to_string(),
+            Some("integer" | "int") => "INTEGER".to_string(),
+            Some("float" | "double") => "DOUBLE PRECISION".to_string(),
+            Some("decimal") => "DECIMAL(19,4)".to_string(),
             Some("boolean" | "bool") => match dialect {
-                "mysql" => Ok("TINYINT(1)".to_string()),
+                "mysql" => "TINYINT(1)".to_string(),
                 // PostgreSQL and standard SQL both use BOOLEAN
-                "postgresql" | "sqlite" | "standard" => Ok("BOOLEAN".to_string()),
-                _ => Ok("BOOLEAN".to_string()) // Default to standard SQL BOOLEAN
+                "postgresql" | "sqlite" | "standard" => "BOOLEAN".to_string(),
+                _ => "BOOLEAN".to_string() // Default to standard SQL BOOLEAN
             },
-            Some("date") => Ok("DATE".to_string()),
+            Some("date") => "DATE".to_string(),
             Some("datetime") => match dialect {
-                "postgresql" => Ok("TIMESTAMP WITH TIME ZONE".to_string()),
-                _ => Ok("TIMESTAMP".to_string())},
+                "postgresql" => "TIMESTAMP WITH TIME ZONE".to_string(),
+                _ => "TIMESTAMP".to_string()},
             // Text types (including URIs and unknown/missing types as fallback)
-            Some("uri" | "url") | None => Ok("TEXT".to_string()),
+            Some("uri" | "url") | None => "TEXT".to_string(),
             Some(other) => {
                 // Check if it's an enum
                 if schema.enums.contains_key(other) {
                     match dialect {
-                        "postgresql" => Ok(self.convert_table_name(other)),
-                        _ => Ok("VARCHAR(255)".to_string())}
+                        "postgresql" => self.convert_table_name(other),
+                        _ => "VARCHAR(255)".to_string()}
                 } else if schema.classes.contains_key(other) {
                     // Foreign key reference
-                    Ok(self.get_id_type(options))
+                    self.get_id_type(options)
                 } else {
-                    Ok("TEXT".to_string())
+                    "TEXT".to_string()
                 }
             }}
     }
