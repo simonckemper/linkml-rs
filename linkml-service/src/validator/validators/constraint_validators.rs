@@ -716,7 +716,7 @@ impl CrossReferenceValidator {
                         && let Some(date_format) = annotations.get("date_format")
                             && let AnnotationValue::String(format) = date_format {
                                 // Validate date matches expected format
-                                if !self.validate_date_format(date_str, format.as_str()) {
+                                if !Self::validate_date_format(date_str, format.as_str()) {
                                     issues.push(ValidationIssue::error(
                                         format!("Birth date '{date_str}' does not match format '{format}'"),
                                         context.path(),
@@ -730,7 +730,7 @@ impl CrossReferenceValidator {
     }
 
     /// Helper to validate date format
-    fn validate_date_format(&self, date_str: &str, format: &str) -> bool {
+    fn validate_date_format(date_str: &str, format: &str) -> bool {
         use chrono::NaiveDate;
         
         match format {

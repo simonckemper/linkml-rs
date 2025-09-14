@@ -143,7 +143,7 @@ impl StructuredPatternValidator {
     }
 
     /// Apply pattern interpolation if enabled
-    fn interpolate_pattern(&self, pattern: &str, context: &ValidationContext) -> Result<String> {
+    fn interpolate_pattern(pattern: &str, context: &ValidationContext) -> Result<String> {
         let mut result = pattern.to_string();
 
         // Simple interpolation: replace {variable} with context values
@@ -201,7 +201,7 @@ impl StructuredPatternValidator {
     }
 
     /// Validate using regex syntax
-    fn validate_regex(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
+    fn validate_regex(value: &str, pattern: &str, partial: bool) -> Result<bool> {
         let regex = Regex::new(pattern)
             .map_err(|e| LinkMLError::data_validation(format!("Invalid regex pattern: {e}")))?;
 
@@ -252,7 +252,7 @@ impl Validator for StructuredPatternValidator {
 
         // Apply interpolation if enabled
         let final_pattern = if structured_pattern.interpolated.unwrap_or(false) {
-            match self.interpolate_pattern(pattern, context) {
+            match Self::interpolate_pattern(pattern, context) {
                 Ok(p) => p,
                 Err(e) => {
                     let mut issue = ValidationIssue::error(
@@ -279,7 +279,7 @@ impl Validator for StructuredPatternValidator {
             Value::String(s) => {
                 let matches = match syntax {
                     "regular_expression" | "regex" => {
-                        match self.validate_regex(s, &final_pattern, partial) {
+                        match Self::validate_regex(s, &final_pattern, partial) {
                             Ok(m) => m,
                             Err(e) => {
                                 let mut issue = ValidationIssue::error(
@@ -344,7 +344,7 @@ impl Validator for StructuredPatternValidator {
                     if let Value::String(s) = item {
                         let matches = match syntax {
                             "regular_expression" | "regex" => {
-                                match self.validate_regex(s, &final_pattern, partial) {
+                                match Self::validate_regex(s, &final_pattern, partial) {
                                     Ok(m) => m,
                                     Err(e) => {
                                         let mut issue = ValidationIssue::error(

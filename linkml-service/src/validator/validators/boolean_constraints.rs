@@ -386,7 +386,6 @@ impl ExactlyOneOfValidator {
 
     /// Validate a single anonymous slot expression
     fn validate_expression(
-        &self,
         value: &Value,
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
@@ -451,7 +450,7 @@ impl Validator for ExactlyOneOfValidator {
             // Count how many constraints are satisfied
             for (i, constraint) in constraints.iter().enumerate() {
                 context.push_path(format!("exactly_one_of[{i}]"));
-                let sub_issues = self.validate_expression(value, constraint, context);
+                let sub_issues = Self::validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
                     satisfied_count += 1;
@@ -523,7 +522,7 @@ impl NoneOfValidator {
 
     /// Check if expression is satisfied without full validation
     /// Returns true if the expression is satisfied (which means `none_of` should fail)
-    fn is_expression_satisfied(&self, value: &Value, expr: &AnonymousSlotExpression) -> bool {
+    fn is_expression_satisfied(value: &Value, expr: &AnonymousSlotExpression) -> bool {
         // Type check if range is specified
         if let Some(range) = &expr.range {
             let type_matches = match (range.as_str(), value) {
@@ -586,7 +585,6 @@ impl NoneOfValidator {
 
     /// Validate a single anonymous slot expression
     fn validate_expression(
-        &self,
         value: &Value,
         expr: &AnonymousSlotExpression,
         context: &mut ValidationContext,
@@ -685,7 +683,7 @@ impl Validator for NoneOfValidator {
             // First pass: Quick satisfaction check for simple constraints
             for (i, constraint) in constraints.iter().enumerate() {
                 // Quick check for simple type-only constraints
-                if self.is_expression_satisfied(value, constraint) {
+                if Self::is_expression_satisfied(value, constraint) {
                     satisfied_indices.push(i);
                     // Early exit optimization: If we already found a satisfied constraint,
                     // we know none_of will fail, so we can skip remaining checks
@@ -716,7 +714,7 @@ impl Validator for NoneOfValidator {
                 }
 
                 context.push_path(format!("none_of[{i}]"));
-                let sub_issues = self.validate_expression(value, constraint, context);
+                let sub_issues = Self::validate_expression(value, constraint, context);
 
                 if sub_issues.is_empty() {
                     satisfied_indices.push(i);

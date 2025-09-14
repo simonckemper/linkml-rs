@@ -429,7 +429,7 @@ impl CacheWarmer {
                 if priority >= config.priority_threshold {
                     // Estimate time based on priority (higher priority = likely more complex)
                     let time_millis = 50.0 * (1.0 + priority);
-                    let estimated_time = Duration::from_millis(time_millis.max(0.0) as u64);
+                    let estimated_time = Duration::from_millis(crate::utils::f64_to_u64_saturating(time_millis.max(0.0)));
                     all_candidates.push(WarmingEntry {
                         key,
                         priority,

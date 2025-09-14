@@ -174,7 +174,7 @@ impl ExpressionCache {
         if total == 0 {
             0.0
         } else {
-            stats.hits as f64 / total as f64
+            crate::utils::u64_to_f64_lossy(stats.hits) / crate::utils::u64_to_f64_lossy(total)
         }
     }
 
@@ -283,7 +283,7 @@ impl GlobalExpressionCache {
         if total_requests == 0 {
             0.0
         } else {
-            total_hits as f64 / total_requests as f64
+            crate::utils::u64_to_f64_lossy(total_hits) / crate::utils::u64_to_f64_lossy(total_requests)
         }
     }
 
@@ -354,7 +354,7 @@ mod tests {
             let key = ExpressionKey {
                 source: format!("expr{i}"),
                 schema_id: None};
-            let ast = Expression::Number(i as f64);
+            let ast = Expression::Number(crate::utils::usize_to_f64(i));
             cache.insert(key, ast, None);
         }
 

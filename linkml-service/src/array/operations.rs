@@ -250,7 +250,7 @@ impl ArrayOperations for ArrayData {
             ));
         }
         let sum = self.sum()?;
-        Ok(sum / self.data.len() as f64)
+        Ok(sum / crate::utils::usize_to_f64(self.data.len()))
     }
 
     fn min(&self) -> ArrayResult<f64> {

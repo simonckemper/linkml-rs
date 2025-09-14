@@ -11,23 +11,7 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition, TypeDefinition};
 use std::collections::{HashMap, HashSet};
 
-/// Utility functions for safe numeric casting
-mod safe_cast {
-    /// Safely cast usize to f64 with precision checking
-    /// For values that exceed f64's precision, returns the maximum representable value
-    pub fn usize_to_f64(value: usize) -> f64 {
-        // f64 can precisely represent integers up to 2^53 - 1
-        const MAX_PRECISE_F64: u64 = (1_u64 << 53) - 1;
 
-        if value as u64 <= MAX_PRECISE_F64 {
-            value as f64
-        } else {
-            // For very large values in schema statistics, use max precise value
-            // This is reasonable since schemas are unlikely to have > 2^53 elements
-            MAX_PRECISE_F64 as f64
-        }
-    }
-}
 
 /// Summary generator configuration
 #[derive(Debug, Clone)]
@@ -231,7 +215,7 @@ impl SummaryGenerator {
         let total_slots: usize = classes.values().map(|c| c.slots.len()).sum();
 
         if stats.class_count > 0 {
-            stats.avg_slots_per_class = safe_cast::usize_to_f64(total_slots) / safe_cast::usize_to_f64(stats.class_count);
+            stats.avg_slots_per_class = crate::utils::usize_to_f64(total_slots) / crate::utils::usize_to_f64(stats.class_count);
         }
     }
 
@@ -297,7 +281,7 @@ impl SummaryGenerator {
 
         if stats.enum_count > 0 {
             stats.avg_values_per_enum =
-                safe_cast::usize_to_f64(stats.total_permissible_values) / safe_cast::usize_to_f64(stats.enum_count);
+                crate::utils::usize_to_f64(stats.total_permissible_values) / crate::utils::usize_to_f64(stats.enum_count);
         }
     }
 
@@ -312,7 +296,7 @@ impl SummaryGenerator {
             + stats.documented_enums;
 
         if total_elements > 0 {
-            stats.documentation_coverage = safe_cast::usize_to_f64(documented_elements) / safe_cast::usize_to_f64(total_elements);
+            stats.documentation_coverage = crate::utils::usize_to_f64(documented_elements) / crate::utils::usize_to_f64(total_elements);
         }
 
         // Calculate max inheritance depth
@@ -359,11 +343,11 @@ impl SummaryGenerator {
     /// Calculate complexity metrics
     fn calculate_complexity_metrics(&self, stats: &mut SchemaStats, schema: &SchemaDefinition) {
         // Schema complexity score (simple heuristic)
-        stats.schema_complexity_score = (safe_cast::usize_to_f64(stats.class_count) * 1.0)
-            + (safe_cast::usize_to_f64(stats.slot_count) * 0.5)
-            + (safe_cast::usize_to_f64(stats.inheritance_relationships) * 2.0)
-            + (safe_cast::usize_to_f64(stats.mixin_relationships) * 1.5)
-            + (safe_cast::usize_to_f64(stats.slots_with_constraints) * 0.8);
+        stats.schema_complexity_score = (crate::utils::usize_to_f64(stats.class_count) * 1.0)
+            + (crate::utils::usize_to_f64(stats.slot_count) * 0.5)
+            + (crate::utils::usize_to_f64(stats.inheritance_relationships) * 2.0)
+            + (crate::utils::usize_to_f64(stats.mixin_relationships) * 1.5)
+            + (crate::utils::usize_to_f64(stats.slots_with_constraints) * 0.8);
 
         // Cyclomatic complexity (simplified)
         stats.cyclomatic_complexity = stats.inheritance_relationships
@@ -377,7 +361,7 @@ impl SummaryGenerator {
         }
 
         if stats.class_count > 0 {
-            stats.coupling_score = safe_cast::usize_to_f64(references) / safe_cast::usize_to_f64(stats.class_count);
+            stats.coupling_score = crate::utils::usize_to_f64(references) / crate::utils::usize_to_f64(stats.class_count);
         }
 
         // Cohesion score (based on shared slots)
@@ -389,7 +373,7 @@ impl SummaryGenerator {
         }
 
         if stats.slot_count > 0 {
-            stats.cohesion_score = f64::from(shared_slots) / safe_cast::usize_to_f64(stats.slot_count);
+            stats.cohesion_score = f64::from(shared_slots) / crate::utils::usize_to_f64(stats.slot_count);
         }
     }
 

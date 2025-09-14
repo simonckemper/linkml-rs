@@ -156,7 +156,7 @@ impl InstanceValidator {
                         ));
                     }
                 // Store in context for future use
-                self.store_instance_data_in_context(slot, &loaded_values, context);
+                Self::store_instance_data_in_context(slot, &loaded_values, context);
             }
             Err(e) => {
                 issues.push(ValidationIssue::warning(
@@ -253,7 +253,6 @@ impl InstanceValidator {
 
     /// Store loaded instance data in validation context
     fn store_instance_data_in_context(
-        &self,
         slot: &SlotDefinition,
         loaded_values: &Arc<Vec<String>>,
         context: &mut ValidationContext,
