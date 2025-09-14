@@ -122,9 +122,9 @@ impl RuleMatcher {
                 let slot_def = linkml_core::types::SlotDefinition {
                     name: "temp".to_string(),
                     pattern: Some(pattern.clone()),
-                    ..Default::default()
+                    ..SlotDefinition::default()
                 };
-                let mut validation_context = ValidationContext::new(Default::default());
+                let mut validation_context = ValidationContext::new(Arc::default());
                 let issues = validator.validate(value, &slot_def, &mut validation_context);
                 if !issues.is_empty() {
                     return Ok(false);
