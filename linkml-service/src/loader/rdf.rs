@@ -402,7 +402,7 @@ impl RdfLoader {
                 // RDF-star support: convert triple to reified statement representation
                 let subj = self._term_to_string(&triple.subject.clone().into());
                 let pred = triple.predicate.as_str();
-                let obj = self._term_to_string(&triple.object.clone().into());
+                let obj = self._term_to_string(&triple.object.clone());
                 format!("<<{subj} {pred} {obj}>>")
             }
         }

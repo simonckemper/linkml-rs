@@ -542,36 +542,33 @@ impl NoneOfValidator {
         }
 
         // Check pattern constraint
-        if let Some(pattern) = &expr.pattern {
-            if let Value::String(s) = value {
-                if let Ok(re) = regex::Regex::new(pattern) {
-                    if !re.is_match(s) {
-                        return false;
-                    }
+        if let Some(pattern) = &expr.pattern
+            && let Value::String(s) = value {
+            if let Ok(re) = regex::Regex::new(pattern) {
+                if !re.is_match(s) {
+                    return false;
                 }
-            } else {
-                return false; // Pattern only applies to strings
             }
+        } else if expr.pattern.is_some() {
+            return false; // Pattern only applies to strings
         }
 
         // Check minimum value constraint
-        if let Some(min_val) = &expr.minimum_value {
-            if let Value::Number(n) = value {
-                if let (Some(actual), Some(min)) = (n.as_f64(), min_val.as_number().and_then(|v| v.as_f64())) {
-                    if actual < min {
-                        return false;
-                    }
+        if let Some(min_val) = &expr.minimum_value
+            && let Value::Number(n) = value {
+            if let (Some(actual), Some(min)) = (n.as_f64(), min_val.as_number().and_then(serde_json::Number::as_f64)) {
+                if actual < min {
+                    return false;
                 }
             }
         }
 
         // Check maximum value constraint
-        if let Some(max_val) = &expr.maximum_value {
-            if let Value::Number(n) = value {
-                if let (Some(actual), Some(max)) = (n.as_f64(), max_val.as_number().and_then(|v| v.as_f64())) {
-                    if actual > max {
-                        return false;
-                    }
+        if let Some(max_val) = &expr.maximum_value
+            && let Value::Number(n) = value {
+            if let (Some(actual), Some(max)) = (n.as_f64(), max_val.as_number().and_then(serde_json::Number::as_f64)) {
+                if actual > max {
+                    return false;
                 }
             }
         }

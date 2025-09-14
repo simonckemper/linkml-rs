@@ -159,11 +159,11 @@ impl PlantUmlGenerator {
         self.apply_skin(&mut output)?;
 
         // Set direction
-        match self.options.direction.as_str() {
-            "left to right" => writeln!(&mut output, "left to right direction")
-                .map_err(Self::fmt_error_to_generator_error)?,
-            "top to bottom" | _ => {} // default
+        if self.options.direction.as_str() == "left to right" {
+            writeln!(&mut output, "left to right direction")
+                .map_err(Self::fmt_error_to_generator_error)?;
         }
+        // "top to bottom" is default, no action needed
 
         writeln!(&mut output).map_err(Self::fmt_error_to_generator_error)?;
 

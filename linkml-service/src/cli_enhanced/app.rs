@@ -41,7 +41,7 @@ impl LinkMLApp {
             Err(e) => {
                 error!("Command failed: {}", e);
                 if !self.cli.quiet {
-                    eprintln!("Error: {}", e);
+                    eprintln!("Error: {e}");
                 }
                 process::exit(1);
             }
@@ -116,8 +116,8 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Validation would check {} data files against schema: {:?}",
-                     data.len(), schema);
+            println!("Validation would check {} data files against schema: {schema:?}",
+                     data.len());
         }
 
         Ok(())
@@ -134,8 +134,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would generate {} from schema: {:?} to output: {:?}",
-                     generator, schema, output);
+            println!("Would generate {generator} from schema: {schema:?} to output: {output:?}");
         }
 
         Ok(())
@@ -152,7 +151,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would convert schema from {:?} to {:?}", input, output);
+            println!("Would convert schema from {input:?} to {output:?}");
         }
 
         Ok(())
@@ -169,7 +168,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would lint schema: {:?}", schema);
+            println!("Would lint schema: {schema:?}");
         }
 
         Ok(())
@@ -186,7 +185,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would compare schemas: {:?} vs {:?}", schema1, schema2);
+            println!("Would compare schemas: {schema1:?} vs {schema2:?}");
         }
 
         Ok(())
@@ -203,7 +202,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would merge {} schemas to {:?}", schemas.len(), output);
+            println!("Would merge {} schemas to {output:?}", schemas.len());
         }
 
         Ok(())
@@ -220,7 +219,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would dump schema information for: {:?}", schema);
+            println!("Would dump schema information for: {schema:?}");
         }
 
         Ok(())
@@ -237,7 +236,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would load and process schema: {:?}", input);
+            println!("Would load and process schema: {input:?}");
         }
 
         Ok(())
@@ -254,7 +253,7 @@ impl LinkMLApp {
         tokio::task::yield_now().await;
 
         if !self.cli.quiet {
-            println!("Would start server for schema: {:?} on port {}", schema, port);
+            println!("Would start server for schema: {schema:?} on port {port}");
         }
 
         Ok(())
