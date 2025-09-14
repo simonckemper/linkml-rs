@@ -348,7 +348,7 @@ impl Compiler {
 
         if self.optimization_level >= 2 {
             // Dead code elimination
-            self.eliminate_dead_code(ctx);
+            Self::eliminate_dead_code(ctx);
 
             // Peephole optimizations
             self.peephole_optimize(ctx);
@@ -371,7 +371,7 @@ impl Compiler {
                     &ctx.instructions[i + 1],
                     &ctx.instructions[i + 2],
                 )
-                    && let Some(result) = self.evaluate_constant_binary_op(a, b, op) {
+                    && let Some(result) = Self::evaluate_constant_binary_op(a, b, op) {
                         // Replace with single constant
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.remove(i + 1);
@@ -383,7 +383,7 @@ impl Compiler {
             if i + 1 < ctx.instructions.len()
                 && let (Instruction::Const(val), op) =
                     (&ctx.instructions[i], &ctx.instructions[i + 1])
-                    && let Some(result) = self.evaluate_constant_unary_op(val, op) {
+                    && let Some(result) = Self::evaluate_constant_unary_op(val, op) {
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.remove(i + 1);
                         continue;
@@ -394,7 +394,7 @@ impl Compiler {
     }
 
     /// Evaluate constant binary operations
-    fn evaluate_constant_binary_op(&self, a: &Value, b: &Value, op: &Instruction) -> Option<Value> {
+    fn evaluate_constant_binary_op(a: &Value, b: &Value, op: &Instruction) -> Option<Value> {
         match (a, b, op) {
             (Value::Number(n1), Value::Number(n2), Instruction::Add) => {
                 let v1 = n1.as_f64()?;
@@ -420,7 +420,7 @@ impl Compiler {
     }
 
     /// Evaluate constant unary operations
-    fn evaluate_constant_unary_op(&self, val: &Value, op: &Instruction) -> Option<Value> {
+    fn evaluate_constant_unary_op(val: &Value, op: &Instruction) -> Option<Value> {
         match (val, op) {
             (Value::Bool(b), Instruction::Not) => Some(Value::Bool(!b)),
             (Value::Number(n), Instruction::Negate) => {
@@ -431,7 +431,7 @@ impl Compiler {
     }
 
     /// Remove unreachable code
-    fn eliminate_dead_code(&self, ctx: &mut CompilationContext) {
+    fn eliminate_dead_code(ctx: &mut CompilationContext) {
         // Mark reachable instructions
         let mut reachable = vec![false; ctx.instructions.len()];
         let mut work_list = vec![0];
@@ -553,7 +553,7 @@ impl Compiler {
 
                 // Combine constant operations: Const(a), Const(b), Add -> Const(a+b)
                 (Instruction::Const(a), Instruction::Const(b)) if i + 2 < ctx.instructions.len() => {
-                    if let Some(result) = self.evaluate_constant_binary_op(a, b, &ctx.instructions[i + 2]) {
+                    if let Some(result) = Self::evaluate_constant_binary_op(a, b, &ctx.instructions[i + 2]) {
                         ctx.instructions[i] = Instruction::Const(result);
                         ctx.instructions.drain(i + 1..i + 3);
                         continue; // Don't increment i, check this position again

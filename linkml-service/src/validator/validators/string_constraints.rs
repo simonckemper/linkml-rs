@@ -214,7 +214,7 @@ impl StructuredPatternValidator {
     }
 
     /// Validate using glob syntax
-    fn validate_glob(&self, value: &str, pattern: &str, partial: bool) -> Result<bool> {
+    fn validate_glob(value: &str, pattern: &str, partial: bool) -> Result<bool> {
         // Simple glob implementation
         // In production, use a proper glob library
         let regex_pattern = pattern
@@ -293,7 +293,7 @@ impl Validator for StructuredPatternValidator {
                             }
                         }
                     }
-                    "glob" => match self.validate_glob(s, &final_pattern, partial) {
+                    "glob" => match Self::validate_glob(s, &final_pattern, partial) {
                         Ok(m) => m,
                         Err(e) => {
                             let mut issue = ValidationIssue::error(
@@ -359,7 +359,7 @@ impl Validator for StructuredPatternValidator {
                                     }
                                 }
                             }
-                            "glob" => match self.validate_glob(s, &final_pattern, partial) {
+                            "glob" => match Self::validate_glob(s, &final_pattern, partial) {
                                 Ok(m) => m,
                                 Err(e) => {
                                     let mut issue = ValidationIssue::error(

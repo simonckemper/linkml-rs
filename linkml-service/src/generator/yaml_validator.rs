@@ -343,7 +343,7 @@ impl YamlValidatorGenerator {
             let mut array_schema = Map::new();
             array_schema.insert("type".to_string(), json!("array"));
 
-            let item_schema = self.get_range_schema(slot_def, schema)?;
+            let item_schema = Self::get_range_schema(slot_def, schema)?;
             array_schema.insert("items".to_string(), item_schema);
 
             // Cardinality constraints are enforced via required/multivalued flags
@@ -358,12 +358,11 @@ impl YamlValidatorGenerator {
         }
 
         // Single-valued slot
-        self.get_range_schema(slot_def, schema)
+        Self::get_range_schema(slot_def, schema)
     }
 
     /// Get `JSON` `SchemaDefinition` for slot range
     fn get_range_schema(
-        &self,
         slot_def: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> Result<Value, LinkMLError> {
@@ -474,7 +473,7 @@ impl YamlValidatorGenerator {
 
         // Type
         if let Some(range) = &slot_def.range {
-            let cerberus_type = self.range_to_cerberus_type(range, schema);
+            let cerberus_type = Self::range_to_cerberus_type(range, schema);
             writeln!(rule, "        'type': '{cerberus_type}',").unwrap();
         }
 
@@ -501,7 +500,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Cerberus type
-    fn range_to_cerberus_type(&self, range: &str, _schema: &SchemaDefinition) -> &'static str {
+    fn range_to_cerberus_type(range: &str, _schema: &SchemaDefinition) -> &'static str {
         match range {
             "integer" | "int" => "integer",
             "float" | "double" => "float",
@@ -525,7 +524,7 @@ impl YamlValidatorGenerator {
                 write!(
                     output,
                     "const {}SchemaDefinition = Joi.object({{\n",
-                    self.to_camel_case(class_name)
+                    Self::to_camel_case(class_name)
                 ).unwrap();
 
                 // Process all slots
@@ -557,7 +556,7 @@ impl YamlValidatorGenerator {
         let exports: Vec<String> = schema
             .classes
             .keys()
-            .map(|name| format!("  {}SchemaDefinition", self.to_camel_case(name)))
+            .map(|name| format!("  {}SchemaDefinition", Self::to_camel_case(name)))
             .collect();
         output.push_str(&exports.join(",\n"));
         output.push_str("\n};\n");
@@ -577,7 +576,7 @@ impl YamlValidatorGenerator {
 
         // Base type
         if let Some(range) = &slot_def.range {
-            rule.push_str(&self.range_to_joi_type(range, schema));
+            rule.push_str(&Self::range_to_joi_type(range, schema));
         } else {
             rule.push_str("Joi.string()");
         }
@@ -607,7 +606,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Joi type
-    fn range_to_joi_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
+    fn range_to_joi_type(range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "Joi.string()".to_string(),
             "integer" | "int" => "Joi.number().integer()".to_string(),
@@ -633,7 +632,7 @@ impl YamlValidatorGenerator {
                 write!(
                     output,
                     "export const {}SchemaDefinition = yup.object({{\n",
-                    self.to_camel_case(class_name)
+                    Self::to_camel_case(class_name)
                 ).unwrap();
 
                 // Process all slots
@@ -675,7 +674,7 @@ impl YamlValidatorGenerator {
 
         // Base type
         if let Some(range) = &slot_def.range {
-            rule.push_str(&self.range_to_yup_type(range, schema));
+            rule.push_str(&Self::range_to_yup_type(range, schema));
         } else {
             rule.push_str("yup.string()");
         }
@@ -703,7 +702,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert range to Yup type
-    fn range_to_yup_type(&self, range: &str, _schema: &SchemaDefinition) -> String {
+    fn range_to_yup_type(range: &str, _schema: &SchemaDefinition) -> String {
         match range {
             "string" => "yup.string()".to_string(),
             "integer" | "int" => "yup.number().integer()".to_string(),
@@ -766,7 +765,7 @@ impl YamlValidatorGenerator {
     }
 
     /// Convert to camelCase
-    fn to_camel_case(&self, s: &str) -> String {
+    fn to_camel_case(s: &str) -> String {
         let mut result = String::new();
         let mut capitalize_next = false;
 
