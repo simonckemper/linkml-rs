@@ -89,7 +89,7 @@ fn create_test_schema() -> SchemaDefinition {
         .push(PermissibleValue::Simple("INACTIVE".to_string());
     status_enum
         .permissible_values
-        .push(PermissibleValue::Simple("PENDING".to_string());
+        .push(PermissibleValue::Simple("PENDING".to_string()));
     schema.enums.insert("PersonStatus".to_string(), status_enum);
 
     schema

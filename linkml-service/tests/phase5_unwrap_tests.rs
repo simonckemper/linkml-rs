@@ -7,7 +7,7 @@
 mod tests {
     use linkml_core::error::LinkMLError;
     use std::fs;
-use std::error::Error as StdError;
+// use std::error::Error as StdError;
     use std::path::Path;
     use tempfile::TempDir;
 

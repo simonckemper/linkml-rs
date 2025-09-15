@@ -92,12 +92,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Generate the Excel file
     let options = GeneratorOptions::default();
-    let outputs = generator.generate(&schema, &options).await?;
+    let output = generator.generate(&schema)?;
 
     // The output is base64 encoded, so we need to decode it
-    if let Some(output) = outputs.first() {
-        use base64::Engine;
-        let decoded = base64::engine::general_purpose::STANDARD.decode(&output.content)?;
+    use base64::Engine;
+    let decoded = base64::engine::general_purpose::STANDARD.decode(&output)?;
 
         // Save to file
         let filename = "person_schema.xlsx";

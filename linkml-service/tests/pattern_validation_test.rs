@@ -43,7 +43,7 @@ slots:
     // Parse schema
     let parser = Parser::new();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Debug: Check patterns in parsed schema
@@ -118,7 +118,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Valid semantic version strings
@@ -166,7 +166,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Valid phone numbers in different formats
@@ -228,7 +228,7 @@ slots:
 
     let parser = Parser::new();
     let schema = parser
-        .parse(schema_yaml, "yaml")
+        .parse_str(schema_yaml, "yaml")
         .expect("Test operation failed");
 
     // Generate large array of items to test caching

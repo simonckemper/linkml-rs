@@ -24,8 +24,8 @@ fn test_basic_rule_generation() {
     // Add an age slot with range constraint
     person.slots.push("age".to_string());
     let mut age_slot = SlotDefinition::default();
-    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0));
-    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150));
+    age_slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
+    age_slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
     person.slot_usage.insert("age".to_string(), age_slot);
 
     // Generate rules for the class

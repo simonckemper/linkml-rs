@@ -132,8 +132,8 @@ slots:
     println!("Number of logs: {}", logs.len());
     assert!(logs.len() >= 3);
     // Find the relevant logs - they might not be in exact positions
-    assert!(logs.iter().any(|l| l.contains("Loading test schema"));
-    assert!(logs.iter().any(|l| l.contains("Schema loaded: TestSchema"));
+    assert!(logs.iter().any(|l| l.contains("Loading test schema")));
+    assert!(logs.iter().any(|l| l.contains("Schema loaded: TestSchema")));
     // Check if validation passed or failed
     assert!(
         logs.iter()
@@ -1181,7 +1181,7 @@ enums:
 
     // Verify workflow success
     let logs = logger_ref.get_logs().await;
-    assert!(logs.iter().any(|l| l.contains("Workflow complete"));
+    assert!(logs.iter().any(|l| l.contains("Workflow complete")));
     assert!(report.valid);
     assert_eq!(valid_count, batch_size);
 }

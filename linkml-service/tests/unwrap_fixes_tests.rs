@@ -86,7 +86,7 @@ fn test_validator_error_propagation() {
     schema.classes.insert("TestClass".to_string(), class);
 
     let validator = ValidationEngine::new(&schema);
-    let context = ValidationContext::new(std::sync::Arc::new(schema.clone());
+    let context = ValidationContext::new(std::sync::Arc::new(schema.clone()));
     let options = ValidationOptions::default();
 
     // This should return error, not panic

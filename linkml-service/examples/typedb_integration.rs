@@ -144,7 +144,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("========================\n");
 
     // Create sample instances
-    let instances = create_sample_instances();
+    let instances = create_sample_instances()?;
 
     let dump_options = TypeDBIntegrationOptions {
         database_name: "test-dump".to_string(),
@@ -294,11 +294,11 @@ fn create_knowledge_graph_schema() -> SchemaDefinition {
 }
 
 /// Create sample instances for dumping
-fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance> {
+fn create_sample_instances() -> Result<Vec<linkml_service::loader::traits::DataInstance>, serde_json::Error> {
     use linkml_service::loader::traits::DataInstance;
     use serde_json::json;
 
-    vec![
+    Ok(vec![
         DataInstance {
             class_name: "Person".to_string(),
             data: serde_json::from_value(json!({
@@ -357,5 +357,5 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "since_date": "2018-09-15"
             }))?,
         },
-    ]
+    ])
 }

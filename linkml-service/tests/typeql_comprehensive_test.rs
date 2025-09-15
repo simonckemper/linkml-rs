@@ -205,8 +205,8 @@ fn create_comprehensive_schema() -> SchemaDefinition {
 
     let mut duration = SlotDefinition::default();
     duration.range = Some("integer".to_string());
-    duration.minimum_value = Some(Value::Number(serde_json::Number::from(15));
-    duration.maximum_value = Some(Value::Number(serde_json::Number::from(480));
+    duration.minimum_value = Some(Value::Number(serde_json::Number::from(15)));
+    duration.maximum_value = Some(Value::Number(serde_json::Number::from(480)));
     schema
         .slots
         .insert("duration_minutes".to_string(), duration);
