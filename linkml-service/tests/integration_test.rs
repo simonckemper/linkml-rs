@@ -48,9 +48,7 @@ slots:
     let valid_instance = json!({
         "name": "John Doe",
         "age": 30
-    }
-    Ok(())
-});
+    });
 
     let validation_result = validation_engine
         .validate_as_class(&valid_instance, "Person", None)

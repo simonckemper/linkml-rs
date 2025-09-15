@@ -289,7 +289,8 @@ fn truncate(s: &str, max_len: usize) -> String {
     }
 }
 
-async fn create_example_linkml_service() -> std::result::Result<LinkMLService, Box<dyn std::error::Error>> {
+async fn create_example_linkml_service() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // In a real application, this would initialize with all dependencies
-    initialize_example_service().await
+    initialize_example_service().await?;
+    Ok(())
 }

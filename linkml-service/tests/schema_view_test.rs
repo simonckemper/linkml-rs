@@ -96,8 +96,8 @@ fn test_class_inheritance() {
     let descendants = view
         .class_descendants("BaseClass")
         .expect("Failed to get descendants");
-    assert!(descendants.contains(&"DerivedClass".to_string());
-    assert!(descendants.contains(&"MixedClass".to_string());
+    assert!(descendants.contains(&"DerivedClass".to_string()));
+    assert!(descendants.contains(&"MixedClass".to_string()));
 }
 
 #[test]
@@ -111,9 +111,9 @@ fn test_induced_class() {
         .expect("Failed to get induced class");
 
     // Should have both inherited and own slots
-    assert!(induced.slots.contains(&"id".to_string());
-    assert!(induced.slots.contains(&"name".to_string());
-    assert!(induced.slots.contains(&"extra_field".to_string());
+    assert!(induced.slots.contains(&"id".to_string()));
+    assert!(induced.slots.contains(&"name".to_string()));
+    assert!(induced.slots.contains(&"extra_field".to_string()));
 }
 
 #[test]

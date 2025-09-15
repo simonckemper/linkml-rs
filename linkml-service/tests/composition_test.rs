@@ -138,7 +138,7 @@ slots:
         .await
         .expect("Test operation failed");
     assert!(!report.valid);
-    assert!(report.errors().any(|e| e.path.contains("id"));
+    assert!(report.errors().any(|e| e.path.contains("id")));
 }
 
 #[tokio::test]
@@ -313,8 +313,8 @@ slots:
         .get_subclasses("AbstractBase")
         .expect("Test operation failed");
     assert_eq!(subclasses.len(), 2);
-    assert!(subclasses.contains(&"ConcreteChild".to_string());
-    assert!(subclasses.contains(&"AnotherAbstract".to_string());
+    assert!(subclasses.contains(&"ConcreteChild".to_string()));
+    assert!(subclasses.contains(&"AnotherAbstract".to_string()));
 }
 
 #[tokio::test]

@@ -143,11 +143,20 @@ fn demonstrate_caching() {
     println!("First pass (cache misses):");
     let start = Instant::now();
     for i in 0..50 {
- let expr = format!("{println!(" Time:{:?}", first_pass );
+        let expr = format!("value_{}", i);
+        let _ = engine.evaluate(&expr, &context);
+    }
+    let first_pass = start.elapsed();
+    println!("  Time: {:?}", first_pass);
+
     println!("Second pass (cache hits):");
     let start = Instant::now();
     for i in 0..50 {
- let expr = format!("{println!(" Time:{:?}", second_pass );
+        let expr = format!("value_{}", i);
+        let _ = engine.evaluate(&expr, &context);
+    }
+    let second_pass = start.elapsed();
+    println!("  Time: {:?}", second_pass);
     println!(
         "  Speedup:{
 :.2
@@ -167,7 +176,7 @@ fn demonstrate_compilation() {
     println!("Compilation Benefits for Complex Expressions");
     println!("-------------------------------------------\n");
     let mut context = HashMap::new();
-    context.insert("values".to_string(), json!((0..100).collect::<Vec<_>>());
+    context.insert("values".to_string(), json!((0..100).collect::<Vec<_>>()));
     let complex_expr = "sum(values) + avg(values) * stddev(values) - median(values) / 2";
     let compiled_engine = EngineBuilder::new()
         .use_compilation(true)

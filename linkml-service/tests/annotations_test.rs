@@ -37,7 +37,7 @@ fn test_annotations_api() {
 
     // Remove annotation
     let removed = schema.remove_annotation("deprecated");
-    assert_eq!(removed, Some(AnnotationValue::Bool(false));
+    assert_eq!(removed, Some(AnnotationValue::Bool(false)));
     assert!(!schema.has_annotation("deprecated"));
 }
 

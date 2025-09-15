@@ -28,28 +28,21 @@ fn main () {
     mut description = SlotDefinition ::default () ;
     description . range = Some ("string" . to_string ()) ;
     v1_schema . slots . insert ("description" . to_string (), description) ;
-    let
-    mut v2_schema = v1_schema . clone () ;
-    v2_schema . version = Some ("2.0.0" . to_string ()) ;
-    if
-    let Some (product) = v2_schema . classes . get_
-    mut ("Product") {
-        product . slots . push ("sku" . to_string ()) ;
-        let
-        mut sku_slot = SlotDefinition ::default () ;
-        sku_slot . required = Some (true) ;
-        sku_slot . identifier = Some (true) ;
-        product . slot_usage . insert ("sku" . to_string (), sku_slot) ;
-        product . slots . push ("category" . to_string ()) ;
-        product . slots . retain (| s | s != "description") ;
+    let mut v2_schema = v1_schema.clone();
+    v2_schema.version = Some("2.0.0".to_string());
+    if let Some(product) = v2_schema.classes.get_mut("Product") {
+        product.slots.push("sku".to_string());
+        let mut sku_slot = SlotDefinition::default();
+        sku_slot.required = Some(true);
+        sku_slot.identifier = Some(true);
+        product.slot_usage.insert("sku".to_string(), sku_slot);
+        product.slots.push("category".to_string());
+        product.slots.retain(|s| s != "description");
     }
-    let
-    mut sku = SlotDefinition ::default () ;
-    sku . range = Some ("string" . to_string ()) ;
-    sku . pattern = Some (r"^SKU-\d{
-        6
-    }$" . to_string ()) ;
-    v2_schema . slots . insert ("sku" . to_string (), sku) ;
+    let mut sku = SlotDefinition::default();
+    sku.range = Some("string".to_string());
+    sku.pattern = Some(r"^SKU-\d{6}$".to_string());
+    v2_schema.slots.insert("sku".to_string(), sku);
     let
     mut category = SlotDefinition ::default () ;
     category . range = Some ("string" . to_string ()) ;
