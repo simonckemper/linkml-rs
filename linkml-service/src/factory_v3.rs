@@ -195,11 +195,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
-    use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
-    use std::collections::HashMap;
-    use linkml_core::prelude::*;
+    use linkml_core::types::{SchemaDefinition, ClassDefinition};
 
     #[tokio::test]
     async fn test_create_base_linkml_service() {

@@ -338,7 +338,6 @@ mod tests {
     use crate::create_linkml_service;
     use crate::validator::ValidationEngine;
     use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
-    use std::collections::HashMap;
     use std::path::PathBuf;
     use tempfile::TempDir;
 
