@@ -156,12 +156,9 @@ async fn bench_generator<G: Generator>(
             schema,
             |b, schema| {
                 b.iter(|| {
-                    let runtime = tokio::runtime::Runtime::new()?;
-                    runtime.block_on(async {
-                        let result = generator.generate(black_box(schema), &options).await;
-                        assert!(result.is_ok());
-                        result?
-                    })
+                    let result = generator.generate(black_box(schema));
+                    assert!(result.is_ok());
+                    result
                 })
             },
         );

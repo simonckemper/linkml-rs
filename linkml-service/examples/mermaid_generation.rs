@@ -199,12 +199,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("1. Entity Relationship Diagram:");
     println!("-------------------------------");
     let er_generator = MermaidGenerator::new();
-    let result = er_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    let er_content = &result[0].content;
-    println!("Generated: {}", result[0].filename);
-    std::fs::write("library_er.mermaid", er_content)?;
+    let er_content = er_generator
+        .generate_with_options(&schema, &GeneratorOptions::default())?;
+    println!("Generated: library_er.mermaid");
+    std::fs::write("library_er.mermaid", &er_content)?;
     println!("Saved to: library_er.mermaid");
     println!(
         "\nPreview:\n{}\n",
@@ -216,10 +214,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("-----------------");
     let class_generator =
         MermaidGenerator::new().with_diagram_type(MermaidDiagramType::ClassDiagram);
-    let result = class_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("library_class.mermaid", &result[0].content)?;
+    let class_content = class_generator
+        .generate_with_options(&schema, &GeneratorOptions::default())?;
+    std::fs::write("library_class.mermaid", &class_content)?;
     println!("Generated: {}", result[0].filename);
     println!("Saved to: library_class.mermaid\n");
 
@@ -228,10 +225,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("-------------------------------");
     let state_generator =
         MermaidGenerator::new().with_diagram_type(MermaidDiagramType::StateDiagram);
-    let result = state_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("library_states.mermaid", &result[0].content)?;
+    let state_content = state_generator
+        .generate_with_options(&schema, &GeneratorOptions::default())?;
+    std::fs::write("library_states.mermaid", &state_content)?;
     println!("Generated: {}", result[0].filename);
     println!("Saved to: library_states.mermaid\n");
 
@@ -239,10 +235,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("4. Schema Structure Flowchart:");
     println!("------------------------------");
     let flow_generator = MermaidGenerator::new().with_diagram_type(MermaidDiagramType::Flowchart);
-    let result = flow_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("library_flow.mermaid", &result[0].content)?;
+    let flow_content = flow_generator
+        .generate_with_options(&schema, &GeneratorOptions::default())?;
+    std::fs::write("library_flow.mermaid", &flow_content)?;
     println!("Generated: {}", result[0].filename);
     println!("Saved to: library_flow.mermaid\n");
 

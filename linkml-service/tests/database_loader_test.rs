@@ -184,7 +184,7 @@ fn test_data_instance_creation() {
     };
 
     assert_eq!(instance.class_name, "Person");
-    assert_eq!(instance.data.get("id"), Some(&json!("person1"));
+    assert_eq!(instance.data.get("id"), Some(&json!("person1")));
     assert_eq!(instance.data.get("name"), Some(&json!("Alice Smith"));
     assert_eq!(instance.data.get("age"), Some(&json!(30)));
     assert_eq!(instance.data.get("active"), Some(&json!(true)));
@@ -388,6 +388,6 @@ fn test_instance_with_references() {
     // Verify reference structure
     let person_ref = address.data.get("person").expect("Test operation failed");
     assert!(person_ref.is_object());
-    assert_eq!(person_ref.get("@type"), Some(&json!("Person"));
-    assert_eq!(person_ref.get("id"), Some(&json!("p1"));
+    assert_eq!(person_ref.get("@type"), Some(&json!("Person")));
+    assert_eq!(person_ref.get("id"), Some(&json!("p1")));
 }

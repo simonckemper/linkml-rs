@@ -7,8 +7,8 @@
 //! - Interactive schema manipulation
 
 use linkml_service::cli::{Cli, CliApp};
-use linkml_service::factory::create_linkml_service;
-use timestamp_service::factory::create_timestamp_service;
+mod common;
+use common::initialize_example_service;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -17,10 +17,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("============================\n");
     
     // Create the LinkML service
-    let service = Arc::new(create_linkml_service().await?);
-    
-    // Create timestamp service
-    let timestamp = create_timestamp_service();
+    let service = initialize_example_service().await?;
     
     // Create the CLI app
     let app = CliApp::new(service, timestamp);

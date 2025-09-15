@@ -352,7 +352,7 @@ classes:
     // Last import wins strategy - schema2's Person should override
     let person = schema.classes.get("Person").expect("Test operation failed");
     assert_eq!(person.description.as_deref(), Some("Person from schema2"));
-    assert!(person.slots.contains(&"full_name".to_string());
+    assert!(person.slots.contains(&"full_name".to_string()));
 }
 
 #[tokio::test]

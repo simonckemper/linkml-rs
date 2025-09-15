@@ -416,6 +416,6 @@ slots:
     assert!(!report.valid);
 
     // Should have errors for missing id and name
-    assert!(report.errors().any(|e| e.path.contains("id"));
-    assert!(report.errors().any(|e| e.path.contains("name"));
+    assert!(report.errors().any(|e| e.path.contains("id")));
+    assert!(report.errors().any(|e| e.path.contains("name")));
 }

@@ -145,7 +145,7 @@ fn bench_simple_schemas(c: &mut Criterion) {
         let schema = create_schema(*size);
         let generator = EnhancedTypeQLGenerator::new();
         let options = GeneratorOptions {
-            indent_style: IndentStyle::Spaces(2),
+            indent: IndentStyle::Spaces(2),
             ..Default::default()
         };
 

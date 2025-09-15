@@ -68,7 +68,8 @@ pub async fn init_linkml_service_with_real_deps()
     };
 
     // Initialize LinkML service
-    let service = Arc::new(LinkMLServiceImpl::new(deps, config).await?);
+    let service = LinkMLServiceImpl::new(deps)?;
+    service.initialize().await?;
 
-    Ok(service)
+    Ok(Arc::new(service))
 }

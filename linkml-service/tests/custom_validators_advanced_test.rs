@@ -260,7 +260,7 @@ async fn test_custom_validator_with_state() {
                     errors.push(ValidationError::new(format!(
                         "Daily transaction limit exceeded for user {}. Total: ${:.2}",
                         user_id, daily_total
-                    ));
+                    )));
                 }
             }
 
