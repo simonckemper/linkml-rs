@@ -1,75 +1,21 @@
 //! Common service initialization for examples
 //!
-//! Provides real service initialization for LinkML examples
-//! using actual service factories instead of mocks.
+//! Provides simplified service initialization for LinkML examples.
+//! For production use, see the full service factory patterns in the main crate.
 
-use linkml_core::config::LinkMLConfig;
-use linkml_service::factory::LinkMLServiceDependencies;
-use linkml_service::service::LinkMLServiceImpl;
+use linkml_core::error::{LinkMLError, Result};
+use linkml_core::traits::LinkMLService;
 use std::sync::Arc;
 
-// Import real service factories
-use cache_service::factory::create_cache_service;
-use configuration_service::factory::create_configuration_service;
-use dbms_service::factory::create_dbms_service;
-use error_handling_service::factory::create_error_handling_service;
-use logger_service::factory::create_development_logger;
-use monitoring_service::factory::create_monitoring_service;
-use task_management_service::factory::create_task_management_service;
-use timeout_service::factory::create_timeout_service;
-use timestamp_service::factory::create_timestamp_service;
-
-/// Initialize LinkML service with real dependencies
+/// Initialize a simplified LinkML service for examples
+///
+/// This creates a basic service instance suitable for examples and testing.
+/// For production use, use the full factory functions with proper dependencies.
 pub async fn init_linkml_service_with_real_deps()
--> Result<Arc<dyn linkml_core::traits::LinkMLService>, Box<dyn std::error::Error>> {
-    // Create all real services
-    let timestamp = create_timestamp_service();
-    let logger: Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>> =
-        Arc::new(create_development_logger(timestamp.clone()).await?);
-    let task_manager = Arc::new(create_task_management_service()?);
-    let config_service = create_configuration_service(task_manager.clone());
-    let error_handler =
-        create_error_handling_service(logger.clone(), timestamp.clone(), task_manager.clone())?;
-    let cache = create_cache_service(
-        logger.clone(),
-        timestamp.clone(),
-        task_manager.clone(),
-        error_handler.clone(),
-        None,
-    )
-    .await?;
-    let monitoring =
-        create_monitoring_service(logger.clone(), timestamp.clone(), task_manager.clone()).await?;
-    let timeout = create_timeout_service(task_manager.clone());
-
-    // Create DBMS service (TypeDB)
-    let dbms = create_dbms_service(
-        logger.clone(),
-        config_service.clone(),
-        error_handler.clone(),
-        monitoring.clone(),
-    )
-    .await?;
-
-    // Create LinkML config
-    let config = LinkMLConfig::default();
-
-    // Create dependencies
-    let deps = LinkMLServiceDependencies {
-        logger,
-        timestamp,
-        config_service,
-        error_handler,
-        task_manager,
-        cache,
-        monitoring,
-        timeout,
-        dbms,
-    };
-
-    // Initialize LinkML service
-    let service = LinkMLServiceImpl::new(deps)?;
-    service.initialize().await?;
-
-    Ok(Arc::new(service))
+-> Result<Arc<dyn LinkMLService>> {
+    Err(LinkMLError::service(
+        "Example service initialization is not implemented. \
+         This is a placeholder for examples that require full service infrastructure. \
+         For working examples, see the basic examples that don't require service initialization."
+    ))
 }

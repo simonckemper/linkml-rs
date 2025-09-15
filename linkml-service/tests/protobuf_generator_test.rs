@@ -1,12 +1,10 @@
 //! Tests for Protocol Buffers code generation
 
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, Definition, SlotDefinition,
-    TypeDefinition,
+    ClassDefinition, EnumDefinition, PermissibleValue, SlotDefinition,
+    TypeDefinition, SchemaDefinition, SubsetDefinition,
 };
 use linkml_service::generator::{Generator, GeneratorOptions, ProtobufGenerator};
-use linkml_core::types::SchemaDefinition;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 #[tokio::test]
 async fn test_basic_protobuf_generation() {
     let mut schema = SchemaDefinition::new("person_schema");

@@ -1,6 +1,6 @@
 //! Integration tests for custom validators
 
-use linkml_core::types::{ClassDefinition, Definition, SlotDefinition};
+use linkml_core::types::{ClassDefinition, SlotDefinition};
 use linkml_service::validator::{
     ValidationEngine,
     validators::{CustomValidatorBuilder, helpers},

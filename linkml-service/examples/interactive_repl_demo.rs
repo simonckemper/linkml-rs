@@ -8,7 +8,7 @@
 
 use linkml_service::cli::{Cli, CliApp};
 mod common;
-use common::initialize_example_service;
+use common::init_linkml_service_with_real_deps;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -17,7 +17,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("============================\n");
     
     // Create the LinkML service
-    let service = initialize_example_service().await?;
+    let service = init_linkml_service_with_real_deps().await?;
     
     // Create the CLI app
     let app = CliApp::new(service, timestamp);

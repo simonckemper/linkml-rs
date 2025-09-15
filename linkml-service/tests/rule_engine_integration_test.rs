@@ -2,12 +2,11 @@
 
 use indexmap::IndexMap;
 use linkml_core::types::{
-    ClassDefinition, Rule, RuleConditions, Definition, SlotCondition, SlotDefinition,
+    ClassDefinition, Rule, RuleConditions, SlotCondition, SlotDefinition, SchemaDefinition,
+    EnumDefinition, TypeDefinition, SubsetDefinition,
 };
 use linkml_service::validator::engine::{ValidationEngine, ValidationOptions};
 use serde_json::json;
-use linkml_core::types::SchemaDefinition;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
 fn create_test_schema() -> SchemaDefinition {
     let mut schema = SchemaDefinition {
         id: "https://example.org/test-rules".to_string(),
