@@ -274,7 +274,7 @@ impl StressTestRunner {
     /// Create new stress test runner
     #[must_use]
     pub fn new(config: StressTestConfig) -> Self {
-        let chaos_engine = if config.chaos_testing {
+        let chaos_engine = if config.chaos_testing() {
             Some(Arc::new(ChaosEngine::new()))
         } else {
             None
@@ -325,7 +325,7 @@ impl StressTestRunner {
             let chaos = self.chaos_engine.clone();
 
             // Pre-compute values that need RNG outside the async block
-            let should_fail = config.error_injection && rand::random::<f64>() < config.error_rate;
+            let should_fail = config.error_injection() && rand::random::<f64>() < config.error_rate;
             let operation_name = operation.name().to_string();
 
             let handle = tokio::spawn(async move {
@@ -361,12 +361,12 @@ impl StressTestRunner {
             handles.push(handle);
 
             // Apply CPU pressure if configured
-            if config.cpu_pressure {
+            if config.cpu_pressure() {
                 self.apply_cpu_pressure(config.target_cpu_percent).await;
             }
 
             // Apply memory pressure if configured
-            if config.memory_pressure {
+            if config.memory_pressure() {
                 Self::apply_memory_pressure(config.target_memory_bytes);
             }
         }
@@ -465,7 +465,7 @@ impl StressTestRunner {
                 concurrency: config.concurrency,
                 total_operations: config.total_operations,
                 error_injection_rate: config.error_rate,
-                chaos_testing: config.chaos_testing},
+                chaos_testing: config.chaos_testing()},
             total_duration,
             throughput,
             success_rate,

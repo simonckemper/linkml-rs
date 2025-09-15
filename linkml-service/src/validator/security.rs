@@ -201,7 +201,7 @@ impl InputSanitizer {
     pub fn sanitize_string(&self, input: &str) -> linkml_core::error::Result<String> {
         let config = self.config.read();
 
-        if !config.sanitize_input {
+        if !config.sanitize_input() {
             return Ok(input.to_string());
         }
 
@@ -503,7 +503,7 @@ impl SensitiveDataHandler {
     pub fn mask_string(&self, input: &str) -> String {
         let config = self.config.read();
 
-        if !config.mask_sensitive_data {
+        if !config.mask_sensitive_data() {
             return input.to_string();
         }
 
@@ -543,7 +543,7 @@ impl AuditLogger {
     pub fn log_event(&self, event: AuditEvent) {
         let config = self.config.read();
 
-        if !config.audit_logging {
+        if !config.audit_logging() {
             return;
         }
 
@@ -717,7 +717,7 @@ impl SecurityRateLimiter {
     pub fn check_limit(&self, client_id: &str) -> linkml_core::error::Result<()> {
         let config = self.config.read();
 
-        if !config.rate_limit_enabled {
+        if !config.rate_limit_enabled() {
             return Ok(());
         }
 

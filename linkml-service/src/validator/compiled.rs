@@ -627,7 +627,7 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Handle inheritance if precompute_inheritance is enabled
-        if self.options.precompute_inheritance
+        if self.options.contains(CompilationOptions::PRECOMPUTE_INHERITANCE)
             && let Some(parent_name) = &class.is_a
                 && let Some(parent_class) = self.schema.classes.get(parent_name) {
                     let parent_instructions = self.compile_inherited_slots(parent_class)?;
@@ -669,7 +669,7 @@ impl<'a> ValidatorCompiler<'a> {
             }
 
         // Range validation
-        if self.options.optimize_ranges
+        if self.options.contains(CompilationOptions::OPTIMIZE_RANGES)
             && (slot.minimum_value.is_some() || slot.maximum_value.is_some())
         {
             instructions.push(ValidationInstruction::ValidateRange {
@@ -686,7 +686,7 @@ impl<'a> ValidatorCompiler<'a> {
         }
 
         // Type validation
-        if self.options.optimize_types
+        if self.options.contains(CompilationOptions::OPTIMIZE_TYPES)
             && let Some(range) = &slot.range {
                 let compiled_type = self.compile_type(range);
                 instructions.push(ValidationInstruction::ValidateType {
@@ -697,7 +697,7 @@ impl<'a> ValidatorCompiler<'a> {
         // Enum validation
         if let Some(range) = &slot.range
             && let Some(enum_def) = self.schema.enums.get(range)
-                && self.options.cache_permissible_values {
+                && self.options.contains(CompilationOptions::CACHE_PERMISSIBLE_VALUES) {
                     let enum_id = self.cache_enum(range, enum_def);
                     instructions.push(ValidationInstruction::ValidateEnum {
                         path: path.clone(),

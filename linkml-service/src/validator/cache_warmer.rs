@@ -459,12 +459,7 @@ impl CacheWarmer {
 
         if let Some(class_def) = engine.schema.classes.get(&key.class_name) {
             // Create compilation options based on key requirements
-            let options = CompilationOptions {
-                compile_patterns: true,
-                optimize_ranges: true,
-                optimize_types: true,
-                precompute_inheritance: true,
-                cache_permissible_values: true};
+            let options = CompilationOptions::ALL;
             let validator = CompiledValidator::compile_class(
                 &engine.schema,
                 &key.class_name,

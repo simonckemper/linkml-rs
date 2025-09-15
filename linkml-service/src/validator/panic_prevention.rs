@@ -195,7 +195,7 @@ impl PanicSafeWrapper {
     {
         let config = self.config.read();
 
-        if !config.catch_panics {
+        if !config.catch_panics() {
             return f();
         }
 
@@ -250,7 +250,7 @@ impl PanicSafeWrapper {
     fn extract_panic_message(&self, panic: &Box<dyn Any + Send>) -> String {
         // Check configuration to determine how detailed the panic message should be
         let config = self.config.read();
-        let include_debug_info = config.catch_panics;
+        let include_debug_info = config.catch_panics();
 
         if let Some(s) = panic.downcast_ref::<String>() {
             if include_debug_info {

@@ -825,6 +825,7 @@ mod tests {
             .expect("should put into cache: {}");
         cache
             .invalidate(&key)
+            .await
             .expect("should invalidate cache: {}");
         let retrieved = cache.get(&key).await;
         assert!(retrieved.is_none());

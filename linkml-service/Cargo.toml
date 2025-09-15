@@ -45,7 +45,7 @@ serde_yaml = "0.9"
 serde_urlencoded = "0.7"
 
 # Bitflags for efficient flag management
-bitflags = "2.4"
+bitflags = { version = "2.4", features = ["serde"] }
 
 # Pattern matching
 regex = "1.10"
