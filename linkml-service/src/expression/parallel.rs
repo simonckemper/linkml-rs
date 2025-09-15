@@ -472,9 +472,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref()?, json!(2.0));
-        assert_eq!(results[1].as_ref()?, json!(4.0));
-        assert_eq!(results[2].as_ref()?, json!(6.0));
+        assert_eq!(*results[0].as_ref()?, json!(2.0));
+        assert_eq!(*results[1].as_ref()?, json!(4.0));
+        assert_eq!(*results[2].as_ref()?, json!(6.0));
         Ok(())
     }
 
@@ -494,9 +494,9 @@ mod tests {
             .await;
 
         assert_eq!(results.len(), 3);
-        assert_eq!(results[0].as_ref()?, json!(50.0));
-        assert_eq!(results[1].as_ref()?, json!(60.0));
-        assert_eq!(results[2].as_ref()?, json!(60.0));
+        assert_eq!(*results[0].as_ref()?, json!(50.0));
+        assert_eq!(*results[1].as_ref()?, json!(60.0));
+        assert_eq!(*results[2].as_ref()?, json!(60.0));
 
         // Test map-reduce
         let total = batch

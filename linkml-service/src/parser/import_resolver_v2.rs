@@ -535,7 +535,7 @@ impl ImportResolverV2 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::YamlParser;
+    use crate::parser::{SchemaParser, YamlParser};
     use tempfile::TempDir;
 
     #[tokio::test]

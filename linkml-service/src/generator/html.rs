@@ -1001,8 +1001,8 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition};
     fn test_anchor_conversion() {
         let generator = HtmlGenerator::new();
 
-        assert_eq!(generator.to_anchor("Person Name"), "person-name");
-        assert_eq!(generator.to_anchor("test_class"), "test-class");
-        assert_eq!(generator.to_anchor("Test123!@#"), "test123");
+        assert_eq!(HtmlGenerator::to_anchor("Person Name"), "person-name");
+        assert_eq!(HtmlGenerator::to_anchor("test_class"), "test-class");
+        assert_eq!(HtmlGenerator::to_anchor("Test123!@#"), "test123");
     }
 }

@@ -295,18 +295,18 @@ mod tests {
         // Test ID-like names
         let mut slot = SlotDefinition::default();
         slot.name = "user_id".to_string();
-        assert!(translator.is_unique_constraint(&slot));
+        assert!(TypeQLConstraintTranslator::is_unique_constraint(&slot));
 
         // Test description-based detection
         let mut slot = SlotDefinition::default();
         slot.name = "email".to_string();
         slot.description = Some("Unique email address".to_string());
-        assert!(translator.is_unique_constraint(&slot));
+        assert!(TypeQLConstraintTranslator::is_unique_constraint(&slot));
 
         // Test non-unique
         let mut slot = SlotDefinition::default();
         slot.name = "name".to_string();
-        assert!(!translator.is_unique_constraint(&slot));
+        assert!(!TypeQLConstraintTranslator::is_unique_constraint(&slot));
     }
 
     #[test]
