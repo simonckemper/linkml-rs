@@ -8,31 +8,38 @@ use linkml_core::prelude::*;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
-/// Optimization instructions for validator compilation
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]pub struct CompilationOptions {
-    /// Enable regex compilation and caching
-    pub compile_patterns: bool,
+use bitflags::bitflags;
 
-    /// Enable value range optimization
-    pub optimize_ranges: bool,
+bitflags! {
+    /// Optimization flags for validator compilation
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+    pub struct CompilationOptions: u8 {
+        /// Enable regex compilation and caching
+        const COMPILE_PATTERNS = 0b00001;
+        /// Enable value range optimization
+        const OPTIMIZE_RANGES = 0b00010;
+        /// Enable type checking optimization
+        const OPTIMIZE_TYPES = 0b00100;
+        /// Pre-compute inheritance chains
+        const PRECOMPUTE_INHERITANCE = 0b01000;
+        /// Cache permissible values as hash sets
+        const CACHE_PERMISSIBLE_VALUES = 0b10000;
 
-    /// Enable type checking optimization
-    pub optimize_types: bool,
+        /// All optimizations enabled (default)
+        const ALL = Self::COMPILE_PATTERNS.bits()
+                  | Self::OPTIMIZE_RANGES.bits()
+                  | Self::OPTIMIZE_TYPES.bits()
+                  | Self::PRECOMPUTE_INHERITANCE.bits()
+                  | Self::CACHE_PERMISSIBLE_VALUES.bits();
 
-    /// Pre-compute inheritance chains
-    pub precompute_inheritance: bool,
-
-    /// Cache permissible values as hash sets
-    pub cache_permissible_values: bool}
+        /// No optimizations (for debugging)
+        const NONE = 0b00000;
+    }
+}
 
 impl Default for CompilationOptions {
     fn default() -> Self {
-        Self {
-            compile_patterns: true,
-            optimize_ranges: true,
-            optimize_types: true,
-            precompute_inheritance: true,
-            cache_permissible_values: true}
+        Self::ALL
     }
 }
 
@@ -654,7 +661,7 @@ impl<'a> ValidatorCompiler<'a> {
 
         // Pattern validation
         if let Some(pattern) = &slot.pattern
-            && self.options.compile_patterns {
+            && self.options.contains(CompilationOptions::COMPILE_PATTERNS) {
                 let pattern_id = self.compile_pattern(pattern)?;
                 instructions.push(ValidationInstruction::ValidatePattern {
                     path: path.clone(),

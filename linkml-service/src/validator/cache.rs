@@ -91,11 +91,8 @@ impl ValidatorCacheKey {
     fn hash_options(options: &CompilationOptions) -> String {
         let mut hasher = Hasher::new();
 
-        hasher.update(&[u8::from(options.compile_patterns)]);
-        hasher.update(&[u8::from(options.optimize_ranges)]);
-        hasher.update(&[u8::from(options.optimize_types)]);
-        hasher.update(&[u8::from(options.precompute_inheritance)]);
-        hasher.update(&[u8::from(options.cache_permissible_values)]);
+        // Hash the bitflags value directly for efficiency
+        hasher.update(&options.bits().to_le_bytes());
 
         hasher.finalize().to_hex().to_string()
     }

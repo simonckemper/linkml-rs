@@ -53,16 +53,40 @@ mod excel_cast {
     }
 }
 
+use bitflags::bitflags;
+
+bitflags! {
+    /// Excel generation features to enable
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct ExcelFeatures: u8 {
+        /// Include a summary sheet
+        const INCLUDE_SUMMARY = 0b0001;
+        /// Add data validation
+        const ADD_VALIDATION = 0b0010;
+        /// Freeze header rows
+        const FREEZE_HEADERS = 0b0100;
+        /// Add filters
+        const ADD_FILTERS = 0b1000;
+
+        /// All features enabled (default)
+        const ALL = Self::INCLUDE_SUMMARY.bits()
+                  | Self::ADD_VALIDATION.bits()
+                  | Self::FREEZE_HEADERS.bits()
+                  | Self::ADD_FILTERS.bits();
+
+        /// Basic features only (no validation or filters)
+        const BASIC = Self::INCLUDE_SUMMARY.bits()
+                    | Self::FREEZE_HEADERS.bits();
+
+        /// No features (minimal Excel)
+        const NONE = 0b0000;
+    }
+}
+
 /// Excel generator
 pub struct ExcelGenerator {
-    /// Whether to include a summary sheet
-    include_summary: bool,
-    /// Whether to add data validation
-    add_validation: bool,
-    /// Whether to freeze header rows
-    freeze_headers: bool,
-    /// Whether to add filters
-    add_filters: bool,
+    /// Enabled Excel features
+    features: ExcelFeatures,
     /// Generator options
     options: super::traits::GeneratorOptions,
 }
@@ -72,10 +96,7 @@ impl ExcelGenerator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            include_summary: true,
-            add_validation: true,
-            freeze_headers: true,
-            add_filters: true,
+            features: ExcelFeatures::ALL,
             options: super::traits::GeneratorOptions::default(),
         }
     }
@@ -91,28 +112,68 @@ impl ExcelGenerator {
     /// Configure summary sheet generation
     #[must_use]
     pub fn with_summary(mut self, enabled: bool) -> Self {
-        self.include_summary = enabled;
+        if enabled {
+            self.features.insert(ExcelFeatures::INCLUDE_SUMMARY);
+        } else {
+            self.features.remove(ExcelFeatures::INCLUDE_SUMMARY);
+        }
         self
+    }
+
+    /// Check if summary sheet is enabled
+    #[must_use]
+    pub fn include_summary(&self) -> bool {
+        self.features.contains(ExcelFeatures::INCLUDE_SUMMARY)
+    }
+
+    /// Check if data validation is enabled
+    #[must_use]
+    pub fn add_validation(&self) -> bool {
+        self.features.contains(ExcelFeatures::ADD_VALIDATION)
+    }
+
+    /// Check if header freezing is enabled
+    #[must_use]
+    pub fn freeze_headers(&self) -> bool {
+        self.features.contains(ExcelFeatures::FREEZE_HEADERS)
+    }
+
+    /// Check if filters are enabled
+    #[must_use]
+    pub fn add_filters(&self) -> bool {
+        self.features.contains(ExcelFeatures::ADD_FILTERS)
     }
 
     /// Configure data validation
     #[must_use]
     pub fn with_validation(mut self, enabled: bool) -> Self {
-        self.add_validation = enabled;
+        if enabled {
+            self.features.insert(ExcelFeatures::ADD_VALIDATION);
+        } else {
+            self.features.remove(ExcelFeatures::ADD_VALIDATION);
+        }
         self
     }
 
     /// Configure header freezing
     #[must_use]
     pub fn with_frozen_headers(mut self, enabled: bool) -> Self {
-        self.freeze_headers = enabled;
+        if enabled {
+            self.features.insert(ExcelFeatures::FREEZE_HEADERS);
+        } else {
+            self.features.remove(ExcelFeatures::FREEZE_HEADERS);
+        }
         self
     }
 
     /// Configure filter addition
     #[must_use]
     pub fn with_filters(mut self, enabled: bool) -> Self {
-        self.add_filters = enabled;
+        if enabled {
+            self.features.insert(ExcelFeatures::ADD_FILTERS);
+        } else {
+            self.features.remove(ExcelFeatures::ADD_FILTERS);
+        }
         self
     }
 
@@ -150,7 +211,7 @@ impl ExcelGenerator {
             .set_border(FormatBorder::Thin);
 
         // Generate summary sheet
-        if self.include_summary {
+        if self.include_summary() {
             self.generate_summary_sheet(&mut workbook, schema, &header_format)?;
         }
 
@@ -178,7 +239,7 @@ impl ExcelGenerator {
         }
 
         // Generate validation sheet if add_validation is enabled
-        if self.add_validation {
+        if self.add_validation() {
             self.generate_validation_sheet(&mut workbook, schema, &header_format)?;
         }
 
@@ -389,19 +450,19 @@ impl ExcelGenerator {
         }
 
         // Add data validation for enum fields and constraints
-        if self.add_validation {
+        if self.add_validation() {
             self.add_data_validations(worksheet, &slots, schema, 3)?;
         }
 
         // Freeze headers if enabled (now 3 rows: headers, types, descriptions)
-        if self.freeze_headers {
+        if self.freeze_headers() {
             worksheet
                 .set_freeze_panes(3, 0)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Add filters if enabled
-        if self.add_filters {
+        if self.add_filters() {
             let max_col = excel_cast::usize_to_u16_column(slots.len())?
                 .saturating_sub(1);
             worksheet
@@ -469,14 +530,14 @@ impl ExcelGenerator {
         }
 
         // Freeze headers
-        if self.freeze_headers {
+        if self.freeze_headers() {
             worksheet
                 .set_freeze_panes(1, 0)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;
         }
 
         // Add filters
-        if self.add_filters {
+        if self.add_filters() {
             worksheet
                 .autofilter(0, 0, row - 1, 2)
                 .map_err(|e| GeneratorError::Generation(e.to_string(),))?;

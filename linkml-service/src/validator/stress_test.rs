@@ -20,30 +20,56 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
 
+use bitflags::bitflags;
+
+bitflags! {
+    /// Types of stress testing to enable
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct StressTestFeatures: u8 {
+        /// Enable memory pressure testing
+        const MEMORY_PRESSURE = 0b0001;
+        /// Enable CPU pressure testing
+        const CPU_PRESSURE = 0b0010;
+        /// Enable error injection testing
+        const ERROR_INJECTION = 0b0100;
+        /// Enable chaos testing
+        const CHAOS_TESTING = 0b1000;
+
+        /// All stress test features enabled
+        const ALL = Self::MEMORY_PRESSURE.bits()
+                  | Self::CPU_PRESSURE.bits()
+                  | Self::ERROR_INJECTION.bits()
+                  | Self::CHAOS_TESTING.bits();
+
+        /// Basic stress testing only (no chaos)
+        const BASIC = Self::MEMORY_PRESSURE.bits()
+                    | Self::CPU_PRESSURE.bits();
+
+        /// No stress features (performance testing only)
+        const NONE = 0b0000;
+    }
+}
+
 /// Stress test configuration
-#[derive(Debug, Clone)]pub struct StressTestConfig {
+#[derive(Debug, Clone)]
+pub struct StressTestConfig {
     /// Number of concurrent operations
     pub concurrency: usize,
     /// Total number of operations
     pub total_operations: usize,
     /// Operation timeout
     pub timeout: Duration,
-    /// Enable memory pressure
-    pub memory_pressure: bool,
+    /// Enabled stress test features
+    pub enabled_features: StressTestFeatures,
     /// Target memory usage (bytes)
     pub target_memory_bytes: usize,
-    /// Enable CPU pressure
-    pub cpu_pressure: bool,
     /// Target CPU usage (0-100)
     pub target_cpu_percent: f32,
-    /// Enable error injection
-    pub error_injection: bool,
     /// Error injection rate (0.0-1.0)
     pub error_rate: f64,
-    /// Enable chaos testing
-    pub chaos_testing: bool,
     /// Performance thresholds
-    pub performance_thresholds: PerformanceThresholds}
+    pub performance_thresholds: PerformanceThresholds,
+}
 
 impl Default for StressTestConfig {
     fn default() -> Self {
@@ -51,14 +77,38 @@ impl Default for StressTestConfig {
             concurrency: 100,
             total_operations: 10000,
             timeout: Duration::from_secs(30),
-            memory_pressure: false,
+            enabled_features: StressTestFeatures::NONE, // Conservative default
             target_memory_bytes: 1024 * 1024 * 1024, // 1GB
-            cpu_pressure: false,
             target_cpu_percent: 80.0,
-            error_injection: false,
             error_rate: 0.01, // 1%
-            chaos_testing: false,
-            performance_thresholds: PerformanceThresholds::default()}
+            performance_thresholds: PerformanceThresholds::default(),
+        }
+    }
+}
+
+impl StressTestConfig {
+    /// Check if memory pressure testing is enabled
+    #[must_use]
+    pub fn memory_pressure(&self) -> bool {
+        self.enabled_features.contains(StressTestFeatures::MEMORY_PRESSURE)
+    }
+
+    /// Check if CPU pressure testing is enabled
+    #[must_use]
+    pub fn cpu_pressure(&self) -> bool {
+        self.enabled_features.contains(StressTestFeatures::CPU_PRESSURE)
+    }
+
+    /// Check if error injection is enabled
+    #[must_use]
+    pub fn error_injection(&self) -> bool {
+        self.enabled_features.contains(StressTestFeatures::ERROR_INJECTION)
+    }
+
+    /// Check if chaos testing is enabled
+    #[must_use]
+    pub fn chaos_testing(&self) -> bool {
+        self.enabled_features.contains(StressTestFeatures::CHAOS_TESTING)
     }
 }
 

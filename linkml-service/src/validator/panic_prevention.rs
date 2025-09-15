@@ -17,33 +17,79 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
+use bitflags::bitflags;
+
+bitflags! {
+    /// Types of panic prevention checks to enable
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct PanicPreventionFlags: u8 {
+        /// Enable panic catching
+        const CATCH_PANICS = 0b0001;
+        /// Enable stack size monitoring
+        const MONITOR_STACK = 0b0010;
+        /// Enable arithmetic overflow checks
+        const CHECK_ARITHMETIC = 0b0100;
+        /// Enable bounds checking
+        const CHECK_BOUNDS = 0b1000;
+
+        /// All checks enabled (default)
+        const ALL = Self::CATCH_PANICS.bits()
+                  | Self::MONITOR_STACK.bits()
+                  | Self::CHECK_ARITHMETIC.bits()
+                  | Self::CHECK_BOUNDS.bits();
+
+        /// No checks (for debugging)
+        const NONE = 0b0000;
+    }
+}
+
 /// Panic prevention configuration
-#[derive(Debug, Clone)]pub struct PanicPreventionConfig {
-    /// Enable panic catching
-    pub catch_panics: bool,
+#[derive(Debug, Clone)]
+pub struct PanicPreventionConfig {
+    /// Enabled panic prevention checks
+    pub enabled_checks: PanicPreventionFlags,
     /// Maximum recursion depth
     pub max_recursion_depth: usize,
-    /// Enable stack size monitoring
-    pub monitor_stack: bool,
     /// Stack size limit (bytes)
     pub stack_size_limit: usize,
-    /// Enable arithmetic overflow checks
-    pub check_arithmetic: bool,
-    /// Enable bounds checking
-    pub check_bounds: bool,
     /// Recovery timeout for poisoned locks
-    pub poison_recovery_timeout: Duration}
+    pub poison_recovery_timeout: Duration,
+}
 
 impl Default for PanicPreventionConfig {
     fn default() -> Self {
         Self {
-            catch_panics: true,
+            enabled_checks: PanicPreventionFlags::ALL,
             max_recursion_depth: 1000,
-            monitor_stack: true,
             stack_size_limit: 8 * 1024 * 1024, // 8MB
-            check_arithmetic: true,
-            check_bounds: true,
-            poison_recovery_timeout: Duration::from_secs(5)}
+            poison_recovery_timeout: Duration::from_secs(5),
+        }
+    }
+}
+
+impl PanicPreventionConfig {
+    /// Check if panic catching is enabled
+    #[must_use]
+    pub fn catch_panics(&self) -> bool {
+        self.enabled_checks.contains(PanicPreventionFlags::CATCH_PANICS)
+    }
+
+    /// Check if stack monitoring is enabled
+    #[must_use]
+    pub fn monitor_stack(&self) -> bool {
+        self.enabled_checks.contains(PanicPreventionFlags::MONITOR_STACK)
+    }
+
+    /// Check if arithmetic checking is enabled
+    #[must_use]
+    pub fn check_arithmetic(&self) -> bool {
+        self.enabled_checks.contains(PanicPreventionFlags::CHECK_ARITHMETIC)
+    }
+
+    /// Check if bounds checking is enabled
+    #[must_use]
+    pub fn check_bounds(&self) -> bool {
+        self.enabled_checks.contains(PanicPreventionFlags::CHECK_BOUNDS)
     }
 }
 

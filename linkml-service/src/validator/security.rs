@@ -32,29 +32,51 @@ static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Resu
     .collect()
 });
 
+use bitflags::bitflags;
+
+bitflags! {
+    /// Security features to enable
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub struct SecurityFeatures: u8 {
+        /// Enable input sanitization
+        const SANITIZE_INPUT = 0b0001;
+        /// Enable audit logging
+        const AUDIT_LOGGING = 0b0010;
+        /// Enable sensitive data masking
+        const MASK_SENSITIVE_DATA = 0b0100;
+        /// Enable rate limiting per IP/user
+        const RATE_LIMITING = 0b1000;
+
+        /// All security features enabled (default)
+        const ALL = Self::SANITIZE_INPUT.bits()
+                  | Self::AUDIT_LOGGING.bits()
+                  | Self::MASK_SENSITIVE_DATA.bits()
+                  | Self::RATE_LIMITING.bits();
+
+        /// No security features (for testing only)
+        const NONE = 0b0000;
+    }
+}
+
 /// Security configuration
-#[derive(Debug, Clone)]pub struct SecurityConfig {
-    /// Enable input sanitization
-    pub sanitize_input: bool,
+#[derive(Debug, Clone)]
+pub struct SecurityConfig {
+    /// Enabled security features
+    pub enabled_features: SecurityFeatures,
     /// Maximum allowed path depth
     pub max_path_depth: usize,
     /// Allowed file extensions
     pub allowed_extensions: Vec<String>,
-    /// Enable audit logging
-    pub audit_logging: bool,
     /// Maximum input size (bytes)
     pub max_input_size: usize,
-    /// Enable sensitive data masking
-    pub mask_sensitive_data: bool,
     /// Blocked patterns (regex)
     pub blocked_patterns: Vec<String>,
-    /// Rate limiting per IP/user
-    pub rate_limit_enabled: bool}
+}
 
 impl Default for SecurityConfig {
     fn default() -> Self {
         Self {
-            sanitize_input: true,
+            enabled_features: SecurityFeatures::ALL,
             max_path_depth: 10,
             allowed_extensions: vec![
                 "json".to_string(),
@@ -62,14 +84,38 @@ impl Default for SecurityConfig {
                 "yml".to_string(),
                 "csv".to_string(),
             ],
-            audit_logging: true,
             max_input_size: 100 * 1024 * 1024, // 100MB
-            mask_sensitive_data: true,
             blocked_patterns: vec![
                 r"(?i)(password|secret|token|key)\s*[:=]".to_string(),
                 r"(?i)bearer\s+[a-zA-Z0-9\-_]+".to_string(),
             ],
-            rate_limit_enabled: true}
+        }
+    }
+}
+
+impl SecurityConfig {
+    /// Check if input sanitization is enabled
+    #[must_use]
+    pub fn sanitize_input(&self) -> bool {
+        self.enabled_features.contains(SecurityFeatures::SANITIZE_INPUT)
+    }
+
+    /// Check if audit logging is enabled
+    #[must_use]
+    pub fn audit_logging(&self) -> bool {
+        self.enabled_features.contains(SecurityFeatures::AUDIT_LOGGING)
+    }
+
+    /// Check if sensitive data masking is enabled
+    #[must_use]
+    pub fn mask_sensitive_data(&self) -> bool {
+        self.enabled_features.contains(SecurityFeatures::MASK_SENSITIVE_DATA)
+    }
+
+    /// Check if rate limiting is enabled
+    #[must_use]
+    pub fn rate_limit_enabled(&self) -> bool {
+        self.enabled_features.contains(SecurityFeatures::RATE_LIMITING)
     }
 }
 
