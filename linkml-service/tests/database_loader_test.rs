@@ -124,7 +124,7 @@ fn test_database_options_configuration() {
     );
 
     assert_eq!(options.connection_string, "postgresql://localhost/test");
-    assert_eq!(options.schema_name, Some("public".to_string());
+    assert_eq!(options.schema_name, Some("public".to_string()));
     assert_eq!(options.batch_size, 500);
     assert_eq!(options.table_mapping.len(), 2);
     assert_eq!(options.column_mapping.len(), 1);
@@ -186,8 +186,8 @@ fn test_data_instance_creation() {
     assert_eq!(instance.class_name, "Person");
     assert_eq!(instance.data.get("id"), Some(&json!("person1"));
     assert_eq!(instance.data.get("name"), Some(&json!("Alice Smith"));
-    assert_eq!(instance.data.get("age"), Some(&json!(30));
-    assert_eq!(instance.data.get("active"), Some(&json!(true));
+    assert_eq!(instance.data.get("age"), Some(&json!(30)));
+    assert_eq!(instance.data.get("active"), Some(&json!(true)));
 }
 
 #[test]

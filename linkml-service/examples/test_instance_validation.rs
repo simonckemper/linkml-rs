@@ -24,7 +24,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Test 1: Load and validate country instances
     println!("Test 1: Loading ISO3166Entity instances");
-    println!("-" .repeat(40));
+    println!("{}", "-".repeat(40));
 
     let country_schema_path = schema_base.join("place/polity/country/schema.yaml");
     let country_instances_path = schema_base.join("place/polity/country/ISO3166Entity.yaml");
@@ -70,7 +70,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Test 2: Validate identifier against permissible values
     println!("Test 2: Validating CountryCodeAlpha2Identifier");
-    println!("-" .repeat(40));
+    println!("{}", "-".repeat(40));
 
     let identifier_schema_path = schema_base.join("meta/identifier/identifier/schema.yaml");
 

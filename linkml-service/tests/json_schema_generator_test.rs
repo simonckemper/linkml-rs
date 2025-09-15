@@ -137,10 +137,10 @@ async fn test_enum_json_schema() {
     let enum_values = order_status["enum"]
         .as_array()
         .expect("Test operation failed");
-    assert!(enum_values.contains(&json!("pending"));
-    assert!(enum_values.contains(&json!("processing"));
-    assert!(enum_values.contains(&json!("shipped"));
-    assert!(enum_values.contains(&json!("delivered"));
+    assert!(enum_values.contains(&json!("pending")));
+    assert!(enum_values.contains(&json!("processing")));
+    assert!(enum_values.contains(&json!("shipped")));
+    assert!(enum_values.contains(&json!("delivered")));
 
     // Check that class references the enum
     let order_def = &parsed["definitions"]["Order"];

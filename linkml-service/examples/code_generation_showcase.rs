@@ -1,6 +1,3 @@
-mod common;
-use common::initialize_example_service;
-
 //! Code Generation Showcase
 //!
 //! This example demonstrates all the code generation capabilities of LinkML:
@@ -11,6 +8,9 @@ use common::initialize_example_service;
 //! - Rust structs
 //! - Python dataclasses
 //! - And more!
+
+mod common;
+use common::initialize_example_service;
 
 use linkml_core::prelude::*;
 use linkml_service::prelude::*;

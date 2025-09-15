@@ -94,8 +94,8 @@ async fn test_conditional_requirements_basic() {
         2,
         "Should have 2 errors for missing email and phone"
     );
-    assert!(errors1.iter().any(|e| e.message.contains("email"));
-    assert!(errors1.iter().any(|e| e.message.contains("phone"));
+    assert!(errors1.iter().any(|e| e.message.contains("email")));
+    assert!(errors1.iter().any(|e| e.message.contains("phone")));
 
     // Test case 2: Active status with required fields
     let data2 = json!({
@@ -539,5 +539,5 @@ async fn test_multiple_conditional_requirements() {
     assert!(error_messages.iter().any(|m| m.contains("state"));
     assert!(error_messages.iter().any(|m| m.contains("zip_code"));
     assert!(error_messages.iter().any(|m| m.contains("tax_id"));
-    assert!(error_messages.iter().any(|m| m.contains("business_name"));
+    assert!(error_messages.iter().any(|m| m.contains("business_name")));
 }

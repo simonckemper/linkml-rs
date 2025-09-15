@@ -494,7 +494,7 @@ fn test_expression_security_limits() {
 
     // Large string allocation should fail with tiny memory limit
     let mut large_context = HashMap::new();
-    large_context.insert("s".to_string(), json!("x".repeat(1000));
+    large_context.insert("s".to_string(), json!("x".repeat(1000)));
     let _result = engine.evaluate("{s} + {s}", &large_context);
     // Should fail due to memory limit
 }

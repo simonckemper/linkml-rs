@@ -86,8 +86,8 @@ fn test_conflicting_class_definitions() {
         .get("Person")
         .expect("Test operation failed");
     assert_eq!(person_union.slots.len(), 4); // Combined slots
-    assert!(person_union.slots.contains(&"name".to_string());
-    assert!(person_union.slots.contains(&"full_name".to_string());
+    assert!(person_union.slots.contains(&"name".to_string()));
+    assert!(person_union.slots.contains(&"full_name".to_string()));
 }
 
 #[test]
