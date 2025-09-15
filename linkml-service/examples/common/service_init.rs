@@ -21,7 +21,7 @@ use timestamp_service::factory::create_timestamp_service;
 
 /// Initialize LinkML service with real dependencies
 pub async fn init_linkml_service_with_real_deps()
--> Result<Arc<LinkMLServiceImpl>, Box<dyn std::error::Error>> {
+-> Result<Arc<dyn linkml_core::traits::LinkMLService>, Box<dyn std::error::Error>> {
     // Create all real services
     let timestamp = create_timestamp_service();
     let logger: Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>> =

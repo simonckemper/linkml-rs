@@ -98,11 +98,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use base64::Engine;
     let decoded = base64::engine::general_purpose::STANDARD.decode(&output)?;
 
-        // Save to file
-        let filename = "person_schema.xlsx";
-        fs::write(filename, decoded)?;
+    // Save to file
+    let filename = "person_schema.xlsx";
+    fs::write(filename, decoded)?;
 
-        println!("✅ Excel workbook generated: {}", filename);
+    println!("✅ Excel workbook generated: {}", filename);
         println!("   - Summary sheet with schema statistics");
         println!("   - Person sheet with headers, types, and descriptions");
         println!("   - Enumerations sheet with PersonStatus values");
