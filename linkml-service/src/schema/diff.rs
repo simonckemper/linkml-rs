@@ -576,22 +576,22 @@ impl DiffResult {
             output.push_str("@@ Classes @@\n");
 
             for class in &self.removed_classes {
-                writeln!(output, "- class: {class}").unwrap();
+                writeln!(output, "- class: {class}").expect("writeln! to String should never fail");
             }
 
             for class in &self.added_classes {
-                writeln!(output, "+ class: {class}").unwrap();
+                writeln!(output, "+ class: {class}").expect("writeln! to String should never fail");
             }
 
             for class_diff in &self.modified_classes {
-                writeln!(output, "  class: {}", class_diff.name).unwrap();
+                writeln!(output, "  class: {}", class_diff.name).expect("writeln! to String should never fail");
 
                 for slot in &class_diff.removed_slots {
-                    writeln!(output, "    - slot: {slot}").unwrap();
+                    writeln!(output, "    - slot: {slot}").expect("writeln! to String should never fail");
                 }
 
                 for slot in &class_diff.added_slots {
-                    writeln!(output, "    + slot: {slot}").unwrap();
+                    writeln!(output, "    + slot: {slot}").expect("writeln! to String should never fail");
                 }
             }
 
@@ -606,15 +606,15 @@ impl DiffResult {
             output.push_str("@@ Slots @@\n");
 
             for slot in &self.removed_slots {
-                writeln!(output, "- slot: {slot}").unwrap();
+                writeln!(output, "- slot: {slot}").expect("writeln! to String should never fail");
             }
 
             for slot in &self.added_slots {
-                writeln!(output, "+ slot: {slot}").unwrap();
+                writeln!(output, "+ slot: {slot}").expect("writeln! to String should never fail");
             }
 
             for slot_diff in &self.modified_slots {
-                writeln!(output, "  slot: {}", slot_diff.name).unwrap();
+                writeln!(output, "  slot: {}", slot_diff.name).expect("writeln! to String should never fail");
 
                 for (attr, change) in &slot_diff.changed_attributes {
                     writeln!(output, 
@@ -634,16 +634,16 @@ impl DiffResult {
     #[must_use] pub fn to_side_by_side(&self) -> String {
         let mut output = String::new();
 
-        writeln!(output, "{:<40} | {:<40}", "Schema 1", "Schema 2").unwrap();
-        writeln!(output, "{:-<40} | {:-<40}", "", "").unwrap();
+        writeln!(output, "{:<40} | {:<40}", "Schema 1", "Schema 2").expect("writeln! to String should never fail");
+        writeln!(output, "{:-<40} | {:-<40}", "", "").expect("writeln! to String should never fail");
 
         // Classes
         output.push_str("\nClasses:\n");
         for class in &self.removed_classes {
-            writeln!(output, "{:<40} | {:<40}", class, "").unwrap();
+            writeln!(output, "{:<40} | {:<40}", class, "").expect("writeln! to String should never fail");
         }
         for class in &self.added_classes {
-            writeln!(output, "{:<40} | {:<40}", "", class).unwrap();
+            writeln!(output, "{:<40} | {:<40}", "", class).expect("writeln! to String should never fail");
         }
 
         output
@@ -714,7 +714,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             html.push_str("<h2>Added Classes</h2>\n<ul>\n");
             for class in &self.added_classes {
-                writeln!(html, "<li class='added'>{class}</li>").unwrap();
+                writeln!(html, "<li class='added'>{class}</li>").expect("writeln! to String should never fail");
             }
             html.push_str("</ul>\n");
         }
@@ -722,7 +722,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             html.push_str("<h2>Removed Classes</h2>\n<ul>\n");
             for class in &self.removed_classes {
-                writeln!(html, "<li class='removed'>{class}</li>").unwrap();
+                writeln!(html, "<li class='removed'>{class}</li>").expect("writeln! to String should never fail");
             }
             html.push_str("</ul>\n");
         }
@@ -760,7 +760,7 @@ impl DiffResult {
         if !self.breaking_changes.is_empty() {
             md.push_str("## ⚠️ Breaking Changes\n\n");
             for change in &self.breaking_changes {
-                writeln!(md, "- {change}").unwrap();
+                writeln!(md, "- {change}").expect("writeln! to String should never fail");
             }
             md.push('\n');
         }
@@ -769,7 +769,7 @@ impl DiffResult {
         if !self.added_classes.is_empty() {
             md.push_str("## Added Classes\n\n");
             for class in &self.added_classes {
-                writeln!(md, "- ✅ `{class}`").unwrap();
+                writeln!(md, "- ✅ `{class}`").expect("writeln! to String should never fail");
             }
             md.push('\n');
         }
@@ -778,7 +778,7 @@ impl DiffResult {
         if !self.removed_classes.is_empty() {
             md.push_str("## Removed Classes\n\n");
             for class in &self.removed_classes {
-                writeln!(md, "- ❌ `{class}`").unwrap();
+                writeln!(md, "- ❌ `{class}`").expect("writeln! to String should never fail");
             }
             md.push('\n');
         }
@@ -787,12 +787,12 @@ impl DiffResult {
         if !self.modified_classes.is_empty() {
             md.push_str("## Modified Classes\n\n");
             for class_diff in &self.modified_classes {
-                writeln!(md, "### `{}``\n", class_diff.name).unwrap();
+                writeln!(md, "### `{}``\n", class_diff.name).expect("writeln! to String should never fail");
 
                 if !class_diff.added_slots.is_empty() {
                     md.push_str("**Added slots:**\n");
                     for slot in &class_diff.added_slots {
-                        writeln!(md, "- ✅ `{slot}`").unwrap();
+                        writeln!(md, "- ✅ `{slot}`").expect("writeln! to String should never fail");
                     }
                     md.push('\n');
                 }
@@ -800,7 +800,7 @@ impl DiffResult {
                 if !class_diff.removed_slots.is_empty() {
                     md.push_str("**Removed slots:**\n");
                     for slot in &class_diff.removed_slots {
-                        writeln!(md, "- ❌ `{slot}`").unwrap();
+                        writeln!(md, "- ❌ `{slot}`").expect("writeln! to String should never fail");
                     }
                     md.push('\n');
                 }

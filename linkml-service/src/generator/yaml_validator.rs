@@ -429,7 +429,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                writeln!(output, "# Validation schema for {class_name}").unwrap();
+                writeln!(output, "# Validation schema for {class_name}").expect("writeln! to String should never fail");
                 write!(output, "{}_SCHEMA = {{\n", class_name.to_uppercase()).unwrap();
 
                 // Process slots
@@ -474,7 +474,7 @@ impl YamlValidatorGenerator {
         // Type
         if let Some(range) = &slot_def.range {
             let cerberus_type = Self::range_to_cerberus_type(range, schema);
-            writeln!(rule, "        'type': '{cerberus_type}',").unwrap();
+            writeln!(rule, "        'type': '{cerberus_type}',").expect("writeln! to String should never fail");
         }
 
         // Required
@@ -484,15 +484,15 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            writeln!(rule, "        'regex': r'{pattern}',").unwrap();
+            writeln!(rule, "        'regex': r'{pattern}',").expect("writeln! to String should never fail");
         }
 
         // Min/max values
         if let Some(min) = &slot_def.minimum_value {
-            writeln!(rule, "        'min': {min},").unwrap();
+            writeln!(rule, "        'min': {min},").expect("writeln! to String should never fail");
         }
         if let Some(max) = &slot_def.maximum_value {
-            writeln!(rule, "        'max': {max},").unwrap();
+            writeln!(rule, "        'max': {max},").expect("writeln! to String should never fail");
         }
 
         rule.push_str("    },\n");
@@ -520,7 +520,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                writeln!(output, "// Validation schema for {class_name}").unwrap();
+                writeln!(output, "// Validation schema for {class_name}").expect("writeln! to String should never fail");
                 write!(
                     output,
                     "const {}SchemaDefinition = Joi.object({{\n",
@@ -628,7 +628,7 @@ impl YamlValidatorGenerator {
         // Generate schemas for each class
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
-                writeln!(output, "// Validation schema for {class_name}").unwrap();
+                writeln!(output, "// Validation schema for {class_name}").expect("writeln! to String should never fail");
                 write!(
                     output,
                     "export const {}SchemaDefinition = yup.object({{\n",

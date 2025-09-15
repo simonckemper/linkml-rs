@@ -171,15 +171,15 @@ impl LintResult {
         xml.push_str(&format!(" failures=\"{}\"", self.warning_count()));
         xml.push_str(">\n");
 
-        writeln!(xml, "  <testcase name=\"{test_name}\">").unwrap();
+        writeln!(xml, "  <testcase name=\"{test_name}\">").expect("writeln! to String should never fail");
 
         for issue in &self.issues {
             match issue.severity {
                 Severity::Error => {
-                    writeln!(xml, "    <error message=\"{}\"/>", issue.message).unwrap();
+                    writeln!(xml, "    <error message=\"{}\"/>", issue.message).expect("writeln! to String should never fail");
                 }
                 Severity::Warning => {
-                    writeln!(xml, "    <failure message=\"{}\"/>", issue.message).unwrap();
+                    writeln!(xml, "    <failure message=\"{}\"/>", issue.message).expect("writeln! to String should never fail");
                 }
                 Severity::Info => {
                     // Info messages are not included in JUnit

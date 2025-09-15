@@ -200,14 +200,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("1.1 SELECT Queries:");
     let select_generator = SparqlGenerator::new();
     let result = select_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_select.sparql", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_select.sparql", &result)?;
     println!("Generated: research_select.sparql");
     println!(
         "Sample query:\n{}\n...\n",
-        result[0]
-            .content
+        result
             .lines()
             .take(15)
             .collect::<Vec<_>>()
@@ -218,18 +216,16 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("1.2 CONSTRUCT Queries:");
     let construct_generator = SparqlGenerator::new().with_query_type(SparqlQueryType::Construct);
     let result = construct_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_construct.sparql", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_construct.sparql", &result)?;
     println!("Generated: research_construct.sparql\n");
 
     // ASK queries
     println!("1.3 ASK Queries (Validation):");
     let ask_generator = SparqlGenerator::new().with_query_type(SparqlQueryType::Ask);
     let result = ask_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_ask.sparql", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_ask.sparql", &result)?;
     println!("Generated: research_ask.sparql\n");
 
     // ShEx Generation Examples
@@ -240,9 +236,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("2.1 ShEx Compact Syntax:");
     let shexc_generator = ShExGenerator::new();
     let result = shexc_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_shapes.shex", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_shapes.shex", &result)?;
     println!("Generated: research_shapes.shex");
     println!(
         "Sample shape:\n{}\n...\n",
@@ -258,9 +253,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("2.2 ShEx JSON Format:");
     let shexj_generator = ShExGenerator::new().with_style(ShExStyle::Json);
     let result = shexj_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_shapes.shexj", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_shapes.shexj", &result)?;
     println!("Generated: research_shapes.shexj\n");
 
     // PlantUML Generation Examples
@@ -271,9 +265,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("3.1 Class Diagram:");
     let class_generator = PlantUmlGenerator::new();
     let result = class_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_class.puml", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_class.puml", &result)?;
     println!("Generated: research_class.puml");
 
     // ER diagram
@@ -281,18 +274,16 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let er_generator =
         PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::EntityRelationship);
     let result = er_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_er.puml", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_er.puml", &result)?;
     println!("Generated: research_er.puml");
 
     // State diagram
     println!("3.3 State Diagram (Publication Status):");
     let state_generator = PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::State);
     let result = state_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_states.puml", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_states.puml", &result)?;
     println!("Generated: research_states.puml");
 
     // Mind map
@@ -300,9 +291,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mindmap_generator =
         PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::MindMap);
     let result = mindmap_generator
-        .generate(&schema, &GeneratorOptions::default())
-        .await?;
-    std::fs::write("research_mindmap.puml", &result[0].content)?;
+        .generate(&schema)?;
+    std::fs::write("research_mindmap.puml", &result)?;
     println!("Generated: research_mindmap.puml\n");
 
     // Create an integrated example showing how these work together

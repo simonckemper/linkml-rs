@@ -402,12 +402,12 @@ impl ExpressionTranslator {
         let trans = self.translate(expression, &mut ctx)?;
 
         let mut rule = String::new();
-        writeln!(rule, "rule compute-{entity_type}-{attribute}:").unwrap();
+        writeln!(rule, "rule compute-{entity_type}-{attribute}:").expect("writeln! to String should never fail");
         rule.push_str("when {\n");
-        writeln!(rule, "    {entity_var} isa {entity_type};").unwrap();
+        writeln!(rule, "    {entity_var} isa {entity_type};").expect("writeln! to String should never fail");
 
         for pattern in &trans.patterns {
-            writeln!(rule, "    {pattern};").unwrap();
+            writeln!(rule, "    {pattern};").expect("writeln! to String should never fail");
         }
 
         rule.push_str("} then {\n");

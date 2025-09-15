@@ -11,8 +11,8 @@ use linkml_service::generator::{Generator, GeneratorOptions, GraphvizGenerator};
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create a sample schema representing a simple e-commerce model
     let mut schema = SchemaDefinition::default();
-    schema.name = Some("ECommerceSchema".to_string());
-    schema.id = Some("https://example.org/ecommerce".to_string());
+    schema.name = "ECommerceSchema".to_string();
+    schema.id = "https://example.org/ecommerce".to_string();
     schema.description = Some("A simple e-commerce schema".to_string());
 
     // Base class for all entities

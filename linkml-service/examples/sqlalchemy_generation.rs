@@ -1,6 +1,6 @@
 //! Example of generating SQLAlchemy ORM models from LinkML schemas
 
-use linkml_service::generator::{SQLAlchemyGenerator, SQLAlchemyGeneratorConfig};
+use linkml_service::generator::{Generator, SQLAlchemyGenerator, SQLAlchemyGeneratorConfig};
 use linkml_service::parser::SchemaParser;
 
 #[tokio::main]

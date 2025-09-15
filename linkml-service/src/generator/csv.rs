@@ -370,7 +370,7 @@ impl Generator for CsvGenerator {
             match self.generate_class_csv(class_name, class_def, schema) {
                 Ok(content) => {
                     if !content.is_empty() {
-                        writeln!(result, "=== {class_name} ===").unwrap();
+                        writeln!(result, "=== {class_name} ===").expect("writeln! to String should never fail");
                         result.push_str(&content);
                         result.push_str("\n\n");
                     }

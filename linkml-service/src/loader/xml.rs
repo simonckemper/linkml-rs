@@ -313,9 +313,9 @@ impl DataDumper for XmlDumper {
 
         // Root element
         if let Some(ns) = &self.namespace {
-            writeln!(xml, "<{} xmlns=\"{}\">", self.root_element, ns).unwrap();
+            writeln!(xml, "<{} xmlns=\"{}\">", self.root_element, ns).expect("writeln! to String should never fail");
         } else {
-            writeln!(xml, "<{}>", self.root_element).unwrap();
+            writeln!(xml, "<{}>", self.root_element).expect("writeln! to String should never fail");
         }
 
         // Convert instances to XML
@@ -348,13 +348,13 @@ impl DataDumper for XmlDumper {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        writeln!(xml, "<{key}>{n}</{key}>").unwrap();
+                        writeln!(xml, "<{key}>{n}</{key}>").expect("writeln! to String should never fail");
                     }
                     Value::Bool(b) => {
                         if self.pretty || options.pretty_print {
                             xml.push_str("    ");
                         }
-                        writeln!(xml, "<{key}>{b}</{key}>").unwrap();
+                        writeln!(xml, "<{key}>{b}</{key}>").expect("writeln! to String should never fail");
                     }
                     Value::Array(arr) => {
                         for item in arr {
@@ -376,11 +376,11 @@ impl DataDumper for XmlDumper {
             if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
-            writeln!(xml, "</{}>", instance.class_name).unwrap();
+            writeln!(xml, "</{}>", instance.class_name).expect("writeln! to String should never fail");
         }
 
         // Close root element
-        writeln!(xml, "</{}>", self.root_element).unwrap();
+        writeln!(xml, "</{}>", self.root_element).expect("writeln! to String should never fail");
 
         Ok(xml)
     }

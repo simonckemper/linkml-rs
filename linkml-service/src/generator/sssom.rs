@@ -383,11 +383,11 @@ impl SssomGenerator {
             output.push('\n');
 
             if let Some(license) = &self.config.license {
-                writeln!(output, "# license: {license}").unwrap();
+                writeln!(output, "# license: {license}").expect("writeln! to String should never fail");
             }
 
             if let Some(creator) = &self.config.creator {
-                writeln!(output, "# creator_id: {creator}").unwrap();
+                writeln!(output, "# creator_id: {creator}").expect("writeln! to String should never fail");
             }
 
             output.push_str(&format!(
@@ -410,7 +410,7 @@ impl SssomGenerator {
                         PrefixDefinition::Complex {
                             prefix_reference, ..
                         } => prefix_reference.clone().unwrap_or_default()};
-                    writeln!(output, "#   {prefix}: {reference}").unwrap();
+                    writeln!(output, "#   {prefix}: {reference}").expect("writeln! to String should never fail");
                 }
             }
             // Add standard prefixes used in SSSOM

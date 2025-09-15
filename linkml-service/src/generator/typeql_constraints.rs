@@ -230,17 +230,17 @@ impl TypeQLConstraintTranslator {
         let rule_name = format!("{}-unique-{}", class_typeql, "key");
 
         let mut rule = String::new();
-        writeln!(rule, "rule {rule_name}:").unwrap();
+        writeln!(rule, "rule {rule_name}:").expect("writeln! to String should never fail");
         rule.push_str("when {\n");
-        writeln!(rule, "    $x isa {class_typeql};").unwrap();
-        writeln!(rule, "    $y isa {class_typeql};").unwrap();
+        writeln!(rule, "    $x isa {class_typeql};").expect("writeln! to String should never fail");
+        writeln!(rule, "    $y isa {class_typeql};").expect("writeln! to String should never fail");
         rule.push_str("    not { $x is $y; };\n");
 
         // Add conditions for each slot in the unique key
         for (i, slot) in unique_key.unique_key_slots.iter().enumerate() {
             let attr = type_name_converter(slot);
-            writeln!(rule, "    $x has {attr} $v{i};").unwrap();
-            writeln!(rule, "    $y has {attr} $v{i};").unwrap();
+            writeln!(rule, "    $x has {attr} $v{i};").expect("writeln! to String should never fail");
+            writeln!(rule, "    $y has {attr} $v{i};").expect("writeln! to String should never fail");
         }
 
         rule.push_str("} then {\n");

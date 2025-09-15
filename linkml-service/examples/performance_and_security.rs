@@ -114,7 +114,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let monitor = create_monitor(limits);
 
     // Parse schema with profiling
-    let schema = profiler.time("parse_schema", || YamlParser::parse_string(schema_yaml))?;
+    let schema = profiler.time("parse_schema", || YamlParser::parse_str(schema_yaml))?;
 
     // Build validator
     let validator = profiler.time("build_validator", || {

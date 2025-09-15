@@ -118,7 +118,7 @@ impl NamespaceManagerGenerator {
         output.push_str("\n\n");
 
         // Class definition
-        writeln!(output, "class {}:", self.config.class_name).unwrap();
+        writeln!(output, "class {}:", self.config.class_name).expect("writeln! to String should never fail");
         output.push_str(
             "    \"\"\"Manages namespace prefixes and URI expansion/contraction\"\"\"\n\n",
         );
@@ -409,7 +409,7 @@ impl NamespaceManagerGenerator {
         output.push_str(" */\n\n");
 
         // Class definition
-        writeln!(output, "class {} {{", self.config.class_name).unwrap();
+        writeln!(output, "class {} {{", self.config.class_name).expect("writeln! to String should never fail");
 
         // Constructor
         output.push_str("  constructor() {\n");
@@ -597,7 +597,7 @@ impl NamespaceManagerGenerator {
 
         // Struct definition
         output.push_str("#[derive(Debug, Clone)]\n");
-        writeln!(output, "pub struct {} {{", self.config.class_name).unwrap();
+        writeln!(output, "pub struct {} {{", self.config.class_name).expect("writeln! to String should never fail");
         if self.config.thread_safe {
             output.push_str("    prefixes: Arc<RwLock<HashMap<String, String>>>,\n");
             output.push_str("    namespaces: Arc<RwLock<HashMap<String, String>>>,\n");
@@ -609,7 +609,7 @@ impl NamespaceManagerGenerator {
         output.push_str("}\n\n");
 
         // Implementation
-        writeln!(output, "impl {} {{", self.config.class_name).unwrap();
+        writeln!(output, "impl {} {{", self.config.class_name).expect("writeln! to String should never fail");
 
         // Constructor
         output.push_str("    /// Create a new namespace manager\n");
@@ -671,7 +671,7 @@ impl NamespaceManagerGenerator {
         output.push_str("}\n\n");
 
         // Default implementation
-        writeln!(output, "impl Default for {} {{", self.config.class_name).unwrap();
+        writeln!(output, "impl Default for {} {{", self.config.class_name).expect("writeln! to String should never fail");
         output.push_str("    fn default() -> Self {\n");
         output.push_str("        Self::new()\n");
         output.push_str("    }\n");
@@ -802,7 +802,7 @@ impl NamespaceManagerGenerator {
         output.push('\n');
 
         // Class definition
-        writeln!(output, "public class {} {{", self.config.class_name).unwrap();
+        writeln!(output, "public class {} {{", self.config.class_name).expect("writeln! to String should never fail");
 
         if self.config.thread_safe {
             output.push_str(
@@ -1004,7 +1004,7 @@ impl NamespaceManagerGenerator {
         output.push_str("\t}\n\n");
 
         if let Some(default_prefix) = &schema.default_prefix {
-            writeln!(output, "\tm.defaultPrefix = \"{default_prefix}\"").unwrap();
+            writeln!(output, "\tm.defaultPrefix = \"{default_prefix}\"").expect("writeln! to String should never fail");
         }
 
         output.push_str("\treturn m\n");

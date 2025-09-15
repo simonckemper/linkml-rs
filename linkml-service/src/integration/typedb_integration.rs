@@ -132,7 +132,7 @@ where
         // Convert LinkML classes to TypeDB entities
         for (class_name, class_def) in &schema.classes {
             let entity_type = self.map_class_to_entity(class_name, class_def, schema)?;
-            writeln!(typeql, "\n{entity_type}").unwrap();
+            writeln!(typeql, "\n{entity_type}").expect("writeln! to String should never fail");
             entity_mappings.insert(class_name.clone(), Self::sanitize_name(class_name));
 
             // Check for relationships
@@ -145,7 +145,7 @@ where
 
         // Add relations to TypeQL
         for relation in relation_mappings.values() {
-            writeln!(typeql, "\n{} sub relation,", relation.relation_type).unwrap();
+            writeln!(typeql, "\n{} sub relation,", relation.relation_type).expect("writeln! to String should never fail");
             for role in &relation.roles {
                 let _ = writeln!(typeql, "  relates {role},");
             }

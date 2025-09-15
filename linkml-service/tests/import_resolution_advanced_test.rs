@@ -450,7 +450,8 @@ settings:
             strategy
         );
 
-        let filename = format!("test_{}.yaml", format!("{:?}", strategy).to_lowercase());
+        let strategy_debug = format!("{strategy:?}", strategy = strategy);
+        let filename = format!("test_{strategy_name}.yaml", strategy_name = strategy_debug.to_lowercase());
         fs::write(base_path.join(&filename), test_schema)
             .await
             .expect("Test operation failed");

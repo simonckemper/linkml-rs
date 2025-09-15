@@ -391,25 +391,25 @@ impl SummaryGenerator {
 
         // Basic information
         if !schema.name.is_empty() {
-            writeln!(output, "Schema Name\t{}", schema.name).unwrap();
+            writeln!(output, "Schema Name\t{}", schema.name).expect("writeln! to String should never fail");
         }
         if let Some(version) = &schema.version {
-            writeln!(output, "Schema Version\t{version}").unwrap();
+            writeln!(output, "Schema Version\t{version}").expect("writeln! to String should never fail");
         }
 
         // Basic counts
-        writeln!(output, "Total Classes\t{}", stats.class_count).unwrap();
-        writeln!(output, "Total Slots\t{}", stats.slot_count).unwrap();
-        writeln!(output, "Total Types\t{}", stats.type_count).unwrap();
-        writeln!(output, "Total Enums\t{}", stats.enum_count).unwrap();
-        writeln!(output, "Total Subsets\t{}", stats.subset_count).unwrap();
+        writeln!(output, "Total Classes\t{}", stats.class_count).expect("writeln! to String should never fail");
+        writeln!(output, "Total Slots\t{}", stats.slot_count).expect("writeln! to String should never fail");
+        writeln!(output, "Total Types\t{}", stats.type_count).expect("writeln! to String should never fail");
+        writeln!(output, "Total Enums\t{}", stats.enum_count).expect("writeln! to String should never fail");
+        writeln!(output, "Total Subsets\t{}", stats.subset_count).expect("writeln! to String should never fail");
 
         // Class statistics
         writeln!(output, 
             "Abstract Classes\t{}",
             stats.abstract_class_count
         ).unwrap();
-        writeln!(output, "Mixin Classes\t{}", stats.mixin_class_count).unwrap();
+        writeln!(output, "Mixin Classes\t{}", stats.mixin_class_count).expect("writeln! to String should never fail");
         writeln!(output, 
             "Classes with Slots\t{}",
             stats.classes_with_slots
@@ -428,7 +428,7 @@ impl SummaryGenerator {
         ).unwrap();
 
         // Slot statistics
-        writeln!(output, "Required Slots\t{}", stats.required_slot_count).unwrap();
+        writeln!(output, "Required Slots\t{}", stats.required_slot_count).expect("writeln! to String should never fail");
         writeln!(output, 
             "Multivalued Slots\t{}",
             stats.multivalued_slot_count
@@ -461,8 +461,8 @@ impl SummaryGenerator {
                 "Cyclomatic Complexity\t{}",
                 stats.cyclomatic_complexity
             ).unwrap();
-            writeln!(output, "Coupling Score\t{:.2}", stats.coupling_score).unwrap();
-            writeln!(output, "Cohesion Score\t{:.2}", stats.cohesion_score).unwrap();
+            writeln!(output, "Coupling Score\t{:.2}", stats.coupling_score).expect("writeln! to String should never fail");
+            writeln!(output, "Cohesion Score\t{:.2}", stats.cohesion_score).expect("writeln! to String should never fail");
         }
 
         // Detailed slot usage if requested
@@ -474,7 +474,7 @@ impl SummaryGenerator {
             slot_usage.sort_by(|a, b| b.1.cmp(a.1));
 
             for (slot, count) in slot_usage {
-                writeln!(output, "{slot}\t{count}").unwrap();
+                writeln!(output, "{slot}\t{count}").expect("writeln! to String should never fail");
             }
         }
 
@@ -494,11 +494,11 @@ impl SummaryGenerator {
         output.push_str("# LinkML Schema Summary Report\n\n");
 
         if !schema.name.is_empty() {
-            writeln!(output, "## Schema: {}\n", schema.name).unwrap();
+            writeln!(output, "## Schema: {}\n", schema.name).expect("writeln! to String should never fail");
         }
 
         if let Some(description) = &schema.description {
-            writeln!(output, "{description}\n").unwrap();
+            writeln!(output, "{description}\n").expect("writeln! to String should never fail");
         }
 
         // Basic information
@@ -507,13 +507,13 @@ impl SummaryGenerator {
         output.push_str("|--------|-------|\n");
 
         if let Some(version) = &schema.version {
-            writeln!(output, "| Version | {version} |").unwrap();
+            writeln!(output, "| Version | {version} |").expect("writeln! to String should never fail");
         }
 
-        writeln!(output, "| Total Classes | {} |", stats.class_count).unwrap();
-        writeln!(output, "| Total Slots | {} |", stats.slot_count).unwrap();
-        writeln!(output, "| Total Types | {} |", stats.type_count).unwrap();
-        writeln!(output, "| Total Enums | {} |", stats.enum_count).unwrap();
+        writeln!(output, "| Total Classes | {} |", stats.class_count).expect("writeln! to String should never fail");
+        writeln!(output, "| Total Slots | {} |", stats.slot_count).expect("writeln! to String should never fail");
+        writeln!(output, "| Total Types | {} |", stats.type_count).expect("writeln! to String should never fail");
+        writeln!(output, "| Total Enums | {} |", stats.enum_count).expect("writeln! to String should never fail");
         writeln!(output, 
             "| Documentation Coverage | {:.1}% |",
             stats.documentation_coverage * 100.0
@@ -595,7 +595,7 @@ impl SummaryGenerator {
             output.push_str("|------|-------------|\n");
 
             for (slot, count) in slot_usage.iter().take(10) {
-                writeln!(output, "| {slot} | {count} |").unwrap();
+                writeln!(output, "| {slot} | {count} |").expect("writeln! to String should never fail");
             }
         }
 
@@ -767,20 +767,20 @@ impl SummaryGenerator {
         html.push_str("    <h1>LinkML Schema Summary Report</h1>\n");
 
         if !schema.name.is_empty() {
-            writeln!(html, "    <h2>Schema: {}</h2>", schema.name).unwrap();
+            writeln!(html, "    <h2>Schema: {}</h2>", schema.name).expect("writeln! to String should never fail");
         }
 
         if let Some(description) = &schema.description {
-            writeln!(html, "    <p>{description}</p>").unwrap();
+            writeln!(html, "    <p>{description}</p>").expect("writeln! to String should never fail");
         }
 
         // Overview cards
         html.push_str("    <div class=\"overview\">\n");
-        writeln!(html, "        <div class=\"metric-card\">Classes: <span class=\"metric-value\">{}</span></div>", stats.class_count).unwrap();
-        writeln!(html, "        <div class=\"metric-card\">Slots: <span class=\"metric-value\">{}</span></div>", stats.slot_count).unwrap();
-        writeln!(html, "        <div class=\"metric-card\">Types: <span class=\"metric-value\">{}</span></div>", stats.type_count).unwrap();
-        writeln!(html, "        <div class=\"metric-card\">Enums: <span class=\"metric-value\">{}</span></div>", stats.enum_count).unwrap();
-        writeln!(html, "        <div class=\"metric-card\">Documentation: <span class=\"metric-value\">{:.1}%</span></div>", stats.documentation_coverage * 100.0).unwrap();
+        writeln!(html, "        <div class=\"metric-card\">Classes: <span class=\"metric-value\">{}</span></div>", stats.class_count).expect("writeln! to String should never fail");
+        writeln!(html, "        <div class=\"metric-card\">Slots: <span class=\"metric-value\">{}</span></div>", stats.slot_count).expect("writeln! to String should never fail");
+        writeln!(html, "        <div class=\"metric-card\">Types: <span class=\"metric-value\">{}</span></div>", stats.type_count).expect("writeln! to String should never fail");
+        writeln!(html, "        <div class=\"metric-card\">Enums: <span class=\"metric-value\">{}</span></div>", stats.enum_count).expect("writeln! to String should never fail");
+        writeln!(html, "        <div class=\"metric-card\">Documentation: <span class=\"metric-value\">{:.1}%</span></div>", stats.documentation_coverage * 100.0).expect("writeln! to String should never fail");
         html.push_str("    </div>\n");
 
         // Detailed statistics table

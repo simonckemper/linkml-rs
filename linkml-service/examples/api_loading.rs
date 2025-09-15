@@ -309,7 +309,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!();
 
     // Sample instances to dump
-    let instances = create_sample_instances();
+    let instances = create_sample_instances()?;
     println!("Sample instances to dump: {}", instances.len());
 
     // Note: In a real application, you would dump to the actual API
@@ -409,11 +409,11 @@ fn create_user_api_schema() -> SchemaDefinition {
 }
 
 /// Create sample instances for dumping
-fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance> {
+fn create_sample_instances() -> Result<Vec<linkml_service::loader::traits::DataInstance>, serde_json::Error> {
     use linkml_service::loader::traits::DataInstance;
     use serde_json::json;
 
-    vec![
+    Ok(vec![
         DataInstance {
             class_name: "User".to_string(),
             data: serde_json::from_value(json!({
@@ -423,6 +423,8 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "status": "active",
                 "created_at": "2024-01-15T10:30:00Z"
             }))?,
+            id: Some("user-123".to_string()),
+            metadata: std::collections::HashMap::new(),
         },
         DataInstance {
             class_name: "Post".to_string(),
@@ -433,6 +435,8 @@ fn create_sample_instances() -> Vec<linkml_service::loader::traits::DataInstance
                 "tags": ["linkml", "data-modeling", "schemas"],
                 "published_at": "2024-02-01T14:00:00Z"
             }))?,
+            id: Some("post-456".to_string()),
+            metadata: std::collections::HashMap::new(),
         },
-    ]
+    ])
 }
