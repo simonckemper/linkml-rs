@@ -1,7 +1,9 @@
 //!  Example demonstrating LinkML to TypeQL schema migration //!  This example shows how to: //!  1. Compare two schema versions //!  2. Analyze the impact of changes //!  3. Generate migration scripts
 use linkml_core::prelude::*;
-use linkml_service::generator::typeql_migration::{
-    MigrationAnalyzer, MigrationGenerator, SchemaDiffer, SchemaVersion, } ;
+// Migration functionality not yet implemented
+// use linkml_service::generator::typeql_migration::{
+//     MigrationAnalyzer, MigrationGenerator, SchemaDiffer, SchemaVersion,
+// };
 fn main () {
     let
     mut v1_schema = SchemaDefinition ::default () ;

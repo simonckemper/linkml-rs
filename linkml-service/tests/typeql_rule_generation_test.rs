@@ -181,7 +181,7 @@ async fn test_multiple_classes_with_rules() {
 
     // Add unique key
     use indexmap::IndexMap;
-use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition, Element};
+use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition, EnumDefinition, TypeDefinition, SubsetDefinition};
     let mut unique_keys_map: IndexMap<String, linkml_core::types::UniqueKeyDefinition> =
         IndexMap::new();
     unique_keys_map.insert(

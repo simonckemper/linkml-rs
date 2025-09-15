@@ -134,15 +134,14 @@ async fn test_composite_unique_keys_edge_cases() {
     ];
 
     // Composite unique key
-    order_class.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "customer_date_product".to_string(),
-        unique_key_slots: vec![
-            "customer_id".to_string(),
-            "order_date".to_string(),
-            "product_id".to_string(),
-        ],
-        consider_nulls_inequal: Some(true),
-    }];
+    let mut composite_key = UniqueKeyDefinition::default();
+    composite_key.unique_key_slots = vec![
+        "customer_id".to_string(),
+        "order_date".to_string(),
+        "product_id".to_string(),
+    ];
+    composite_key.consider_nulls_inequal = Some(true);
+    order_class.unique_keys.insert("customer_date_product".to_string(), composite_key);
 
     schema.classes.insert("Order".to_string(), order_class);
 
@@ -229,11 +228,10 @@ async fn test_unique_validation_with_updates() {
     product_class.slots = vec!["id".to_string(), "sku".to_string(), "name".to_string()];
 
     // SKU should be unique
-    product_class.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "sku_key".to_string(),
-        unique_key_slots: vec!["sku".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut sku_key = UniqueKeyDefinition::default();
+    sku_key.unique_key_slots = vec!["sku".to_string()];
+    sku_key.consider_nulls_inequal = Some(false);
+    product_class.unique_keys.insert("sku_key".to_string(), sku_key);
 
     schema.classes.insert("Product".to_string(), product_class);
 
@@ -294,22 +292,20 @@ async fn test_unique_keys_with_inheritance() {
     // Base class with ID
     let mut entity = ClassDefinition::new("Entity");
     entity.slots = vec!["id".to_string()];
-    entity.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "id_key".to_string(),
-        unique_key_slots: vec!["id".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut id_key = UniqueKeyDefinition::default();
+    id_key.unique_key_slots = vec!["id".to_string()];
+    id_key.consider_nulls_inequal = Some(false);
+    entity.unique_keys.insert("id_key".to_string(), id_key);
     schema.classes.insert("Entity".to_string(), entity);
 
     // Derived class adds email uniqueness
     let mut user = ClassDefinition::new("User");
     user.is_a = Some("Entity".to_string());
     user.slots = vec!["email".to_string()];
-    user.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "email_key".to_string(),
-        unique_key_slots: vec!["email".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut email_key = UniqueKeyDefinition::default();
+    email_key.unique_key_slots = vec!["email".to_string()];
+    email_key.consider_nulls_inequal = Some(false);
+    user.unique_keys.insert("email_key".to_string(), email_key);
     schema.classes.insert("User".to_string(), user);
 
     for (slot_name, range) in [("id", "string"), ("email", "string")] {
@@ -365,11 +361,10 @@ async fn test_unique_validation_memory_efficiency() {
 
     let mut record = ClassDefinition::new("Record");
     record.slots = vec!["id".to_string(), "code".to_string()];
-    record.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "code_key".to_string(),
-        unique_key_slots: vec!["code".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut code_key = UniqueKeyDefinition::default();
+    code_key.unique_key_slots = vec!["code".to_string()];
+    code_key.consider_nulls_inequal = Some(false);
+    record.unique_keys.insert("code_key".to_string(), code_key);
     schema.classes.insert("Record".to_string(), record);
 
     for (slot_name, range) in [("id", "integer"), ("code", "string")] {
@@ -421,11 +416,10 @@ async fn test_unique_keys_with_special_characters() {
 
     let mut document = ClassDefinition::new("Document");
     document.slots = vec!["path".to_string()];
-    document.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "path_key".to_string(),
-        unique_key_slots: vec!["path".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut path_key = UniqueKeyDefinition::default();
+    path_key.unique_key_slots = vec!["path".to_string()];
+    path_key.consider_nulls_inequal = Some(false);
+    document.unique_keys.insert("path_key".to_string(), path_key);
     schema.classes.insert("Document".to_string(), document);
 
     let mut path_slot = SlotDefinition::new("path");
@@ -488,11 +482,10 @@ async fn test_unique_validation_with_empty_values() {
 
     let mut config = ClassDefinition::new("Config");
     config.slots = vec!["key".to_string(), "value".to_string()];
-    config.unique_keys = vec![UniqueKeyDefinition {
-        unique_key_name: "key_unique".to_string(),
-        unique_key_slots: vec!["key".to_string()],
-        consider_nulls_inequal: Some(false),
-    }];
+    let mut key_unique = UniqueKeyDefinition::default();
+    key_unique.unique_key_slots = vec!["key".to_string()];
+    key_unique.consider_nulls_inequal = Some(false);
+    config.unique_keys.insert("key_unique".to_string(), key_unique);
     schema.classes.insert("Config".to_string(), config);
 
     for slot_name in ["key", "value"] {
