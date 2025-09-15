@@ -1,6 +1,7 @@
 //! Main validation engine
 
 use crate::performance::profiling::Profiler;
+use crate::utils::safe_cast::u128_to_u64_saturating;
 use linkml_core::{
     error::{LinkMLError, Result},
     settings::SchemaSettings,
@@ -747,7 +748,7 @@ impl ValidationEngine {
             .map_err(|e| LinkMLError::service(format!("Failed to get system time: {e}")))?;
         let duration = end.duration_since(start)
             .map_err(|e| LinkMLError::service(format!("Time calculation error: {e}")))?;
-        report.stats.duration_ms = duration.as_millis().min(u64::MAX as u128) as u64;
+        report.stats.duration_ms = u128_to_u64_saturating(duration.as_millis());
         Ok(report)
     }
 

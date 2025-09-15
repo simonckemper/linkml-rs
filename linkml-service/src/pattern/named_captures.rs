@@ -3,6 +3,7 @@
 //! This module provides advanced named capture functionality for pattern matching,
 //! including type conversion, validation, and extraction utilities.
 
+use crate::utils::safe_cast::i64_to_f64_lossy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -376,7 +377,7 @@ impl CaptureValue {
     #[must_use] pub fn as_float(&self) -> Option<f64> {
         match self {
             CaptureValue::Float(f) => Some(*f),
-            CaptureValue::Integer(i) => Some(*i as f64),
+            CaptureValue::Integer(i) => Some(i64_to_f64_lossy(*i)),
             _ => None}
     }
 

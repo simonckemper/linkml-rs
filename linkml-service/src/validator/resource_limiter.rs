@@ -7,7 +7,7 @@
 //! - Request rate limiting
 //! - Timeout enforcement
 
-use crate::utils::safe_cast::{usize_to_f64, usize_to_f32_saturating};
+use crate::utils::safe_cast::{usize_to_f64, usize_to_f32_saturating, u64_to_usize_saturating};
 use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
 use linkml_core::{LinkMLError, Result};
@@ -560,7 +560,7 @@ impl ResourceMonitor for SystemResourceMonitor {
         // Note: sysinfo::System doesn't implement Clone, so we create a new instance
         let mut system = sysinfo::System::new();
         system.refresh_memory();
-        system.used_memory() as usize
+        u64_to_usize_saturating(system.used_memory())
     }
 
     fn get_cpu_usage(&self) -> f32 {

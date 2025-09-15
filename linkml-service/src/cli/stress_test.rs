@@ -1,5 +1,6 @@
 //! Real stress testing implementation for `LinkML` CLI
 
+use crate::utils::safe_cast::f64_to_usize_saturating;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -378,7 +379,7 @@ where
             return 0.0;
         }
 
-        let index = ((sorted_latencies.len() - 1) as f64 * percentile) as usize;
+        let index = f64_to_usize_saturating((sorted_latencies.len() - 1) as f64 * percentile);
         sorted_latencies
             .get(index)
             .map_or(0.0, |d| d.as_millis() as f64)

@@ -3,6 +3,7 @@
 //! This module generates Java classes from `LinkML` schemas with full
 //! validation support and builder patterns.
 
+use crate::utils::safe_cast::f64_to_i64_saturating;
 use linkml_core::{
     error::LinkMLError,
     types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition}};
@@ -272,13 +273,13 @@ impl JavaGenerator {
 
         if let Some(min) = &slot.minimum_value
             && let Some(num) = min.as_f64() {
-                writeln!(output, "    @Min({})", num as i64)
+                writeln!(output, "    @Min({})", f64_to_i64_saturating(num))
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 
         if let Some(max) = &slot.maximum_value
             && let Some(num) = max.as_f64() {
-                writeln!(output, "    @Max({})", num as i64)
+                writeln!(output, "    @Max({})", f64_to_i64_saturating(num))
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
 

@@ -135,6 +135,54 @@ pub fn f32_to_usize_saturating(value: f32) -> usize {
     }
 }
 
+/// Safely cast u128 to u64 with saturation
+#[must_use]
+pub fn u128_to_u64_saturating(value: u128) -> u64 {
+    if value > u64::MAX as u128 {
+        u64::MAX
+    } else {
+        value as u64
+    }
+}
+
+/// Safely cast u64 to usize with saturation
+#[must_use]
+pub fn u64_to_usize_saturating(value: u64) -> usize {
+    if value > usize::MAX as u64 {
+        usize::MAX
+    } else {
+        value as usize
+    }
+}
+
+/// Safely cast f64 to i64 with saturation and rounding
+#[must_use]
+pub fn f64_to_i64_saturating(value: f64) -> i64 {
+    if value > i64::MAX as f64 {
+        i64::MAX
+    } else if value < i64::MIN as f64 {
+        i64::MIN
+    } else if value.is_nan() {
+        0
+    } else {
+        value.round() as i64
+    }
+}
+
+/// Safely cast f64 to usize with saturation and rounding
+#[must_use]
+pub fn f64_to_usize_saturating(value: f64) -> usize {
+    if value < 0.0 {
+        0
+    } else if value > usize::MAX as f64 {
+        usize::MAX
+    } else if value.is_nan() {
+        0
+    } else {
+        value.round() as usize
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

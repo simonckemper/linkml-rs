@@ -4,6 +4,7 @@
 //! to generate optimal `TypeQL` relations, including multi-way relations,
 //! nested relations, and role detection.
 
+use crate::utils::safe_cast::u64_to_usize_saturating;
 use linkml_core::prelude::*;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -211,7 +212,7 @@ impl RelationAnalyzer {
         let min = usize::from(slot.required.unwrap_or(false));
         let max = if slot.multivalued.unwrap_or(false) {
             if let Some(Value::Number(max_card)) = &slot.maximum_value {
-                max_card.as_u64().map(|n| n as usize)
+                max_card.as_u64().map(u64_to_usize_saturating)
             } else {
                 None
             }

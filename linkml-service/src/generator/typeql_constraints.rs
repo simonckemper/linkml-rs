@@ -3,6 +3,7 @@
 //! This module provides comprehensive constraint translation from `LinkML` to `TypeQL`,
 //! supporting `TypeDB` 3.0 features including @card, @key, @unique, and regex patterns.
 
+use crate::utils::safe_cast::u64_to_usize_saturating;
 use linkml_core::prelude::*;
 use std::fmt::Write;
 use std::collections::HashMap;
@@ -103,7 +104,7 @@ impl TypeQLConstraintTranslator {
         if slot.multivalued == Some(true) {
             // Check for explicit max cardinality
             if let Some(serde_json::Value::Number(max)) = &slot.maximum_value {
-                max.as_u64().map(|n| n as usize)
+                max.as_u64().map(u64_to_usize_saturating)
             } else {
                 None // Unbounded
             }

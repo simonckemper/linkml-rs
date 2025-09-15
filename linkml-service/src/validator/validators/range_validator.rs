@@ -1,6 +1,7 @@
 //! Range validation for numeric values
 
 use super::{ValidationContext, ValidationIssue, Validator};
+use crate::utils::safe_cast::i64_to_f64_lossy;
 use linkml_core::types::SlotDefinition;
 use serde_json::Value;
 
@@ -114,8 +115,8 @@ impl Validator for RangeValidator {
             if let Some(n) = v.as_f64() {
                 self.validate_range(n, slot, path)
             } else if let Some(n) = v.as_i64() {
-                // Precision loss acceptable here
-                let n_f64 = n as f64;
+                // Convert i64 to f64 using safe casting
+                let n_f64 = i64_to_f64_lossy(n);
                 self.validate_range(n_f64, slot, path)
             } else if !v.is_null() {
                 vec![ValidationIssue::error(

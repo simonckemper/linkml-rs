@@ -3,6 +3,7 @@
 //! This module provides functionality to compute differences between `LinkML` schemas,
 //! including structural differences, semantic changes, and breaking change detection.
 
+use crate::utils::safe_cast::usize_to_f64;
 use linkml_core::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -307,8 +308,8 @@ impl SchemaDiffer {
         // Compare attributes
         let old_attrs: HashSet<_> = old_class.attributes.keys().cloned().collect();
         let new_attrs: HashSet<_> = new_class.attributes.keys().cloned().collect();
-        let attr_intersection = old_attrs.intersection(&new_attrs).count() as f64;
-        let attr_union = old_attrs.union(&new_attrs).count() as f64;
+        let attr_intersection = usize_to_f64(old_attrs.intersection(&new_attrs).count());
+        let attr_union = usize_to_f64(old_attrs.union(&new_attrs).count());
 
         if attr_union > 0.0 {
             score += attr_intersection / attr_union;
@@ -330,8 +331,8 @@ impl SchemaDiffer {
         // Compare mixins
         let old_mixins: HashSet<_> = old_class.mixins.iter().cloned().collect();
         let new_mixins: HashSet<_> = new_class.mixins.iter().cloned().collect();
-        let mixin_intersection = old_mixins.intersection(&new_mixins).count() as f64;
-        let mixin_union = old_mixins.union(&new_mixins).count() as f64;
+        let mixin_intersection = usize_to_f64(old_mixins.intersection(&new_mixins).count());
+        let mixin_union = usize_to_f64(old_mixins.union(&new_mixins).count());
 
         if mixin_union > 0.0 {
             score += mixin_intersection / mixin_union;

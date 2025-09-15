@@ -12,6 +12,7 @@
 //! - Rich formatting options
 
 use super::traits::{Generator, GeneratorError, GeneratorResult};
+use crate::utils::safe_cast::usize_to_f64;
 use async_trait::async_trait;
 use linkml_core::prelude::*;
 use rust_xlsxwriter::{
@@ -803,7 +804,7 @@ impl ExcelGenerator {
         match slot.range.as_deref() {
             Some("string") => format!("{} {}", name, index + 1),
             Some("integer") => format!("{}", (index + 1) * 10),
-            Some("float") => format!("{:.2}", (index + 1) as f64 * 3.14),
+            Some("float") => format!("{:.2}", usize_to_f64(index + 1) * 3.14),
             Some("boolean") => if index % 2 == 0 { "TRUE" } else { "FALSE" }.to_string(),
             Some("date") => format!("2024-01-{:02}", index + 1),
             Some("datetime") => format!("2024-01-{:02}T10:00:00", index + 1),
