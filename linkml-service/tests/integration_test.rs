@@ -110,7 +110,7 @@ slots:
     assert!(schema.slots.contains_key("email"));
 
     // Test that email slot has pattern
-    let email_slot = schema.slots.get("email").unwrap();
+    let email_slot = schema.slots.get("email").expect("test access failed");
     assert!(email_slot.pattern.is_some());
 
     Ok(())

@@ -757,13 +757,13 @@ mod tests {
         let expr = parser.parse("len(text)")?;
         let compiled = compiler.compile(&expr, "len(text)")?;
         let result = vm.execute(&compiled, &context)?;
-        assert_eq!(result, Value::Number(5.0));
+        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).unwrap()));
 
         // Test max function
         let expr = parser.parse("max(1, 5, 3)")?;
         let compiled = compiler.compile(&expr, "max(1, 5, 3)")?;
         let result = vm.execute(&compiled, &context)?;
-        assert_eq!(result, Value::Number(5.0));
+        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).unwrap()));
 
         Ok(())
     }

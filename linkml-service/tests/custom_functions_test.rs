@@ -344,8 +344,8 @@ fn test_function_registry_listing() {
     let mut registry = FunctionRegistry::new();
 
     // Register some custom functions
-    registry.register_custom(CustomFunction::new("custom1", 0, Some(0), |_| Ok(json!(1)));
-    registry.register_custom(CustomFunction::new("custom2", 0, Some(0), |_| Ok(json!(2)));
+    registry.register_custom(CustomFunction::new("custom1", 0, Some(0), |_| Ok(json!(1))));
+    registry.register_custom(CustomFunction::new("custom2", 0, Some(0), |_| Ok(json!(2))));
 
     // Get function names
     let mut names = registry.function_names();

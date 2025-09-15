@@ -7,7 +7,8 @@ use linkml_core::types::SchemaDefinition;
 async fn generate_pydantic(schema: SchemaDefinition) -> String {
     let generator = PydanticGenerator::new();
     let options = GeneratorOptions::new()
-        .with_docs(true);
+        .with_docs(true)
+        .set_custom("generate_validators", "true");
 
     generator.generate(&schema).expect("Test operation failed")
 }

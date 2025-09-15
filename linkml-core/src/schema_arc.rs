@@ -310,7 +310,7 @@ mod tests {
             name: "test".to_string(),
             ..Default::default()
         });
-        let schema2 = cache.get("test").unwrap();
+        let schema2 = cache.get("test").expect("test access failed");
         assert!(Arc::ptr_eq(&schema1, &schema2));
     }
 }

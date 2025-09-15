@@ -91,7 +91,7 @@ impl EnhancedTypeQLGenerator {
         }
 
         // Check first character
-        let first_char = name.chars().next().unwrap();
+        let first_char = name.chars().next().expect("iterator should have next item");
         if !first_char.is_alphabetic() && first_char != '_' {
             return false;
         }
