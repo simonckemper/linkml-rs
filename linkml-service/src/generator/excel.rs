@@ -31,13 +31,13 @@ mod excel_cast {
 
         if value >= MAX_EXCEL_COLUMNS {
             return Err(GeneratorError::Generation(
-                format!("Too many columns for Excel: {} (max: {})", value, MAX_EXCEL_COLUMNS)
+                format!("Too many columns for Excel: {value} (max: {MAX_EXCEL_COLUMNS})")
             ));
         }
 
         u16::try_from(value).map_err(|_| {
             GeneratorError::Generation(
-                format!("Column index {} cannot fit in u16", value)
+                format!("Column index {value} cannot fit in u16")
             )
         })
     }
@@ -47,7 +47,7 @@ mod excel_cast {
     pub fn i64_to_i32_validation(value: i64) -> Result<i32, GeneratorError> {
         i32::try_from(value).map_err(|_| {
             GeneratorError::Generation(
-                format!("Validation value {} is outside i32 range", value)
+                format!("Validation value {value} is outside i32 range")
             )
         })
     }

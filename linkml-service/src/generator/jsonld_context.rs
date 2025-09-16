@@ -173,7 +173,7 @@ impl JsonLdContextGenerator {
         // Validate slot name doesn't conflict with JSON-LD keywords
         if ["@context", "@id", "@type", "@value", "@language", "@index", "@reverse", "@graph"].contains(&slot_name) {
             return Err(LinkMLError::data_validation(
-                format!("Slot name '{}' conflicts with JSON-LD keyword", slot_name)
+                format!("Slot name '{slot_name}' conflicts with JSON-LD keyword")
             ));
         }
 

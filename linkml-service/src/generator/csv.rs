@@ -255,44 +255,48 @@ impl CsvGenerator {
         }
 
         // Classes
-        output.push_str(&format!(
+        write!(
+            output,
             "Class{}{}{}Schema classes{}{}\n",
             self.delimiter,
             self.delimiter,
             self.delimiter,
             self.delimiter,
             schema.classes.len()
-        ));
+        ).expect("Failed to write to string");
 
         // Slots
-        output.push_str(&format!(
+        write!(
+            output,
             "Slot{}{}{}Schema slots{}{}\n",
             self.delimiter,
             self.delimiter,
             self.delimiter,
             self.delimiter,
             schema.slots.len()
-        ));
+        ).expect("Failed to write to string");
 
         // Enums
-        output.push_str(&format!(
+        write!(
+            output,
             "Enum{}{}{}Schema enumerations{}{}\n",
             self.delimiter,
             self.delimiter,
             self.delimiter,
             self.delimiter,
             schema.enums.len()
-        ));
+        ).expect("Failed to write to string");
 
         // Types
-        output.push_str(&format!(
+        write!(
+            output,
             "Type{}{}{}Schema types{}{}\n",
             self.delimiter,
             self.delimiter,
             self.delimiter,
             self.delimiter,
             schema.types.len()
-        ));
+        ).expect("Failed to write to string");
 
         output
     }

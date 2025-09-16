@@ -172,8 +172,7 @@ impl JsonSchemaGenerator {
                     // Check if we should error on unknown types
                     if self.options.custom.get("strict_types").map(|v| v == "true").unwrap_or(false) {
                         Err(GeneratorError::SchemaValidation(format!(
-                            "Unknown type '{}' - not found in enums, classes, or types",
-                            other
+                            "Unknown type '{other}' - not found in enums, classes, or types"
                         )))
                     } else {
                         // Default to string with warning comment
