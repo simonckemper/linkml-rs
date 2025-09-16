@@ -152,7 +152,7 @@ impl RustGenerator {
             // Generate fields for each slot
             for slot_name in &slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
-                    self.generate_field(&mut output, slot_name, slot_def, schema)?;
+                    Self::generate_field(&mut output, slot_name, slot_def, schema)?;
                 }
             }
         }
@@ -162,7 +162,7 @@ impl RustGenerator {
     }
 
     /// Generate a field from a slot definition
-    pub(super) fn generate_field(&self, output: &mut String, slot_name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<()> {
+    pub(super) fn generate_field(output: &mut String, slot_name: &str, slot_def: &SlotDefinition, schema: &SchemaDefinition) -> GeneratorResult<()> {
         // Add field documentation
         if let Some(ref desc) = slot_def.description {
             writeln!(output, "    /// {desc}").map_err(Self::fmt_error_to_generator_error)?;

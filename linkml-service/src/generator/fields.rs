@@ -48,7 +48,7 @@ impl RustGenerator {
                 }
 
                 // Field definition
-                let field_type = self.get_rust_type(slot, schema);
+                let field_type = Self::get_rust_type(slot, schema);
                 writeln!(
                     output,
                     "{}pub {}: {},",
@@ -65,7 +65,6 @@ impl RustGenerator {
 
     /// Get Rust type for a slot
     pub(super) fn get_rust_type(
-        &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> String {
@@ -116,7 +115,6 @@ impl RustGenerator {
 
     /// Get default value for a field
     pub(super) fn get_default_value(
-        &self,
         slot: &SlotDefinition,
         schema: &SchemaDefinition,
     ) -> String {

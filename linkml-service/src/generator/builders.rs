@@ -36,7 +36,7 @@ impl RustGenerator {
         for slot_name in &all_slots {
             if let Some(slot) = schema.slots.get(slot_name) {
                 let field_name = Self::convert_field_name(slot_name);
-                let field_type = self.get_rust_type(slot, schema);
+                let field_type = Self::get_rust_type(slot, schema);
 
                 writeln!(
                     output,
@@ -115,7 +115,7 @@ impl RustGenerator {
         indent: &IndentStyle,
     ) -> GeneratorResult<()> {
         let field_name = Self::convert_field_name(slot_name);
-        let field_type = self.get_rust_type(slot, schema);
+        let field_type = Self::get_rust_type(slot, schema);
 
         // Documentation
         if options.include_docs {

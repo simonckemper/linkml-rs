@@ -148,12 +148,12 @@ impl RustGenerator {
                     field_name
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
-                self.generate_pattern_check(output, slot_name, pattern, "item", indent.to_string(3))?;
+                Self::generate_pattern_check(output, slot_name, pattern, "item", indent.to_string(3))?;
                 writeln!(output, "{}}}", indent.to_string(2))
                     .map_err(Self::fmt_error_to_generator_error)?;
             } else if slot.required.unwrap_or(false) {
                 // Validate required field directly
-                self.generate_pattern_check(output, slot_name, pattern, &format!("&self.{field_name}"), indent.to_string(2))?;
+                Self::generate_pattern_check(output, slot_name, pattern, &format!("&self.{field_name}"), indent.to_string(2))?;
             } else {
                 // Validate optional field if present
                 writeln!(
@@ -163,7 +163,7 @@ impl RustGenerator {
                     field_name
                 )
                 .map_err(Self::fmt_error_to_generator_error)?;
-                self.generate_pattern_check(output, slot_name, pattern, "value", indent.to_string(3))?;
+                Self::generate_pattern_check(output, slot_name, pattern, "value", indent.to_string(3))?;
                 writeln!(output, "{}}}", indent.to_string(2))
                     .map_err(Self::fmt_error_to_generator_error)?;
             }
@@ -173,7 +173,7 @@ impl RustGenerator {
         if let Some(range) = &slot.range
             && matches!(range.as_str(), "integer" | "int" | "float" | "double")
                 && let (Some(min_val), Some(max_val)) = (&slot.minimum_value, &slot.maximum_value) {
-                    self.generate_range_validation(output, slot_name, &field_name, min_val, max_val, slot, indent)?;
+                    Self::generate_range_validation(output, slot_name, &field_name, min_val, max_val, slot, indent)?;
                 }
 
         writeln!(output).map_err(Self::fmt_error_to_generator_error)?;
@@ -182,7 +182,6 @@ impl RustGenerator {
 
     /// Generate pattern validation check
     fn generate_pattern_check(
-        &self,
         output: &mut String,
         slot_name: &str,
         pattern: &str,
@@ -222,7 +221,6 @@ impl RustGenerator {
     /// Generate range validation for numeric fields
     #[allow(clippy::too_many_arguments)]
     fn generate_range_validation(
-        &self,
         output: &mut String,
         slot_name: &str,
         field_name: &str,

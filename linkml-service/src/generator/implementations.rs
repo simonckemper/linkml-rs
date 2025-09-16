@@ -146,7 +146,7 @@ impl RustGenerator {
 
         // Generate tests for each class
         for (class_name, class) in &schema.classes {
-            self.generate_class_tests(&mut output, class_name, class, schema, options)?;
+            Self::generate_class_tests(&mut output, class_name, class, schema, options)?;
         }
 
         writeln!(&mut output, "}}")
@@ -176,7 +176,6 @@ impl RustGenerator {
 
     /// Generate tests for a specific class
     fn generate_class_tests(
-        &self,
         output: &mut String,
         class_name: &str,
         _class: &ClassDefinition,
