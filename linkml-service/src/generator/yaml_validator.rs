@@ -430,7 +430,7 @@ impl YamlValidatorGenerator {
         if !schema.classes.is_empty() {
             for (class_name, class_def) in &schema.classes {
                 writeln!(output, "# Validation schema for {class_name}").expect("writeln! to String should never fail");
-                write!(output, "{}_SCHEMA = {{\n", class_name.to_uppercase()).unwrap();
+                write!(output, "{}_SCHEMA = {{\n", class_name.to_uppercase()).expect("write! to String should never fail");
 
                 // Process slots
                 for slot_name in &class_def.slots {
@@ -456,7 +456,7 @@ impl YamlValidatorGenerator {
                 "{}_validator = Validator({}_SCHEMA)\n",
                 class_name.to_lowercase(),
                 class_name.to_uppercase()
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         }
 
         Ok(output)
@@ -525,7 +525,7 @@ impl YamlValidatorGenerator {
                     output,
                     "const {}SchemaDefinition = Joi.object({{\n",
                     Self::to_camel_case(class_name)
-                ).unwrap();
+                ).expect("LinkML operation should succeed");
 
                 // Process all slots
                 let mut slot_rules = Vec::new();
@@ -588,7 +588,7 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            write!(rule, ".pattern(/{pattern}/)").unwrap();
+            write!(rule, ".pattern(/{pattern}/)").expect("write! to String should never fail");
         }
 
         // Description
@@ -598,7 +598,7 @@ impl YamlValidatorGenerator {
                     rule,
                     ".description('{}')",
                     description.replace('\'', "\\'")
-                ).unwrap();
+                ).expect("LinkML operation should succeed");
             }
 
         rule
@@ -633,7 +633,7 @@ impl YamlValidatorGenerator {
                     output,
                     "export const {}SchemaDefinition = yup.object({{\n",
                     Self::to_camel_case(class_name)
-                ).unwrap();
+                ).expect("LinkML operation should succeed");
 
                 // Process all slots
                 let mut slot_rules = Vec::new();
@@ -688,13 +688,13 @@ impl YamlValidatorGenerator {
 
         // Pattern
         if let Some(pattern) = &slot_def.pattern {
-            write!(rule, ".matches(/{pattern}/)").unwrap();
+            write!(rule, ".matches(/{pattern}/)").expect("write! to String should never fail");
         }
 
         // Custom error message
         if self.config.custom_error_messages
             && let Some(_description) = &slot_def.description {
-                write!(rule, ".label('{name}')").unwrap();
+                write!(rule, ".label('{name}')").expect("write! to String should never fail");
             }
 
         rule

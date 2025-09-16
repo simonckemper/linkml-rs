@@ -376,7 +376,7 @@ impl SssomGenerator {
             if !schema.id.is_empty() {
                 output.push_str(&schema.id);
             } else if !schema.name.is_empty() {
-                write!(output, "https://w3id.org/sssom/mappings/{}", schema.name).unwrap();
+                write!(output, "https://w3id.org/sssom/mappings/{}", schema.name).expect("write! to String should never fail");
             } else {
                 output.push_str("https://w3id.org/sssom/mappings/unknown");
             }
@@ -398,7 +398,7 @@ impl SssomGenerator {
             if let Some(description) = &schema.description {
                 writeln!(output, 
                     "# comment: Generated from LinkML schema - {description}"
-                ).unwrap();
+                ).expect("LinkML operation should succeed");
             }
 
             // Add prefix declarations

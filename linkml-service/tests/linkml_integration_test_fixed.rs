@@ -125,7 +125,7 @@ async fn create_test_service() -> Arc<
         monitor,
     )
     .await
-    .unwrap()
+    .expect("LinkML operation in test should succeed")
 }
 
 #[tokio::test]
@@ -136,7 +136,7 @@ async fn test_biomedical_research_workflow() {
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse(BIOMEDICAL_SCHEMA, "yaml").unwrap();
+    let schema = parser.parse(BIOMEDICAL_SCHEMA, "yaml").expect("LinkML operation in test should succeed");
     println!("✓ Schema parsed in {:?}", start.elapsed());
 
     // Create sample data
@@ -175,11 +175,11 @@ async fn test_biomedical_research_workflow() {
 
     // Validate data
     let validation_start = Instant::now();
-    let engine = linkml_service::validator::ValidationEngine::new(&schema).unwrap();
+    let engine = linkml_service::validator::ValidationEngine::new(&schema).expect("LinkML operation in test should succeed");
     let report = engine
         .validate_as_class(&study_data, "Study", None)
         .await
-        .unwrap();
+        .expect("LinkML operation in test should succeed");
 
     println!("✓ Validation completed in {:?}", validation_start.elapsed());
     assert!(report.valid, "Study data should be valid");
@@ -190,17 +190,17 @@ async fn test_biomedical_research_workflow() {
     let generator = linkml_service::generator::python::PythonDataclassGenerator::new();
     let code = generator
         .generate(&schema, GeneratorOptions::default())
-        .unwrap();
+        .expect("LinkML operation in test should succeed");
     println!("✓ Python code generated in {:?}", gen_start.elapsed());
     assert!(code.contains("class Study"));
     assert!(code.contains("class Participant"));
 
     // Create SchemaView for introspection
     let view = SchemaView::new(&schema);
-    let study_class = view.get_class("Study").unwrap();
+    let study_class = view.get_class("Study").expect("LinkML operation in test should succeed");
     assert_eq!(study_class.name, "Study");
 
-    let slots = view.class_slots("Study").unwrap();
+    let slots = view.class_slots("Study").expect("LinkML operation in test should succeed");
     assert!(slots.iter().any(|s| s.name == "participants"));
 
     println!("✓ Total test time: {:?}", start.elapsed());
@@ -226,7 +226,7 @@ classes:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse(schema_yaml, "yaml").expect("LinkML operation in test should succeed");
 
     // Valid data
     let valid_data = json!({
@@ -235,11 +235,11 @@ classes:
     });
 
     // Validate
-    let engine = linkml_service::validator::ValidationEngine::new(&schema).unwrap();
+    let engine = linkml_service::validator::ValidationEngine::new(&schema).expect("LinkML operation in test should succeed");
     let report = engine
         .validate_as_class(&valid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("LinkML operation in test should succeed");
 
     assert!(report.valid);
 
@@ -251,7 +251,7 @@ classes:
     let report = engine
         .validate_as_class(&invalid_data, "Person", None)
         .await
-        .unwrap();
+        .expect("LinkML operation in test should succeed");
 
     assert!(!report.valid);
     assert!(report.issues.iter().any(|i| i.message.contains("name"));

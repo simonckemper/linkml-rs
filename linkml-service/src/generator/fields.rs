@@ -88,14 +88,13 @@ impl RustGenerator {
             Some(range_name) => {
                 // Check if it's a built-in type
                 match range_name.as_str() {
-                    "string" | "str" => "String".to_string(),
+                    "string" | "str" | "uri" | "uriorcurie" => "String".to_string(),
                     "integer" | "int" => "i64".to_string(),
                     "float" | "double" => "f64".to_string(),
                     "boolean" | "bool" => "bool".to_string(),
                     "date" => "chrono::NaiveDate".to_string(),
                     "datetime" => "chrono::DateTime<chrono::Utc>".to_string(),
                     "time" => "chrono::NaiveTime".to_string(),
-                    "uri" | "uriorcurie" => "String".to_string(),
                     "decimal" => "rust_decimal::Decimal".to_string(),
                     _ => {
                         // Check if it's a class in the schema

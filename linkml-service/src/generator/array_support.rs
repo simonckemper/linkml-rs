@@ -82,7 +82,7 @@ impl ArrayCodeGenerator for PythonArrayGenerator {
 
             if spec.allow_missing && spec.missing_value.is_some() {
                 // We checked is_some() so use unwrap() since we know it's Some
-                let missing_val = spec.missing_value.as_ref().unwrap();
+                let missing_val = spec.missing_value.as_ref().expect("LinkML operation should succeed");
                 Self::write_or_default(
                     &mut code,
                     format_args!(

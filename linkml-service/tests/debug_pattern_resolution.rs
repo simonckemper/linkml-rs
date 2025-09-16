@@ -35,7 +35,7 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse(schema_yaml, "yaml").expect("LinkML operation in test should succeed");
 
     // Check parsed patterns
     eprintln!("\n=== Parsed Schema Slots ===");
@@ -50,14 +50,14 @@ slots:
     });
 
     // Create validation engine
-    let engine = ValidationEngine::new(&schema).unwrap();
+    let engine = ValidationEngine::new(&schema).expect("LinkML operation in test should succeed");
 
     // Validate
     eprintln!("\n=== Starting Validation ===");
     let report = engine
         .validate_as_class(&valid_data, "DateRecord", None)
         .await
-        .unwrap();
+        .expect("LinkML operation in test should succeed");
 
     // Check results
     eprintln!("\n=== Validation Results ===");

@@ -319,7 +319,7 @@ slots:
     let mut success_count = 0;
     for handle in handles {
         let result = handle.await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        if result.is_ok() && result.unwrap().valid {
+        if result.is_ok() && result.expect("LinkML operation in test should succeed").valid {
             success_count += 1;
         }
     }

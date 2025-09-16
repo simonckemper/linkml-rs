@@ -238,9 +238,8 @@ impl TtlManager {
         // Get base TTL for cache level
         let base_ttl = match cache_level {
             1 => config.l1_base_ttl,
-            2 => config.l2_base_ttl,
             3 => config.l3_base_ttl,
-            _ => config.l2_base_ttl, // Use L2 as default for any other level
+            _ => config.l2_base_ttl, // Use L2 as default for level 2 and any other level
         };
 
         // Apply rules

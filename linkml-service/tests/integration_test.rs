@@ -148,7 +148,7 @@ slots:
 
     assert!(json_schema_result.is_ok(), "JSON Schema generation should succeed");
 
-    let json_schema = json_schema_result.unwrap();
+    let json_schema = json_schema_result.expect("LinkML operation in test should succeed");
     assert!(json_schema.contains("TestClass"), "Generated schema should contain TestClass");
 
     Ok(())
@@ -239,7 +239,7 @@ classes:
 });
             let validation = engine.validate_as_class(&test_instance, "TestClass", None).await;
             // Should have issues due to undefined slot
-            assert!(validation.is_err() || !validation.unwrap().valid);
+            assert!(validation.is_err() || !validation.expect("LinkML operation in test should succeed").valid);
         }
     }
 

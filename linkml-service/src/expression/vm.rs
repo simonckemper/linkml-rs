@@ -757,13 +757,13 @@ mod tests {
         let expr = parser.parse("len(text)")?;
         let compiled = compiler.compile(&expr, "len(text)")?;
         let result = vm.execute(&compiled, &context)?;
-        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).unwrap()));
+        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).expect("LinkML operation should succeed")));
 
         // Test max function
         let expr = parser.parse("max(1, 5, 3)")?;
         let compiled = compiler.compile(&expr, "max(1, 5, 3)")?;
         let result = vm.execute(&compiled, &context)?;
-        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).unwrap()));
+        assert_eq!(result, Value::Number(serde_json::Number::from_f64(5.0).expect("LinkML operation should succeed")));
 
         Ok(())
     }

@@ -286,7 +286,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     if let Some(ref parse_result) = validator.parse_result {
         // Count entities by various criteria
         let with_notes = parse_result.entities.iter()
-            .filter(|e| e.notes.is_some() && !e.notes.as_ref().unwrap().is_empty())
+            .filter(|e| e.notes.is_some() && !e.notes.as_ref().expect("LinkML operation in test should succeed").is_empty())
             .count();
         
         let with_mappings = parse_result.entities.iter()

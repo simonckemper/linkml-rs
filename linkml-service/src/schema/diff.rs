@@ -620,7 +620,7 @@ impl DiffResult {
                     writeln!(output, 
                         "    {}: {:?} -> {:?}",
                         attr, change.old_value, change.new_value
-                    ).unwrap();
+                    ).expect("LinkML operation should succeed");
                 }
             }
 

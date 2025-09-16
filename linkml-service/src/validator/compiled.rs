@@ -221,8 +221,8 @@ impl CompiledValidator {
         &self,
         path: &str,
         num: f64,
-        min: &Option<f64>,
-        max: &Option<f64>,
+        min: Option<&f64>,
+        max: Option<&f64>,
     ) -> ValidationIssue {
         let mut context = HashMap::new();
         if let Some(json_num) = serde_json::Number::from_f64(num) {
@@ -278,7 +278,7 @@ impl CompiledValidator {
                 min,
                 max,
                 inclusive} => {
-                issues.extend(self.validate_range(value, path, min, max, *inclusive));
+                issues.extend(self.validate_range(value, path, min.as_ref(), max.as_ref(), *inclusive));
             }
 
             ValidationInstruction::ValidateEnum { path, enum_id } => {
@@ -498,8 +498,8 @@ impl CompiledValidator {
         &self,
         value: &JsonValue,
         path: &str,
-        min: &Option<f64>,
-        max: &Option<f64>,
+        min: Option<&f64>,
+        max: Option<&f64>,
         inclusive: bool,
     ) -> Vec<ValidationIssue> {
         let mut issues = Vec::new();
@@ -531,7 +531,7 @@ impl CompiledValidator {
                 };
 
                 if !valid {
-                    issues.push(self.create_range_violation_issue(path, num, min, max));
+                    issues.push(self.create_range_violation_issue(path, num, min.as_deref(), max.as_deref()));
                 }
             }
         issues

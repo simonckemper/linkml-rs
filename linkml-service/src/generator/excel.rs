@@ -670,8 +670,8 @@ impl ExcelGenerator {
                     let validation = DataValidation::new()
                         // Allow dates within a reasonable range
                         .allow_date(DataValidationRule::Between(
-                            ExcelDateTime::from_ymd(1900, 1, 1).unwrap(),
-                            ExcelDateTime::from_ymd(2100, 12, 31).unwrap(),
+                            ExcelDateTime::from_ymd(1900, 1, 1).expect("LinkML operation should succeed"),
+                            ExcelDateTime::from_ymd(2100, 12, 31).expect("LinkML operation should succeed"),
                         ))
                         .set_input_title("Enter a date")
                         .map_err(|e| GeneratorError::Generation(e.to_string(),))?

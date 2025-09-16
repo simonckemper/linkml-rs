@@ -52,7 +52,7 @@ impl ShellCommand {
         loop {
             // Print prompt
             print!("{}", self.prompt);
-            io::stdout().flush().unwrap();
+            io::stdout().flush().expect("flush operation should succeed");
 
             // Read input
             let mut input = String::new();

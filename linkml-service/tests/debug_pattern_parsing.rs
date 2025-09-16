@@ -41,7 +41,7 @@ slots:
 
     // Parse schema
     let parser = Parser::new();
-    let schema = parser.parse(schema_yaml, "yaml").unwrap();
+    let schema = parser.parse(schema_yaml, "yaml").expect("LinkML operation in test should succeed");
 
     // Debug: Check patterns in parsed schema
     eprintln!("DEBUG: Checking parsed schema slots:");
@@ -73,30 +73,30 @@ slots:
         schema
             .slots
             .get("iso_date")
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .pattern
             .as_ref()
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .contains("year")
     );
     assert!(
         schema
             .slots
             .get("us_date")
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .pattern
             .as_ref()
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .contains("month")
     );
     assert!(
         schema
             .slots
             .get("custom_date")
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .pattern
             .as_ref()
-            .unwrap()
+            .expect("LinkML operation in test should succeed")
             .contains("dayname")
     );
 }

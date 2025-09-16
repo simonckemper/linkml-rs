@@ -884,7 +884,7 @@ mod tests {
 
     #[test]
     fn test_sensitive_data_handler() {
-        let handler = SensitiveDataHandler::new(SecurityConfig::default()).unwrap();
+        let handler = SensitiveDataHandler::new(SecurityConfig::default()).expect("security handler creation should succeed");
 
         assert_eq!(handler.mask_string("password: secret123"), "[REDACTED]");
 

@@ -272,21 +272,21 @@ types:
 
     c.bench_function("schema_parsing_simple", |b| {
         let parser = YamlParser::new();
-        b.iter(|| black_box(parser.parse_str(schema_yaml).unwrap()))
+        b.iter(|| black_box(parser.parse_str(schema_yaml).expect("LinkML operation in test should succeed")))
     });
 
     let complex_schema = create_complex_schema();
-    let complex_yaml = serde_yaml::to_string(&complex_schema).unwrap();
+    let complex_yaml = serde_yaml::to_string(&complex_schema).expect("LinkML operation in test should succeed");
 
     c.bench_function("schema_parsing_complex", |b| {
         let parser = YamlParser::new();
-        b.iter(|| black_box(parser.parse_str(&complex_yaml).unwrap()))
+        b.iter(|| black_box(parser.parse_str(&complex_yaml).expect("LinkML operation in test should succeed")))
     });
 }
 
 /// Benchmark validation performance
 fn bench_validation(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
+    let rt = Runtime::new().expect("LinkML operation in test should succeed");
     let schema = Arc::new(create_complex_schema());
     let engine = ValidationEngine::new(schema);
 
@@ -303,7 +303,7 @@ fn bench_validation(c: &mut Criterion) {
                         let result = engine
                             .validate_instance(black_box(person), "Person")
                             .await
-                            .unwrap();
+                            .expect("LinkML operation in test should succeed");
                         black_box(result);
                     }
                 })
@@ -322,12 +322,12 @@ fn bench_code_generation(c: &mut Criterion) {
 
     group.bench_function("python_dataclass", |b| {
         let generator = PythonDataclassGenerator::new();
-        b.iter(|| black_box(generator.generate(&schema).unwrap()))
+        b.iter(|| black_box(generator.generate(&schema).expect("LinkML operation in test should succeed")))
     });
 
     group.bench_function("typescript", |b| {
         let generator = TypeScriptGenerator::new();
-        b.iter(|| black_box(generator.generate(&schema).unwrap()))
+        b.iter(|| black_box(generator.generate(&schema).expect("LinkML operation in test should succeed")))
     });
 
     group.finish();
@@ -335,7 +335,7 @@ fn bench_code_generation(c: &mut Criterion) {
 
 /// Benchmark memory usage patterns
 fn bench_memory_usage(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
+    let rt = Runtime::new().expect("LinkML operation in test should succeed");
     let schema = Arc::new(create_complex_schema());
 
     let mut group = c.benchmark_group("memory_usage");
@@ -353,7 +353,7 @@ fn bench_memory_usage(c: &mut Criterion) {
                         let result = engine
                             .validate_instance(black_box(person), "Person")
                             .await
-                            .unwrap();
+                            .expect("LinkML operation in test should succeed");
                         black_box(result);
                     }
                 })

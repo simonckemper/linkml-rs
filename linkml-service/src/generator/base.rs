@@ -306,8 +306,7 @@ pub fn collect_all_slots(
         match language {
             "python" => Some("None".to_string()),
             "javascript" => Some("null".to_string()),
-            "typescript" => None, // TypeScript uses ? for optional
-            _ => None, // Default to None for other languages
+            _ => None, // TypeScript and other languages use ? for optional or have no default
         }
     } else {
         None

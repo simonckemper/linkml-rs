@@ -323,7 +323,7 @@ impl DataDumper for XmlDumper {
             if self.pretty || options.pretty_print {
                 xml.push_str("  ");
             }
-            write!(xml, "<{}", instance.class_name).unwrap();
+            write!(xml, "<{}", instance.class_name).expect("write! to String should never fail");
 
             // Add simple attributes
             for (key, value) in &instance.data {

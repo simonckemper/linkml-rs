@@ -408,59 +408,59 @@ impl SummaryGenerator {
         writeln!(output, 
             "Abstract Classes\t{}",
             stats.abstract_class_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, "Mixin Classes\t{}", stats.mixin_class_count).expect("writeln! to String should never fail");
         writeln!(output, 
             "Classes with Slots\t{}",
             stats.classes_with_slots
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Classes with Attributes\t{}",
             stats.classes_with_attributes
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Max Inheritance Depth\t{}",
             stats.max_inheritance_depth
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Avg Slots per Class\t{:.2}",
             stats.avg_slots_per_class
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         // Slot statistics
         writeln!(output, "Required Slots\t{}", stats.required_slot_count).expect("writeln! to String should never fail");
         writeln!(output, 
             "Multivalued Slots\t{}",
             stats.multivalued_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Identifier Slots\t{}",
             stats.identifier_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Slots with Patterns\t{}",
             stats.slots_with_patterns
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "Slots with Constraints\t{}",
             stats.slots_with_constraints
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         // Documentation
         writeln!(output, 
             "Documentation Coverage\t{:.1}%",
             stats.documentation_coverage * 100.0
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         if self.config.complexity_metrics {
             writeln!(output, 
                 "Schema Complexity Score\t{:.2}",
                 stats.schema_complexity_score
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(output, 
                 "Cyclomatic Complexity\t{}",
                 stats.cyclomatic_complexity
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(output, "Coupling Score\t{:.2}", stats.coupling_score).expect("writeln! to String should never fail");
             writeln!(output, "Cohesion Score\t{:.2}", stats.cohesion_score).expect("writeln! to String should never fail");
         }
@@ -517,7 +517,7 @@ impl SummaryGenerator {
         writeln!(output, 
             "| Documentation Coverage | {:.1}% |",
             stats.documentation_coverage * 100.0
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         // Class analysis
         output.push_str("\n## Class Analysis\n\n");
@@ -526,19 +526,19 @@ impl SummaryGenerator {
         writeln!(output, 
             "| Abstract Classes | {} |",
             stats.abstract_class_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Mixin Classes | {} |",
             stats.mixin_class_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Max Inheritance Depth | {} |",
             stats.max_inheritance_depth
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Average Slots per Class | {:.2} |",
             stats.avg_slots_per_class
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         // Slot analysis
         output.push_str("\n## Slot Analysis\n\n");
@@ -547,19 +547,19 @@ impl SummaryGenerator {
         writeln!(output, 
             "| Required Slots | {} |",
             stats.required_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Multivalued Slots | {} |",
             stats.multivalued_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Identifier Slots | {} |",
             stats.identifier_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(output, 
             "| Slots with Constraints | {} |",
             stats.slots_with_constraints
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         // Complexity metrics
         if self.config.complexity_metrics {
@@ -569,19 +569,19 @@ impl SummaryGenerator {
             writeln!(output, 
                 "| Schema Complexity Score | {:.2} |",
                 stats.schema_complexity_score
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(output, 
                 "| Cyclomatic Complexity | {} |",
                 stats.cyclomatic_complexity
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(output, 
                 "| Coupling Score | {:.2} |",
                 stats.coupling_score
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(output, 
                 "| Cohesion Score | {:.2} |",
                 stats.cohesion_score
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         }
 
         // Most used slots
@@ -790,33 +790,33 @@ impl SummaryGenerator {
         writeln!(html, 
             "        <tr><td>Abstract Classes</td><td>{}</td></tr>",
             stats.abstract_class_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(html, 
             "        <tr><td>Mixin Classes</td><td>{}</td></tr>",
             stats.mixin_class_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(html, 
             "        <tr><td>Max Inheritance Depth</td><td>{}</td></tr>",
             stats.max_inheritance_depth
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(html, 
             "        <tr><td>Required Slots</td><td>{}</td></tr>",
             stats.required_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         writeln!(html, 
             "        <tr><td>Multivalued Slots</td><td>{}</td></tr>",
             stats.multivalued_slot_count
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
 
         if self.config.complexity_metrics {
             writeln!(html, 
                 "        <tr><td>Schema Complexity Score</td><td>{:.2}</td></tr>",
                 stats.schema_complexity_score
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
             writeln!(html, 
                 "        <tr><td>Cyclomatic Complexity</td><td>{}</td></tr>",
                 stats.cyclomatic_complexity
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         }
 
         html.push_str("    </table>\n");

@@ -194,7 +194,7 @@ impl Profiler {
         });
 
         for (key, counter) in entries {
-            write!(report, "{}: {}\n", key, counter.summary()).unwrap();
+            write!(report, "{}: {}\n", key, counter.summary()).expect("write! to String should never fail");
         }
 
         report

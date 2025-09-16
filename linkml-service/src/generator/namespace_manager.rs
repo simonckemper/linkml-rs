@@ -162,7 +162,7 @@ impl NamespaceManagerGenerator {
         if let Some(default_prefix) = &schema.default_prefix {
             writeln!(output, 
                 "        self._default_prefix = '{default_prefix}'"
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         } else {
             output.push_str("        self._default_prefix = None\n");
         }
@@ -453,7 +453,7 @@ impl NamespaceManagerGenerator {
         if let Some(default_prefix) = &schema.default_prefix {
             writeln!(output, 
                 "    this._defaultPrefix = '{default_prefix}';"
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         } else {
             output.push_str("    this._defaultPrefix = null;\n");
         }
@@ -861,7 +861,7 @@ impl NamespaceManagerGenerator {
         if let Some(default_prefix) = &schema.default_prefix {
             writeln!(output, 
                 "        this.defaultPrefix = \"{default_prefix}\";"
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         } else {
             output.push_str("        this.defaultPrefix = null;\n");
         }

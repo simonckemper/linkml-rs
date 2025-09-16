@@ -155,7 +155,7 @@ impl SQLGenerator {
 
                 // Add default value if specified
                 if let Some(default) = options.get_custom(&format!("default_{slot_name}")) {
-                    write!(column_def, " DEFAULT {default}").unwrap();
+                    write!(column_def, " DEFAULT {default}").expect("write! to String should never fail");
                 }
 
                 // Add CHECK constraint for pattern
@@ -167,7 +167,7 @@ impl SQLGenerator {
                 // Add column comment if dialect supports it
                 if options.include_docs && options.get_custom("dialect").map(std::string::String::as_str) == Some("postgresql")
                     && let Some(desc) = &slot.description {
-                        write!(column_def, " -- {desc}").unwrap();
+                        write!(column_def, " -- {desc}").expect("write! to String should never fail");
                     }
 
                 columns.push(column_def);

@@ -260,11 +260,11 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationLoader<E> {
         // Build the match query
         let mut query = format!("match $x isa {};", type_info.name);
         for attr in attributes {
-            write!(query, " $x has {} $attr_{};", attr.name, attr.name).unwrap();
+            write!(query, " $x has {} $attr_{};", attr.name, attr.name).expect("write! to String should never fail");
         }
         query.push_str(" get $x");
         for attr in attributes {
-            write!(query, ", $attr_{}", attr.name).unwrap();
+            write!(query, ", $attr_{}", attr.name).expect("write! to String should never fail");
         }
         query.push(';');
 
@@ -472,7 +472,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
         let mut define_query = String::new();
 
         if is_relation {
-            write!(define_query, "define {type_name} sub relation").unwrap();
+            write!(define_query, "define {type_name} sub relation").expect("write! to String should never fail");
 
             // Add roles based on object-valued slots
             for slot_name in &class_def.slots {
@@ -480,11 +480,11 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                     && let Some(range) = &slot_def.range
                         && schema.classes.contains_key(range) {
                             let role_name = to_snake_case(slot_name);
-                            write!(define_query, ", relates {role_name}").unwrap();
+                            write!(define_query, ", relates {role_name}").expect("write! to String should never fail");
                         }
             }
         } else {
-            write!(define_query, "define {type_name} sub entity").unwrap();
+            write!(define_query, "define {type_name} sub entity").expect("write! to String should never fail");
         }
 
         // Add attributes
@@ -498,10 +498,10 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                         // Define attribute type if needed
                         write!(define_query, 
                             "; {attr_name} sub attribute, value {value_type}"
-                        ).unwrap();
+                        ).expect("LinkML operation should succeed");
 
                         // Type owns attribute
-                        write!(define_query, "; {type_name} owns {attr_name}").unwrap();
+                        write!(define_query, "; {type_name} owns {attr_name}").expect("write! to String should never fail");
                     }
         }
 
@@ -602,7 +602,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            write!(query, ", has {attr_name} {typeql_value}").unwrap();
+            write!(query, ", has {attr_name} {typeql_value}").expect("write! to String should never fail");
         }
 
         query.push(';');
@@ -630,7 +630,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
                                 let role_type = to_snake_case(range);
                                 write!(match_part, 
                                     "${slot_name} isa {role_type}, has id \"{id}\"; "
-                                ).unwrap();
+                                ).expect("LinkML operation should succeed");
                                 role_players.push((to_snake_case(slot_name), slot_name.clone()));
                             }
                     }
@@ -662,7 +662,7 @@ impl<E: TypeDBQueryExecutor> TypeDBIntegrationDumper<E> {
 
             let attr_name = to_snake_case(slot_name);
             let typeql_value = json_value_to_typeql(value)?;
-            write!(insert_part, ", has {attr_name} {typeql_value}").unwrap();
+            write!(insert_part, ", has {attr_name} {typeql_value}").expect("write! to String should never fail");
         }
 
         Ok(format!("{match_part} {insert_part}"))

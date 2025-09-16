@@ -237,7 +237,7 @@ where
                 "string" | "str" => Value::String(format!("test_string_{}", rng.r#gen::<u32>())),
                 "integer" | "int" => Value::Number(serde_json::Number::from(rng.gen_range(1..1000))),
                 "float" | "double" => {
-                    Value::Number(serde_json::Number::from_f64(rng.r#gen::<f64>() * 1000.0).unwrap())
+                    Value::Number(serde_json::Number::from_f64(rng.r#gen::<f64>() * 1000.0).expect("LinkML operation in test should succeed"))
                 },
                 "boolean" | "bool" => Value::Bool(rng.r#gen()),
                 "date" => Value::String(chrono::Utc::now().date_naive().to_string()),

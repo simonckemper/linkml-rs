@@ -170,7 +170,7 @@ where
 
         // Add regex constraint if pattern is specified
         if let Some(ref pattern) = slot_def.pattern {
-            write!(attribute, " regex \"{pattern}\";").unwrap();
+            write!(attribute, " regex \"{pattern}\";").expect("write! to String should never fail");
         }
 
         attribute
@@ -359,7 +359,7 @@ where
             for (field, value) in map {
                 if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
                     let value_str = self.format_value_for_typedb(value)?;
-                    write!(query, " $x has {attr_name} {value_str};").unwrap();
+                    write!(query, " $x has {attr_name} {value_str};").expect("write! to String should never fail");
                 }
             }
         }
@@ -404,7 +404,7 @@ where
         // Add filters
         for (field, value) in &filters {
             if let Some(attr_name) = typedb_schema.attribute_mappings.get(field) {
-                write!(query, " $x has {attr_name} {value};").unwrap();
+                write!(query, " $x has {attr_name} {value};").expect("write! to String should never fail");
             }
         }
 

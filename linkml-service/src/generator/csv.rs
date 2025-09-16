@@ -251,7 +251,7 @@ impl CsvGenerator {
             writeln!(output, 
                 "Type{}Name{}Description{}Count",
                 self.delimiter, self.delimiter, self.delimiter
-            ).unwrap();
+            ).expect("LinkML operation should succeed");
         }
 
         // Classes

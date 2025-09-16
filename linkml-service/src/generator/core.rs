@@ -78,15 +78,14 @@ impl RustGenerator {
     /// Map `LinkML` type to Rust type
     pub(super) fn linkml_type_to_rust(linkml_type: &str) -> &str {
         match linkml_type {
-            "string" | "str" => "String",
             "integer" | "int" => "i64",
             "float" | "double" | "decimal" => "f64",
             "boolean" | "bool" => "bool",
             "date" => "chrono::NaiveDate",
             "datetime" => "chrono::DateTime<chrono::Utc>",
             "time" => "chrono::NaiveTime",
-            "uri" | "uriorcurie" | "curie" | "ncname" => "String",
-            _ => "String", // Default to String for unknown types
+            // All string-like types map to String
+            _ => "String",
         }
     }
 

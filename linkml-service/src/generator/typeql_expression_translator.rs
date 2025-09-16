@@ -414,7 +414,7 @@ impl ExpressionTranslator {
         writeln!(rule, 
             "    {} has {} {};",
             entity_var, attribute, trans.result
-        ).unwrap();
+        ).expect("LinkML operation should succeed");
         rule.push_str("};\n");
 
         Ok(rule)

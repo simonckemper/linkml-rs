@@ -67,7 +67,7 @@ fn bench_schema_parsing(c: &mut Criterion) {
 fn bench_validation_engine_creation(c: &mut Criterion) {
     let schema_yaml = create_test_schema();
     let parser = Parser::new();
-    let schema = parser.parse_str(&schema_yaml, "yaml").unwrap();
+    let schema = parser.parse_str(&schema_yaml, "yaml").expect("LinkML operation in test should succeed");
     
     c.bench_function("validation_engine_creation", |b| {
         b.iter(|| {
@@ -78,11 +78,11 @@ fn bench_validation_engine_creation(c: &mut Criterion) {
 }
 
 fn bench_instance_validation(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
+    let rt = Runtime::new().expect("LinkML operation in test should succeed");
     let schema_yaml = create_test_schema();
     let parser = Parser::new();
-    let schema = parser.parse_str(&schema_yaml, "yaml").unwrap();
-    let validation_engine = ValidationEngine::new(&schema).unwrap();
+    let schema = parser.parse_str(&schema_yaml, "yaml").expect("LinkML operation in test should succeed");
+    let validation_engine = ValidationEngine::new(&schema).expect("LinkML operation in test should succeed");
     let test_data = create_test_data();
     
     c.bench_function("instance_validation", |b| {
@@ -96,11 +96,11 @@ fn bench_instance_validation(c: &mut Criterion) {
 }
 
 fn bench_concurrent_validation(c: &mut Criterion) {
-    let rt = Runtime::new().unwrap();
+    let rt = Runtime::new().expect("LinkML operation in test should succeed");
     let schema_yaml = create_test_schema();
     let parser = Parser::new();
-    let schema = parser.parse_str(&schema_yaml, "yaml").unwrap();
-    let validation_engine = std::sync::Arc::new(ValidationEngine::new(&schema).unwrap());
+    let schema = parser.parse_str(&schema_yaml, "yaml").expect("LinkML operation in test should succeed");
+    let validation_engine = std::sync::Arc::new(ValidationEngine::new(&schema).expect("LinkML operation in test should succeed"));
     let test_data = create_test_data();
     
     c.bench_function("concurrent_validation_10", |b| {
@@ -190,7 +190,7 @@ slots:
 ", i, i, i, i);
                 
                 let parser = Parser::new();
-                let schema = parser.parse_str(&schema_yaml, "yaml").unwrap();
+                let schema = parser.parse_str(&schema_yaml, "yaml").expect("LinkML operation in test should succeed");
                 schemas.push(schema);
             }
             

@@ -593,12 +593,11 @@ impl GoGenerator {
     /// Map `LinkML` type to Go type
     fn map_type(&self, linkml_type: &str) -> &'static str {
         match linkml_type {
-            "string" | "str" => "string",
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             "integer" | "int" => "int64",
             "float" | "double" | "decimal" => "float64",
             "boolean" | "bool" => "bool",
             "date" | "datetime" => "time.Time",
-            "uri" | "uriorcurie" | "curie" | "ncname" => "string",
             _ => "interface{}"}
     }
 
