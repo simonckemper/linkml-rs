@@ -329,24 +329,14 @@ impl ValidationEngine {
         report: &mut ValidationReport,
         options: &ValidationOptions,
     ) -> Result<()> {
-        // INTEGRATION 1: Apply defaults BEFORE validation
-        let mut data = data.clone();
-        let default_applier = DefaultApplier::from_schema(&self.schema);
-        if let Err(e) = default_applier.apply_defaults(&mut data, &self.schema) {
-            report.add_issue(ValidationIssue::warning(
-                format!("Failed to apply defaults: {e}"),
-                context.path().to_string(),
-                "default_applier",
-            ));
-        }
+        // Apply defaults and prepare data
+        let data = self.apply_defaults_and_prepare(data, context, report)?;
 
-        // INTEGRATION 2: Use SchemaView for comprehensive class analysis
-        let schema_view = SchemaView::new(self.schema.as_ref().clone())?;
-        let _class_view = schema_view.class_view(class_name)?;
+        // Setup schema analysis components
+        self.setup_schema_analysis(class_name)?;
 
-        // INTEGRATION 3: Use InheritanceResolver for complete slot resolution
-        let mut inheritance_resolver = InheritanceResolver::new(&self.schema);
-        let _resolved_class = inheritance_resolver.resolve_class(class_name)?;
+        // Check recursion constraints
+        self.check_recursion_constraints(&data, class_name, class_def, context, report)?;
 
         // INTEGRATION 4: Check recursion depth using RecursionOptions
         if let Some(_recursion_options) = &class_def.recursion_options {
@@ -770,6 +760,64 @@ impl ValidationEngine {
         // to properly track duplicates, so delegate to sequential version
         self.validate_collection(instances, class_name, options)
             .await
+    }
+
+    /// Apply defaults and prepare data for validation
+    fn apply_defaults_and_prepare(
+        &self,
+        data: &Value,
+        context: &ValidationContext,
+        report: &mut ValidationReport,
+    ) -> Result<Value> {
+        let mut data = data.clone();
+        let default_applier = DefaultApplier::from_schema(&self.schema);
+        if let Err(e) = default_applier.apply_defaults(&mut data, &self.schema) {
+            report.add_issue(ValidationIssue::warning(
+                format!("Failed to apply defaults: {e}"),
+                context.path().to_string(),
+                "default_applier",
+            ));
+        }
+        Ok(data)
+    }
+
+    /// Setup schema analysis components
+    fn setup_schema_analysis(&self, class_name: &str) -> Result<()> {
+        // Use SchemaView for comprehensive class analysis
+        let schema_view = SchemaView::new(self.schema.as_ref().clone())?;
+        let _class_view = schema_view.class_view(class_name)?;
+
+        // Use InheritanceResolver for complete slot resolution
+        let mut inheritance_resolver = InheritanceResolver::new(&self.schema);
+        let _resolved_class = inheritance_resolver.resolve_class(class_name)?;
+
+        Ok(())
+    }
+
+    /// Check recursion constraints
+    fn check_recursion_constraints(
+        &self,
+        data: &Value,
+        class_name: &str,
+        class_def: &ClassDefinition,
+        context: &ValidationContext,
+        report: &mut ValidationReport,
+    ) -> Result<()> {
+        if let Some(_recursion_options) = &class_def.recursion_options {
+            let mut recursion_tracker = RecursionTracker::new(&self.schema);
+
+            // Check for circular references and depth violations
+            if let Err(recursion_error) =
+                check_recursion(data, class_name, &self.schema, &mut recursion_tracker)
+            {
+                report.add_issue(ValidationIssue::error(
+                    recursion_error,
+                    context.path().to_string(),
+                    "recursion_checker",
+                ));
+            }
+        }
+        Ok(())
     }
 }
 

@@ -266,43 +266,11 @@ impl CompiledValidator {
         let mut issues = Vec::new();
         match instruction {
             ValidationInstruction::CheckRequired { path, field } => {
-                if let Some(obj) = value.as_object()
-                    && !obj.contains_key(field) {
-                        issues.push(ValidationIssue {
-                            severity: Severity::Error,
-                            path: path.clone(),
-                            message: format!("Required field '{field}' is missing"),
-                            validator: self.name.clone(),
-                            code: Some("required_field_missing".to_string()),
-                            context: HashMap::new()});
-                    }
+                issues.extend(self.validate_required_field(value, path, field));
             }
 
             ValidationInstruction::ValidatePattern { path, pattern_id } => {
-                if let Some(field_value) = Self::extract_value_at_path(value, path)
-                    && let Some(s) = field_value.as_str()
-                        && let Some(pattern) = self.compiled_patterns.get(*pattern_id)
-                            && !pattern.is_match(s) {
-                                let mut context = HashMap::new();
-                                context.insert(
-                                    "value".to_string(),
-                                    serde_json::Value::String(s.to_string()),
-                                );
-                                context.insert(
-                                    "pattern".to_string(),
-                                    serde_json::Value::String(pattern.as_str().to_string()),
-                                );
-                                issues.push(ValidationIssue {
-                                    severity: Severity::Error,
-                                    path: path.clone(),
-                                    message: format!(
-                                        "Value does not match pattern: {}",
-                                        pattern.as_str()
-                                    ),
-                                    validator: self.name.clone(),
-                                    code: Some("pattern_mismatch".to_string()),
-                                    context});
-                            }
+                issues.extend(self.validate_pattern(value, path, *pattern_id));
             }
 
             ValidationInstruction::ValidateRange {
@@ -310,36 +278,7 @@ impl CompiledValidator {
                 min,
                 max,
                 inclusive} => {
-                if let Some(field_value) = Self::extract_value_at_path(value, path)
-                    && let Some(num) = field_value.as_f64() {
-                        let valid = match (min, max) {
-                            (Some(min_val), Some(max_val)) => {
-                                if *inclusive {
-                                    num >= *min_val && num <= *max_val
-                                } else {
-                                    num > *min_val && num < *max_val
-                                }
-                            }
-                            (Some(min_val), None) => {
-                                if *inclusive {
-                                    num >= *min_val
-                                } else {
-                                    num > *min_val
-                                }
-                            }
-                            (None, Some(max_val)) => {
-                                if *inclusive {
-                                    num <= *max_val
-                                } else {
-                                    num < *max_val
-                                }
-                            }
-                            (None, None) => true};
-
-                        if !valid {
-                            issues.push(self.create_range_violation_issue(path, num, min, max));
-                        }
-                    }
+                issues.extend(self.validate_range(value, path, min, max, *inclusive));
             }
 
             ValidationInstruction::ValidateEnum { path, enum_id } => {
@@ -493,6 +432,108 @@ impl CompiledValidator {
             }
         }
 
+        issues
+    }
+
+    /// Validate required field presence
+    fn validate_required_field(
+        &self,
+        value: &JsonValue,
+        path: &str,
+        field: &str,
+    ) -> Vec<ValidationIssue> {
+        let mut issues = Vec::new();
+        if let Some(obj) = value.as_object()
+            && !obj.contains_key(field) {
+                issues.push(ValidationIssue {
+                    severity: Severity::Error,
+                    path: path.to_string(),
+                    message: format!("Required field '{field}' is missing"),
+                    validator: self.name.clone(),
+                    code: Some("required_field_missing".to_string()),
+                    context: HashMap::new(),
+                });
+            }
+        issues
+    }
+
+    /// Validate pattern matching
+    fn validate_pattern(
+        &self,
+        value: &JsonValue,
+        path: &str,
+        pattern_id: usize,
+    ) -> Vec<ValidationIssue> {
+        let mut issues = Vec::new();
+        if let Some(field_value) = Self::extract_value_at_path(value, path)
+            && let Some(s) = field_value.as_str()
+                && let Some(pattern) = self.compiled_patterns.get(pattern_id)
+                    && !pattern.is_match(s) {
+                        let mut context = HashMap::new();
+                        context.insert(
+                            "value".to_string(),
+                            serde_json::Value::String(s.to_string()),
+                        );
+                        context.insert(
+                            "pattern".to_string(),
+                            serde_json::Value::String(pattern.as_str().to_string()),
+                        );
+                        issues.push(ValidationIssue {
+                            severity: Severity::Error,
+                            path: path.to_string(),
+                            message: format!(
+                                "Value does not match pattern: {}",
+                                pattern.as_str()
+                            ),
+                            validator: self.name.clone(),
+                            code: Some("pattern_mismatch".to_string()),
+                            context,
+                        });
+                    }
+        issues
+    }
+
+    /// Validate numeric range
+    fn validate_range(
+        &self,
+        value: &JsonValue,
+        path: &str,
+        min: &Option<f64>,
+        max: &Option<f64>,
+        inclusive: bool,
+    ) -> Vec<ValidationIssue> {
+        let mut issues = Vec::new();
+        if let Some(field_value) = Self::extract_value_at_path(value, path)
+            && let Some(num) = field_value.as_f64() {
+                let valid = match (min, max) {
+                    (Some(min_val), Some(max_val)) => {
+                        if inclusive {
+                            num >= *min_val && num <= *max_val
+                        } else {
+                            num > *min_val && num < *max_val
+                        }
+                    }
+                    (Some(min_val), None) => {
+                        if inclusive {
+                            num >= *min_val
+                        } else {
+                            num > *min_val
+                        }
+                    }
+                    (None, Some(max_val)) => {
+                        if inclusive {
+                            num <= *max_val
+                        } else {
+                            num < *max_val
+                        }
+                    }
+                    (None, None) => true,
+                };
+
+                if !valid {
+                    issues.push(self.create_range_violation_issue(path, num, min, max));
+                }
+            }
         issues
     }
 
