@@ -43,7 +43,7 @@ impl ValidatorCacheKey {
         let schema_hash = Self::hash_schema(schema);
 
         // Calculate options hash
-        let options_hash = Self::hash_options(options);
+        let options_hash = Self::hash_options(*options);
 
         Self {
             schema_id: schema.id.clone(),
@@ -88,7 +88,7 @@ impl ValidatorCacheKey {
     }
 
     /// Generate hash for compilation options
-    fn hash_options(options: &CompilationOptions) -> String {
+    fn hash_options(options: CompilationOptions) -> String {
         let mut hasher = Hasher::new();
 
         // Hash the bitflags value directly for efficiency
@@ -315,7 +315,7 @@ impl CompiledValidatorCache {
                 // Compile and cache
                 if let Some(class) = schema.classes.get(&class_name) {
                     let validator =
-                        CompiledValidator::compile_class(&schema, &class_name, class, options)?;
+                        CompiledValidator::compile_class(&schema, &class_name, class, *options)?;
 
                     self.put(&key, validator)?;
                 }
@@ -394,7 +394,7 @@ mod tests {
         assert_eq!(cache.stats().misses, 1);
 
         // Compile and cache
-        let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, &options)
+        let validator = CompiledValidator::compile_class(&schema, "TestClass", &class, options)
             .expect("should compile validator: {}");
 
         cache
@@ -424,7 +424,7 @@ mod tests {
 
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator =
-                CompiledValidator::compile_class(&schema, &class.name, &class, &options)
+                CompiledValidator::compile_class(&schema, &class.name, &class, options)
                     .expect("should compile validator: {}");
 
             cache

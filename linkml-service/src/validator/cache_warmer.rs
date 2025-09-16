@@ -464,7 +464,7 @@ impl CacheWarmer {
                 &engine.schema,
                 &key.class_name,
                 class_def,
-                &options,
+                options,
             )?;
 
             // Put in cache

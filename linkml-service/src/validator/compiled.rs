@@ -195,9 +195,9 @@ impl CompiledValidator {
         schema: &SchemaDefinition,
         class_name: &str,
         class: &ClassDefinition,
-        options: &CompilationOptions,
+        options: CompilationOptions,
     ) -> LinkMLResult<Self> {
-        let mut compiler = ValidatorCompiler::new(schema, options);
+        let mut compiler = ValidatorCompiler::new(schema, &options);
         compiler.compile_class(class_name, class)
     }
 
@@ -875,7 +875,7 @@ use linkml_core::types::{SchemaDefinition, ClassDefinition, SlotDefinition};
         // Compile validator
         let options = CompilationOptions::default();
         let validator =
-            CompiledValidator::compile_class(&schema, "Person", &person_class, &options)
+            CompiledValidator::compile_class(&schema, "Person", &person_class, options)
                 .expect("Failed to compile validator: {}");
 
         // Test valid data

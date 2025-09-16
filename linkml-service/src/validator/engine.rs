@@ -410,7 +410,7 @@ impl ValidationEngine {
                         &self.schema,
                         class_name,
                         class_def,
-                        &compilation_options,
+                        compilation_options,
                     )?;
 
                     let compile_end = self.timestamp_service.system_time()
