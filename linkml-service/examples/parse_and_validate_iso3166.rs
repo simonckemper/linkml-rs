@@ -51,7 +51,7 @@ struct CountryCodeValidator {
 impl CountryCodeValidator {
     fn new() -> Self {
         // Pattern for ISO 3166-1 alpha-2 codes: exactly 2 uppercase letters
-        let pattern = Regex::new(r"^[A-Z]{2}$").unwrap();
+        let pattern = Regex::new(r"^[A-Z]{2}$").expect("regex in test should be valid");
         Self {
             pattern,
             parse_result: None,

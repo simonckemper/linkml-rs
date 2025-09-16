@@ -55,10 +55,10 @@ classes:
     assert_eq!(schema.contributors.len(), 2);
     let jane = &schema.contributors[0];
     assert_eq!(jane.name, "Jane Smith");
-    assert_eq!(jane.email, Some("jane@example.com".to_string());
-    assert_eq!(jane.github, Some("janesmith".to_string());
-    assert_eq!(jane.orcid, Some("0000-0000-0000-0001".to_string());
-    assert_eq!(jane.role, Some("lead".to_string());
+    assert_eq!(jane.email, Some("jane@example.com".to_string()));
+    assert_eq!(jane.github, Some("janesmith".to_string()));
+    assert_eq!(jane.orcid, Some("0000-0000-0000-0001".to_string()));
+    assert_eq!(jane.role, Some("lead".to_string()));
 }
 
 #[test]
@@ -209,7 +209,7 @@ fn test_metadata_inheritance() {
     assert_eq!(merged.aliases.len(), 2); // Both aliases preserved
     assert_eq!(merged.see_also.len(), 2); // Both references preserved
     assert_eq!(merged.notes.len(), 2); // Both notes preserved
-    assert_eq!(merged.deprecated, Some("Use new_slot instead".to_string());
+    assert_eq!(merged.deprecated, Some("Use new_slot instead".to_string()));
     assert_eq!(merged.rank, Some(2)); // Override wins
 }
 

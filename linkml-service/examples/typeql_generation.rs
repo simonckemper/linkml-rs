@@ -6,9 +6,8 @@
 use linkml_core::prelude::*;
 use linkml_service::generator::{
     Generator, GeneratorOptions,
-    typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
+    // typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
 };
-use linkml_service::prelude::*;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

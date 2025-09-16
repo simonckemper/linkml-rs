@@ -3,7 +3,8 @@
 //! This example shows the performance benefits of JIT compilation and caching
 //! for LinkML expressions.
 use linkml_service::expression::{
-    ExpressionEngine, engine_v2::{EngineBuilder, ExpressionEngineV2}, };
+    ExpressionEngine, engine_v2::{EngineBuilder, ExpressionEngineV2}
+};
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Instant;

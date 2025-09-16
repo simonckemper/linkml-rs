@@ -51,7 +51,7 @@ impl RustGenerator {
             .map_err(Self::fmt_error_to_generator_error)?;
         writeln!(
             output,
-            "{}Err(errors.into_iter().next().expect(\"iterator should have next item\"))",
+            "{}Err(errors.into_iter().next().expect(\\\"iterator should have next item\\\"))",
             indent.to_string(3)
         )
         .map_err(Self::fmt_error_to_generator_error)?;

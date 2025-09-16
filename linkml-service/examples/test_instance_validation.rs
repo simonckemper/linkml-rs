@@ -168,7 +168,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     for (value, should_match, description) in pattern_tests {
         // Just test the regex pattern
-        let pattern = regex::Regex::new(r"^[A-Z]{2}$").unwrap();
+        let pattern = regex::Regex::new(r"^[A-Z]{2}$").expect("regex in test should be valid");
         let matches = pattern.is_match(value);
 
         if matches == should_match {

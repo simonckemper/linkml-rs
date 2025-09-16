@@ -232,26 +232,26 @@ fn _production_test_pattern() {
 async fn test_real_integration() {{
     // 1. Initialize all services using proper test patterns
     let logger = Arc::new(MockMockLoggerService::new());
-    let linkml = create_linkml_service(...).await.unwrap();
+    let linkml = create_linkml_service(...).await.expect("async operation failed in test");
     let typedb = Arc::new(MockTypeDBService::new());
 
     // 2. Load schema
-    let _schema = linkml.load_schema_str(SCHEMA, SchemaFormat::Yaml).await.unwrap();
+    let _schema = linkml.load_schema_str(SCHEMA, SchemaFormat::Yaml).await.expect("async operation failed in test");
 
     // 3. Generate TypeQL
-    let typeql = linkml.generate_typeql(&schema).await.unwrap();
+    let typeql = linkml.generate_typeql(&schema).await.expect("async operation failed in test");
 
     // 4. Define in TypeDB
-    typedb.define_schema(&typeql).await.unwrap();
+    typedb.define_schema(&typeql).await.expect("async operation failed in test");
 
     // 5. Validate and insert data
     let data = json!({{...}});
-    let report = linkml.validate(&data, &schema, "Person").await.unwrap();
+    let report = linkml.validate(&data, &schema, "Person").await.expect("async operation failed in test");
 
     assert!(report.valid);
 
     if report.valid {{
-        typedb.insert(data).await.unwrap();
+        typedb.insert(data).await.expect("async operation failed in test");
     }}
 }}
 "#
