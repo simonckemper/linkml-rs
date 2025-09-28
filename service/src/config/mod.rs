@@ -8,7 +8,7 @@ pub mod configuration_integration;
 pub mod hot_reload;
 pub mod validation;
 
-use configuration_core::Validate;
+use rootreal_core_application_config_configuration_core::Validate;
 use linkml_core::{LinkMLError, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};

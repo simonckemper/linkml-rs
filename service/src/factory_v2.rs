@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use configuration_core::Validate;
+use rootreal_core_application_config_configuration_core::Validate;
 use linkml_core::{
     configuration::LinkMLServiceConfig,
     error::{LinkMLError, Result},
@@ -14,14 +14,14 @@ use linkml_core::{
 use crate::service::LinkMLServiceImpl;
 
 // RootReal service dependencies
-use cache_core::CacheService;
-use configuration_core::ConfigurationService;
+use rootreal_core_application_resources_cache_core::CacheService;
+use rootreal_core_application_config_configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::ErrorHandlingService;
+use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
-use task_management_core::TaskManagementService;
+use rootreal_core_foundation_task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
 use timestamp_core::{TimestampService, TimestampError};
 

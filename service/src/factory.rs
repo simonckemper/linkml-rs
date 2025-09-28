@@ -7,14 +7,14 @@ use linkml_core::{config::LinkMLConfig, error::Result};
 use crate::config_helpers::load_and_validate_configuration;
 
 // RootReal service dependencies
-use cache_core::CacheService;
-use configuration_core::ConfigurationService;
+use rootreal_core_application_resources_cache_core::CacheService;
+use rootreal_core_application_config_configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::ErrorHandlingService;
+use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
-use task_management_core::TaskManagementService;
+use rootreal_core_foundation_task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
 use timestamp_core::{TimestampService, TimestampError};
 

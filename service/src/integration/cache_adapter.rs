@@ -1,7 +1,7 @@
 //! Cache adapter for `RootReal` `CacheService` integration
 
 use async_trait::async_trait;
-use cache_core::CacheKey;
+use rootreal_core_application_resources_cache_core::CacheKey;
 use std::sync::Arc;
 
 /// Adapter to convert `RootReal`'s `CacheService` to our internal trait

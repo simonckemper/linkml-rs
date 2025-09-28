@@ -16,7 +16,7 @@ use timestamp_core::traits::TimestampService;
 // Task management not used in this test
 // Error handling not used in this test
 // Configuration not used in this test
-use cache_core::traits::CacheService;
+use rootreal_core_application_resources_cache_core::traits::CacheService;
 use monitoring_core::traits::MonitoringService;
 
 // Mock consumer services

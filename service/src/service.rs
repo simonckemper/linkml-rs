@@ -25,14 +25,14 @@ use serde_json::json;
 use std::collections::HashMap;
 
 // RootReal service dependencies
-use cache_core::CacheService;
-use configuration_core::ConfigurationService;
+use rootreal_core_application_resources_cache_core::CacheService;
+use rootreal_core_application_config_configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::{ErrorContext, ErrorHandlingService};
+use rootreal_core_resilience_error_handling_core::{ErrorContext, ErrorHandlingService};
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
-use task_management_core::{TaskId, TaskManagementService};
+use rootreal_core_foundation_task_management_core::{TaskId, TaskManagementService};
 use timeout_core::TimeoutService;
 use timestamp_core::{TimestampService, TimestampError};
 

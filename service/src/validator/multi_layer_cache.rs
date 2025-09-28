@@ -7,7 +7,7 @@
 
 use super::{cache::ValidatorCacheKey, compiled::CompiledValidator};
 use crate::utils::safe_cast::u64_to_f64_lossy;
-use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
+use rootreal_core_application_resources_cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
 use linkml_core::error::{LinkMLError, Result};
 use lru::LruCache;
 use parking_lot::{Mutex, RwLock};

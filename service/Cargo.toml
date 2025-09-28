@@ -140,7 +140,7 @@ rootreal-core-application-resources-cache-core = { workspace = true }
 rootreal-core-observability-telemetry-core = { workspace = true }
 rootreal-database-lakehouse-core = { workspace = true }
 rootreal-data-parsing-parse-core = { workspace = true }
-rootreal-core-resilience-timeout-service-core = { workspace = true }
+rootreal-core-resilience-timeout-core = { workspace = true }
 rootreal-core-foundation-random-core = { workspace = true }
 rootreal-core-foundation-random = { workspace = true }
 rootreal-security-identity-authentication-core = { workspace = true }
