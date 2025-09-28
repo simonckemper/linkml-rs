@@ -42,8 +42,7 @@ tracing = "0.1"
 humantime-serde = "1.1"
 num_cpus = "1.16"
 anyhow = { workspace = true }
-rootreal-core-application-configuration-core = { path = "../../configuration/configuration-core" }
-rootreal-core-foundation-timestamp-core = { path = "../../timestamp/timestamp-core" }
+rootreal-core-application-configuration-core = { path = "../../../../core/application/configuration/configuration-core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }
