@@ -200,7 +200,7 @@ description = "Enhanced TypeScript code generator with additional features"
 version = "1.2.0"
 plugin_type = "Generator"
 author = "Your Name"
-license = "MIT"
+license = "CC-BY-NC-4.0"
 homepage = "https://github.com/yourusername/custom-ts-generator"
 linkml_version = ">=2.0.0"
 

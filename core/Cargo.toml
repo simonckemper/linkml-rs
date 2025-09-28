@@ -42,7 +42,7 @@ tracing = "0.1"
 humantime-serde = "1.1"
 num_cpus = "1.16"
 anyhow = { workspace = true }
-rootreal-core-application-configuration-core = { path = "../../../../core/application/configuration/configuration-core" }
+rootreal-core-application-configuration-core = { path = "../../../../core/application/config/configuration/core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }

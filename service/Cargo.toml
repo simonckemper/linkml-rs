@@ -127,26 +127,26 @@ colored = "2.1"
 indicatif = "0.17"
 rustyline = "14.0"
 rootreal-model-symbolic-linkml-core = { path = "../linkml-core" }
-rootreal-hub-api-restful-api-core = { path = "../../../../hub/api/restful-api/restful-api-core" }
-rootreal-hub-web-frontend-framework-frontend = { path = "../../../../hub/web/frontend-framework/frontend-framework-frontend/frontend-framework-core" }
-rootreal-core-application-shutdown-core = { path = "../../../../core/application/shutdown/shutdown-core" }
-rootreal-core-observability-logger-core = { path = "../../../../core/observability/logger/logger-core" }
-rootreal-core-foundation-timestamp = { path = "../../../../core/foundation/timestamp/timestamp-service" }
-rootreal-core-foundation-task-management-core = { path = "../../../../core/foundation/task-management/task-management-core" }
-rootreal-core-resilience-error-handling-core = { path = "../../../../core/resilience/error-handling/error-handling-core" }
-rootreal-core-application-memory-core = { path = "../../../../core/application/memory/memory-core" }
-rootreal-core-application-configuration-core = { path = "../../../../core/application/configuration/configuration-core" }
-rootreal-core-application-cache-core = { path = "../../../../core/application/cache/cache-core" }
-rootreal-core-observability-telemetry-core = { path = "../../../../core/observability/telemetry/telemetry-core" }
-rootreal-database-dbms-dbms-core = { path = "../../../../database/dbms/dbms/dbms-core" }
-rootreal-data-parsing-parse-core = { path = "../../../../data/parsing/parse/parse-core" }
-rootreal-core-resilience-timeout-core = { path = "../../../../core/resilience/timeout/timeout-core" }
-rootreal-core-foundation-random-core = { path = "../../../../core/foundation/random/random-core" }
-rootreal-core-foundation-random = { path = "../../../../core/foundation/random/random-service" }
-rootreal-security-identity-authentication-core = { path = "../../../../security/identity/authentication/authentication-core" }
-rootreal-security-crypto-hash-core = { path = "../../../../security/crypto/hash/hash-core" }
-rootreal-optimization-resilience-rate-limiting-core = { path = "../../../../optimization/resilience/rate-limiting/rate-limiting-core" }
-rootreal-database-vector-vector-database-core = { path = "../../../../database/vector/vector-database/vector-database-core" }
+rootreal-hub-api-restful-api-core = { path = "../../../../hub/api/web/rest/core" }
+rootreal-hub-web-frontend-framework-frontend = { path = "../../../../hub/web/frontend/frontend-framework-frontend/frontend-framework-core" }
+rootreal-core-application-shutdown-core = { path = "../../../../core/application/lifecycle/shutdown/core" }
+rootreal-core-observability-logger-core = { path = "../../../../core/observability/logger/core" }
+rootreal-core-foundation-timestamp = { path = "../../../../core/foundation/timestamp/service" }
+rootreal-core-foundation-task-management-core = { path = "../../../../core/foundation/task-management/core" }
+rootreal-core-resilience-error-handling-core = { path = "../../../../core/resilience/error-handling/core" }
+rootreal-core-application-memory-core = { path = "../../../../core/application/resources/memory/core" }
+rootreal-core-application-configuration-core = { path = "../../../../core/application/config/configuration/core" }
+rootreal-core-application-cache-core = { path = "../../../../core/application/resources/cache/core" }
+rootreal-core-observability-telemetry-core = { path = "../../../../core/observability/telemetry/core" }
+rootreal-database-dbms-dbms-core = { path = "../../../../database/dbms/dbms/core" }
+rootreal-data-parsing-parse-core = { path = "../../../../data/parsing/parse/core" }
+rootreal-core-resilience-timeout-core = { path = "../../../../core/resilience/timeout/core" }
+rootreal-core-foundation-random-core = { path = "../../../../core/foundation/random/core" }
+rootreal-core-foundation-random = { path = "../../../../core/foundation/random/service" }
+rootreal-security-identity-authentication-core = { path = "../../../../security/identity/authentication/core" }
+rootreal-security-crypto-hash-core = { path = "../../../../security/crypto/hash/core" }
+rootreal-optimization-resilience-rate-limiting-core = { path = "../../../../optimization/resilience/rate-limiting/core" }
+rootreal-database-vector-vector-database-core = { path = "../../../../database/vector/vector-database/core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }

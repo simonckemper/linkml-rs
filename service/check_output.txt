@@ -1,5 +1,0 @@
-    Updating crates.io index
-error: failed to select a version for the requirement `memory-stats = "^1.3"`
-candidate versions found which didn't match: 1.2.0, 1.1.0, 1.0.0
-location searched: crates.io index
-required by package `dbms-service v0.1.0 (/home/kempersc/apps/rootreal/crates/dbms/dbms-service)`
