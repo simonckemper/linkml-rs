@@ -1,5 +1,5 @@
 [package]
-name = "linkml-client"
+name = "rootreal-model-symbolic-linkml-client"
 version = "0.1.0"
 edition = "2024"
 authors = ["Simon C. Kemper <textpast@textpast.com>"]
@@ -9,9 +9,10 @@ repository = "https://github.com/simonckemper/rootreal"
 keywords = ["linkml", "client", "validation"]
 categories = ["api-bindings"]
 readme = "README.md"
+
+[package.metadata]
+alias = "linkml-client"
 [dependencies]
-# Core dependencies
-linkml-core = { path = "../linkml-core" }
 
 # Async runtime
 tokio = { version = "1.42", features = ["sync", "macros"] }
@@ -26,6 +27,7 @@ thiserror = "2.0"
 
 # Tracing
 tracing = "0.1"
+rootreal-model-symbolic-linkml-core = { path = "../linkml-core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }

@@ -1,5 +1,5 @@
 [package]
-name = "linkml-core"
+name = "rootreal-model-symbolic-linkml-core"
 version = "2.0.0"
 edition = "2024"
 authors = ["Simon C. Kemper <textpast@textpast.com>"]
@@ -9,6 +9,9 @@ repository = "https://github.com/simonckemper/rootreal"
 keywords = ["linkml", "schema", "validation", "metadata"]
 categories = ["data-structures", "encoding", "parser-implementations"]
 readme = "README.md"
+
+[package.metadata]
+alias = "linkml-core"
 [dependencies]
 # Core dependencies
 serde = { version = "1.0", features = ["derive", "rc"] }
@@ -17,8 +20,6 @@ serde_yaml = "0.9"
 thiserror = "2.0"
 indexmap = { version = "2.2", features = ["serde"] }
 dashmap = { workspace = true }
-configuration-core = { path = "../../configuration/configuration-core" }
-timestamp-core = { path = "../../timestamp/timestamp-core" }
 
 # Async support
 async-trait = "0.1"
@@ -41,6 +42,8 @@ tracing = "0.1"
 humantime-serde = "1.1"
 num_cpus = "1.16"
 anyhow = { workspace = true }
+rootreal-core-application-configuration-core = { path = "../../configuration/configuration-core" }
+rootreal-core-foundation-timestamp-core = { path = "../../timestamp/timestamp-core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }

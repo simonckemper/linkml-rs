@@ -1,5 +1,5 @@
 [package]
-name = "linkml-service"
+name = "rootreal-model-symbolic-linkml"
 version = "2.0.0"
 edition = "2024"
 authors = ["Simon C. Kemper <textpast@textpast.com>"]
@@ -11,6 +11,9 @@ categories = ["data-structures", "encoding", "parser-implementations", "developm
 readme = "README.md"
 autoexamples = false
 autotests = false
+
+[package.metadata]
+alias = "linkml-service"
 [features]
 default = []
 database = ["dep:sqlx"]  # Database support for PostgreSQL and MySQL (no SQLite to avoid burn conflicts)
@@ -19,52 +22,6 @@ linkml_examples = []
 test-utils = []  # Test utilities for external testing
 
 [dependencies]
-# Core dependencies
-linkml-core = { path = "../linkml-core" }
-
-# RootReal service dependencies - ARCHITECTURAL COMPLIANCE INTEGRATION
-# Core services that LinkML integrates with instead of implementing its own infrastructure
-restful-api-core = { path = "../../restful-api/restful-api-core" }
-# restful-api-service = { path = "../../restful-api/restful-api-service" }
-frontend-framework-core = { path = "../../frontend-framework/frontend-framework-core" }
-# frontend-framework-service = { path = "../../frontend-framework/frontend-framework-service" }
-shutdown-core = { path = "../../shutdown/shutdown-core" }
-# shutdown-service = { path = "../../shutdown/shutdown-service" }
-logger-core = { path = "../../logger/logger-core" }
-# Keep only essential services to reduce compilation time
-# logger-service = { path = "../../logger/logger-service" }
-timestamp-core = { path = "../../timestamp/timestamp-core" }
-timestamp-service = { path = "../../timestamp/timestamp-service" }
-task-management-core = { path = "../../task-management/task-management-core" }
-# task-management-service = { path = "../../task-management/task-management-service" }
-error-handling-core = { path = "../../error-handling/error-handling-core" }
-# error-handling-service = { path = "../../error-handling/error-handling-service" }
-memory-core = { path = "../../memory/memory-core" }
-# memory-service = { path = "../../memory/memory-service" }
-configuration-core = { path = "../../configuration/configuration-core" }
-# configuration-service = { path = "../../configuration/configuration-service" }
-cache-core = { path = "../../cache/cache-core" }
-# cache-service = { path = "../../cache/cache-service" }
-monitoring-core = { path = "../../monitoring/monitoring-core" }
-# monitoring-service = { path = "../../monitoring/monitoring-service" }
-telemetry-core = { path = "../../telemetry/telemetry-core" }
-# telemetry-service = { path = "../../telemetry/telemetry-service" }
-dbms-core = { path = "../../dbms/dbms-core" }
-parse-core = { path = "../../parse/parse-core" }
-timeout-core = { path = "../../timeout/timeout-core" }
-# timeout-service = { path = "../../timeout/timeout-service" }
-random-core = { path = "../../random/random-core" }
-random-service = { path = "../../random/random-service" }
-authentication-core = { path = "../../authentication/authentication-core" }
-# authentication-service = { path = "../../authentication/authentication-service" }
-hash-core = { path = "../../hash/hash-core" }
-# hash-service = { path = "../../hash/hash-service" }
-# Removed lakehouse-service dependency to break circular dependency
-# LinkML service should not depend on lakehouse, only provide schemas for it
-lakehouse-core = { path = "../../lakehouse/lakehouse-core" }
-rate-limiting-core = { path = "../../rate-limiting/rate-limiting-core" }
-# rate-limiting-service = { path = "../../rate-limiting/rate-limiting-service" }
-vector-database-core = { path = "../../vector-database/vector-database-core" }
 
 # Async runtime
 tokio = { version = "1.42", features = ["full"] }
@@ -169,6 +126,30 @@ clap = { version = "4.4", features = ["derive"] }
 colored = "2.1"
 indicatif = "0.17"
 rustyline = "14.0"
+rootreal-model-symbolic-linkml-core = { path = "../linkml-core" }
+rootreal-hub-api-restful-api-core = { path = "../../restful-api/restful-api-core" }
+rootreal-hub-web-frontend-framework-frontend = { path = "../../frontend-framework/frontend-framework-core" }
+rootreal-core-application-shutdown-core = { path = "../../shutdown/shutdown-core" }
+rootreal-core-observability-logger-core = { path = "../../logger/logger-core" }
+rootreal-core-foundation-timestamp-core = { path = "../../timestamp/timestamp-core" }
+rootreal-core-foundation-timestamp = { path = "../../timestamp/timestamp-service" }
+rootreal-core-foundation-task-management-core = { path = "../../task-management/task-management-core" }
+rootreal-core-resilience-error-handling-core = { path = "../../error-handling/error-handling-core" }
+rootreal-core-application-memory-core = { path = "../../memory/memory-core" }
+rootreal-core-application-configuration-core = { path = "../../configuration/configuration-core" }
+rootreal-core-application-cache-core = { path = "../../cache/cache-core" }
+rootreal-core-observability-monitoring-core = { path = "../../monitoring/monitoring-core" }
+rootreal-core-observability-telemetry-core = { path = "../../telemetry/telemetry-core" }
+rootreal-database-dbms-dbms-core = { path = "../../dbms/dbms-core" }
+rootreal-data-parsing-parse-core = { path = "../../parse/parse-core" }
+rootreal-core-resilience-timeout-core = { path = "../../timeout/timeout-core" }
+rootreal-core-foundation-random-core = { path = "../../random/random-core" }
+rootreal-core-foundation-random = { path = "../../random/random-service" }
+rootreal-security-identity-authentication-core = { path = "../../authentication/authentication-core" }
+rootreal-security-crypto-hash-core = { path = "../../hash/hash-core" }
+rootreal-database-lakehouse-lakehouse-core = { path = "../../lakehouse/lakehouse-core" }
+rootreal-optimization-resilience-rate-limiting-core = { path = "../../rate-limiting/rate-limiting-core" }
+rootreal-database-vector-vector-database-core = { path = "../../vector-database/vector-database-core" }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }
