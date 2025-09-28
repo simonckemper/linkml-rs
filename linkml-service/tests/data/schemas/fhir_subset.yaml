@@ -1,0 +1,296 @@
+id: https://example.org/fhir-subset
+name: FHIR_Subset
+description: Subset of FHIR for healthcare integration testing
+
+prefixes:
+  fhir: https://hl7.org/fhir/
+  linkml: https://w3id.org/linkml/
+
+classes:
+  Resource:
+    abstract: true
+    description: Base resource type
+    attributes:
+      id:
+        identifier: true
+        pattern: "^[A-Za-z0-9\\-\\.]{1,64}$"
+      meta:
+        range: Meta
+        description: Metadata about the resource
+
+  DomainResource:
+    is_a: Resource
+    abstract: true
+    attributes:
+      text:
+        range: Narrative
+        description: Human-readable summary
+
+  Patient:
+    is_a: DomainResource
+    description: Demographics and administrative information about a patient
+    attributes:
+      identifier:
+        range: Identifier
+        multivalued: true
+        minimum_cardinality: 1
+      active:
+        range: boolean
+        ifabsent: 'true'
+      name:
+        range: HumanName
+        multivalued: true
+        minimum_cardinality: 1
+      gender:
+        range: gender_enum
+        required: true
+      birthDate:
+        range: date
+        required: true
+      address:
+        range: Address
+        multivalued: true
+      contact:
+        range: ContactPoint
+        multivalued: true
+    rules:
+      - preconditions:
+          description: Check age
+        postconditions:
+          description: Minors need guardian contact
+        # Age < 18 requires at least one contact
+    expressions:
+      - 'age = floor((today() - birthDate) / 365.25)'
+
+  Observation:
+    is_a: DomainResource
+    description: Measurements and simple assertions
+    attributes:
+      status:
+        range: observation_status_enum
+        required: true
+      code:
+        range: CodeableConcept
+        required: true
+      subject:
+        range: Patient
+        required: true
+      effectiveDateTime:
+        range: datetime
+      valueQuantity:
+        range: Quantity
+      interpretation:
+        range: CodeableConcept
+        multivalued: true
+      referenceRange:
+        range: ReferenceRange
+        multivalued: true
+    rules:
+      - preconditions:
+          slot_conditions:
+            status:
+              equals: "final"
+        postconditions:
+          slot_conditions:
+            valueQuantity:
+              required: true
+        description: Final observations must have values
+
+  Meta:
+    description: Resource metadata
+    attributes:
+      versionId:
+        range: string
+      lastUpdated:
+        range: datetime
+        required: true
+      profile:
+        range: uri
+        multivalued: true
+
+  Narrative:
+    description: Human-readable text
+    attributes:
+      status:
+        range: narrative_status_enum
+        required: true
+      div:
+        range: string
+        required: true
+        description: xhtml content
+
+  Identifier:
+    description: Business identifier
+    attributes:
+      use:
+        range: identifier_use_enum
+      type:
+        range: CodeableConcept
+      system:
+        range: uri
+        required: true
+      value:
+        range: string
+        required: true
+
+  HumanName:
+    description: Human name
+    attributes:
+      use:
+        range: name_use_enum
+      family:
+        range: string
+        required: true
+      given:
+        range: string
+        multivalued: true
+      prefix:
+        range: string
+        multivalued: true
+
+  Address:
+    description: Postal address
+    attributes:
+      use:
+        range: address_use_enum
+      line:
+        range: string
+        multivalued: true
+      city:
+        range: string
+      state:
+        range: string
+      postalCode:
+        range: string
+        pattern: "^[0-9]{5}(-[0-9]{4})?$"
+      country:
+        range: string
+        pattern: "^[A-Z]{2}$"
+
+  ContactPoint:
+    description: Contact details
+    attributes:
+      system:
+        range: contact_system_enum
+        required: true
+      value:
+        range: string
+        required: true
+      use:
+        range: contact_use_enum
+
+  CodeableConcept:
+    description: Coded value
+    attributes:
+      coding:
+        range: Coding
+        multivalued: true
+      text:
+        range: string
+
+  Coding:
+    description: Reference to a terminology
+    attributes:
+      system:
+        range: uri
+        required: true
+      code:
+        range: string
+        required: true
+      display:
+        range: string
+
+  Quantity:
+    description: Measured amount
+    attributes:
+      value:
+        range: decimal
+        required: true
+      unit:
+        range: string
+      system:
+        range: uri
+        ifabsent: 'http://unitsofmeasure.org'
+      code:
+        range: string
+
+  ReferenceRange:
+    description: Normal range for observation
+    attributes:
+      low:
+        range: Quantity
+      high:
+        range: Quantity
+      type:
+        range: CodeableConcept
+      text:
+        range: string
+
+enums:
+  gender_enum:
+    permissible_values:
+      male:
+      female:
+      other:
+      unknown:
+
+  observation_status_enum:
+    permissible_values:
+      registered:
+      preliminary:
+      final:
+      amended:
+      corrected:
+      cancelled:
+      entered-in-error:
+
+  narrative_status_enum:
+    permissible_values:
+      generated:
+      extensions:
+      additional:
+      empty:
+
+  identifier_use_enum:
+    permissible_values:
+      usual:
+      official:
+      temp:
+      secondary:
+      old:
+
+  name_use_enum:
+    permissible_values:
+      usual:
+      official:
+      temp:
+      nickname:
+      anonymous:
+      old:
+      maiden:
+
+  address_use_enum:
+    permissible_values:
+      home:
+      work:
+      temp:
+      old:
+      billing:
+
+  contact_system_enum:
+    permissible_values:
+      phone:
+      fax:
+      email:
+      pager:
+      url:
+      sms:
+      other:
+
+  contact_use_enum:
+    permissible_values:
+      home:
+      work:
+      temp:
+      old:
+      mobile:

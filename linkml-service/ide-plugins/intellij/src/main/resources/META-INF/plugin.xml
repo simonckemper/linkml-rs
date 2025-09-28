@@ -1,0 +1,263 @@
+<idea-plugin>
+    <id>com.rootreal.linkml</id>
+    <name>LinkML Schema Support</name>
+    <vendor email="support@textpast.com" url="https://github.com/simonckemper/rootreal">RootReal</vendor>
+
+    <description><![CDATA[
+        <h3>LinkML Schema Support for IntelliJ IDEA</h3>
+        <p>
+            Comprehensive support for LinkML (Linked Data Modeling Language) schemas in IntelliJ IDEA.
+            This plugin provides full language support including syntax highlighting, validation,
+            code completion, and code generation.
+        </p>
+
+        <h4>Features:</h4>
+        <ul>
+            <li>Syntax highlighting for LinkML YAML schemas</li>
+            <li>Real-time schema validation</li>
+            <li>Code completion for LinkML keywords and references</li>
+            <li>Code generation to multiple languages (Python, TypeScript, Java, etc.)</li>
+            <li>Schema visualization and navigation</li>
+            <li>Refactoring support</li>
+            <li>Quick fixes and inspections</li>
+            <li>Live templates for common patterns</li>
+            <li>Structure view for easy navigation</li>
+            <li>Find usages and go to declaration</li>
+        </ul>
+
+        <h4>Supported Generators:</h4>
+        <ul>
+            <li>Python (Dataclass & Pydantic)</li>
+            <li>TypeScript & JavaScript</li>
+            <li>Java</li>
+            <li>Go</li>
+            <li>Rust</li>
+            <li>SQL DDL</li>
+            <li>GraphQL</li>
+            <li>JSON Schema</li>
+            <li>And 30+ more formats!</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.yaml</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- File Type -->
+        <fileType
+            name="LinkML Schema"
+            implementationClass="com.rootreal.linkml.LinkMLFileType"
+            fieldName="INSTANCE"
+            language="LinkML"
+            extensions="linkml.yaml;linkml.yml;linkml"/>
+
+        <!-- Language -->
+        <lang.parserDefinition
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.parser.LinkMLParserDefinition"/>
+
+        <!-- Syntax Highlighting -->
+        <lang.syntaxHighlighterFactory
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.highlighting.LinkMLSyntaxHighlighterFactory"/>
+
+        <colorSettingsPage
+            implementation="com.rootreal.linkml.highlighting.LinkMLColorSettingsPage"/>
+
+        <!-- Code Completion -->
+        <completion.contributor
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.completion.LinkMLCompletionContributor"
+            order="first"/>
+
+        <!-- References -->
+        <psi.referenceContributor
+            language="LinkML"
+            implementation="com.rootreal.linkml.reference.LinkMLReferenceContributor"/>
+
+        <!-- Structure View -->
+        <lang.psiStructureViewFactory
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.structure.LinkMLStructureViewFactory"/>
+
+        <!-- Folding -->
+        <lang.foldingBuilder
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.folding.LinkMLFoldingBuilder"/>
+
+        <!-- Commenter -->
+        <lang.commenter
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.LinkMLCommenter"/>
+
+        <!-- Formatter -->
+        <lang.formatter
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.formatting.LinkMLFormattingModelBuilder"/>
+
+        <!-- Inspections -->
+        <localInspection
+            language="LinkML"
+            displayName="LinkML schema validation"
+            groupName="LinkML"
+            implementationClass="com.rootreal.linkml.inspection.LinkMLSchemaInspection"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <localInspection
+            language="LinkML"
+            displayName="Undefined class reference"
+            groupName="LinkML"
+            implementationClass="com.rootreal.linkml.inspection.LinkMLUndefinedReferenceInspection"
+            enabledByDefault="true"
+            level="WARNING"/>
+
+        <localInspection
+            language="LinkML"
+            displayName="Duplicate identifier"
+            groupName="LinkML"
+            implementationClass="com.rootreal.linkml.inspection.LinkMLDuplicateIdentifierInspection"
+            enabledByDefault="true"
+            level="ERROR"/>
+
+        <!-- Quick Fixes -->
+        <intentionAction>
+            <className>com.rootreal.linkml.quickfix.CreateMissingClassQuickFix</className>
+            <category>LinkML</category>
+        </intentionAction>
+
+        <intentionAction>
+            <className>com.rootreal.linkml.quickfix.AddRequiredFieldQuickFix</className>
+            <category>LinkML</category>
+        </intentionAction>
+
+        <!-- Live Templates -->
+        <liveTemplateContext
+            implementation="com.rootreal.linkml.template.LinkMLTemplateContextType"/>
+
+        <defaultLiveTemplates file="/liveTemplates/LinkML.xml"/>
+
+        <!-- Documentation -->
+        <lang.documentationProvider
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.documentation.LinkMLDocumentationProvider"/>
+
+        <!-- Refactoring -->
+        <refactoring.safeDeleteProcessor
+            implementation="com.rootreal.linkml.refactoring.LinkMLSafeDeleteProcessor"/>
+
+        <renamePsiElementProcessor
+            implementation="com.rootreal.linkml.refactoring.LinkMLRenameProcessor"/>
+
+        <!-- Find Usages -->
+        <lang.findUsagesProvider
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.findusages.LinkMLFindUsagesProvider"/>
+
+        <!-- Code Style Settings -->
+        <codeStyleSettingsProvider
+            implementation="com.rootreal.linkml.formatting.LinkMLCodeStyleSettingsProvider"/>
+
+        <langCodeStyleSettingsProvider
+            implementation="com.rootreal.linkml.formatting.LinkMLLanguageCodeStyleSettingsProvider"/>
+
+        <!-- Annotator -->
+        <annotator
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.annotator.LinkMLAnnotator"/>
+
+        <!-- Gutter Icons -->
+        <codeInsight.lineMarkerProvider
+            language="LinkML"
+            implementationClass="com.rootreal.linkml.gutter.LinkMLLineMarkerProvider"/>
+
+        <!-- Project Service -->
+        <projectService
+            serviceImplementation="com.rootreal.linkml.service.LinkMLProjectService"/>
+
+        <!-- Tool Window -->
+        <toolWindow
+            id="LinkML"
+            anchor="right"
+            factoryClass="com.rootreal.linkml.toolwindow.LinkMLToolWindowFactory"
+            icon="/icons/linkml.svg"/>
+
+        <!-- Settings -->
+        <projectConfigurable
+            id="linkml.settings"
+            instance="com.rootreal.linkml.settings.LinkMLSettingsConfigurable"
+            displayName="LinkML"
+            nonDefaultProject="true"/>
+
+        <!-- Notification Group -->
+        <notificationGroup
+            id="LinkML Notifications"
+            displayType="BALLOON"
+            isLogByDefault="true"/>
+    </extensions>
+
+    <actions>
+        <!-- Main Menu -->
+        <group id="LinkMLMenu" text="Link_ML" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <action id="LinkML.Validate"
+                    class="com.rootreal.linkml.action.ValidateSchemaAction"
+                    text="Validate Schema"
+                    description="Validate the current LinkML schema">
+                <keyboard-shortcut first-keystroke="ctrl shift V" keymap="$default"/>
+            </action>
+
+            <action id="LinkML.Generate"
+                    class="com.rootreal.linkml.action.GenerateCodeAction"
+                    text="Generate Code..."
+                    description="Generate code from LinkML schema">
+                <keyboard-shortcut first-keystroke="ctrl shift G" keymap="$default"/>
+            </action>
+
+            <separator/>
+
+            <action id="LinkML.Format"
+                    class="com.rootreal.linkml.action.FormatSchemaAction"
+                    text="Format Schema"
+                    description="Format the current LinkML schema"/>
+
+            <action id="LinkML.Visualize"
+                    class="com.rootreal.linkml.action.VisualizeSchemaAction"
+                    text="Visualize Schema"
+                    description="Visualize the schema structure"/>
+
+            <separator/>
+
+            <action id="LinkML.NewSchema"
+                    class="com.rootreal.linkml.action.NewSchemaAction"
+                    text="New LinkML Schema"
+                    description="Create a new LinkML schema"/>
+
+            <action id="LinkML.ConvertFormat"
+                    class="com.rootreal.linkml.action.ConvertFormatAction"
+                    text="Convert Format..."
+                    description="Convert schema between formats"/>
+        </group>
+
+        <!-- Editor Popup Menu -->
+        <group id="LinkMLEditorPopup">
+            <reference ref="LinkML.Validate"/>
+            <reference ref="LinkML.Generate"/>
+            <separator/>
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="RefactoringMenu"/>
+        </group>
+
+        <!-- Project View Popup -->
+        <group id="LinkMLProjectViewPopup">
+            <reference ref="LinkML.Validate"/>
+            <reference ref="LinkML.Generate"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="RefactoringMenu"/>
+        </group>
+    </actions>
+
+    <applicationListeners>
+        <listener class="com.rootreal.linkml.listener.LinkMLFileListener"
+                  topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </applicationListeners>
+</idea-plugin>

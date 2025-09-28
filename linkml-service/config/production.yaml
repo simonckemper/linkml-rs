@@ -1,0 +1,140 @@
+# Production LinkML Service Configuration
+# Optimized for production workloads with higher limits and longer cache times
+
+typedb:
+  server_address: "${TYPEDB_SERVER:-typedb.production.local:1729}"
+  default_database: "${TYPEDB_DATABASE:-linkml_prod}"
+  batch_size: 5000
+  connection_timeout_ms: 60000
+  query_timeout_ms: 30000
+  max_retries: 5
+  retry_delay_ms: 2000
+  pool_size: 50
+  include_inferred: true
+
+parser:
+  max_recursion_depth: 200
+  enable_cache: true
+  cache_ttl_seconds: 7200  # 2 hours
+  max_file_size_bytes: 52428800  # 50MB
+  supported_formats:
+    - "yaml"
+    - "yml"
+    - "json"
+  max_import_depth: 20
+
+validator:
+  enable_parallel: true
+  thread_count: 16
+  batch_size: 500
+  timeout_ms: 60000
+  max_errors: 5000
+  fail_fast: false
+  compiled_cache_size: 5000
+
+generator:
+  output_directory: "${OUTPUT_DIR:-/var/linkml/generated}"
+  enable_formatting: true
+  include_docs: true
+  generator_options:
+    python:
+      template_path: null
+      settings:
+        use_pydantic_v2: true
+        optimize_imports: true
+    typescript:
+      template_path: null
+      settings:
+        use_strict: true
+        target: "ES2020"
+    rust:
+      template_path: null
+      settings:
+        derive_debug: false
+        derive_serde: true
+
+cache:
+  max_entries: 100000
+  ttl_seconds: 7200  # 2 hours
+  enable_compression: true
+  eviction_policy: "Lru"
+  expression_cache:
+    max_entries: 10000
+    ttl_seconds: 3600
+  rule_cache:
+    max_entries: 5000
+    ttl_seconds: 14400  # 4 hours
+
+performance:
+  enable_monitoring: true
+  memory_limit_bytes: 8589934592  # 8GB
+  cpu_limit_percent: 90
+  enable_string_interning: true
+  string_pool_size: 50000
+  enable_background_tasks: true
+  enable_cache_warming: true
+  background_task_interval_secs: 300  # 5 minutes
+  string_cache:
+    max_entries: 20000
+    max_string_length: 4096
+  memory_pool:
+    max_size_bytes: 1073741824  # 1GB
+    chunk_size_bytes: 8192
+  cache_ttl_levels:
+    l1_seconds: 600    # 10 minutes
+    l2_seconds: 3600   # 1 hour
+    l3_seconds: 14400  # 4 hours
+    min_ttl_seconds: 300
+    max_ttl_seconds: 172800  # 48 hours
+
+security_limits:
+  max_string_length: 262144  # 256KB
+  max_expression_depth: 200
+  max_constraint_count: 5000
+  max_cache_entries: 1000000
+  max_function_args: 50
+  max_identifier_length: 512
+  max_json_size_bytes: 52428800  # 50MB
+  max_slots_per_class: 5000
+  max_classes_per_schema: 50000
+  max_validation_time_ms: 600000  # 10 minutes
+  max_memory_usage_bytes: 8589934592  # 8GB
+  max_parallel_validators: 500
+  max_cache_memory_bytes: 1073741824  # 1GB
+  max_expression_time_ms: 5000
+  max_validation_errors: 5000
+
+# Network configuration
+network:
+  default_host: "0.0.0.0"
+  default_port: "${PORT:-8080}"
+  api_timeout_seconds: 60
+
+# Expression evaluation configuration
+expression:
+  enable_cache: true
+  enable_compilation: true
+  cache_size: 10000
+  timeout_seconds: 5
+  max_recursion_depth: 100
+
+# Pattern validator configuration
+pattern_validator:
+  default_cache_size: 1000
+
+# Multi-layer cache configuration
+multi_layer_cache:
+  l3_max_size_bytes: 10737418240  # 10GB
+
+# Background service intervals
+background_services:
+  cache_ttl_check_interval_secs: 600   # 10 minutes
+  memory_cleanup_interval_secs: 1800   # 30 minutes
+  panic_recovery_timeout_secs: 10
+  error_recovery_timeout_secs: 120
+
+# CLI specific configuration
+cli:
+  default_iterations: 10000
+  progress_bar_template: "{spinner} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})"
+  progress_bar_finish_template: "✨ Completed in {elapsed_precise}"

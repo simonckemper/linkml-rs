@@ -1,0 +1,205 @@
+{
+  "name": "linkml-vscode",
+  "displayName": "LinkML Schema Support",
+  "description": "Language support for LinkML schemas in Visual Studio Code",
+  "version": "2.0.0",
+  "publisher": "rootreal",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simonckemper/rootreal"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Snippets"
+  ],
+  "keywords": [
+    "linkml",
+    "schema",
+    "yaml",
+    "validation",
+    "data modeling"
+  ],
+  "icon": "images/icon.png",
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "linkml",
+        "aliases": ["LinkML", "linkml"],
+        "extensions": [".linkml.yaml", ".linkml.yml", ".linkml"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "linkml",
+        "scopeName": "source.linkml",
+        "path": "./syntaxes/linkml.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "linkml.validate",
+        "title": "LinkML: Validate Schema"
+      },
+      {
+        "command": "linkml.generate",
+        "title": "LinkML: Generate Code"
+      },
+      {
+        "command": "linkml.format",
+        "title": "LinkML: Format Schema"
+      },
+      {
+        "command": "linkml.visualize",
+        "title": "LinkML: Visualize Schema"
+      },
+      {
+        "command": "linkml.convert",
+        "title": "LinkML: Convert Schema Format"
+      },
+      {
+        "command": "linkml.showDocumentation",
+        "title": "LinkML: Show Documentation"
+      },
+      {
+        "command": "linkml.createNewSchema",
+        "title": "LinkML: Create New Schema"
+      },
+      {
+        "command": "linkml.runTests",
+        "title": "LinkML: Run Validation Tests"
+      }
+    ],
+    "configuration": {
+      "title": "LinkML",
+      "properties": {
+        "linkml.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to LinkML language server executable"
+        },
+        "linkml.validation.onSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate LinkML schemas on save"
+        },
+        "linkml.validation.onType": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate LinkML schemas as you type"
+        },
+        "linkml.format.onSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Format LinkML schemas on save"
+        },
+        "linkml.generation.defaultTarget": {
+          "type": "string",
+          "default": "python",
+          "enum": [
+            "python",
+            "typescript",
+            "java",
+            "rust",
+            "go",
+            "sql",
+            "graphql",
+            "jsonschema"
+          ],
+          "description": "Default code generation target"
+        },
+        "linkml.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace communication with LinkML language server"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "linkml",
+        "path": "./snippets/linkml.json"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "*.linkml.json",
+        "url": "./schemas/linkml-schema.json"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .linkml.yaml || resourceExtname == .linkml.yml",
+          "command": "linkml.validate",
+          "group": "linkml@1"
+        },
+        {
+          "when": "resourceExtname == .linkml.yaml || resourceExtname == .linkml.yml",
+          "command": "linkml.generate",
+          "group": "linkml@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .linkml.yaml || resourceExtname == .linkml.yml",
+          "command": "linkml.validate",
+          "group": "linkml"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "linkml.validate",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorTextFocus && editorLangId == linkml"
+      },
+      {
+        "command": "linkml.generate",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g",
+        "when": "editorTextFocus && editorLangId == linkml"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && npm run build-wasm",
+    "build-wasm": "wasm-pack build --target web --out-dir dist/wasm ../../../linkml-wasm",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "yaml": "^2.3.4",
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.2",
+    "vsce": "^2.15.0",
+    "@vscode/test-electron": "^2.3.8"
+  },
+  "activationEvents": [
+    "onLanguage:yaml",
+    "workspaceContains:**/*.linkml.yaml",
+    "workspaceContains:**/*.linkml.yml"
+  ]
+}

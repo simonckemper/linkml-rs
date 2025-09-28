@@ -1,0 +1,35 @@
+[package]
+name = "cargo-linkml"
+version = "2.0.0"
+edition = "2024"
+authors = ["RootReal Team <support@textpast.com>"]
+license = "MIT"
+description = "Cargo plugin for LinkML schema validation and code generation"
+repository = "https://github.com/simonckemper/rootreal"
+keywords = ["linkml", "schema", "validation", "codegen", "cargo-subcommand"]
+categories = ["development-tools::cargo-plugins", "development-tools::build-utils"]
+readme = "README.md"
+[[bin]]
+name = "cargo-linkml"
+path = "src/main.rs"
+
+[dependencies]
+cargo_metadata = "0.18"
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+anyhow = "1.0"
+thiserror = "2.0"
+which = "6.0"
+glob = "0.3"
+walkdir = "2.4"
+colored = "2.1"
+indicatif = "0.17"
+tokio = { version = "1.42", features = ["full"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+tempfile = "3.8"
+assert_cmd = "2.0"
+predicates = "3.0"

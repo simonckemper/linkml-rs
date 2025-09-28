@@ -1,0 +1,187 @@
+id: https://w3id.org/linkml/meta
+name: meta
+title: LinkML Metamodel
+description: The metamodel for LinkML schemas
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  skos: http://www.w3.org/2004/02/skos/core#
+
+default_prefix: linkml
+
+imports:
+  - linkml:types
+
+classes:
+  SchemaDefinition:
+    description: A collection of definitions
+    slots:
+      - id
+      - name
+      - title
+      - description
+      - version
+      - imports
+      - prefixes
+      - default_prefix
+      - default_range
+      - types
+      - enums
+      - slots
+      - classes
+      - subsets
+
+  ClassDefinition:
+    description: The definition of a class
+    slots:
+      - name
+      - description
+      - is_a
+      - abstract
+      - mixin
+      - mixins
+      - slots
+      - slot_usage
+      - attributes
+      - class_uri
+      - subclass_of
+      - tree_root
+
+  SlotDefinition:
+    description: The definition of a property or slot
+    slots:
+      - name
+      - description
+      - range
+      - required
+      - multivalued
+      - identifier
+      - pattern
+      - minimum_value
+      - maximum_value
+      - is_a
+      - mixins
+      - slot_uri
+
+  TypeDefinition:
+    description: The definition of a type
+    slots:
+      - name
+      - description
+      - typeof
+      - base
+      - uri
+      - pattern
+      - minimum_value
+      - maximum_value
+
+  EnumDefinition:
+    description: The definition of an enumeration
+    slots:
+      - name
+      - description
+      - permissible_values
+      - code_set
+      - code_set_tag
+      - code_set_version
+
+slots:
+  name:
+    description: The name of the element
+    range: string
+    required: true
+
+  description:
+    description: A description of the element
+    range: string
+
+  title:
+    description: A human-readable title
+    range: string
+
+  id:
+    description: The unique identifier
+    range: uriorcurie
+    identifier: true
+
+  version:
+    description: Version of the schema
+    range: string
+
+  imports:
+    description: Other schemas imported by this schema
+    range: uriorcurie
+    multivalued: true
+
+  prefixes:
+    description: Prefix declarations
+    range: string
+    multivalued: true
+
+  default_prefix:
+    description: Default prefix
+    range: string
+
+  default_range:
+    description: Default slot range
+    range: string
+
+  is_a:
+    description: Parent class or slot
+    range: string
+
+  abstract:
+    description: Whether the class is abstract
+    range: boolean
+
+  mixin:
+    description: Whether the class is a mixin
+    range: boolean
+
+  mixins:
+    description: Mixins incorporated
+    range: string
+    multivalued: true
+
+  slots:
+    description: Slots applicable to a class
+    range: string
+    multivalued: true
+
+  slot_usage:
+    description: Refinements of slots in context of class
+    range: SlotDefinition
+    multivalued: true
+
+  attributes:
+    description: Inline slot definitions
+    range: SlotDefinition
+    multivalued: true
+
+  range:
+    description: The range (type) of values
+    range: string
+
+  required:
+    description: Whether the slot is required
+    range: boolean
+
+  multivalued:
+    description: Whether multiple values are allowed
+    range: boolean
+
+  identifier:
+    description: Whether this slot is the identifier
+    range: boolean
+
+  pattern:
+    description: Regular expression pattern
+    range: string
+
+  minimum_value:
+    description: Minimum value constraint
+    range: string
+
+  maximum_value:
+    description: Maximum value constraint
+    range: string

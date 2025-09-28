@@ -1,0 +1,226 @@
+[package]
+name = "linkml-service"
+version = "2.0.0"
+edition = "2024"
+authors = ["Simon C. Kemper <textpast@textpast.com>"]
+license = "CC-BY-NC-4.0"
+description = "LinkML schema validation service with 100% Python parity and TypeQL generation"
+repository = "https://github.com/simonckemper/rootreal"
+keywords = ["linkml", "schema", "validation", "typeql", "codegen"]
+categories = ["data-structures", "encoding", "parser-implementations", "development-tools"]
+readme = "README.md"
+autoexamples = false
+autotests = false
+[features]
+default = []
+database = ["dep:sqlx"]  # Database support for PostgreSQL and MySQL (no SQLite to avoid burn conflicts)
+linkml_full_tests = []
+linkml_examples = []
+test-utils = []  # Test utilities for external testing
+
+[dependencies]
+# Core dependencies
+linkml-core = { path = "../linkml-core" }
+
+# RootReal service dependencies - ARCHITECTURAL COMPLIANCE INTEGRATION
+# Core services that LinkML integrates with instead of implementing its own infrastructure
+restful-api-core = { path = "../../restful-api/restful-api-core" }
+# restful-api-service = { path = "../../restful-api/restful-api-service" }
+frontend-framework-core = { path = "../../frontend-framework/frontend-framework-core" }
+# frontend-framework-service = { path = "../../frontend-framework/frontend-framework-service" }
+shutdown-core = { path = "../../shutdown/shutdown-core" }
+# shutdown-service = { path = "../../shutdown/shutdown-service" }
+logger-core = { path = "../../logger/logger-core" }
+# Keep only essential services to reduce compilation time
+# logger-service = { path = "../../logger/logger-service" }
+timestamp-core = { path = "../../timestamp/timestamp-core" }
+timestamp-service = { path = "../../timestamp/timestamp-service" }
+task-management-core = { path = "../../task-management/task-management-core" }
+# task-management-service = { path = "../../task-management/task-management-service" }
+error-handling-core = { path = "../../error-handling/error-handling-core" }
+# error-handling-service = { path = "../../error-handling/error-handling-service" }
+memory-core = { path = "../../memory/memory-core" }
+# memory-service = { path = "../../memory/memory-service" }
+configuration-core = { path = "../../configuration/configuration-core" }
+# configuration-service = { path = "../../configuration/configuration-service" }
+cache-core = { path = "../../cache/cache-core" }
+# cache-service = { path = "../../cache/cache-service" }
+monitoring-core = { path = "../../monitoring/monitoring-core" }
+# monitoring-service = { path = "../../monitoring/monitoring-service" }
+telemetry-core = { path = "../../telemetry/telemetry-core" }
+# telemetry-service = { path = "../../telemetry/telemetry-service" }
+dbms-core = { path = "../../dbms/dbms-core" }
+parse-core = { path = "../../parse/parse-core" }
+timeout-core = { path = "../../timeout/timeout-core" }
+# timeout-service = { path = "../../timeout/timeout-service" }
+random-core = { path = "../../random/random-core" }
+random-service = { path = "../../random/random-service" }
+authentication-core = { path = "../../authentication/authentication-core" }
+# authentication-service = { path = "../../authentication/authentication-service" }
+hash-core = { path = "../../hash/hash-core" }
+# hash-service = { path = "../../hash/hash-service" }
+# Removed lakehouse-service dependency to break circular dependency
+# LinkML service should not depend on lakehouse, only provide schemas for it
+lakehouse-core = { path = "../../lakehouse/lakehouse-core" }
+rate-limiting-core = { path = "../../rate-limiting/rate-limiting-core" }
+# rate-limiting-service = { path = "../../rate-limiting/rate-limiting-service" }
+vector-database-core = { path = "../../vector-database/vector-database-core" }
+
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+serde_urlencoded = "0.7"
+
+# Bitflags for efficient flag management
+bitflags = { version = "2.4", features = ["serde"] }
+
+# Pattern matching
+regex = "1.10"
+pcre2 = "0.2"  # For full PCRE2 support with named capture groups
+
+# Date/time and URL validation
+chrono = { version = "0.4", features = ["serde"] }
+url = "2.5"
+
+# XML parsing
+quick-xml = "0.31"
+
+# Collections
+indexmap = { version = "2.2", features = ["serde"] }
+dashmap = { workspace = true }
+lru = "0.13"
+once_cell = "1.19"
+
+# Excel generation
+rust_xlsxwriter = "0.89.1"
+
+# TypeDB integration
+typedb-driver = "3.4.0"
+base64 = "0.22"
+
+# String case conversion
+convert_case = "0.6"
+
+# Error handling
+thiserror = "2.0"
+anyhow = { workspace = true }
+
+# Validation compilation
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+
+# Performance
+rayon = "1.8"
+parking_lot = "0.12"
+arc-swap = "1.6"
+blake3 = "1.5"
+num_cpus = "1.16"
+bincode = "1.3"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+smallvec = "1.13"
+
+# Cryptography
+sha2 = "0.10"
+
+# Plugin system
+dlopen = "0.1"
+dlopen_derive = "0.1"
+semver = { version = "1.0", features = ["serde"] }
+toml = "0.8"
+petgraph = "0.6"
+dirs = "5.0"
+glob = "0.3"
+hostname = "0.4"
+
+# File operations
+walkdir = "2.4"
+notify = "7.0"
+csv = "1.3"
+
+# RDF support
+oxigraph = "0.5.0"
+
+# Database support - PostgreSQL and MySQL only (no SQLite to avoid burn conflicts)
+# Use unified sqlx dependency from workspace
+sqlx = { workspace = true, optional = true }
+
+# HTTP client and server
+reqwest = { version = "0.12", features = ["json", "stream"] }
+axum = { version = "0.8", features = ["json", "tokio"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# System info
+sysinfo = "0.33"
+uuid = { version = "1.11", features = ["v4"] }
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+colored = "2.1"
+indicatif = "0.17"
+rustyline = "14.0"
+
+[dev-dependencies]
+tokio = { version = "1.42", features = ["full", "test-util"] }
+pretty_assertions = "1.4"
+proptest = "1.3"
+criterion = "0.5"
+tempfile = "3.8"
+futures = "0.3"
+insta = "1.34"
+once_cell = "1.19"
+tokio-test = "0.4"
+rand = "0.8"  # For test RngCore implementation
+[[example]]
+name = "linkml_batch_processing"
+path = "examples/batch_processing.rs"
+
+[[bench]]
+name = "validation_benchmarks"
+harness = false
+
+[[bench]]
+name = "generation_benchmarks"
+harness = false
+
+[[bench]]
+name = "parsing_benchmarks"
+harness = false
+
+[[bench]]
+name = "expression_benchmarks"
+harness = false
+
+[[bench]]
+name = "typeql_generation_benchmarks"
+harness = false
+
+[[bench]]
+name = "linkml_benchmarks"
+harness = false
+
+[[bench]]
+name = "performance_bench"
+harness = false
+
+[[bench]]
+name = "validation_bench"
+harness = false
+
+[[test]]
+name = "basic_smoke"
+path = "tests/basic_smoke.rs"
+
+[[bin]]
+name = "linkml"
+path = "src/bin/linkml.rs"

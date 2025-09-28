@@ -1,0 +1,77 @@
+{
+  "name": "@rootreal/linkml",
+  "version": "2.0.0",
+  "description": "LinkML schema validation and code generation for JavaScript/TypeScript projects",
+  "keywords": [
+    "linkml",
+    "schema",
+    "validation",
+    "codegen",
+    "typescript",
+    "data-modeling"
+  ],
+  "homepage": "https://github.com/simonckemper/rootreal",
+  "bugs": {
+    "url": "https://github.com/simonckemper/rootreal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simonckemper/rootreal.git"
+  },
+  "license": "MIT",
+  "author": "RootReal Team <support@textpast.com>",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "linkml": "./bin/linkml.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "execa": "^8.0.1",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
+    "js-yaml": "^4.1.0",
+    "ora": "^8.0.1",
+    "which": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.11",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.10.5",
+    "@types/which": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

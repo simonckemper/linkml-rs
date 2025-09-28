@@ -1,0 +1,74 @@
+id: https://w3id.org/linkml/annotations
+name: annotations
+title: LinkML Annotations
+description: Built-in annotations for LinkML schemas
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+
+default_prefix: linkml
+
+imports:
+  - linkml:types
+
+classes:
+  Annotation:
+    description: An annotation on a schema element
+    attributes:
+      tag:
+        description: The annotation tag
+        range: string
+        required: true
+      value:
+        description: The annotation value
+        range: string
+        required: true
+
+# Common annotations
+slots:
+  deprecated:
+    description: Element is deprecated
+    range: string
+    annotations:
+      - tag: special
+        value: true
+
+  see_also:
+    description: Related resources
+    range: uriorcurie
+    multivalued: true
+    annotations:
+      - tag: special
+        value: true
+
+  todos:
+    description: Outstanding tasks
+    range: string
+    multivalued: true
+    annotations:
+      - tag: special
+        value: true
+
+  notes:
+    description: Editorial notes
+    range: string
+    multivalued: true
+    annotations:
+      - tag: special
+        value: true
+
+  comments:
+    description: General comments
+    range: string
+    multivalued: true
+    annotations:
+      - tag: special
+        value: true
+
+  examples:
+    description: Example values
+    range: string
+    multivalued: true
+    annotations:
+      - tag: special
+        value: true

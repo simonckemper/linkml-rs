@@ -1,0 +1,152 @@
+id: https://w3id.org/biolink/minimal
+name: biolink_minimal
+description: Minimal subset of Biolink Model for testing
+
+prefixes:
+  biolink: https://w3id.org/biolink/
+  linkml: https://w3id.org/linkml/
+
+imports:
+  - linkml:types
+
+classes:
+  NamedThing:
+    abstract: true
+    description: A generic grouping for any identifiable entity
+    attributes:
+      id:
+        identifier: true
+        required: true
+        pattern: "^[A-Z]+:[0-9]+$"
+      name:
+        required: true
+      category:
+        range: category_type
+        multivalued: true
+        required: true
+
+  BiologicalEntity:
+    is_a: NamedThing
+    abstract: true
+    description: An entity that is biological in nature
+
+  Gene:
+    is_a: BiologicalEntity
+    description: A region of DNA that encodes a functional RNA or protein
+    attributes:
+      symbol:
+        required: true
+        pattern: "^[A-Z][A-Z0-9]*$"
+      chromosome:
+        range: chromosome_enum
+      taxon:
+        range: OrganismTaxon
+        required: true
+
+  Disease:
+    is_a: BiologicalEntity
+    description: A disorder of structure or function
+    attributes:
+      mondo_id:
+        pattern: "^MONDO:[0-9]{7}$"
+      severity:
+        range: severity_enum
+
+  GeneDiseaseAssociation:
+    description: An association between a gene and a disease
+    attributes:
+      id:
+        identifier: true
+        required: true
+      subject:
+        range: Gene
+        required: true
+      predicate:
+        range: predicate_enum
+        required: true
+      object:
+        range: Disease
+        required: true
+      evidence:
+        range: evidence_enum
+        multivalued: true
+      publications:
+        range: string
+        multivalued: true
+        pattern: "^PMID:[0-9]+$"
+    rules:
+      - preconditions:
+          slot_conditions:
+            evidence:
+              has_member: "experimental"
+        postconditions:
+          slot_conditions:
+            publications:
+              minimum_cardinality: 1
+        description: Experimental evidence requires publications
+
+  OrganismTaxon:
+    description: A classification of organisms
+    attributes:
+      taxon_id:
+        identifier: true
+        pattern: "^NCBITaxon:[0-9]+$"
+      scientific_name:
+        required: true
+      common_name:
+
+enums:
+  category_type:
+    permissible_values:
+      gene:
+      disease:
+      association:
+
+  chromosome_enum:
+    permissible_values:
+      chr1:
+      chr2:
+      chr3:
+      chr4:
+      chr5:
+      chr6:
+      chr7:
+      chr8:
+      chr9:
+      chr10:
+      chr11:
+      chr12:
+      chr13:
+      chr14:
+      chr15:
+      chr16:
+      chr17:
+      chr18:
+      chr19:
+      chr20:
+      chr21:
+      chr22:
+      chrX:
+      chrY:
+      chrM:
+
+  severity_enum:
+    permissible_values:
+      mild:
+      moderate:
+      severe:
+      life_threatening:
+
+  predicate_enum:
+    permissible_values:
+      associated_with:
+      causes:
+      contributes_to:
+      treats:
+
+  evidence_enum:
+    permissible_values:
+      experimental:
+      computational:
+      curated:
+      inferred:

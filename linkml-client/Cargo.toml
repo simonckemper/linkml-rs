@@ -1,0 +1,32 @@
+[package]
+name = "linkml-client"
+version = "0.1.0"
+edition = "2024"
+authors = ["Simon C. Kemper <textpast@textpast.com>"]
+license = "CC-BY-NC-4.0"
+description = "Client library for LinkML service"
+repository = "https://github.com/simonckemper/rootreal"
+keywords = ["linkml", "client", "validation"]
+categories = ["api-bindings"]
+readme = "README.md"
+[dependencies]
+# Core dependencies
+linkml-core = { path = "../linkml-core" }
+
+# Async runtime
+tokio = { version = "1.42", features = ["sync", "macros"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+
+# Tracing
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1.42", features = ["full", "test-util"] }
+mockall = "0.12"

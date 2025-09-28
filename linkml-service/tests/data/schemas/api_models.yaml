@@ -1,0 +1,340 @@
+id: https://example.org/api-models
+name: APIModels
+description: RESTful API data models for code generation testing
+
+prefixes:
+  api: https://example.org/api/
+  linkml: https://w3id.org/linkml/
+  schema: http://schema.org/
+
+default_range: string
+
+imports:
+  - linkml:types
+
+subsets:
+  required:
+    description: Required fields for API
+  public:
+    description: Public API fields
+  internal:
+    description: Internal only fields
+
+classes:
+  Timestamped:
+    abstract: true
+    description: Mixin for timestamped resources
+    attributes:
+      created_at:
+        range: datetime
+        required: true
+        readonly: true
+        in_subset:
+          - public
+        ifabsent: 'datetime(now)'
+      updated_at:
+        range: datetime
+        required: true
+        readonly: true
+        in_subset:
+          - public
+        ifabsent: 'datetime(now)'
+
+  Identifiable:
+    abstract: true
+    description: Mixin for identifiable resources
+    attributes:
+      id:
+        identifier: true
+        range: string
+        required: true
+        readonly: true
+        in_subset:
+          - public
+          - required
+        pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-4[a-zA-Z0-9]{3}-[89ab][a-zA-Z0-9]{3}-[a-zA-Z0-9]{12}$"
+        description: UUID v4 format
+
+  User:
+    mixins:
+      - Identifiable
+      - Timestamped
+    description: User account resource
+    attributes:
+      username:
+        required: true
+        pattern: "^[a-zA-Z0-9_]{3,30}$"
+        unique: true
+        in_subset:
+          - public
+          - required
+      email:
+        required: true
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        unique: true
+        in_subset:
+          - public
+          - required
+      password_hash:
+        required: true
+        in_subset:
+          - internal
+        description: bcrypt hash - never expose
+      full_name:
+        required: true
+        in_subset:
+          - public
+      avatar_url:
+        range: uri
+        in_subset:
+          - public
+      is_active:
+        range: boolean
+        ifabsent: 'true'
+        in_subset:
+          - public
+      is_verified:
+        range: boolean
+        ifabsent: 'false'
+        in_subset:
+          - public
+      roles:
+        range: role_enum
+        multivalued: true
+        in_subset:
+          - public
+      metadata:
+        range: UserMetadata
+        inlined: true
+        in_subset:
+          - public
+    rules:
+      - preconditions:
+          slot_conditions:
+            is_active:
+              equals: false
+        postconditions:
+          slot_conditions:
+            roles:
+              maximum_cardinality: 0
+        description: Inactive users cannot have roles
+
+  UserMetadata:
+    description: User metadata and preferences
+    attributes:
+      last_login:
+        range: datetime
+      login_count:
+        range: integer
+        minimum_value: 0
+        ifabsent: '0'
+      preferred_language:
+        range: language_enum
+        ifabsent: 'en'
+      timezone:
+        range: string
+        pattern: "^[A-Za-z]+/[A-Za-z_]+$"
+        ifabsent: 'UTC'
+      notifications:
+        range: NotificationSettings
+        inlined: true
+
+  NotificationSettings:
+    description: User notification preferences
+    attributes:
+      email_enabled:
+        range: boolean
+        ifabsent: 'true'
+      push_enabled:
+        range: boolean
+        ifabsent: 'false'
+      frequency:
+        range: frequency_enum
+        ifabsent: 'daily'
+
+  Organization:
+    mixins:
+      - Identifiable
+      - Timestamped
+    description: Organization resource
+    attributes:
+      name:
+        required: true
+        unique: true
+        in_subset:
+          - public
+          - required
+      slug:
+        required: true
+        pattern: "^[a-z0-9-]{3,50}$"
+        unique: true
+        in_subset:
+          - public
+      description:
+        in_subset:
+          - public
+      website:
+        range: uri
+        in_subset:
+          - public
+      logo_url:
+        range: uri
+        in_subset:
+          - public
+      members:
+        range: OrganizationMember
+        multivalued: true
+        inlined_as_list: true
+        in_subset:
+          - public
+      settings:
+        range: OrganizationSettings
+        inlined: true
+        in_subset:
+          - internal
+
+  OrganizationMember:
+    description: Organization membership
+    attributes:
+      user:
+        range: User
+        required: true
+      role:
+        range: org_role_enum
+        required: true
+      joined_at:
+        range: datetime
+        required: true
+
+  OrganizationSettings:
+    description: Organization settings
+    attributes:
+      billing_email:
+        range: string
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+      max_members:
+        range: integer
+        minimum_value: 1
+        ifabsent: '10'
+      features:
+        range: feature_enum
+        multivalued: true
+
+  Project:
+    mixins:
+      - Identifiable
+      - Timestamped
+    description: Project resource
+    attributes:
+      name:
+        required: true
+        in_subset:
+          - public
+          - required
+      description:
+        recommended: true
+        in_subset:
+          - public
+      organization:
+        range: Organization
+        required: true
+        in_subset:
+          - public
+      visibility:
+        range: visibility_enum
+        required: true
+        ifabsent: 'private'
+        in_subset:
+          - public
+      tags:
+        range: string
+        multivalued: true
+        pattern: "^[a-z][a-z0-9-]*$"
+        maximum_cardinality: 10
+        in_subset:
+          - public
+      settings:
+        range: ProjectSettings
+        inlined: true
+    rules:
+      - preconditions:
+          slot_conditions:
+            visibility:
+              equals: "public"
+        postconditions:
+          slot_conditions:
+            description:
+              required: true
+        description: Public projects must have descriptions
+
+  ProjectSettings:
+    description: Project configuration
+    attributes:
+      allow_issues:
+        range: boolean
+        ifabsent: 'true'
+      allow_wiki:
+        range: boolean
+        ifabsent: 'true'
+      default_branch:
+        range: string
+        ifabsent: 'main'
+
+enums:
+  role_enum:
+    permissible_values:
+      admin:
+        description: Full system access
+      user:
+        description: Regular user access
+      guest:
+        description: Limited guest access
+
+  language_enum:
+    permissible_values:
+      en:
+        description: English
+      es:
+        description: Spanish
+      fr:
+        description: French
+      de:
+        description: German
+      ja:
+        description: Japanese
+      zh:
+        description: Chinese
+
+  frequency_enum:
+    permissible_values:
+      immediate:
+      hourly:
+      daily:
+      weekly:
+      never:
+
+  org_role_enum:
+    permissible_values:
+      owner:
+        description: Organization owner
+      admin:
+        description: Organization admin
+      member:
+        description: Regular member
+
+  feature_enum:
+    permissible_values:
+      advanced_analytics:
+      custom_branding:
+      sso:
+      api_access:
+      unlimited_projects:
+
+  visibility_enum:
+    permissible_values:
+      public:
+        description: Visible to everyone
+      internal:
+        description: Visible to organization
+      private:
+        description: Visible to members only

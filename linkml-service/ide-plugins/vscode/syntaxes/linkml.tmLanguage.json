@@ -1,0 +1,271 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "LinkML",
+  "scopeName": "source.linkml",
+  "fileTypes": ["linkml.yaml", "linkml.yml"],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#schema-header"
+    },
+    {
+      "include": "#prefixes"
+    },
+    {
+      "include": "#imports"
+    },
+    {
+      "include": "#classes"
+    },
+    {
+      "include": "#slots"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#enums"
+    },
+    {
+      "include": "#subsets"
+    },
+    {
+      "include": "#yaml"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "(^|\\s)#.*$",
+          "name": "comment.line.number-sign.linkml"
+        }
+      ]
+    },
+    "schema-header": {
+      "patterns": [
+        {
+          "match": "^(id|name|title|description|version|license):",
+          "name": "keyword.control.schema.linkml"
+        },
+        {
+          "match": "^(default_prefix|default_range|default_curi_maps):",
+          "name": "keyword.control.defaults.linkml"
+        },
+        {
+          "match": "^(generation_date|source_file|source_file_date|source_file_size):",
+          "name": "keyword.control.metadata.linkml"
+        }
+      ]
+    },
+    "prefixes": {
+      "patterns": [
+        {
+          "match": "^prefixes:",
+          "name": "keyword.control.prefixes.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):\\s*",
+          "captures": {
+            "1": {
+              "name": "entity.name.namespace.linkml"
+            }
+          }
+        }
+      ]
+    },
+    "imports": {
+      "patterns": [
+        {
+          "match": "^imports:",
+          "name": "keyword.control.imports.linkml"
+        },
+        {
+          "match": "^\\s+-\\s+([\\w:]+)",
+          "captures": {
+            "1": {
+              "name": "string.quoted.import.linkml"
+            }
+          }
+        }
+      ]
+    },
+    "classes": {
+      "patterns": [
+        {
+          "match": "^classes:",
+          "name": "keyword.control.classes.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):",
+          "captures": {
+            "1": {
+              "name": "entity.name.class.linkml"
+            }
+          }
+        },
+        {
+          "include": "#class-properties"
+        }
+      ]
+    },
+    "class-properties": {
+      "patterns": [
+        {
+          "match": "\\b(is_a|mixins|abstract|mixin|tree_root):",
+          "name": "keyword.other.inheritance.linkml"
+        },
+        {
+          "match": "\\b(attributes|slot_usage):",
+          "name": "keyword.other.structure.linkml"
+        },
+        {
+          "match": "\\b(aliases|local_names|mappings|exact_mappings|close_mappings|narrow_mappings|broad_mappings|related_mappings):",
+          "name": "keyword.other.mapping.linkml"
+        },
+        {
+          "match": "\\b(description|comments|notes|examples|see_also|deprecated):",
+          "name": "keyword.other.documentation.linkml"
+        },
+        {
+          "include": "#slot-properties"
+        }
+      ]
+    },
+    "slots": {
+      "patterns": [
+        {
+          "match": "^slots:",
+          "name": "keyword.control.slots.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.linkml"
+            }
+          }
+        },
+        {
+          "include": "#slot-properties"
+        }
+      ]
+    },
+    "slot-properties": {
+      "patterns": [
+        {
+          "match": "\\b(range|domain|slot_uri|multivalued|required|identifier|key|designates_type):",
+          "name": "keyword.other.constraint.linkml"
+        },
+        {
+          "match": "\\b(pattern|minimum_value|maximum_value|equals_string|equals_number):",
+          "name": "keyword.other.validation.linkml"
+        },
+        {
+          "match": "\\b(minimum_cardinality|maximum_cardinality|exactly_one_of|any_of|all_of|none_of):",
+          "name": "keyword.other.cardinality.linkml"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "match": "^types:",
+          "name": "keyword.control.types.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):",
+          "captures": {
+            "1": {
+              "name": "entity.name.type.linkml"
+            }
+          }
+        }
+      ]
+    },
+    "enums": {
+      "patterns": [
+        {
+          "match": "^enums:",
+          "name": "keyword.control.enums.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):",
+          "captures": {
+            "1": {
+              "name": "entity.name.enum.linkml"
+            }
+          }
+        },
+        {
+          "match": "\\b(permissible_values):",
+          "name": "keyword.other.enum.linkml"
+        }
+      ]
+    },
+    "subsets": {
+      "patterns": [
+        {
+          "match": "^subsets:",
+          "name": "keyword.control.subsets.linkml"
+        },
+        {
+          "match": "^\\s+(\\w+):",
+          "captures": {
+            "1": {
+              "name": "entity.name.subset.linkml"
+            }
+          }
+        }
+      ]
+    },
+    "builtin-types": {
+      "patterns": [
+        {
+          "match": "\\b(string|integer|float|double|boolean|date|datetime|time|uri|uriorcurie|curie|ncname)\\b",
+          "name": "support.type.builtin.linkml"
+        }
+      ]
+    },
+    "boolean": {
+      "patterns": [
+        {
+          "match": "\\b(true|false|yes|no)\\b",
+          "name": "constant.language.boolean.linkml"
+        }
+      ]
+    },
+    "yaml": {
+      "patterns": [
+        {
+          "include": "#boolean"
+        },
+        {
+          "include": "#builtin-types"
+        },
+        {
+          "match": "\"[^\"]*\"",
+          "name": "string.quoted.double.linkml"
+        },
+        {
+          "match": "'[^']*'",
+          "name": "string.quoted.single.linkml"
+        },
+        {
+          "match": "\\b-?\\d+\\.\\d+\\b",
+          "name": "constant.numeric.float.linkml"
+        },
+        {
+          "match": "\\b-?\\d+\\b",
+          "name": "constant.numeric.integer.linkml"
+        },
+        {
+          "match": "\\bnull\\b",
+          "name": "constant.language.null.linkml"
+        }
+      ]
+    }
+  }
+}

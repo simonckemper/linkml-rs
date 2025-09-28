@@ -1,0 +1,90 @@
+id: https://w3id.org/linkml/types
+name: types
+title: LinkML Built-in Types
+description: Built-in data types for LinkML schemas
+
+prefixes:
+  linkml: https://w3id.org/linkml/
+  xsd: http://www.w3.org/2001/XMLSchema#
+
+default_prefix: linkml
+
+types:
+  string:
+    uri: xsd:string
+    base: str
+    description: A character string
+
+  integer:
+    uri: xsd:integer
+    base: int
+    description: An integer
+
+  boolean:
+    uri: xsd:boolean
+    base: bool
+    description: A boolean (true or false)
+
+  float:
+    uri: xsd:float
+    base: float
+    description: A real number that conforms to the xsd:float specification
+
+  double:
+    uri: xsd:double
+    base: float
+    description: A real number that conforms to the xsd:double specification
+
+  decimal:
+    uri: xsd:decimal
+    base: Decimal
+    description: A real number with arbitrary precision
+
+  time:
+    uri: xsd:time
+    base: XSDTime
+    description: A time object represents a (local) time of day
+
+  date:
+    uri: xsd:date
+    base: XSDDate
+    description: A date object represents a calendar date
+
+  datetime:
+    uri: xsd:dateTime
+    base: XSDDateTime
+    description: A timestamp object represents an absolute point in time
+
+  date_or_datetime:
+    base: str
+    description: Either a date or a datetime
+
+  uriorcurie:
+    base: URIorCURIE
+    uri: xsd:anyURI
+    description: A URI or a CURIE
+
+  curie:
+    base: Curie
+    uri: xsd:string
+    description: A compact URI
+
+  uri:
+    base: URI
+    uri: xsd:anyURI
+    description: A uniform resource identifier
+
+  ncname:
+    base: NCName
+    uri: xsd:string
+    description: Prefix part of CURIE
+
+  objectidentifier:
+    base: ElementIdentifier
+    uri: shex:iri
+    description: A URI or CURIE that represents an object identifier
+
+  nodeidentifier:
+    base: NodeIdentifier
+    uri: shex:nonLiteral
+    description: A URI, CURIE or BNODE

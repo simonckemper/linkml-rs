@@ -1,0 +1,279 @@
+{
+  "LinkML Schema": {
+    "prefix": "linkml-schema",
+    "body": [
+      "id: https://example.com/${1:schema-name}",
+      "name: ${2:SchemaName}",
+      "description: ${3:Schema description}",
+      "version: ${4:0.1.0}",
+      "",
+      "prefixes:",
+      "  linkml: https://w3id.org/linkml/",
+      "  ${5:prefix}: https://example.com/${1}/",
+      "",
+      "default_prefix: ${5:prefix}",
+      "",
+      "imports:",
+      "  - linkml:types",
+      "",
+      "classes:",
+      "  ${6:ClassName}:",
+      "    description: ${7:Class description}",
+      "    attributes:",
+      "      id:",
+      "        identifier: true",
+      "        range: string",
+      "      ${0}"
+    ],
+    "description": "Create a new LinkML schema"
+  },
+  "Class": {
+    "prefix": "class",
+    "body": [
+      "${1:ClassName}:",
+      "  description: ${2:Class description}",
+      "  attributes:",
+      "    id:",
+      "      identifier: true",
+      "      range: string",
+      "    ${0}"
+    ],
+    "description": "Create a new LinkML class"
+  },
+  "Class with Inheritance": {
+    "prefix": "class-inherit",
+    "body": [
+      "${1:ClassName}:",
+      "  is_a: ${2:ParentClass}",
+      "  description: ${3:Class description}",
+      "  attributes:",
+      "    ${0}"
+    ],
+    "description": "Create a class with inheritance"
+  },
+  "Attribute": {
+    "prefix": "attr",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Attribute description}",
+      "  range: ${3:string}",
+      "  ${0}"
+    ],
+    "description": "Create a new attribute"
+  },
+  "Required Attribute": {
+    "prefix": "attr-req",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Attribute description}",
+      "  range: ${3:string}",
+      "  required: true",
+      "  ${0}"
+    ],
+    "description": "Create a required attribute"
+  },
+  "Multivalued Attribute": {
+    "prefix": "attr-multi",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Attribute description}",
+      "  range: ${3:string}",
+      "  multivalued: true",
+      "  ${0}"
+    ],
+    "description": "Create a multivalued attribute"
+  },
+  "Attribute with Pattern": {
+    "prefix": "attr-pattern",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Attribute description}",
+      "  range: string",
+      "  pattern: '${3:^[A-Z][a-z]+$}'",
+      "  ${0}"
+    ],
+    "description": "Create an attribute with regex pattern"
+  },
+  "Attribute with Range": {
+    "prefix": "attr-range",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Attribute description}",
+      "  range: ${3:integer}",
+      "  minimum_value: ${4:0}",
+      "  maximum_value: ${5:100}",
+      "  ${0}"
+    ],
+    "description": "Create an attribute with value range"
+  },
+  "Enum": {
+    "prefix": "enum",
+    "body": [
+      "${1:EnumName}:",
+      "  description: ${2:Enum description}",
+      "  permissible_values:",
+      "    ${3:value1}:",
+      "      description: ${4:Value 1 description}",
+      "    ${5:value2}:",
+      "      description: ${6:Value 2 description}",
+      "    ${0}"
+    ],
+    "description": "Create an enumeration"
+  },
+  "Type": {
+    "prefix": "type",
+    "body": [
+      "${1:TypeName}:",
+      "  description: ${2:Type description}",
+      "  typeof: ${3:string}",
+      "  ${0}"
+    ],
+    "description": "Create a custom type"
+  },
+  "Type with Pattern": {
+    "prefix": "type-pattern",
+    "body": [
+      "${1:TypeName}:",
+      "  description: ${2:Type description}",
+      "  typeof: string",
+      "  pattern: '${3:^[A-Z][a-z]+$}'",
+      "  ${0}"
+    ],
+    "description": "Create a type with pattern constraint"
+  },
+  "Slot": {
+    "prefix": "slot",
+    "body": [
+      "${1:slot_name}:",
+      "  description: ${2:Slot description}",
+      "  range: ${3:string}",
+      "  ${0}"
+    ],
+    "description": "Create a reusable slot"
+  },
+  "Prefix": {
+    "prefix": "prefix",
+    "body": [
+      "${1:prefix}: ${2:https://example.com/namespace/}"
+    ],
+    "description": "Add a namespace prefix"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": [
+      "- ${1:linkml:types}"
+    ],
+    "description": "Add an import"
+  },
+  "Mixin": {
+    "prefix": "mixin",
+    "body": [
+      "${1:MixinName}:",
+      "  mixin: true",
+      "  description: ${2:Mixin description}",
+      "  attributes:",
+      "    ${0}"
+    ],
+    "description": "Create a mixin class"
+  },
+  "Abstract Class": {
+    "prefix": "abstract",
+    "body": [
+      "${1:AbstractClassName}:",
+      "  abstract: true",
+      "  description: ${2:Abstract class description}",
+      "  attributes:",
+      "    ${0}"
+    ],
+    "description": "Create an abstract class"
+  },
+  "Subset": {
+    "prefix": "subset",
+    "body": [
+      "${1:subset_name}:",
+      "  description: ${2:Subset description}"
+    ],
+    "description": "Create a subset"
+  },
+  "Slot Usage": {
+    "prefix": "slot-usage",
+    "body": [
+      "slot_usage:",
+      "  ${1:slot_name}:",
+      "    required: ${2:true}",
+      "    description: ${3:Override description}",
+      "    ${0}"
+    ],
+    "description": "Override slot properties in a class"
+  },
+  "Examples": {
+    "prefix": "examples",
+    "body": [
+      "examples:",
+      "  - value: ${1:example_value}",
+      "    description: ${2:Example description}",
+      "  ${0}"
+    ],
+    "description": "Add examples"
+  },
+  "See Also": {
+    "prefix": "see-also",
+    "body": [
+      "see_also:",
+      "  - ${1:https://example.com/related}",
+      "  ${0}"
+    ],
+    "description": "Add see also links"
+  },
+  "Aliases": {
+    "prefix": "aliases",
+    "body": [
+      "aliases:",
+      "  - ${1:alternate_name}",
+      "  ${0}"
+    ],
+    "description": "Add aliases"
+  },
+  "Mappings": {
+    "prefix": "mappings",
+    "body": [
+      "exact_mappings:",
+      "  - ${1:schema:equivalent}",
+      "close_mappings:",
+      "  - ${2:schema:similar}",
+      "${0}"
+    ],
+    "description": "Add semantic mappings"
+  },
+  "Array Attribute": {
+    "prefix": "attr-array",
+    "body": [
+      "${1:attribute_name}:",
+      "  description: ${2:Array attribute description}",
+      "  range: ${3:float}",
+      "  multivalued: true",
+      "  array:",
+      "    dimensions:",
+      "      - alias: ${4:x}",
+      "        exact_cardinality: ${5:3}",
+      "  ${0}"
+    ],
+    "description": "Create an array attribute"
+  },
+  "Conditional Rule": {
+    "prefix": "rule",
+    "body": [
+      "rules:",
+      "  - preconditions:",
+      "      slot_conditions:",
+      "        ${1:slot_name}:",
+      "          equals_string: ${2:value}",
+      "    postconditions:",
+      "      slot_conditions:",
+      "        ${3:other_slot}:",
+      "          required: true",
+      "    ${0}"
+    ],
+    "description": "Create a conditional rule"
+  }
+}
