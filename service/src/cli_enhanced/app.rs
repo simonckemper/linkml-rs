@@ -34,7 +34,7 @@ impl LinkMLApp {
     #[must_use]
     pub fn from_args_with_timestamp(
         timestamp_service: Arc<
-            dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>,
+            dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>,
         >,
     ) -> Self {
         let cli = LinkMLCli::parse();
@@ -50,7 +50,7 @@ impl LinkMLApp {
     pub fn new(
         cli: LinkMLCli,
         timestamp_service: Arc<
-            dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>,
+            dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>,
         >,
     ) -> Self {
         let timestamp_utils = Arc::new(SyncTimestampUtils::new(timestamp_service));
@@ -65,7 +65,7 @@ impl LinkMLApp {
     pub fn with_services(
         cli: LinkMLCli,
         timestamp_service: Arc<
-            dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>,
+            dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>,
         >,
     ) -> Self {
         let timestamp_utils = Arc::new(SyncTimestampUtils::new(timestamp_service));

@@ -22,7 +22,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::{Arc, RwLock};
 use thiserror::Error;
-use timestamp_core::{TimestampError, TimestampService};
+use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
 
 /// Errors specific to `TypeQL` generation
 #[derive(Debug, Error)]

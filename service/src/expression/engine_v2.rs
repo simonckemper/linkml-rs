@@ -15,7 +15,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::SystemTime;
-use timestamp_core::SyncTimestampService;
+use rootreal_core_foundation_timestamp_core::SyncTimestampService;
 
 /// Configuration for the enhanced expression engine
 #[derive(Clone)]
@@ -90,7 +90,7 @@ pub struct ExpressionEngineV2 {
     /// Performance metrics
     metrics: Arc<std::sync::RwLock<PerformanceMetrics>>,
     /// Timestamp service for timing operations
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 impl ExpressionEngineV2 {
@@ -121,7 +121,7 @@ impl ExpressionEngineV2 {
     /// Create a new enhanced expression engine with injected timestamp service (factory pattern compliant)
     pub fn with_timestamp_service<T>(config: EngineConfig, timestamp_service: Arc<T>) -> Self
     where
-        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+        T: SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError> + Send + Sync + 'static,
     {
         let function_registry = Arc::new(FunctionRegistry::new());
 
@@ -178,7 +178,7 @@ impl ExpressionEngineV2 {
         timestamp_service: Arc<T>,
     ) -> Self
     where
-        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+        T: SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError> + Send + Sync + 'static,
     {
         Self {
             parser: Parser::new(),

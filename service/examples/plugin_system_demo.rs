@@ -13,7 +13,7 @@ use logger_service::factory::create_development_logger;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
-use timestamp_service::factory::create_timestamp_service;
+use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

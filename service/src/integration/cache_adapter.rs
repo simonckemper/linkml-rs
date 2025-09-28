@@ -22,7 +22,7 @@ impl crate::validator::cache::CacheService for CacheServiceAdapter {
         &self,
         key: &str,
     ) -> std::result::Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
-        use cache_core::CacheKey;
+        use rootreal_core_application_resources_cache_core::CacheKey;
 
         let cache_key = CacheKey::new(format!("linkml:{key}"))?;
 
@@ -44,7 +44,7 @@ impl crate::validator::cache::CacheService for CacheServiceAdapter {
         key: &str,
         value: Vec<u8>,
     ) -> std::result::Result<(), Box<dyn std::error::Error>> {
-        use cache_core::{CacheKey, CacheTtl, CacheValue};
+        use rootreal_core_application_resources_cache_core::{CacheKey, CacheTtl, CacheValue};
 
         let cache_key = CacheKey::new(format!("linkml:{key}"))?;
         let cache_value = CacheValue::from_bytes(value);

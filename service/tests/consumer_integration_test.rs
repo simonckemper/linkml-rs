@@ -11,8 +11,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 // RootReal service dependencies
-use logger_core::traits::LoggerService;
-use timestamp_core::traits::TimestampService;
+use rootreal_core_observability_logger_core::traits::LoggerService;
+use rootreal_core_foundation_timestamp_core::traits::TimestampService;
 // Task management not used in this test
 // Error handling not used in this test
 // Configuration not used in this test
@@ -324,7 +324,7 @@ mod test_mocks {
 
     #[async_trait]
     impl LoggerService for MockLogger {
-        type Error = logger_core::error::LoggerError;
+        type Error = rootreal_core_observability_logger_core::error::LoggerError;
 
         async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
@@ -344,7 +344,7 @@ mod test_mocks {
 
         async fn log(
             &self,
-            _level: logger_core::LogLevel,
+            _level: rootreal_core_observability_logger_core::LogLevel,
             _message: &str,
         ) -> std::result::Result<(), Self::Error> {
             Ok(())
@@ -352,7 +352,7 @@ mod test_mocks {
 
         async fn log_entry(
             &self,
-            _entry: &logger_core::LogEntry,
+            _entry: &rootreal_core_observability_logger_core::LogEntry,
         ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
@@ -373,7 +373,7 @@ mod test_mocks {
 
     #[async_trait]
     impl TimestampService for MockTimestamp {
-        type Error = timestamp_core::error::TimestampError;
+        type Error = rootreal_core_foundation_timestamp_core::error::TimestampError;
 
         async fn now_utc(&self) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(chrono::Utc::now())
@@ -693,9 +693,9 @@ async fn create_test_services() -> TestServices {
     use test_mocks::*;
 
     // Create mock services for testing
-    let _logger: Arc<dyn LoggerService<Error = logger_core::error::LoggerError>> =
+    let _logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::error::LoggerError>> =
         Arc::new(MockLogger);
-    let _timestamp: Arc<dyn TimestampService<Error = timestamp_core::error::TimestampError>> =
+    let _timestamp: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::error::TimestampError>> =
         Arc::new(MockTimestamp);
     let _cache: Arc<dyn CacheService<Error = cache_core::error::CacheError>> = Arc::new(MockCache);
     let _monitor: Arc<dyn MonitoringService<Error = monitoring_core::error::MonitoringError>> =

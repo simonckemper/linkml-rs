@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 // Import the logger trait for error() method
-use logger_core::LoggerService;
+use rootreal_core_observability_logger_core::LoggerService;
 
 // Import the complete mock implementations from the mock_services module
 mod mock_services;
@@ -176,7 +176,7 @@ async fn test_timestamp_service_integration() -> Result<(), Box<dyn std::error::
     ?;
 
     // Record start time
-    use timestamp_core::TimestampService;
+    use rootreal_core_foundation_timestamp_core::TimestampService;
     let start = timestamp.now_utc().await?;
 
     // Perform some operations

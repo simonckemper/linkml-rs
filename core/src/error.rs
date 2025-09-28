@@ -244,8 +244,8 @@ impl From<anyhow::Error> for LinkMLError {
 }
 
 // Add conversion for timestamp service errors
-impl From<timestamp_core::TimestampError> for LinkMLError {
-    fn from(err: timestamp_core::TimestampError) -> Self {
+impl From<rootreal_core_foundation_timestamp_core::TimestampError> for LinkMLError {
+    fn from(err: rootreal_core_foundation_timestamp_core::TimestampError) -> Self {
         Self::ServiceError(err.to_string())
     }
 }

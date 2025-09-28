@@ -8,7 +8,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 use timeout_core::{OperationComplexity, TimeoutContext, TimeoutService};
-use timestamp_core::SyncTimestampService;
+use rootreal_core_foundation_timestamp_core::SyncTimestampService;
 
 use toml;
 
@@ -322,7 +322,7 @@ pub struct SandboxedPlugin<O: TimeoutService> {
     /// Timeout service for managing execution timeouts
     timeout_service: Arc<O>,
     /// Timestamp service for timing operations
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 impl<O: TimeoutService> SandboxedPlugin<O> {
@@ -344,7 +344,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
         timestamp_service: Arc<T>,
     ) -> Self
     where
-        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+        T: SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError> + Send + Sync + 'static,
     {
         Self {
             plugin,

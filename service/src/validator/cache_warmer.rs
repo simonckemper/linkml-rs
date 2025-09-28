@@ -19,7 +19,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use timestamp_core::{TimestampError, TimestampService};
+use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 

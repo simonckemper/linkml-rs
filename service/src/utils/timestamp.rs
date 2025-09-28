@@ -6,16 +6,16 @@
 use chrono::{DateTime, Datelike, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use linkml_core::error::{LinkMLError, Result};
 use std::sync::Arc;
-use timestamp_core::TimestampService;
+use rootreal_core_foundation_timestamp_core::TimestampService;
 
 /// Timestamp utilities that wrap `TimestampService` functionality
 pub struct TimestampUtils {
-    service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
+    service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 impl TimestampUtils {
     /// Create new timestamp utilities with a `TimestampService`
-    pub fn new(service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>) -> Self {
+    pub fn new(service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>) -> Self {
         Self { service }
     }
 
@@ -200,7 +200,7 @@ pub struct SyncTimestampUtils {
 
 impl SyncTimestampUtils {
     /// Create new sync timestamp utilities.
-    pub fn new(service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>) -> Self {
+    pub fn new(service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>) -> Self {
         Self {
             utils: Arc::new(TimestampUtils::new(service)),
         }
@@ -273,7 +273,7 @@ impl SyncTimestampUtils {
 mod tests {
     use super::*;
     use chrono::{Datelike, Timelike};
-    use timestamp_service::factory::create_timestamp_service;
+    use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
 
     #[tokio::test]
     async fn test_timestamp_utils() -> Result<()> {

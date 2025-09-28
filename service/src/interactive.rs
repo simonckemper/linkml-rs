@@ -22,7 +22,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use timestamp_core::TimestampService;
+use rootreal_core_foundation_timestamp_core::TimestampService;
 
 /// Interactive session state
 pub struct InteractiveSession<S> {
@@ -37,7 +37,7 @@ pub struct InteractiveSession<S> {
     /// `LinkML` service
     service: Arc<S>,
     /// Timestamp service for history entries
-    timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 /// Interactive session configuration
@@ -130,7 +130,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
     pub fn new(
         service: Arc<S>,
         config: InteractiveConfig,
-        timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
     ) -> Self {
         Self {
             schemas: HashMap::new(),

@@ -9,7 +9,7 @@ use linkml_core::{
 };
 use serde_json::Value;
 use std::sync::Arc;
-use timestamp_core::SyncTimestampService;
+use rootreal_core_foundation_timestamp_core::SyncTimestampService;
 
 use super::{
     buffer_pool::ValidationBufferPools,
@@ -136,7 +136,7 @@ pub struct ValidationEngine {
     registry: ValidatorRegistry,
     compiled_cache: Option<Arc<CompiledValidatorCache>>,
     buffer_pools: Arc<ValidationBufferPools>,
-    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
     profiler: Arc<Profiler>,
 }
 
@@ -174,7 +174,7 @@ impl ValidationEngine {
         timestamp_service: Arc<T>,
     ) -> Result<Self>
     where
-        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
+        T: SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError> + Send + Sync + 'static,
     {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
@@ -226,7 +226,7 @@ impl ValidationEngine {
     pub fn with_cache_and_timestamp(
         schema: &SchemaDefinition,
         cache: Arc<CompiledValidatorCache>,
-        timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
     ) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;

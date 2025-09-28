@@ -16,7 +16,7 @@ use rootreal_core_resilience_error_handling_core::{
     ErrorCategory, ErrorContext, ErrorHandlingError, ErrorHandlingService, ErrorPattern,
     RecoveryStrategy, TransientErrorType,
 };
-use logger_core::{LogEntry, LogLevel, LoggerError, LoggerService};
+use rootreal_core_observability_logger_core::{LogEntry, LogLevel, LoggerError, LoggerService};
 use monitoring_core::{
     Alert, BottleneckReport, HealthReport, HealthStatus, HealthSummary, MonitoringConfig,
     MonitoringError, MonitoringService, MonitoringSession, MonitoringSessionStatus,
@@ -24,7 +24,7 @@ use monitoring_core::{
     SystemHealthReport, SystemPerformanceMetrics,
 };
 use rootreal_core_foundation_task_management_core::{TaskId, TaskManagementError, TaskManagementService, TaskOptions};
-use timestamp_core::{TimestampError, TimestampService};
+use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
 use dbms_core::{

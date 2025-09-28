@@ -29,12 +29,12 @@ use rootreal_core_application_resources_cache_core::CacheService;
 use rootreal_core_application_config_configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
 use rootreal_core_resilience_error_handling_core::{ErrorContext, ErrorHandlingService};
-use logger_core::LoggerService;
+use rootreal_core_observability_logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
 use rootreal_core_foundation_task_management_core::{TaskId, TaskManagementService};
 use timeout_core::TimeoutService;
-use timestamp_core::{TimestampService, TimestampError};
+use rootreal_core_foundation_timestamp_core::{TimestampService, TimestampError};
 
 /// Main `LinkML` service implementation
 ///
@@ -77,7 +77,7 @@ where
     config_monitor_task: RwLock<Option<TaskId>>,
 
     // RootReal service dependencies
-    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     task_manager: Arc<T>,
     error_handler: Arc<E>,
@@ -1106,13 +1106,13 @@ where
 
 struct LinkMLConfigWatcherHandler {
     config: Arc<RwLock<LinkMLConfig>>,
-    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
 }
 
 impl LinkMLConfigWatcherHandler {
     fn new(
         config: Arc<RwLock<LinkMLConfig>>,
-        logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
+        logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
     ) -> Self {
         Self { config, logger }
     }

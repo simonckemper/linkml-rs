@@ -9,7 +9,7 @@ use std::path::PathBuf;
 // Core service imports
 use logger_service::factory::create_logger_service;
 use configuration_service::factory::create_configuration_service;
-use timestamp_service::factory::create_timestamp_service;
+use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
 use hash_service::factory::create_hash_service;
 use random_service::factory::create_random_service;
 use cache_service::factory::create_cache_service;

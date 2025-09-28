@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
-use timestamp_service::factory::create_timestamp_service;
+use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
 
 /// Local timestamp service trait for profiling
 pub trait LocalTimestampService: Send + Sync {
@@ -129,14 +129,14 @@ impl PerfCounter {
 pub struct Profiler {
     counters: Arc<Mutex<HashMap<String, Arc<PerfCounter>>>>,
     enabled: AtomicU64,
-    _timestamp: Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
+    _timestamp: Arc<dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 impl Profiler {
     /// Create a new profiler
     pub fn new(
         timestamp: Arc<
-            dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>,
+            dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>,
         >,
     ) -> Self {
         Self {

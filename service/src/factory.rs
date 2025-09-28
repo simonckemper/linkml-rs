@@ -11,12 +11,12 @@ use rootreal_core_application_resources_cache_core::CacheService;
 use rootreal_core_application_config_configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
 use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
-use logger_core::LoggerService;
+use rootreal_core_observability_logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
 use rootreal_core_foundation_task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
-use timestamp_core::{TimestampService, TimestampError};
+use rootreal_core_foundation_timestamp_core::{TimestampService, TimestampError};
 
 /// Create a new `LinkML` service instance with all dependencies
 ///
@@ -33,7 +33,7 @@ use timestamp_core::{TimestampService, TimestampError};
 /// Returns an error if service initialization fails
 #[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service<T, E, C, O, R>(
-    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     task_manager: Arc<T>,
     error_handler: Arc<E>,
@@ -113,7 +113,7 @@ where
 /// `DBMSService` is dyn-compatible and uses `Arc<dyn DBMSService>` pattern
 pub struct LinkMLServiceDependencies<T, E, C, O, R> {
     /// Logger service
-    pub logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
+    pub logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
     /// Timestamp service
     pub timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     /// Task manager

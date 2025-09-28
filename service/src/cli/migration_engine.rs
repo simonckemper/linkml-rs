@@ -4,7 +4,7 @@ use linkml_core::types::{PermissibleValue, SchemaDefinition};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
-use timestamp_core::{TimestampError, TimestampService};
+use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
 
 /// Migration analysis result
 #[derive(Debug, Clone, Serialize, Deserialize)]

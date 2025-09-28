@@ -16,8 +16,8 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use timestamp_core::TimestampService;
-use timestamp_service::factory;
+use rootreal_core_foundation_timestamp_core::TimestampService;
+use rootreal_core_foundation_timestamp::factory;
 
 // Pre-compile regex patterns at startup to avoid runtime compilation
 static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Result<Regex>>> =
@@ -554,7 +554,7 @@ impl SensitiveDataHandler {
 pub struct AuditLogger {
     events: Arc<RwLock<Vec<AuditEvent>>>,
     config: Arc<RwLock<SecurityConfig>>,
-    timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
 }
 
 impl AuditLogger {
@@ -562,7 +562,7 @@ impl AuditLogger {
     #[must_use]
     pub fn new(
         config: SecurityConfig,
-        timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
     ) -> Self {
         Self {
             events: Arc::new(RwLock::new(Vec::with_capacity(10000))),

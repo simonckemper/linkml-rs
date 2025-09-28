@@ -5,7 +5,7 @@
 use super::functions::{BuiltinFunction, FunctionError};
 use serde_json::Value;
 use std::sync::Arc;
-use timestamp_core::{TimestampError, TimestampService};
+use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
 
 // Re-export chrono types needed for internal operations
 use chrono::{DateTime, Datelike, Duration, NaiveDate};
@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn test_now_today() {
-        use timestamp_service::create_timestamp_service;
+        use rootreal_core_foundation_timestamp::create_timestamp_service;
 
         let timestamp_service = create_timestamp_service();
 
