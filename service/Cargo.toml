@@ -126,27 +126,27 @@ clap = { version = "4.4", features = ["derive"] }
 colored = "2.1"
 indicatif = "0.17"
 rustyline = "14.0"
-rootreal-model-symbolic-linkml-core = { path = "../linkml-core" }
-rootreal-hub-api-restful-api-core = { path = "../../../../hub/api/web/rest/core" }
-rootreal-hub-web-frontend-framework-frontend = { path = "../../../../hub/web/frontend/frontend-framework-frontend/frontend-framework-core" }
-rootreal-core-application-shutdown-core = { path = "../../../../core/application/lifecycle/shutdown/core" }
-rootreal-core-observability-logger-core = { path = "../../../../core/observability/logger/core" }
-rootreal-core-foundation-timestamp = { path = "../../../../core/foundation/timestamp/service" }
-rootreal-core-foundation-task-management-core = { path = "../../../../core/foundation/task-management/core" }
-rootreal-core-resilience-error-handling-core = { path = "../../../../core/resilience/error-handling/core" }
-rootreal-core-application-memory-core = { path = "../../../../core/application/resources/memory/core" }
-rootreal-core-application-configuration-core = { path = "../../../../core/application/config/configuration/core" }
-rootreal-core-application-cache-core = { path = "../../../../core/application/resources/cache/core" }
-rootreal-core-observability-telemetry-core = { path = "../../../../core/observability/telemetry/core" }
-rootreal-database-dbms-dbms-core = { path = "../../../../database/dbms/core" }
-rootreal-data-parsing-parse-core = { path = "../../../../data/parsing/parse/core" }
-rootreal-core-resilience-timeout-core = { path = "../../../../core/resilience/timeout/core" }
-rootreal-core-foundation-random-core = { path = "../../../../core/foundation/random/core" }
-rootreal-core-foundation-random = { path = "../../../../core/foundation/random/service" }
-rootreal-security-identity-authentication-core = { path = "../../../../security/identity/authentication/core" }
-rootreal-security-crypto-hash-core = { path = "../../../../security/crypto/hash/core" }
-rootreal-optimization-resilience-rate-limiting-core = { path = "../../../../optimization/resilience/rate-limiting/core" }
-rootreal-database-vector-vector-database-core = { path = "../../../../database/vector/vector-database/core" }
+rootreal-model-symbolic-linkml-core = { workspace = true }
+rootreal-hub-api-web-rest-core = { workspace = true }
+rootreal-hub-web-frontend-framework-frontend = { workspace = true }
+rootreal-core-application-lifecycle-shutdown-core = { workspace = true }
+rootreal-core-observability-logger-core = { workspace = true }
+rootreal-core-foundation-timestamp = { workspace = true }
+rootreal-core-foundation-task-management-core = { workspace = true }
+rootreal-core-resilience-error-handling-core = { workspace = true }
+rootreal-core-application-resources-memory-core = { workspace = true }
+rootreal-core-application-config-configuration-core = { workspace = true }
+rootreal-core-application-resources-cache-core = { workspace = true }
+rootreal-core-observability-telemetry-core = { workspace = true }
+rootreal-database-lakehouse-core = { workspace = true }
+rootreal-data-parsing-parse-core = { workspace = true }
+rootreal-core-resilience-timeout-service-core = { workspace = true }
+rootreal-core-foundation-random-core = { workspace = true }
+rootreal-core-foundation-random = { workspace = true }
+rootreal-security-identity-authentication-core = { workspace = true }
+rootreal-security-crypto-hash-core = { workspace = true }
+rootreal-optimization-resilience-rate-limiting-core = { workspace = true }
+rootreal-database-vector-core = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }
