@@ -138,7 +138,7 @@ rootreal-core-application-memory-core = { path = "../../../../core/application/r
 rootreal-core-application-configuration-core = { path = "../../../../core/application/config/configuration/core" }
 rootreal-core-application-cache-core = { path = "../../../../core/application/resources/cache/core" }
 rootreal-core-observability-telemetry-core = { path = "../../../../core/observability/telemetry/core" }
-rootreal-database-dbms-dbms-core = { path = "../../../../database/dbms/dbms/core" }
+rootreal-database-dbms-dbms-core = { path = "../../../../database/dbms/core" }
 rootreal-data-parsing-parse-core = { path = "../../../../data/parsing/parse/core" }
 rootreal-core-resilience-timeout-core = { path = "../../../../core/resilience/timeout/core" }
 rootreal-core-foundation-random-core = { path = "../../../../core/foundation/random/core" }
