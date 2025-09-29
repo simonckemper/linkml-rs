@@ -14,16 +14,16 @@ use linkml_service::{
 };
 
 // RootReal service dependencies
-use rootreal_core_application_resources_cache_core::CacheService;
-use rootreal_core_application_config_configuration_core::ConfigurationService;
+use cache_core::CacheService;
+use configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
-use rootreal_core_observability_logger_core::{LoggerService, LoggerError};
+use error_handling_core::ErrorHandlingService;
+use logger_core::{LoggerService, LoggerError};
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
-use rootreal_core_foundation_task_management_core::TaskManagementService;
+use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
-use rootreal_core_foundation_timestamp_core::{TimestampService, TimestampError};
+use timestamp_core::{TimestampService, TimestampError};
 
 // Test utilities and service implementations
 use cache_service::create_cache_service;
@@ -564,7 +564,7 @@ impl FailingLogger {
 impl LoggerService for FailingLogger {
     type Error = LoggerError;
 
-    async fn log(&self, _level: rootreal_core_observability_logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
+    async fn log(&self, _level: logger_core::LogLevel, _message: &str) -> std::result::Result<(), Self::Error> {
         Err(LoggerError::InitializationFailed("Mock logger failure".to_string()))
     }
 

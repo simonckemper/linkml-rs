@@ -20,7 +20,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::traits::LinkMLService;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// `LinkML` CLI tool for schema validation and operations
 #[derive(Parser, Debug)]

@@ -10,7 +10,7 @@ use linkml_core::error::LinkMLError;
 use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use std::fmt::Write;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// SSSOM generator configuration
 #[derive(Debug, Clone)]

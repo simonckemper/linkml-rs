@@ -5,7 +5,7 @@
 
 use super::LinkMLConfig as LinkMLServiceConfig; // Use the local config type
 use async_trait::async_trait;
-use rootreal_core_application_config_configuration_core::{ConfigurationService, Validate};
+use configuration_core::{ConfigurationService, Validate};
 use linkml_core::error::{LinkMLError, Result};
 use serde::{Serialize, de::DeserializeOwned};
 #[allow(unused_imports)] // False positive - used in Debug impl for MigrationResult

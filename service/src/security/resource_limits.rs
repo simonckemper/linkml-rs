@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use thiserror::Error;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// Errors related to resource limits
 #[derive(Debug, Error)]

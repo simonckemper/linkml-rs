@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::TimestampService;
+use timestamp_core::TimestampService;
 use rootreal_core_foundation_timestamp::factory;
 
 /// Instance data for permissible values
@@ -56,14 +56,14 @@ pub struct InstanceLoader {
     /// Cache of loaded instance data
     cache: dashmap::DashMap<String, Arc<InstanceData>>,
     /// Timestamp service for `loaded_at` timestamps
-    timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 impl InstanceLoader {
     /// Create a new instance loader
     #[must_use]
     pub fn new(
-        timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
     ) -> Self {
         Self {
             cache: dashmap::DashMap::new(),

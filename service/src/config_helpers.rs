@@ -1,7 +1,7 @@
 //! Configuration loading and validation helpers
 
 use crate::config::LinkMLConfig;
-use rootreal_core_application_config_configuration_core::{ConfigurationService, Validate};
+use configuration_core::{ConfigurationService, Validate};
 use linkml_core::{LinkMLError, Result};
 use std::sync::Arc;
 use std::path::PathBuf;

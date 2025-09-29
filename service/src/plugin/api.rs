@@ -9,7 +9,7 @@ use super::{
 };
 use std::any::Any;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::TimestampService;
+use timestamp_core::TimestampService;
 
 /// Plugin `API` version
 pub const PLUGIN_API_VERSION: u32 = 1;
@@ -212,7 +212,7 @@ impl PluginSDK {
     ///
     /// Returns error if timestamp service fails to provide current time.
     pub async fn metadata(
-        timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
     ) -> Result<PluginMetadata> {
         let now = timestamp_service
             .now_utc()

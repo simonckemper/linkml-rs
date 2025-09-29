@@ -42,7 +42,8 @@ tracing = "0.1"
 humantime-serde = "1.1"
 num_cpus = "1.16"
 anyhow = { workspace = true }
-rootreal-core-application-config-configuration-core = { workspace = true }
+configuration_core = { workspace = true }
+timestamp_core = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }

@@ -9,7 +9,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 
 // Re-export chrono types for internal operations
 use chrono::{Local, Utc};

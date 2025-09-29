@@ -7,7 +7,7 @@ use serde_json::Value;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 use tokio::sync::Semaphore;
 
 /// Stress test results

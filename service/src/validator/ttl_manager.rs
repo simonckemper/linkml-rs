@@ -11,7 +11,7 @@ use parking_lot::RwLock;
 use smallvec::SmallVec;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// TTL configuration for different cache levels
 #[derive(Debug, Clone)]

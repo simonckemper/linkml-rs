@@ -10,21 +10,21 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 // Import core types and service traits
-use rootreal_core_application_resources_cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
-use rootreal_core_application_config_configuration_core::{ConfigurationError, ConfigurationService};
-use rootreal_core_resilience_error_handling_core::{
+use cache_core::{CacheError, CacheKey, CacheService, CacheTtl, CacheValue};
+use configuration_core::{ConfigurationError, ConfigurationService};
+use error_handling_core::{
     ErrorCategory, ErrorContext, ErrorHandlingError, ErrorHandlingService, ErrorPattern,
     RecoveryStrategy, TransientErrorType,
 };
-use rootreal_core_observability_logger_core::{LogEntry, LogLevel, LoggerError, LoggerService};
+use logger_core::{LogEntry, LogLevel, LoggerError, LoggerService};
 use monitoring_core::{
     Alert, BottleneckReport, HealthReport, HealthStatus, HealthSummary, MonitoringConfig,
     MonitoringError, MonitoringService, MonitoringSession, MonitoringSessionStatus,
     PerformanceAnalysisSummary, PerformanceMetric, PerformanceReport, SessionConfiguration,
     SystemHealthReport, SystemPerformanceMetrics,
 };
-use rootreal_core_foundation_task_management_core::{TaskId, TaskManagementError, TaskManagementService, TaskOptions};
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use task_management_core::{TaskId, TaskManagementError, TaskManagementService, TaskOptions};
+use timestamp_core::{TimestampError, TimestampService};
 
 // Import DBMS and Timeout services
 use dbms_core::{

@@ -3,7 +3,7 @@
 //! All configuration values must be externalized through RootReal's Configuration Service.
 //! NO HARDCODED VALUES are allowed per RootReal architecture standards.
 
-use rootreal_core_application_config_configuration_core::{ConfigurationError, Validate};
+use configuration_core::{ConfigurationError, Validate};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

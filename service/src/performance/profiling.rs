@@ -129,14 +129,14 @@ impl PerfCounter {
 pub struct Profiler {
     counters: Arc<Mutex<HashMap<String, Arc<PerfCounter>>>>,
     enabled: AtomicU64,
-    _timestamp: Arc<dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+    _timestamp: Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 impl Profiler {
     /// Create a new profiler
     pub fn new(
         timestamp: Arc<
-            dyn rootreal_core_foundation_timestamp_core::TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>,
+            dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>,
         >,
     ) -> Self {
         Self {

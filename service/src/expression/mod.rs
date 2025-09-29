@@ -26,7 +26,7 @@ pub mod vm;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::SyncTimestampService;
+use timestamp_core::SyncTimestampService;
 
 pub use ast::Expression;
 pub use error::{EvaluationError, ExpressionError, ParseError};
@@ -40,7 +40,7 @@ pub use parser::Parser;
 pub struct ExpressionEngine {
     parser: Parser,
     evaluator: Arc<Evaluator>,
-    timestamp_service: Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 impl ExpressionEngine {
@@ -67,7 +67,7 @@ impl ExpressionEngine {
     /// Create an expression engine with injected dependencies (factory pattern compliant)
     pub fn with_dependencies<T>(evaluator: Arc<Evaluator>, timestamp_service: Arc<T>) -> Self
     where
-        T: SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError> + Send + Sync + 'static,
+        T: SyncTimestampService<Error = timestamp_core::TimestampError> + Send + Sync + 'static,
     {
         Self {
             parser: Parser::new(),
@@ -121,7 +121,7 @@ impl ExpressionEngine {
     /// Get the timestamp service (internal use)
     pub(crate) fn timestamp_service(
         &self,
-    ) -> &Arc<dyn SyncTimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>> {
+    ) -> &Arc<dyn SyncTimestampService<Error = timestamp_core::TimestampError>> {
         &self.timestamp_service
     }
 }

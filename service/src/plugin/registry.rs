@@ -11,7 +11,7 @@ use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, RwLock};
-use rootreal_core_foundation_timestamp_core::TimestampService;
+use timestamp_core::TimestampService;
 
 /// Plugin registry for managing all loaded plugins
 pub struct PluginRegistry {
@@ -24,7 +24,7 @@ pub struct PluginRegistry {
     /// Node index mapping
     node_map: Arc<RwLock<HashMap<String, NodeIndex>>>,
     /// Timestamp service for registration timestamps
-    timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+    timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
 }
 
 /// Plugin registration entry
@@ -43,7 +43,7 @@ impl PluginRegistry {
     /// Create a new plugin registry
     #[must_use]
     pub fn new(
-        timestamp_service: Arc<dyn TimestampService<Error = rootreal_core_foundation_timestamp_core::TimestampError>>,
+        timestamp_service: Arc<dyn TimestampService<Error = timestamp_core::TimestampError>>,
     ) -> Self {
         Self {
             plugins: Arc::new(RwLock::new(HashMap::new())),
@@ -522,8 +522,8 @@ mod tests {
     struct TestLogger;
 
     #[async_trait]
-    impl rootreal_core_observability_logger_core::LoggerService for TestLogger {
-        type Error = rootreal_core_observability_logger_core::LoggerError;
+    impl logger_core::LoggerService for TestLogger {
+        type Error = logger_core::LoggerError;
 
         async fn debug(&self, _message: &str) -> std::result::Result<(), Self::Error> {
             Ok(())
@@ -543,7 +543,7 @@ mod tests {
 
         async fn log(
             &self,
-            _level: rootreal_core_observability_logger_core::LogLevel,
+            _level: logger_core::LogLevel,
             _message: &str,
         ) -> std::result::Result<(), Self::Error> {
             Ok(())
@@ -551,7 +551,7 @@ mod tests {
 
         async fn log_entry(
             &self,
-            _entry: &rootreal_core_observability_logger_core::LogEntry,
+            _entry: &logger_core::LogEntry,
         ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }

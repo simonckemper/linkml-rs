@@ -5,7 +5,7 @@
 
 use std::sync::Arc;
 
-use rootreal_core_application_config_configuration_core::Validate;
+use configuration_core::Validate;
 use linkml_core::{
     configuration::LinkMLServiceConfig,
     error::{LinkMLError, Result},
@@ -14,16 +14,16 @@ use linkml_core::{
 use crate::service::LinkMLServiceImpl;
 
 // RootReal service dependencies
-use rootreal_core_application_resources_cache_core::CacheService;
-use rootreal_core_application_config_configuration_core::ConfigurationService;
+use cache_core::CacheService;
+use configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
-use rootreal_core_observability_logger_core::LoggerService;
+use error_handling_core::ErrorHandlingService;
+use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
-use rootreal_core_foundation_task_management_core::TaskManagementService;
+use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
-use rootreal_core_foundation_timestamp_core::{TimestampService, TimestampError};
+use timestamp_core::{TimestampService, TimestampError};
 
 /// Create `LinkML` service with Configuration Service integration
 ///
@@ -39,7 +39,7 @@ use rootreal_core_foundation_timestamp_core::{TimestampService, TimestampError};
 ///
 /// # Errors
 pub async fn create_linkml_service_with_configuration<C, T, E, O, R>(
-    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitoring: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
@@ -104,7 +104,7 @@ where
 /// # Errors
 pub async fn create_linkml_service_with_custom_config<C, T, E, O, R>(
     config: LinkMLServiceConfig,
-    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitoring: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
@@ -166,7 +166,7 @@ where
 /// # Errors
 pub async fn create_linkml_service_from_source<C, T, E, O, R>(
     config_source: &str,
-    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitoring: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
@@ -229,7 +229,7 @@ where
 #[allow(clippy::too_many_arguments)]
 pub async fn create_linkml_service_for_environment<C, T, E, O, R>(
     environment: Environment,
-    logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
+    logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     cache: Arc<dyn CacheService<Error = cache_core::CacheError>>,
     monitoring: Arc<dyn MonitoringService<Error = monitoring_core::MonitoringError>>,
@@ -326,7 +326,7 @@ where
     /// `LinkML` service configuration
     pub config: LinkMLServiceConfig,
     /// Logger service instance
-    pub logger: Arc<dyn LoggerService<Error = rootreal_core_observability_logger_core::LoggerError>>,
+    pub logger: Arc<dyn LoggerService<Error = logger_core::LoggerError>>,
     /// Timestamp service instance
     pub timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     /// Cache service instance

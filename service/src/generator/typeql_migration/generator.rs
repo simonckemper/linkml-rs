@@ -4,7 +4,7 @@
 
 use std::fmt::Write;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp_core::{TimestampError, TimestampService};
+use timestamp_core::{TimestampError, TimestampService};
 use crate::utils::timestamp::SyncTimestampUtils;
 
 use crate::generator::typeql_generator_enhanced::EnhancedTypeQLGenerator;

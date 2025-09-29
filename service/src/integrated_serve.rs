@@ -18,14 +18,14 @@ use crate::validator::engine::ValidationEngine;
 
 // REAL RootReal service imports - integrate as dependencies as implementation matures.
 // use authentication_core::AuthenticationService;
-// use rootreal_core_application_resources_cache_core::CacheService;
+// use cache_core::CacheService;
 // use configuration_core::ConfigurationService;
 // use dbms_core::DBMSService;
-// use rootreal_core_resilience_error_handling_core::ErrorHandlingService;
+// use error_handling_core::ErrorHandlingService;
 // use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
 // use hash_core::HashService;
 // use lakehouse_core::LakehouseService;
-// use rootreal_core_observability_logger_core::LoggerService;
+// use logger_core::LoggerService;
 // use monitoring_core::MonitoringService;
 // use random_core::RandomService;
 // use rate_limiting_core::RateLimitingService;
@@ -33,10 +33,10 @@ use crate::validator::engine::ValidationEngine;
 //     app_v3::create_app_v3, factory_v3::ServiceDependencies as RestApiDeps,
 // };
 // use shutdown_core::{ShutdownHook, ShutdownService};
-// use rootreal_core_foundation_task_management_core::TaskManagementService;
+// use task_management_core::TaskManagementService;
 // use telemetry_core::TelemetryService;
 // use timeout_core::TimeoutService;
-// use rootreal_core_foundation_timestamp_core::TimestampService;
+// use timestamp_core::TimestampService;
 // use vector_database_core::VectorDatabaseService;
 
 /// `LinkML` Router Factory - creates routes for REST API service integration

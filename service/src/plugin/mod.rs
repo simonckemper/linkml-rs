@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use linkml_core::prelude::*;
-use rootreal_core_observability_logger_core::{LoggerError, LoggerService};
+use logger_core::{LoggerError, LoggerService};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
