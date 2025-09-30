@@ -148,6 +148,21 @@ rootreal-security-crypto-hash-core = { workspace = true }
 rootreal-optimization-resilience-rate-limiting-core = { workspace = true }
 rootreal-database-vector-core = { workspace = true }
 
+dbms_core = { workspace = true }
+dbms_service = { workspace = true }
+error_handling_service = { workspace = true }
+hash_service = { workspace = true }
+linkml_core = { workspace = true }
+monitoring_core = { workspace = true }
+monitoring_service = { workspace = true }
+parse_core = { workspace = true }
+random_service = { workspace = true }
+shutdown_service = { workspace = true }
+telemetry_service = { workspace = true }
+timeout_core = { workspace = true }
+timeout_service = { workspace = true }
+timestamp_core = { workspace = true }
+vector_database_service = { workspace = true }
 [dev-dependencies]
 tokio = { version = "1.42", features = ["full", "test-util"] }
 pretty_assertions = "1.4"
