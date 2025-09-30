@@ -13,7 +13,7 @@ use tokio::time::timeout;
 
 // Import mock services
 mod mock_services;
-// use logger_service::factory::create_testing_logger;
+// use rootreal_core_observability_logger::factory::create_testing_logger;
 use mock_services::*;
 
 /// Helper to measure memory usage

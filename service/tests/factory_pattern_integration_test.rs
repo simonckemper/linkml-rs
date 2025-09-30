@@ -26,12 +26,12 @@ use timeout_core::TimeoutService;
 use timestamp_core::{TimestampService, TimestampError};
 
 // Test utilities and service implementations
-use cache_service::create_cache_service;
-use logger_service::create_logger_service;
+use rootreal_core_application_resources_cache::create_cache_service;
+use rootreal_core_observability_logger::create_logger_service;
 use monitoring_service::create_monitoring_service;
 use random_service::create_random_service;
 use rootreal_core_foundation_timestamp::create_timestamp_service;
-use task_management_service::create_task_management_service;
+use rootreal_core_foundation_task_management::create_task_management_service;
 
 use pretty_assertions::{assert_eq, assert_ne};
 use tokio;

@@ -9,7 +9,7 @@
 use linkml_core::prelude::*;
 use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
-use logger_service::factory::create_development_logger;
+use rootreal_core_observability_logger::factory::create_development_logger;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
