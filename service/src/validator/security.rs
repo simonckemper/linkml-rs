@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use timestamp_core::TimestampService;
-use rootreal_core_foundation_timestamp::factory;
+use timestamp_core::factory;
 
 // Pre-compile regex patterns at startup to avoid runtime compilation
 static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Result<Regex>>> =

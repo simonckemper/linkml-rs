@@ -273,7 +273,7 @@ impl SyncTimestampUtils {
 mod tests {
     use super::*;
     use chrono::{Datelike, Timelike};
-    use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
+    use timestamp_core::factory::create_timestamp_service;
 
     #[tokio::test]
     async fn test_timestamp_utils() -> Result<()> {

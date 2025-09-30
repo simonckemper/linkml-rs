@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
-use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
+use timestamp_core::factory::create_timestamp_service;
 
 /// Local timestamp service trait for profiling
 pub trait LocalTimestampService: Send + Sync {

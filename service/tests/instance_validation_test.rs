@@ -7,7 +7,7 @@ use linkml_service::validator::{
 use serde_json::json;
 use std::sync::Arc;
 use tempfile::TempDir;
-use rootreal_core_foundation_timestamp::factory;
+use timestamp_core::factory;
 use tokio::fs;
 
 #[tokio::test]

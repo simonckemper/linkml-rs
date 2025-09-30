@@ -9,11 +9,11 @@
 use linkml_core::prelude::*;
 use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
-use rootreal_core_observability_logger::factory::create_development_logger;
+use logger_service::factory::create_development_logger;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
-use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
+use timestamp_core::factory::create_timestamp_service;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

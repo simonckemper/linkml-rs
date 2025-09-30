@@ -268,10 +268,10 @@ mod handlers {
 /// Returns error if service instantiation or configuration fails.
 #[allow(dead_code)]
 pub fn example_real_integration() -> Result<()> {
-    // use rootreal_core_application_config_configuration::factory::create_configuration_service;
-    // use rootreal_core_observability_logger::factory::create_logger_service;
+    // use configuration_service::factory::create_configuration_service;
+    // use logger_service::factory::create_logger_service;
     // use shutdown_service::factory::create_shutdown_service;
-    // use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
+    // use timestamp_core::factory::create_timestamp_service;
     // ... import all other factory functions
 
     // Create all 17 service dependencies (abbreviated for clarity)

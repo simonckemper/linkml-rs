@@ -7,17 +7,17 @@ use std::sync::Arc;
 use std::path::PathBuf;
 
 // Core service imports
-use rootreal_core_observability_logger::factory::create_logger_service;
-use rootreal_core_application_config_configuration::factory::create_configuration_service;
-use rootreal_core_foundation_timestamp::factory::create_timestamp_service;
+use logger_service::factory::create_logger_service;
+use configuration_service::factory::create_configuration_service;
+use timestamp_core::factory::create_timestamp_service;
 use hash_service::factory::create_hash_service;
 use random_service::factory::create_random_service;
-use rootreal_core_application_resources_cache::factory::create_cache_service;
+use cache_service::factory::create_cache_service;
 use monitoring_service::factory::create_monitoring_service;
 use telemetry_service::factory::create_telemetry_service;
 use error_handling_service::factory::create_error_handling_service;
 use timeout_service::factory::create_timeout_service;
-use rootreal_core_foundation_task_management::factory::create_task_management_service;
+use task_management_service::factory::create_task_management_service;
 
 // Data services
 use dbms_service::factory::create_dbms_service;

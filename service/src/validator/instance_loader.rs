@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use timestamp_core::TimestampService;
-use rootreal_core_foundation_timestamp::factory;
+use timestamp_core::factory;
 
 /// Instance data for permissible values
 #[derive(Debug, Clone, Serialize, Deserialize)]
