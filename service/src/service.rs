@@ -274,11 +274,11 @@ where
 
         // Built-in schema definitions
         let builtin_schemas = vec![
-            ("linkml:types", include_str!("../schemas/types.yaml")),
-            ("linkml:meta", include_str!("../schemas/meta.yaml")),
+            ("linkml:types", include_str!("../../schemas/types.yaml")),
+            ("linkml:meta", include_str!("../../schemas/meta.yaml")),
             (
                 "linkml:annotations",
-                include_str!("../schemas/annotations.yaml"),
+                include_str!("../../schemas/annotations.yaml"),
             ),
         ];
 
