@@ -140,7 +140,10 @@ impl std::fmt::Debug for CustomValidatorBuilder {
             .field("name", &self.name)
             .field("description", &self.description)
             .field("applies_to", &self.applies_to)
-            .field("validation_fn", &self.validation_fn.as_ref().map(|_| "<function>"))
+            .field(
+                "validation_fn",
+                &self.validation_fn.as_ref().map(|_| "<function>"),
+            )
             .finish()
     }
 }

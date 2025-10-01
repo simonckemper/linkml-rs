@@ -333,7 +333,9 @@ impl NamespaceContext {
             if let Some(uri_base) = self.local_prefixes.get(prefix) {
                 let local = captures
                     .get(2)
-                    .ok_or_else(|| LinkMLError::service(format!("Invalid CURIE format: {identifier}")))?
+                    .ok_or_else(|| {
+                        LinkMLError::service(format!("Invalid CURIE format: {identifier}"))
+                    })?
                     .as_str();
                 return Ok(format!("{uri_base}{local}"));
             }

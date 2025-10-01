@@ -293,10 +293,7 @@ where
 {
     /// Create new stress test runner
     #[must_use]
-    pub fn new(
-        config: StressTestConfig,
-        random_service: Arc<R>,
-    ) -> Self {
+    pub fn new(config: StressTestConfig, random_service: Arc<R>) -> Self {
         let chaos_engine = if config.chaos_testing() {
             Some(Arc::new(ChaosEngine::new(random_service.clone())))
         } else {
@@ -677,9 +674,7 @@ impl<R> ChaosEngine<R>
 where
     R: random_core::RandomService + Send + Sync + 'static,
 {
-    fn new(
-        random_service: Arc<R>,
-    ) -> Self {
+    fn new(random_service: Arc<R>) -> Self {
         Self {
             enabled: Arc::new(RwLock::new(false)),
             events: Arc::new(RwLock::new(0)),

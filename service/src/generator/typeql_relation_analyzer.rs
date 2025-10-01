@@ -401,7 +401,9 @@ mod tests {
 
         let mut organization_role_def = SlotDefinition::default();
         organization_role_def.range = Some("Organization".to_string());
-        schema.slots.insert("employer".to_string(), organization_role_def);
+        schema
+            .slots
+            .insert("employer".to_string(), organization_role_def);
 
         schema.classes.insert("Employment".to_string(), employment);
         schema
@@ -437,7 +439,9 @@ mod tests {
 
         let mut academic_subject_def = SlotDefinition::default();
         academic_subject_def.range = Some("Course".to_string());
-        schema.slots.insert("course".to_string(), academic_subject_def);
+        schema
+            .slots
+            .insert("course".to_string(), academic_subject_def);
 
         let mut teacher_role_def = SlotDefinition::default();
         teacher_role_def.range = Some("Instructor".to_string());
@@ -448,7 +452,9 @@ mod tests {
         // Add attribute slot
         let mut grade_attribute_def = SlotDefinition::default();
         grade_attribute_def.range = Some("string".to_string());
-        schema.slots.insert("grade".to_string(), grade_attribute_def);
+        schema
+            .slots
+            .insert("grade".to_string(), grade_attribute_def);
 
         schema.classes.insert("Enrollment".to_string(), enrollment);
         schema

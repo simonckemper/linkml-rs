@@ -419,11 +419,7 @@ where
     }
 
     /// Apply chaos testing effects through real system load
-    async fn apply_chaos(
-        failure_rate: f64,
-        max_delay_ms: u64,
-        random_service: &Arc<R>,
-    ) {
+    async fn apply_chaos(failure_rate: f64, max_delay_ms: u64, random_service: &Arc<R>) {
         // Create real CPU load instead of simulated delay
         if max_delay_ms > 0 {
             let delay_ms = random_service

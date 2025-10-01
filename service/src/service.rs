@@ -34,7 +34,7 @@ use monitoring_core::MonitoringService;
 use random_core::RandomService;
 use task_management_core::{TaskId, TaskManagementService};
 use timeout_core::TimeoutService;
-use timestamp_core::{TimestampService, TimestampError};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// Main `LinkML` service implementation
 ///
@@ -190,9 +190,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
 
         self.logger
@@ -223,9 +225,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000; // Convert ns to ms
 
@@ -567,7 +571,6 @@ where
         Ok(())
     }
 
-
     /// Check if configuration service has updates available
     ///
     /// Note: Actually updating configuration would require interior mutability
@@ -622,9 +625,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
 
         self.logger
@@ -718,9 +723,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let shutdown_duration_ms = (shutdown_end - shutdown_start) / 1_000_000;
 
@@ -754,9 +761,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
 
         self.logger
@@ -840,9 +849,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000;
         self.logger
@@ -865,9 +876,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
 
         self.logger
@@ -919,9 +932,11 @@ where
             .timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))?;
         let duration_ms = (end_time - start_time) / 1_000_000;
 
@@ -972,9 +987,11 @@ where
         self.timestamp
             .now_utc()
             .await
-            .map(|dt| dt.timestamp_nanos_opt().ok_or_else(|| {
-                LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
-            }))?
+            .map(|dt| {
+                dt.timestamp_nanos_opt().ok_or_else(|| {
+                    LinkMLError::service("Failed to get timestamp in nanoseconds".to_string())
+                })
+            })?
             .map_err(|e| LinkMLError::service(format!("Timestamp error: {e}")))
     }
 

@@ -85,10 +85,7 @@ impl ImportResolver {
     /// # Errors
     ///
     /// Returns an error if import resolution fails.
-    pub fn resolve_imports_async(
-        &self,
-        schema: &SchemaDefinition,
-    ) -> Result<SchemaDefinition> {
+    pub fn resolve_imports_async(&self, schema: &SchemaDefinition) -> Result<SchemaDefinition> {
         let mut merged = schema.clone();
         let mut visited = HashSet::new();
 

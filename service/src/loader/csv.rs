@@ -494,7 +494,8 @@ impl DataLoader for CsvLoader {
                 }
 
                 // Validate range constraints
-                if let Some(range) = &slot_def.range && !schema.classes.contains_key(range)
+                if let Some(range) = &slot_def.range
+                    && !schema.classes.contains_key(range)
                     && !schema.enums.contains_key(range)
                     && !is_valid_csv_datatype(range)
                 {
@@ -504,7 +505,9 @@ impl DataLoader for CsvLoader {
                 }
 
                 // Check domain constraints
-                if let Some(domain) = &slot_def.domain && !schema.classes.contains_key(domain) {
+                if let Some(domain) = &slot_def.domain
+                    && !schema.classes.contains_key(domain)
+                {
                     return Err(LoaderError::SchemaValidation(format!(
                         "Slot '{slot_name}' has invalid domain '{domain}' - class not found in schema"
                     )));
@@ -522,7 +525,9 @@ impl DataLoader for CsvLoader {
             }
 
             // Check inheritance chain for validity
-            if let Some(parent_name) = &class_def.is_a && !schema.classes.contains_key(parent_name) {
+            if let Some(parent_name) = &class_def.is_a
+                && !schema.classes.contains_key(parent_name)
+            {
                 return Err(LoaderError::SchemaValidation(format!(
                     "Parent class '{parent_name}' for class '{class_name}' not found in schema"
                 )));
@@ -532,7 +537,8 @@ impl DataLoader for CsvLoader {
         // Validate slot definitions
         for (slot_name, slot_def) in &schema.slots {
             // Check if range is valid
-            if let Some(range) = &slot_def.range && !schema.classes.contains_key(range)
+            if let Some(range) = &slot_def.range
+                && !schema.classes.contains_key(range)
                 && !schema.enums.contains_key(range)
                 && !is_valid_csv_datatype(range)
             {
@@ -915,7 +921,9 @@ impl DataDumper for CsvDumper {
                 }
 
                 // Check domain constraints
-                if let Some(domain) = &slot_def.domain && !schema.classes.contains_key(domain) {
+                if let Some(domain) = &slot_def.domain
+                    && !schema.classes.contains_key(domain)
+                {
                     return Err(DumperError::SchemaValidation(format!(
                         "Slot '{slot_name}' has invalid domain '{domain}' - class not found in schema"
                     )));
@@ -933,7 +941,9 @@ impl DataDumper for CsvDumper {
             }
 
             // Check inheritance chain for validity
-            if let Some(parent_name) = &class_def.is_a && !schema.classes.contains_key(parent_name) {
+            if let Some(parent_name) = &class_def.is_a
+                && !schema.classes.contains_key(parent_name)
+            {
                 return Err(DumperError::SchemaValidation(format!(
                     "Parent class '{parent_name}' for class '{class_name}' not found in schema"
                 )));

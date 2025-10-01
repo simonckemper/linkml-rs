@@ -1231,7 +1231,7 @@ Definitions:"
     fn run_interactive_loop(
         &self,
         editor: &mut rustyline::DefaultEditor,
-        session_state: &mut InteractiveSessionState
+        session_state: &mut InteractiveSessionState,
     ) {
         // Main REPL loop
         loop {
@@ -1279,7 +1279,7 @@ Goodbye!"
     fn handle_interactive_command(
         &self,
         line: &str,
-        session_state: &mut InteractiveSessionState
+        session_state: &mut InteractiveSessionState,
     ) -> bool {
         // Parse and execute command
         let trimmed = line.trim();
@@ -1312,7 +1312,11 @@ Goodbye!"
                     eprintln!("Usage: validate <data-file> [class-name]");
                 } else {
                     let class_name = parts.get(2).map(|s| (*s).to_string());
-                    Self::handle_validate(session_state.current_schema.as_ref(), parts[1], class_name);
+                    Self::handle_validate(
+                        session_state.current_schema.as_ref(),
+                        parts[1],
+                        class_name,
+                    );
                 }
             }
             "show" => {
@@ -1330,17 +1334,23 @@ Goodbye!"
                 if parts.len() < 3 {
                     eprintln!("Usage: info <class|slot|type|enum> <name>");
                 } else {
-                    self.handle_info_command(session_state.current_schema.as_ref(), parts[1], parts[2]);
+                    self.handle_info_command(
+                        session_state.current_schema.as_ref(),
+                        parts[1],
+                        parts[2],
+                    );
                 }
             }
             "generate" => {
                 if parts.len() < 2 {
-                    eprintln!(
-                        "Usage: generate <python|rust|sql|typeql|json-schema> [output-file]"
-                    );
+                    eprintln!("Usage: generate <python|rust|sql|typeql|json-schema> [output-file]");
                 } else {
                     let output = parts.get(2).map(PathBuf::from);
-                    self.handle_generate(session_state.current_schema.as_ref(), parts[1], output.as_deref());
+                    self.handle_generate(
+                        session_state.current_schema.as_ref(),
+                        parts[1],
+                        output.as_deref(),
+                    );
                 }
             }
             "check" => {
@@ -1437,7 +1447,6 @@ Goodbye!"
             "cache".green()
         );
     }
-
 
     /// Handle validation command
     fn handle_validate(

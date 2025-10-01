@@ -277,12 +277,14 @@ impl ImportResolverV2 {
                 |base_url| {
                     url::Url::parse(base_url).map_or_else(
                         |_| url_str.to_string(),
-                        |base| base.join(url_str).map_or_else(
-                            |_| url_str.to_string(),
-                            |resolved| resolved.to_string()
-                        )
+                        |base| {
+                            base.join(url_str).map_or_else(
+                                |_| url_str.to_string(),
+                                |resolved| resolved.to_string(),
+                            )
+                        },
                     )
-                }
+                },
             )
         };
 

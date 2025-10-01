@@ -222,7 +222,8 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             return Err(LinkMLError::service("Empty command"));
         }
 
-        let first_part = parts.get(0)
+        let first_part = parts
+            .get(0)
             .ok_or_else(|| LinkMLError::service("Empty command".to_string()))?;
 
         match first_part.to_lowercase().as_str() {
@@ -230,7 +231,8 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                 if parts.len() < 2 {
                     return Err(LinkMLError::service("Usage: load <path> [name]"));
                 }
-                let path_str = parts.get(1)
+                let path_str = parts
+                    .get(1)
                     .ok_or_else(|| LinkMLError::service("Missing path argument"))?;
                 Ok(Command::Load {
                     path: PathBuf::from(path_str),
@@ -246,7 +248,8 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                 if parts.len() < 2 {
                     return Err(LinkMLError::service("Usage: use <schema-name>"));
                 }
-                let name = parts.get(1)
+                let name = parts
+                    .get(1)
                     .ok_or_else(|| LinkMLError::service("Missing schema name argument"))?;
                 Ok(Command::Use {
                     name: name.to_string(),
@@ -276,7 +279,8 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                 if parts.len() < 2 {
                     return Err(LinkMLError::service("Usage: validate-file <path> [class]"));
                 }
-                let path_str = parts.get(1)
+                let path_str = parts
+                    .get(1)
                     .ok_or_else(|| LinkMLError::service("Missing file path argument"))?;
                 Ok(Command::ValidateFile {
                     path: PathBuf::from(path_str),

@@ -3,8 +3,8 @@
 use crate::config::LinkMLConfig;
 use configuration_core::{ConfigurationService, Validate};
 use linkml_core::{LinkMLError, Result};
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 /// Load and validate configuration from the configuration service
@@ -12,9 +12,7 @@ use std::time::Duration;
 /// # Errors
 ///
 /// Returns an error if configuration loading or validation fails
-pub async fn load_and_validate_configuration<C>(
-    config_service: &Arc<C>,
-) -> Result<LinkMLConfig>
+pub async fn load_and_validate_configuration<C>(config_service: &Arc<C>) -> Result<LinkMLConfig>
 where
     C: ConfigurationService + Send + Sync + 'static,
 {
@@ -256,9 +254,8 @@ pub fn convert_service_to_core_config(
     service_config: &LinkMLConfig,
 ) -> linkml_core::config::LinkMLConfig {
     use linkml_core::config::{
-        IntegrationConfig, GenerationConfig, GenerationTarget, GenerationTargets,
-        PerformanceConfig, SchemaConfig, ValidationConfig, ValidationFeatures,
-        ValidationMode
+        GenerationConfig, GenerationTarget, GenerationTargets, IntegrationConfig,
+        PerformanceConfig, SchemaConfig, ValidationConfig, ValidationFeatures, ValidationMode,
     };
 
     linkml_core::config::LinkMLConfig {
@@ -282,9 +279,10 @@ pub fn convert_service_to_core_config(
             timeout: Duration::from_millis(service_config.validator.timeout_ms),
         },
         performance: PerformanceConfig {
-            enable_compilation: service_config.performance.features.is_enabled(
-                &crate::config::PerformanceFeature::BackgroundTasks
-            ),
+            enable_compilation: service_config
+                .performance
+                .features
+                .is_enabled(&crate::config::PerformanceFeature::BackgroundTasks),
             thread_pool_size: service_config.validator.thread_count,
             max_concurrent_validations: service_config.validator.batch_size,
             stream_buffer_size: 8192,
@@ -313,9 +311,10 @@ pub fn convert_service_to_core_config(
             iceberg_endpoint: None,
             enable_typedb: true,
             typedb_connection: Some(service_config.typedb.server_address.clone()),
-            enable_monitoring: service_config.performance.features.is_enabled(
-                &crate::config::PerformanceFeature::Monitoring
-            ),
+            enable_monitoring: service_config
+                .performance
+                .features
+                .is_enabled(&crate::config::PerformanceFeature::Monitoring),
             monitoring_endpoint: None,
         },
     }

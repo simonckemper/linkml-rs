@@ -115,10 +115,10 @@ pub mod prelude;
 
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
-pub use linkml_core::prelude::*;
+pub use linkml_core::error::LinkMLError;
 pub use linkml_core::prelude::SchemaFormat;
 pub use linkml_core::prelude::ValidationReport;
-pub use linkml_core::error::LinkMLError;
+pub use linkml_core::prelude::*;
 pub use service::LinkMLServiceImpl;
 
 /// Test utilities for linkml service testing
@@ -221,7 +221,11 @@ pub mod test_utils {
         /// let mock = MockLinkMLService::new().with_results(errors, warnings);
         /// // Validation will return these specific errors and warnings
         /// ```
-        pub fn with_results(mut self, errors: Vec<linkml_core::ValidationError>, warnings: Vec<linkml_core::ValidationWarning>) -> Self {
+        pub fn with_results(
+            mut self,
+            errors: Vec<linkml_core::ValidationError>,
+            warnings: Vec<linkml_core::ValidationWarning>,
+        ) -> Self {
             self.custom_errors = errors;
             self.custom_warnings = warnings;
             self

@@ -12,7 +12,7 @@ pub use crate::service::LinkMLServiceImpl;
 pub use crate::factory::{create_linkml_service, create_linkml_service_with_config};
 
 // Re-export parser utilities
-pub use crate::parser::{Parser, YamlParser, JsonParser, SchemaParser};
+pub use crate::parser::{JsonParser, Parser, SchemaParser, YamlParser};
 
 // Re-export validation types
 pub use crate::validator::ValidationReport;

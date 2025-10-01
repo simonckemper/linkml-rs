@@ -611,7 +611,9 @@ impl RdfLoader {
                 }
                 visited.insert(current_class.clone());
 
-                if let Some(current_def) = schema.classes.get(&current_class) && let Some(parent) = &current_def.is_a {
+                if let Some(current_def) = schema.classes.get(&current_class)
+                    && let Some(parent) = &current_def.is_a
+                {
                     if parent == class_name {
                         return Err(LoaderError::SchemaValidation(format!(
                             "Circular inheritance detected: class '{class_name}' inherits from itself"
@@ -812,7 +814,9 @@ impl DataLoader for RdfLoader {
             }
 
             // Check inheritance chain for validity
-            if let Some(parent_name) = &class_def.is_a && !schema.classes.contains_key(parent_name) {
+            if let Some(parent_name) = &class_def.is_a
+                && !schema.classes.contains_key(parent_name)
+            {
                 return Err(LoaderError::SchemaValidation(format!(
                     "Parent class '{parent_name}' for class '{class_name}' not found in schema"
                 )));

@@ -2,9 +2,9 @@
 
 use std::sync::Arc;
 
+use crate::config_helpers::load_and_validate_configuration;
 use crate::service::LinkMLServiceImpl;
 use linkml_core::{config::LinkMLConfig, error::Result};
-use crate::config_helpers::load_and_validate_configuration;
 
 // RootReal service dependencies
 use cache_core::CacheService;
@@ -16,7 +16,7 @@ use monitoring_core::MonitoringService;
 use random_core::RandomService;
 use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
-use timestamp_core::{TimestampService, TimestampError};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// Create a new `LinkML` service instance with all dependencies
 ///

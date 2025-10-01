@@ -467,11 +467,7 @@ impl CacheWarmer {
     }
 
     /// Warm a single validator
-    fn warm_validator(
-        &self,
-        key: &ValidatorCacheKey,
-        engine: &ValidationEngine,
-    ) -> Result<()> {
+    fn warm_validator(&self, key: &ValidatorCacheKey, engine: &ValidationEngine) -> Result<()> {
         // Mark as in progress
         self.warming_in_progress
             .insert(key.clone(), std::time::Instant::now());

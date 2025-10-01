@@ -882,22 +882,30 @@ mod tests {
         async fn delete_database(&self, name: &str) -> DBMSResult<()> {
             // REAL IMPLEMENTATION - Actually delete the database
             // This is a critical operation that MUST NOT be simulated
-            let connection = self.get_connection("system").await.expect("Mock operation failed");
+            let connection = self
+                .get_connection("system")
+                .await
+                .expect("Mock operation failed");
             let query = format!("delete database {};", name);
             let _result = connection
                 .execute_query(&dbms_core::types::Query::new(query.clone()))
-                .await.expect("Mock operation failed");
+                .await
+                .expect("Mock operation failed");
             println!("✓ Actually deleted database: {}", name);
             Ok(())
         }
 
         async fn list_databases(&self) -> DBMSResult<Vec<DatabaseInfo>> {
             // REAL IMPLEMENTATION - Actually list databases from TypeDB
-            let connection = self.get_connection("system").await.expect("Mock operation failed");
+            let connection = self
+                .get_connection("system")
+                .await
+                .expect("Mock operation failed");
             let query = "match $db isa database; get $db;";
             let result_data = connection
                 .execute_query(&dbms_core::types::Query::new(query.to_string()))
-                .await.expect("Mock operation failed");
+                .await
+                .expect("Mock operation failed");
 
             // Parse the result to extract database information
             let databases: Vec<HashMap<String, Value>> =
@@ -932,12 +940,16 @@ mod tests {
 
         async fn deploy_schema(&self, database: &str, schema: &str) -> DBMSResult<()> {
             // REAL IMPLEMENTATION - Actually deploy schema to TypeDB
-            let connection = self.get_connection(database).await.expect("Mock operation failed");
+            let connection = self
+                .get_connection(database)
+                .await
+                .expect("Mock operation failed");
 
             // Execute the schema definition as a TypeQL query
             let _result = connection
                 .execute_query(&dbms_core::types::Query::new(schema.to_string()))
-                .await.expect("Mock operation failed");
+                .await
+                .expect("Mock operation failed");
 
             println!("✓ Actually deployed schema to database: {}", database);
             Ok(())
@@ -945,11 +957,15 @@ mod tests {
 
         async fn execute_string_query(&self, database: &str, query: &str) -> DBMSResult<String> {
             // REAL IMPLEMENTATION - Actually execute query against TypeDB
-            let connection = self.get_connection(database).await.expect("Mock operation failed");
+            let connection = self
+                .get_connection(database)
+                .await
+                .expect("Mock operation failed");
 
             let result = connection
                 .execute_query(&dbms_core::types::Query::new(query.to_string()))
-                .await.expect("Mock operation failed");
+                .await
+                .expect("Mock operation failed");
 
             Ok(result)
         }

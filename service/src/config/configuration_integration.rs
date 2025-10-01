@@ -276,7 +276,9 @@ impl<C: ConfigurationService + Send + Sync + 'static> ConfigurationWatcher<C> {
 }
 /// Migration utilities to help transition from standalone hot-reload
 pub mod migration {
-    use super::{ConfigurationManager, ConfigurationService, ConfigurationWatcher, LinkMLServiceConfig};
+    use super::{
+        ConfigurationManager, ConfigurationService, ConfigurationWatcher, LinkMLServiceConfig,
+    };
     use linkml_core::error::{LinkMLError, Result};
     use serde_json;
     use serde_yaml;

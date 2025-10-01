@@ -1054,7 +1054,10 @@ impl LinkMLApp {
                     let value = if let Ok(num) = field.parse::<i64>() {
                         serde_json::Value::Number(serde_json::Number::from(num))
                     } else if let Ok(num) = field.parse::<f64>() {
-                        serde_json::Number::from_f64(num).map_or_else(|| serde_json::Value::String(field.to_string()), serde_json::Value::Number)
+                        serde_json::Number::from_f64(num).map_or_else(
+                            || serde_json::Value::String(field.to_string()),
+                            serde_json::Value::Number,
+                        )
                     } else {
                         serde_json::Value::String(field.to_string())
                     };

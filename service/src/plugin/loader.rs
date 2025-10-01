@@ -98,11 +98,7 @@ impl DynamicLoader {
     /// # Errors
     ///
     /// Returns `LinkMLError::PluginError` if the plugin cannot be loaded or initialized
-    pub fn load_plugin(
-        &self,
-        path: &Path,
-        manifest: &PluginManifest,
-    ) -> Result<Box<dyn Plugin>> {
+    pub fn load_plugin(&self, path: &Path, manifest: &PluginManifest) -> Result<Box<dyn Plugin>> {
         let base_dir = path
             .parent()
             .ok_or_else(|| LinkMLError::other("Invalid plugin path"))?;

@@ -4,15 +4,15 @@ use super::column_info::ColumnInfo;
 use super::converters::{MySqlConverter, PostgresConverter};
 use super::options::DatabaseOptions;
 use super::pool::DatabasePool;
-use crate::loader::traits::{DataInstance, LoaderError, LoaderResult, DataLoader, LoadOptions};
+use crate::loader::traits::{DataInstance, DataLoader, LoadOptions, LoaderError, LoaderResult};
+use async_trait::async_trait;
 use linkml_core::prelude::*;
 use serde_json::{Value, json};
 use sqlx::Row;
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::postgres::PgPoolOptions;
-use tracing::{debug, info};
-use async_trait::async_trait;
 use std::path::Path;
+use tracing::{debug, info};
 
 /// Database loader for `LinkML` data
 pub struct DatabaseLoader {
@@ -66,7 +66,6 @@ impl DatabaseLoader {
 
     /// Get table names from the database
     async fn get_table_names(&self, pool: &DatabasePool) -> LoaderResult<Vec<String>> {
-
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let query = if let Some(schema) = &self.options.schema_name {
@@ -158,8 +157,11 @@ impl DatabaseLoader {
     }
 
     /// Get column information for a table
-    async fn get_columns(&self, table_name: &str, pool: &DatabasePool) -> LoaderResult<Vec<ColumnInfo>> {
-
+    async fn get_columns(
+        &self,
+        table_name: &str,
+        pool: &DatabasePool,
+    ) -> LoaderResult<Vec<ColumnInfo>> {
         match pool {
             DatabasePool::PostgreSQL(pg_pool) => {
                 let query = format!(
@@ -321,7 +323,6 @@ impl DatabaseLoader {
         }
     }
 
-
     /// Load data from database
     pub async fn load_from_database(
         &self,
@@ -345,7 +346,9 @@ impl DatabaseLoader {
             let columns = self.get_columns(&table_name, &pool).await?;
 
             // Load table data
-            let instances = self.load_table_data(&table_name, &columns, schema, &pool).await?;
+            let instances = self
+                .load_table_data(&table_name, &columns, schema, &pool)
+                .await?;
             info!(
                 "Loaded {} instances from table {}",
                 instances.len(),
@@ -428,16 +431,17 @@ impl DataLoader for DatabaseLoader {
         // Validate that the schema has classes that can be mapped to database tables
         if schema.classes.is_empty() {
             return Err(LoaderError::SchemaValidation(
-                "Schema must have at least one class for database loading".to_string()
+                "Schema must have at least one class for database loading".to_string(),
             ));
         }
 
         // Additional validations can be added here
         for (class_name, class_def) in &schema.classes {
             if class_def.slots.is_empty() {
-                return Err(LoaderError::SchemaValidation(
-                    format!("Class '{}' must have at least one slot for database loading", class_name)
-                ));
+                return Err(LoaderError::SchemaValidation(format!(
+                    "Class '{}' must have at least one slot for database loading",
+                    class_name
+                )));
             }
         }
 

@@ -621,7 +621,9 @@ impl Compiler {
                 Instruction::Const(_) | Instruction::Load(_) | Instruction::Dup => {
                     current_stack += 1;
                 }
-                Instruction::Store(_) | Instruction::Pop | Instruction::Add
+                Instruction::Store(_)
+                | Instruction::Pop
+                | Instruction::Add
                 | Instruction::Subtract
                 | Instruction::Multiply
                 | Instruction::Divide

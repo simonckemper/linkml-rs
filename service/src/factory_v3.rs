@@ -23,7 +23,7 @@ use monitoring_core::MonitoringService;
 use random_core::RandomService;
 use task_management_core::TaskManagementService;
 use timeout_core::TimeoutService;
-use timestamp_core::{TimestampService, TimestampError};
+use timestamp_core::{TimestampError, TimestampService};
 
 /// Create `LinkML` service with DBMS integration
 ///
