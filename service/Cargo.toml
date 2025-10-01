@@ -14,6 +14,9 @@ autotests = false
 
 [package.metadata]
 alias = "linkml-service"
+[lib]
+name = "linkml_service"
+
 [features]
 default = []
 database = ["dep:sqlx"]  # Database support for PostgreSQL and MySQL (no SQLite to avoid burn conflicts)

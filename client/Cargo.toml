@@ -12,6 +12,9 @@ readme = "README.md"
 
 [package.metadata]
 alias = "linkml-client"
+[lib]
+name = "linkml_client"
+
 [dependencies]
 
 # Async runtime

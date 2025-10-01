@@ -12,6 +12,9 @@ readme = "README.md"
 
 [package.metadata]
 alias = "cargo-linkml"
+[lib]
+name = "cargo_linkml"
+
 [[bin]]
 name = "cargo-linkml"
 path = "src/main.rs"
