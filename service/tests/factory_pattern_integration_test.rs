@@ -30,7 +30,7 @@ use cache_service::create_cache_service;
 use logger_service::create_logger_service;
 use monitoring_service::create_monitoring_service;
 use random_service::create_random_service;
-use timestamp_core::create_timestamp_service;
+use timestamp_service::create_timestamp_service;
 use task_management_service::create_task_management_service;
 
 use pretty_assertions::{assert_eq, assert_ne};

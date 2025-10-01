@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn test_now_today() {
-        use timestamp_core::create_timestamp_service;
+        use timestamp_service::create_timestamp_service;
 
         let timestamp_service = create_timestamp_service();
 

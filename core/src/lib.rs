@@ -71,8 +71,11 @@ pub use configuration_v2::LinkMLServiceConfig;
 pub use error::{LinkMLError, Result};
 pub use serde_json::Value;
 pub use settings::SchemaSettings;
-pub use traits::{LinkMLService, SchemaOperations, SchemaFormat, ValidationOperations};
-pub use types::{ClassDefinition, SchemaDefinition, SlotDefinition, StructuredPattern, ValidationReport, ValidationError, ValidationWarning};
+pub use traits::{LinkMLService, SchemaFormat, SchemaOperations, ValidationOperations};
+pub use types::{
+    ClassDefinition, SchemaDefinition, SlotDefinition, StructuredPattern, ValidationError,
+    ValidationReport, ValidationWarning,
+};
 
 /// Prelude module for convenient imports
 pub mod prelude {
