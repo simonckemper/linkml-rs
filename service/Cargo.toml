@@ -134,6 +134,7 @@ rootreal-hub-api-web-rest-core = { workspace = true }
 rootreal-hub-web-frontend-framework-frontend = { workspace = true }
 shutdown_core = { workspace = true }
 logger_core = { workspace = true }
+logger_service = { workspace = true }
 timestamp_service = { workspace = true }
 task_management_core = { workspace = true }
 error_handling_core = { workspace = true }
@@ -150,6 +151,10 @@ rootreal-security-identity-authentication-core = { workspace = true }
 hash_core = { workspace = true }
 rate_limiting_core = { workspace = true }
 vector_database_core = { workspace = true }
+
+# Format identification for automatic format detection
+format_identification_core = { workspace = true }
+format_identification_service = { workspace = true }
 
 dbms_core = { workspace = true }
 dbms_service = { workspace = true }
@@ -209,9 +214,21 @@ harness = false
 name = "validation_bench"
 harness = false
 
+[[bench]]
+name = "inference_benchmarks"
+harness = false
+
 [[test]]
 name = "basic_smoke"
 path = "tests/basic_smoke.rs"
+
+[[test]]
+name = "inference_integration"
+path = "tests/inference_integration.rs"
+
+[[test]]
+name = "inference_property_tests"
+path = "tests/inference_property_tests.rs"
 
 [[bin]]
 name = "linkml"

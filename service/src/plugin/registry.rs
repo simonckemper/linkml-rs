@@ -555,6 +555,18 @@ mod tests {
         ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
+
+        async fn set_level(&self, _level: logger_core::LogLevel) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn flush(&self) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
+
+        async fn shutdown(&self) -> std::result::Result<(), Self::Error> {
+            Ok(())
+        }
     }
 
     #[tokio::test]

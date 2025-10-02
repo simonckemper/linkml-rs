@@ -481,7 +481,7 @@ mod tests {
             Ok(v) => v,
             Err(e) => {
                 assert!(false, "Failed to create pattern validator: {e}");
-                return;
+                return Ok(());
             }
         };
 
@@ -525,7 +525,7 @@ mod tests {
             Ok(v) => v,
             Err(e) => {
                 assert!(false, "Failed to create pattern validator: {e}");
-                return;
+                return Ok(());
             }
         };
 
