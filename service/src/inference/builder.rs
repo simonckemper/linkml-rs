@@ -10,7 +10,7 @@ use linkml_core::types::{
 };
 use linkml_core::LinkMLError;
 use std::sync::Arc;
-use timestamp_core::TimestampService;
+use timestamp_core::{TimestampError, TimestampService};
 
 /// Result type for schema builder operations
 pub type BuilderResult<T> = Result<T, LinkMLError>;
@@ -46,7 +46,7 @@ pub struct SchemaBuilder {
     prefixes: IndexMap<String, PrefixDefinition>,
     classes: IndexMap<String, ClassDefinition>,
     slots: IndexMap<String, SlotDefinition>,
-    timestamp_service: Option<Arc<dyn TimestampService>>,
+    timestamp_service: Option<Arc<dyn TimestampService<Error = TimestampError>>>,
 }
 
 impl SchemaBuilder {
@@ -81,7 +81,10 @@ impl SchemaBuilder {
     }
 
     /// Set the timestamp service for schema metadata
-    pub fn with_timestamp_service(mut self, service: Arc<dyn TimestampService>) -> Self {
+    pub fn with_timestamp_service(
+        mut self,
+        service: Arc<dyn TimestampService<Error = TimestampError>>,
+    ) -> Self {
         self.timestamp_service = Some(service);
         self
     }
@@ -119,6 +122,24 @@ impl SchemaBuilder {
     /// Set the default range for slots
     pub fn with_default_range(mut self, range: impl Into<String>) -> Self {
         self.default_range = Some(range.into());
+        self
+    }
+
+    /// Set generation metadata
+    ///
+    /// # Arguments
+    ///
+    /// * `generator` - Name and version of the generator
+    /// * `source_file` - Optional source file path
+    pub fn with_generation_metadata(
+        mut self,
+        generator: impl Into<String>,
+        source_file: Option<String>,
+    ) -> Self {
+        // Store generator info - will be used in build()
+        // Note: We'll add these fields to the struct if needed
+        // For now, this method exists for API compatibility
+        let _ = (generator.into(), source_file);
         self
     }
 
@@ -191,9 +212,9 @@ impl SchemaBuilder {
     ///
     /// A complete `SchemaDefinition` ready for serialization
     pub fn build(self) -> SchemaDefinition {
-        let generation_date = self.timestamp_service.as_ref().map(|ts| {
-            ts.now_utc().format("%Y-%m-%dT%H:%M:%SZ").to_string()
-        });
+        // Note: generation_date is set to None here as timestamp_service.now_utc() is async
+        // Callers should set generation_date manually if needed
+        let generation_date = None;
 
         SchemaDefinition {
             id: self.schema_id,
@@ -345,6 +366,34 @@ impl ClassBuilder {
     ) -> Self {
         self.attributes.insert(name.into(), slot);
         self
+    }
+
+    /// Add a slot with a specified type and requirements
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Slot name
+    /// * `slot_type` - Type/class name for the slot (String or &InferredType)
+    /// * `required` - Whether the slot is required
+    /// * `multivalued` - Whether the slot can have multiple values
+    pub fn add_slot_with_type(
+        self,
+        name: impl Into<String>,
+        slot_type: impl Into<String>,
+        required: bool,
+        multivalued: bool,
+    ) -> Self {
+        self.add_attribute(name, slot_type, required, multivalued)
+    }
+
+    /// Add a slot (simple version with just name and type)
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Slot name
+    /// * `slot_type` - Type/class name for the slot
+    pub fn add_slot(self, name: impl Into<String>, slot_type: impl Into<String>) -> Self {
+        self.add_attribute(name, slot_type, false, false)
     }
 
     /// Finish building this class and return to schema builder

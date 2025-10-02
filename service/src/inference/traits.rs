@@ -5,12 +5,10 @@
 
 use async_trait::async_trait;
 use linkml_core::SchemaDefinition;
-use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
 use thiserror::Error;
 
-use crate::inference::types::{AttributeStats, ChildStats, DocumentStats, ElementStats, SchemaMetadata};
+use crate::inference::types::DocumentStats;
 
 /// Error types for inference operations
 #[derive(Debug, Error)]
@@ -26,6 +24,9 @@ pub enum InferenceError {
 
     #[error("Logger service error: {0}")]
     LoggerError(String),
+
+    #[error("Service error: {0}")]
+    ServiceError(String),
 
     #[error("Unsupported format: {puid} ({format_name})")]
     UnsupportedFormat {
@@ -217,6 +218,18 @@ impl InferredType {
 impl std::fmt::Display for InferredType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.to_linkml_type())
+    }
+}
+
+impl From<&InferredType> for String {
+    fn from(t: &InferredType) -> Self {
+        t.to_linkml_type().to_string()
+    }
+}
+
+impl From<InferredType> for String {
+    fn from(t: InferredType) -> Self {
+        t.to_linkml_type().to_string()
     }
 }
 

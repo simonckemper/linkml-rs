@@ -113,6 +113,9 @@ pub mod utils;
 /// Prelude module for convenient imports
 pub mod prelude;
 
+/// Schema inference from data (data2linkmlschema)
+pub mod inference;
+
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
 pub use linkml_core::error::LinkMLError;

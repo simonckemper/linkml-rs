@@ -24,6 +24,9 @@ pub struct DocumentStats {
 
     /// Document-level statistics
     pub document_metrics: DocumentMetrics,
+
+    /// Namespace prefixes encountered
+    pub namespaces: HashMap<String, String>,
 }
 
 impl DocumentStats {
@@ -35,6 +38,7 @@ impl DocumentStats {
             elements: HashMap::new(),
             metadata: SchemaMetadata::default(),
             document_metrics: DocumentMetrics::default(),
+            namespaces: HashMap::new(),
         }
     }
 
@@ -82,6 +86,11 @@ impl DocumentStats {
                 .occurrence_count += 1;
         }
     }
+
+    /// Record a namespace prefix and URI
+    pub fn record_namespace(&mut self, prefix: String, uri: String) {
+        self.namespaces.insert(prefix, uri);
+    }
 }
 
 /// Statistics for a single element/field
@@ -104,6 +113,12 @@ pub struct ElementStats {
 
     /// Maximum nesting depth where this element appears
     pub max_depth: usize,
+
+    /// Namespace URI for this element
+    pub namespace: Option<String>,
+
+    /// Whether this element has mixed content (text and children)
+    pub has_mixed_content: bool,
 }
 
 impl ElementStats {
@@ -116,7 +131,19 @@ impl ElementStats {
             children: HashMap::new(),
             text_samples: Vec::new(),
             max_depth: 0,
+            namespace: None,
+            has_mixed_content: false,
         }
+    }
+
+    /// Set the namespace for this element
+    pub fn set_namespace(&mut self, namespace: String) {
+        self.namespace = Some(namespace);
+    }
+
+    /// Mark this element as having mixed content
+    pub fn mark_mixed_content(&mut self) {
+        self.has_mixed_content = true;
     }
 }
 
@@ -165,6 +192,18 @@ pub struct ChildStats {
 
     /// Number of times this child appears
     pub occurrence_count: usize,
+
+    /// Minimum occurrences within a parent instance
+    pub min_occurs: Option<usize>,
+
+    /// Maximum occurrences within a parent instance
+    pub max_occurs: Option<usize>,
+
+    /// Number of parent instances that contain this child
+    pub parent_instances_with_child: Option<usize>,
+
+    /// Total number of parent instances
+    pub total_parent_instances: Option<usize>,
 }
 
 impl ChildStats {
@@ -173,7 +212,40 @@ impl ChildStats {
         Self {
             name,
             occurrence_count: 0,
+            min_occurs: None,
+            max_occurs: None,
+            parent_instances_with_child: None,
+            total_parent_instances: None,
         }
+    }
+
+    /// Update occurrence statistics
+    pub fn update_occurs(&mut self, occurs: usize, parent_instance_count: usize) {
+        self.min_occurs = Some(self.min_occurs.map_or(occurs, |min| min.min(occurs)));
+        self.max_occurs = Some(self.max_occurs.map_or(occurs, |max| max.max(occurs)));
+
+        if occurs > 0 {
+            self.parent_instances_with_child =
+                Some(self.parent_instances_with_child.unwrap_or(0) + 1);
+        }
+
+        self.total_parent_instances = Some(parent_instance_count);
+    }
+
+    /// Check if this child is required
+    pub fn is_required(&self) -> bool {
+        if let (Some(with_child), Some(total)) =
+            (self.parent_instances_with_child, self.total_parent_instances)
+        {
+            total > 0 && with_child == total
+        } else {
+            false
+        }
+    }
+
+    /// Check if this child is multivalued
+    pub fn is_multivalued(&self) -> bool {
+        self.max_occurs.map_or(false, |max| max > 1)
     }
 }
 
@@ -219,7 +291,7 @@ pub struct DocumentMetrics {
 }
 
 /// Inferred data type from sample values
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum InferredType {
     /// String type
     String,
@@ -293,6 +365,317 @@ impl Default for InferenceConfig {
             max_nesting_depth: 10,
             sample_size: Some(100),
         }
+    }
+}
+
+/// Aggregated statistics from multiple documents for schema inference
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregatedStats {
+    /// Number of documents analyzed
+    pub document_count: usize,
+
+    /// Confidence score for the aggregated schema (0.0 to 1.0)
+    pub confidence: f32,
+
+    /// Aggregated element statistics across all documents
+    pub elements: HashMap<String, AggregatedElementStats>,
+
+    /// Source document identifiers
+    pub source_documents: Vec<String>,
+
+    /// Format of the analyzed documents
+    pub format: Option<String>,
+
+    /// Schema metadata
+    pub metadata: SchemaMetadata,
+}
+
+impl AggregatedStats {
+    /// Create a new AggregatedStats instance
+    pub fn new() -> Self {
+        Self {
+            document_count: 0,
+            confidence: 0.0,
+            elements: HashMap::new(),
+            source_documents: Vec::new(),
+            format: None,
+            metadata: SchemaMetadata::default(),
+        }
+    }
+
+    /// Merge statistics from a single document
+    pub fn merge(&mut self, stats: DocumentStats) {
+        self.document_count += 1;
+        self.source_documents.push(stats.document_id.clone());
+
+        if self.format.is_none() {
+            self.format = Some(stats.format.clone());
+        }
+
+        // Merge element statistics
+        for (element_name, element_stats) in stats.elements {
+            self.elements
+                .entry(element_name.clone())
+                .or_insert_with(|| AggregatedElementStats::new(element_name))
+                .merge_element_stats(&element_stats, self.document_count);
+        }
+
+        // Update confidence based on document count
+        self.confidence = match self.document_count {
+            1 => 0.5,
+            2..=4 => 0.5 + (self.document_count as f32 - 1.0) * 0.1,
+            5..=9 => 0.8,
+            _ => 0.95,
+        };
+    }
+}
+
+impl Default for AggregatedStats {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Aggregated statistics for a single element across multiple documents
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregatedElementStats {
+    /// Element name
+    pub name: String,
+
+    /// Number of documents containing this element
+    pub document_frequency: usize,
+
+    /// Total occurrences across all documents
+    pub total_occurrences: usize,
+
+    /// Minimum occurrences in a single document
+    pub min_occurrences: usize,
+
+    /// Maximum occurrences in a single document
+    pub max_occurrences: usize,
+
+    /// Aggregated attribute statistics
+    pub attributes: HashMap<String, AggregatedElementStats>,
+
+    /// Aggregated child statistics
+    pub children: HashMap<String, AggregatedChildStats>,
+
+    /// Type votes from text samples
+    pub text_type_votes: TypeVotes,
+
+    /// Type votes for attributes
+    pub attribute_type_votes: HashMap<String, TypeVotes>,
+
+    /// Namespace URI if detected
+    pub namespace: Option<String>,
+
+    /// Whether this element has mixed content (text and child elements)
+    pub has_mixed_content: bool,
+}
+
+impl AggregatedElementStats {
+    /// Create a new AggregatedElementStats instance
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            document_frequency: 0,
+            total_occurrences: 0,
+            min_occurrences: usize::MAX,
+            max_occurrences: 0,
+            attributes: HashMap::new(),
+            children: HashMap::new(),
+            text_type_votes: TypeVotes::new(),
+            attribute_type_votes: HashMap::new(),
+            namespace: None,
+            has_mixed_content: false,
+        }
+    }
+
+    /// Merge statistics from a single element
+    pub fn merge_element_stats(&mut self, stats: &ElementStats, _document_index: usize) {
+        self.document_frequency += 1;
+        self.total_occurrences += stats.occurrence_count;
+        self.min_occurrences = self.min_occurrences.min(stats.occurrence_count);
+        self.max_occurrences = self.max_occurrences.max(stats.occurrence_count);
+
+        // Merge text samples for type inference
+        if !stats.text_samples.is_empty() {
+            self.text_type_votes.add_samples(&stats.text_samples);
+        }
+
+        // Merge attribute statistics
+        for (attr_name, attr_stats) in &stats.attributes {
+            self.attribute_type_votes
+                .entry(attr_name.clone())
+                .or_insert_with(TypeVotes::new)
+                .add_samples(&attr_stats.value_samples);
+        }
+
+        // Merge child statistics
+        for (child_name, child_stats) in &stats.children {
+            self.children
+                .entry(child_name.clone())
+                .or_insert_with(|| AggregatedChildStats::new(child_name.clone()))
+                .merge_child_stats(child_stats);
+        }
+    }
+
+    /// Check if this element is required (appears in all documents)
+    pub fn is_required(&self, total_documents: usize) -> bool {
+        self.document_frequency == total_documents
+    }
+
+    /// Check if this element is multivalued (max occurrences > 1)
+    pub fn is_multivalued(&self) -> bool {
+        self.max_occurrences > 1
+    }
+
+    /// Calculate confidence in cardinality determination
+    pub fn cardinality_confidence(&self) -> f32 {
+        if self.min_occurrences == self.max_occurrences {
+            1.0
+        } else {
+            let range = self.max_occurrences - self.min_occurrences;
+            1.0 - (range as f32 / self.max_occurrences as f32).min(1.0)
+        }
+    }
+}
+
+/// Aggregated statistics for child elements
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregatedChildStats {
+    /// Child element name
+    pub name: String,
+
+    /// Total occurrences across all parent instances
+    pub total_occurrences: usize,
+
+    /// Minimum occurrences within a parent
+    pub min_occurrences: usize,
+
+    /// Maximum occurrences within a parent
+    pub max_occurrences: usize,
+
+    /// Number of parent instances that contain this child
+    pub parent_instances_with_child: usize,
+
+    /// Total number of parent instances
+    pub total_parent_instances: usize,
+}
+
+impl AggregatedChildStats {
+    /// Create a new AggregatedChildStats instance
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            total_occurrences: 0,
+            min_occurrences: usize::MAX,
+            max_occurrences: 0,
+            parent_instances_with_child: 0,
+            total_parent_instances: 0,
+        }
+    }
+
+    /// Merge statistics from a single child
+    pub fn merge_child_stats(&mut self, stats: &ChildStats) {
+        self.total_occurrences += stats.occurrence_count;
+
+        if let Some(min) = stats.min_occurs {
+            self.min_occurrences = self.min_occurrences.min(min);
+        }
+
+        if let Some(max) = stats.max_occurs {
+            self.max_occurrences = self.max_occurrences.max(max);
+        }
+
+        if let Some(with_child) = stats.parent_instances_with_child {
+            self.parent_instances_with_child += with_child;
+        }
+
+        if let Some(total) = stats.total_parent_instances {
+            self.total_parent_instances += total;
+        }
+    }
+
+    /// Check if this child is required (appears in all parent instances)
+    pub fn is_required(&self) -> bool {
+        self.total_parent_instances > 0
+            && self.parent_instances_with_child == self.total_parent_instances
+    }
+
+    /// Check if this child is multivalued (max occurrences > 1)
+    pub fn is_multivalued(&self) -> bool {
+        self.max_occurrences > 1
+    }
+
+    /// Calculate confidence in cardinality determination
+    pub fn cardinality_confidence(&self) -> f32 {
+        if self.total_parent_instances == 0 {
+            0.0
+        } else {
+            self.parent_instances_with_child as f32 / self.total_parent_instances as f32
+        }
+    }
+}
+
+/// Type voting system for inferring types from multiple samples
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TypeVotes {
+    /// Vote counts for each inferred type
+    votes: HashMap<InferredType, usize>,
+
+    /// Total number of samples
+    total_samples: usize,
+}
+
+impl TypeVotes {
+    /// Create a new TypeVotes instance
+    pub fn new() -> Self {
+        Self {
+            votes: HashMap::new(),
+            total_samples: 0,
+        }
+    }
+
+    /// Add samples and vote for their inferred types
+    pub fn add_samples(&mut self, samples: &[String]) {
+        use crate::inference::type_inference::infer_type_from_value;
+
+        for sample in samples {
+            let inferred = infer_type_from_value(sample);
+            *self.votes.entry(inferred).or_insert(0) += 1;
+            self.total_samples += 1;
+        }
+    }
+
+    /// Get the majority type
+    pub fn majority_type(&self) -> InferredType {
+        self.votes
+            .iter()
+            .max_by_key(|(_, count)| *count)
+            .map(|(t, _)| t.clone())
+            .unwrap_or(InferredType::Unknown)
+    }
+
+    /// Get confidence in the majority type (0.0 to 1.0)
+    pub fn confidence(&self) -> f32 {
+        if self.total_samples == 0 {
+            return 0.0;
+        }
+
+        let majority = self.votes.values().max().copied().unwrap_or(0);
+        majority as f32 / self.total_samples as f32
+    }
+
+    /// Check if there are any samples
+    pub fn has_samples(&self) -> bool {
+        self.total_samples > 0
+    }
+}
+
+impl Default for TypeVotes {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

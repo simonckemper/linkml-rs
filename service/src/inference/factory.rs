@@ -9,8 +9,10 @@ use crate::inference::traits::InferenceResult;
 use crate::inference::types::InferenceConfig;
 use format_identification_service::create_format_identification_service;
 use logger_core::{LoggerError, LoggerService};
+use logger_service::factory::create_logger_service;
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
+use timestamp_service::factory::create_timestamp_service;
 
 /// Create a fully-configured XML introspector
 ///
@@ -139,10 +141,10 @@ pub fn create_csv_introspector(
 /// ```
 pub async fn create_inference_engine() -> InferenceResult<Arc<InferenceEngine>> {
     // Create core services
-    let logger = logger_service::create_logger_service()
+    let logger = create_logger_service().await
         .map_err(|e| crate::inference::traits::InferenceError::ServiceError(e.to_string()))?;
 
-    let timestamp = timestamp_service::create_timestamp_service()
+    let timestamp = create_timestamp_service().await
         .map_err(|e| crate::inference::traits::InferenceError::ServiceError(e.to_string()))?;
 
     create_inference_engine_with_services(logger, timestamp).await

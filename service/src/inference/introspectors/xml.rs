@@ -353,7 +353,9 @@ impl DataIntrospector for XmlIntrospector {
                             stats.namespaces.get("").cloned()
                         };
 
-                        element_stats.set_namespace(prefix.clone(), namespace_uri);
+                        if let Some(ns_uri) = namespace_uri {
+                            element_stats.set_namespace(ns_uri);
+                        }
                     }
 
                     // Record parent-child relationship with occurrence tracking
@@ -408,7 +410,7 @@ impl DataIntrospector for XmlIntrospector {
                             if let Some(element_stats) = stats.elements.get_mut(&popped_element) {
                                 for (child_name, count) in children_counts {
                                     if let Some(child_stats) = element_stats.children.get_mut(&child_name) {
-                                        child_stats.update_occurs(count);
+                                        child_stats.update_occurs(count, count);
                                     }
                                 }
                             }
@@ -522,11 +524,8 @@ impl DataIntrospector for XmlIntrospector {
             .clone()
             .unwrap_or_else(|| format!("{} Schema", schema_id));
 
-        let mut builder = SchemaBuilder::new(
-            schema_id,
-            &schema_name,
-            Arc::clone(&self.timestamp),
-        );
+        let mut builder = SchemaBuilder::new(schema_id, &schema_name)
+            .with_timestamp_service(Arc::clone(&self.timestamp));
 
         builder = builder
             .with_description(format!(
@@ -534,9 +533,7 @@ impl DataIntrospector for XmlIntrospector {
                 stats.format
             ))
             .with_version("1.0.0")
-            .with_default_range("string")
-            .with_generation_metadata()
-            .await?;
+            .with_default_range("string");
 
         // Create classes for each element
         for (element_name, element_stats) in &stats.elements {
@@ -576,7 +573,7 @@ impl DataIntrospector for XmlIntrospector {
                 let required = child_stats.is_required();
                 let multivalued = child_stats.is_multivalued();
 
-                class_builder = class_builder.add_slot(
+                class_builder = class_builder.add_slot_with_type(
                     child_name,
                     child_name,
                     required,
@@ -584,7 +581,7 @@ impl DataIntrospector for XmlIntrospector {
                 );
             }
 
-            class_builder.finish();
+            builder = class_builder.finish();
         }
 
         let schema = builder.build();

@@ -24,7 +24,7 @@ use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
 
 /// Detected delimiter for CSV parsing
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Delimiter {
     /// Comma delimiter (,)
     Comma,
@@ -482,11 +482,8 @@ impl DataIntrospector for CsvIntrospector {
             .clone()
             .unwrap_or_else(|| format!("{} Schema", schema_id));
 
-        let mut builder = SchemaBuilder::new(
-            schema_id,
-            &schema_name,
-            Arc::clone(&self.timestamp),
-        );
+        let mut builder = SchemaBuilder::new(schema_id, &schema_name)
+            .with_timestamp_service(Arc::clone(&self.timestamp));
 
         builder = builder
             .with_description(format!(
@@ -494,9 +491,7 @@ impl DataIntrospector for CsvIntrospector {
                 stats.format
             ))
             .with_version("1.0.0")
-            .with_default_range("string")
-            .with_generation_metadata()
-            .await?;
+            .with_default_range("string");
 
         // Create a single class for the CSV row
         let mut class_builder = builder.add_class("CSVRow");
@@ -527,7 +522,7 @@ impl DataIntrospector for CsvIntrospector {
             );
         }
 
-        class_builder.finish();
+        builder = class_builder.finish();
 
         let schema = builder.build();
 

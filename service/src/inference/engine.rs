@@ -7,14 +7,12 @@ use crate::inference::builder::SchemaBuilder;
 use crate::inference::introspectors::{CsvIntrospector, JsonIntrospector, XmlIntrospector};
 use crate::inference::traits::{DataIntrospector, InferenceError, InferenceResult};
 use crate::inference::types::{AggregatedStats, DocumentStats, InferenceConfig};
-use async_trait::async_trait;
 use format_identification_core::{FormatIdentifier, Identification, IdentificationOptions};
 use linkml_core::SchemaDefinition;
 use logger_core::{LogLevel, LoggerError, LoggerService};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
-use task_management_core::TaskManagementService;
 use timestamp_core::{TimestampError, TimestampService};
 
 /// Core inference engine for automated schema generation
@@ -330,7 +328,7 @@ impl InferenceEngine {
                 Err(e) => {
                     self.logger
                         .log(
-                            LogLevel::Warning,
+                            LogLevel::Warn,
                             &format!("Skipping document {:?}: {}", path, e),
                         )
                         .await
@@ -440,7 +438,7 @@ impl InferenceEngine {
                 .with_description(&class_description);
 
             // Add attributes for text content if present
-            if !element_stats.text_type_votes.samples.is_empty() {
+            if element_stats.text_type_votes.has_samples() {
                 let inferred_type = element_stats.text_type_votes.majority_type();
                 let confidence = element_stats.text_type_votes.confidence();
 
