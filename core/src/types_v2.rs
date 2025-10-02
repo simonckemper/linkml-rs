@@ -1,7 +1,7 @@
 //! Optimized type definitions using string interning
 //!
 //! This module provides memory-optimized versions of LinkML types that use
-//! Arc<str> for commonly duplicated strings to reduce memory usage.
+//! `Arc<str>` for commonly duplicated strings to reduce memory usage.
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};

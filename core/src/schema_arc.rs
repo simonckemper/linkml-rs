@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 ///  Type alias for Arc-wrapped schema
 pub type ArcSchema = Arc<SchemaDefinition>;
-///  Trait for types that can provide an Arc<SchemaDefinition>
+///  Trait for types that can provide an `Arc<SchemaDefinition>`
 pub trait SchemaProvider {
     ///  Get the schema as an Arc
     fn schema(&self) -> &ArcSchema;

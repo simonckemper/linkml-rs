@@ -29,7 +29,7 @@ impl StringPool {
         }
     }
 
-    /// Intern a string and return an Arc<str>
+    /// Intern a string and return an `Arc<str>`
     pub fn intern(&self, s: &str) -> Arc<str> {
         // Try read lock first for common case
         {
@@ -88,12 +88,12 @@ pub fn intern(s: &str) -> Arc<str> {
     STRING_POOL.intern(s)
 }
 
-/// Convenience function to intern an Option<String>
+/// Convenience function to intern an `Option<String>`
 pub fn intern_option(s: Option<&str>) -> Option<Arc<str>> {
     s.map(intern)
 }
 
-/// Convenience function to intern a Vec<String>
+/// Convenience function to intern a `Vec<String>`
 #[must_use]
 pub fn intern_vec(v: Vec<String>) -> Vec<Arc<str>> {
     v.into_iter().map(|s| intern(&s)).collect()

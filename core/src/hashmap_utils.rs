@@ -85,7 +85,7 @@ impl<K: Eq + Hash, V> IndexMapExt<K, V> for IndexMap<K, V> {
     }
 }
 
-///  Efficient string key `HashMap` using Arc<str>
+///  Efficient string key `HashMap` using `Arc<str>`
 pub type StringMap<V> = HashMap<Arc<str>, V>;
 ///  Create a `StringMap` with pre-allocated capacity
 #[must_use]

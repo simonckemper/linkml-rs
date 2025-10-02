@@ -101,7 +101,7 @@ impl std::ops::DerefMut for StringBuffer {
     }
 }
 
-/// Pool for reusable Vec<T> buffers
+/// Pool for reusable `Vec<T>` buffers
 pub struct VecPool<T> {
     pool: Arc<Mutex<VecDeque<Vec<T>>>>,
     max_size: usize,

@@ -22,9 +22,9 @@ pub enum PathSegment {
     Root,
     /// Property access (.property)
     Property(String),
-    /// Array index ([n])
+    /// Array index (`[n]`)
     Index(usize),
-    /// Wildcard array access ([*])
+    /// Wildcard array access (`[*]`)
     Wildcard,
 }
 

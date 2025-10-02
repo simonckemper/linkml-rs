@@ -19,7 +19,7 @@ pub struct OptimizedValidationIssue {
     pub message: String,
     /// Validator name (24 bytes)
     pub validator: String,
-    /// Error code if any (24 bytes for Option<String>)
+    /// Error code if any (24 bytes for `Option<String>`)
     pub code: Option<String>,
     /// Severity (1 byte + padding)
     pub severity: Severity,
