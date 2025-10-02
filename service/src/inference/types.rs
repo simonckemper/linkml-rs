@@ -61,12 +61,7 @@ impl DocumentStats {
     }
 
     /// Record an attribute for an element
-    pub fn record_attribute(
-        &mut self,
-        element_name: &str,
-        attr_name: &str,
-        attr_value: String,
-    ) {
+    pub fn record_attribute(&mut self, element_name: &str, attr_name: &str, attr_value: String) {
         if let Some(element) = self.elements.get_mut(element_name) {
             element
                 .attributes
@@ -234,9 +229,10 @@ impl ChildStats {
 
     /// Check if this child is required
     pub fn is_required(&self) -> bool {
-        if let (Some(with_child), Some(total)) =
-            (self.parent_instances_with_child, self.total_parent_instances)
-        {
+        if let (Some(with_child), Some(total)) = (
+            self.parent_instances_with_child,
+            self.total_parent_instances,
+        ) {
             total > 0 && with_child == total
         } else {
             false
@@ -642,7 +638,20 @@ impl TypeVotes {
         use crate::inference::type_inference::infer_type_from_value;
 
         for sample in samples {
-            let inferred = infer_type_from_value(sample);
+            let inferred_traits_type = infer_type_from_value(sample);
+            // Convert traits::InferredType to types::InferredType
+            let inferred = match inferred_traits_type {
+                crate::inference::traits::InferredType::String => InferredType::String,
+                crate::inference::traits::InferredType::Integer => InferredType::Integer,
+                crate::inference::traits::InferredType::Float => InferredType::Float,
+                crate::inference::traits::InferredType::Boolean => InferredType::Boolean,
+                crate::inference::traits::InferredType::DateTime => InferredType::DateTime,
+                crate::inference::traits::InferredType::Date => InferredType::Date,
+                crate::inference::traits::InferredType::Time => InferredType::Time,
+                crate::inference::traits::InferredType::Uri => InferredType::Uri,
+                crate::inference::traits::InferredType::Email => InferredType::Email,
+                crate::inference::traits::InferredType::Unknown => InferredType::Unknown,
+            };
             *self.votes.entry(inferred).or_insert(0) += 1;
             self.total_samples += 1;
         }
@@ -843,7 +852,11 @@ mod tests {
     #[test]
     fn test_type_votes_boolean() {
         let mut votes = TypeVotes::new();
-        votes.add_samples(&vec!["true".to_string(), "false".to_string(), "TRUE".to_string()]);
+        votes.add_samples(&vec![
+            "true".to_string(),
+            "false".to_string(),
+            "TRUE".to_string(),
+        ]);
 
         assert_eq!(votes.majority_type(), InferredType::Boolean);
         assert_eq!(votes.confidence(), 1.0);

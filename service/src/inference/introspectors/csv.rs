@@ -221,8 +221,10 @@ impl CsvIntrospector {
 
         // If we have a second row, compare characteristics
         if let Some(second) = second_row {
-            let first_avg_len: usize = first_row.iter().map(|v| v.len()).sum::<usize>() / first_row.len().max(1);
-            let second_avg_len: usize = second.iter().map(|v| v.len()).sum::<usize>() / second.len().max(1);
+            let first_avg_len: usize =
+                first_row.iter().map(|v| v.len()).sum::<usize>() / first_row.len().max(1);
+            let second_avg_len: usize =
+                second.iter().map(|v| v.len()).sum::<usize>() / second.len().max(1);
 
             // Headers are typically shorter and all non-numeric
             all_non_numeric && first_avg_len < second_avg_len
@@ -240,7 +242,11 @@ impl CsvIntrospector {
     ///
     /// # Returns
     /// * `Vec<String>` - Column names
-    fn generate_column_names(&self, header_row: Option<&StringRecord>, column_count: usize) -> Vec<String> {
+    fn generate_column_names(
+        &self,
+        header_row: Option<&StringRecord>,
+        column_count: usize,
+    ) -> Vec<String> {
         if let Some(headers) = header_row {
             // Use header row values
             headers
@@ -282,15 +288,19 @@ impl CsvIntrospector {
 
         // Read first two rows to detect headers
         let mut records_iter = reader.records();
-        let first_record = records_iter.next().transpose()
-            .map_err(|e| InferenceError::ParseServiceError(format!("Failed to read first row: {}", e)))?;
+        let first_record = records_iter.next().transpose().map_err(|e| {
+            InferenceError::ParseServiceError(format!("Failed to read first row: {}", e))
+        })?;
 
         let Some(first_row) = first_record else {
-            return Err(InferenceError::InvalidDataStructure("CSV file is empty".to_string()));
+            return Err(InferenceError::InvalidDataStructure(
+                "CSV file is empty".to_string(),
+            ));
         };
 
-        let second_record = records_iter.next().transpose()
-            .map_err(|e| InferenceError::ParseServiceError(format!("Failed to read second row: {}", e)))?;
+        let second_record = records_iter.next().transpose().map_err(|e| {
+            InferenceError::ParseServiceError(format!("Failed to read second row: {}", e))
+        })?;
 
         // Detect if first row is a header
         let has_headers = self.has_header_row(&first_row, second_record.as_ref());
@@ -305,10 +315,8 @@ impl CsvIntrospector {
         let column_count = column_names.len();
 
         // Initialize column statistics
-        let mut column_stats: Vec<ColumnStats> = column_names
-            .into_iter()
-            .map(ColumnStats::new)
-            .collect();
+        let mut column_stats: Vec<ColumnStats> =
+            column_names.into_iter().map(ColumnStats::new).collect();
 
         // Process data rows
         let data_rows = if has_headers {
@@ -343,7 +351,11 @@ impl CsvIntrospector {
         let mut row_count = if has_headers { 1 } else { 1 }; // Already processed first/second row
         for result in data_rows {
             let record = result.map_err(|e| {
-                InferenceError::ParseServiceError(format!("Failed to parse CSV row {}: {}", row_count + 1, e))
+                InferenceError::ParseServiceError(format!(
+                    "Failed to parse CSV row {}: {}",
+                    row_count + 1,
+                    e
+                ))
             })?;
 
             for (col_idx, value) in record.iter().enumerate() {
@@ -361,24 +373,29 @@ impl CsvIntrospector {
             stats.record_element(&col_stat.name);
 
             // Infer type from samples
-            let inferred_type = self.type_inferencer.infer_from_samples(&col_stat.value_samples);
+            let inferred_type = self
+                .type_inferencer
+                .infer_from_samples(&col_stat.value_samples);
 
             // Add the inferred type as a slot attribute
             // We store type information in text samples for now
-            stats.add_text_sample(&col_stat.name, format!("type:{}", inferred_type.to_linkml_type()));
+            stats.add_text_sample(
+                &col_stat.name,
+                format!("type:{}", inferred_type.to_linkml_type()),
+            );
 
             // Store statistics as additional samples
             stats.add_text_sample(
                 &col_stat.name,
-                format!("required:{}", col_stat.is_required())
+                format!("required:{}", col_stat.is_required()),
             );
             stats.add_text_sample(
                 &col_stat.name,
-                format!("non_empty_count:{}", col_stat.non_empty_count)
+                format!("non_empty_count:{}", col_stat.non_empty_count),
             );
             stats.add_text_sample(
                 &col_stat.name,
-                format!("total_count:{}", col_stat.total_count)
+                format!("total_count:{}", col_stat.total_count),
             );
 
             // Store actual value samples
@@ -393,8 +410,10 @@ impl CsvIntrospector {
         stats.document_metrics.max_nesting_depth = 1; // CSV is flat
 
         // Set metadata
-        let now = self.timestamp.now_utc().await
-            .map_err(|e| InferenceError::ServiceError(format!("Failed to get timestamp: {}", e)))?;
+        let now =
+            self.timestamp.now_utc().await.map_err(|e| {
+                InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
+            })?;
 
         stats.metadata = SchemaMetadata {
             schema_id: Some(format!("{}_schema", stats.document_id)),
@@ -426,9 +445,7 @@ impl DataIntrospector for CsvIntrospector {
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
         // Read file to bytes
-        let bytes = tokio::fs::read(path)
-            .await
-            .map_err(InferenceError::Io)?;
+        let bytes = tokio::fs::read(path).await.map_err(InferenceError::Io)?;
 
         // Analyze bytes
         self.analyze_bytes(&bytes).await
@@ -496,27 +513,26 @@ impl DataIntrospector for CsvIntrospector {
         // Create a single class for the CSV row
         let mut class_builder = builder.add_class("CSVRow");
 
-        class_builder = class_builder.with_description(
-            "Represents a single row in the CSV file".to_string()
-        );
+        class_builder =
+            class_builder.with_description("Represents a single row in the CSV file".to_string());
 
         // Add slots for each column
         for (column_name, element_stats) in &stats.elements {
             // Extract type and required information from text samples
-            let mut inferred_type = "string";
             let mut is_required = false;
 
             for sample in &element_stats.text_samples {
-                if let Some(type_str) = sample.strip_prefix("type:") {
-                    inferred_type = type_str;
-                } else if let Some(req_str) = sample.strip_prefix("required:") {
+                if let Some(req_str) = sample.strip_prefix("required:") {
                     is_required = req_str == "true";
                 }
             }
 
+            let inferred_type = self
+                .type_inferencer
+                .infer_from_samples(&element_stats.text_samples);
             class_builder = class_builder.add_slot_with_type(
                 column_name,
-                &self.type_inferencer.infer_from_samples(&element_stats.text_samples),
+                inferred_type.to_linkml_type(),
                 is_required,
                 false, // CSV columns are not multivalued
             );
@@ -545,8 +561,12 @@ mod tests {
     use logger_service::create_logger_service;
     use timestamp_service::create_timestamp_service;
 
-    fn create_test_services() -> (Arc<dyn LoggerService<Error = LoggerError>>, Arc<dyn TimestampService<Error = TimestampError>>) {
-        let logger = create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
+    fn create_test_services() -> (
+        Arc<dyn LoggerService<Error = LoggerError>>,
+        Arc<dyn TimestampService<Error = TimestampError>>,
+    ) {
+        let logger =
+            create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
         let timestamp = create_timestamp_service();
         (logger, timestamp)
     }
@@ -667,7 +687,10 @@ mod tests {
         let csv = b"name,age,active\nJohn Doe,25,true\nJane Smith,30,false";
 
         let stats = introspector.analyze_bytes(csv).await.unwrap();
-        let schema = introspector.generate_schema(&stats, "test_csv_schema").await.unwrap();
+        let schema = introspector
+            .generate_schema(&stats, "test_csv_schema")
+            .await
+            .unwrap();
 
         assert_eq!(schema.id, "test_csv_schema");
         assert!(schema.classes.contains_key("CSVRow"));

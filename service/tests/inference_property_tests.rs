@@ -15,7 +15,10 @@ use std::sync::Arc;
 use timestamp_service::create_timestamp_service;
 
 // Helper function to create test services
-fn create_test_services() -> (Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>, Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>) {
+fn create_test_services() -> (
+    Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>,
+    Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
+) {
     let logger = create_logger_service().unwrap();
     let timestamp = create_timestamp_service();
     (logger, timestamp)

@@ -212,26 +212,32 @@ fn find_page_xml_files(dir: &Path) -> Result<Vec<PathBuf>> {
 }
 
 /// Display schema inference statistics
-fn display_inference_stats(
-    schema_yaml: &str,
-    analyzed_files: &[PathBuf],
-    total_files: usize,
-) {
+fn display_inference_stats(schema_yaml: &str, analyzed_files: &[PathBuf], total_files: usize) {
     println!("\n┌─────────────────────────────────────────────────┐");
     println!("│     INFERRED SCHEMA ANALYSIS RESULTS            │");
     println!("└─────────────────────────────────────────────────┘");
     println!();
     println!("📊 Analysis Statistics:");
-    println!("  • Documents analyzed: {}/{}", analyzed_files.len(), total_files);
+    println!(
+        "  • Documents analyzed: {}/{}",
+        analyzed_files.len(),
+        total_files
+    );
     println!("  • Schema size: {} bytes", schema_yaml.len());
     println!();
 
     // Parse schema to count classes and slots
-    let class_count = schema_yaml.matches("  ").filter(|line| !line.is_empty()).count();
+    let class_count = schema_yaml
+        .matches("  ")
+        .filter(|line| !line.is_empty())
+        .count();
     let slot_count = schema_yaml.matches("range:").count();
 
     println!("🔍 Schema Structure:");
-    println!("  • Classes detected: ~{}", class_count.saturating_sub(10).max(1));
+    println!(
+        "  • Classes detected: ~{}",
+        class_count.saturating_sub(10).max(1)
+    );
     println!("  • Attributes detected: ~{}", slot_count);
     println!();
 
@@ -262,7 +268,8 @@ fn display_schema_preview(schema_yaml: &str) {
 
     for line in preview_lines {
         // Simple syntax highlighting
-        if line.starts_with("id:") || line.starts_with("name:") || line.starts_with("description:") {
+        if line.starts_with("id:") || line.starts_with("name:") || line.starts_with("description:")
+        {
             println!("  \x1b[1m{}\x1b[0m", line); // Bold
         } else if line.contains("classes:") || line.contains("slots:") {
             println!("  \x1b[32m{}\x1b[0m", line); // Green
@@ -304,7 +311,8 @@ fn display_full_schema(schema_yaml: &str) {
 /// NOTE: This is a simplified version for demonstration
 /// In production, use parse_service::parsers::factory::create_page_xml_parser()
 async fn parse_page_xml_metadata(path: &Path) -> Result<HashMap<String, serde_json::Value>> {
-    let filename = path.file_name()
+    let filename = path
+        .file_name()
         .unwrap_or_default()
         .to_string_lossy()
         .to_string();
@@ -377,7 +385,10 @@ async fn main() -> Result<()> {
     println!("    • GLAM ID: {}", config.glam_id);
     println!("    • Collection: {}", config.collection_id);
     println!("    • Record set: {}", config.record_set_id);
-    println!("    • Analysis limit: {} documents", config.max_analysis_docs);
+    println!(
+        "    • Analysis limit: {} documents",
+        config.max_analysis_docs
+    );
     println!();
 
     // Step 2: Check path existence
@@ -431,7 +442,11 @@ async fn main() -> Result<()> {
     let analysis_limit = config.max_analysis_docs.min(xml_files.len());
     let files_to_analyze: Vec<PathBuf> = xml_files.iter().take(analysis_limit).cloned().collect();
 
-    println!("  Analyzing {} of {} files...", files_to_analyze.len(), xml_files.len());
+    println!(
+        "  Analyzing {} of {} files...",
+        files_to_analyze.len(),
+        xml_files.len()
+    );
 
     // Analyze first document to get schema structure
     let first_file = &files_to_analyze[0];
@@ -443,7 +458,8 @@ async fn main() -> Result<()> {
     // For multi-document analysis, merge statistics (simplified for example)
     // In production, you would use InferenceEngine.analyze_documents()
 
-    let schema_id = format!("page_xml_{}_{}", config.glam_id, config.collection_id).replace('-', "_");
+    let schema_id =
+        format!("page_xml_{}_{}", config.glam_id, config.collection_id).replace('-', "_");
     let schema = xml_introspector
         .generate_schema(&doc_stats, &schema_id)
         .await
@@ -454,8 +470,8 @@ async fn main() -> Result<()> {
 
     // Step 6: Convert schema to YAML
     println!("📝 Step 6: Generating LinkML YAML...");
-    let schema_yaml = serde_yaml::to_string(&schema)
-        .context("Failed to serialize schema to YAML")?;
+    let schema_yaml =
+        serde_yaml::to_string(&schema).context("Failed to serialize schema to YAML")?;
     println!("  ✓ YAML generation complete");
     println!();
 
@@ -509,7 +525,10 @@ async fn main() -> Result<()> {
     println!("💾 Step 9: Writing output files...");
     let output_path = config.schema_output_path();
     fs::create_dir_all(&output_path).with_context(|| {
-        format!("Failed to create output directory: {}", output_path.display())
+        format!(
+            "Failed to create output directory: {}",
+            output_path.display()
+        )
     })?;
 
     // Write schema file

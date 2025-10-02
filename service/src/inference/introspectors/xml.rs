@@ -10,7 +10,6 @@ use crate::inference::types::{DocumentStats, SchemaMetadata};
 use async_trait::async_trait;
 use linkml_core::types::SchemaDefinition;
 use logger_core::{LoggerError, LoggerService};
-use parse_core::{ContentElement, DocumentContent, ParsedDocument, StructuredContent};
 use std::path::Path;
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
@@ -72,9 +71,16 @@ impl XmlIntrospector {
     ///
     /// # Returns
     /// * `Option<String>` - Detected format name
-    fn detect_xml_format(root_element: &str, namespaces: &std::collections::HashMap<String, String>) -> Option<String> {
+    fn detect_xml_format(
+        root_element: &str,
+        namespaces: &std::collections::HashMap<String, String>,
+    ) -> Option<String> {
         // PAGE-XML detection
-        if root_element == "PcGts" || namespaces.values().any(|uri| uri.contains("primaresearch.org/PAGE")) {
+        if root_element == "PcGts"
+            || namespaces
+                .values()
+                .any(|uri| uri.contains("primaresearch.org/PAGE"))
+        {
             return Some("PAGE-XML".to_string());
         }
 
@@ -84,7 +90,10 @@ impl XmlIntrospector {
         }
 
         // Dublin Core detection
-        if root_element == "dc" || root_element == "metadata" && namespaces.values().any(|uri| uri.contains("purl.org/dc")) {
+        if root_element == "dc"
+            || root_element == "metadata"
+                && namespaces.values().any(|uri| uri.contains("purl.org/dc"))
+        {
             return Some("Dublin Core".to_string());
         }
 
@@ -279,9 +288,7 @@ impl DataIntrospector for XmlIntrospector {
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
         // Read file to bytes
-        let bytes = tokio::fs::read(path)
-            .await
-            .map_err(InferenceError::Io)?;
+        let bytes = tokio::fs::read(path).await.map_err(InferenceError::Io)?;
 
         // Analyze bytes
         self.analyze_bytes(&bytes).await
@@ -299,8 +306,8 @@ impl DataIntrospector for XmlIntrospector {
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
         // Parse XML using quick-xml for basic introspection
-        use quick_xml::events::Event;
         use quick_xml::Reader;
+        use quick_xml::events::Event;
         use std::collections::HashMap;
 
         let mut reader = Reader::from_reader(data);
@@ -396,8 +403,14 @@ impl DataIntrospector for XmlIntrospector {
                 Ok(Event::End(_)) => {
                     if let Some(popped_element) = element_stack.pop() {
                         // Check for mixed content
-                        let has_text = element_has_text.get(&popped_element).copied().unwrap_or(false);
-                        let has_children = element_has_children.get(&popped_element).copied().unwrap_or(false);
+                        let has_text = element_has_text
+                            .get(&popped_element)
+                            .copied()
+                            .unwrap_or(false);
+                        let has_children = element_has_children
+                            .get(&popped_element)
+                            .copied()
+                            .unwrap_or(false);
 
                         if Self::is_mixed_content(has_text, has_children) {
                             if let Some(element_stats) = stats.elements.get_mut(&popped_element) {
@@ -406,10 +419,13 @@ impl DataIntrospector for XmlIntrospector {
                         }
 
                         // Update child occurrence statistics for completed parent
-                        if let Some(children_counts) = parent_children_count.remove(&popped_element) {
+                        if let Some(children_counts) = parent_children_count.remove(&popped_element)
+                        {
                             if let Some(element_stats) = stats.elements.get_mut(&popped_element) {
                                 for (child_name, count) in children_counts {
-                                    if let Some(child_stats) = element_stats.children.get_mut(&child_name) {
+                                    if let Some(child_stats) =
+                                        element_stats.children.get_mut(&child_name)
+                                    {
                                         child_stats.update_occurs(count, count);
                                     }
                                 }
@@ -424,7 +440,10 @@ impl DataIntrospector for XmlIntrospector {
                 Ok(Event::Text(e)) => {
                     if let Some(current_element) = element_stack.last() {
                         let text = e.unescape().map_err(|e| {
-                            InferenceError::ParseServiceError(format!("XML text unescape error: {}", e))
+                            InferenceError::ParseServiceError(format!(
+                                "XML text unescape error: {}",
+                                e
+                            ))
                         })?;
                         let text_str = text.to_string().trim().to_string();
                         if !text_str.is_empty() {
@@ -457,11 +476,8 @@ impl DataIntrospector for XmlIntrospector {
         // Update metrics
         stats.document_metrics.max_nesting_depth = max_depth;
         stats.document_metrics.unique_element_names = stats.elements.len();
-        stats.document_metrics.total_elements = stats
-            .elements
-            .values()
-            .map(|e| e.occurrence_count)
-            .sum();
+        stats.document_metrics.total_elements =
+            stats.elements.values().map(|e| e.occurrence_count).sum();
         stats.document_metrics.total_attributes = stats
             .elements
             .values()
@@ -471,15 +487,17 @@ impl DataIntrospector for XmlIntrospector {
         stats.document_metrics.document_size_bytes = data.len();
 
         // Detect specific XML format if possible
-        let detected_format = root_element.as_ref().and_then(|root| {
-            Self::detect_xml_format(root, &stats.namespaces)
-        });
+        let detected_format = root_element
+            .as_ref()
+            .and_then(|root| Self::detect_xml_format(root, &stats.namespaces));
 
         let format_name = detected_format.unwrap_or_else(|| "XML".to_string());
 
         // Set metadata
-        let now = self.timestamp.now_utc().await
-            .map_err(|e| InferenceError::ServiceError(format!("Failed to get timestamp: {}", e)))?;
+        let now =
+            self.timestamp.now_utc().await.map_err(|e| {
+                InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
+            })?;
 
         stats.metadata = SchemaMetadata {
             schema_id: Some("xml_schema".to_string()),
@@ -546,26 +564,22 @@ impl DataIntrospector for XmlIntrospector {
 
             // Add slots for attributes
             for (attr_name, attr_stats) in &element_stats.attributes {
-                let inferred_type = self.type_inferencer.infer_from_samples(&attr_stats.value_samples);
+                let inferred_type = self
+                    .type_inferencer
+                    .infer_from_samples(&attr_stats.value_samples);
                 let required = attr_stats.occurrence_count == element_stats.occurrence_count;
 
-                class_builder = class_builder.add_slot_with_type(
-                    attr_name,
-                    &inferred_type,
-                    required,
-                    false,
-                );
+                class_builder =
+                    class_builder.add_slot_with_type(attr_name, &inferred_type, required, false);
             }
 
             // Add slot for text content if present
             if !element_stats.text_samples.is_empty() {
-                let inferred_type = self.type_inferencer.infer_from_samples(&element_stats.text_samples);
-                class_builder = class_builder.add_slot_with_type(
-                    "text_content",
-                    &inferred_type,
-                    false,
-                    false,
-                );
+                let inferred_type = self
+                    .type_inferencer
+                    .infer_from_samples(&element_stats.text_samples);
+                class_builder =
+                    class_builder.add_slot_with_type("text_content", &inferred_type, false, false);
             }
 
             // Add slots for child elements with improved cardinality detection
@@ -573,12 +587,8 @@ impl DataIntrospector for XmlIntrospector {
                 let required = child_stats.is_required();
                 let multivalued = child_stats.is_multivalued();
 
-                class_builder = class_builder.add_slot_with_type(
-                    child_name,
-                    child_name,
-                    required,
-                    multivalued,
-                );
+                class_builder =
+                    class_builder.add_slot_with_type(child_name, child_name, required, multivalued);
             }
 
             builder = class_builder.finish();
@@ -605,8 +615,12 @@ mod tests {
     use logger_service::create_logger_service;
     use timestamp_service::create_timestamp_service;
 
-    fn create_test_services() -> (Arc<dyn LoggerService<Error = LoggerError>>, Arc<dyn TimestampService<Error = TimestampError>>) {
-        let logger = create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
+    fn create_test_services() -> (
+        Arc<dyn LoggerService<Error = LoggerError>>,
+        Arc<dyn TimestampService<Error = TimestampError>>,
+    ) {
+        let logger =
+            create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
         let timestamp = create_timestamp_service();
         (logger, timestamp)
     }
@@ -664,7 +678,10 @@ mod tests {
         "#;
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
-        let schema = introspector.generate_schema(&stats, "test_schema").await.unwrap();
+        let schema = introspector
+            .generate_schema(&stats, "test_schema")
+            .await
+            .unwrap();
 
         assert_eq!(schema.id, "test_schema");
         assert!(schema.classes.contains_key("root"));
@@ -737,13 +754,22 @@ mod tests {
 
         // Check namespace declarations were captured
         assert_eq!(stats.namespaces.len(), 2);
-        assert_eq!(stats.namespaces.get(""), Some(&"http://example.com/default".to_string()));
-        assert_eq!(stats.namespaces.get("custom"), Some(&"http://example.com/custom".to_string()));
+        assert_eq!(
+            stats.namespaces.get(""),
+            Some(&"http://example.com/default".to_string())
+        );
+        assert_eq!(
+            stats.namespaces.get("custom"),
+            Some(&"http://example.com/custom".to_string())
+        );
 
         // Check element has namespace information
         let element = stats.elements.get("element").unwrap();
         assert_eq!(element.namespace_prefix, Some("custom".to_string()));
-        assert_eq!(element.namespace_uri, Some("http://example.com/custom".to_string()));
+        assert_eq!(
+            element.namespace_uri,
+            Some("http://example.com/custom".to_string())
+        );
     }
 
     #[tokio::test]
@@ -773,7 +799,12 @@ mod tests {
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
         // Verify format was detected
-        assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("PAGE-XML")));
+        assert!(
+            stats
+                .metadata
+                .schema_name
+                .is_some_and(|name| name.contains("PAGE-XML"))
+        );
 
         // Verify structure was analyzed
         assert!(stats.elements.contains_key("PcGts"));
@@ -809,7 +840,12 @@ mod tests {
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
         // Verify format was detected
-        assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("EAD")));
+        assert!(
+            stats
+                .metadata
+                .schema_name
+                .is_some_and(|name| name.contains("EAD"))
+        );
 
         // Verify EAD structure
         assert!(stats.elements.contains_key("ead"));
@@ -834,7 +870,12 @@ mod tests {
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
         // Verify format was detected
-        assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("Dublin Core")));
+        assert!(
+            stats
+                .metadata
+                .schema_name
+                .is_some_and(|name| name.contains("Dublin Core"))
+        );
 
         // Verify Dublin Core elements
         assert!(stats.elements.contains_key("title"));
@@ -858,8 +899,14 @@ mod tests {
 
         // Verify mixed content was detected
         let paragraph = stats.elements.get("paragraph").unwrap();
-        assert!(paragraph.has_mixed_content, "Paragraph should have mixed content");
-        assert!(!paragraph.text_samples.is_empty(), "Should have text samples");
+        assert!(
+            paragraph.has_mixed_content,
+            "Paragraph should have mixed content"
+        );
+        assert!(
+            !paragraph.text_samples.is_empty(),
+            "Should have text samples"
+        );
         assert!(!paragraph.children.is_empty(), "Should have child elements");
     }
 
@@ -881,8 +928,14 @@ mod tests {
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
         let script = stats.elements.get("script").unwrap();
-        assert!(!script.text_samples.is_empty(), "CDATA content should be captured");
-        assert!(script.text_samples[0].contains("function test"), "CDATA content should be preserved");
+        assert!(
+            !script.text_samples.is_empty(),
+            "CDATA content should be captured"
+        );
+        assert!(
+            script.text_samples[0].contains("function test"),
+            "CDATA content should be preserved"
+        );
     }
 
     #[tokio::test]
@@ -962,7 +1015,10 @@ mod tests {
         let book = stats.elements.get("book").unwrap();
         let author_child = book.children.get("author").unwrap();
 
-        assert!(author_child.is_multivalued(), "Author should be multivalued");
+        assert!(
+            author_child.is_multivalued(),
+            "Author should be multivalued"
+        );
         assert_eq!(author_child.max_occurs, 3, "Max occurs should be 3");
         assert_eq!(author_child.min_occurs, 3, "Min occurs should be 3");
     }
@@ -996,7 +1052,10 @@ mod tests {
 
         assert_eq!(tag_child.min_occurs, 1, "Min occurs should be 1");
         assert_eq!(tag_child.max_occurs, 3, "Max occurs should be 3");
-        assert!(tag_child.is_required(), "Tag should be required (appears in all products)");
+        assert!(
+            tag_child.is_required(),
+            "Tag should be required (appears in all products)"
+        );
         assert!(tag_child.is_multivalued(), "Tag should be multivalued");
     }
 

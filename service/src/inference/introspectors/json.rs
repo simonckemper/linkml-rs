@@ -292,9 +292,7 @@ impl DataIntrospector for JsonIntrospector {
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
         // Read file to bytes
-        let bytes = tokio::fs::read(path)
-            .await
-            .map_err(InferenceError::Io)?;
+        let bytes = tokio::fs::read(path).await.map_err(InferenceError::Io)?;
 
         // Analyze bytes
         self.analyze_bytes(&bytes).await
@@ -310,9 +308,8 @@ impl DataIntrospector for JsonIntrospector {
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
         // Parse JSON
-        let json_value: JsonValue = serde_json::from_slice(data).map_err(|e| {
-            InferenceError::ParseServiceError(format!("JSON parsing error: {}", e))
-        })?;
+        let json_value: JsonValue = serde_json::from_slice(data)
+            .map_err(|e| InferenceError::ParseServiceError(format!("JSON parsing error: {}", e)))?;
 
         let mut stats = DocumentStats::new(doc_id, format);
         let mut max_depth = 0;
@@ -336,11 +333,8 @@ impl DataIntrospector for JsonIntrospector {
         // Update metrics
         stats.document_metrics.max_nesting_depth = max_depth;
         stats.document_metrics.unique_element_names = stats.elements.len();
-        stats.document_metrics.total_elements = stats
-            .elements
-            .values()
-            .map(|e| e.occurrence_count)
-            .sum();
+        stats.document_metrics.total_elements =
+            stats.elements.values().map(|e| e.occurrence_count).sum();
         stats.document_metrics.total_attributes = stats
             .elements
             .values()
@@ -350,11 +344,10 @@ impl DataIntrospector for JsonIntrospector {
         stats.document_metrics.document_size_bytes = data.len();
 
         // Set metadata
-        let now = self
-            .timestamp
-            .now_utc()
-            .await
-            .map_err(|e| InferenceError::ServiceError(format!("Failed to get timestamp: {}", e)))?;
+        let now =
+            self.timestamp.now_utc().await.map_err(|e| {
+                InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
+            })?;
 
         stats.metadata = SchemaMetadata {
             schema_id: Some("json_schema".to_string()),
@@ -439,12 +432,8 @@ impl DataIntrospector for JsonIntrospector {
                 let required = child_stats.occurrence_count >= element_stats.occurrence_count;
                 let multivalued = child_stats.occurrence_count > element_stats.occurrence_count;
 
-                class_builder = class_builder.add_slot_with_type(
-                    child_name,
-                    child_name,
-                    required,
-                    multivalued,
-                );
+                class_builder =
+                    class_builder.add_slot_with_type(child_name, child_name, required, multivalued);
             }
 
             builder = class_builder.finish();
@@ -475,7 +464,8 @@ mod tests {
         Arc<dyn LoggerService<Error = LoggerError>>,
         Arc<dyn TimestampService<Error = TimestampError>>,
     ) {
-        let logger = create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
+        let logger =
+            create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
         let timestamp = create_timestamp_service();
         (logger, timestamp)
     }

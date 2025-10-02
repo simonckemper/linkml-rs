@@ -141,11 +141,11 @@ pub fn create_csv_introspector(
 /// ```
 pub async fn create_inference_engine() -> InferenceResult<Arc<InferenceEngine>> {
     // Create core services
-    let logger = create_logger_service().await
+    let logger = create_logger_service()
+        .await
         .map_err(|e| crate::inference::traits::InferenceError::ServiceError(e.to_string()))?;
 
-    let timestamp = create_timestamp_service().await
-        .map_err(|e| crate::inference::traits::InferenceError::ServiceError(e.to_string()))?;
+    let timestamp = create_timestamp_service();
 
     create_inference_engine_with_services(logger, timestamp).await
 }
@@ -183,15 +183,14 @@ pub async fn create_inference_engine_with_services(
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 ) -> InferenceResult<Arc<InferenceEngine>> {
     // Create format identification service
-    let format_identifier = create_format_identification_service()
-        .await
-        .map_err(|e| crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string()))?;
+    let format_identifier = create_format_identification_service().await.map_err(|e| {
+        crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string())
+    })?;
 
     // Create introspectors
     let xml_introspector = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 
-    let json_introspector =
-        create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let json_introspector = create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 
     let csv_introspector = create_csv_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 
@@ -252,15 +251,14 @@ pub async fn create_inference_engine_with_config(
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
 ) -> InferenceResult<Arc<InferenceEngine>> {
     // Create format identification service
-    let format_identifier = create_format_identification_service()
-        .await
-        .map_err(|e| crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string()))?;
+    let format_identifier = create_format_identification_service().await.map_err(|e| {
+        crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string())
+    })?;
 
     // Create introspectors
     let xml_introspector = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 
-    let json_introspector =
-        create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let json_introspector = create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 
     let csv_introspector = create_csv_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
 

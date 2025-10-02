@@ -3,7 +3,7 @@
 //
 // Comprehensive benchmarks for LinkML schema inference system
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use linkml_service::inference::{
     CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector,
 };
@@ -177,12 +177,8 @@ fn bench_xml_introspector_sizes(c: &mut Criterion) {
             let timestamp = create_timestamp_service();
             let introspector = XmlIntrospector::new(logger, timestamp);
 
-            b.to_async(&rt).iter(|| async {
-                introspector
-                    .analyze_bytes(black_box(data))
-                    .await
-                    .unwrap()
-            });
+            b.to_async(&rt)
+                .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
         });
     }
 
@@ -203,12 +199,8 @@ fn bench_xml_introspector_depth(c: &mut Criterion) {
             let timestamp = create_timestamp_service();
             let introspector = XmlIntrospector::new(logger, timestamp);
 
-            b.to_async(&rt).iter(|| async {
-                introspector
-                    .analyze_bytes(black_box(data))
-                    .await
-                    .unwrap()
-            });
+            b.to_async(&rt)
+                .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
         });
     }
 
@@ -224,12 +216,8 @@ fn bench_xml_page_xml_analysis(c: &mut Criterion) {
         let introspector = XmlIntrospector::new(logger, timestamp);
         let data = generate_page_xml().as_bytes();
 
-        b.to_async(&rt).iter(|| async {
-            introspector
-                .analyze_bytes(black_box(data))
-                .await
-                .unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
     });
 }
 
@@ -242,12 +230,8 @@ fn bench_xml_schema_generation(c: &mut Criterion) {
         let introspector = XmlIntrospector::new(logger, timestamp);
         let xml = generate_simple_xml(100);
 
-        let stats = rt.block_on(async {
-            introspector
-                .analyze_bytes(xml.as_bytes())
-                .await
-                .unwrap()
-        });
+        let stats =
+            rt.block_on(async { introspector.analyze_bytes(xml.as_bytes()).await.unwrap() });
 
         b.to_async(&rt).iter(|| async {
             introspector
@@ -273,12 +257,8 @@ fn bench_json_introspector_sizes(c: &mut Criterion) {
             let timestamp = create_timestamp_service();
             let introspector = JsonIntrospector::new(logger, timestamp);
 
-            b.to_async(&rt).iter(|| async {
-                introspector
-                    .analyze_bytes(black_box(data))
-                    .await
-                    .unwrap()
-            });
+            b.to_async(&rt)
+                .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
         });
     }
 
@@ -299,12 +279,8 @@ fn bench_json_introspector_depth(c: &mut Criterion) {
             let timestamp = create_timestamp_service();
             let introspector = JsonIntrospector::new(logger, timestamp);
 
-            b.to_async(&rt).iter(|| async {
-                introspector
-                    .analyze_bytes(black_box(data))
-                    .await
-                    .unwrap()
-            });
+            b.to_async(&rt)
+                .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
         });
     }
 
@@ -320,12 +296,8 @@ fn bench_json_complex_schema(c: &mut Criterion) {
         let introspector = JsonIntrospector::new(logger, timestamp);
         let data = generate_complex_json().as_bytes();
 
-        b.to_async(&rt).iter(|| async {
-            introspector
-                .analyze_bytes(black_box(data))
-                .await
-                .unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
     });
 }
 
@@ -338,12 +310,8 @@ fn bench_json_schema_generation(c: &mut Criterion) {
         let introspector = JsonIntrospector::new(logger, timestamp);
         let json = generate_simple_json(100);
 
-        let stats = rt.block_on(async {
-            introspector
-                .analyze_bytes(json.as_bytes())
-                .await
-                .unwrap()
-        });
+        let stats =
+            rt.block_on(async { introspector.analyze_bytes(json.as_bytes()).await.unwrap() });
 
         b.to_async(&rt).iter(|| async {
             introspector
@@ -369,12 +337,8 @@ fn bench_csv_introspector_sizes(c: &mut Criterion) {
             let timestamp = create_timestamp_service();
             let introspector = CsvIntrospector::new(logger, timestamp);
 
-            b.to_async(&rt).iter(|| async {
-                introspector
-                    .analyze_bytes(black_box(data))
-                    .await
-                    .unwrap()
-            });
+            b.to_async(&rt)
+                .iter(|| async { introspector.analyze_bytes(black_box(data)).await.unwrap() });
         });
     }
 
@@ -392,10 +356,7 @@ fn bench_xml_end_to_end(c: &mut Criterion) {
         let data = xml.as_bytes();
 
         b.to_async(&rt).iter(|| async {
-            let stats = introspector
-                .analyze_bytes(black_box(data))
-                .await
-                .unwrap();
+            let stats = introspector.analyze_bytes(black_box(data)).await.unwrap();
             introspector
                 .generate_schema(&stats, "bench_schema")
                 .await
@@ -415,10 +376,7 @@ fn bench_json_end_to_end(c: &mut Criterion) {
         let data = json.as_bytes();
 
         b.to_async(&rt).iter(|| async {
-            let stats = introspector
-                .analyze_bytes(black_box(data))
-                .await
-                .unwrap();
+            let stats = introspector.analyze_bytes(black_box(data)).await.unwrap();
             introspector
                 .generate_schema(&stats, "bench_schema")
                 .await

@@ -36,8 +36,7 @@ impl StandardTypeInferencer {
         Self {
             email_regex: Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                 .expect("Valid email regex"),
-            uri_regex: Regex::new(r"^(https?|ftp)://[^\s/$.?#].[^\s]*$")
-                .expect("Valid URI regex"),
+            uri_regex: Regex::new(r"^(https?|ftp)://[^\s/$.?#].[^\s]*$").expect("Valid URI regex"),
             date_regex: Regex::new(r"^\d{4}-\d{2}-\d{2}$").expect("Valid date regex"),
             time_regex: Regex::new(r"^\d{2}:\d{2}:\d{2}(\.\d+)?$").expect("Valid time regex"),
             datetime_regex: Regex::new(

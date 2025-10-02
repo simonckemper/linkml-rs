@@ -29,10 +29,7 @@ pub enum InferenceError {
     ServiceError(String),
 
     #[error("Unsupported format: {puid} ({format_name})")]
-    UnsupportedFormat {
-        puid: String,
-        format_name: String,
-    },
+    UnsupportedFormat { puid: String, format_name: String },
 
     #[error("Invalid data structure: {0}")]
     InvalidDataStructure(String),
@@ -210,7 +207,11 @@ impl InferredType {
     pub fn requires_validation(&self) -> bool {
         matches!(
             self,
-            InferredType::Email | InferredType::Uri | InferredType::DateTime | InferredType::Date | InferredType::Time
+            InferredType::Email
+                | InferredType::Uri
+                | InferredType::DateTime
+                | InferredType::Date
+                | InferredType::Time
         )
     }
 }

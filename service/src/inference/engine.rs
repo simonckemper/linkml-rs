@@ -106,17 +106,38 @@ impl InferenceEngine {
         let mut introspectors: HashMap<String, Arc<dyn DataIntrospector>> = HashMap::new();
 
         // Register XML introspectors by PUID
-        introspectors.insert("fmt/101".to_string(), Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>); // XML 1.0
-        introspectors.insert("x-fmt/280".to_string(), Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>); // XML 1.1
-        introspectors.insert("x-fmt/281".to_string(), Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>); // XML 1.0 with DTD
+        introspectors.insert(
+            "fmt/101".to_string(),
+            Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>,
+        ); // XML 1.0
+        introspectors.insert(
+            "x-fmt/280".to_string(),
+            Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>,
+        ); // XML 1.1
+        introspectors.insert(
+            "x-fmt/281".to_string(),
+            Arc::clone(&xml_introspector) as Arc<dyn DataIntrospector>,
+        ); // XML 1.0 with DTD
 
         // Register JSON introspectors by PUID
-        introspectors.insert("fmt/817".to_string(), Arc::clone(&json_introspector) as Arc<dyn DataIntrospector>); // JSON
-        introspectors.insert("fmt/818".to_string(), Arc::clone(&json_introspector) as Arc<dyn DataIntrospector>); // JSON Lines
+        introspectors.insert(
+            "fmt/817".to_string(),
+            Arc::clone(&json_introspector) as Arc<dyn DataIntrospector>,
+        ); // JSON
+        introspectors.insert(
+            "fmt/818".to_string(),
+            Arc::clone(&json_introspector) as Arc<dyn DataIntrospector>,
+        ); // JSON Lines
 
         // Register CSV introspectors by PUID
-        introspectors.insert("x-fmt/18".to_string(), Arc::clone(&csv_introspector) as Arc<dyn DataIntrospector>); // CSV
-        introspectors.insert("fmt/1047".to_string(), Arc::clone(&csv_introspector) as Arc<dyn DataIntrospector>); // CSV with headers
+        introspectors.insert(
+            "x-fmt/18".to_string(),
+            Arc::clone(&csv_introspector) as Arc<dyn DataIntrospector>,
+        ); // CSV
+        introspectors.insert(
+            "fmt/1047".to_string(),
+            Arc::clone(&csv_introspector) as Arc<dyn DataIntrospector>,
+        ); // CSV with headers
 
         Self {
             format_identifier,
@@ -251,7 +272,9 @@ impl InferenceEngine {
             if puid.contains("817") && format_lower.contains("json") {
                 return Ok(Arc::clone(introspector));
             }
-            if puid.contains("18") && (format_lower.contains("csv") || format_lower.contains("comma")) {
+            if puid.contains("18")
+                && (format_lower.contains("csv") || format_lower.contains("comma"))
+            {
                 return Ok(Arc::clone(introspector));
             }
         }
@@ -317,10 +340,7 @@ impl InferenceEngine {
             match self.analyze_single_document(path).await {
                 Ok(stats) => {
                     self.logger
-                        .log(
-                            LogLevel::Debug,
-                            &format!("Analyzed document: {:?}", path),
-                        )
+                        .log(LogLevel::Debug, &format!("Analyzed document: {:?}", path))
                         .await
                         .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
                     aggregated.merge(stats);
@@ -359,10 +379,7 @@ impl InferenceEngine {
     /// # Returns
     ///
     /// * `InferenceResult<DocumentStats>` - Document statistics or error
-    async fn analyze_single_document(
-        &self,
-        path: &Path,
-    ) -> InferenceResult<DocumentStats> {
+    async fn analyze_single_document(&self, path: &Path) -> InferenceResult<DocumentStats> {
         // Identify format
         let identification = self
             .format_identifier
@@ -407,11 +424,9 @@ impl InferenceEngine {
             .unwrap_or_else(|| "Aggregated Schema".to_string());
 
         // Create builder with metadata
-        let now = self
-            .timestamp
-            .now_utc()
-            .await
-            .map_err(|e| InferenceError::ServiceError(format!("Failed to get timestamp: {}", e)))?;
+        let _now = self.timestamp.now_utc().await.map_err(|e| {
+            InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
+        })?;
 
         let mut builder = SchemaBuilder::new(&schema_id, &schema_name)
             .with_timestamp_service(Arc::clone(&self.timestamp))
@@ -430,11 +445,13 @@ impl InferenceEngine {
                 "Inferred from {} documents (confidence: {:.2}%, appears in {:.1}% of documents)",
                 aggregated.document_count,
                 element_stats.cardinality_confidence() * 100.0,
-                (element_stats.document_frequency as f32 / aggregated.document_count as f32) * 100.0
+                (element_stats.document_frequency as f32 / aggregated.document_count as f32)
+                    * 100.0
             );
 
             // Start building the class
-            let mut class_builder = builder.add_class(element_name)
+            let mut class_builder = builder
+                .add_class(element_name)
                 .with_description(&class_description);
 
             // Add attributes for text content if present

@@ -5,10 +5,8 @@
 //! and validates the resulting schema structure.
 
 use indexmap::IndexMap;
-use linkml_core::types::{
-    ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition,
-};
 use linkml_core::LinkMLError;
+use linkml_core::types::{ClassDefinition, PrefixDefinition, SchemaDefinition, SlotDefinition};
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
 
@@ -132,7 +130,7 @@ impl SchemaBuilder {
     /// * `generator` - Name and version of the generator
     /// * `source_file` - Optional source file path
     pub fn with_generation_metadata(
-        mut self,
+        self,
         generator: impl Into<String>,
         source_file: Option<String>,
     ) -> Self {
@@ -150,10 +148,8 @@ impl SchemaBuilder {
     /// * `prefix` - Short prefix name
     /// * `uri` - Full URI expansion
     pub fn add_prefix(mut self, prefix: impl Into<String>, uri: impl Into<String>) -> Self {
-        self.prefixes.insert(
-            prefix.into(),
-            PrefixDefinition::Simple(uri.into()),
-        );
+        self.prefixes
+            .insert(prefix.into(), PrefixDefinition::Simple(uri.into()));
         self
     }
 
@@ -425,7 +421,8 @@ impl ClassBuilder {
             comments: Vec::new(),
         };
 
-        self.schema_builder.add_class_internal(self.class_name, class_def)
+        self.schema_builder
+            .add_class_internal(self.class_name, class_def)
     }
 }
 
@@ -513,7 +510,8 @@ impl SlotBuilder {
             ..Default::default()
         };
 
-        self.schema_builder.add_slot_internal(self.slot_name, slot_def)
+        self.schema_builder
+            .add_slot_internal(self.slot_name, slot_def)
     }
 }
 
@@ -551,15 +549,18 @@ mod tests {
     fn test_schema_with_class() {
         let schema = SchemaBuilder::new("person_schema", "PersonSchema")
             .add_class("Person")
-                .with_description("A person entity")
-                .add_attribute("name", "string", true, false)
-                .add_attribute("age", "integer", false, false)
-                .finish()
+            .with_description("A person entity")
+            .add_attribute("name", "string", true, false)
+            .add_attribute("age", "integer", false, false)
+            .finish()
             .build();
 
         assert!(schema.classes.contains_key("Person"));
         let person_class = schema.classes.get("Person").unwrap();
-        assert_eq!(person_class.description, Some("A person entity".to_string()));
+        assert_eq!(
+            person_class.description,
+            Some("A person entity".to_string())
+        );
         assert_eq!(person_class.attributes.len(), 2);
 
         let name_attr = person_class.attributes.get("name").unwrap();
@@ -572,12 +573,12 @@ mod tests {
     fn test_schema_with_multiple_classes() {
         let schema = SchemaBuilder::new("org_schema", "OrganizationSchema")
             .add_class("Person")
-                .add_attribute("name", "string", true, false)
-                .finish()
+            .add_attribute("name", "string", true, false)
+            .finish()
             .add_class("Organization")
-                .add_attribute("org_name", "string", true, false)
-                .add_attribute("employees", "Person", false, true)
-                .finish()
+            .add_attribute("org_name", "string", true, false)
+            .add_attribute("employees", "Person", false, true)
+            .finish()
             .build();
 
         assert_eq!(schema.classes.len(), 2);
@@ -594,13 +595,13 @@ mod tests {
     fn test_class_inheritance() {
         let schema = SchemaBuilder::new("test", "Test")
             .add_class("Entity")
-                .abstract_()
-                .add_attribute("id", "string", true, false)
-                .finish()
+            .abstract_()
+            .add_attribute("id", "string", true, false)
+            .finish()
             .add_class("Person")
-                .is_a("Entity")
-                .add_attribute("name", "string", true, false)
-                .finish()
+            .is_a("Entity")
+            .add_attribute("name", "string", true, false)
+            .finish()
             .build();
 
         let entity = schema.classes.get("Entity").unwrap();
@@ -614,13 +615,13 @@ mod tests {
     fn test_class_mixins() {
         let schema = SchemaBuilder::new("test", "Test")
             .add_class("Timestamped")
-                .mixin()
-                .add_attribute("created_at", "datetime", true, false)
-                .finish()
+            .mixin()
+            .add_attribute("created_at", "datetime", true, false)
+            .finish()
             .add_class("Person")
-                .add_mixin("Timestamped")
-                .add_attribute("name", "string", true, false)
-                .finish()
+            .add_mixin("Timestamped")
+            .add_attribute("name", "string", true, false)
+            .finish()
             .build();
 
         let timestamped = schema.classes.get("Timestamped").unwrap();
@@ -634,14 +635,14 @@ mod tests {
     fn test_top_level_slot() {
         let schema = SchemaBuilder::new("test", "Test")
             .add_slot("email")
-                .with_description("Email address")
-                .with_range("string")
-                .required()
-                .with_pattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
-                .finish()
+            .with_description("Email address")
+            .with_range("string")
+            .required()
+            .with_pattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
+            .finish()
             .add_class("Person")
-                .use_slot("email")
-                .finish()
+            .use_slot("email")
+            .finish()
             .build();
 
         assert!(schema.slots.contains_key("email"));
@@ -659,8 +660,8 @@ mod tests {
         let schema = SchemaBuilder::new("test", "Test")
             .with_default_range("string")
             .add_class("Person")
-                .add_attribute("name", "string", true, false)
-                .finish()
+            .add_attribute("name", "string", true, false)
+            .finish()
             .build();
 
         assert_eq!(schema.default_range, Some("string".to_string()));
@@ -672,9 +673,9 @@ mod tests {
             .with_version("1.0.0")
             .add_prefix("ex", "https://example.org/")
             .add_class("Example")
-                .with_description("An example class")
-                .add_attribute("field1", "string", true, false)
-                .finish()
+            .with_description("An example class")
+            .add_attribute("field1", "string", true, false)
+            .finish()
             .build();
 
         let yaml = serde_yaml::to_string(&schema).expect("Failed to serialize to YAML");
@@ -688,12 +689,12 @@ mod tests {
     fn test_tree_root_class() {
         let schema = SchemaBuilder::new("test", "Test")
             .add_class("Container")
-                .tree_root()
-                .add_attribute("items", "Item", false, true)
-                .finish()
+            .tree_root()
+            .add_attribute("items", "Item", false, true)
+            .finish()
             .add_class("Item")
-                .add_attribute("name", "string", true, false)
-                .finish()
+            .add_attribute("name", "string", true, false)
+            .finish()
             .build();
 
         let container = schema.classes.get("Container").unwrap();
@@ -711,11 +712,16 @@ mod tests {
             .build();
 
         assert!(schema.prefixes.contains_key("obo"));
-        if let PrefixDefinition::Complex { prefix_prefix, prefix_reference } =
-            schema.prefixes.get("obo").unwrap()
+        if let PrefixDefinition::Complex {
+            prefix_prefix,
+            prefix_reference,
+        } = schema.prefixes.get("obo").unwrap()
         {
             assert_eq!(prefix_prefix, "http://purl.obolibrary.org/obo/");
-            assert_eq!(prefix_reference, &Some("https://obofoundry.org".to_string()));
+            assert_eq!(
+                prefix_reference,
+                &Some("https://obofoundry.org".to_string())
+            );
         } else {
             panic!("Expected complex prefix definition");
         }

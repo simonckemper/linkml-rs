@@ -10,8 +10,7 @@
 //! - Full service composition testing
 
 use linkml_service::inference::{
-    create_inference_engine, CsvIntrospector, DataIntrospector, JsonIntrospector,
-    XmlIntrospector,
+    CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector, create_inference_engine,
 };
 use logger_service::create_logger_service;
 use std::path::PathBuf;
@@ -21,7 +20,10 @@ use timestamp_service::create_timestamp_service;
 use tokio::fs;
 
 // Helper function to create test services
-fn create_test_services() -> (Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>, Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>) {
+fn create_test_services() -> (
+    Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>,
+    Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
+) {
     let logger = create_logger_service().unwrap();
     let timestamp = create_timestamp_service();
     (logger, timestamp)
@@ -88,7 +90,9 @@ async fn test_xml_end_to_end_workflow() -> Result<(), Box<dyn std::error::Error>
     assert_eq!(book.children.len(), 4); // title, author, genre, pages
 
     // Generate schema
-    let schema = introspector.generate_schema(&stats, "library_schema").await?;
+    let schema = introspector
+        .generate_schema(&stats, "library_schema")
+        .await?;
 
     // Verify schema structure
     assert_eq!(schema.id, "library_schema");
@@ -215,7 +219,9 @@ async fn test_csv_end_to_end_workflow() -> Result<(), Box<dyn std::error::Error>
     assert!(record.attributes.contains_key("hire_date"));
 
     // Generate schema
-    let schema = introspector.generate_schema(&stats, "employees_schema").await?;
+    let schema = introspector
+        .generate_schema(&stats, "employees_schema")
+        .await?;
 
     // Verify schema structure
     assert_eq!(schema.id, "employees_schema");
@@ -292,10 +298,20 @@ async fn test_page_xml_real_world_scenario() -> Result<(), Box<dyn std::error::E
 
     // Verify namespace was detected
     assert!(!stats.namespaces.is_empty());
-    assert!(stats.namespaces.values().any(|uri| uri.contains("primaresearch.org/PAGE")));
+    assert!(
+        stats
+            .namespaces
+            .values()
+            .any(|uri| uri.contains("primaresearch.org/PAGE"))
+    );
 
     // Verify schema name indicates PAGE-XML was detected
-    assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("PAGE-XML")));
+    assert!(
+        stats
+            .metadata
+            .schema_name
+            .is_some_and(|name| name.contains("PAGE-XML"))
+    );
 
     // Verify TextRegion structure
     let text_region = stats.elements.get("TextRegion").unwrap();
@@ -353,7 +369,12 @@ async fn test_ead_archival_description() -> Result<(), Box<dyn std::error::Error
     assert!(stats.elements.contains_key("unittitle"));
 
     // Verify schema name indicates EAD was detected
-    assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("EAD")));
+    assert!(
+        stats
+            .metadata
+            .schema_name
+            .is_some_and(|name| name.contains("EAD"))
+    );
 
     Ok(())
 }
@@ -391,7 +412,12 @@ async fn test_dublin_core_metadata() -> Result<(), Box<dyn std::error::Error>> {
     assert!(stats.elements.contains_key("description"));
 
     // Verify schema name indicates Dublin Core was detected
-    assert!(stats.metadata.schema_name.is_some_and(|name| name.contains("Dublin Core")));
+    assert!(
+        stats
+            .metadata
+            .schema_name
+            .is_some_and(|name| name.contains("Dublin Core"))
+    );
 
     // Verify multivalued subject field
     let subject = stats.elements.get("subject").unwrap();
@@ -436,7 +462,10 @@ async fn test_large_document_performance() -> Result<(), Box<dyn std::error::Err
     let analysis_duration = start.elapsed();
 
     // Verify analysis completed
-    assert_eq!(stats.elements.get("product").unwrap().occurrence_count, 1000);
+    assert_eq!(
+        stats.elements.get("product").unwrap().occurrence_count,
+        1000
+    );
 
     // Verify performance target (<500ms for 1000 element document)
     // Note: This is a generous target. Actual performance should be better.

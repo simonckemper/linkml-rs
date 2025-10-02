@@ -556,7 +556,10 @@ mod tests {
             Ok(())
         }
 
-        async fn set_level(&self, _level: logger_core::LogLevel) -> std::result::Result<(), Self::Error> {
+        async fn set_level(
+            &self,
+            _level: logger_core::LogLevel,
+        ) -> std::result::Result<(), Self::Error> {
             Ok(())
         }
 

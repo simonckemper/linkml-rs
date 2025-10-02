@@ -55,7 +55,7 @@ pub use factory::{
 };
 pub use introspectors::{CsvIntrospector, JsonIntrospector, XmlIntrospector};
 pub use traits::{DataIntrospector, InferenceError, InferenceResult, InferredType, TypeInferencer};
-pub use type_inference::{create_type_inferencer, StandardTypeInferencer};
+pub use type_inference::{StandardTypeInferencer, create_type_inferencer};
 pub use types::{
     AggregatedChildStats, AggregatedElementStats, AggregatedStats, AttributeStats, ChildStats,
     DocumentMetrics, DocumentStats, ElementStats, InferenceConfig, SchemaMetadata, TypeVotes,
