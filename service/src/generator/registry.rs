@@ -283,7 +283,7 @@ impl GeneratorRegistry {
                 // Check plugin status and capabilities
                 let status = plugin_locked.status();
                 if status != PluginStatus::Ready && status != PluginStatus::Initializing {
-                    failed_plugins.push(format!("Plugin is not active: {:?}", status));
+                    failed_plugins.push(format!("Plugin is not active: {status:?}"));
                     continue;
                 }
 

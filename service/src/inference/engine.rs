@@ -185,7 +185,7 @@ impl InferenceEngine {
         self.logger
             .log(
                 LogLevel::Info,
-                &format!("Starting automatic schema inference for: {:?}", path),
+                &format!("Starting automatic schema inference for: {path:?}"),
             )
             .await
             .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
@@ -340,7 +340,7 @@ impl InferenceEngine {
             match self.analyze_single_document(path).await {
                 Ok(stats) => {
                     self.logger
-                        .log(LogLevel::Debug, &format!("Analyzed document: {:?}", path))
+                        .log(LogLevel::Debug, &format!("Analyzed document: {path:?}"))
                         .await
                         .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
                     aggregated.merge(stats);
@@ -349,7 +349,7 @@ impl InferenceEngine {
                     self.logger
                         .log(
                             LogLevel::Warn,
-                            &format!("Skipping document {:?}: {}", path, e),
+                            &format!("Skipping document {path:?}: {e}"),
                         )
                         .await
                         .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
@@ -429,7 +429,7 @@ impl InferenceEngine {
         // This is NOT a stub - it's defensive programming to fail fast if timestamp service is unavailable.
         let _now =
             self.timestamp.now_utc().await.map_err(|e| {
-                InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
+                InferenceError::ServiceError(format!("Failed to get timestamp: {e}"))
             })?;
 
         let mut builder = SchemaBuilder::new(&schema_id, &schema_name)
