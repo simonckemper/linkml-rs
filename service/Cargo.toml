@@ -9,7 +9,7 @@ repository = "https://github.com/simonckemper/rootreal"
 keywords = ["linkml", "schema", "validation", "typeql", "codegen"]
 categories = ["data-structures", "encoding", "parser-implementations", "development-tools"]
 readme = "README.md"
-autoexamples = false
+autoexamples = false  # Examples explicitly declared below for nested directory support
 autotests = false
 
 [package.metadata]
@@ -178,14 +178,236 @@ insta = "1.34"
 once_cell = "1.19"
 tokio-test = "0.4"
 rand = "0.8"  # For test RngCore implementation
+# Examples organized by category (3-level nesting)
+# Run with: cargo run --example <name>
+
+# 1 Basic
 [[example]]
-name = "linkml_batch_processing"
-path = "examples/batch_processing.rs"
+name = "basic_usage_api"
+path = "examples/01_basic/api/basic_usage_api.rs"
+
+[[example]]
+name = "standalone_usage"
+path = "examples/01_basic/api/standalone_usage.rs"
+
+[[example]]
+name = "cli_usage"
+path = "examples/01_basic/cli/cli_usage.rs"
+
+[[example]]
+name = "cli_with_fs_adapter"
+path = "examples/01_basic/cli/cli_with_fs_adapter.rs"
+
+# 2 Validation
+[[example]]
+name = "advanced_validation_api"
+path = "examples/02_validation/api/advanced_validation_api.rs"
+
+[[example]]
+name = "test_instance_validation"
+path = "examples/02_validation/api/test_instance_validation.rs"
+
+[[example]]
+name = "parse_and_validate_iso3166"
+path = "examples/02_validation/iso3166/parse_and_validate_iso3166.rs"
+
+[[example]]
+name = "validate_country_schema"
+path = "examples/02_validation/iso3166/validate_country_schema.rs"
+
+[[example]]
+name = "validate_iso3166_standalone"
+path = "examples/02_validation/iso3166/validate_iso3166_standalone.rs"
+
+[[example]]
+name = "validate_with_parse_service"
+path = "examples/02_validation/patterns/validate_with_parse_service.rs"
+
+[[example]]
+name = "validation_patterns"
+path = "examples/02_validation/patterns/validation_patterns.rs"
+
+# 3 Data Loading
+[[example]]
+name = "array_support"
+path = "examples/03_data_loading/batch/array_support.rs"
+
+[[example]]
+name = "batch_processing"
+path = "examples/03_data_loading/batch/batch_processing.rs"
+
+[[example]]
+name = "data_transformation"
+path = "examples/03_data_loading/batch/data_transformation.rs"
+
+[[example]]
+name = "csv_data_loading"
+path = "examples/03_data_loading/csv/csv_data_loading.rs"
+
+[[example]]
+name = "csv_introspection_demo"
+path = "examples/03_data_loading/csv/csv_introspection_demo.rs"
+
+[[example]]
+name = "api_loading"
+path = "examples/03_data_loading/database/api_loading.rs"
+
+[[example]]
+name = "database_loading"
+path = "examples/03_data_loading/database/database_loading.rs"
+
+[[example]]
+name = "excel_generation"
+path = "examples/03_data_loading/excel/excel_generation.rs"
+
+[[example]]
+name = "excel_generation_advanced"
+path = "examples/03_data_loading/excel/excel_generation_advanced.rs"
+
+# 4 Code Generation
+[[example]]
+name = "sqlalchemy_generation"
+path = "examples/04_code_generation/database/sqlalchemy_generation.rs"
+
+[[example]]
+name = "typeql_generation"
+path = "examples/04_code_generation/database/typeql_generation.rs"
+
+[[example]]
+name = "code_generation_showcase"
+path = "examples/04_code_generation/general/code_generation_showcase.rs"
+
+[[example]]
+name = "generate_code_from_schema"
+path = "examples/04_code_generation/general/generate_code_from_schema.rs"
+
+[[example]]
+name = "generate_complete_example"
+path = "examples/04_code_generation/general/generate_complete_example.rs"
+
+[[example]]
+name = "test_code_generation"
+path = "examples/04_code_generation/general/test_code_generation.rs"
+
+[[example]]
+name = "generate_iso3166_code"
+path = "examples/04_code_generation/iso3166/generate_iso3166_code.rs"
+
+[[example]]
+name = "generate_iso3166_simple"
+path = "examples/04_code_generation/iso3166/generate_iso3166_simple.rs"
+
+[[example]]
+name = "rust_code_generation"
+path = "examples/04_code_generation/rust/rust_code_generation.rs"
+
+[[example]]
+name = "test_rust_generator_comprehensive"
+path = "examples/04_code_generation/rust/test_rust_generator_comprehensive.rs"
+
+[[example]]
+name = "verify_rust_generator"
+path = "examples/04_code_generation/rust/verify_rust_generator.rs"
+
+[[example]]
+name = "verify_rust_generator_fix"
+path = "examples/04_code_generation/rust/verify_rust_generator_fix.rs"
+
+# 5 Visualization
+[[example]]
+name = "graphviz_generation"
+path = "examples/05_visualization/diagrams/graphviz_generation.rs"
+
+[[example]]
+name = "mermaid_generation"
+path = "examples/05_visualization/diagrams/mermaid_generation.rs"
+
+[[example]]
+name = "project_generation"
+path = "examples/05_visualization/schemas/project_generation.rs"
+
+[[example]]
+name = "schema_generation_api"
+path = "examples/05_visualization/schemas/schema_generation_api.rs"
+
+[[example]]
+name = "prefix_map_generation"
+path = "examples/05_visualization/semantic_web/prefix_map_generation.rs"
+
+[[example]]
+name = "rdf_generation"
+path = "examples/05_visualization/semantic_web/rdf_generation.rs"
+
+[[example]]
+name = "semantic_web_generators"
+path = "examples/05_visualization/semantic_web/semantic_web_generators.rs"
+
+# 6 Integration
+[[example]]
+name = "full_integration"
+path = "examples/06_integration/full_integration.rs"
 
 [[example]]
 name = "page_xml_schema_inference"
-path = "examples/page_xml_schema_inference.rs"
-required-features = []
+path = "examples/06_integration/schemas/page_xml_schema_inference.rs"
+
+[[example]]
+name = "schema_migration_example"
+path = "examples/06_integration/schemas/schema_migration_example.rs"
+
+[[example]]
+name = "typedb_integration"
+path = "examples/06_integration/typedb/typedb_integration.rs"
+
+[[example]]
+name = "typeql_performance_check"
+path = "examples/06_integration/typedb/typeql_performance_check.rs"
+
+# 7 Performance
+[[example]]
+name = "performance_comparison"
+path = "examples/07_performance/benchmarks/performance_comparison.rs"
+
+[[example]]
+name = "performance_summary"
+path = "examples/07_performance/benchmarks/performance_summary.rs"
+
+[[example]]
+name = "expression_performance_demo"
+path = "examples/07_performance/security/expression_performance_demo.rs"
+
+[[example]]
+name = "performance_and_security"
+path = "examples/07_performance/security/performance_and_security.rs"
+
+# 8 Advanced
+[[example]]
+name = "comprehensive_demo"
+path = "examples/08_advanced/comprehensive/comprehensive_demo.rs"
+
+[[example]]
+name = "comprehensive_usage"
+path = "examples/08_advanced/comprehensive/comprehensive_usage.rs"
+
+[[example]]
+name = "expression_functions_demo"
+path = "examples/08_advanced/expressions/expression_functions_demo.rs"
+
+[[example]]
+name = "expression_language"
+path = "examples/08_advanced/expressions/expression_language.rs"
+
+[[example]]
+name = "interactive_repl_demo"
+path = "examples/08_advanced/extensibility/interactive_repl_demo.rs"
+
+[[example]]
+name = "plugin_system_demo"
+path = "examples/08_advanced/extensibility/plugin_system_demo.rs"
+
+[[example]]
+name = "schema_builder_demo"
+path = "examples/08_advanced/extensibility/schema_builder_demo.rs"
 
 [[bench]]
 name = "validation_benchmarks"
