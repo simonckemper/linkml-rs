@@ -5,6 +5,19 @@ All notable changes to the LinkML Service will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Comprehensive README.md with quick start guide and feature overview
+- LICENSE file (CC-BY-NC-4.0) in LinkML directory
+- CONTRIBUTING.md with development guidelines and contribution process
+- Documentation for repository synchronization after hypernym migration
+
+### Fixed
+- Repository sync to TextPast/linkml-rs after hypernym migration
+- GitHub Actions workflow paths updated for new directory structure
+- Sync script paths corrected for automated synchronization
+
 ## [2.0.0] - 2025-01-17
 
 ### Added

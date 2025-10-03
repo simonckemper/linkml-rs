@@ -1,6 +1,70 @@
-//! `LinkML` Client Library
+//! # LinkML Client
 //!
-//! This crate provides a client interface for interacting with the `LinkML` service.
+//! Client library for interacting with LinkML validation services.
+//!
+//! This crate provides a client interface for interacting with the LinkML service,
+//! allowing remote or local service interaction through a unified API.
+//!
+//! ## Overview
+//!
+//! `linkml-client` provides:
+//!
+//! - **Unified Interface**: Single client for local or remote LinkML services
+//! - **Type-Safe**: Leverages Rust's type system for compile-time guarantees
+//! - **Async Support**: Full async/await support for non-blocking operations
+//! - **Service Delegation**: Transparently delegates to underlying service implementation
+//!
+//! ## Usage
+//!
+//! ```rust
+//! use linkml_client::LinkMLClient;
+//! use linkml_service::create_linkml_service;
+//! use std::sync::Arc;
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create the underlying service
+//!     let service = create_linkml_service().await?;
+//!
+//!     // Wrap it in a client
+//!     let client = LinkMLClient::new(Arc::new(service));
+//!
+//!     // Use the client (same API as service)
+//!     let schema = client.load_schema("schema.yaml").await?;
+//!
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## Design
+//!
+//! The client is generic over the service implementation because `LinkMLService`
+//! is not dyn-compatible (it has generic methods). This allows for:
+//!
+//! - Zero-cost abstraction when using concrete types
+//! - Type-safe service interaction
+//! - Flexible deployment models (local, remote, etc.)
+//!
+//! ## Features
+//!
+//! - **Service Wrapper**: Wraps any `LinkMLService` implementation
+//! - **Trait Delegation**: Implements `LinkMLService` by delegating to wrapped service
+//! - **Arc-based Sharing**: Allows sharing client across async tasks
+//!
+//! ## Example: Remote Client (Future)
+//!
+//! While the current implementation wraps a local service, the client pattern
+//! is designed to support remote services in the future:
+//!
+//! ```rust,ignore
+//! // Future: Remote client over HTTP/gRPC
+//! let remote_client = LinkMLClient::connect("http://linkml-service:8080").await?;
+//! let schema = remote_client.load_schema("schema.yaml").await?;
+//! ```
+//!
+//! ## License
+//!
+//! Licensed under CC-BY-NC-4.0. See LICENSE file for details.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
