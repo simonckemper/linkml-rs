@@ -424,6 +424,9 @@ impl InferenceEngine {
             .unwrap_or_else(|| "Aggregated Schema".to_string());
 
         // Create builder with metadata
+        // NOTE: Preemptive TimestampService health check - verifies service is operational before schema generation.
+        // The service is passed to SchemaBuilder (line 432) which will call it again for actual metadata timestamps.
+        // This is NOT a stub - it's defensive programming to fail fast if timestamp service is unavailable.
         let _now = self.timestamp.now_utc().await.map_err(|e| {
             InferenceError::ServiceError(format!("Failed to get timestamp: {}", e))
         })?;

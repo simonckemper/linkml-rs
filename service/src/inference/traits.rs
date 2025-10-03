@@ -10,38 +10,155 @@ use thiserror::Error;
 
 use crate::inference::types::DocumentStats;
 
-/// Error types for inference operations
+/// Comprehensive error types for LinkML schema inference operations.
+///
+/// This error type integrates with RootReal's centralized error handling service
+/// and provides detailed context for debugging inference failures across the
+/// multi-service pipeline (Format Identification → Parse → Introspection → Schema Generation).
+///
+/// Each variant includes contextual information to aid in root cause analysis
+/// and recovery strategy selection.
 #[derive(Debug, Error)]
 pub enum InferenceError {
+    /// File system operations failed during data access or schema writing.
+    ///
+    /// This typically occurs when:
+    /// - Input files are missing or inaccessible
+    /// - Output directories lack write permissions
+    /// - Disk space is exhausted during large file processing
+    ///
+    /// Recovery strategy: Verify file paths and permissions before retrying.
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
+    /// Format Identification Service could not determine file format via PRONOM signatures.
+    ///
+    /// This occurs when:
+    /// - File lacks recognizable magic bytes or signature patterns
+    /// - File is corrupted or truncated
+    /// - Format is not registered in PRONOM database
+    ///
+    /// Recovery strategy: Manually specify format using explicit introspector selection.
     #[error("Format identification failed: {0}")]
-    FormatIdentificationFailed(String),
+    FormatIdentificationFailed(
+        /// Detailed error message from Format Identification Service explaining why detection failed
+        String,
+    ),
 
+    /// Parse Service encountered errors extracting structured data from file.
+    ///
+    /// This occurs when:
+    /// - XML/JSON is malformed or violates syntax rules
+    /// - CSV has inconsistent column counts or encoding issues
+    /// - File contains binary data in text format fields
+    ///
+    /// Recovery strategy: Validate input file format and repair structural issues.
     #[error("Parse service error: {0}")]
-    ParseServiceError(String),
+    ParseServiceError(
+        /// Detailed parse error including line/column numbers for syntax errors
+        String,
+    ),
 
+    /// Logger Service integration failed during inference operation logging.
+    ///
+    /// This is typically non-fatal but indicates monitoring gaps in:
+    /// - Progress tracking for long-running batch operations
+    /// - Performance metrics collection for optimization
+    /// - Audit trail generation for compliance
+    ///
+    /// Recovery strategy: Check logger service configuration and connectivity.
     #[error("Logger service error: {0}")]
-    LoggerError(String),
+    LoggerError(
+        /// Logger service error details including service state and configuration issues
+        String,
+    ),
 
+    /// Generic service integration failure across any RootReal service dependency.
+    ///
+    /// This occurs when:
+    /// - Task Management Service cannot spawn async operations
+    /// - Timestamp Service is unavailable for metadata generation
+    /// - Service initialization fails during engine creation
+    ///
+    /// Recovery strategy: Verify all service dependencies are properly initialized.
     #[error("Service error: {0}")]
-    ServiceError(String),
+    ServiceError(
+        /// Generic service error message identifying which service failed and why
+        String,
+    ),
 
+    /// File format identified by PRONOM but no introspector implementation exists.
+    ///
+    /// This occurs when:
+    /// - Format is recognized (valid PUID) but introspector not yet implemented
+    /// - Format is proprietary/binary with no open parsing specification
+    /// - Format requires specialized libraries not yet integrated
+    ///
+    /// Currently supported formats: XML, JSON, CSV
+    /// Recovery strategy: Implement custom introspector or convert to supported format.
     #[error("Unsupported format: {puid} ({format_name})")]
-    UnsupportedFormat { puid: String, format_name: String },
+    UnsupportedFormat {
+        /// PRONOM Unique Identifier for the detected format (e.g., "fmt/101" for XML)
+        puid: String,
+        /// Human-readable format name from PRONOM registry (e.g., "Extensible Markup Language")
+        format_name: String,
+    },
 
+    /// Data structure violates expected patterns for the declared format.
+    ///
+    /// This occurs when:
+    /// - JSON lacks consistent object structure across documents
+    /// - XML has deeply nested elements exceeding practical schema depth
+    /// - CSV contains variable column counts preventing schema inference
+    ///
+    /// Recovery strategy: Normalize data structure or provide explicit schema hints.
     #[error("Invalid data structure: {0}")]
-    InvalidDataStructure(String),
+    InvalidDataStructure(
+        /// Detailed structural validation error describing inconsistency or constraint violation
+        String,
+    ),
 
+    /// Schema Builder failed to construct valid LinkML schema from statistics.
+    ///
+    /// This occurs when:
+    /// - Collected statistics are insufficient (sample size too small)
+    /// - Type inference produces conflicting results across documents
+    /// - Required metadata (schema ID, class names) is missing or invalid
+    ///
+    /// Recovery strategy: Increase sample size or provide explicit type hints.
     #[error("Schema generation failed: {0}")]
-    SchemaGenerationFailed(String),
+    SchemaGenerationFailed(
+        /// Schema generation error including missing fields or validation failures
+        String,
+    ),
 
+    /// Inference configuration contains invalid or contradictory settings.
+    ///
+    /// This occurs when:
+    /// - Minimum confidence threshold exceeds 1.0 or is negative
+    /// - Sample size limits are set to zero
+    /// - Parallel processing settings exceed available resources
+    ///
+    /// Recovery strategy: Validate configuration against documented constraints.
     #[error("Configuration error: {0}")]
-    ConfigurationError(String),
+    ConfigurationError(
+        /// Configuration validation error specifying invalid parameter and valid range
+        String,
+    ),
 
+    /// Type Inferencer could not determine consistent data type from samples.
+    ///
+    /// This occurs when:
+    /// - Sample values are too heterogeneous (e.g., mixed numbers and strings)
+    /// - All samples are null/empty preventing type determination
+    /// - Format-specific type detection fails (e.g., invalid datetime formats)
+    ///
+    /// Recovery strategy: Provide more consistent samples or explicit type annotations.
     #[error("Type inference error: {0}")]
-    TypeInferenceError(String),
+    TypeInferenceError(
+        /// Type inference error describing sample inconsistency or detection failure reason
+        String,
+    ),
 }
 
 /// Result type for inference operations

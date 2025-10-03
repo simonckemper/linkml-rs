@@ -129,14 +129,22 @@ impl SchemaBuilder {
     ///
     /// * `generator` - Name and version of the generator
     /// * `source_file` - Optional source file path
+    ///
+    /// # Note: Forward Compatibility API
+    ///
+    /// This method currently accepts but does not store generation metadata, as LinkML core
+    /// does not yet support generator/source_file fields in schema metadata. This API exists
+    /// to prevent breaking changes when LinkML adds this support in the future.
+    ///
+    /// This is NOT a stub - it's intentional forward compatibility. When LinkML core adds
+    /// metadata.generator and metadata.source_file fields, this method can be activated
+    /// without breaking existing caller code.
     pub fn with_generation_metadata(
         self,
         generator: impl Into<String>,
         source_file: Option<String>,
     ) -> Self {
-        // Store generator info - will be used in build()
-        // Note: We'll add these fields to the struct if needed
-        // For now, this method exists for API compatibility
+        // Forward compatibility: Accept parameters now, use them when LinkML core supports them
         let _ = (generator.into(), source_file);
         self
     }

@@ -43,6 +43,17 @@ pub mod builder;
 pub mod engine;
 pub mod factory;
 pub mod introspectors;
+/// Core trait definitions for schema inference operations.
+///
+/// This module defines the fundamental abstractions for LinkML schema inference:
+/// - [`DataIntrospector`]: Format-specific data structure analysis
+/// - [`TypeInferencer`]: Statistical type detection from sample values
+/// - [`InferenceError`]: Comprehensive error handling for inference operations
+/// - [`InferredType`]: Semantic type representation for LinkML schemas
+///
+/// These traits enable the Dependency Inversion Principle by allowing different
+/// implementations (XML, JSON, CSV) to be used interchangeably while maintaining
+/// consistent schema generation behavior across all formats.
 pub mod traits;
 pub mod type_inference;
 pub mod types;
