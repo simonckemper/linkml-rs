@@ -536,7 +536,7 @@ impl DataIntrospector for CsvIntrospector {
                 .infer_from_samples(&element_stats.text_samples);
             class_builder = class_builder.add_slot_with_type(
                 column_name,
-                inferred_type.to_linkml_type(),  // Type IS used here for schema generation
+                inferred_type.to_linkml_type(), // Type IS used here for schema generation
                 is_required,
                 false, // CSV columns are not multivalued
             );
