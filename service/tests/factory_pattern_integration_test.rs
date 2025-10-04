@@ -26,7 +26,7 @@ use timeout_core::TimeoutService;
 use timestamp_core::{TimestampService, TimestampError};
 
 // Test utilities and service implementations
-use cache_service::create_cache_service;
+use cache_service::factory::create_cache_service_trait_object as create_cache_service;
 use logger_service::test_utils::create_test_logger_service;
 use monitoring_service::create_monitoring_service;
 use random_service::create_random_service;

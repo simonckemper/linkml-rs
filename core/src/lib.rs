@@ -84,19 +84,19 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(missing_docs)] // Documentation is covered by module-level docs
 
-/// Core error types for ``LinkML`` operations
+/// Core error types for `LinkML` operations
 pub mod error;
 
-/// Core trait definitions for ``LinkML`` services
+/// Core trait definitions for `LinkML` services
 pub mod traits;
 
-/// Type definitions for ``LinkML`` schemas and data
+/// Type definitions for `LinkML` schemas and data
 pub mod types;
 
-/// Configuration types for ``LinkML`` services
+/// Configuration types for `LinkML` services
 pub mod config;
 
-/// Validation types and utilities for ``LinkML`` schemas
+/// Validation types and utilities for `LinkML` schemas
 pub mod validation;
 
 /// RootReal-compliant configuration structures
