@@ -2,7 +2,6 @@
 //!
 //! This example shows various ways to use the LinkML command-line interface.
 
-use std::process::Command;
 
 fn main() {
     println!(

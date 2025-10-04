@@ -8,11 +8,10 @@
 
 use linkml_core::prelude::*;
 use linkml_service::loader::{
-    DBMSServiceExecutor, DataDumper, DataLoader, TypeDBIntegrationDumper, TypeDBIntegrationLoader,
+    TypeDBIntegrationDumper, TypeDBIntegrationLoader,
     TypeDBIntegrationOptions,
 };
 use std::collections::HashMap;
-use tracing::info;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

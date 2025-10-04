@@ -562,7 +562,6 @@ impl DataIntrospector for CsvIntrospector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use logger_service::test_utils::create_test_logger_service;
     use timestamp_service::create_timestamp_service;
 
     fn create_test_services() -> (

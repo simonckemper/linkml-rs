@@ -21,6 +21,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Example 3: Migrating existing CLI code
     example_migration().await?;
 
+    // Example 4: Command pattern with file system adapter
+    example_command_pattern().await?;
+
     Ok(())
 }
 
@@ -127,6 +130,23 @@ async fn example_migration() -> std::result::Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
+/// Example demonstrating command pattern with file system adapter
+async fn example_command_pattern() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "
+=== Example 4: Command Pattern ==="
+    );
+
+    let cli_fs = default_cli_fs();
+    let schema_path = Path::new("output/example.yaml");
+    let output_path = Path::new("output/generated_result.txt");
+
+    // Use the command example function
+    generate_command_example(schema_path, output_path, &cli_fs).await?;
+
+    Ok(())
+}
+
 /// Example of how to update a CLI command function
 async fn generate_command_example(
     schema_path: &Path,
@@ -136,8 +156,18 @@ async fn generate_command_example(
     // Load schema using the adapter
     let schema_content = cli_fs.read_input(schema_path).await?;
 
-    // Process schema (simplified)
-    let result = format!("Generated from: {}", schema_path.display());
+    // Validate schema content is not empty
+    if schema_content.trim().is_empty() {
+        return Err("Schema file is empty".into());
+    }
+
+    // Process schema - include content size in output for verification
+    let result = format!(
+        "Generated from: {}\nSchema size: {} bytes\nFirst 100 chars: {}",
+        schema_path.display(),
+        schema_content.len(),
+        schema_content.chars().take(100).collect::<String>()
+    );
 
     // Write output using the adapter
     cli_fs.write_output(output_path, &result).await?;

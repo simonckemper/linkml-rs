@@ -5,7 +5,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{
-    Generator, GeneratorOptions, PlantUmlGenerator, ShExGenerator, SparqlGenerator,
+    Generator, , PlantUmlGenerator, ShExGenerator, SparqlGenerator,
 };
 
 #[tokio::main]

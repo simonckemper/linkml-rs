@@ -9,7 +9,6 @@
 use linkml_service::inference::{
     CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector,
 };
-use logger_service::test_utils::create_test_logger_service;
 use proptest::prelude::*;
 use std::sync::Arc;
 use timestamp_service::create_timestamp_service;

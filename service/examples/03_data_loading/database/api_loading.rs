@@ -8,12 +8,11 @@
 
 use linkml_core::prelude::*;
 use linkml_service::loader::{
-    ApiDumper, ApiLoader, ApiOptions, AuthConfig, DataDumper, DataLoader, EndpointConfig,
+    ApiDumper, ApiLoader, ApiOptions, AuthConfig, EndpointConfig,
     PaginationConfig, PaginationStyle, RetryConfig,
 };
 use reqwest::Method;
 use std::collections::HashMap;
-use tracing::info;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

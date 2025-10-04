@@ -7,7 +7,6 @@ use linkml_core::prelude::*;
 use linkml_service::generator::{Generator, GeneratorOptions, RdfGenerator};
 // TODO: RdfFormat and RdfMode imports commented out - API mismatch
 // use linkml_service::generator::{RdfFormat, RdfMode};
-use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

@@ -9,7 +9,6 @@
 //! ```
 
 use linkml_service::inference::{CsvIntrospector, DataIntrospector};
-use logger_service::test_utils::create_test_logger_service;
 use timestamp_service::create_timestamp_service;
 
 #[tokio::main]

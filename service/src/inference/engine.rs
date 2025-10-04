@@ -520,7 +520,6 @@ impl InferenceEngine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     // Note: Full integration tests require actual service instances
     // These tests focus on unit-testable components

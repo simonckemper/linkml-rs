@@ -4,7 +4,6 @@
 //! and register it with the REST API service instead of running as a standalone server.
 
 use std::path::PathBuf;
-use std::sync::Arc;
 
 // Core service imports
 use cache_service::factory::create_cache_service;

@@ -7,7 +7,7 @@
 //! 4. Dump the data back to CSV format
 
 use linkml_core::prelude::*;
-use linkml_service::loader::{CsvDumper, CsvLoader, CsvOptions, DumpOptions, LoadOptions};
+use linkml_service::loader::{CsvDumper, CsvLoader, DumpOptions, LoadOptions};
 use std::collections::HashMap;
 
 #[tokio::main]

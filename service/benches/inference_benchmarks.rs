@@ -7,8 +7,6 @@ use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, 
 use linkml_service::inference::{
     CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector,
 };
-use logger_service::test_utils::create_test_logger_service;
-use std::sync::Arc;
 use timestamp_service::create_timestamp_service;
 
 // Test data generators for realistic benchmarking

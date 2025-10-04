@@ -5,7 +5,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{
-    Generator, GeneratorOptions, MermaidDiagramType, MermaidGenerator,
+    , Options, MermaidDiagramType, Mermaid,
 };
 
 #[tokio::main]

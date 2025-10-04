@@ -6,7 +6,6 @@
 //! 3. Values must match the 'id' field from ISO3166Entity instances
 
 use regex::Regex;
-use serde_json::json;
 use std::fs;
 use std::path::PathBuf;
 

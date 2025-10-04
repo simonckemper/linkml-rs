@@ -3,7 +3,7 @@
 use linkml_core::prelude::*;
 use linkml_service::generator::{
     Generator, GeneratorOptions,
-    typeql_generator_enhanced::{EnhancedTypeQLGenerator, create_enhanced_typeql_generator},
+    typeql_generator_enhanced::{create_enhanced_typeql_generator},
 };
 use std::time::Instant;
 

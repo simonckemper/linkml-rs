@@ -12,8 +12,7 @@
 mod common;
 use common::create_example_service;
 
-use linkml_core::prelude::*;
-use linkml_service::generator::{Generator, GeneratorOptions, sql_generator::SqlDialect};
+use linkml_service::generator::{GeneratorOptions, sql_generator::SqlDialect};
 use linkml_service::prelude::*;
 
 #[tokio::main]

@@ -6,7 +6,6 @@
 //! 3. Use plugin-based generators
 //! 4. Manage plugin lifecycle
 
-use linkml_core::prelude::*;
 use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
 use logger_service::factory::create_development_logger;

@@ -8,7 +8,6 @@ use linkml_service::{
     generator::{ExcelFormat, ExcelGenerator, ExcelOptions},
     schema::{ClassBuilder, Schema, SchemaBuilder, SlotBuilder},
 };
-use std::path::Path;
 
 fn main() -> Result<()> {
     println!(

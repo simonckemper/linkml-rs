@@ -8,7 +8,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::array::{ArrayData, ArrayDimension, ArraySpec, ArrayValidator};
-use linkml_service::generator::array_support::{ArrayCodeGenerator, get_array_generator};
+use linkml_service::generator::array_support::{get_array_generator};
 use serde_json::json;
 
 #[tokio::main]

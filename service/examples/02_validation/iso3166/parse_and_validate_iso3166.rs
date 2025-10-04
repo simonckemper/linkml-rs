@@ -235,15 +235,24 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 "
     );
 
-    for (code, description) in test_cases {
-        let result = validator.validate_code(code);
+    for (code_input, description) in test_cases {
+        let result = validator.validate_code(code_input);
 
         if result.is_valid {
             // For valid codes, also show the actual country name
-            let country = validator.get_country_label(code).unwrap_or_default();
-            println!("✓ {:3} - Valid   | {} ({})", code, country, description);
+            let country = validator.get_country_label(&result.code).unwrap_or_default();
+            println!(
+                "✓ {:3} - Valid   | {} ({}) [Pattern: ✓, Instance: ✓]",
+                result.code, country, description
+            );
         } else {
-            println!("✗ {:3} - Invalid | {}", code, description);
+            // Show detailed validation status
+            let pattern_status = if result.pattern_valid { "✓" } else { "✗" };
+            let instance_status = if result.instance_valid { "✓" } else { "✗" };
+            println!(
+                "✗ {:3} - Invalid | {} [Pattern: {}, Instance: {}]",
+                result.code, description, pattern_status, instance_status
+            );
             for error in &result.errors {
                 println!("       └─ {}", error);
             }
@@ -274,25 +283,29 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     if let Some(addresses) = document["addresses"].as_array() {
         for (idx, address) in addresses.iter().enumerate() {
-            if let Some(country) = address["country"].as_str() {
-                let result = validator.validate_code(country);
+            if let Some(country_input) = address["country"].as_str() {
+                let result = validator.validate_code(country_input);
                 let city = address["city"].as_str().unwrap_or("Unknown");
 
                 if result.is_valid {
-                    let country_name = validator.get_country_label(country).unwrap_or_default();
+                    let country_name = validator.get_country_label(&result.code).unwrap_or_default();
                     println!(
                         "  Address {}: ✓ {} ({}) - {}",
                         idx + 1,
-                        country,
+                        result.code,
                         country_name,
                         city
                     );
                 } else {
+                    let pattern_status = if result.pattern_valid { "✓" } else { "✗" };
+                    let instance_status = if result.instance_valid { "✓" } else { "✗" };
                     println!(
-                        "  Address {}: ✗ {} - {} [INVALID COUNTRY CODE]",
+                        "  Address {}: ✗ {} - {} [Pattern: {}, Instance: {}]",
                         idx + 1,
-                        country,
-                        city
+                        result.code,
+                        city,
+                        pattern_status,
+                        instance_status
                     );
                 }
             }

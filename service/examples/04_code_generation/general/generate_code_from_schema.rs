@@ -9,7 +9,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::generator::{
-    Generator, GeneratorOptions, GeneratorRegistry, IndentStyle, OutputFormat, PydanticGenerator,
+    Generator, GeneratorOptions, , IndentStyle, OutputFormat, PydanticGenerator,
     PythonDataclassGenerator, RustGenerator,
 };
 use std::fs;

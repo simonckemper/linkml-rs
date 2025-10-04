@@ -6,10 +6,9 @@
 //! - Generating code from schemas
 //! - Interactive schema manipulation
 
-use linkml_service::cli::{Cli, CliApp};
+use linkml_service::cli::CliApp;
 mod common;
 use common::init_linkml_service_with_real_deps;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {

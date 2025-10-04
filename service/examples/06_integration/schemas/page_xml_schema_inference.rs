@@ -41,7 +41,6 @@
 
 use anyhow::{Context, Result};
 use configuration_core::Validate;
-use parse_core::page_xml_types::PageXmlDocument;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
