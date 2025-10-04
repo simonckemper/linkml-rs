@@ -25,8 +25,10 @@ use std::time::Duration;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Service Comprehensive Demo");
-    println!("=================================
-");
+    println!(
+        "=================================
+"
+    );
 
     // Enable performance profiling
     let profiler = global_profiler();
@@ -310,8 +312,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("  Enums: {}", schema.enums.len());
 
     // 3. Create SchemaView for introspection
-    println!("
-2. Schema Introspection");
+    println!(
+        "
+2. Schema Introspection"
+    );
     println!("-----------------------");
     let schema_view = SchemaView::new(schema.clone())?;
 
@@ -325,8 +329,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // Show induced slots for Person
-    println!("
-Induced slots for Person:");
+    println!(
+        "
+Induced slots for Person:"
+    );
     let person_slots = schema_view.class_induced_slots("Person")?;
     for slot in &person_slots {
         println!(
@@ -342,8 +348,10 @@ Induced slots for Person:");
     }
 
     // 4. Build validator and validate data
-    println!("
-3. Data Validation");
+    println!(
+        "
+3. Data Validation"
+    );
     println!("------------------");
     let validator = ValidatorBuilder::new()
         .with_schema(schema.clone())
@@ -398,8 +406,10 @@ Induced slots for Person:");
     }
 
     // 5. Expression evaluation
-    println!("
-4. Expression Language");
+    println!(
+        "
+4. Expression Language"
+    );
     println!("----------------------");
     let expr = parse_expression("age >= 21 and employment_status == 'FULL_TIME'")?;
     let evaluator = Evaluator::new();
@@ -415,8 +425,10 @@ Induced slots for Person:");
     println!("Result: {}", result);
 
     // 6. Code generation showcase
-    println!("
-5. Code Generation");
+    println!(
+        "
+5. Code Generation"
+    );
     println!("------------------");
 
     // Generate TypeQL
@@ -439,8 +451,10 @@ Induced slots for Person:");
     println!("✓ Rust code generated ({} lines)", rust.lines().count());
 
     // Show sample of generated TypeQL
-    println!("
-Sample TypeQL output:");
+    println!(
+        "
+Sample TypeQL output:"
+    );
     println!("```typeql");
     for line in typeql.lines().take(10) {
         println!("{}", line);
@@ -449,8 +463,10 @@ Sample TypeQL output:");
     println!("```");
 
     // 7. Performance optimizations demo
-    println!("
-6. Performance Optimizations");
+    println!(
+        "
+6. Performance Optimizations"
+    );
     println!("----------------------------");
 
     // String interning
@@ -490,8 +506,10 @@ Sample TypeQL output:");
     }
 
     // 8. Security features
-    println!("
-7. Security Features");
+    println!(
+        "
+7. Security Features"
+    );
     println!("--------------------");
 
     // Input validation
@@ -510,18 +528,25 @@ Sample TypeQL output:");
 
     // Resource monitoring
     let usage = monitor.current_usage();
-    println!("
-Resource usage: {}", usage.format_summary());
+    println!(
+        "
+Resource usage: {}",
+        usage.format_summary()
+    );
 
     // 9. Performance summary
-    println!("
-8. Performance Summary");
+    println!(
+        "
+8. Performance Summary"
+    );
     println!("----------------------");
     println!("{}", profiler.report());
 
     // 10. Feature summary
-    println!("
-9. Feature Summary");
+    println!(
+        "
+9. Feature Summary"
+    );
     println!("------------------");
     println!("✓ 100% Python LinkML compatibility");
     println!("✓ Advanced validation (boolean constraints, rules, expressions)");

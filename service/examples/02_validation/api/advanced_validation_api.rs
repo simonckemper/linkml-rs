@@ -22,8 +22,10 @@ use serde_json::json;
 /// 3. Use the service throughout your application
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Advanced Validation API Demonstration");
-    println!("==========================================
-");
+    println!(
+        "==========================================
+"
+    );
 
     // Show configuration options
     demonstrate_configuration()?;
@@ -44,8 +46,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn demonstrate_configuration() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("1. Configuration Options:
-");
+    println!(
+        "1. Configuration Options:
+"
+    );
 
     // Show how to configure the service for different use cases
     let strict_config = LinkMLConfig {
@@ -93,9 +97,11 @@ fn demonstrate_configuration() -> std::result::Result<(), Box<dyn std::error::Er
 }
 
 fn demonstrate_schema() {
-    println!("
+    println!(
+        "
 2. Schema Definition with Advanced Constraints:
-");
+"
+    );
 
     let _schema_yaml = r#"
 id: https://example.org/advanced-schema
@@ -187,9 +193,11 @@ enums:
 }
 
 fn demonstrate_validation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
+    println!(
+        "
 3. Validation Examples:
-");
+"
+    );
 
     // Valid person
     let valid_person = json!({
@@ -214,8 +222,10 @@ fn demonstrate_validation() -> std::result::Result<(), Box<dyn std::error::Error
         // Missing salary!
     });
 
-    println!("
-Invalid - employed without salary:");
+    println!(
+        "
+Invalid - employed without salary:"
+    );
     println!("{}", serde_json::to_string_pretty(&invalid_employed)?);
     println!("Expected error: Rule violation - employed persons must have salary");
 
@@ -228,8 +238,10 @@ Invalid - employed without salary:");
         "supervisor": {"id": "US123456"}
     });
 
-    println!("
-Invalid - minor as supervisor:");
+    println!(
+        "
+Invalid - minor as supervisor:"
+    );
     println!("{}", serde_json::to_string_pretty(&invalid_supervisor)?);
     println!("Expected error: Rule violation - minors cannot be supervisors");
 
@@ -237,9 +249,11 @@ Invalid - minor as supervisor:");
 }
 
 fn demonstrate_error_handling() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
+    println!(
+        "
 4. Error Handling Patterns:
-");
+"
+    );
 
     println!("The LinkML service provides detailed error information:");
     println!("- Error path (e.g., 'Person.email')");
@@ -266,8 +280,12 @@ fn demonstrate_error_handling() -> std::result::Result<(), Box<dyn std::error::E
     ];
 
     for error in &example_errors {
-        println!("
-Error at {}: {}", error.path.as_ref()?, error.message);
+        println!(
+            "
+Error at {}: {}",
+            error.path.as_ref()?,
+            error.message
+        );
         if let Some(expected) = &error.expected {
             println!("  Expected: {}", expected);
         }
@@ -277,30 +295,38 @@ Error at {}: {}", error.path.as_ref()?, error.message);
 }
 
 fn demonstrate_performance_patterns() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
+    println!(
+        "
 5. Performance Optimization Patterns:
-");
+"
+    );
 
     println!("a) Parallel Validation:");
     println!("   - Validate multiple documents concurrently");
     println!("   - Use batch validation API for large datasets");
     println!("   - Configure max_concurrent_validations");
 
-    println!("
-b) Schema Compilation:");
+    println!(
+        "
+b) Schema Compilation:"
+    );
     println!("   - Enable compilation for frequently used schemas");
     println!("   - Compiled validators are 10-100x faster");
     println!("   - Trade memory for speed with caching");
 
-    println!("
-c) Streaming Validation:");
+    println!(
+        "
+c) Streaming Validation:"
+    );
     println!("   - Process large files without loading into memory");
     println!("   - Early termination on first error (fail-fast)");
     println!("   - Progressive validation with partial results");
 
     // Example: Batch validation pattern
-    println!("
-Batch validation pattern:");
+    println!(
+        "
+Batch validation pattern:"
+    );
     println!(
         r#"
 // In production code:
@@ -327,9 +353,11 @@ let results = linkml_service.validate_batch(
 ///
 /// This shows how you would initialize the service in a real application
 fn _show_production_pattern() {
-    println!("
+    println!(
+        "
 6. Production Initialization Pattern:
-");
+"
+    );
 
     println!(
         r#"
@@ -366,6 +394,8 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {{
 "#
     );
 
-    println!("
-See docs/architecture/dyn-compatibility-guidelines.md for details.");
+    println!(
+        "
+See docs/architecture/dyn-compatibility-guidelines.md for details."
+    );
 }

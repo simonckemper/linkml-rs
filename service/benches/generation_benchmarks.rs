@@ -59,7 +59,7 @@ fn create_medium_schema() -> SchemaDefinition {
 
     // 10 classes with inheritance
     for i in 0..10 {
-        let mut class = ClassDefinition::new(&format!("Entity{}", i));
+        let mut class = ClassDefinition::new(format!("Entity{}", i));
         if i > 0 {
             class.is_a = Some(format!("Entity{}", i - 1));
         }
@@ -106,7 +106,7 @@ fn create_large_schema() -> SchemaDefinition {
 
     // 50 classes with complex relationships
     for i in 0..50 {
-        let mut class = ClassDefinition::new(&format!("Class{}", i));
+        let mut class = ClassDefinition::new(format!("Class{}", i));
 
         // Inheritance
         if i > 0 && i % 3 == 0 {

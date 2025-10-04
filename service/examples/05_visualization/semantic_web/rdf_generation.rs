@@ -54,8 +54,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let options = GeneratorOptions::default();
 
-    println!("=== RDF Generation Examples ===
-");
+    println!(
+        "=== RDF Generation Examples ===
+"
+    );
 
     // Example 1: OWL Ontology in Turtle format (default)
     println!("1. OWL Ontology (Turtle):");
@@ -96,9 +98,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let simple_outputs = simple_generator.generate(&schema, &options).await?;
     if let Some(output) = simple_outputs.first() {
         println!("Filename: {}", output.filename);
-        println!("Content:
+        println!(
+            "Content:
 {}
-", output.content);
+",
+            output.content
+        );
     }
 
     // Example 4: JSON-LD format
@@ -109,9 +114,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let jsonld_outputs = jsonld_generator.generate(&schema, &options).await?;
     if let Some(output) = jsonld_outputs.first() {
         println!("Filename: {}", output.filename);
-        println!("Content:
+        println!(
+            "Content:
 {}
-", output.content);
+",
+            output.content
+        );
     }
 
     // Example 5: N-Triples format (simple RDF)
@@ -122,19 +130,26 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let nt_outputs = ntriples_generator.generate(&schema, &options).await?;
     if let Some(output) = nt_outputs.first() {
         println!("Filename: {}", output.filename);
-        println!("Content:
+        println!(
+            "Content:
 {}
-", output.content);
+",
+            output.content
+        );
     }
 
     println!("✅ RDF generation complete!");
-    println!("
-Available modes:");
+    println!(
+        "
+Available modes:"
+    );
     println!("  - OWL: Full OWL ontology with restrictions and inference rules");
     println!("  - RDFS: Simple RDFS schema with classes and properties");
     println!("  - Simple: Plain RDF triples without ontology semantics");
-    println!("
-Available formats:");
+    println!(
+        "
+Available formats:"
+    );
     println!("  - Turtle (.ttl): Human-readable, compact RDF syntax");
     println!("  - RDF/XML (.rdf): XML-based RDF syntax");
     println!("  - N-Triples (.nt): Line-based, simple triple format");

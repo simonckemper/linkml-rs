@@ -1,8 +1,10 @@
 use linkml_service::generator::{Generator, registry::GeneratorRegistry};
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Verifying RustGenerator Fix ===
-");
+    println!(
+        "=== Verifying RustGenerator Fix ===
+"
+    );
 
     // Load the registry
     let registry = GeneratorRegistry::new();
@@ -83,8 +85,10 @@ classes:
         }
 
         // Check for proper field generation
-        println!("
-Checking field generation:");
+        println!(
+            "
+Checking field generation:"
+        );
 
         if rust_code.contains("pub struct Country") {
             println!("✓ Country struct generated");
@@ -103,8 +107,10 @@ Checking field generation:");
         }
 
         // Show a snippet of the generated struct
-        println!("
-Generated Country struct:");
+        println!(
+            "
+Generated Country struct:"
+        );
         println!("----------------------------------------");
 
         // Find and print the Country struct
@@ -137,11 +143,16 @@ Generated Country struct:");
         // Save to file for inspection
         let output_path = "/tmp/verify_rust_generator_output.rs";
         std::fs::write(output_path, &rust_code)?;
-        println!("
-Full output saved to: {}", output_path);
+        println!(
+            "
+Full output saved to: {}",
+            output_path
+        );
 
-        println!("
-=== CONCLUSION ===");
+        println!(
+            "
+=== CONCLUSION ==="
+        );
         println!("The RustGenerator has been SUCCESSFULLY FIXED!");
         println!("It now generates:");
         println!("  ✓ Complete struct definitions");

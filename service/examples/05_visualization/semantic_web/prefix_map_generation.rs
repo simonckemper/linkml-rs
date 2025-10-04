@@ -122,8 +122,10 @@ classes:
     let parser = YamlParser::new();
     let schema = parser.parse_str(schema_yaml)?;
 
-    println!("Generating prefix maps in various formats...
-");
+    println!(
+        "Generating prefix maps in various formats...
+"
+    );
 
     // Generate simple JSON format
     let config_simple = PrefixMapGeneratorConfig::default();
@@ -131,8 +133,11 @@ classes:
     let output_simple = generator_simple.generate(&schema)?;
 
     println!("=== Simple JSON Format ===");
-    println!("{}
-", output_simple);
+    println!(
+        "{}
+",
+        output_simple
+    );
 
     // Generate extended JSON format with metadata
     let config_extended = PrefixMapGeneratorConfig {
@@ -145,8 +150,11 @@ classes:
     let output_extended = generator_extended.generate(&schema)?;
 
     println!("=== Extended JSON Format with Metadata ===");
-    println!("{}
-", output_extended);
+    println!(
+        "{}
+",
+        output_extended
+    );
 
     // Generate Turtle format for SPARQL
     let config_turtle = PrefixMapGeneratorConfig {
@@ -157,8 +165,11 @@ classes:
     let output_turtle = generator_turtle.generate(&schema)?;
 
     println!("=== Turtle/SPARQL Format ===");
-    println!("{}
-", output_turtle);
+    println!(
+        "{}
+",
+        output_turtle
+    );
 
     // Generate YAML format
     let config_yaml = PrefixMapGeneratorConfig {
@@ -170,8 +181,11 @@ classes:
     let output_yaml = generator_yaml.generate(&schema)?;
 
     println!("=== YAML Format ===");
-    println!("{}
-", output_yaml);
+    println!(
+        "{}
+",
+        output_yaml
+    );
 
     // Generate CSV format
     let config_csv = PrefixMapGeneratorConfig {
@@ -182,8 +196,11 @@ classes:
     let output_csv = generator_csv.generate(&schema)?;
 
     println!("=== CSV Format ===");
-    println!("{}
-", output_csv);
+    println!(
+        "{}
+",
+        output_csv
+    );
 
     // Generate with additional custom prefixes
     let mut additional_prefixes = std::collections::HashMap::new();
@@ -206,8 +223,11 @@ classes:
     let output_custom = generator_custom.generate(&schema)?;
 
     println!("=== Extended Format with Custom Prefixes ===");
-    println!("{}
-", output_custom);
+    println!(
+        "{}
+",
+        output_custom
+    );
 
     // Save different formats to files
     std::fs::write("prefix_map.json", &output_simple)?;

@@ -8,14 +8,15 @@
 use linkml_core::prelude::*;
 use linkml_service::create_linkml_service;
 use serde_json::json;
-use serde_yaml;
 use std::fs;
 use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Testing LinkML Instance-Based Validation ===
-");
+    println!(
+        "=== Testing LinkML Instance-Based Validation ===
+"
+    );
 
     // Create the service
     let service = create_linkml_service()?;
@@ -56,8 +57,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Show a few examples
     if let Some(arr) = instances.as_array() {
-        println!("
-Example instances:");
+        println!(
+            "
+Example instances:"
+        );
         for instance in arr.iter().take(3) {
             if let (Some(id), Some(label)) = (
                 instance.get("id").and_then(|v| v.as_str()),
@@ -97,8 +100,10 @@ Example instances:");
             }
 
             // Test validation with actual values
-            println!("
-Validating test values:");
+            println!(
+                "
+Validating test values:"
+            );
 
             let test_values = vec![
                 ("US", true, "United States"),
@@ -158,7 +163,7 @@ Validating test values:");
 
     // Test 3: Check pattern validation
     println!("Test 3: Pattern Validation");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
 
     // The pattern should validate format independent of permissible values
     let pattern_tests = vec![
@@ -191,14 +196,18 @@ Validating test values:");
     println!("=== Test Complete ===");
 
     // Summary
-    println!("
-Summary:");
+    println!(
+        "
+Summary:"
+    );
     println!("This test verifies that the LinkML service can:");
     println!("1. Load instance files (ISO3166Entity.yaml)");
     println!("2. Use instance values as permissible values for validation");
     println!("3. Validate identifiers against both patterns and permissible values");
-    println!("
-The key insight: When a slot has range: ISO3166Entity,");
+    println!(
+        "
+The key insight: When a slot has range: ISO3166Entity,"
+    );
     println!("values must be from the 'id' field of ISO3166Entity instances.");
 
     Ok(())

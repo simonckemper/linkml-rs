@@ -9,7 +9,7 @@
 //! ```
 
 use linkml_service::inference::{CsvIntrospector, DataIntrospector};
-use logger_service::create_logger_service;
+use logger_service::test_utils::create_test_logger_service;
 use timestamp_service::create_timestamp_service;
 
 #[tokio::main]
@@ -44,7 +44,9 @@ Alice Williams,28,alice@example.com,true";
     println!();
 
     // Generate schema
-    let schema = introspector.generate_schema(&stats, "people_schema").await?;
+    let schema = introspector
+        .generate_schema(&stats, "people_schema")
+        .await?;
     println!("Generated schema ID: {}", schema.id);
     println!("Schema name: {}", schema.name);
     println!("Classes: {}", schema.classes.len());

@@ -10,8 +10,10 @@ use std::fs;
 use std::path::PathBuf;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Code Generation from ISO3166 LinkML Schema ===
-");
+    println!(
+        "=== Code Generation from ISO3166 LinkML Schema ===
+"
+    );
 
     // Load the test ISO3166 schema
     let schema_path = PathBuf::from("/tmp/test_schema.yaml");
@@ -21,8 +23,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("Loaded schema: {}", schema.name);
 
     // Generate Rust code
-    println!("
-1. Generating Rust code...");
+    println!(
+        "
+1. Generating Rust code..."
+    );
     let rust_generator = RustGenerator::new();
     let rust_code = rust_generator.generate(&schema)?;
     let rust_path = PathBuf::from("/tmp/iso3166.rs");
@@ -31,8 +35,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("   Lines: {}", rust_code.lines().count());
 
     // Generate Python dataclass code
-    println!("
-2. Generating Python dataclass code...");
+    println!(
+        "
+2. Generating Python dataclass code..."
+    );
     let python_generator = PythonDataclassGenerator::new();
     let python_code = python_generator.generate(&schema)?;
     let python_path = PathBuf::from("/tmp/iso3166_dataclass.py");
@@ -41,8 +47,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("   Lines: {}", python_code.lines().count());
 
     // Generate Pydantic code
-    println!("
-3. Generating Pydantic model code...");
+    println!(
+        "
+3. Generating Pydantic model code..."
+    );
     let pydantic_generator = PydanticGenerator::new();
     let pydantic_code = pydantic_generator.generate(&schema)?;
     let pydantic_path = PathBuf::from("/tmp/iso3166_pydantic.py");
@@ -51,8 +59,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("   Lines: {}", pydantic_code.lines().count());
 
     // Show preview of Rust code
-    println!("
-=== Rust Code Preview ===");
+    println!(
+        "
+=== Rust Code Preview ==="
+    );
     for line in rust_code.lines().take(30) {
         println!("{}", line);
     }
@@ -61,8 +71,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // Show preview of Python code
-    println!("
-=== Python Dataclass Preview ===");
+    println!(
+        "
+=== Python Dataclass Preview ==="
+    );
     for line in python_code.lines().take(30) {
         println!("{}", line);
     }
@@ -71,8 +83,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test compilation/syntax
-    println!("
-=== Testing Generated Code ===");
+    println!(
+        "
+=== Testing Generated Code ==="
+    );
 
     // Test Rust compilation
     print!("Testing Rust compilation... ");
@@ -134,12 +148,16 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("
-=== Summary ===");
+    println!(
+        "
+=== Summary ==="
+    );
     println!("✓ Successfully generated Rust and Python code from ISO3166 schema!");
     println!("✓ Code generation works for both Rust structs and Python classes!");
-    println!("
-Generated files:");
+    println!(
+        "
+Generated files:"
+    );
     println!("  - {}", rust_path.display());
     println!("  - {}", python_path.display());
     println!("  - {}", pydantic_path.display());

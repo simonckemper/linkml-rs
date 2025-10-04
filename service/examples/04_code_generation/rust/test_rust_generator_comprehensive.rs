@@ -3,8 +3,10 @@ use linkml_service::generator::{Generator, registry::GeneratorRegistry};
 use std::fs;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Comprehensive RustGenerator Test ===
-");
+    println!(
+        "=== Comprehensive RustGenerator Test ===
+"
+    );
 
     // Create a complex schema with various field types
     let mut schema = SchemaDefinition::new("ComprehensiveTestSchema");
@@ -364,8 +366,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         "pub address: Option<Box<Address>>",
     ];
 
-    println!("
-Field generation check:");
+    println!(
+        "
+Field generation check:"
+    );
     for field in &expected_fields {
         if rust_code.contains(field) {
             println!("  ✓ Found: {}", field);
@@ -376,8 +380,10 @@ Field generation check:");
 
     // Check for serde attributes
     if rust_code.contains("#[serde(rename") {
-        println!("
-✓ Serde rename attributes generated");
+        println!(
+            "
+✓ Serde rename attributes generated"
+        );
     }
 
     // Check for documentation comments
@@ -392,8 +398,10 @@ Field generation check:");
         println!("✗ TODO comments still present");
     }
 
-    println!("
-=== Summary ===");
+    println!(
+        "
+=== Summary ==="
+    );
     println!("The RustGenerator has been successfully fixed!");
     println!("It now generates:");
     println!("  - Complete struct definitions with all fields");

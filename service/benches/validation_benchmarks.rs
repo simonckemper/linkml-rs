@@ -86,7 +86,7 @@ fn create_complex_schema() -> SchemaDefinition {
     schema.enums.insert("Status".to_string(), status_enum);
 
     for i in 0..20 {
-        let mut slot = SlotDefinition::new(&format!("field_{i}"));
+        let mut slot = SlotDefinition::new(format!("field_{i}"));
         slot.range = Some(
             match i % 3 {
                 0 => "string",
@@ -109,7 +109,7 @@ fn create_complex_schema() -> SchemaDefinition {
     schema.classes.insert("BaseEntity".to_string(), base_class);
 
     for i in 0..5 {
-        let mut class = ClassDefinition::new(&format!("Entity{i}"));
+        let mut class = ClassDefinition::new(format!("Entity{i}"));
         class.is_a = Some("BaseEntity".to_string());
         class.slots = (2..6)
             .map(|j| format!("field_{}", (i * 4 + j) % 20))
@@ -411,12 +411,12 @@ fn bench_inheritance_resolution(c: &mut Criterion) {
     let mut schema = SchemaDefinition::new("inheritance_schema");
 
     for i in 0..10 {
-        let mut class = ClassDefinition::new(&format!("Level{i}"));
+        let mut class = ClassDefinition::new(format!("Level{i}"));
         if i > 0 {
             class.is_a = Some(format!("Level{}", i - 1));
         }
 
-        let mut slot = SlotDefinition::new(&format!("field_level_{i}"));
+        let mut slot = SlotDefinition::new(format!("field_level_{i}"));
         slot.range = Some("string".to_string());
         schema.slots.insert(format!("field_level_{i}"), slot);
 

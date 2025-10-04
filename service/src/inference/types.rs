@@ -503,7 +503,7 @@ impl AggregatedElementStats {
         for (attr_name, attr_stats) in &stats.attributes {
             self.attribute_type_votes
                 .entry(attr_name.clone())
-                .or_insert_with(TypeVotes::new)
+                .or_default()
                 .add_samples(&attr_stats.value_samples);
         }
 

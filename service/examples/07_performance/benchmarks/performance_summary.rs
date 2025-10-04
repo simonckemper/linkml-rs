@@ -14,8 +14,10 @@ use std::time::Instant;
 
 fn main() -> anyhow::Result<()> {
     println!("LinkML Service Performance Summary");
-    println!("==================================
-");
+    println!(
+        "==================================
+"
+    );
 
     // Enable profiling
     let profiler = global_profiler();
@@ -118,8 +120,10 @@ fn main() -> anyhow::Result<()> {
     println!("Complex schema: {:?}", complex_parse_time);
 
     // 2. Validation Performance
-    println!("
-2. Validation Performance");
+    println!(
+        "
+2. Validation Performance"
+    );
     println!("-------------------------");
 
     let validator = ValidatorBuilder::new()
@@ -160,8 +164,10 @@ fn main() -> anyhow::Result<()> {
     );
 
     // 3. Code Generation Performance
-    println!("
-3. Code Generation Performance");
+    println!(
+        "
+3. Code Generation Performance"
+    );
     println!("------------------------------");
 
     let generators = vec![
@@ -188,8 +194,10 @@ fn main() -> anyhow::Result<()> {
     }
 
     // 4. Expression Evaluation Performance
-    println!("
-4. Expression Evaluation Performance");
+    println!(
+        "
+4. Expression Evaluation Performance"
+    );
     println!("------------------------------------");
 
     let expr = parse_expression(
@@ -222,8 +230,10 @@ fn main() -> anyhow::Result<()> {
     );
 
     // 5. Boolean Constraints Performance
-    println!("
-5. Boolean Constraints Performance");
+    println!(
+        "
+5. Boolean Constraints Performance"
+    );
     println!("----------------------------------");
 
     // Test with complex any_of constraint
@@ -247,8 +257,10 @@ fn main() -> anyhow::Result<()> {
     );
 
     // 6. Performance Characteristics Summary
-    println!("
-6. Performance Characteristics");
+    println!(
+        "
+6. Performance Characteristics"
+    );
     println!("------------------------------");
     println!("- Parsing: Sub-millisecond for typical schemas");
     println!("- Validation: >100,000 ops/sec for simple data");
@@ -257,8 +269,10 @@ fn main() -> anyhow::Result<()> {
     println!("- TypeQL Generation: 0.79ms for 100 classes (126x faster than target)");
 
     // 7. Optimization Features
-    println!("
-7. Active Optimizations");
+    println!(
+        "
+7. Active Optimizations"
+    );
     println!("-----------------------");
     println!("✓ Parallel boolean constraint evaluation (Rayon)");
     println!("✓ String interning for common terms");
@@ -268,8 +282,10 @@ fn main() -> anyhow::Result<()> {
     println!("✓ Memory-efficient batch operations");
 
     // Print profiler report
-    println!("
-8. Detailed Profiling Report");
+    println!(
+        "
+8. Detailed Profiling Report"
+    );
     println!("----------------------------");
     println!("{}", profiler.report());
 

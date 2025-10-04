@@ -347,10 +347,7 @@ impl InferenceEngine {
                 }
                 Err(e) => {
                     self.logger
-                        .log(
-                            LogLevel::Warn,
-                            &format!("Skipping document {path:?}: {e}"),
-                        )
+                        .log(LogLevel::Warn, &format!("Skipping document {path:?}: {e}"))
                         .await
                         .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
                     // Continue with other documents

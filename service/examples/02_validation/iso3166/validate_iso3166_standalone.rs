@@ -7,13 +7,14 @@
 
 use regex::Regex;
 use serde_json::json;
-use serde_yaml;
 use std::fs;
 use std::path::PathBuf;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== LinkML Instance-Based Validation (Standalone) ===
-");
+    println!(
+        "=== LinkML Instance-Based Validation (Standalone) ===
+"
+    );
 
     // Paths
     let schema_base = PathBuf::from("/home/kempersc/apps/rootreal/domain/schema");

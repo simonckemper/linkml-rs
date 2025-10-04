@@ -193,8 +193,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .enums
         .insert("MembershipType".to_string(), membership_type);
 
-    println!("=== Mermaid Diagram Generation Examples ===
-");
+    println!(
+        "=== Mermaid Diagram Generation Examples ===
+"
+    );
 
     // Example 1: Entity Relationship Diagram
     println!("1. Entity Relationship Diagram:");
@@ -209,8 +211,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 Preview:
 {}
 ",
-        er_content.lines().take(20).collect::<Vec<_>>().join("
-")
+        er_content.lines().take(20).collect::<Vec<_>>().join(
+            "
+"
+        )
     );
 
     // Example 2: Class Diagram
@@ -222,8 +226,10 @@ Preview:
         class_generator.generate_with_options(&schema, &GeneratorOptions::default())?;
     std::fs::write("library_class.mermaid", &class_content)?;
     println!("Generated: {}", result[0].filename);
-    println!("Saved to: library_class.mermaid
-");
+    println!(
+        "Saved to: library_class.mermaid
+"
+    );
 
     // Example 3: State Diagram
     println!("3. State Diagram (Book Status):");
@@ -234,8 +240,10 @@ Preview:
         state_generator.generate_with_options(&schema, &GeneratorOptions::default())?;
     std::fs::write("library_states.mermaid", &state_content)?;
     println!("Generated: {}", result[0].filename);
-    println!("Saved to: library_states.mermaid
-");
+    println!(
+        "Saved to: library_states.mermaid
+"
+    );
 
     // Example 4: Flowchart
     println!("4. Schema Structure Flowchart:");
@@ -245,8 +253,10 @@ Preview:
         flow_generator.generate_with_options(&schema, &GeneratorOptions::default())?;
     std::fs::write("library_flow.mermaid", &flow_content)?;
     println!("Generated: {}", result[0].filename);
-    println!("Saved to: library_flow.mermaid
-");
+    println!(
+        "Saved to: library_flow.mermaid
+"
+    );
 
     // Create an HTML file to preview all diagrams
     let html_preview = r#"<!DOCTYPE html>
@@ -273,50 +283,62 @@ Preview:
 
     let mut html = html_preview.to_string();
     html.push_str(&std::fs::read_to_string("library_er.mermaid")?);
-    html.push_str("
+    html.push_str(
+        "
         </pre>
     </div>
     
     <div class=\"diagram\">
         <h2>Class Diagram</h2>
         <pre class=\"mermaid\">
-");
+",
+    );
     html.push_str(&std::fs::read_to_string("library_class.mermaid")?);
-    html.push_str("
+    html.push_str(
+        "
         </pre>
     </div>
     
     <div class=\"diagram\">
         <h2>State Diagram</h2>
         <pre class=\"mermaid\">
-");
+",
+    );
     html.push_str(&std::fs::read_to_string("library_states.mermaid")?);
-    html.push_str("
+    html.push_str(
+        "
         </pre>
     </div>
     
     <div class=\"diagram\">
         <h2>Schema Structure Flowchart</h2>
         <pre class=\"mermaid\">
-");
+",
+    );
     html.push_str(&std::fs::read_to_string("library_flow.mermaid")?);
-    html.push_str("
+    html.push_str(
+        "
         </pre>
     </div>
 </body>
-</html>");
+</html>",
+    );
 
     std::fs::write("library_diagrams.html", html)?;
 
     println!("✅ Mermaid diagram generation complete!");
-    println!("
-To view the diagrams:");
+    println!(
+        "
+To view the diagrams:"
+    );
     println!("1. Open library_diagrams.html in a web browser");
     println!("2. Or use the Mermaid Live Editor: https://mermaid.live/");
     println!("3. Or install Mermaid CLI: npm install -g @mermaid-js/mermaid-cli");
     println!("   Then: mmdc -i library_er.mermaid -o library_er.png");
-    println!("
-Mermaid diagrams can be embedded in:");
+    println!(
+        "
+Mermaid diagrams can be embedded in:"
+    );
     println!("- GitHub README files");
     println!("- Markdown documentation");
     println!("- Web applications");

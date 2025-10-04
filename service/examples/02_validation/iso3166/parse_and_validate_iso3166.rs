@@ -9,7 +9,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use serde_yaml;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -165,8 +164,10 @@ impl CountryCodeValidator {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Parse and Validate ISO 3166 Country Codes ===
-");
+    println!(
+        "=== Parse and Validate ISO 3166 Country Codes ===
+"
+    );
 
     // Initialize the validator
     let mut validator = CountryCodeValidator::new();
@@ -229,8 +230,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         ("123", "Invalid - all numbers"),
     ];
 
-    println!("Validating country codes:
-");
+    println!(
+        "Validating country codes:
+"
+    );
 
     for (code, description) in test_cases {
         let result = validator.validate_code(code);

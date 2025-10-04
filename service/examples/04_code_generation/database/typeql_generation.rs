@@ -13,8 +13,10 @@ use linkml_service::generator::{
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML TypeQL Generation Example");
-    println!("================================
-");
+    println!(
+        "================================
+"
+    );
 
     // Example 1: Simple entity schema
     let simple_schema = r#"
@@ -66,8 +68,10 @@ slots:
     println!("Generating TypeQL for simple schema...");
     let outputs = generator.generate(&schema, &options).await?;
 
-    println!("Generated TypeQL:
-");
+    println!(
+        "Generated TypeQL:
+"
+    );
     println!("{}", outputs[0].content);
 
     // Example 2: Complex relations
@@ -148,13 +152,17 @@ slots:
 
     let relation_schema = parser.parse_str(relation_schema)?;
 
-    println!("
+    println!(
+        "
 
-Generating TypeQL for relation schema...");
+Generating TypeQL for relation schema..."
+    );
     let outputs = generator.generate(&relation_schema, &options).await?;
 
-    println!("Generated TypeQL with relations:
-");
+    println!(
+        "Generated TypeQL with relations:
+"
+    );
     println!("{}", outputs[0].content);
 
     // Example 3: Schema with rules and constraints
@@ -202,19 +210,25 @@ enums:
 
     let rule_schema = parser.parse_str(rule_schema)?;
 
-    println!("
+    println!(
+        "
 
-Generating TypeQL with rules...");
+Generating TypeQL with rules..."
+    );
     let outputs = generator.generate(&rule_schema, &options).await?;
 
-    println!("Generated TypeQL with validation rules:
-");
+    println!(
+        "Generated TypeQL with validation rules:
+"
+    );
     println!("{}", outputs[0].content);
 
     // Performance demonstration
-    println!("
+    println!(
+        "
 
-Performance Demonstration");
+Performance Demonstration"
+    );
     println!("------------------------");
 
     let mut large_schema = SchemaDefinition::default();
@@ -256,9 +270,11 @@ Performance Demonstration");
     );
 
     // Migration example
-    println!("
+    println!(
+        "
 
-Schema Migration Example");
+Schema Migration Example"
+    );
     println!("-----------------------");
 
     let mut options_with_migration = GeneratorOptions::default();

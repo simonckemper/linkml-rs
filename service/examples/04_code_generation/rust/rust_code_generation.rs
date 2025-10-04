@@ -191,15 +191,20 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .with_docs(true)
         .set_custom("generate_builder", "true");
 
-    println!("Generating Rust code from LinkML schema...
-");
+    println!(
+        "Generating Rust code from LinkML schema...
+"
+    );
 
     let outputs = generator.generate(&schema, &options).await?;
 
     // Display the generated code
     for output in outputs {
-        println!("=== Generated file: {} ===
-", output.filename);
+        println!(
+            "=== Generated file: {} ===
+",
+            output.filename
+        );
         println!("{}", output.content);
 
         // In a real application, you would write this to a file:
@@ -207,9 +212,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // Demonstrate what the generated code would look like in use
-    println!("
+    println!(
+        "
 === Example usage of generated code ===
-");
+"
+    );
     println!(
         r#"
 // Using the generated code:

@@ -1,23 +1,23 @@
-//! # LinkML Core
+//! # `LinkML` Core
 //!
-//! Core types and traits for LinkML schema validation in Rust.
+//! Core types and traits for `LinkML` schema validation in Rust.
 //!
-//! This crate provides the fundamental building blocks for working with LinkML schemas,
+//! This crate provides the fundamental building blocks for working with `LinkML` schemas,
 //! including type definitions, validation traits, error handling, and configuration.
 //!
 //! ## Overview
 //!
-//! `linkml-core` is the foundation of the LinkML Rust implementation, providing:
+//! `linkml-core` is the foundation of the `LinkML` Rust implementation, providing:
 //!
-//! - **Type Definitions**: Complete LinkML schema type system (classes, slots, types, enums)
-//! - **Traits**: Service interfaces and extension traits for LinkML operations
+//! - **Type Definitions**: Complete `LinkML` schema type system (classes, slots, types, enums)
+//! - **Traits**: Service interfaces and extension traits for `LinkML` operations
 //! - **Error Types**: Comprehensive error handling with detailed error contexts
 //! - **Configuration**: Schema settings and validation configuration
 //! - **Validation Types**: Validation results, constraints, and rule definitions
 //!
 //! ## Design Principles
 //!
-//! - **100% Feature Parity**: Full compatibility with Python LinkML
+//! - **100% Feature Parity**: Full compatibility with Python `LinkML`
 //! - **Native Performance**: Leveraging Rust's zero-cost abstractions
 //! - **Type Safety**: Compile-time guarantees where possible
 //! - **Composition Over Inheritance**: Following Rust idioms
@@ -65,9 +65,9 @@
 //! ## Modules
 //!
 //! - [`error`]: Error types and error handling utilities
-//! - [`traits`]: Core trait definitions for LinkML services
-//! - [`types`]: LinkML schema type definitions
-//! - [`config`]: Configuration types for LinkML services
+//! - [`traits`]: Core trait definitions for `LinkML` services
+//! - [`types`]: `LinkML` schema type definitions
+//! - [`config`]: Configuration types for `LinkML` services
 //! - [`validation`]: Validation types and utilities
 //! - [`utils`]: Utility functions and helpers
 //!
@@ -84,19 +84,19 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(missing_docs)] // Documentation is covered by module-level docs
 
-/// Core error types for `LinkML` operations
+/// Core error types for ``LinkML`` operations
 pub mod error;
 
-/// Core trait definitions for `LinkML` services
+/// Core trait definitions for ``LinkML`` services
 pub mod traits;
 
-/// Type definitions for `LinkML` schemas and data
+/// Type definitions for ``LinkML`` schemas and data
 pub mod types;
 
-/// Configuration types for `LinkML` services
+/// Configuration types for ``LinkML`` services
 pub mod config;
 
-/// Validation types and utilities for `LinkML` schemas
+/// Validation types and utilities for ``LinkML`` schemas
 pub mod validation;
 
 /// RootReal-compliant configuration structures

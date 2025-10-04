@@ -29,7 +29,7 @@ use timestamp_service::factory::create_timestamp_service;
 ///
 /// ```rust,no_run
 /// use linkml_service::inference::create_xml_introspector;
-/// use logger_service::create_logger_service;
+/// use logger_service::test_utils::create_test_logger_service;
 /// use timestamp_service::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -61,7 +61,7 @@ pub fn create_xml_introspector(
 ///
 /// ```rust,no_run
 /// use linkml_service::inference::create_json_introspector;
-/// use logger_service::create_logger_service;
+/// use logger_service::test_utils::create_test_logger_service;
 /// use timestamp_service::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -93,7 +93,7 @@ pub fn create_json_introspector(
 ///
 /// ```rust,no_run
 /// use linkml_service::inference::create_csv_introspector;
-/// use logger_service::create_logger_service;
+/// use logger_service::test_utils::create_test_logger_service;
 /// use timestamp_service::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -168,7 +168,7 @@ pub async fn create_inference_engine() -> InferenceResult<Arc<InferenceEngine>> 
 ///
 /// ```rust,no_run
 /// use linkml_service::inference::create_inference_engine_with_services;
-/// use logger_service::create_logger_service;
+/// use logger_service::test_utils::create_test_logger_service;
 /// use timestamp_service::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -225,7 +225,7 @@ pub async fn create_inference_engine_with_services(
 ///
 /// ```rust,no_run
 /// use linkml_service::inference::{create_inference_engine_with_config, InferenceConfig};
-/// use logger_service::create_logger_service;
+/// use logger_service::test_utils::create_test_logger_service;
 /// use timestamp_service::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -280,7 +280,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_introspectors() {
-        let logger = logger_service::create_logger_service().expect("Failed to create logger");
+        let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
         let timestamp =
             timestamp_service::create_timestamp_service().expect("Failed to create timestamp");
 
@@ -310,7 +310,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_inference_engine_with_custom_config() {
-        let logger = logger_service::create_logger_service().expect("Failed to create logger");
+        let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
         let timestamp =
             timestamp_service::create_timestamp_service().expect("Failed to create timestamp");
 

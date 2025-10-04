@@ -12,16 +12,20 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== CSV Data Loading and Dumping Example ===
-");
+    println!(
+        "=== CSV Data Loading and Dumping Example ===
+"
+    );
 
     // Create a research dataset schema
     let mut schema = create_research_schema();
 
     // Example 1: Basic CSV loading
     println!("1. Basic CSV Loading");
-    println!("===================
-");
+    println!(
+        "===================
+"
+    );
 
     let csv_data = r#"experiment_id,sample_name,temperature,ph,concentration,tags,notes
 EXP001,Sample A,25.5,7.2,0.5,"control;baseline",Initial measurement
@@ -45,8 +49,11 @@ EXP004,Sample D,20.0,7.0,0.6,"treatment;low-temp",Cold treatment
 
     println!("Loaded {} experiments", instances.len());
     for (i, instance) in instances.iter().enumerate() {
-        println!("
-Experiment {}:", i + 1);
+        println!(
+            "
+Experiment {}:",
+            i + 1
+        );
         println!("  ID: {}", instance.id.as_ref()?);
         println!("  Sample: {}", instance.data.get("sample_name")?);
         println!("  Temperature: {}°C", instance.data.get("temperature")?);
@@ -54,11 +61,15 @@ Experiment {}:", i + 1);
     }
 
     // Example 2: Loading with field mappings
-    println!("
+    println!(
+        "
 
-2. Loading with Field Mappings");
-    println!("==============================
-");
+2. Loading with Field Mappings"
+    );
+    println!(
+        "==============================
+"
+    );
 
     let csv_with_different_headers = r#"ID,Name,Temp(C),pH_value,Conc_mg/ml,Keywords,Comments
 EXP005,Sample E,22.0,7.1,0.9,"validation;standard",Standard conditions
@@ -90,11 +101,15 @@ EXP006,Sample F,28.0,6.9,1.5,"experimental;novel",New protocol test
     );
 
     // Example 3: TSV format
-    println!("
+    println!(
+        "
 
-3. TSV Format Loading");
-    println!("====================
-");
+3. TSV Format Loading"
+    );
+    println!(
+        "====================
+"
+    );
 
     let tsv_data = "experiment_id\tsample_name\ttemperature\tph\tconcentration\ttags\tnotes
 EXP007\tSample G\t26.0\t7.3\t1.0\ttsv-test;format\tTSV format test
@@ -108,11 +123,15 @@ EXP008\tSample H\t24.5\t6.7\t0.7\ttsv-test;validation\tAnother TSV record
     println!("Loaded {} experiments from TSV", tsv_instances.len());
 
     // Example 4: Handling errors and validation
-    println!("
+    println!(
+        "
 
-4. Error Handling and Validation");
-    println!("================================
-");
+4. Error Handling and Validation"
+    );
+    println!(
+        "================================
+"
+    );
 
     let invalid_csv = r#"experiment_id,sample_name,temperature,ph,concentration,tags,notes
 EXP009,Sample I,not_a_number,7.0,0.5,invalid,Temperature is invalid
@@ -136,11 +155,15 @@ EXP011,Sample K,25.0,7.0,-0.5,invalid,Negative concentration
     );
 
     // Example 5: Dumping data back to CSV
-    println!("
+    println!(
+        "
 
-5. Dumping Data to CSV");
-    println!("=====================
-");
+5. Dumping Data to CSV"
+    );
+    println!(
+        "=====================
+"
+    );
 
     // Combine all loaded instances
     let mut all_instances = instances.clone();
@@ -163,11 +186,15 @@ EXP011,Sample K,25.0,7.0,-0.5,invalid,Negative concentration
     println!("...");
 
     // Example 6: Dumping with custom options
-    println!("
+    println!(
+        "
 
-6. Custom Dump Options");
-    println!("====================
-");
+6. Custom Dump Options"
+    );
+    println!(
+        "====================
+"
+    );
 
     let custom_dump_options = DumpOptions {
         include_metadata: true,
@@ -185,11 +212,15 @@ EXP011,Sample K,25.0,7.0,-0.5,invalid,Negative concentration
     println!("{}", limited_output);
 
     // Example 7: Round-trip test
-    println!("
+    println!(
+        "
 
-7. Round-trip Test");
-    println!("=================
-");
+7. Round-trip Test"
+    );
+    println!(
+        "=================
+"
+    );
 
     // Dump and reload
     let roundtrip_csv = dumper
@@ -207,11 +238,15 @@ EXP011,Sample K,25.0,7.0,-0.5,invalid,Negative concentration
     );
 
     // Example 8: Working with files
-    println!("
+    println!(
+        "
 
-8. File Operations");
-    println!("=================
-");
+8. File Operations"
+    );
+    println!(
+        "=================
+"
+    );
 
     // Save to file
     let output_path = std::path::Path::new("experiments.csv");
@@ -229,8 +264,10 @@ EXP011,Sample K,25.0,7.0,-0.5,invalid,Negative concentration
     // Clean up
     std::fs::remove_file(output_path)?;
 
-    println!("
-✅ CSV loading and dumping examples complete!");
+    println!(
+        "
+✅ CSV loading and dumping examples complete!"
+    );
 
     Ok(())
 }

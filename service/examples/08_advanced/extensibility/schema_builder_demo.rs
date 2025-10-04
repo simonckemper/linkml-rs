@@ -14,7 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: Simple Person Schema
     println!("Example 1: Building a Person schema...");
-    let mut builder = SchemaBuilder::new("person_schema", "PersonSchema", timestamp_service.clone());
+    let mut builder =
+        SchemaBuilder::new("person_schema", "PersonSchema", timestamp_service.clone());
 
     builder
         .add_class("Person")

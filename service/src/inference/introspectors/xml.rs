@@ -372,7 +372,7 @@ impl DataIntrospector for XmlIntrospector {
                         // Track child count for this parent instance
                         parent_children_count
                             .entry(parent.clone())
-                            .or_insert_with(HashMap::new)
+                            .or_default()
                             .entry(local_name.clone())
                             .and_modify(|count| *count += 1)
                             .or_insert(1);
@@ -612,7 +612,7 @@ impl DataIntrospector for XmlIntrospector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use logger_service::create_logger_service;
+    use logger_service::test_utils::create_test_logger_service;
     use timestamp_service::create_timestamp_service;
 
     fn create_test_services() -> (

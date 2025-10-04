@@ -8,8 +8,10 @@ use linkml_service::parser::YamlParser;
 use std::error::Error;
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
-    println!("=== Verifying RustGenerator Fix ===
-");
+    println!(
+        "=== Verifying RustGenerator Fix ===
+"
+    );
 
     // Simple test schema with a class and slots
     let schema_yaml = r#"
@@ -102,8 +104,10 @@ enums:
     let parser = YamlParser::new();
     let schema = parser.parse(schema_yaml)?;
 
-    println!("
-✅ Schema parsed successfully");
+    println!(
+        "
+✅ Schema parsed successfully"
+    );
     println!(
         "  - Classes: {:?}",
         schema.classes.keys().collect::<Vec<_>>()
@@ -117,23 +121,32 @@ enums:
         .get_generator("rust")
         .ok_or("Rust generator not found")?;
 
-    println!("
-✅ RustGenerator loaded: {}", generator.description());
+    println!(
+        "
+✅ RustGenerator loaded: {}",
+        generator.description()
+    );
 
     // Generate Rust code
-    println!("
-🔧 Generating Rust code...");
+    println!(
+        "
+🔧 Generating Rust code..."
+    );
     let generated_code = generator.generate(&schema)?;
 
-    println!("
-📄 Generated Rust Code:");
+    println!(
+        "
+📄 Generated Rust Code:"
+    );
     println!("{}", "─".repeat(60));
     println!("{}", generated_code);
     println!("{}", "─".repeat(60));
 
     // Verify the fix worked
-    println!("
-🔍 Verification Results:");
+    println!(
+        "
+🔍 Verification Results:"
+    );
 
     if generated_code.contains("// TODO: Add fields based on slots") {
         println!("❌ FAIL: Generated code still contains TODO comment!");
@@ -200,12 +213,16 @@ enums:
     }
 
     if all_fields_found {
-        println!("
-🎉 SUCCESS: RustGenerator is properly fixed!");
+        println!(
+            "
+🎉 SUCCESS: RustGenerator is properly fixed!"
+        );
         println!("   All expected fields and enums were generated correctly.");
     } else {
-        println!("
-⚠️  PARTIAL SUCCESS: Some fields or enums missing");
+        println!(
+            "
+⚠️  PARTIAL SUCCESS: Some fields or enums missing"
+        );
         println!("   The RustGenerator is partially working but may need more fixes.");
     }
 

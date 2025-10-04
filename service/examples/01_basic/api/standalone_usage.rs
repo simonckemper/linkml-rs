@@ -15,8 +15,10 @@ use serde_json::json;
 use std::error::Error;
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
-    println!("LinkML Standalone Usage Example
-");
+    println!(
+        "LinkML Standalone Usage Example
+"
+    );
 
     // Define a schema
     let schema_yaml = r#"
@@ -122,8 +124,10 @@ classes:
     });
 
     // Validate data
-    println!("
-2. Validating data...");
+    println!(
+        "
+2. Validating data..."
+    );
     let validator = Validator::new();
 
     // Validate valid book
@@ -165,40 +169,50 @@ classes:
     );
 
     // Generate TypeQL
-    println!("
-3. Generating TypeQL for TypeDB...");
+    println!(
+        "
+3. Generating TypeQL for TypeDB..."
+    );
     let typeql_gen = create_typeql_generator();
     let typeql = typeql_gen.generate(&schema, &GeneratorOptions::default())?;
     println!(
         "   Generated TypeQL schema ({} lines)",
         typeql.lines().count()
     );
-    println!("
---- TypeQL Preview ---");
+    println!(
+        "
+--- TypeQL Preview ---"
+    );
     for line in typeql.lines().take(10) {
         println!("   {}", line);
     }
     println!("   ...");
 
     // Generate Rust code
-    println!("
-4. Generating Rust structs...");
+    println!(
+        "
+4. Generating Rust structs..."
+    );
     let rust_gen = RustGenerator::new();
     let rust_code = rust_gen.generate(&schema, &GeneratorOptions::default())?;
     println!(
         "   Generated Rust code ({} lines)",
         rust_code.lines().count()
     );
-    println!("
---- Rust Code Preview ---");
+    println!(
+        "
+--- Rust Code Preview ---"
+    );
     for line in rust_code.lines().take(15) {
         println!("   {}", line);
     }
     println!("   ...");
 
     // Demonstrate batch validation
-    println!("
-5. Batch validation example...");
+    println!(
+        "
+5. Batch validation example..."
+    );
     let books = vec![
         json!({
             "isbn": "9780262033848",
@@ -239,15 +253,19 @@ classes:
     );
 
     // Show memory efficiency
-    println!("
-6. Performance characteristics:");
+    println!(
+        "
+6. Performance characteristics:"
+    );
     println!("   - Schema parsing: ~0.5ms for typical schemas");
     println!("   - Validation: ~10µs per record");
     println!("   - TypeQL generation: ~1ms for 100 classes");
     println!("   - Memory usage: ~10KB per schema class");
 
-    println!("
-✓ Example completed successfully!");
+    println!(
+        "
+✓ Example completed successfully!"
+    );
 
     Ok(())
 }

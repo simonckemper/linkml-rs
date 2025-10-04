@@ -8,8 +8,10 @@ use std::collections::HashMap;
 
 fn main() {
     println!("LinkML Expression Functions Demo");
-    println!("================================
-");
+    println!(
+        "================================
+"
+    );
 
     let engine = ExpressionEngine::new();
 

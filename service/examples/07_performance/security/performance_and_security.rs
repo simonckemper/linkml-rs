@@ -23,8 +23,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("LinkML Performance and Security Example
-");
+    println!(
+        "LinkML Performance and Security Example
+"
+    );
 
     // 1. Enable performance profiling
     println!("1. Enabling performance profiling...");
@@ -35,8 +37,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     memory_profiler.set_enabled(true);
 
     // 2. Demonstrate string interning for performance
-    println!("
-2. String interning optimization:");
+    println!(
+        "
+2. String interning optimization:"
+    );
     {
         let _scope = MemoryScope::new("string_interning");
 
@@ -53,8 +57,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // 3. Secure input validation
-    println!("
-3. Input validation examples:");
+    println!(
+        "
+3. Input validation examples:"
+    );
 
     // Valid inputs
     let valid_string = "This is a normal string with
@@ -79,8 +85,10 @@ newlines";
     }
 
     // 4. Resource-limited validation
-    println!("
-4. Resource-limited schema validation:");
+    println!(
+        "
+4. Resource-limited schema validation:"
+    );
 
     let schema_yaml = r#"
     id: https://example.org/performance-demo
@@ -158,8 +166,10 @@ newlines";
     }
 
     // 5. Secure expression evaluation
-    println!("
-5. Secure expression evaluation:");
+    println!(
+        "
+5. Secure expression evaluation:"
+    );
 
     // Create a restricted function registry (no custom functions allowed)
     let registry = FunctionRegistry::new_restricted();
@@ -184,18 +194,24 @@ newlines";
     println!("   - Cached result: {}", result2);
 
     // 6. Performance report
-    println!("
-6. Performance Report:");
+    println!(
+        "
+6. Performance Report:"
+    );
     println!("{}", profiler.report());
 
     // 7. Memory usage report
-    println!("
-7. Memory Usage Report:");
+    println!(
+        "
+7. Memory Usage Report:"
+    );
     println!("{}", memory_profiler.category_report());
 
     // 8. Resource usage summary
-    println!("
-8. Resource Usage Summary:");
+    println!(
+        "
+8. Resource Usage Summary:"
+    );
     let usage = monitor.current_usage();
     println!("{}", usage.format_summary());
 

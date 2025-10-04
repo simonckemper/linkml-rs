@@ -24,8 +24,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Create plugin manager
     let mut plugin_manager = PluginManager::new(logger.clone());
 
-    println!("=== LinkML Plugin System Demo ===
-");
+    println!(
+        "=== LinkML Plugin System Demo ===
+"
+    );
 
     // 1. Discover plugins from various sources
     println!("1. Discovering plugins...");
@@ -53,8 +55,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("   Found {} system plugins", system_plugins.len());
 
     // 2. Initialize all plugins
-    println!("
-2. Initializing plugins...");
+    println!(
+        "
+2. Initializing plugins..."
+    );
 
     let plugin_context = PluginContext {
         config: HashMap::new(),
@@ -68,8 +72,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("   All plugins initialized successfully");
 
     // 3. Demonstrate plugin usage with a custom generator
-    println!("
-3. Using plugin-based generators...");
+    println!(
+        "
+3. Using plugin-based generators..."
+    );
 
     // Get all generator plugins
     let generator_plugins = plugin_manager.get_plugins_by_type(PluginType::Generator);
@@ -116,8 +122,11 @@ classes:
     for plugin in generator_plugins {
         // Try to cast to GeneratorPlugin
         // In a real implementation, this would use the plugin trait properly
-        println!("
-   Plugin: {}", plugin.info().name);
+        println!(
+            "
+   Plugin: {}",
+            plugin.info().name
+        );
         println!("   Supported formats: (would list formats)");
 
         // Generate code (example)
@@ -126,15 +135,20 @@ classes:
     }
 
     // 4. Demonstrate plugin capabilities
-    println!("
-4. Plugin capabilities...");
+    println!(
+        "
+4. Plugin capabilities..."
+    );
 
     // Check for specific capabilities
     let all_plugins = plugin_manager.get_all();
     for plugin in &all_plugins {
         let info = plugin.info();
-        println!("
-   Plugin: {}", info.name);
+        println!(
+            "
+   Plugin: {}",
+            info.name
+        );
         println!("   Capabilities:");
         for cap in &info.capabilities {
             println!("     - {:?}", cap);
@@ -142,8 +156,10 @@ classes:
     }
 
     // 5. Plugin health monitoring
-    println!("
-5. Plugin health status...");
+    println!(
+        "
+5. Plugin health status..."
+    );
 
     for plugin in &all_plugins {
         let status = plugin.status();
@@ -151,8 +167,10 @@ classes:
     }
 
     // 6. Demonstrate plugin configuration
-    println!("
-6. Plugin configuration...");
+    println!(
+        "
+6. Plugin configuration..."
+    );
 
     // Example: Configure a specific plugin
     if let Some(example_plugin) = plugin_manager.get_plugin("example-generator") {
@@ -168,8 +186,10 @@ classes:
     }
 
     // 7. Plugin dependency checking
-    println!("
-7. Checking plugin dependencies...");
+    println!(
+        "
+7. Checking plugin dependencies..."
+    );
 
     // This would check if all plugin dependencies are satisfied
     // let dep_errors = plugin_manager.check_dependencies()?;
@@ -183,15 +203,19 @@ classes:
     // }
 
     // 8. Shutdown plugins
-    println!("
-8. Shutting down plugins...");
+    println!(
+        "
+8. Shutting down plugins..."
+    );
 
     plugin_manager.shutdown_all().await?;
     println!("   All plugins shut down successfully");
 
     // Example of creating a plugin manifest
-    println!("
-=== Plugin Manifest Example ===");
+    println!(
+        "
+=== Plugin Manifest Example ==="
+    );
     let manifest_example = r#"
 [plugin]
 id = "custom-typescript-generator"

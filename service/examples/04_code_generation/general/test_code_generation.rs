@@ -12,8 +12,10 @@ use std::fs;
 use std::path::PathBuf;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Testing Code Generation for Rust and Python ===
-");
+    println!(
+        "=== Testing Code Generation for Rust and Python ===
+"
+    );
 
     // Create a simple test schema programmatically
     let mut schema = SchemaDefinition {
@@ -100,8 +102,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         rust_code.lines().count()
     );
     println!("  Saved to: {}", rust_path.display());
-    println!("
-First 40 lines:");
+    println!(
+        "
+First 40 lines:"
+    );
     println!("{}", "=".repeat(50));
     for line in rust_code.lines().take(40) {
         println!("{}", line);
@@ -124,8 +128,10 @@ First 40 lines:");
         python_code.lines().count()
     );
     println!("  Saved to: {}", python_path.display());
-    println!("
-First 40 lines:");
+    println!(
+        "
+First 40 lines:"
+    );
     println!("{}", "=".repeat(50));
     for line in python_code.lines().take(40) {
         println!("{}", line);
@@ -148,8 +154,10 @@ First 40 lines:");
         pydantic_code.lines().count()
     );
     println!("  Saved to: {}", pydantic_path.display());
-    println!("
-First 40 lines:");
+    println!(
+        "
+First 40 lines:"
+    );
     println!("{}", "=".repeat(50));
     for line in pydantic_code.lines().take(40) {
         println!("{}", line);
@@ -209,14 +217,18 @@ First 40 lines:");
         println!("✗ Failed");
     }
 
-    println!("
-=== Summary ===");
+    println!(
+        "
+=== Summary ==="
+    );
     println!("✓ Successfully generated Rust structs/enums from LinkML schema");
     println!("✓ Successfully generated Python dataclasses from LinkML schema");
     println!("✓ Successfully generated Pydantic models from LinkML schema");
     println!("✓ All generators produce syntactically valid code");
-    println!("
-Conclusion: The LinkML Rust service CAN generate both Rust and Python code!");
+    println!(
+        "
+Conclusion: The LinkML Rust service CAN generate both Rust and Python code!"
+    );
 
     Ok(())
 }

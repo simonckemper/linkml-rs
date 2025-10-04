@@ -55,8 +55,10 @@ classes:
 
 /// Example using sandboxed file system adapter
 async fn example_with_sandboxed_fs() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
-=== Example 2: Sandboxed File System Adapter ===");
+    println!(
+        "
+=== Example 2: Sandboxed File System Adapter ==="
+    );
 
     use tempfile::TempDir;
     let temp_dir = TempDir::new()?;
@@ -84,8 +86,10 @@ async fn example_with_sandboxed_fs() -> std::result::Result<(), Box<dyn std::err
 
 /// Example showing how to migrate existing CLI code
 async fn example_migration() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
-=== Example 3: Migrating CLI Code ===");
+    println!(
+        "
+=== Example 3: Migrating CLI Code ==="
+    );
 
     // OLD CODE (direct file system):
     // std::fs::create_dir_all(output.parent().unwrap_or(Path::new(".")))?;

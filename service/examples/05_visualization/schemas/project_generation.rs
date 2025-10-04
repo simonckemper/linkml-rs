@@ -150,8 +150,10 @@ enums:
     let mut parser = SchemaParser::new();
     let schema = parser.parse(schema_yaml)?;
 
-    println!("Generating projects for research data model...
-");
+    println!(
+        "Generating projects for research data model...
+"
+    );
 
     // Generate Python project
     let python_config = ProjectGeneratorConfig {
@@ -174,8 +176,10 @@ enums:
 
     println!("=== Python Project Structure ===");
     println!("{}", &python_manifest[..python_manifest.len().min(2000)]);
-    println!("... (truncated)
-");
+    println!(
+        "... (truncated)
+"
+    );
 
     // Generate TypeScript project
     let typescript_config = ProjectGeneratorConfig {
@@ -220,8 +224,10 @@ enums:
     let rust_generator = ProjectGenerator::new(rust_config);
     let rust_manifest = rust_generator.generate(&schema)?;
 
-    println!("
-=== Rust Project Structure ===");
+    println!(
+        "
+=== Rust Project Structure ==="
+    );
     if let Some(structure_start) = rust_manifest.find("## Project Structure") {
         if let Some(structure_end) = rust_manifest[structure_start..].find("## Generated Files") {
             println!(
@@ -244,8 +250,10 @@ enums:
     let multi_generator = ProjectGenerator::new(multi_config);
     let multi_manifest = multi_generator.generate(&schema)?;
 
-    println!("
-=== Multi-Language Project Structure ===");
+    println!(
+        "
+=== Multi-Language Project Structure ==="
+    );
     if let Some(structure_start) = multi_manifest.find("## Project Structure") {
         if let Some(structure_end) = multi_manifest[structure_start..].find("## Generated Files") {
             println!(
@@ -261,14 +269,18 @@ enums:
     std::fs::write("rust_project_manifest.txt", &rust_manifest)?;
     std::fs::write("multi_project_manifest.txt", &multi_manifest)?;
 
-    println!("
-Project manifests saved to:");
+    println!(
+        "
+Project manifests saved to:"
+    );
     println!("  - python_project_manifest.txt");
     println!("  - typescript_project_manifest.txt");
     println!("  - rust_project_manifest.txt");
     println!("  - multi_project_manifest.txt");
-    println!("
-Note: The manifest shows what files would be generated. In a real scenario,");
+    println!(
+        "
+Note: The manifest shows what files would be generated. In a real scenario,"
+    );
     println!("these files would be written to disk in the appropriate directory structure.");
 
     Ok(())

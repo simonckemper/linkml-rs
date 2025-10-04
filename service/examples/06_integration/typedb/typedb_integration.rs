@@ -19,16 +19,20 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::fmt::init();
 
-    println!("=== LinkML TypeDB Integration Example ===
-");
+    println!(
+        "=== LinkML TypeDB Integration Example ===
+"
+    );
 
     // Create a sample schema representing a knowledge graph
     let schema = create_knowledge_graph_schema();
 
     // Example 1: Direct TypeDB Connection
     println!("1. Direct TypeDB Connection");
-    println!("==========================
-");
+    println!(
+        "==========================
+"
+    );
 
     let mut direct_options = TypeDBIntegrationOptions {
         database_name: "knowledge-graph".to_string(),
@@ -82,8 +86,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Using DBMS Service
     println!("2. Using DBMS Service");
-    println!("====================
-");
+    println!(
+        "====================
+"
+    );
 
     println!("DBMS Service provides:");
     println!("  - Connection pooling");
@@ -107,8 +113,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 3: Complex Type Mappings
     println!("3. Complex Type Mappings");
-    println!("=======================
-");
+    println!(
+        "=======================
+"
+    );
 
     let mut complex_options = TypeDBIntegrationOptions {
         database_name: "social-network".to_string(),
@@ -145,8 +153,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 4: Dumping Data to TypeDB
     println!("4. Dumping Data to TypeDB");
-    println!("========================
-");
+    println!(
+        "========================
+"
+    );
 
     // Create sample instances
     let instances = create_sample_instances()?;
@@ -173,8 +183,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 5: Query Patterns
     println!("5. Query Patterns");
-    println!("================
-");
+    println!(
+        "================
+"
+    );
 
     println!("Common TypeQL patterns used by the loader:");
     println!();
@@ -200,10 +212,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("  get $emp, $person, $org, $date;");
     println!();
 
-    println!("
-✅ TypeDB integration examples complete!");
-    println!("
-Key features demonstrated:");
+    println!(
+        "
+✅ TypeDB integration examples complete!"
+    );
+    println!(
+        "
+Key features demonstrated:"
+    );
     println!("- Direct TypeDB connection");
     println!("- DBMS service integration");
     println!("- Type and attribute mapping");

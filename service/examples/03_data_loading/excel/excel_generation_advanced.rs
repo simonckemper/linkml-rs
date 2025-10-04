@@ -11,8 +11,10 @@ use linkml_service::{
 use std::path::Path;
 
 fn main() -> Result<()> {
-    println!("=== Advanced Excel Generation with LinkML ===
-");
+    println!(
+        "=== Advanced Excel Generation with LinkML ===
+"
+    );
 
     // Create a comprehensive schema for a research project
     let schema = create_research_schema()?;
@@ -65,8 +67,10 @@ fn main() -> Result<()> {
     generate_variants(&schema)?;
 
     // Show generated features
-    println!("
-📊 Generated Excel Features:");
+    println!(
+        "
+📊 Generated Excel Features:"
+    );
     println!("  - Multiple sheets (one per class)");
     println!("  - Conditional formatting for data types");
     println!("  - Data validation dropdowns for enums");
@@ -293,8 +297,10 @@ fn create_research_schema() -> Result<Schema> {
 }
 
 fn generate_variants(schema: &Schema) -> Result<()> {
-    println!("
-📁 Generating Excel variants...");
+    println!(
+        "
+📁 Generating Excel variants..."
+    );
 
     // 1. Simple single-sheet version
     let simple_options = ExcelOptions {

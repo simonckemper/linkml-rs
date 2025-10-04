@@ -158,8 +158,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .enums
         .insert("ProductCategory".to_string(), product_category);
 
-    println!("=== Graphviz Generation Examples ===
-");
+    println!(
+        "=== Graphviz Generation Examples ===
+"
+    );
 
     // Example 1: Simple style
     println!("1. Simple Diagram Style:");
@@ -188,8 +190,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Save this one to show full content
     std::fs::write("ecommerce_uml.dot", &result[0].content)?;
     println!("Full UML diagram saved to: ecommerce_uml.dot");
-    println!("To render: dot -Tpng ecommerce_uml.dot -o ecommerce_uml.png
-");
+    println!(
+        "To render: dot -Tpng ecommerce_uml.dot -o ecommerce_uml.png
+"
+    );
 
     // Example 3: Entity-Relationship style
     println!("3. Entity-Relationship Style:");
@@ -199,8 +203,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .generate(&schema, &GeneratorOptions::default())
         .await?;
     std::fs::write("ecommerce_er.dot", &result[0].content)?;
-    println!("ER diagram saved to: ecommerce_er.dot
-");
+    println!(
+        "ER diagram saved to: ecommerce_er.dot
+"
+    );
 
     // Example 4: Hierarchical with different layout
     println!("4. Hierarchical Style with Circular Layout:");
@@ -222,8 +228,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .generate(&schema, &GeneratorOptions::default())
         .await?;
     std::fs::write("ecommerce_hierarchical.dot", &result[0].content)?;
-    println!("Hierarchical diagram saved to: ecommerce_hierarchical.dot
-");
+    println!(
+        "Hierarchical diagram saved to: ecommerce_hierarchical.dot
+"
+    );
 
     // Example 5: Left-to-right layout
     println!("5. Left-to-Right UML Layout:");
@@ -245,19 +253,25 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .generate(&schema, &GeneratorOptions::default())
         .await?;
     std::fs::write("ecommerce_lr.dot", &result[0].content)?;
-    println!("Left-to-right diagram saved to: ecommerce_lr.dot
-");
+    println!(
+        "Left-to-right diagram saved to: ecommerce_lr.dot
+"
+    );
 
     println!("✅ Graphviz generation complete!");
-    println!("
-To render the diagrams, use Graphviz tools:");
+    println!(
+        "
+To render the diagrams, use Graphviz tools:"
+    );
     println!("  dot -Tpng file.dot -o file.png    # For hierarchical layouts");
     println!("  neato -Tpng file.dot -o file.png  # For spring model layouts");
     println!("  fdp -Tpng file.dot -o file.png    # For force-directed layouts");
     println!("  circo -Tpng file.dot -o file.png  # For circular layouts");
     println!("  twopi -Tpng file.dot -o file.png  # For radial layouts");
-    println!("
-Or view online at: https://dreampuf.github.io/GraphvizOnline/");
+    println!(
+        "
+Or view online at: https://dreampuf.github.io/GraphvizOnline/"
+    );
 
     Ok(())
 }

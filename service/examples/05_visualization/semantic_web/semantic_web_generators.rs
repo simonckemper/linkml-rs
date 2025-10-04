@@ -189,13 +189,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     ];
     schema.enums.insert("LicenseType".to_string(), license_type);
 
-    println!("=== Semantic Web Generators Example ===
-");
+    println!(
+        "=== Semantic Web Generators Example ===
+"
+    );
 
     // SPARQL Generation Examples
     println!("1. SPARQL Query Generation");
-    println!("==========================
-");
+    println!(
+        "==========================
+"
+    );
 
     // SELECT queries
     println!("1.1 SELECT Queries:");
@@ -208,8 +212,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 {}
 ...
 ",
-        result.lines().take(15).collect::<Vec<_>>().join("
-")
+        result.lines().take(15).collect::<Vec<_>>().join(
+            "
+"
+        )
     );
 
     // CONSTRUCT queries
@@ -217,21 +223,27 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let construct_generator = SparqlGenerator::new().with_query_type(SparqlQueryType::Construct);
     let result = construct_generator.generate(&schema)?;
     std::fs::write("research_construct.sparql", &result)?;
-    println!("Generated: research_construct.sparql
-");
+    println!(
+        "Generated: research_construct.sparql
+"
+    );
 
     // ASK queries
     println!("1.3 ASK Queries (Validation):");
     let ask_generator = SparqlGenerator::new().with_query_type(SparqlQueryType::Ask);
     let result = ask_generator.generate(&schema)?;
     std::fs::write("research_ask.sparql", &result)?;
-    println!("Generated: research_ask.sparql
-");
+    println!(
+        "Generated: research_ask.sparql
+"
+    );
 
     // ShEx Generation Examples
     println!("2. ShEx (Shape Expressions) Generation");
-    println!("======================================
-");
+    println!(
+        "======================================
+"
+    );
 
     // ShEx Compact syntax
     println!("2.1 ShEx Compact Syntax:");
@@ -244,13 +256,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 {}
 ...
 ",
-        result[0]
-            .content
-            .lines()
-            .take(20)
-            .collect::<Vec<_>>()
-            .join("
-")
+        result[0].content.lines().take(20).collect::<Vec<_>>().join(
+            "
+"
+        )
     );
 
     // ShEx JSON
@@ -258,13 +267,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let shexj_generator = ShExGenerator::new().with_style(ShExStyle::Json);
     let result = shexj_generator.generate(&schema)?;
     std::fs::write("research_shapes.shexj", &result)?;
-    println!("Generated: research_shapes.shexj
-");
+    println!(
+        "Generated: research_shapes.shexj
+"
+    );
 
     // PlantUML Generation Examples
     println!("3. PlantUML Diagram Generation");
-    println!("==============================
-");
+    println!(
+        "==============================
+"
+    );
 
     // Class diagram
     println!("3.1 Class Diagram:");
@@ -294,8 +307,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::MindMap);
     let result = mindmap_generator.generate(&schema)?;
     std::fs::write("research_mindmap.puml", &result)?;
-    println!("Generated: research_mindmap.puml
-");
+    println!(
+        "Generated: research_mindmap.puml
+"
+    );
 
     // Create an integrated example showing how these work together
     let integrated_example = r#"
@@ -377,14 +392,18 @@ ex:pub789 a ex:Publication ;
     std::fs::write("semantic_web_integration.md", integrated_example)?;
 
     println!("✅ Semantic Web generators complete!");
-    println!("
-Generated files:");
+    println!(
+        "
+Generated files:"
+    );
     println!("- SPARQL queries: *.sparql");
     println!("- ShEx shapes: *.shex, *.shexj");
     println!("- PlantUML diagrams: *.puml");
     println!("- Integration guide: semantic_web_integration.md");
-    println!("
-These tools enable:");
+    println!(
+        "
+These tools enable:"
+    );
     println!("1. RDF data validation with ShEx");
     println!("2. Semantic querying with SPARQL");
     println!("3. Visual documentation with PlantUML");

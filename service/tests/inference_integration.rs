@@ -12,7 +12,7 @@
 use linkml_service::inference::{
     CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector, create_inference_engine,
 };
-use logger_service::create_logger_service;
+use logger_service::test_utils::create_test_logger_service;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tempfile::TempDir;

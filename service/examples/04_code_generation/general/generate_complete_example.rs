@@ -11,8 +11,10 @@ use std::fs;
 use std::path::PathBuf;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Complete ISO3166 Code Generation Example ===
-");
+    println!(
+        "=== Complete ISO3166 Code Generation Example ===
+"
+    );
 
     // Load the simple schema
     let schema_path = PathBuf::from(
@@ -46,8 +48,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("  Saved to: {}", rust_path.display());
 
     // Show Rust preview
-    println!("
-Rust Code Preview:");
+    println!(
+        "
+Rust Code Preview:"
+    );
     println!("{}", "=".repeat(60));
     for (i, line) in rust_code.lines().enumerate() {
         if i >= 50 {
@@ -74,8 +78,10 @@ Rust Code Preview:");
     println!("  Saved to: {}", python_path.display());
 
     // Show Python preview
-    println!("
-Python Dataclass Preview:");
+    println!(
+        "
+Python Dataclass Preview:"
+    );
     println!("{}", "=".repeat(60));
     for (i, line) in python_code.lines().enumerate() {
         if i >= 40 {
@@ -102,8 +108,10 @@ Python Dataclass Preview:");
     println!("  Saved to: {}", pydantic_path.display());
 
     // Show Pydantic preview
-    println!("
-Pydantic Model Preview:");
+    println!(
+        "
+Pydantic Model Preview:"
+    );
     println!("{}", "=".repeat(60));
     for (i, line) in pydantic_code.lines().enumerate() {
         if i >= 50 {
@@ -144,14 +152,18 @@ Pydantic Model Preview:");
         println!("✗ Invalid");
     }
 
-    println!("
-=== Summary ===");
+    println!(
+        "
+=== Summary ==="
+    );
     println!("Successfully generated code from complete ISO3166 schema:");
     println!("  - Rust: {}", rust_path.display());
     println!("  - Python Dataclass: {}", python_path.display());
     println!("  - Pydantic Model: {}", pydantic_path.display());
-    println!("
-All generated files are saved for your study!");
+    println!(
+        "
+All generated files are saved for your study!"
+    );
 
     Ok(())
 }

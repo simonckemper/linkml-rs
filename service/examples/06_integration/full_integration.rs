@@ -3,40 +3,39 @@
 //! This example demonstrates the proper way to integrate LinkML with all 17 RootReal services
 //! and register it with the REST API service instead of running as a standalone server.
 
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 // Core service imports
-use logger_service::factory::create_logger_service;
-use configuration_service::factory::create_configuration_service;
-use timestamp_core::factory::create_timestamp_service;
-use hash_service::factory::create_hash_service;
-use random_service::factory::create_random_service;
 use cache_service::factory::create_cache_service;
-use monitoring_service::factory::create_monitoring_service;
-use telemetry_service::factory::create_telemetry_service;
+use configuration_service::factory::create_configuration_service;
 use error_handling_service::factory::create_error_handling_service;
-use timeout_service::factory::create_timeout_service;
+use hash_service::factory::create_hash_service;
+use logger_service::factory::create_logger_service;
+use monitoring_service::factory::create_monitoring_service;
+use random_service::factory::create_random_service;
 use task_management_service::factory::create_task_management_service;
+use telemetry_service::factory::create_telemetry_service;
+use timeout_service::factory::create_timeout_service;
+use timestamp_core::factory::create_timestamp_service;
 
 // Data services
 use dbms_service::factory::create_dbms_service;
-use vector_database_service::factory::create_vector_database_service;
 use lakehouse_consumer::factory::create_lakehouse_service;
+use vector_database_service::factory::create_vector_database_service;
 
 // Security services
 use authentication_service::factory::create_authentication_service;
 use rate_limiting_service::factory::create_rate_limiting_service;
 
 // REST API and related services
-use restful_api_service::factory_v3::{create_restful_api_service, ServiceDependencies};
 use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
+use restful_api_service::factory_v3::{ServiceDependencies, create_restful_api_service};
 use shutdown_service::factory::create_shutdown_service;
 
 // LinkML service
 use linkml_service::{
-    factory::create_linkml_service,
-    cli_enhanced::commands::serve::create_linkml_router,
+    cli_enhanced::commands::serve::create_linkml_router, factory::create_linkml_service,
 };
 
 #[tokio::main]
@@ -57,39 +56,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Phase 2: Create infrastructure services
     println!("Phase 2: Creating infrastructure services...");
-    let cache = create_cache_service(
-        logger.clone(),
-        config.clone(),
-        timestamp.clone(),
-    ).await?;
+    let cache = create_cache_service(logger.clone(), config.clone(), timestamp.clone()).await?;
 
-    let monitor = create_monitoring_service(
-        logger.clone(),
-        timestamp.clone(),
-    ).await?;
+    let monitor = create_monitoring_service(logger.clone(), timestamp.clone()).await?;
 
-    let telemetry = create_telemetry_service(
-        logger.clone(),
-        config.clone(),
-        timestamp.clone(),
-    ).await?;
+    let telemetry =
+        create_telemetry_service(logger.clone(), config.clone(), timestamp.clone()).await?;
 
     // Phase 3: Create task and error handling
     println!("Phase 3: Creating task and error handling services...");
-    let task_manager = create_task_management_service(
-        logger.clone(),
-        monitor.clone(),
-    ).await?;
+    let task_manager = create_task_management_service(logger.clone(), monitor.clone()).await?;
 
-    let error_handler = create_error_handling_service(
-        logger.clone(),
-        telemetry.clone(),
-    ).await?;
+    let error_handler = create_error_handling_service(logger.clone(), telemetry.clone()).await?;
 
-    let timeout = create_timeout_service(
-        logger.clone(),
-        timestamp.clone(),
-    ).await?;
+    let timeout = create_timeout_service(logger.clone(), timestamp.clone()).await?;
 
     // Phase 4: Create data services
     println!("Phase 4: Creating data services...");
@@ -98,35 +78,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.clone(),
         cache.clone(),
         monitor.clone(),
-    ).await?;
+    )
+    .await?;
 
-    let vector_db = create_vector_database_service(
-        logger.clone(),
-        config.clone(),
-        cache.clone(),
-    ).await?;
+    let vector_db =
+        create_vector_database_service(logger.clone(), config.clone(), cache.clone()).await?;
 
-    let lakehouse = create_lakehouse_service(
-        logger.clone(),
-        config.clone(),
-        cache.clone(),
-        dbms.clone(),
-    ).await?;
+    let lakehouse =
+        create_lakehouse_service(logger.clone(), config.clone(), cache.clone(), dbms.clone())
+            .await?;
 
     // Phase 5: Create security services
     println!("Phase 5: Creating security services...");
-    let auth = create_authentication_service(
-        logger.clone(),
-        config.clone(),
-        cache.clone(),
-        hash.clone(),
-    ).await?;
+    let auth =
+        create_authentication_service(logger.clone(), config.clone(), cache.clone(), hash.clone())
+            .await?;
 
-    let rate_limiter = create_rate_limiting_service(
-        logger.clone(),
-        config.clone(),
-        cache.clone(),
-    ).await?;
+    let rate_limiter =
+        create_rate_limiting_service(logger.clone(), config.clone(), cache.clone()).await?;
 
     // Phase 6: Create LinkML service with all dependencies
     println!("Phase 6: Creating LinkML service...");
@@ -141,7 +110,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         cache.clone(),
         monitor.clone(),
         random.clone(),
-    ).await?;
+    )
+    .await?;
 
     // Phase 7: Create REST API service dependencies
     println!("Phase 7: Preparing REST API service...");
@@ -175,7 +145,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let schema_path = PathBuf::from("examples/schema.yaml");
     if !schema_path.exists() {
         println!("Creating example schema file...");
-        std::fs::write(&schema_path, r#"
+        std::fs::write(
+            &schema_path,
+            r#"
 id: https://example.org/schema
 name: example_schema
 description: Example LinkML schema for integration testing
@@ -193,7 +165,8 @@ classes:
         range: integer
         minimum_value: 0
         maximum_value: 150
-"#)?;
+"#,
+        )?;
     }
 
     // Create LinkML router with handlers
@@ -214,28 +187,31 @@ classes:
 
     // Phase 11: Setup shutdown service
     println!("Phase 11: Setting up graceful shutdown...");
-    let shutdown = create_shutdown_service(
-        logger.clone(),
-        timestamp.clone(),
-        task_manager.clone(),
-    ).await?;
+    let shutdown =
+        create_shutdown_service(logger.clone(), timestamp.clone(), task_manager.clone()).await?;
 
     // Register shutdown hooks for all services
-    shutdown.register_hook("linkml", Box::new(move || {
-        Box::pin(async move {
-            println!("Shutting down LinkML service...");
-            // LinkML cleanup logic here
-            Ok(())
-        })
-    }))?;
+    shutdown.register_hook(
+        "linkml",
+        Box::new(move || {
+            Box::pin(async move {
+                println!("Shutting down LinkML service...");
+                // LinkML cleanup logic here
+                Ok(())
+            })
+        }),
+    )?;
 
-    shutdown.register_hook("rest_api", Box::new(move || {
-        Box::pin(async move {
-            println!("Shutting down REST API service...");
-            // REST API cleanup logic here
-            Ok(())
-        })
-    }))?;
+    shutdown.register_hook(
+        "rest_api",
+        Box::new(move || {
+            Box::pin(async move {
+                println!("Shutting down REST API service...");
+                // REST API cleanup logic here
+                Ok(())
+            })
+        }),
+    )?;
 
     // Phase 12: Start the integrated service
     println!("Phase 12: Starting integrated service...");

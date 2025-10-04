@@ -18,16 +18,20 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::fmt::init();
 
-    println!("=== LinkML Database Loading Example ===
-");
+    println!(
+        "=== LinkML Database Loading Example ===
+"
+    );
 
     // Create a sample schema representing a typical e-commerce database
     let schema = create_ecommerce_schema();
 
     // Example 1: Load from PostgreSQL
     println!("1. PostgreSQL Example");
-    println!("====================
-");
+    println!(
+        "====================
+"
+    );
 
     let mut pg_options = DatabaseOptions {
         connection_string: "postgresql://user:password@localhost/ecommerce".to_string(),
@@ -96,8 +100,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Load from MySQL
     println!("2. MySQL Example");
-    println!("===============
-");
+    println!(
+        "===============
+"
+    );
 
     let mut mysql_options = DatabaseOptions {
         connection_string: "mysql://user:password@localhost/ecommerce".to_string(),
@@ -127,8 +133,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 3: Load from SQLite
     println!("3. SQLite Example");
-    println!("================
-");
+    println!(
+        "================
+"
+    );
 
     let sqlite_options = DatabaseOptions {
         connection_string: "sqlite://./ecommerce.db".to_string(),
@@ -149,8 +157,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 4: Complex loading scenario
     println!("4. Complex Loading Scenario");
-    println!("==========================
-");
+    println!(
+        "==========================
+"
+    );
 
     let mut complex_options = DatabaseOptions {
         connection_string: "postgresql://user:password@localhost/analytics".to_string(),
@@ -182,8 +192,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 5: Dumping data back to database
     println!("5. Dumping Data to Database");
-    println!("==========================
-");
+    println!(
+        "==========================
+"
+    );
 
     // Create sample instances
     let instances = create_sample_instances()?;
@@ -215,10 +227,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // let result = dumper.dump(&instances, &schema).await?;
     // println!("Successfully dumped {} bytes", result.len());
 
-    println!("
-✅ Database loading examples complete!");
-    println!("
-Key features demonstrated:");
+    println!(
+        "
+✅ Database loading examples complete!"
+    );
+    println!(
+        "
+Key features demonstrated:"
+    );
     println!("- Connection to PostgreSQL, MySQL, and SQLite");
     println!("- Table and column name mapping");
     println!("- Foreign key relationship handling");

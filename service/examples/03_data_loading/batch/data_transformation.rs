@@ -16,16 +16,20 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Data Transformation Example ===
-");
+    println!(
+        "=== Data Transformation Example ===
+"
+    );
 
     // Create a knowledge graph schema
     let schema = create_knowledge_graph_schema();
 
     // Example 1: CSV to RDF transformation
     println!("1. CSV to RDF Transformation");
-    println!("===========================
-");
+    println!(
+        "===========================
+"
+    );
 
     // Sample CSV data about people and organizations
     let people_csv = r#"id,name,email,affiliation,expertise,collaborators
@@ -68,16 +72,20 @@ david,David Lee,david@institute.org,MIT,"robotics;AI","charlie;alice"
 
     println!("Generated Turtle RDF:");
     println!("{}", &turtle[..500.min(turtle.len())]); // First 500 chars
-    println!("...
-");
+    println!(
+        "...
+"
+    );
 
     // Save to file
     std::fs::write("researchers.ttl", &turtle)?;
 
     // Example 2: RDF format conversions
     println!("2. RDF Format Conversions");
-    println!("========================
-");
+    println!(
+        "========================
+"
+    );
 
     // Convert to N-Triples
     let ntriples_dumper = RdfDumper::with_format(RdfSerializationFormat::NTriples);
@@ -89,8 +97,10 @@ david,David Lee,david@institute.org,MIT,"robotics;AI","charlie;alice"
     for line in ntriples.lines().take(5) {
         println!("{}", line);
     }
-    println!("...
-");
+    println!(
+        "...
+"
+    );
 
     // Convert to RDF/XML
     let rdfxml_dumper = RdfDumper::with_format(RdfSerializationFormat::RdfXml);
@@ -100,13 +110,17 @@ david,David Lee,david@institute.org,MIT,"robotics;AI","charlie;alice"
 
     println!("RDF/XML format (first 300 chars):");
     println!("{}", &rdfxml[..300.min(rdfxml.len())]);
-    println!("...
-");
+    println!(
+        "...
+"
+    );
 
     // Example 3: Load organizations data and merge
     println!("3. Loading and Merging Data");
-    println!("==========================
-");
+    println!(
+        "==========================
+"
+    );
 
     let orgs_csv = r#"id,name,type,location,founded
 MIT,Massachusetts Institute of Technology,University,"Cambridge, MA",1861
@@ -140,10 +154,14 @@ Berkeley,University of California Berkeley,University,"Berkeley, CA",1868
     );
 
     // Example 4: Round-trip through RDF
-    println!("
-4. Round-trip Testing");
-    println!("====================
-");
+    println!(
+        "
+4. Round-trip Testing"
+    );
+    println!(
+        "====================
+"
+    );
 
     // Load the Turtle back
     let rdf_loader = RdfLoader::with_options(rdf_options);
@@ -187,13 +205,17 @@ Berkeley,University of California Berkeley,University,"Berkeley, CA",1868
     for line in researchers_csv.lines().take(3) {
         println!("{}", line);
     }
-    println!("...
-");
+    println!(
+        "...
+"
+    );
 
     // Example 5: Advanced RDF features
     println!("5. Advanced RDF Features");
-    println!("=======================
-");
+    println!(
+        "=======================
+"
+    );
 
     // Create more complex RDF with blank nodes and references
     let project_turtle = r#"
@@ -258,10 +280,14 @@ ex:project2 rdf:type ex:Project ;
     }
 
     // Example 6: Data statistics
-    println!("
-6. Data Statistics");
-    println!("=================
-");
+    println!(
+        "
+6. Data Statistics"
+    );
+    println!(
+        "=================
+"
+    );
 
     let total_instances = all_instances.len() + projects.len();
     let classes: std::collections::HashSet<_> = all_instances
@@ -299,10 +325,14 @@ ex:project2 rdf:type ex:Project ;
     std::fs::remove_file("researchers.ttl").ok();
     std::fs::remove_file("knowledge_graph.ttl").ok();
 
-    println!("
-✅ Data transformation examples complete!");
-    println!("
-Key takeaways:");
+    println!(
+        "
+✅ Data transformation examples complete!"
+    );
+    println!(
+        "
+Key takeaways:"
+    );
     println!("- Easy conversion between CSV and RDF formats");
     println!("- Support for multiple RDF serializations");
     println!("- Preservation of relationships and complex data");

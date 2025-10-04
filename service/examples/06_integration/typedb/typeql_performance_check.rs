@@ -83,8 +83,10 @@ async fn main() {
         }
     }
 
-    println!("
-Performance Targets:");
+    println!(
+        "
+Performance Targets:"
+    );
     println!("- 100 classes: <100ms");
     println!("- 1000 classes: <1s");
 }

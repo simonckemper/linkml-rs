@@ -13,8 +13,10 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== ISO3166 Validation with Parse Service Integration ===
-");
+    println!(
+        "=== ISO3166 Validation with Parse Service Integration ===
+"
+    );
 
     // Create dependencies
     let logger = Arc::new(logger_service::factory::create_development_logger().await?);
@@ -131,8 +133,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     );
 
     if !validation_result.errors.is_empty() {
-        println!("
-❌ Validation Errors:");
+        println!(
+            "
+❌ Validation Errors:"
+        );
         for error in &validation_result.errors {
             println!(
                 "  - [{}] {}: {}",
@@ -164,8 +168,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         ("U1", false, "Contains number"),
     ];
 
-    println!("Testing CountryCodeAlpha2Identifier validation:
-");
+    println!(
+        "Testing CountryCodeAlpha2Identifier validation:
+"
+    );
 
     for (code, should_be_valid, description) in test_cases {
         // Create a test document with the country code
@@ -255,8 +261,10 @@ label: "Test country"
     // Validate the document structure
     let json_validation = parse_service.validate_document(&parsed_json, None).await?;
 
-    println!("
-📋 Document Structure Validation:");
+    println!(
+        "
+📋 Document Structure Validation:"
+    );
     println!("  - Valid: {}", json_validation.is_valid);
 
     // Note: In a real implementation, we would extract and validate

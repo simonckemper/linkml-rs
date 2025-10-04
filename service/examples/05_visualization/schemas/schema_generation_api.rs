@@ -12,8 +12,10 @@
 
 fn main() {
     println!("LinkML Schema Generation API Demonstration");
-    println!("=========================================
-");
+    println!(
+        "=========================================
+"
+    );
 
     // Show the schema we'll use for generation
     demonstrate_source_schema();
@@ -35,8 +37,10 @@ fn main() {
 }
 
 fn demonstrate_source_schema() {
-    println!("1. Source Schema for Generation:
-");
+    println!(
+        "1. Source Schema for Generation:
+"
+    );
 
     let schema = r#"
 id: https://example.org/library-schema
@@ -99,14 +103,18 @@ slots:
 "#;
 
     println!("{}", schema);
-    println!("
+    println!(
+        "
 This schema will be transformed into various formats...
-");
+"
+    );
 }
 
 fn demonstrate_typeql_generation() {
-    println!("2. TypeQL Generation (for TypeDB):
-");
+    println!(
+        "2. TypeQL Generation (for TypeDB):
+"
+    );
 
     let expected_typeql = r#"
 define
@@ -162,8 +170,10 @@ name sub attribute, value string;
     println!("Generated TypeQL schema:");
     println!("{}", expected_typeql);
 
-    println!("
-Usage in production:");
+    println!(
+        "
+Usage in production:"
+    );
     println!(
         r#"
 let typeql = linkml_service.generate_typeql(&schema).await?;
@@ -173,9 +183,11 @@ typedb_client.define_schema(&typeql).await?;
 }
 
 fn demonstrate_sql_generation() {
-    println!("
+    println!(
+        "
 3. SQL DDL Generation:
-");
+"
+    );
 
     let expected_sql = r#"
 -- Generated SQL DDL for PostgreSQL
@@ -225,8 +237,10 @@ CREATE INDEX idx_loan_dates ON loan(loan_date, due_date);
     println!("Generated SQL DDL:");
     println!("{}", expected_sql);
 
-    println!("
-Dialect options:");
+    println!(
+        "
+Dialect options:"
+    );
     println!("- PostgreSQL (default)");
     println!("- MySQL");
     println!("- SQLite");
@@ -234,9 +248,11 @@ Dialect options:");
 }
 
 fn demonstrate_graphql_generation() {
-    println!("
+    println!(
+        "
 4. GraphQL Schema Generation:
-");
+"
+    );
 
     let expected_graphql = r#"
 # Generated GraphQL Schema
@@ -314,9 +330,11 @@ type Mutation {
 }
 
 fn demonstrate_rust_generation() {
-    println!("
+    println!(
+        "
 5. Rust Code Generation:
-");
+"
+    );
 
     let expected_rust = r#"
 // Generated Rust code with serde support
@@ -433,8 +451,10 @@ impl Book {
     println!("Generated Rust code:");
     println!("{}", expected_rust);
 
-    println!("
-Features:");
+    println!(
+        "
+Features:"
+    );
     println!("- Serde serialization support");
     println!("- Validation methods");
     println!("- Builder pattern (optional)");
@@ -442,9 +462,11 @@ Features:");
 }
 
 fn demonstrate_doc_generation() {
-    println!("
+    println!(
+        "
 6. Documentation Generation:
-");
+"
+    );
 
     println!("Supported formats:");
     println!("- Markdown (for GitHub/GitLab)");
@@ -497,9 +519,11 @@ graph LR
 
 /// Show generator configuration options
 fn _generator_options() {
-    println!("
+    println!(
+        "
 7. Generator Options:
-");
+"
+    );
 
     println!(
         r#"

@@ -20,16 +20,20 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::fmt::init();
 
-    println!("=== LinkML API Loading Example ===
-");
+    println!(
+        "=== LinkML API Loading Example ===
+"
+    );
 
     // Create a sample schema for a user management API
     let schema = create_user_api_schema();
 
     // Example 1: Basic API Configuration
     println!("1. Basic API Configuration");
-    println!("=========================
-");
+    println!(
+        "=========================
+"
+    );
 
     let mut basic_options = ApiOptions {
         base_url: "https://api.example.com".to_string(),
@@ -77,8 +81,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Authentication Methods
     println!("2. Authentication Methods");
-    println!("========================
-");
+    println!(
+        "========================
+"
+    );
 
     // Bearer token authentication
     let bearer_auth = AuthConfig::Bearer("your-api-token-here".to_string());
@@ -120,8 +126,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 3: Pagination Strategies
     println!("3. Pagination Strategies");
-    println!("=======================
-");
+    println!(
+        "=======================
+"
+    );
 
     // Page number pagination
     let page_pagination = PaginationConfig {
@@ -157,8 +165,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 4: Field Mapping
     println!("4. Field Mapping");
-    println!("===============
-");
+    println!(
+        "===============
+"
+    );
 
     let mut mapped_options = ApiOptions::default();
 
@@ -180,8 +190,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 5: Retry and Rate Limiting
     println!("5. Retry and Rate Limiting");
-    println!("=========================
-");
+    println!(
+        "=========================
+"
+    );
 
     let retry_config = RetryConfig {
         max_retries: 5,
@@ -214,8 +226,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 6: Loading Data
     println!("6. Loading Data");
-    println!("==============
-");
+    println!(
+        "==============
+"
+    );
 
     // Configure a complete example
     let mut github_options = ApiOptions {
@@ -273,8 +287,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 7: Dumping Data
     println!("7. Dumping Data to API");
-    println!("=====================
-");
+    println!(
+        "=====================
+"
+    );
 
     let mut crud_options = ApiOptions {
         base_url: "https://api.example.com".to_string(),
@@ -325,10 +341,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // let result = dumper.dump(&instances, &schema).await?;
     // println!("Dump result: {}", String::from_utf8_lossy(&result));
 
-    println!("
-✅ API loading examples complete!");
-    println!("
-Key features demonstrated:");
+    println!(
+        "
+✅ API loading examples complete!"
+    );
+    println!(
+        "
+Key features demonstrated:"
+    );
     println!("- Multiple authentication methods (Bearer, Basic, API Key, OAuth2)");
     println!("- Pagination strategies (Page, Offset, Cursor, Link Header)");
     println!("- Field mapping between API and LinkML");

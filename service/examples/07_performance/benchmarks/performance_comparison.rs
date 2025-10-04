@@ -8,8 +8,10 @@ use std::time::Instant;
 
 fn main() {
     println!("LinkML V2 Performance Optimizations Demonstration");
-    println!("==================================================
-");
+    println!(
+        "==================================================
+"
+    );
 
     // Demonstrate string interning performance
     demonstrate_string_interning();
@@ -27,11 +29,7 @@ fn demonstrate_string_interning() {
 
     let interner = StringInterner::with_defaults();
     let test_strings = vec![
-        "Person",
-        "name",
-        "age",
-        "email",
-        "Person", // Duplicate
+        "Person", "name", "age", "email", "Person", // Duplicate
         "name",   // Duplicate
     ];
 
@@ -65,10 +63,15 @@ fn demonstrate_string_interning() {
     println!("  With interning (V2):");
     println!("    Time: {:?}", v2_duration);
     println!("    Approx memory: {} KB", v2_memory / 1024);
-    println!("    Speedup: {:.2}x", v1_duration.as_secs_f64() / v2_duration.as_secs_f64());
-    println!("    Memory reduction: {:.1}%
+    println!(
+        "    Speedup: {:.2}x",
+        v1_duration.as_secs_f64() / v2_duration.as_secs_f64()
+    );
+    println!(
+        "    Memory reduction: {:.1}%
 ",
-             ((v1_memory - v2_memory) as f64 / v1_memory as f64) * 100.0);
+        ((v1_memory - v2_memory) as f64 / v1_memory as f64) * 100.0
+    );
 }
 
 fn demonstrate_arc_sharing() {
@@ -108,14 +111,18 @@ fn demonstrate_arc_sharing() {
     let v2_schema = SchemaV2 {
         name: Arc::from("TestSchema"),
         classes: Arc::new(vec![Arc::from("Person"), Arc::from("Organization")]),
-        slots: Arc::new(vec![Arc::from("name"), Arc::from("age"), Arc::from("email")]),
+        slots: Arc::new(vec![
+            Arc::from("name"),
+            Arc::from("age"),
+            Arc::from("email"),
+        ]),
     };
 
     let start = Instant::now();
     let mut v2_clones = Vec::new();
     for _ in 0..10000 {
         v2_clones.push(SchemaV2 {
-            name: v2_schema.name.clone(),     // Just increments refcount
+            name: v2_schema.name.clone(),       // Just increments refcount
             classes: v2_schema.classes.clone(), // Just increments refcount
             slots: v2_schema.slots.clone(),     // Just increments refcount
         });
@@ -127,8 +134,11 @@ fn demonstrate_arc_sharing() {
 
     println!("  Arc sharing (V2):");
     println!("    Time: {:?}", v2_duration);
-    println!("    Speedup: {:.2}x
-", v1_duration.as_secs_f64() / v2_duration.as_secs_f64());
+    println!(
+        "    Speedup: {:.2}x
+",
+        v1_duration.as_secs_f64() / v2_duration.as_secs_f64()
+    );
 }
 
 fn print_optimization_summary() {

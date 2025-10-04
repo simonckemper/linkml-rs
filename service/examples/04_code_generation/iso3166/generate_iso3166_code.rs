@@ -17,8 +17,10 @@ use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== Code Generation from ISO3166 LinkML Schema ===
-");
+    println!(
+        "=== Code Generation from ISO3166 LinkML Schema ===
+"
+    );
 
     // ========================================================================
     // Part 1: Load the ISO3166Entity schema
@@ -133,8 +135,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Show a preview of the generated code
     let rust_lines: Vec<&str> = rust_code.lines().collect();
     let preview_lines = 20;
-    println!("
-  Preview (first {} lines):", preview_lines);
+    println!(
+        "
+  Preview (first {} lines):",
+        preview_lines
+    );
     println!("  {}", "-".repeat(40));
     for line in rust_lines.iter().take(preview_lines) {
         println!("  {}", line);
@@ -167,8 +172,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Show a preview
     let python_lines: Vec<&str> = python_code.lines().collect();
-    println!("
-  Preview (first {} lines):", preview_lines);
+    println!(
+        "
+  Preview (first {} lines):",
+        preview_lines
+    );
     println!("  {}", "-".repeat(40));
     for line in python_lines.iter().take(preview_lines) {
         println!("  {}", line);
@@ -201,8 +209,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Show a preview
     let pydantic_lines: Vec<&str> = pydantic_code.lines().collect();
-    println!("
-  Preview (first {} lines):", preview_lines);
+    println!(
+        "
+  Preview (first {} lines):",
+        preview_lines
+    );
     println!("  {}", "-".repeat(40));
     for line in pydantic_lines.iter().take(preview_lines) {
         println!("  {}", line);
@@ -245,8 +256,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test Python dataclass code syntax
-    println!("
-Testing Python dataclass syntax:");
+    println!(
+        "
+Testing Python dataclass syntax:"
+    );
     let python_test = std::process::Command::new("python3")
         .arg("-m")
         .arg("py_compile")
@@ -264,8 +277,10 @@ Testing Python dataclass syntax:");
     }
 
     // Test Pydantic code syntax
-    println!("
-Testing Pydantic model syntax:");
+    println!(
+        "
+Testing Pydantic model syntax:"
+    );
     let pydantic_test = std::process::Command::new("python3")
         .arg("-m")
         .arg("py_compile")
@@ -357,8 +372,10 @@ print("
     println!("Created test script: {}", test_script_path.display());
 
     // Run the test script
-    println!("
-Running Python test script:");
+    println!(
+        "
+Running Python test script:"
+    );
     let test_result = std::process::Command::new("python3")
         .arg(&test_script_path)
         .env("PYTHONPATH", "/tmp")

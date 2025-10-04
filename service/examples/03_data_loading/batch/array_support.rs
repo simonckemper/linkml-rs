@@ -13,13 +13,17 @@ use serde_json::json;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("=== LinkML Array Support Example ===
-");
+    println!(
+        "=== LinkML Array Support Example ===
+"
+    );
 
     // Example 1: Scientific data arrays
     println!("1. Scientific Data Arrays");
-    println!("========================
-");
+    println!(
+        "========================
+"
+    );
 
     // Create a 3D array spec for imaging data (e.g., microscopy)
     let imaging_spec = ArraySpec::new("float")
@@ -45,8 +49,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 2: Time series data with dynamic dimension
     println!("2. Time Series Data");
-    println!("==================
-");
+    println!(
+        "==================
+"
+    );
 
     let timeseries_spec = ArraySpec::new("float")
         .with_dimension(
@@ -65,8 +71,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 3: Array data manipulation
     println!("3. Array Data Manipulation");
-    println!("=========================
-");
+    println!(
+        "=========================
+"
+    );
 
     // Create a small 2D array for demonstration
     let matrix_spec = ArraySpec::new("integer")
@@ -143,8 +151,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 4: Code generation with arrays
     println!("4. Code Generation with Arrays");
-    println!("=============================
-");
+    println!(
+        "=============================
+"
+    );
 
     // Generate Python/NumPy code
     if let Some(py_gen) = get_array_generator("python") {
@@ -173,8 +183,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Generate TypeScript code
     if let Some(ts_gen) = get_array_generator("typescript") {
-        println!("
-TypeScript code:");
+        println!(
+            "
+TypeScript code:"
+        );
         println!("----------------");
 
         let type_decl = ts_gen.generate_array_type(&matrix_spec, "Matrix");
@@ -194,8 +206,10 @@ TypeScript code:");
 
     // Generate Rust code
     if let Some(rust_gen) = get_array_generator("rust") {
-        println!("
-Rust code:");
+        println!(
+            "
+Rust code:"
+        );
         println!("----------");
 
         let type_decl = rust_gen.generate_array_type(&timeseries_spec, "TimeSeries");
@@ -214,10 +228,14 @@ Rust code:");
     }
 
     // Example 5: Schema integration
-    println!("
-5. Schema Integration");
-    println!("====================
-");
+    println!(
+        "
+5. Schema Integration"
+    );
+    println!(
+        "====================
+"
+    );
 
     // Create a schema with array slots
     let mut schema = SchemaDefinition::default();
@@ -267,8 +285,10 @@ Rust code:");
 
     // Example 6: Validation
     println!("6. Array Validation");
-    println!("==================
-");
+    println!(
+        "==================
+"
+    );
 
     // Create test data
     let test_spec = ArraySpec::new("float")
@@ -288,8 +308,10 @@ Rust code:");
     }
 
     // Try invalid shape
-    println!("
-Validating incorrect shape:");
+    println!(
+        "
+Validating incorrect shape:"
+    );
     match ArrayData::new(
         test_spec.clone(),
         vec![2, 3], // Wrong shape!
@@ -313,17 +335,23 @@ Validating incorrect shape:");
         vec![json!("a"), json!("b"), json!("c"), json!("d")], // Strings instead of floats
     )?;
 
-    println!("
-Validating incorrect type:");
+    println!(
+        "
+Validating incorrect type:"
+    );
     match ArrayValidator::validate(&wrong_type_data, &test_spec) {
         Ok(_) => println!("  ✗ Should have failed"),
         Err(e) => println!("  ✓ Correctly rejected: {}", e),
     }
 
-    println!("
-✅ Array support examples complete!");
-    println!("
-Key features demonstrated:");
+    println!(
+        "
+✅ Array support examples complete!"
+    );
+    println!(
+        "
+Key features demonstrated:"
+    );
     println!("- N-dimensional array specifications");
     println!("- Fixed and dynamic dimensions");
     println!("- Array data manipulation (slice, reshape, transpose)");
