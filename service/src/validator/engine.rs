@@ -179,9 +179,9 @@ impl ValidationEngine {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
 
-        let profiler = Arc::new(Profiler::new(Arc::new(
-            timestamp_service::wiring::wire_timestamp(),
-        )));
+        let profiler = Arc::new(Profiler::new(
+            timestamp_service::wiring::wire_timestamp().into_inner(),
+        ));
 
         Ok(Self {
             schema,
