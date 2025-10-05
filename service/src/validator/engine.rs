@@ -211,10 +211,10 @@ impl ValidationEngine {
             registry,
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service: timestamp_service.clone(),
-            profiler: Arc::new(Profiler::new(Arc::new(
-                timestamp_service::wiring::wire_timestamp(),
-            ))),
+            timestamp_service: timestamp_service.clone().into_inner(),
+            profiler: Arc::new(Profiler::new(
+                timestamp_service::wiring::wire_timestamp().into_inner(),
+            )),
         })
     }
 
