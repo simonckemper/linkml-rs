@@ -317,7 +317,7 @@ impl PluginManager {
     /// Create a new plugin manager
     pub fn new(logger: Arc<dyn LoggerService<Error = LoggerError>>) -> Self {
         Self {
-            registry: PluginRegistry::new(timestamp_service::wiring::wire_timestamp()),
+            registry: PluginRegistry::new(timestamp_service::wiring::wire_timestamp().into_inner()),
             loader: DynamicLoader::new(),
             discovery: PluginDiscovery::new(),
             compatibility: CompatibilityChecker::new(),

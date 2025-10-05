@@ -114,7 +114,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
+            timestamp_service: timestamp_service.into_inner(),
         }
     }
 
@@ -167,7 +167,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service,
+            timestamp_service: timestamp_service.into_inner(),
         }
     }
 

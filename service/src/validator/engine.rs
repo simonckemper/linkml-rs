@@ -149,7 +149,8 @@ impl ValidationEngine {
     pub fn new(schema: &SchemaDefinition) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        // Use direct instantiation for sync timestamp service (no wiring function exists yet)
+        let timestamp_service = Arc::new(timestamp_core::factory::create_sync_chrono_timestamp_service());
         let profiler = Arc::new(Profiler::new(
             timestamp_service::wiring::wire_timestamp().into_inner(),
         ));
@@ -159,7 +160,7 @@ impl ValidationEngine {
             registry,
             compiled_cache: None,
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service: timestamp_service.into_inner(),
+            timestamp_service,
             profiler,
         })
     }
@@ -204,14 +205,15 @@ impl ValidationEngine {
     ) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        // Use direct instantiation for sync timestamp service (no wiring function exists yet)
+        let timestamp_service = Arc::new(timestamp_core::factory::create_sync_chrono_timestamp_service());
 
         Ok(Self {
             schema,
             registry,
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service: timestamp_service.clone().into_inner(),
+            timestamp_service: timestamp_service.clone(),
             profiler: Arc::new(Profiler::new(
                 timestamp_service::wiring::wire_timestamp().into_inner(),
             )),
@@ -237,9 +239,9 @@ impl ValidationEngine {
             compiled_cache: Some(cache),
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service,
-            profiler: Arc::new(Profiler::new(Arc::new(
-                timestamp_service::wiring::wire_timestamp(),
-            ))),
+            profiler: Arc::new(Profiler::new(
+                timestamp_service::wiring::wire_timestamp().into_inner(),
+            )),
         })
     }
 

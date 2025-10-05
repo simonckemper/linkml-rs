@@ -259,7 +259,7 @@ impl MigrationEngine {
         Self {
             from_schema,
             to_schema,
-            timestamp_service,
+            timestamp_service: timestamp_service.into_inner(),
         }
     }
 

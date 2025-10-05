@@ -84,7 +84,7 @@ impl SssomGenerator {
     /// Create a new SSSOM generator
     #[must_use]
     pub fn new(config: SssomGeneratorConfig) -> Self {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let timestamp_utils = Arc::new(TimestampUtils::new(timestamp_service));
         Self {
             config,
@@ -99,7 +99,7 @@ impl SssomGenerator {
         config: SssomGeneratorConfig,
         options: super::traits::GeneratorOptions,
     ) -> Self {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let timestamp_utils = Arc::new(TimestampUtils::new(timestamp_service));
         Self {
             config,

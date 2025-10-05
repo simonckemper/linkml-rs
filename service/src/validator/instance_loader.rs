@@ -360,7 +360,7 @@ pub struct CacheStats {
 
 impl Default for InstanceLoader {
     fn default() -> Self {
-        let timestamp_service = wire_timestamp();
+        let timestamp_service = wire_timestamp().into_inner();
         Self::new(timestamp_service)
     }
 }

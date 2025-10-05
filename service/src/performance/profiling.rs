@@ -226,7 +226,7 @@ impl Profiler {
 
 impl Default for Profiler {
     fn default() -> Self {
-        Self::new(wire_timestamp())
+        Self::new(wire_timestamp().into_inner())
     }
 }
 

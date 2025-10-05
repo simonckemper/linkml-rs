@@ -328,7 +328,7 @@ impl<O: TimeoutService> SandboxedPlugin<O> {
             plugin,
             sandbox,
             timeout_service,
-            timestamp_service: timestamp_service::wiring::wire_timestamp(),
+            timestamp_service: timestamp_service::wiring::wire_timestamp().into_inner(),
         }
     }
 

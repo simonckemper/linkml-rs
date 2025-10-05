@@ -817,7 +817,7 @@ impl SecurityManager {
     ///
     /// Returns an error if input sanitizer creation fails due to invalid regex patterns.
     pub fn new(config: SecurityConfig) -> linkml_core::error::Result<Self> {
-        let timestamp_service = wire_timestamp();
+        let timestamp_service = wire_timestamp().into_inner();
         Ok(Self {
             sanitizer: InputSanitizer::new(config.clone())?,
             path_validator: PathValidator::new(config.clone()),
