@@ -168,11 +168,11 @@ impl ResourceMonitor {
             |_| self.start_timestamp,
             |st| {
                 // Timestamp values are within i64 range for reasonable time periods
-                let timestamp = st
+                
+                st
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_secs() as i64;
-                timestamp
+                    .as_secs() as i64
             },
         ); // Use start if service fails
 
@@ -201,11 +201,11 @@ impl ResourceMonitor {
             |_| start_timestamp,
             |st| {
                 // Timestamp values are within i64 range for reasonable time periods
-                let timestamp = st
+                
+                st
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_secs() as i64;
-                timestamp
+                    .as_secs() as i64
             },
         ); // Use start if service fails
 

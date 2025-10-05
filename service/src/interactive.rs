@@ -222,8 +222,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             return Err(LinkMLError::service("Empty command"));
         }
 
-        let first_part = parts
-            .get(0)
+        let first_part = parts.first()
             .ok_or_else(|| LinkMLError::service("Empty command".to_string()))?;
 
         match first_part.to_lowercase().as_str() {
@@ -252,7 +251,7 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
                     .get(1)
                     .ok_or_else(|| LinkMLError::service("Missing schema name argument"))?;
                 Ok(Command::Use {
-                    name: name.to_string(),
+                    name: (*name).to_string(),
                 })
             }
 

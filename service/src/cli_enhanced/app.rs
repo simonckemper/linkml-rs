@@ -964,27 +964,25 @@ impl LinkMLApp {
                     },
                     "namespace" => {
                         let namespace = value.trim().to_string();
-                        if !namespace.is_empty() {
-                            generator_options
-                                .custom
-                                .insert("namespace".to_string(), namespace);
-                        } else {
+                        if namespace.is_empty() {
                             return Err(LinkMLError::config(
                                 "Namespace value cannot be empty".to_string(),
                             ));
                         }
+                        generator_options
+                            .custom
+                            .insert("namespace".to_string(), namespace);
                     }
                     "package" => {
                         let package = value.trim().to_string();
-                        if !package.is_empty() {
-                            generator_options
-                                .custom
-                                .insert("package_name".to_string(), package);
-                        } else {
+                        if package.is_empty() {
                             return Err(LinkMLError::config(
                                 "Package value cannot be empty".to_string(),
                             ));
                         }
+                        generator_options
+                            .custom
+                            .insert("package_name".to_string(), package);
                     }
                     unknown_key => {
                         return Err(LinkMLError::config(format!(

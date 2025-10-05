@@ -181,7 +181,7 @@ mod tests {
                 assert_eq!(size, 11);
                 assert_eq!(max, 10);
             }
-            _ => assert!(false, "Expected StringTooLarge error")}
+            _ => panic!("Expected StringTooLarge error")}
     }
 
     #[test]
@@ -189,10 +189,10 @@ mod tests {
         let interner = StringInterner::new(2, 100);
 
         if let Err(e) = interner.intern("a") {
-            assert!(false, "Should intern first string: {e}");
+            panic!("Should intern first string: {e}");
         }
         if let Err(e) = interner.intern("b") {
-            assert!(false, "Should intern second string: {e}");
+            panic!("Should intern second string: {e}");
         }
 
         match interner.intern("c") {
@@ -200,7 +200,7 @@ mod tests {
                 assert_eq!(current, 2);
                 assert_eq!(max, 2);
             }
-            _ => assert!(false, "Expected CacheFull error")}
+            _ => panic!("Expected CacheFull error")}
         Ok(())
     }
 

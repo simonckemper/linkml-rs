@@ -624,7 +624,7 @@ mod tests {
                 assert!(arr.contains(&json!(1)));
                 assert!(arr.contains(&json!(2)));
             }
-            _ => assert!(false, "Expected array of modes"),
+            _ => panic!("Expected array of modes"),
         }
         Ok(())
     }
@@ -699,7 +699,7 @@ mod tests {
                     assert_eq!(veggies.len(), 2);
                 }
             }
-            _ => assert!(false, "Expected object result"),
+            _ => panic!("Expected object result"),
         }
         Ok(())
     }

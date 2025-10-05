@@ -371,7 +371,7 @@ impl DataIntrospector for JsonIntrospector {
         Ok(stats)
     }
 
-    fn format_name(&self) -> &str {
+    fn format_name(&self) -> &'static str {
         "json"
     }
 

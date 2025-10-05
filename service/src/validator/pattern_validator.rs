@@ -443,7 +443,7 @@ mod tests {
         let mut validator = match PatternValidator::new() {
             Ok(v) => v,
             Err(e) => {
-                assert!(false, "Failed to create pattern validator: {e}");
+                panic!("Failed to create pattern validator: {e}");
                 return;
             }
         };
@@ -480,7 +480,7 @@ mod tests {
         let mut validator = match PatternValidator::new() {
             Ok(v) => v,
             Err(e) => {
-                assert!(false, "Failed to create pattern validator: {e}");
+                panic!("Failed to create pattern validator: {e}");
                 return Ok(());
             }
         };
@@ -524,7 +524,7 @@ mod tests {
         let mut validator = match PatternValidator::new() {
             Ok(v) => v,
             Err(e) => {
-                assert!(false, "Failed to create pattern validator: {e}");
+                panic!("Failed to create pattern validator: {e}");
                 return Ok(());
             }
         };

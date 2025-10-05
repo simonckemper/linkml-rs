@@ -1179,21 +1179,21 @@ mod tests {
         if let AuthConfig::Bearer(token) = bearer {
             assert_eq!(token, "token123");
         } else {
-            assert!(false, "Expected Bearer variant");
+            panic!("Expected Bearer variant");
         }
 
         if let AuthConfig::Basic { username, password } = basic {
             assert_eq!(username, "user");
             assert_eq!(password, "pass");
         } else {
-            assert!(false, "Expected Basic variant");
+            panic!("Expected Basic variant");
         }
 
         if let AuthConfig::ApiKey { header_name, key } = api_key {
             assert_eq!(header_name, "X-API-Key");
             assert_eq!(key, "key123");
         } else {
-            assert!(false, "Expected ApiKey variant");
+            panic!("Expected ApiKey variant");
         }
     }
 

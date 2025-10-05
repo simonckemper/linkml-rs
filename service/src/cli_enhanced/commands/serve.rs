@@ -409,7 +409,6 @@ async fn create_shutdown_signal() {
     let ctrl_c = async {
         if let Err(e) = tokio::signal::ctrl_c().await {
             eprintln!("Failed to install Ctrl+C handler: {e}");
-            return;
         }
     };
 
@@ -421,7 +420,6 @@ async fn create_shutdown_signal() {
             }
             Err(e) => {
                 eprintln!("Failed to install signal handler: {e}");
-                return;
             }
         }
     };

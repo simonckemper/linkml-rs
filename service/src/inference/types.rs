@@ -241,7 +241,7 @@ impl ChildStats {
 
     /// Check if this child is multivalued
     pub fn is_multivalued(&self) -> bool {
-        self.max_occurs.map_or(false, |max| max > 1)
+        self.max_occurs.is_some_and(|max| max > 1)
     }
 }
 

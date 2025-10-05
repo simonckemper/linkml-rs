@@ -222,9 +222,9 @@ impl CsvIntrospector {
         // If we have a second row, compare characteristics
         if let Some(second) = second_row {
             let first_avg_len: usize =
-                first_row.iter().map(|v| v.len()).sum::<usize>() / first_row.len().max(1);
+                first_row.iter().map(str::len).sum::<usize>() / first_row.len().max(1);
             let second_avg_len: usize =
-                second.iter().map(|v| v.len()).sum::<usize>() / second.len().max(1);
+                second.iter().map(str::len).sum::<usize>() / second.len().max(1);
 
             // Headers are typically shorter and all non-numeric
             all_non_numeric && first_avg_len < second_avg_len
@@ -479,7 +479,7 @@ impl DataIntrospector for CsvIntrospector {
         self.analyze_with_reader(reader, doc_id).await
     }
 
-    fn format_name(&self) -> &str {
+    fn format_name(&self) -> &'static str {
         "csv"
     }
 

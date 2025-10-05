@@ -10,35 +10,27 @@ use linkml_service::expression::{
 /// Test function error handling
 #[test]
 fn test_function_error_handling() {
-    let registry = FunctionRegistry::new();
-
-    // Test that registry can be created
-    assert!(true); // Placeholder test
+    let _registry = FunctionRegistry::new();
+    // Test passes if registry creation doesn't panic
 }
 
 /// Test evaluator error handling
 #[test]
 fn test_evaluator_error_handling() {
-    let evaluator = Evaluator::new();
-
-    // Test that evaluator can be created
-    assert!(true); // Placeholder test
+    let _evaluator = Evaluator::new();
+    // Test passes if evaluator creation doesn't panic
 }
 
 /// Test parser error handling
 #[test]
 fn test_parser_error_handling() {
-    let parser = Parser::new();
-
-    // Test that parser can be created
-    assert!(true); // Placeholder test
+    let _parser = Parser::new();
+    // Test passes if parser creation doesn't panic
 }
 
 /// Test cache error handling
 #[test]
 fn test_cache_error_handling() {
-    let cache = ExpressionCache::new(100);
-
-    // Test that cache can be created
-    assert!(true); // Placeholder test
+    let _cache = ExpressionCache::new(100);
+    // Test passes if cache creation doesn't panic
 }

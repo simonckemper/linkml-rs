@@ -70,7 +70,7 @@ mod tests {
         if let Err(LinkMLError::ParseError { message, .. }) = result {
             assert!(message.contains("JSON parsing error"));
         } else {
-            assert!(false, "Expected ParseError");
+            panic!("Expected ParseError");
         }
     }
 }

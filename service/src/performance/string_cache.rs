@@ -235,7 +235,7 @@ mod tests {
             Err(InternError::StringTooLarge(size)) => {
                 assert_eq!(size, MAX_STRING_LENGTH + 1);
             }
-            _ => assert!(false, "Expected StringTooLarge error"),
+            _ => panic!("Expected StringTooLarge error"),
         }
     }
 

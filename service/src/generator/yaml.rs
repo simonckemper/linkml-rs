@@ -145,7 +145,7 @@ impl YamlGenerator {
             let contributors: Vec<serde_yaml::Value> = schema
                 .contributors
                 .iter()
-                .map(|c| Self::contributor_to_yaml(c))
+                .map(Self::contributor_to_yaml)
                 .collect();
             root.insert(
                 "contributors".to_string(),

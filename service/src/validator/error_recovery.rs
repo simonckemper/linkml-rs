@@ -615,7 +615,7 @@ mod tests {
             RecoveryAction::Retry { delay } => {
                 assert!(delay.as_millis() >= 100);
             }
-            _ => assert!(false, "Expected retry action"),
+            _ => panic!("Expected retry action"),
         }
         Ok(())
     }

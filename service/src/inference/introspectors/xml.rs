@@ -330,7 +330,7 @@ impl DataIntrospector for XmlIntrospector {
 
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
+                Ok(Event::Start(e) | Event::Empty(e)) => {
                     let raw_name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                     let (prefix, local_name) = Self::parse_qname(&raw_name);
 
@@ -433,9 +433,7 @@ impl DataIntrospector for XmlIntrospector {
                         }
                     }
 
-                    if current_depth > 0 {
-                        current_depth -= 1;
-                    }
+                    current_depth = current_depth.saturating_sub(1);
                 }
                 Ok(Event::Text(e)) => {
                     if let Some(current_element) = element_stack.last() {
@@ -522,7 +520,7 @@ impl DataIntrospector for XmlIntrospector {
         Ok(stats)
     }
 
-    fn format_name(&self) -> &str {
+    fn format_name(&self) -> &'static str {
         "xml"
     }
 
