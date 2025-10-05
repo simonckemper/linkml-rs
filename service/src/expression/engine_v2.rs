@@ -149,7 +149,7 @@ impl ExpressionEngineV2 {
         config: EngineConfig,
         function_registry: Arc<FunctionRegistry>,
     ) -> Self {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_arc();
+        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
 
         Self {
             parser: Parser::new(),
