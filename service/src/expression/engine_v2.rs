@@ -98,7 +98,7 @@ impl ExpressionEngineV2 {
     #[must_use]
     pub fn new(config: EngineConfig) -> Self {
         let function_registry = Arc::new(FunctionRegistry::new());
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
 
         Self {
             parser: Parser::new(),
@@ -114,7 +114,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service: timestamp_service.into_inner(),
+            timestamp_service,
         }
     }
 
@@ -149,7 +149,7 @@ impl ExpressionEngineV2 {
         config: EngineConfig,
         function_registry: Arc<FunctionRegistry>,
     ) -> Self {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
 
         Self {
             parser: Parser::new(),
@@ -167,7 +167,7 @@ impl ExpressionEngineV2 {
             )),
             config,
             metrics: Arc::new(std::sync::RwLock::new(PerformanceMetrics::default())),
-            timestamp_service: timestamp_service.into_inner(),
+            timestamp_service,
         }
     }
 

@@ -50,7 +50,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator: Arc::new(Evaluator::new()),
-            timestamp_service: timestamp_service::wiring::wire_timestamp(),
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
         }
     }
 
@@ -60,7 +60,7 @@ impl ExpressionEngine {
         Self {
             parser: Parser::new(),
             evaluator,
-            timestamp_service: timestamp_service::wiring::wire_timestamp(),
+            timestamp_service: timestamp_service::factory::create_sync_timestamp_service(),
         }
     }
 
