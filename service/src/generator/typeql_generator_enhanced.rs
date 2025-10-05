@@ -145,7 +145,7 @@ impl EnhancedTypeQLGenerator {
     /// Create a new enhanced `TypeQL` generator
     #[must_use]
     pub fn new() -> Self {
-        let timestamp_service = timestamp_service::factory::create_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
         let timestamp_utils = Arc::new(SyncTimestampUtils::new(timestamp_service));
         Self {
             name: "typeql-enhanced".to_string(),

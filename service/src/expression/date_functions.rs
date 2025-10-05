@@ -515,7 +515,7 @@ mod tests {
     fn test_now_today() {
         use timestamp_service::create_timestamp_service;
 
-        let timestamp_service = create_timestamp_service();
+        let timestamp_service = wire_timestamp();
 
         let now_fn = NowFunction::new(timestamp_service.clone());
         let result = now_fn.call(vec![]).expect("now_fn.call should succeed");

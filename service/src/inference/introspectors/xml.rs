@@ -618,7 +618,7 @@ mod tests {
     ) {
         let logger =
             create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         (logger, timestamp)
     }
 

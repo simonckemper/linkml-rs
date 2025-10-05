@@ -48,7 +48,7 @@ impl FactoryIntegrationFixture {
         let logger = create_logger_service().await
             .expect("Logger service should be created successfully");
 
-        let timestamp = create_timestamp_service()
+        let timestamp = wire_timestamp()
             .expect("Timestamp service should be created successfully");
 
         let random = create_random_service()
@@ -96,7 +96,7 @@ async fn test_complete_factory_dependency_injection() {
     let logger = create_logger_service().await
         .expect("Logger service creation should succeed");
 
-    let timestamp = create_timestamp_service()
+    let timestamp = wire_timestamp()
         .expect("Timestamp service creation should succeed");
 
     let random = create_random_service()
@@ -247,7 +247,7 @@ async fn test_factory_error_handling() {
 
     // Create a mock service that will fail initialization
     let failing_logger = create_failing_logger();
-    let timestamp = create_timestamp_service()
+    let timestamp = wire_timestamp()
         .expect("Timestamp service should work");
     let random = create_random_service()
         .expect("Random service should work");

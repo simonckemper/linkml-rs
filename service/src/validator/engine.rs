@@ -149,9 +149,9 @@ impl ValidationEngine {
     pub fn new(schema: &SchemaDefinition) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
         let profiler = Arc::new(Profiler::new(
-            timestamp_service::factory::create_timestamp_service(),
+            timestamp_service::wiring::wire_timestamp().into_inner(),
         ));
 
         Ok(Self {
@@ -159,7 +159,7 @@ impl ValidationEngine {
             registry,
             compiled_cache: None,
             buffer_pools: Arc::new(ValidationBufferPools::new()),
-            timestamp_service,
+            timestamp_service: timestamp_service.into_inner(),
             profiler,
         })
     }
@@ -180,7 +180,7 @@ impl ValidationEngine {
         let registry = ValidatorRegistry::new(&schema)?;
 
         let profiler = Arc::new(Profiler::new(Arc::new(
-            timestamp_service::factory::create_timestamp_service(),
+            timestamp_service::wiring::wire_timestamp(),
         )));
 
         Ok(Self {
@@ -204,7 +204,7 @@ impl ValidationEngine {
     ) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
 
         Ok(Self {
             schema,
@@ -213,7 +213,7 @@ impl ValidationEngine {
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service: timestamp_service.clone(),
             profiler: Arc::new(Profiler::new(Arc::new(
-                timestamp_service::factory::create_timestamp_service(),
+                timestamp_service::wiring::wire_timestamp(),
             ))),
         })
     }
@@ -238,7 +238,7 @@ impl ValidationEngine {
             buffer_pools: Arc::new(ValidationBufferPools::new()),
             timestamp_service,
             profiler: Arc::new(Profiler::new(Arc::new(
-                timestamp_service::factory::create_timestamp_service(),
+                timestamp_service::wiring::wire_timestamp(),
             ))),
         })
     }

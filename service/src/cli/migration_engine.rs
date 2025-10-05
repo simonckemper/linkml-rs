@@ -255,7 +255,7 @@ impl MigrationEngine {
     /// Create a new migration engine
     #[must_use]
     pub fn new(from_schema: SchemaDefinition, to_schema: SchemaDefinition) -> Self {
-        let timestamp_service = timestamp_service::factory::create_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
         Self {
             from_schema,
             to_schema,

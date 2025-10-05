@@ -574,7 +574,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_plugin_registration() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let timestamp_service = timestamp_service::factory::create_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
         let registry = PluginRegistry::new(timestamp_service);
 
         let plugin = Box::new(MockPlugin {
@@ -610,7 +610,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_plugin_lifecycle() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let timestamp_service = timestamp_service::factory::create_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp();
         let registry = PluginRegistry::new(timestamp_service);
 
         let plugin = Box::new(MockPlugin {

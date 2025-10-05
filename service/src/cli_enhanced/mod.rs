@@ -18,8 +18,8 @@ pub use types::{
 /// # Errors
 /// Returns error if CLI execution fails or encounters invalid arguments.
 pub async fn run() -> linkml_core::error::Result<()> {
-    use timestamp_core::factory::create_timestamp_service;
-    let timestamp_service = create_timestamp_service();
-    let app = LinkMLApp::from_args_with_timestamp(timestamp_service);
+    use timestamp_service::wiring::wire_timestamp;
+    let timestamp_service = wire_timestamp();
+    let app = LinkMLApp::from_args_with_timestamp(timestamp_service.into_inner());
     app.run().await
 }

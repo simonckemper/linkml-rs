@@ -277,7 +277,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_timestamp_utils() -> Result<()> {
-        let ts_service = create_timestamp_service();
+        let ts_service = wire_timestamp();
         let utils = TimestampUtils::new(ts_service);
 
         // Test getting current time
@@ -306,7 +306,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sync_utils() -> Result<()> {
-        let ts_service = create_timestamp_service();
+        let ts_service = wire_timestamp();
         let utils = SyncTimestampUtils::new(ts_service);
 
         // Test blocking operations

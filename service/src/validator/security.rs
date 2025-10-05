@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use timestamp_core::TimestampService;
-use timestamp_core::factory;
+use timestamp_service::wiring::wire_timestamp;
 
 // Pre-compile regex patterns at startup to avoid runtime compilation
 static SENSITIVE_DATA_PATTERNS: std::sync::LazyLock<Vec<linkml_core::error::Result<Regex>>> =
@@ -817,7 +817,7 @@ impl SecurityManager {
     ///
     /// Returns an error if input sanitizer creation fails due to invalid regex patterns.
     pub fn new(config: SecurityConfig) -> linkml_core::error::Result<Self> {
-        let timestamp_service = factory::create_timestamp_service();
+        let timestamp_service = wire_timestamp();
         Ok(Self {
             sanitizer: InputSanitizer::new(config.clone())?,
             path_validator: PathValidator::new(config.clone()),

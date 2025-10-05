@@ -2352,7 +2352,7 @@ def migrate():
 /// Returns an error if the CLI service cannot be created or initialized.
 pub async fn run() -> linkml_core::error::Result<()> {
     // Create timestamp service (available)
-    let timestamp_service = timestamp_service::factory::create_timestamp_service();
+    let timestamp_service = timestamp_service::wiring::wire_timestamp();
 
     // For CLI usage, we'll skip the complex service dependencies
     // and use a minimal service that doesn't require all the complex setup
@@ -2363,7 +2363,7 @@ pub async fn run() -> linkml_core::error::Result<()> {
     })?;
 
     // Create and run CLI app
-    let app = CliApp::new(Arc::new(linkml_service), timestamp_service.clone());
+    let app = CliApp::new(Arc::new(linkml_service), timestamp_service.clone().into_inner());
     app.run().await
 }
 

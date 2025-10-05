@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create required services
     let logger = create_logger_service()?;
-    let timestamp = create_timestamp_service()?;
+    let timestamp = wire_timestamp()?;
 
     // Create CSV introspector
     let introspector = CsvIntrospector::new(logger, timestamp);

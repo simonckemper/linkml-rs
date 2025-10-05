@@ -483,7 +483,7 @@ async fn create_integrated_linkml_service(schema_path: &str) -> Result<()> {
     // 1. Create all required service dependencies using factory functions
     let logger = logger_service::factory::create_logger_service().await?;
     let config = configuration_service::factory::create_configuration_service().await?;
-    let timestamp = timestamp_service::factory::create_timestamp_service();
+    let timestamp = timestamp_service::wiring::wire_timestamp();
     // ... create all 17 dependencies
 
     // 2. Create REST API service dependencies

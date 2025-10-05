@@ -81,7 +81,7 @@ slots:
     let _engine = ValidationEngine::new(&schema).expect("Test operation failed");
 
     // Load instance data
-    let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+    let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
     let loader = InstanceLoader::new(timestamp_service);
     let country_config = InstanceConfig {
         key_field: "code".to_string(),
@@ -175,7 +175,7 @@ WOMN,Womens,CLOT
         .expect("Test operation failed");
 
     // Load CSV data
-    let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+    let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
     let loader = InstanceLoader::new(timestamp_service);
     let config = InstanceConfig {
         key_field: "id".to_string(),
@@ -247,7 +247,7 @@ slots:
         .expect("Test operation failed");
 
     // Load instance data
-    let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+    let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
     let loader = InstanceLoader::new(timestamp_service);
     let config = InstanceConfig {
         key_field: "id".to_string(),

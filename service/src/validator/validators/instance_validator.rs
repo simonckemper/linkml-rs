@@ -379,7 +379,7 @@ mod tests {
 
     #[test]
     fn test_instance_validation() {
-        let timestamp_service = Arc::new(timestamp_service::factory::create_timestamp_service());
+        let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
         let loader = Arc::new(InstanceLoader::new(timestamp_service));
         let validator = InstanceValidator::new(loader);
 

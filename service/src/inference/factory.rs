@@ -12,7 +12,7 @@ use logger_core::{LoggerError, LoggerService};
 use logger_service::factory::create_logger_service;
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
-use timestamp_service::factory::create_timestamp_service;
+use timestamp_service::wiring::wire_timestamp;
 
 /// Create a fully-configured XML introspector
 ///
@@ -34,7 +34,7 @@ use timestamp_service::factory::create_timestamp_service;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let logger = create_logger_service()?;
-/// let timestamp = create_timestamp_service()?;
+/// let timestamp = wire_timestamp()?;
 /// let introspector = create_xml_introspector(logger, timestamp)?;
 /// # Ok(())
 /// # }
@@ -66,7 +66,7 @@ pub fn create_xml_introspector(
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let logger = create_logger_service()?;
-/// let timestamp = create_timestamp_service()?;
+/// let timestamp = wire_timestamp()?;
 /// let introspector = create_json_introspector(logger, timestamp)?;
 /// # Ok(())
 /// # }
@@ -98,7 +98,7 @@ pub fn create_json_introspector(
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let logger = create_logger_service()?;
-/// let timestamp = create_timestamp_service()?;
+/// let timestamp = wire_timestamp()?;
 /// let introspector = create_csv_introspector(logger, timestamp)?;
 /// # Ok(())
 /// # }
@@ -145,9 +145,9 @@ pub async fn create_inference_engine() -> InferenceResult<Arc<InferenceEngine>> 
         .await
         .map_err(|e| crate::inference::traits::InferenceError::ServiceError(e.to_string()))?;
 
-    let timestamp = create_timestamp_service();
+    let timestamp = wire_timestamp();
 
-    create_inference_engine_with_services(logger, timestamp).await
+    create_inference_engine_with_services(logger, timestamp.into_inner()).await
 }
 
 /// Create inference engine with provided services
@@ -173,7 +173,7 @@ pub async fn create_inference_engine() -> InferenceResult<Arc<InferenceEngine>> 
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let logger = create_logger_service()?;
-/// let timestamp = create_timestamp_service()?;
+/// let timestamp = wire_timestamp()?;
 /// let engine = create_inference_engine_with_services(logger, timestamp).await?;
 /// # Ok(())
 /// # }
@@ -230,7 +230,7 @@ pub async fn create_inference_engine_with_services(
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let logger = create_logger_service()?;
-/// let timestamp = create_timestamp_service()?;
+/// let timestamp = wire_timestamp()?;
 ///
 /// let config = InferenceConfig {
 ///     min_samples_for_type_inference: 10,
@@ -282,7 +282,7 @@ mod tests {
     async fn test_create_introspectors() {
         let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
         let timestamp =
-            timestamp_service::create_timestamp_service().expect("Failed to create timestamp");
+            timestamp_service::wire_timestamp().expect("Failed to create timestamp");
 
         // Test XML introspector creation
         let xml = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp));
@@ -312,7 +312,7 @@ mod tests {
     async fn test_create_inference_engine_with_custom_config() {
         let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
         let timestamp =
-            timestamp_service::create_timestamp_service().expect("Failed to create timestamp");
+            timestamp_service::wire_timestamp().expect("Failed to create timestamp");
 
         let config = InferenceConfig {
             min_samples_for_type_inference: 10,

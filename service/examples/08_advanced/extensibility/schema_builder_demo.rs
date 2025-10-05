@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== LinkML Schema Builder Demo ===\n");
 
     // Create timestamp service
-    let timestamp_service = create_timestamp_service()?;
+    let timestamp_service = wire_timestamp()?;
 
     // Example 1: Simple Person Schema
     println!("Example 1: Building a Person schema...");

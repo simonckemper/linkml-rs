@@ -422,7 +422,7 @@ async fn main() -> Result<()> {
 
     // Create services needed for inference
     let logger = logger_service::factory::create_logger_service()?;
-    let timestamp = timestamp_service::factory::create_timestamp_service();
+    let timestamp = timestamp_service::wiring::wire_timestamp();
 
     // Create XML introspector for PAGE-XML analysis
     let xml_introspector = linkml_service::inference::introspectors::xml::XmlIntrospector::new(

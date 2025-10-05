@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
-use timestamp_core::factory::create_timestamp_service;
+use timestamp_service::wiring::wire_timestamp;
 
 /// Local timestamp service trait for profiling
 pub trait LocalTimestampService: Send + Sync {
@@ -226,7 +226,7 @@ impl Profiler {
 
 impl Default for Profiler {
     fn default() -> Self {
-        Self::new(create_timestamp_service())
+        Self::new(wire_timestamp())
     }
 }
 
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_profiler() {
-        let profiler = Profiler::new(create_timestamp_service());
+        let profiler = Profiler::new(wire_timestamp());
 
         // Time some operations
         profiler.time("test_op", || {
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn test_timing_guard() {
-        let profiler = Profiler::new(create_timestamp_service());
+        let profiler = Profiler::new(wire_timestamp());
 
         {
             let _guard = TimingGuard::new(&profiler, "test_scope");

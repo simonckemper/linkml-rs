@@ -277,7 +277,7 @@ pub fn example_real_integration() -> Result<()> {
     // Create all 17 service dependencies (abbreviated for clarity)
     // let logger = create_logger_service().await?;
     // let config = create_configuration_service().await?;
-    // let timestamp = create_timestamp_service();
+    // let timestamp = wire_timestamp();
     // let shutdown = create_shutdown_service(logger.clone(), timestamp.clone()).await?;
     // ... create all other services
 

@@ -17,7 +17,7 @@ use timestamp_core::factory::create_timestamp_service;
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize logger service
-    let timestamp = create_timestamp_service();
+    let timestamp = wire_timestamp();
     let logger = Arc::new(create_development_logger(timestamp).await?);
 
     // Create plugin manager

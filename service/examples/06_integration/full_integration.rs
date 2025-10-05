@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Phase 1: Creating core services...");
     let logger = create_logger_service().await?;
     let config = create_configuration_service().await?;
-    let timestamp = create_timestamp_service();
+    let timestamp = wire_timestamp();
     let hash = create_hash_service();
     let random = create_random_service();
 

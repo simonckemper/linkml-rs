@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use timestamp_core::TimestampService;
-use timestamp_core::factory;
+use timestamp_service::wiring::wire_timestamp;
 
 /// Instance data for permissible values
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -360,7 +360,7 @@ pub struct CacheStats {
 
 impl Default for InstanceLoader {
     fn default() -> Self {
-        let timestamp_service = factory::create_timestamp_service();
+        let timestamp_service = wire_timestamp();
         Self::new(timestamp_service)
     }
 }
@@ -386,7 +386,7 @@ mod tests {
             .await
             .expect("should write test JSON file: {}");
 
-        let timestamp_service = Arc::new(factory::create_timestamp_service());
+        let timestamp_service = Arc::new(factory::wire_timestamp());
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig {
             key_field: "code".to_string(),
@@ -438,7 +438,7 @@ CA,Canada
             .await
             .expect("should write test CSV file: {}");
 
-        let timestamp_service = Arc::new(factory::create_timestamp_service());
+        let timestamp_service = Arc::new(factory::wire_timestamp());
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig {
             key_field: "code".to_string(),
@@ -472,7 +472,7 @@ CA,Canada
             .await
             .expect("should write test JSON file for caching: {}");
 
-        let timestamp_service = Arc::new(factory::create_timestamp_service());
+        let timestamp_service = Arc::new(factory::wire_timestamp());
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig::default();
 

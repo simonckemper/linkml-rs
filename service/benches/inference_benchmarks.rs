@@ -172,7 +172,7 @@ fn bench_xml_introspector_sizes(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let logger = create_logger_service().unwrap();
-            let timestamp = create_timestamp_service();
+            let timestamp = wire_timestamp();
             let introspector = XmlIntrospector::new(logger, timestamp);
 
             b.to_async(&rt)
@@ -194,7 +194,7 @@ fn bench_xml_introspector_depth(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(depth), depth, |b, _| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let logger = create_logger_service().unwrap();
-            let timestamp = create_timestamp_service();
+            let timestamp = wire_timestamp();
             let introspector = XmlIntrospector::new(logger, timestamp);
 
             b.to_async(&rt)
@@ -210,7 +210,7 @@ fn bench_xml_page_xml_analysis(c: &mut Criterion) {
     c.bench_function("xml_page_xml_real_world", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = XmlIntrospector::new(logger, timestamp);
         let data = generate_page_xml().as_bytes();
 
@@ -224,7 +224,7 @@ fn bench_xml_schema_generation(c: &mut Criterion) {
     c.bench_function("xml_schema_generation", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = XmlIntrospector::new(logger, timestamp);
         let xml = generate_simple_xml(100);
 
@@ -252,7 +252,7 @@ fn bench_json_introspector_sizes(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let logger = create_logger_service().unwrap();
-            let timestamp = create_timestamp_service();
+            let timestamp = wire_timestamp();
             let introspector = JsonIntrospector::new(logger, timestamp);
 
             b.to_async(&rt)
@@ -274,7 +274,7 @@ fn bench_json_introspector_depth(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(depth), depth, |b, _| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let logger = create_logger_service().unwrap();
-            let timestamp = create_timestamp_service();
+            let timestamp = wire_timestamp();
             let introspector = JsonIntrospector::new(logger, timestamp);
 
             b.to_async(&rt)
@@ -290,7 +290,7 @@ fn bench_json_complex_schema(c: &mut Criterion) {
     c.bench_function("json_complex_schema_analysis", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = JsonIntrospector::new(logger, timestamp);
         let data = generate_complex_json().as_bytes();
 
@@ -304,7 +304,7 @@ fn bench_json_schema_generation(c: &mut Criterion) {
     c.bench_function("json_schema_generation", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = JsonIntrospector::new(logger, timestamp);
         let json = generate_simple_json(100);
 
@@ -332,7 +332,7 @@ fn bench_csv_introspector_sizes(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             let logger = create_logger_service().unwrap();
-            let timestamp = create_timestamp_service();
+            let timestamp = wire_timestamp();
             let introspector = CsvIntrospector::new(logger, timestamp);
 
             b.to_async(&rt)
@@ -348,7 +348,7 @@ fn bench_xml_end_to_end(c: &mut Criterion) {
     c.bench_function("xml_end_to_end_100_elements", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = XmlIntrospector::new(logger, timestamp);
         let xml = generate_simple_xml(100);
         let data = xml.as_bytes();
@@ -368,7 +368,7 @@ fn bench_json_end_to_end(c: &mut Criterion) {
     c.bench_function("json_end_to_end_100_objects", |b| {
         let rt = tokio::runtime::Runtime::new().unwrap();
         let logger = create_logger_service().unwrap();
-        let timestamp = create_timestamp_service();
+        let timestamp = wire_timestamp();
         let introspector = JsonIntrospector::new(logger, timestamp);
         let json = generate_simple_json(100);
         let data = json.as_bytes();

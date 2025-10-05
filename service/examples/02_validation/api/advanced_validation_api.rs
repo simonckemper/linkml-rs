@@ -366,7 +366,7 @@ fn _show_production_pattern() {
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {{
     // 1. Initialize concrete service implementations using factory functions
     let logger = logger_service::factory::create_standard_logger().await?;
-    let timestamp = timestamp_service::factory::create_chrono_timestamp_service();
+    let timestamp = timestamp_service::wiring::wire_timestamp();
     let task_manager = task_management_service::factory::create_standard_task_management_service().await?;
     let error_handler = error_handling_service::factory::create_standard_error_handling_service(
         logger.clone(),

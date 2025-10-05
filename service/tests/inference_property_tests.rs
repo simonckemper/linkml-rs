@@ -19,7 +19,7 @@ fn create_test_services() -> (
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let logger = create_logger_service().unwrap();
-    let timestamp = create_timestamp_service();
+    let timestamp = wire_timestamp();
     (logger, timestamp)
 }
 
