@@ -49,7 +49,7 @@ use timestamp_core::{TimestampError, TimestampService};
 pub struct LinkMLServiceImpl<T, E, C, O, R>
 where
     T: TaskManagementService,
-    E: ErrorHandlingService,
+    E: ObjectSafeErrorHandler,
     C: ConfigurationService + 'static,
     O: TimeoutService,
     R: RandomService,
@@ -92,7 +92,7 @@ where
 impl<T, E, C, O, R> LinkMLServiceImpl<T, E, C, O, R>
 where
     T: TaskManagementService,
-    E: ErrorHandlingService + 'static,
+    E: ObjectSafeErrorHandler + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService,
     R: RandomService,
@@ -747,7 +747,7 @@ where
 impl<T, E, C, O, R> LinkMLService for LinkMLServiceImpl<T, E, C, O, R>
 where
     T: TaskManagementService + Send + Sync,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,
@@ -978,7 +978,7 @@ where
 impl<T, E, C, O, R> LinkMLServiceImpl<T, E, C, O, R>
 where
     T: TaskManagementService + Send + Sync,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,
@@ -1168,7 +1168,7 @@ impl ConfigurationChangeHandler for LinkMLConfigWatcherHandler {
 impl<T, E, C, O, R> LinkMLServiceExt for LinkMLServiceImpl<T, E, C, O, R>
 where
     T: TaskManagementService + Send + Sync,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync,
     O: TimeoutService + Send + Sync,
     R: RandomService + Send + Sync,

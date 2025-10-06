@@ -46,7 +46,7 @@ pub async fn create_linkml_service<T, E, C, O, R>(
 ) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
@@ -158,7 +158,7 @@ pub async fn create_linkml_service_with_config<T, E, C, O, R>(
 ) -> Result<Arc<LinkMLServiceImpl<T, E, C, O, R>>>
 where
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     C: ConfigurationService + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,

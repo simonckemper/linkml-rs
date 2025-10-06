@@ -61,7 +61,7 @@ pub async fn create_linkml_service_with_dbms<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {
@@ -154,7 +154,7 @@ pub async fn create_linkml_service_with_dbms_and_config<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {

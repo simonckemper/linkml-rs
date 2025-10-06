@@ -53,7 +53,7 @@ pub async fn create_linkml_service_with_configuration<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {
@@ -118,7 +118,7 @@ pub async fn create_linkml_service_with_custom_config<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {
@@ -180,7 +180,7 @@ pub async fn create_linkml_service_from_source<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {
@@ -243,7 +243,7 @@ pub async fn create_linkml_service_for_environment<C, T, E, O, R>(
 where
     C: ConfigurationService + Send + Sync + 'static,
     T: TaskManagementService + Send + Sync + 'static,
-    E: ErrorHandlingService + Send + Sync + 'static,
+    E: ObjectSafeErrorHandler + Send + Sync + 'static,
     O: TimeoutService + Send + Sync + 'static,
     R: RandomService + Send + Sync + 'static,
 {
@@ -318,7 +318,7 @@ impl std::fmt::Display for Environment {
 pub struct LinkMLServiceDependencies<T, E, C, O, R>
 where
     T: TaskManagementService,
-    E: ErrorHandlingService,
+    E: ObjectSafeErrorHandler,
     C: ConfigurationService,
     O: TimeoutService,
     R: RandomService,
