@@ -21,7 +21,7 @@ use crate::validator::engine::ValidationEngine;
 // use cache_core::CacheService;
 // use configuration_core::ConfigurationService;
 // use dbms_core::DBMSService;
-// use error_handling_core::ErrorHandlingService;
+// use error_handling_core::ObjectSafeErrorHandler;
 // use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
 // use hash_core::HashService;
 // use lakehouse_core::LakehouseService;

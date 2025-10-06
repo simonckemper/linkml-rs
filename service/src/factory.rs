@@ -10,7 +10,7 @@ use linkml_core::{config::LinkMLConfig, error::Result};
 use cache_core::CacheService;
 use configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::ErrorHandlingService;
+use error_handling_core::ObjectSafeErrorHandler;
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
