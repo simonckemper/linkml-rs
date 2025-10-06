@@ -28,7 +28,7 @@ use std::collections::HashMap;
 use cache_core::CacheService;
 use configuration_core::ConfigurationService;
 use dbms_core::DBMSService;
-use error_handling_core::{ErrorContext, ErrorHandlingService};
+use error_handling_core::{ErrorContext, ObjectSafeErrorHandler};
 use logger_core::LoggerService;
 use monitoring_core::MonitoringService;
 use random_core::RandomService;
@@ -452,8 +452,9 @@ where
                                 // Report cleanup to error handler for tracking
                                 let cleanup_msg = "Cache cleanup triggered due to size limit";
                                 if let Err(e) = error_handler
-                                    .categorize_error(
-                                        &LinkMLError::service(cleanup_msg),
+                                    .categorize_error_by_string(
+                                        cleanup_msg,
+                                        "LinkMLError::ServiceError",
                                         Some(ErrorContext::new(
                                             "linkml-service".to_string(),
                                             "cache_cleanup".to_string(),
@@ -664,8 +665,9 @@ where
                     // Track task cancellation error
                     let _ = self
                         .error_handler
-                        .categorize_error(
-                            &e,
+                        .categorize_error_by_string(
+                            &e.to_string(),
+                            "TaskManagementError",
                             Some(ErrorContext::new(
                                 "linkml-service".to_string(),
                                 "shutdown".to_string(),
@@ -804,8 +806,9 @@ where
                 // Track error with error handler service
                 let _ = self
                     .error_handler
-                    .categorize_error(
-                        &e,
+                    .categorize_error_by_string(
+                        &e.to_string(),
+                        "LinkMLError",
                         Some(ErrorContext::new(
                             "linkml-service".to_string(),
                             "load_schema".to_string(),
@@ -900,8 +903,9 @@ where
                 // Track parse error
                 let _ = self
                     .error_handler
-                    .categorize_error(
-                        &e,
+                    .categorize_error_by_string(
+                        &e.to_string(),
+                        "LinkMLError",
                         Some(ErrorContext::new(
                             "linkml-service".to_string(),
                             "load_schema_str".to_string(),
@@ -1079,8 +1083,9 @@ where
             ));
             let _ = self
                 .error_handler
-                .categorize_error(
-                    &validation_error,
+                .categorize_error_by_string(
+                    &validation_error.to_string(),
+                    "LinkMLError",
                     Some(ErrorContext::new(
                         "linkml-service".to_string(),
                         "validate".to_string(),
