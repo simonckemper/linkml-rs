@@ -6,35 +6,35 @@
 use std::path::PathBuf;
 
 // Core service imports
-use cache_service::factory::create_cache_service;
-use configuration_service::factory::create_configuration_service;
-use error_handling_service::factory::create_error_handling_service;
-use hash_service::factory::create_hash_service;
-use logger_service::factory::create_logger_service;
-use monitoring_service::factory::create_monitoring_service;
-use random_service::factory::create_random_service;
-use task_management_service::factory::create_task_management_service;
-use telemetry_service::factory::create_telemetry_service;
-use timeout_service::factory::create_timeout_service;
-use timestamp_core::factory::create_timestamp_service;
+use cache_service::wiring::wire_cache;
+use configuration_service::wiring::wire_configuration;
+use error_handling_service::wiring::wire_error_handling;
+use hash_service::wiring::wire_hash;
+use logger_service::wiring::wire_logger;
+use monitoring_service::wiring::wire_monitoring;
+use random_service::wiring::wire_random;
+use task_management_service::wiring::wire_task_management;
+use telemetry_service::wiring::wire_telemetry;
+use timeout_service::wiring::wire_timeout;
+use timestamp_service::wiring::wire_timestamp;
 
 // Data services
-use dbms_service::factory::create_dbms_service;
-use lakehouse_consumer::factory::create_lakehouse_service;
-use vector_database_service::factory::create_vector_database_service;
+use dbms_service::wiring::wire_dbms;
+use lakehouse_service::wiring::wire_lakehouse;
+use vector_database_service::wiring::wire_vector_database;
 
 // Security services
-use authentication_service::factory::create_authentication_service;
-use rate_limiting_service::factory::create_rate_limiting_service;
+use authentication_service::wiring::wire_authentication;
+use rate_limiting_service::wiring::wire_rate_limiting;
 
 // REST API and related services
 use frontend_framework_service::cors::{CorsConfig, create_cors_layer};
-use restful_api_service::factory_v3::{ServiceDependencies, create_restful_api_service};
-use shutdown_service::factory::create_shutdown_service;
+use restful_api_service::wiring::{ServiceDependencies, wire_restful_api};
+use shutdown_service::wiring::wire_shutdown;
 
 // LinkML service
 use linkml_service::{
-    cli_enhanced::commands::serve::create_linkml_router, factory::create_linkml_service,
+    cli_enhanced::commands::serve::create_linkml_router, wiring::wire_linkml,
 };
 
 #[tokio::main]
@@ -47,58 +47,59 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Phase 1: Create core services
     println!("Phase 1: Creating core services...");
-    let logger = create_logger_service().await?;
-    let config = create_configuration_service().await?;
-    let timestamp = wire_timestamp();
-    let hash = create_hash_service();
-    let random = create_random_service();
+    let logger = wire_logger().await?.into_arc();
+    let config = wire_configuration().await?.into_arc();
+    let timestamp = wire_timestamp().into_arc();
+    let hash = wire_hash().into_arc();
+    let random = wire_random(logger.clone(), timestamp.clone(), None).into_arc();
 
     // Phase 2: Create infrastructure services
     println!("Phase 2: Creating infrastructure services...");
-    let cache = create_cache_service(logger.clone(), config.clone(), timestamp.clone()).await?;
+    let task_manager = wire_task_management(timestamp.clone()).into_arc();
+    let error_handler = wire_error_handling(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
+    let cache = wire_cache(logger.clone(), timestamp.clone(), task_manager.clone(), error_handler.clone(), None).await?.into_arc();
 
-    let monitor = create_monitoring_service(logger.clone(), timestamp.clone()).await?;
+    let monitor = wire_monitoring(logger.clone(), timestamp.clone(), task_manager.clone(), error_handler.clone(), None).await?.into_arc();
 
     let telemetry =
-        create_telemetry_service(logger.clone(), config.clone(), timestamp.clone()).await?;
+        wire_telemetry(logger.clone(), timestamp.clone(), task_manager.clone(), None).await?.into_arc();
 
-    // Phase 3: Create task and error handling
-    println!("Phase 3: Creating task and error handling services...");
-    let task_manager = create_task_management_service(logger.clone(), monitor.clone()).await?;
-
-    let error_handler = create_error_handling_service(logger.clone(), telemetry.clone()).await?;
-
-    let timeout = create_timeout_service(logger.clone(), timestamp.clone()).await?;
+    // Phase 3: Create timeout service
+    println!("Phase 3: Creating timeout service...");
+    let timeout = wire_timeout(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
 
     // Phase 4: Create data services
     println!("Phase 4: Creating data services...");
-    let dbms = create_dbms_service(
+    let dbms = wire_dbms(
         logger.clone(),
-        config.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        error_handler.clone(),
         cache.clone(),
         monitor.clone(),
+        config.clone(),
     )
-    .await?;
+    .await?.into_arc();
 
     let vector_db =
-        create_vector_database_service(logger.clone(), config.clone(), cache.clone()).await?;
+        wire_vector_database(logger.clone(), timestamp.clone(), cache.clone(), config.clone()).await?.into_arc();
 
     let lakehouse =
-        create_lakehouse_service(logger.clone(), config.clone(), cache.clone(), dbms.clone())
-            .await?;
+        wire_lakehouse(logger.clone(), timestamp.clone(), task_manager.clone(), cache.clone(), dbms.clone(), config.clone())
+            .await?.into_arc();
 
     // Phase 5: Create security services
     println!("Phase 5: Creating security services...");
     let auth =
-        create_authentication_service(logger.clone(), config.clone(), cache.clone(), hash.clone())
-            .await?;
+        wire_authentication(logger.clone(), timestamp.clone(), config.clone(), cache.clone(), hash.clone())
+            .await?.into_arc();
 
     let rate_limiter =
-        create_rate_limiting_service(logger.clone(), config.clone(), cache.clone()).await?;
+        wire_rate_limiting(logger.clone(), timestamp.clone(), config.clone(), cache.clone()).await?.into_arc();
 
     // Phase 6: Create LinkML service with all dependencies
     println!("Phase 6: Creating LinkML service...");
-    let linkml = create_linkml_service(
+    let linkml = wire_linkml(
         logger.clone(),
         timestamp.clone(),
         task_manager.clone(),
@@ -110,7 +111,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         monitor.clone(),
         random.clone(),
     )
-    .await?;
+    .await?.into_arc();
 
     // Phase 7: Create REST API service dependencies
     println!("Phase 7: Preparing REST API service...");
@@ -135,7 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Phase 8: Create REST API service
     println!("Phase 8: Creating REST API service...");
-    let rest_api = create_restful_api_service(rest_api_deps).await?;
+    let rest_api = wire_restful_api(rest_api_deps).await?.into_arc();
 
     // Phase 9: Register LinkML handlers with REST API service
     println!("Phase 9: Registering LinkML handlers with REST API...");
@@ -187,7 +188,7 @@ classes:
     // Phase 11: Setup shutdown service
     println!("Phase 11: Setting up graceful shutdown...");
     let shutdown =
-        create_shutdown_service(logger.clone(), timestamp.clone(), task_manager.clone()).await?;
+        wire_shutdown(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
 
     // Register shutdown hooks for all services
     shutdown.register_hook(

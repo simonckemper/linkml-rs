@@ -135,7 +135,7 @@ rootreal-hub-web-frontend-framework-frontend = { workspace = true }
 shutdown_core = { workspace = true }
 logger_core = { workspace = true }
 logger_service = { workspace = true }
-timestamp_service = { workspace = true }
+timestamp_service = { workspace = true, features = ["idiomatic_di"] }
 task_management_core = { workspace = true }
 error_handling_core = { workspace = true }
 memory_core = { workspace = true }
