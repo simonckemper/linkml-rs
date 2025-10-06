@@ -98,7 +98,7 @@ impl ExpressionEngineV2 {
     #[must_use]
     pub fn new(config: EngineConfig) -> Self {
         let function_registry = Arc::new(FunctionRegistry::new());
-        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_sync_timestamp();
 
         Self {
             parser: Parser::new(),
@@ -149,7 +149,7 @@ impl ExpressionEngineV2 {
         config: EngineConfig,
         function_registry: Arc<FunctionRegistry>,
     ) -> Self {
-        let timestamp_service = timestamp_service::factory::create_sync_timestamp_service();
+        let timestamp_service = timestamp_service::wiring::wire_sync_timestamp();
 
         Self {
             parser: Parser::new(),
