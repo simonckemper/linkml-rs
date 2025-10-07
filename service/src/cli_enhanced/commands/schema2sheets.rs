@@ -126,7 +126,10 @@ impl Schema2SheetsCommand {
             eprintln!("Loading schema from: {}", self.schema.display());
         }
 
-        let schema = self.load_schema(&self.schema)?;
+        let mut schema = self.load_schema(&self.schema)?;
+
+        // Post-process schema to populate name fields from map keys
+        self.populate_names(&mut schema);
 
         if let Some(ref pb) = progress {
             pb.inc(1);
@@ -182,23 +185,81 @@ impl Schema2SheetsCommand {
         Ok(())
     }
 
+    /// Populate name fields in schema from map keys
+    ///
+    /// LinkML YAML schemas use map keys as names, but the Rust structs
+    /// require explicit name fields. This function populates those fields
+    /// after deserialization.
+    fn populate_names(&self, schema: &mut SchemaDefinition) {
+        // Populate class names
+        for (class_name, class_def) in &mut schema.classes {
+            if class_def.name.is_empty() {
+                class_def.name = class_name.clone();
+            }
+
+            // Populate attribute names
+            for (attr_name, attr_def) in &mut class_def.attributes {
+                if attr_def.name.is_empty() {
+                    attr_def.name = attr_name.clone();
+                }
+            }
+
+            // Populate slot_usage names
+            for (slot_name, slot_def) in &mut class_def.slot_usage {
+                if slot_def.name.is_empty() {
+                    slot_def.name = slot_name.clone();
+                }
+            }
+        }
+
+        // Populate slot names
+        for (slot_name, slot_def) in &mut schema.slots {
+            if slot_def.name.is_empty() {
+                slot_def.name = slot_name.clone();
+            }
+        }
+
+        // Populate enum names
+        for (enum_name, enum_def) in &mut schema.enums {
+            if enum_def.name.is_empty() {
+                enum_def.name = enum_name.clone();
+            }
+        }
+
+        // Populate type names
+        for (type_name, type_def) in &mut schema.types {
+            if type_def.name.is_empty() {
+                type_def.name = type_name.clone();
+            }
+        }
+    }
+
     /// Load schema from file (YAML or JSON)
     fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| LinkMLError::io_error(format!("Failed to read schema file: {e}")))?;
 
-        // Try YAML first, then JSON
-        if let Ok(schema) = serde_yaml::from_str::<SchemaDefinition>(&content) {
+        // Try YAML first, capture error
+        let yaml_result = serde_yaml::from_str::<SchemaDefinition>(&content);
+        if let Ok(schema) = yaml_result {
             return Ok(schema);
         }
+        let yaml_error = yaml_result.unwrap_err();
 
-        if let Ok(schema) = serde_json::from_str::<SchemaDefinition>(&content) {
+        // Try JSON, capture error
+        let json_result = serde_json::from_str::<SchemaDefinition>(&content);
+        if let Ok(schema) = json_result {
             return Ok(schema);
         }
+        let json_error = json_result.unwrap_err();
 
-        Err(LinkMLError::deserialization(
-            "Failed to parse schema as YAML or JSON",
-        ))
+        // Return detailed error with both parsing attempts
+        Err(LinkMLError::deserialization(format!(
+            "Failed to parse schema as YAML or JSON.\n\
+             YAML parsing error: {}\n\
+             JSON parsing error: {}",
+            yaml_error, json_error
+        )))
     }
 }
 

@@ -122,6 +122,7 @@ pub struct RecursionOptions {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct ClassDefinition {
     /// Name of the class
+    #[serde(default)]
     pub name: String,
 
     /// Description
@@ -248,6 +249,7 @@ pub enum IfAbsentAction {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct SlotDefinition {
     /// Name of the slot
+    #[serde(default)]
     pub name: String,
 
     /// Description
