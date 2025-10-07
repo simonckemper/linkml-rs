@@ -917,10 +917,10 @@ mod tests {
 
         let mut child_stats = ChildStats::new("Address".to_string());
         child_stats.occurrence_count = 2;
-        child_stats.min_occurs = 1;
-        child_stats.max_occurs = 2;
-        child_stats.parent_instances_with_child = 5;
-        child_stats.total_parent_instances = 5;
+        child_stats.min_occurs = Some(1);
+        child_stats.max_occurs = Some(2);
+        child_stats.parent_instances_with_child = Some(5);
+        child_stats.total_parent_instances = Some(5);
 
         child.merge_child_stats(&child_stats);
 

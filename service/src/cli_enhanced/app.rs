@@ -268,6 +268,44 @@ impl LinkMLApp {
             LinkMLCommand::Shell { .. } => Err(LinkMLError::not_implemented(
                 "Interactive shell is migrating to the Task Management framework",
             )),
+            LinkMLCommand::Sheets2Schema {
+                input,
+                output,
+                schema_id,
+                schema_name,
+                format,
+                progress,
+            } => {
+                self.sheets2schema_command(
+                    input,
+                    output.as_ref(),
+                    schema_id.as_ref(),
+                    schema_name.as_ref(),
+                    *format,
+                    *progress,
+                )
+                .await
+            }
+            LinkMLCommand::Schema2Sheets {
+                schema,
+                output,
+                validation,
+                examples,
+                freeze_headers,
+                filters,
+                progress,
+            } => {
+                self.schema2sheets_command(
+                    schema,
+                    output,
+                    *validation,
+                    *examples,
+                    *freeze_headers,
+                    *filters,
+                    *progress,
+                )
+                .await
+            }
         }
     }
 
@@ -798,6 +836,64 @@ impl LinkMLApp {
         let command = ServeCommand::new(schema.display().to_string(), port)
             .with_host(host.to_string())
             .with_verbose(self.cli.verbose);
+        command.execute().await
+    }
+
+    async fn sheets2schema_command(
+        &self,
+        input: &Path,
+        output: Option<&PathBuf>,
+        schema_id: Option<&String>,
+        schema_name: Option<&String>,
+        format: SchemaFormat,
+        progress: bool,
+    ) -> Result<()> {
+        use crate::cli_enhanced::commands::sheets2schema::{
+            SchemaFormat as CmdSchemaFormat, Sheets2SchemaCommand,
+        };
+
+        let mut command = Sheets2SchemaCommand::new(input.to_path_buf(), output.cloned())
+            .with_progress(progress && !self.cli.quiet)
+            .with_verbose(self.cli.verbose);
+
+        if let Some(id) = schema_id {
+            command = command.with_schema_id(id.clone());
+        }
+
+        if let Some(name) = schema_name {
+            command = command.with_schema_name(name.clone());
+        }
+
+        let cmd_format = match format {
+            SchemaFormat::Yaml => CmdSchemaFormat::Yaml,
+            SchemaFormat::Json => CmdSchemaFormat::Json,
+            _ => CmdSchemaFormat::Yaml,
+        };
+        command = command.with_format(cmd_format);
+
+        command.execute().await
+    }
+
+    async fn schema2sheets_command(
+        &self,
+        schema: &Path,
+        output: &Path,
+        validation: bool,
+        examples: bool,
+        freeze_headers: bool,
+        filters: bool,
+        progress: bool,
+    ) -> Result<()> {
+        use crate::cli_enhanced::commands::schema2sheets::Schema2SheetsCommand;
+
+        let command = Schema2SheetsCommand::new(schema.to_path_buf(), output.to_path_buf())
+            .with_validation(validation)
+            .with_examples(examples)
+            .with_freeze_headers(freeze_headers)
+            .with_filters(filters)
+            .with_progress(progress && !self.cli.quiet)
+            .with_verbose(self.cli.verbose);
+
         command.execute().await
     }
 

@@ -5,9 +5,10 @@
 use super::equivalence::{compare_schemas, EquivalenceResult};
 use linkml_core::prelude::*;
 use linkml_service::generator::excel::ExcelGenerator;
-use linkml_service::introspector::excel::ExcelIntrospector;
-use linkml_service::introspector::Introspector;
+use linkml_service::inference::introspectors::excel::ExcelIntrospector;
+use linkml_service::inference::DataIntrospector;
 use logger_service::wiring::wire_logger;
+use serde_json::json;
 use std::path::PathBuf;
 use tempfile::TempDir;
 use timestamp_service::wiring::wire_timestamp;
@@ -18,19 +19,21 @@ fn create_test_services() -> (
     std::sync::Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone()).into_arc();
+    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+        .expect("Failed to wire logger")
+        .into_arc();
     (logger, timestamp)
 }
 
 /// Helper to create temporary directory for test files
-fn setup_test_directory() -> Result<TempDir, Box<dyn std::error::Error>> {
+fn setup_test_directory() -> std::result::Result<TempDir, Box<dyn std::error::Error>> {
     let temp_dir = tempfile::tempdir()?;
     Ok(temp_dir)
 }
 
 /// Test simple schema round-trip: Schema → Excel → Schema
 #[tokio::test]
-async fn test_simple_schema_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_simple_schema_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -40,11 +43,15 @@ async fn test_simple_schema_roundtrip() -> Result<(), Box<dyn std::error::Error>
     // Step 1: Schema → Excel (using generator)
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("simple_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())?;
+    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Step 2: Excel → Schema (using introspector)
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let reconstructed_schema = introspector.introspect_file(&excel_path).await?;
+    let stats = introspector.analyze_file(&excel_path).await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    let reconstructed_schema = introspector.generate_schema(&stats, "simple_schema").await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Step 3: Compare schemas for semantic equivalence
     let result = compare_schemas(&original_schema, &reconstructed_schema);
@@ -64,7 +71,7 @@ async fn test_simple_schema_roundtrip() -> Result<(), Box<dyn std::error::Error>
 
 /// Test complex schema with inheritance hierarchies
 #[tokio::test]
-async fn test_complex_schema_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_complex_schema_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -74,11 +81,15 @@ async fn test_complex_schema_roundtrip() -> Result<(), Box<dyn std::error::Error
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("complex_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())?;
+    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let reconstructed_schema = introspector.introspect_file(&excel_path).await?;
+    let stats = introspector.analyze_file(&excel_path).await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    let reconstructed_schema = introspector.generate_schema(&stats, "complex_schema").await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
     let result = compare_schemas(&original_schema, &reconstructed_schema);
@@ -98,7 +109,7 @@ async fn test_complex_schema_roundtrip() -> Result<(), Box<dyn std::error::Error
 
 /// Test schema with all LinkML constraint types
 #[tokio::test]
-async fn test_schema_with_constraints_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_schema_with_constraints_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -108,11 +119,15 @@ async fn test_schema_with_constraints_roundtrip() -> Result<(), Box<dyn std::err
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("constraints_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())?;
+    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let reconstructed_schema = introspector.introspect_file(&excel_path).await?;
+    let stats = introspector.analyze_file(&excel_path).await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    let reconstructed_schema = introspector.generate_schema(&stats, "constraints_schema").await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
     let result = compare_schemas(&original_schema, &reconstructed_schema);
@@ -132,7 +147,7 @@ async fn test_schema_with_constraints_roundtrip() -> Result<(), Box<dyn std::err
 
 /// Test schema with enums
 #[tokio::test]
-async fn test_schema_with_enums_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_schema_with_enums_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -142,11 +157,15 @@ async fn test_schema_with_enums_roundtrip() -> Result<(), Box<dyn std::error::Er
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("enums_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())?;
+    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let reconstructed_schema = introspector.introspect_file(&excel_path).await?;
+    let stats = introspector.analyze_file(&excel_path).await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    let reconstructed_schema = introspector.generate_schema(&stats, "enums_schema").await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
     let result = compare_schemas(&original_schema, &reconstructed_schema);
@@ -166,7 +185,7 @@ async fn test_schema_with_enums_roundtrip() -> Result<(), Box<dyn std::error::Er
 
 /// Test multi-class schema with relationships
 #[tokio::test]
-async fn test_multi_class_schema_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_multi_class_schema_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -176,11 +195,15 @@ async fn test_multi_class_schema_roundtrip() -> Result<(), Box<dyn std::error::E
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("multi_class_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())?;
+    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let reconstructed_schema = introspector.introspect_file(&excel_path).await?;
+    let stats = introspector.analyze_file(&excel_path).await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    let reconstructed_schema = introspector.generate_schema(&stats, "multi_class_schema").await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
     let result = compare_schemas(&original_schema, &reconstructed_schema);
@@ -336,8 +359,8 @@ fn create_schema_with_constraints() -> SchemaDefinition {
         SlotDefinition {
             name: "price".to_string(),
             range: Some("float".to_string()),
-            minimum_value: Some(0.0),
-            maximum_value: Some(99999.99),
+            minimum_value: Some(json!(0.0)),
+            maximum_value: Some(json!(99999.99)),
             required: Some(true),
             ..Default::default()
         },
@@ -366,24 +389,22 @@ fn create_schema_with_enums() -> SchemaDefinition {
     schema.name = "enums_schema".to_string();
 
     // Define enum
-    let mut status_enum = EnumDefinition::new("StatusEnum");
-    status_enum.name = "StatusEnum".to_string();
-    status_enum.permissible_values.insert(
-        "active".to_string(),
-        PermissibleValue {
-            text: "active".to_string(),
-            description: Some("Active status".to_string()),
-            ..Default::default()
-        },
-    );
-    status_enum.permissible_values.insert(
-        "inactive".to_string(),
-        PermissibleValue {
-            text: "inactive".to_string(),
-            description: Some("Inactive status".to_string()),
-            ..Default::default()
-        },
-    );
+    let status_enum = EnumDefinition {
+        name: "StatusEnum".to_string(),
+        permissible_values: vec![
+            PermissibleValue::Complex {
+                text: "active".to_string(),
+                description: Some("Active status".to_string()),
+                meaning: None,
+            },
+            PermissibleValue::Complex {
+                text: "inactive".to_string(),
+                description: Some("Inactive status".to_string()),
+                meaning: None,
+            },
+        ],
+        ..Default::default()
+    };
 
     // Class using enum
     let mut user_class = ClassDefinition::new("User");

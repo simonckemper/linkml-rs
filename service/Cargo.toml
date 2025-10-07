@@ -466,6 +466,14 @@ path = "tests/inference_integration.rs"
 name = "inference_property_tests"
 path = "tests/inference_property_tests.rs"
 
+[[test]]
+name = "roundtrip_tests"
+path = "tests/roundtrip_tests.rs"
+
+[[test]]
+name = "cli_integration_tests"
+path = "tests/cli_integration_tests.rs"
+
 [[bin]]
 name = "linkml"
 path = "src/bin/linkml.rs"

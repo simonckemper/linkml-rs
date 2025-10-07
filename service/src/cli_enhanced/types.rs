@@ -267,6 +267,97 @@ pub enum LinkMLCommand {
         #[arg(long, default_value = "true")]
         highlight: bool,
     },
+
+    /// Convert Excel SchemaSheets to LinkML schema
+    ///
+    /// Analyzes an Excel workbook containing data and generates a LinkML schema
+    /// by inferring types, constraints, and relationships from the data.
+    ///
+    /// # Examples
+    ///
+    /// ```bash
+    /// # Generate schema from Excel data
+    /// linkml sheets2schema data.xlsx -o schema.yaml
+    ///
+    /// # Specify schema ID and name
+    /// linkml sheets2schema data.xlsx --schema-id my_schema --schema-name "My Schema"
+    ///
+    /// # Output as JSON
+    /// linkml sheets2schema data.xlsx -o schema.json --format json
+    /// ```
+    Sheets2Schema {
+        /// Input Excel file path (.xlsx, .xls, .xlsb, .ods)
+        #[arg(value_name = "EXCEL_FILE")]
+        input: PathBuf,
+
+        /// Output schema file path (defaults to <input>.yaml)
+        #[arg(short, long, value_name = "FILE")]
+        output: Option<PathBuf>,
+
+        /// Schema ID (defaults to filename without extension)
+        #[arg(long, value_name = "ID")]
+        schema_id: Option<String>,
+
+        /// Schema name (defaults to schema ID)
+        #[arg(long, value_name = "NAME")]
+        schema_name: Option<String>,
+
+        /// Output format (yaml or json)
+        #[arg(short = 'f', long, default_value = "yaml")]
+        format: SchemaFormat,
+
+        /// Show progress indicators
+        #[arg(long, default_value = "true")]
+        progress: bool,
+    },
+
+    /// Convert LinkML schema to Excel SchemaSheets template
+    ///
+    /// Generates an Excel workbook template from a LinkML schema definition.
+    /// The template includes sheets for each class with appropriate columns,
+    /// data validation, and formatting.
+    ///
+    /// # Examples
+    ///
+    /// ```bash
+    /// # Generate Excel template from schema
+    /// linkml schema2sheets schema.yaml -o template.xlsx
+    ///
+    /// # Include data validation and examples
+    /// linkml schema2sheets schema.yaml -o template.xlsx --validation --examples
+    ///
+    /// # Customize formatting
+    /// linkml schema2sheets schema.yaml -o template.xlsx --freeze-headers --filters
+    /// ```
+    Schema2Sheets {
+        /// Input schema file path (.yaml, .yml, .json)
+        #[arg(value_name = "SCHEMA_FILE")]
+        schema: PathBuf,
+
+        /// Output Excel file path
+        #[arg(short, long, value_name = "FILE")]
+        output: PathBuf,
+
+        /// Add data validation (dropdowns, ranges)
+        #[arg(long)]
+        validation: bool,
+
+        /// Include example data rows
+        #[arg(long)]
+        examples: bool,
+
+        /// Freeze header rows
+        #[arg(long, default_value = "true")]
+        freeze_headers: bool,
+
+        /// Add auto-filters to columns
+        #[arg(long, default_value = "true")]
+        filters: bool,
+
+        /// Show progress indicators
+        #[arg(long, default_value = "true")]
+        progress: bool,
+    },
 }
 
 /// Schema formats for conversion

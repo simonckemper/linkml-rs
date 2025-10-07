@@ -197,6 +197,27 @@ impl LinkMLError {
         }
     }
 
+    /// Create an IO error from a message
+    #[must_use]
+    pub fn io_error(message: impl Into<String>) -> Self {
+        Self::IoError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            message.into(),
+        ))
+    }
+
+    /// Create a serialization error
+    #[must_use]
+    pub fn serialization(message: impl Into<String>) -> Self {
+        Self::SerializationError(message.into())
+    }
+
+    /// Create a deserialization error (alias for parse error)
+    #[must_use]
+    pub fn deserialization(message: impl Into<String>) -> Self {
+        Self::parse(message)
+    }
+
     /// Create a generic error with source
     #[must_use]
     pub fn other_with_source<E>(message: impl Into<String>, source: E) -> Self

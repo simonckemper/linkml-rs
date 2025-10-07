@@ -562,15 +562,13 @@ impl DataIntrospector for CsvIntrospector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use timestamp_service::create_timestamp_service;
 
     fn create_test_services() -> (
         Arc<dyn LoggerService<Error = LoggerError>>,
         Arc<dyn TimestampService<Error = TimestampError>>,
     ) {
-        let logger =
-            create_logger_service().unwrap_or_else(|e| panic!("Failed to create logger: {}", e));
-        let timestamp = wire_timestamp().into_inner();
+        let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
+        let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
         (logger, timestamp)
     }
 

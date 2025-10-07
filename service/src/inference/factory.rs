@@ -3,6 +3,8 @@
 //! This module provides factory functions following RootReal patterns for creating
 //! inference engines and introspectors with proper dependency injection.
 
+#![allow(deprecated)]
+
 use crate::inference::engine::InferenceEngine;
 use crate::inference::introspectors::{CsvIntrospector, JsonIntrospector, XmlIntrospector};
 use crate::inference::traits::InferenceResult;

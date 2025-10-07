@@ -386,7 +386,7 @@ mod tests {
             .await
             .expect("should write test JSON file: {}");
 
-        let timestamp_service = Arc::new(factory::wire_timestamp());
+        let timestamp_service = wire_timestamp().into_arc();
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig {
             key_field: "code".to_string(),
@@ -438,7 +438,7 @@ CA,Canada
             .await
             .expect("should write test CSV file: {}");
 
-        let timestamp_service = Arc::new(factory::wire_timestamp());
+        let timestamp_service = wire_timestamp().into_arc();
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig {
             key_field: "code".to_string(),
@@ -472,7 +472,7 @@ CA,Canada
             .await
             .expect("should write test JSON file for caching: {}");
 
-        let timestamp_service = Arc::new(factory::wire_timestamp());
+        let timestamp_service = wire_timestamp().into_arc();
         let loader = InstanceLoader::new(timestamp_service);
         let config = InstanceConfig::default();
 

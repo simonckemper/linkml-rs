@@ -5,7 +5,8 @@
 //! detailed diff reporting for debugging failed round-trips.
 
 use linkml_core::prelude::*;
-use std::collections::{BTreeMap, BTreeSet};
+use indexmap::IndexMap;
+use std::collections::BTreeSet;
 
 /// Result of semantic equivalence check
 #[derive(Debug, Clone, PartialEq)]
@@ -310,8 +311,8 @@ fn compare_class_definition(
 
 /// Compare attributes/slots in a class (order-independent)
 fn compare_attributes(
-    original: &BTreeMap<String, SlotDefinition>,
-    reconstructed: &BTreeMap<String, SlotDefinition>,
+    original: &IndexMap<String, SlotDefinition>,
+    reconstructed: &IndexMap<String, SlotDefinition>,
     class_path: &str,
     differences: &mut Vec<Difference>,
 ) {
@@ -525,8 +526,21 @@ fn compare_enum_definition(
     }
 
     // Compare permissible values (order-independent)
-    let orig_values: BTreeSet<_> = original.permissible_values.keys().collect();
-    let recon_values: BTreeSet<_> = reconstructed.permissible_values.keys().collect();
+    // permissible_values is now a Vec<PermissibleValue>, extract text values
+    let orig_values: BTreeSet<_> = original.permissible_values
+        .iter()
+        .map(|pv| match pv {
+            PermissibleValue::Simple(text) => text.as_str(),
+            PermissibleValue::Complex { text, .. } => text.as_str(),
+        })
+        .collect();
+    let recon_values: BTreeSet<_> = reconstructed.permissible_values
+        .iter()
+        .map(|pv| match pv {
+            PermissibleValue::Simple(text) => text.as_str(),
+            PermissibleValue::Complex { text, .. } => text.as_str(),
+        })
+        .collect();
 
     if orig_values != recon_values {
         differences.push(Difference::ValueMismatch {

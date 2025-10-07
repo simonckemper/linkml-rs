@@ -149,6 +149,13 @@ impl ExcelGenerator {
         self.features.contains(ExcelFeatures::ADD_FILTERS)
     }
 
+    /// Configure example data generation
+    #[must_use]
+    pub fn with_examples(self, _enabled: bool) -> Self {
+        // Examples feature not yet implemented, but method exists for API compatibility
+        self
+    }
+
     /// Configure data validation
     #[must_use]
     pub fn with_validation(mut self, enabled: bool) -> Self {

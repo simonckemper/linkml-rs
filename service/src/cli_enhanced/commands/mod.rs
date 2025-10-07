@@ -10,7 +10,9 @@
 // mod load;
 // mod merge;
 
+pub mod schema2sheets;
 pub mod serve;
+pub mod sheets2schema;
 
 // pub use convert::ConvertCommand;
 // pub use diff::DiffCommand;
@@ -19,4 +21,6 @@ pub mod serve;
 // pub use lint::LintCommand;
 // pub use load::LoadCommand;
 // pub use merge::MergeCommand;
+pub use schema2sheets::Schema2SheetsCommand;
 pub use serve::ServeCommand;
+pub use sheets2schema::Sheets2SchemaCommand;

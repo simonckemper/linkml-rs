@@ -579,19 +579,52 @@ mod tests {
     #[async_trait]
     impl LoggerService for MockLogger {
         type Error = LoggerError;
-        async fn log(&self, _level: LogLevel, _message: &str) -> Result<(), LoggerError> {
-            Ok(())
-        }
+
+        async fn debug(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
+        async fn info(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
+        async fn warn(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
+        async fn error(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
+        async fn log(&self, _level: LogLevel, _message: &str) -> Result<(), Self::Error> { Ok(()) }
+        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> Result<(), Self::Error> { Ok(()) }
+        async fn set_level(&self, _level: LogLevel) -> Result<(), Self::Error> { Ok(()) }
+        async fn flush(&self) -> Result<(), Self::Error> { Ok(()) }
+        async fn shutdown(&self) -> Result<(), Self::Error> { Ok(()) }
     }
 
     struct MockTimestamp;
+    #[async_trait]
     impl TimestampService for MockTimestamp {
         type Error = TimestampError;
-        fn now(&self) -> Result<chrono::DateTime<chrono::Utc>, TimestampError> {
+
+        async fn now_utc(&self) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(chrono::Utc::now())
         }
-        fn now_string(&self) -> Result<String, TimestampError> {
-            Ok(chrono::Utc::now().to_rfc3339())
+        async fn now_local(&self) -> Result<chrono::DateTime<chrono::Local>, Self::Error> {
+            Ok(chrono::Local::now())
+        }
+        async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
+            Ok(std::time::SystemTime::now())
+        }
+        async fn parse_iso8601(&self, timestamp: &str) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+            use chrono::DateTime;
+            Ok(DateTime::parse_from_rfc3339(timestamp)
+                .map_err(|e| TimestampError::ParseError { message: e.to_string().into() })?
+                .with_timezone(&chrono::Utc))
+        }
+        async fn format_iso8601(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<String, Self::Error> {
+            Ok(timestamp.to_rfc3339())
+        }
+        async fn duration_since(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+            Ok(chrono::Utc::now() - *timestamp)
+        }
+        async fn add_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+            Ok(*timestamp + duration)
+        }
+        async fn subtract_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+            Ok(*timestamp - duration)
+        }
+        async fn duration_between(&self, from: &chrono::DateTime<chrono::Utc>, to: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+            Ok(*to - *from)
         }
     }
 }
