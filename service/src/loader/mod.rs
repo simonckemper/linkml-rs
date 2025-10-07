@@ -9,6 +9,7 @@ pub mod csv;
 #[cfg(feature = "database")]
 pub mod database;
 pub mod dbms_executor;
+pub mod excel;
 pub mod json;
 pub mod json_v2;
 pub mod rdf;
@@ -29,6 +30,7 @@ pub use csv::{CsvDumper, CsvLoader, CsvOptions};
 #[cfg(feature = "database")]
 pub use database::{DatabaseDumper, DatabaseLoader, DatabaseOptions, ForeignKeyRelation};
 pub use dbms_executor::DBMSServiceExecutor;
+pub use excel::{ExcelLoader, ExcelOptions};
 pub use json::{JsonDumper, JsonLoader};
 pub use rdf::{RdfDumper, RdfLoader, RdfOptions, RdfSerializationFormat};
 pub use traits::{

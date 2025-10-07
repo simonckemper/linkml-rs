@@ -19,8 +19,9 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     );
 
     // Create dependencies
-    let logger = Arc::new(logger_service::wiring::wire_development_logger().await?);
-    let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
+    let timestamp_service = timestamp_service::wiring::wire_timestamp();
+    let logger = logger_service::wiring::wire_development_logger(timestamp_service.clone().into_arc())?
+        .into_arc();
 
     // Create container service for cache
     let container_service = container_core::mock::create_mock_container_service()?;

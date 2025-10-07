@@ -12,9 +12,9 @@
 use crate::inference::builder::SchemaBuilder;
 use crate::inference::traits::{DataIntrospector, InferenceError, InferenceResult, TypeInferencer};
 use crate::inference::type_inference::create_type_inferencer;
-use crate::inference::types::{DocumentStats, SchemaMetadata};
+use crate::inference::types::DocumentStats;
 use async_trait::async_trait;
-use calamine::{open_workbook_auto, DataType, Reader, Sheets};
+use calamine::{Data, Reader, Xlsx};
 use linkml_core::types::SchemaDefinition;
 use logger_core::{LoggerError, LoggerService};
 use std::collections::HashMap;
@@ -58,17 +58,19 @@ impl ColumnStats {
         }
     }
 
-    fn record_value(&mut self, value: DataType) {
+    fn record_value(&mut self, value: Data) {
         self.total_count += 1;
 
         let (value_str, type_name, numeric_val) = match value {
-            DataType::Int(i) => (i.to_string(), "integer", Some(i as f64)),
-            DataType::Float(f) => (f.to_string(), "float", Some(f)),
-            DataType::String(s) if !s.trim().is_empty() => (s, "string", None),
-            DataType::Bool(b) => (b.to_string(), "boolean", None),
-            DataType::DateTime(dt) => (format!("{dt:?}"), "datetime", None),
-            DataType::Error(e) => (format!("{e:?}"), "error", None),
-            DataType::Empty | DataType::String(_) => {
+            Data::Int(i) => (i.to_string(), "integer", Some(i as f64)),
+            Data::Float(f) => (f.to_string(), "float", Some(f)),
+            Data::String(s) if !s.trim().is_empty() => (s, "string", None),
+            Data::Bool(b) => (b.to_string(), "boolean", None),
+            Data::DateTime(dt) => (format!("{dt:?}"), "datetime", None),
+            Data::DateTimeIso(dt) => (dt.to_string(), "datetime", None),
+            Data::DurationIso(d) => (d.to_string(), "duration", None),
+            Data::Error(e) => (format!("{e:?}"), "error", None),
+            Data::Empty | Data::String(_) => {
                 // Empty cells or blank strings
                 return;
             }
@@ -120,7 +122,7 @@ impl ColumnStats {
 
         // Check if unique values represent majority of data (>80%)
         let total_unique_occurrences: usize = self.unique_values.values().sum();
-        if total_unique_occurrences as f64 / self.non_empty_count as f64 < 0.8 {
+        if (total_unique_occurrences as f64) / (self.non_empty_count as f64) < 0.8 {
             return None;
         }
 
@@ -151,6 +153,8 @@ struct SheetStats {
     /// Total row count
     row_count: usize,
     /// Whether first row was treated as header
+    /// Used in tests to verify header detection logic
+    #[allow(dead_code)]
     has_header: bool,
 }
 
@@ -196,7 +200,7 @@ impl ExcelIntrospector {
     /// * `SheetStats` - Statistics for this sheet
     fn process_sheet<R>(&self, sheet_name: String, mut rows: R) -> InferenceResult<SheetStats>
     where
-        R: Iterator<Item = Vec<DataType>>,
+        R: Iterator<Item = Vec<Data>>,
     {
         let mut columns: Vec<ColumnStats> = Vec::new();
         let mut row_count = 0;
@@ -207,14 +211,14 @@ impl ExcelIntrospector {
             row_count += 1;
 
             // Heuristic: If first row contains mostly strings, treat as header
-            let string_count = first_row.iter().filter(|cell| matches!(cell, DataType::String(_))).count();
+            let string_count = first_row.iter().filter(|cell| matches!(cell, Data::String(_))).count();
             has_header = string_count > first_row.len() / 2;
 
             if has_header {
                 // Initialize columns from header row
                 for (idx, cell) in first_row.iter().enumerate() {
                     let col_name = match cell {
-                        DataType::String(s) if !s.trim().is_empty() => s.clone(),
+                        Data::String(s) if !s.trim().is_empty() => s.clone(),
                         _ => format!("column_{}", idx + 1),
                     };
                     columns.push(ColumnStats::new(col_name));
@@ -445,8 +449,8 @@ pub fn wire_excel_introspector(
 impl DataIntrospector for ExcelIntrospector {
     async fn analyze_file(&self, path: &Path) -> InferenceResult<DocumentStats> {
         // Open workbook using calamine
-        let mut workbook: Sheets<_> = open_workbook_auto(path)
-            .map_err(|e| InferenceError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())))?;
+        let mut workbook: Xlsx<_> = calamine::open_workbook(path)
+            .map_err(|e: calamine::XlsxError| InferenceError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())))?;
 
         let mut all_sheets = Vec::new();
 
@@ -466,8 +470,8 @@ impl DataIntrospector for ExcelIntrospector {
     async fn analyze_bytes(&self, data: &[u8]) -> InferenceResult<DocumentStats> {
         // Create a cursor for in-memory Excel data
         let cursor = Cursor::new(data);
-        let mut workbook: Sheets<Cursor<&[u8]>> = open_workbook_auto(cursor)
-            .map_err(|e| InferenceError::ParseServiceError(e.to_string()))?;
+        let mut workbook: Xlsx<_> = Xlsx::new(cursor)
+            .map_err(|e: calamine::XlsxError| InferenceError::ParseServiceError(e.to_string()))?;
 
         let mut all_sheets = Vec::new();
 
@@ -491,13 +495,69 @@ impl DataIntrospector for ExcelIntrospector {
     async fn generate_schema(
         &self,
         stats: &DocumentStats,
-        schema_id: String,
+        schema_id: &str,
     ) -> InferenceResult<SchemaDefinition> {
-        // Use SchemaBuilder to generate LinkML schema from statistics
-        let mut builder = SchemaBuilder::new(schema_id, self.logger.clone(), self.timestamp.clone());
+        self.logger
+            .log_info(&format!("Generating LinkML schema: {}", schema_id))
+            .await
+            .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
 
-        builder
-            .build_from_stats(stats)
-            .map_err(|e| InferenceError::SchemaGenerationFailed(e.to_string()))
+        let schema_name = stats
+            .metadata
+            .schema_name
+            .clone()
+            .unwrap_or_else(|| format!("{} Schema", schema_id));
+
+        let mut builder = SchemaBuilder::new(schema_id, &schema_name)
+            .with_timestamp_service(Arc::clone(&self.timestamp));
+
+        builder = builder
+            .with_description(format!(
+                "Auto-generated schema from Excel introspection ({})",
+                stats.format
+            ))
+            .with_version("1.0.0")
+            .with_default_range("string");
+
+        // Create classes for each sheet (element)
+        for (element_name, element_stats) in &stats.elements {
+            let mut class_builder = builder.add_class(element_name);
+
+            class_builder = class_builder.with_description(format!(
+                "Excel sheet '{}' with {} rows",
+                element_name, element_stats.occurrence_count
+            ));
+
+            // Add slots for attributes (columns)
+            for (attr_name, attr_stats) in &element_stats.attributes {
+                let inferred_type = self
+                    .type_inferencer
+                    .infer_from_samples(&attr_stats.value_samples);
+                let required = attr_stats.occurrence_count == element_stats.occurrence_count;
+                let multivalued = attr_stats.occurrence_count > element_stats.occurrence_count;
+
+                class_builder = class_builder.add_slot_with_type(
+                    attr_name,
+                    &inferred_type,
+                    required,
+                    multivalued,
+                );
+            }
+
+            builder = class_builder.finish();
+        }
+
+        let schema = builder.build();
+
+        self.logger
+            .log_info(&format!(
+                "Schema generation complete: {} classes, {} slots",
+                schema.classes.len(),
+                schema.slots.len()
+            ))
+            .await
+            .map_err(|e| InferenceError::LoggerError(e.to_string()))?;
+
+        Ok(schema)
     }
 }

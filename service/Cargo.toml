@@ -446,6 +446,14 @@ harness = false
 name = "inference_benchmarks"
 harness = false
 
+[[bench]]
+name = "loader_benchmarks"
+harness = false
+
+[[bench]]
+name = "roundtrip_benchmarks"
+harness = false
+
 [[test]]
 name = "basic_smoke"
 path = "tests/basic_smoke.rs"

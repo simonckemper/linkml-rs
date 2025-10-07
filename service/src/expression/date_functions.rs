@@ -510,11 +510,10 @@ impl BuiltinFunction for DayFunction {
 mod tests {
     use super::*;
     use serde_json::json;
+    use timestamp_service::wiring::wire_timestamp;
 
     #[test]
     fn test_now_today() {
-        use timestamp_service::create_timestamp_service;
-
         let timestamp_service = wire_timestamp().into_inner();
 
         let now_fn = NowFunction::new(timestamp_service.clone());

@@ -14,6 +14,31 @@ use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
 use timestamp_service::wiring::wire_timestamp;
 
+/// Factory function to create a  service instance
+///
+/// # Deprecated
+///
+/// This factory function is deprecated in favor of the new wiring-based pattern.
+/// Use `_service::wiring::wire_()` instead for better composability.
+///
+/// See the [Facade Migration Guide](https://docs.rootreal.com/guides/facade-migration-guide.md)
+/// for complete migration instructions.
+///
+/// # Migration Example
+///
+/// ```rust,ignore
+/// // Old pattern (deprecated):
+/// let service = create_xml_introspector();
+///
+/// // New pattern (recommended):
+/// use _service::wiring::wire_;
+/// let service = wire_()?.into_arc();
+/// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "Use \`_service::wiring::wire_()\` instead. \\
+            See docs/guides/facade-migration-guide.md for migration instructions."
+)]
 /// Create a fully-configured XML introspector
 ///
 /// # Arguments
@@ -46,6 +71,31 @@ pub fn create_xml_introspector(
     Ok(Arc::new(XmlIntrospector::new(logger, timestamp)))
 }
 
+/// Factory function to create a  service instance
+///
+/// # Deprecated
+///
+/// This factory function is deprecated in favor of the new wiring-based pattern.
+/// Use `_service::wiring::wire_()` instead for better composability.
+///
+/// See the [Facade Migration Guide](https://docs.rootreal.com/guides/facade-migration-guide.md)
+/// for complete migration instructions.
+///
+/// # Migration Example
+///
+/// ```rust,ignore
+/// // Old pattern (deprecated):
+/// let service = create_json_introspector();
+///
+/// // New pattern (recommended):
+/// use _service::wiring::wire_;
+/// let service = wire_()?.into_arc();
+/// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "Use \`_service::wiring::wire_()\` instead. \\
+            See docs/guides/facade-migration-guide.md for migration instructions."
+)]
 /// Create a fully-configured JSON introspector
 ///
 /// # Arguments
@@ -78,6 +128,31 @@ pub fn create_json_introspector(
     Ok(Arc::new(JsonIntrospector::new(logger, timestamp)))
 }
 
+/// Factory function to create a  service instance
+///
+/// # Deprecated
+///
+/// This factory function is deprecated in favor of the new wiring-based pattern.
+/// Use `_service::wiring::wire_()` instead for better composability.
+///
+/// See the [Facade Migration Guide](https://docs.rootreal.com/guides/facade-migration-guide.md)
+/// for complete migration instructions.
+///
+/// # Migration Example
+///
+/// ```rust,ignore
+/// // Old pattern (deprecated):
+/// let service = create_csv_introspector();
+///
+/// // New pattern (recommended):
+/// use _service::wiring::wire_;
+/// let service = wire_()?.into_arc();
+/// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "Use \`_service::wiring::wire_()\` instead. \\
+            See docs/guides/facade-migration-guide.md for migration instructions."
+)]
 /// Create a fully-configured CSV introspector
 ///
 /// # Arguments

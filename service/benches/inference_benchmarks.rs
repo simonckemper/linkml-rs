@@ -5,7 +5,7 @@
 
 use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use linkml_service::inference::{
-    CsvIntrospector, DataIntrospector, JsonIntrospector, XmlIntrospector,
+    CsvIntrospector, DataIntrospector, ExcelIntrospector, JsonIntrospector, XmlIntrospector,
 };
 use timestamp_service::create_timestamp_service;
 
@@ -383,6 +383,247 @@ fn bench_json_end_to_end(c: &mut Criterion) {
     });
 }
 
+// ============================================================================
+// Excel Introspector Benchmarks
+// ============================================================================
+
+fn bench_excel_introspector_sizes(c: &mut Criterion) {
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let mut group = c.benchmark_group("excel_introspector_sizes");
+
+    for size in [10, 100, 500, 1000, 5000].iter() {
+        group.throughput(Throughput::Elements(*size as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, &size| {
+            b.to_async(&runtime).iter(|| async {
+                // Create test services
+                let logger = create_logger_service().unwrap();
+                let timestamp = wire_timestamp();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+
+                // Generate Excel file with specified size
+                let mut workbook = Workbook::new();
+                let worksheet = workbook.add_worksheet();
+
+                // Headers
+                worksheet.write_string(0, 0, "id").unwrap();
+                worksheet.write_string(0, 1, "name").unwrap();
+                worksheet.write_string(0, 2, "value").unwrap();
+                worksheet.write_string(0, 3, "status").unwrap();
+
+                // Data rows
+                for row in 1..=size {
+                    worksheet.write_number(row as u32, 0, row as f64).unwrap();
+                    worksheet.write_string(row as u32, 1, &format!("Item {}", row)).unwrap();
+                    worksheet.write_number(row as u32, 2, (row as f64) * 1.5).unwrap();
+                    worksheet.write_string(row as u32, 3, if row % 2 == 0 { "active" } else { "inactive" }).unwrap();
+                }
+
+                // Save to temp file
+                let temp_file = NamedTempFile::new().unwrap();
+                workbook.save(temp_file.path()).unwrap();
+
+                // Benchmark analysis
+                let _ = black_box(introspector.analyze_file(temp_file.path()).await.unwrap());
+            });
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_excel_multi_sheet(c: &mut Criterion) {
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let mut group = c.benchmark_group("excel_multi_sheet");
+
+    for sheets in [1, 5, 10, 20].iter() {
+        group.throughput(Throughput::Elements(*sheets as u64));
+        group.bench_with_input(BenchmarkId::from_parameter(sheets), sheets, |b, &sheets| {
+            b.to_async(&runtime).iter(|| async {
+                // Create test services
+                let logger = create_logger_service().unwrap();
+                let timestamp = wire_timestamp();
+                let introspector = ExcelIntrospector::new(logger, timestamp);
+
+                // Generate multi-sheet workbook
+                let mut workbook = Workbook::new();
+
+                for sheet_idx in 0..sheets {
+                    let worksheet = workbook.add_worksheet().set_name(&format!("Sheet{}", sheet_idx + 1)).unwrap();
+
+                    // Headers
+                    worksheet.write_string(0, 0, "id").unwrap();
+                    worksheet.write_string(0, 1, "data").unwrap();
+
+                    // 100 rows per sheet
+                    for row in 1..=100 {
+                        worksheet.write_number(row, 0, row as f64).unwrap();
+                        worksheet.write_string(row, 1, &format!("Data {}", row)).unwrap();
+                    }
+                }
+
+                // Save to temp file
+                let temp_file = NamedTempFile::new().unwrap();
+                workbook.save(temp_file.path()).unwrap();
+
+                // Benchmark analysis
+                let _ = black_box(introspector.analyze_file(temp_file.path()).await.unwrap());
+            });
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_excel_schema_generation(c: &mut Criterion) {
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("excel_schema_generation", |b| {
+        b.to_async(&runtime).iter(|| async {
+            // Create test services
+            let logger = create_logger_service().unwrap();
+            let timestamp = wire_timestamp();
+            let introspector = ExcelIntrospector::new(logger, timestamp);
+
+            // Generate Excel file
+            let mut workbook = Workbook::new();
+            let worksheet = workbook.add_worksheet();
+
+            // Headers
+            worksheet.write_string(0, 0, "id").unwrap();
+            worksheet.write_string(0, 1, "name").unwrap();
+            worksheet.write_string(0, 2, "age").unwrap();
+            worksheet.write_string(0, 3, "status").unwrap();
+
+            // 1000 rows
+            for row in 1..=1000 {
+                worksheet.write_number(row, 0, row as f64).unwrap();
+                worksheet.write_string(row, 1, &format!("Person {}", row)).unwrap();
+                worksheet.write_number(row, 2, (25 + (row % 50)) as f64).unwrap();
+                worksheet.write_string(row, 3, if row % 3 == 0 { "active" } else if row % 3 == 1 { "inactive" } else { "pending" }).unwrap();
+            }
+
+            let temp_file = NamedTempFile::new().unwrap();
+            workbook.save(temp_file.path()).unwrap();
+
+            // Analyze and generate schema
+            let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
+            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+        });
+    });
+}
+
+fn bench_excel_end_to_end(c: &mut Criterion) {
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("excel_end_to_end", |b| {
+        b.to_async(&runtime).iter(|| async {
+            // Create test services
+            let logger = create_logger_service().unwrap();
+            let timestamp = wire_timestamp();
+            let introspector = ExcelIntrospector::new(logger, timestamp);
+
+            // Generate Excel file with multi-sheet and relationships
+            let mut workbook = Workbook::new();
+
+            // Customer sheet
+            let customer = workbook.add_worksheet().set_name("Customer").unwrap();
+            customer.write_string(0, 0, "id").unwrap();
+            customer.write_string(0, 1, "name").unwrap();
+            for row in 1..=50 {
+                customer.write_number(row, 0, row as f64).unwrap();
+                customer.write_string(row, 1, &format!("Customer {}", row)).unwrap();
+            }
+
+            // Order sheet with foreign key
+            let order = workbook.add_worksheet().set_name("Order").unwrap();
+            order.write_string(0, 0, "id").unwrap();
+            order.write_string(0, 1, "customer_id").unwrap();
+            order.write_string(0, 2, "amount").unwrap();
+            order.write_string(0, 3, "status").unwrap();
+            for row in 1..=200 {
+                order.write_number(row, 0, row as f64).unwrap();
+                order.write_number(row, 1, ((row % 50) + 1) as f64).unwrap();
+                order.write_number(row, 2, (row as f64) * 10.5).unwrap();
+                order.write_string(row, 3, if row % 2 == 0 { "completed" } else { "pending" }).unwrap();
+            }
+
+            let temp_file = NamedTempFile::new().unwrap();
+            workbook.save(temp_file.path()).unwrap();
+
+            // Complete workflow: analyze + generate schema
+            let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
+            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+        });
+    });
+}
+
+fn bench_excel_typical_workbook(c: &mut Criterion) {
+    use rust_xlsxwriter::Workbook;
+    use tempfile::NamedTempFile;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("excel_typical_workbook_10_sheets_1000_rows", |b| {
+        b.to_async(&runtime).iter(|| async {
+            // Create test services
+            let logger = create_logger_service().unwrap();
+            let timestamp = wire_timestamp();
+            let introspector = ExcelIntrospector::new(logger, timestamp);
+
+            // Generate typical workbook: 10 sheets, 1000 rows each
+            let mut workbook = Workbook::new();
+
+            for sheet_idx in 0..10 {
+                let worksheet = workbook.add_worksheet().set_name(&format!("Sheet{}", sheet_idx + 1)).unwrap();
+
+                // 5 columns
+                worksheet.write_string(0, 0, "id").unwrap();
+                worksheet.write_string(0, 1, "name").unwrap();
+                worksheet.write_string(0, 2, "value").unwrap();
+                worksheet.write_string(0, 3, "status").unwrap();
+                worksheet.write_string(0, 4, "category").unwrap();
+
+                // 1000 rows
+                for row in 1..=1000 {
+                    worksheet.write_number(row, 0, row as f64).unwrap();
+                    worksheet.write_string(row, 1, &format!("Item {}", row)).unwrap();
+                    worksheet.write_number(row, 2, (row as f64) * 1.5).unwrap();
+                    worksheet.write_string(row, 3, if row % 2 == 0 { "active" } else { "inactive" }).unwrap();
+                    worksheet.write_string(row, 4, &format!("Cat{}", row % 5)).unwrap();
+                }
+            }
+
+            let temp_file = NamedTempFile::new().unwrap();
+            workbook.save(temp_file.path()).unwrap();
+
+            // Benchmark complete analysis
+            let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
+            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+        });
+    });
+}
+
+// Helper functions for Excel benchmarks
+use logger_service::wiring::wire_logger;
+use timestamp_service::wiring::wire_timestamp;
+
+fn create_logger_service() -> Result<std::sync::Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>, Box<dyn std::error::Error>> {
+    let timestamp = wire_timestamp().into_arc();
+    Ok(wire_logger(timestamp).into_arc())
+}
+
 criterion_group!(
     benches,
     bench_xml_introspector_sizes,
@@ -396,6 +637,11 @@ criterion_group!(
     bench_json_schema_generation,
     bench_json_end_to_end,
     bench_csv_introspector_sizes,
+    bench_excel_introspector_sizes,
+    bench_excel_multi_sheet,
+    bench_excel_schema_generation,
+    bench_excel_end_to_end,
+    bench_excel_typical_workbook,
 );
 
 criterion_main!(benches);

@@ -78,6 +78,31 @@ where
     Ok(Arc::new(service))
 }
 
+/// Factory function to create a  service instance
+///
+/// # Deprecated
+///
+/// This factory function is deprecated in favor of the new wiring-based pattern.
+/// Use `_service::wiring::wire_()` instead for better composability.
+///
+/// See the [Facade Migration Guide](https://docs.rootreal.com/guides/facade-migration-guide.md)
+/// for complete migration instructions.
+///
+/// # Migration Example
+///
+/// ```rust,ignore
+/// // Old pattern (deprecated):
+/// let service = create_minimal_linkml_service<R>();
+///
+/// // New pattern (recommended):
+/// use _service::wiring::wire_;
+/// let service = wire_()?.into_arc();
+/// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "Use \`_service::wiring::wire_()\` instead. \\
+            See docs/guides/facade-migration-guide.md for migration instructions."
+)]
 /// Create a minimal `LinkML` service for CLI usage with limited dependencies.
 ///
 /// This creates a basic `LinkML` service suitable for CLI operations that only
