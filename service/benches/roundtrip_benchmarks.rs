@@ -5,13 +5,10 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use linkml_core::prelude::*;
 use linkml_service::generator::excel::ExcelGenerator;
-use linkml_service::introspector::excel::ExcelIntrospector;
-use linkml_service::introspector::Introspector;
-use linkml_service::loader::excel::ExcelLoader;
-use linkml_service::loader::{DataLoader, LoadOptions};
+use linkml_service::inference::introspectors::excel::ExcelIntrospector;
+use linkml_service::inference::traits::DataIntrospector;
 use logger_service::wiring::wire_logger;
 use std::sync::Arc;
-use tempfile::TempDir;
 use timestamp_service::wiring::wire_timestamp;
 
 /// Helper to create test services
@@ -20,7 +17,9 @@ fn create_test_services() -> (
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone()).into_arc();
+    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+        .expect("Failed to wire logger")
+        .into_arc();
     (logger, timestamp)
 }
 
@@ -88,9 +87,9 @@ fn bench_schema_roundtrip_sizes(c: &mut Criterion) {
                         let introspector = ExcelIntrospector::new(logger.clone(), timestamp.clone());
                         black_box(
                             introspector
-                                .introspect_file(&excel_path)
+                                .analyze_file(&excel_path)
                                 .await
-                                .expect("Failed to introspect"),
+                                .expect("Failed to analyze"),
                         )
                     })
                 });
@@ -122,9 +121,9 @@ fn bench_schema_roundtrip_typical(c: &mut Criterion) {
                 let introspector = ExcelIntrospector::new(logger.clone(), timestamp.clone());
                 black_box(
                     introspector
-                        .introspect_file(&excel_path)
+                        .analyze_file(&excel_path)
                         .await
-                        .expect("Failed to introspect"),
+                        .expect("Failed to analyze"),
                 )
             })
         });
@@ -169,9 +168,9 @@ fn bench_schema_introspection(c: &mut Criterion) {
                 let introspector = ExcelIntrospector::new(logger.clone(), timestamp.clone());
                 black_box(
                     introspector
-                        .introspect_file(&excel_path)
+                        .analyze_file(&excel_path)
                         .await
-                        .expect("Failed to introspect"),
+                        .expect("Failed to analyze"),
                 )
             })
         });
@@ -240,9 +239,9 @@ fn bench_schema_roundtrip_inheritance(c: &mut Criterion) {
                 let introspector = ExcelIntrospector::new(logger.clone(), timestamp.clone());
                 black_box(
                     introspector
-                        .introspect_file(&excel_path)
+                        .analyze_file(&excel_path)
                         .await
-                        .expect("Failed to introspect"),
+                        .expect("Failed to analyze"),
                 )
             })
         });

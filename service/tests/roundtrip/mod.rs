@@ -24,8 +24,7 @@
 
 pub mod equivalence;
 pub mod schema_roundtrip;
-// TODO: Fix data_roundtrip compilation errors
-// pub mod data_roundtrip;
+pub mod data_roundtrip;
 
 // Re-export key types for convenience
 pub use equivalence::{compare_schemas, Difference, EquivalenceResult};

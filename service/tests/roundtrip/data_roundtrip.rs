@@ -11,6 +11,7 @@ use linkml_service::loader::excel::ExcelLoader;
 use linkml_service::loader::{DataLoader, LoadOptions};
 use logger_service::wiring::wire_logger;
 use rust_xlsxwriter::Workbook;
+use serde_json::json;
 use std::collections::HashMap;
 use tempfile::TempDir;
 use timestamp_service::wiring::wire_timestamp;
@@ -21,19 +22,21 @@ fn create_test_services() -> (
     std::sync::Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone()).into_arc();
+    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+        .expect("Failed to wire logger")
+        .into_arc();
     (logger, timestamp)
 }
 
 /// Helper to create temporary directory for test files
-fn setup_test_directory() -> Result<TempDir, Box<dyn std::error::Error>> {
+fn setup_test_directory() -> std::result::Result<TempDir, Box<dyn std::error::Error>> {
     let temp_dir = tempfile::tempdir()?;
     Ok(temp_dir)
 }
 
 /// Test simple data round-trip: Excel → Data → Validation
 #[tokio::test]
-async fn test_simple_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_simple_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -87,7 +90,7 @@ async fn test_simple_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> 
 
 /// Test data round-trip with all data types
 #[tokio::test]
-async fn test_all_types_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_all_types_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -132,7 +135,7 @@ async fn test_all_types_data_roundtrip() -> Result<(), Box<dyn std::error::Error
 
 /// Test data round-trip with constraints validation
 #[tokio::test]
-async fn test_constraints_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_constraints_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -162,7 +165,7 @@ async fn test_constraints_data_roundtrip() -> Result<(), Box<dyn std::error::Err
 
 /// Test multi-sheet data round-trip
 #[tokio::test]
-async fn test_multi_sheet_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_multi_sheet_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -201,7 +204,7 @@ async fn test_multi_sheet_data_roundtrip() -> Result<(), Box<dyn std::error::Err
 
 /// Test data round-trip with optional fields
 #[tokio::test]
-async fn test_optional_fields_data_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_optional_fields_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -278,7 +281,7 @@ fn create_simple_data_schema() -> SchemaDefinition {
 }
 
 /// Create Excel file with simple person data
-fn create_simple_data_excel(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn create_simple_data_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -358,7 +361,7 @@ fn create_all_types_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with all data types
-fn create_all_types_excel(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn create_all_types_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -407,8 +410,8 @@ fn create_constraints_schema() -> SchemaDefinition {
         SlotDefinition {
             name: "price".to_string(),
             range: Some("float".to_string()),
-            minimum_value: Some(0.0),
-            maximum_value: Some(99999.99),
+            minimum_value: Some(json!(0.0)),
+            maximum_value: Some(json!(99999.99)),
             ..Default::default()
         },
     );
@@ -418,7 +421,7 @@ fn create_constraints_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with constraint-compliant data
-fn create_constraints_excel(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn create_constraints_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -489,7 +492,7 @@ fn create_multi_class_data_schema() -> SchemaDefinition {
 }
 
 /// Create multi-sheet Excel file
-fn create_multi_sheet_excel(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn create_multi_sheet_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
 
     // Department sheet
@@ -567,7 +570,7 @@ fn create_optional_fields_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with optional fields (some empty)
-fn create_optional_fields_excel(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+fn create_optional_fields_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
