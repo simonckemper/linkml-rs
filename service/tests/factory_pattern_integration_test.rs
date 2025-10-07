@@ -102,7 +102,7 @@ async fn test_complete_factory_dependency_injection() {
     let random = create_random_service()
         .expect("Random service creation should succeed");
 
-    let task_manager = create_task_management_service()
+    let task_manager = wire_task_management()?.into_arc()
         .expect("Task management service creation should succeed");
 
     let cache = create_cache_service(

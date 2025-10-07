@@ -169,6 +169,12 @@ pub mod factory_v3;
 /// Service implementation
 pub mod service;
 
+/// Handle for dependency injection
+pub mod handle;
+
+/// Wiring functions for idiomatic DI
+pub mod wiring;
+
 /// Schema parsing
 pub mod parser;
 

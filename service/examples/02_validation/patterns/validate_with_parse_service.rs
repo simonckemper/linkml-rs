@@ -27,7 +27,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Create task management service
     let task_service =
-        Arc::new(task_management_service::factory::create_task_management_service()?);
+        Arc::new(task_management_service::wiring::wire_task_management()?);
 
     // Create cache service with all dependencies
     let cache_service =
