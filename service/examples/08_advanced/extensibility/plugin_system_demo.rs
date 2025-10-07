@@ -8,7 +8,7 @@
 
 use linkml_service::parser::SchemaParser;
 use linkml_service::plugin::{PluginContext, PluginManager, PluginType};
-use logger_service::factory::create_development_logger;
+use logger_service::wiring::wire_development_logger;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -18,7 +18,7 @@ use timestamp_core::factory::create_timestamp_service;
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize logger service
     let timestamp = wire_timestamp();
-    let logger = Arc::new(create_development_logger(timestamp).await?);
+    let logger = Arc::new(wire_development_logger(timestamp).await?);
 
     // Create plugin manager
     let mut plugin_manager = PluginManager::new(logger.clone());

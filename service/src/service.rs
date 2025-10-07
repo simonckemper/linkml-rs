@@ -1259,33 +1259,26 @@ impl LinkMLService for MinimalLinkMLServiceImpl {
             // For now, just report success for well-formed JSON objects
             report.valid = true;
         } else {
+            // Get type name for error message
+            let type_name = match data {
+                Value::Array(_) => "array",
+                Value::String(_) => "string",
+                Value::Number(_) => "number",
+                Value::Bool(_) => "boolean",
+                Value::Null => "null",
+                Value::Object(_) => "object", // Should not reach here due to outer if
+            };
+
             report.valid = false;
             report.errors.push(linkml_core::types::ValidationError {
                 message: format!(
                     "Expected object for class '{}', found {}",
                     class_name,
-                    match data {
-                        Value::Array(_) => "array",
-                        Value::String(_) => "string",
-                        Value::Number(_) => "number",
-                        Value::Bool(_) => "boolean",
-                        Value::Null => "null",
-                        Value::Object(_) => unreachable!(),
-                    }
+                    type_name
                 ),
                 path: None,
                 expected: Some("object".to_string()),
-                actual: Some(
-                    match data {
-                        Value::Array(_) => "array",
-                        Value::String(_) => "string",
-                        Value::Number(_) => "number",
-                        Value::Bool(_) => "boolean",
-                        Value::Null => "null",
-                        Value::Object(_) => unreachable!(),
-                    }
-                    .to_string(),
-                ),
+                actual: Some(type_name.to_string()),
                 severity: linkml_core::types::Severity::Error,
             });
         }
