@@ -534,7 +534,7 @@ impl SssomGenerator {
                 mapping.creator_id.as_deref().unwrap_or(""),
                 mapping.comment.as_deref().unwrap_or(""),
             )
-            .unwrap();
+            .map_err(|e| LinkMLError::parse(format!("Failed to write SSSOM TSV row: {}", e)))?;
         }
 
         Ok(output)

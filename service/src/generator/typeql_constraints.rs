@@ -264,13 +264,13 @@ impl TypeQLConstraintTranslator {
             "} then {
 ",
         );
-        write!(
+        // Writing to String should never fail
+        let _ = write!(
             rule,
             "    $x has validation-error \"Duplicate values for unique key: {}\";
 ",
             unique_key.unique_key_slots.join(", ")
-        )
-        .unwrap();
+        );
         rule.push_str(
             "};
 ",
