@@ -285,6 +285,7 @@ pub enum LinkMLCommand {
     /// # Output as JSON
     /// linkml sheets2schema data.xlsx -o schema.json --format json
     /// ```
+    #[command(name = "sheets2schema")]
     Sheets2Schema {
         /// Input Excel file path (.xlsx, .xls, .xlsb, .ods)
         #[arg(value_name = "EXCEL_FILE")]
@@ -329,6 +330,7 @@ pub enum LinkMLCommand {
     /// # Customize formatting
     /// linkml schema2sheets schema.yaml -o template.xlsx --freeze-headers --filters
     /// ```
+    #[command(name = "schema2sheets")]
     Schema2Sheets {
         /// Input schema file path (.yaml, .yml, .json)
         #[arg(value_name = "SCHEMA_FILE")]

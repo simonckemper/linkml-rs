@@ -14,11 +14,10 @@ use crate::inference::traits::{DataIntrospector, InferenceError, InferenceResult
 use crate::inference::type_inference::create_type_inferencer;
 use crate::inference::types::DocumentStats;
 use async_trait::async_trait;
-use calamine::{Data, Reader, Xlsx};
 use linkml_core::types::SchemaDefinition;
 use logger_core::{LoggerError, LoggerService};
+use parse_service::parsers::excel::{CellValue, ExcelParser, Row};
 use std::collections::HashMap;
-use std::io::Cursor;
 use std::path::Path;
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
@@ -200,7 +199,7 @@ impl ExcelIntrospector {
     /// * `SheetStats` - Statistics for this sheet
     fn process_sheet<R>(&self, sheet_name: String, mut rows: R) -> InferenceResult<SheetStats>
     where
-        R: Iterator<Item = Vec<Data>>,
+        R: Iterator<Item = Row>,
     {
         let mut columns: Vec<ColumnStats> = Vec::new();
         let mut row_count = 0;
@@ -211,14 +210,14 @@ impl ExcelIntrospector {
             row_count += 1;
 
             // Heuristic: If first row contains mostly strings, treat as header
-            let string_count = first_row.iter().filter(|cell| matches!(cell, Data::String(_))).count();
+            let string_count = first_row.iter().filter(|cell| matches!(cell, CellValue::String(_))).count();
             has_header = string_count > first_row.len() / 2;
 
             if has_header {
                 // Initialize columns from header row
                 for (idx, cell) in first_row.iter().enumerate() {
                     let col_name = match cell {
-                        Data::String(s) if !s.trim().is_empty() => s.clone(),
+                        CellValue::String(s) if !s.trim().is_empty() => s.clone(),
                         _ => format!("column_{}", idx + 1),
                     };
                     columns.push(ColumnStats::new(col_name));
@@ -227,7 +226,7 @@ impl ExcelIntrospector {
                 // Generate column names and process first row as data
                 for (idx, cell) in first_row.iter().enumerate() {
                     let mut col = ColumnStats::new(format!("column_{}", idx + 1));
-                    col.record_value(cell.clone());
+                    col.record_value(cell);
                     columns.push(col);
                 }
             }
@@ -246,7 +245,7 @@ impl ExcelIntrospector {
             // Record values for each column
             for (idx, cell) in row.iter().enumerate() {
                 if let Some(col_stats) = columns.get_mut(idx) {
-                    col_stats.record_value(cell.clone());
+                    col_stats.record_value(cell);
                 }
             }
         }
