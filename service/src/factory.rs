@@ -100,7 +100,7 @@ where
 /// ```
 #[deprecated(
     since = "0.2.0",
-    note = "Use \`_service::wiring::wire_()\` instead. \\
+    note = "Use `_service::wiring::wire_()` instead.
             See docs/guides/facade-migration-guide.md for migration instructions."
 )]
 /// Create a minimal `LinkML` service for CLI usage with limited dependencies.

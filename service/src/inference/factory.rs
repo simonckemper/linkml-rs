@@ -36,7 +36,7 @@ use timestamp_service::wiring::wire_timestamp;
 /// ```
 #[deprecated(
     since = "0.2.0",
-    note = "Use \`_service::wiring::wire_()\` instead. \\
+    note = "Use `_service::wiring::wire_()` instead.
             See docs/guides/facade-migration-guide.md for migration instructions."
 )]
 /// Create a fully-configured XML introspector
@@ -93,7 +93,7 @@ pub fn create_xml_introspector(
 /// ```
 #[deprecated(
     since = "0.2.0",
-    note = "Use \`_service::wiring::wire_()\` instead. \\
+    note = "Use `_service::wiring::wire_()` instead.
             See docs/guides/facade-migration-guide.md for migration instructions."
 )]
 /// Create a fully-configured JSON introspector
@@ -150,7 +150,7 @@ pub fn create_json_introspector(
 /// ```
 #[deprecated(
     since = "0.2.0",
-    note = "Use \`_service::wiring::wire_()\` instead. \\
+    note = "Use `_service::wiring::wire_()` instead.
             See docs/guides/facade-migration-guide.md for migration instructions."
 )]
 /// Create a fully-configured CSV introspector

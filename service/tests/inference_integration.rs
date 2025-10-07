@@ -14,7 +14,6 @@ use linkml_service::inference::{
 };
 use std::sync::Arc;
 use tempfile::TempDir;
-use timestamp_service::create_timestamp_service;
 use tokio::fs;
 
 // Helper function to create test services
@@ -22,8 +21,8 @@ fn create_test_services() -> (
     Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>,
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
-    let logger = create_logger_service().unwrap();
-    let timestamp = wire_timestamp();
+    let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
+    let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
     (logger, timestamp)
 }
 
