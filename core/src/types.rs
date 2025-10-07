@@ -445,6 +445,7 @@ pub struct StructuredPattern {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct TypeDefinition {
     /// Name of the type
+    #[serde(default)]
     pub name: String,
 
     /// Description
@@ -480,6 +481,7 @@ pub struct TypeDefinition {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct EnumDefinition {
     /// Name of the enum
+    #[serde(default)]
     pub name: String,
 
     /// Description
