@@ -62,6 +62,12 @@ impl ExcelGenerator {
         self.features.contains(ExcelFeatures::ADD_FILTERS)
     }
 
+    /// Check if pattern validation formulas should be emitted.
+    #[must_use]
+    pub fn pattern_validation(&self) -> bool {
+        self.features.contains(ExcelFeatures::PATTERN_VALIDATION)
+    }
+
     /// Configure example data generation (reserved for future use).
     #[must_use]
     pub fn with_examples(self, _enabled: bool) -> Self {
@@ -76,6 +82,17 @@ impl ExcelGenerator {
             self.features.insert(ExcelFeatures::ADD_VALIDATION);
         } else {
             self.features.remove(ExcelFeatures::ADD_VALIDATION);
+        }
+        self
+    }
+
+    /// Configure regex-based pattern validation support.
+    #[must_use]
+    pub fn with_pattern_validation(mut self, enabled: bool) -> Self {
+        if enabled {
+            self.features.insert(ExcelFeatures::PATTERN_VALIDATION);
+        } else {
+            self.features.remove(ExcelFeatures::PATTERN_VALIDATION);
         }
         self
     }

@@ -200,10 +200,7 @@ impl LinkMLError {
     /// Create an IO error from a message
     #[must_use]
     pub fn io_error(message: impl Into<String>) -> Self {
-        Self::IoError(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            message.into(),
-        ))
+        Self::IoError(std::io::Error::other(message.into()))
     }
 
     /// Create a serialization error

@@ -1093,7 +1093,7 @@ impl Annotatable for EnumDefinition {
     }
 }
 
-/// Custom deserializer for permissible_values that handles both map and sequence formats
+/// Custom deserializer for `permissible_values` that handles both map and sequence formats
 fn deserialize_permissible_values<'de, D>(
     deserializer: D,
 ) -> std::result::Result<Vec<PermissibleValue>, D::Error>

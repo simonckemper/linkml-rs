@@ -48,7 +48,7 @@ impl ExcelGenerator {
         )?;
 
         if self.add_validation() {
-            Self::add_data_validations(&mut worksheet, &slots, schema, DATA_START_ROW)?;
+            self.add_data_validations(&mut worksheet, &slots, schema, DATA_START_ROW)?;
         }
 
         if self.freeze_headers() {
@@ -168,6 +168,7 @@ impl ExcelGenerator {
     }
 
     fn add_data_validations(
+        &self,
         worksheet: &mut Worksheet,
         slots: &[(String, SlotDefinition)],
         schema: &SchemaDefinition,
@@ -301,33 +302,39 @@ impl ExcelGenerator {
             }
 
             if let Some(pattern) = &slot_def.pattern {
-                let formula = pattern::build_pattern_formula(pattern, col, start_row)?;
-                let mut validation = DataValidation::new().allow_custom(Formula::new(formula));
-
-                validation = validation
-                    .set_error_title("Pattern mismatch")
-                    .map_err(|e| GeneratorError::Generation(e.to_string()))?;
-                validation = validation
-                    .set_error_message(&format!("Value must match the pattern: {pattern}"))
-                    .map_err(|e| GeneratorError::Generation(e.to_string()))?;
-                validation = validation
-                    .set_input_title("Pattern constraint")
-                    .map_err(|e| GeneratorError::Generation(e.to_string()))?;
-                validation = validation
-                    .set_input_message(&format!("Allowed pattern: {pattern}"))
-                    .map_err(|e| GeneratorError::Generation(e.to_string()))?;
-
                 let note_text = format!("Pattern requirement: {pattern}");
                 let note = Note::new(&note_text).set_author("LinkML Generator");
 
-                if has_validation {
-                    worksheet
-                        .insert_note(start_row, col, &note)
+                if self.pattern_validation() {
+                    let formula = pattern::build_pattern_formula(pattern, col, start_row)?;
+                    let mut validation = DataValidation::new().allow_custom(Formula::new(formula));
+
+                    validation = validation
+                        .set_error_title("Pattern mismatch")
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                    validation = validation
+                        .set_error_message(&format!("Value must match the pattern: {pattern}"))
+                        .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                    validation = validation
+                        .set_input_title("Pattern constraint")
+                        .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                    validation = validation
+                        .set_input_message(&format!("Allowed pattern: {pattern}"))
+                        .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+
+                    if has_validation {
+                        worksheet
+                            .insert_note(start_row, col, &note)
+                            .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                    } else {
+                        worksheet
+                            .add_data_validation(start_row, col, 1_048_575, col, &validation)
+                            .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                        worksheet
+                            .insert_note(start_row, col, &note)
+                            .map_err(|e| GeneratorError::Generation(e.to_string()))?;
+                    }
                 } else {
-                    worksheet
-                        .add_data_validation(start_row, col, 1_048_575, col, &validation)
-                        .map_err(|e| GeneratorError::Generation(e.to_string()))?;
                     worksheet
                         .insert_note(start_row, col, &note)
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
