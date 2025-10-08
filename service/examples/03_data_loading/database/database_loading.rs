@@ -7,9 +7,7 @@
 //! 4. Dump LinkML instances back to databases
 
 use linkml_core::prelude::*;
-use linkml_service::loader::{
-    DatabaseDumper, DatabaseLoader, DatabaseOptions, ForeignKeyRelation,
-};
+use linkml_service::loader::{DatabaseDumper, DatabaseLoader, DatabaseOptions, ForeignKeyRelation};
 use std::collections::HashMap;
 
 #[tokio::main]

@@ -158,7 +158,10 @@ async fn test_constraints_data_roundtrip() -> std::result::Result<(), Box<dyn st
     // Validate constraints are preserved
     let product1 = &instances[0];
     let price1 = product1.data.get("price").and_then(|v| v.as_f64()).unwrap();
-    assert!(price1 >= 0.0 && price1 <= 99999.99, "Price should be within range");
+    assert!(
+        price1 >= 0.0 && price1 <= 99999.99,
+        "Price should be within range"
+    );
 
     Ok(())
 }
@@ -204,7 +207,8 @@ async fn test_multi_sheet_data_roundtrip() -> std::result::Result<(), Box<dyn st
 
 /// Test data round-trip with optional fields
 #[tokio::test]
-async fn test_optional_fields_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn test_optional_fields_data_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>>
+{
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -281,7 +285,9 @@ fn create_simple_data_schema() -> SchemaDefinition {
 }
 
 /// Create Excel file with simple person data
-fn create_simple_data_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn create_simple_data_excel(
+    path: &std::path::Path,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -361,7 +367,9 @@ fn create_all_types_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with all data types
-fn create_all_types_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn create_all_types_excel(
+    path: &std::path::Path,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -421,7 +429,9 @@ fn create_constraints_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with constraint-compliant data
-fn create_constraints_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn create_constraints_excel(
+    path: &std::path::Path,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
@@ -492,7 +502,9 @@ fn create_multi_class_data_schema() -> SchemaDefinition {
 }
 
 /// Create multi-sheet Excel file
-fn create_multi_sheet_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn create_multi_sheet_excel(
+    path: &std::path::Path,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
 
     // Department sheet
@@ -570,7 +582,9 @@ fn create_optional_fields_schema() -> SchemaDefinition {
 }
 
 /// Create Excel with optional fields (some empty)
-fn create_optional_fields_excel(path: &std::path::Path) -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn create_optional_fields_excel(
+    path: &std::path::Path,
+) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 

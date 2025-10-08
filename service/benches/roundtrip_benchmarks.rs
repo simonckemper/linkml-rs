@@ -2,7 +2,7 @@
 //!
 //! Tests round-trip performance for Schema → Excel → Schema and Data → Excel → Data cycles.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use linkml_core::prelude::*;
 use linkml_service::generator::excel::ExcelGenerator;
 use linkml_service::inference::introspectors::excel::ExcelIntrospector;
@@ -47,7 +47,7 @@ fn create_test_schema(num_classes: usize) -> SchemaDefinition {
                     } else {
                         "float".to_string()
                     }),
-                    required: Some(j < 5), // First 5 are required
+                    required: Some(j < 5),    // First 5 are required
                     identifier: Some(j == 0), // First attr is identifier
                     ..Default::default()
                 },
@@ -84,7 +84,8 @@ fn bench_schema_roundtrip_sizes(c: &mut Criterion) {
                             .expect("Failed to generate Excel");
 
                         // Excel → Schema
-                        let introspector = ExcelIntrospector::new(logger.clone(), timestamp.clone());
+                        let introspector =
+                            ExcelIntrospector::new(logger.clone(), timestamp.clone());
                         black_box(
                             introspector
                                 .analyze_file(&excel_path)

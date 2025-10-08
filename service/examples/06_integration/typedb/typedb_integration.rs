@@ -8,8 +8,7 @@
 
 use linkml_core::prelude::*;
 use linkml_service::loader::{
-    TypeDBIntegrationDumper, TypeDBIntegrationLoader,
-    TypeDBIntegrationOptions,
+    TypeDBIntegrationDumper, TypeDBIntegrationLoader, TypeDBIntegrationOptions,
 };
 use std::collections::HashMap;
 

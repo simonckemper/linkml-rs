@@ -265,11 +265,20 @@ pub async fn create_inference_engine_with_services(
     })?;
 
     // Create introspectors using direct instantiation (avoiding deprecated factory functions)
-    let xml_introspector = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let xml_introspector = Arc::new(XmlIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
-    let json_introspector = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let json_introspector = Arc::new(JsonIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
-    let csv_introspector = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let csv_introspector = Arc::new(CsvIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
     // Use default configuration
     let config = InferenceConfig::default();
@@ -333,11 +342,20 @@ pub async fn create_inference_engine_with_config(
     })?;
 
     // Create introspectors using direct instantiation (avoiding deprecated factory functions)
-    let xml_introspector = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let xml_introspector = Arc::new(XmlIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
-    let json_introspector = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let json_introspector = Arc::new(JsonIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
-    let csv_introspector = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
+    let csv_introspector = Arc::new(CsvIntrospector::new(
+        Arc::clone(&logger),
+        Arc::clone(&timestamp),
+    ));
 
     // Create inference engine with custom config
     Ok(Arc::new(InferenceEngine::new(
@@ -357,18 +375,27 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_introspectors() {
-        let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
-        let timestamp =
-            timestamp_service::wire_timestamp().expect("Failed to create timestamp");
+        let logger = logger_service::test_utils::create_test_logger_service()
+            .expect("Failed to create logger");
+        let timestamp = timestamp_service::wire_timestamp().expect("Failed to create timestamp");
 
         // Test introspector creation using direct instantiation
-        let xml = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        let xml = Arc::new(XmlIntrospector::new(
+            Arc::clone(&logger),
+            Arc::clone(&timestamp.into_inner()),
+        ));
         assert!(xml.introspect_bytes(b"<root/>").await.is_ok());
 
-        let json = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        let json = Arc::new(JsonIntrospector::new(
+            Arc::clone(&logger),
+            Arc::clone(&timestamp.into_inner()),
+        ));
         assert!(json.introspect_bytes(b"{}").await.is_ok());
 
-        let csv = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        let csv = Arc::new(CsvIntrospector::new(
+            Arc::clone(&logger),
+            Arc::clone(&timestamp.into_inner()),
+        ));
         assert!(csv.introspect_bytes(b"a,b,c\n1,2,3").await.is_ok());
     }
 
@@ -385,9 +412,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_inference_engine_with_custom_config() {
-        let logger = logger_service::test_utils::create_test_logger_service().expect("Failed to create logger");
-        let timestamp =
-            timestamp_service::wire_timestamp().expect("Failed to create timestamp");
+        let logger = logger_service::test_utils::create_test_logger_service()
+            .expect("Failed to create logger");
+        let timestamp = timestamp_service::wire_timestamp().expect("Failed to create timestamp");
 
         let config = InferenceConfig {
             min_samples_for_type_inference: 10,

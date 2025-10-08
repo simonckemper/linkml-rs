@@ -77,7 +77,10 @@ impl ColumnStats {
         };
 
         self.non_empty_count += 1;
-        *self.detected_types.entry(type_name.to_string()).or_insert(0) += 1;
+        *self
+            .detected_types
+            .entry(type_name.to_string())
+            .or_insert(0) += 1;
 
         // Track unique values for enum detection (limit to 100 unique values)
         if self.unique_values.len() < 100 {
@@ -211,7 +214,10 @@ impl ExcelIntrospector {
             row_count += 1;
 
             // Heuristic: If first row contains mostly strings, treat as header
-            let string_count = first_row.iter().filter(|cell| matches!(cell, Data::String(_))).count();
+            let string_count = first_row
+                .iter()
+                .filter(|cell| matches!(cell, Data::String(_)))
+                .count();
             has_header = string_count > first_row.len() / 2;
 
             if has_header {
@@ -290,10 +296,8 @@ impl ExcelIntrospector {
 
                     // Check if this matches any sheet name
                     if let Some(target_sheet) = sheet_names.get(&normalized_prefix) {
-                        relationships.insert(
-                            (sheet.name.clone(), col.name.clone()),
-                            target_sheet.clone(),
-                        );
+                        relationships
+                            .insert((sheet.name.clone(), col.name.clone()), target_sheet.clone());
                     }
                 }
 
@@ -301,10 +305,8 @@ impl ExcelIntrospector {
                 let col_normalized = sanitize_name(&col.name).to_lowercase();
                 if let Some(target_sheet) = sheet_names.get(&col_normalized) {
                     if target_sheet != &sheet.name {
-                        relationships.insert(
-                            (sheet.name.clone(), col.name.clone()),
-                            target_sheet.clone(),
-                        );
+                        relationships
+                            .insert((sheet.name.clone(), col.name.clone()), target_sheet.clone());
                     }
                 }
             }
@@ -349,30 +351,40 @@ impl ExcelIntrospector {
                 // Infer LinkML type from predominant Excel type
                 if let Some(excel_type) = col.predominant_type() {
                     let linkml_type = excel_type_to_linkml(&excel_type);
-                    attr_stats.value_samples.insert(0, format!("TYPE:{linkml_type}"));
+                    attr_stats
+                        .value_samples
+                        .insert(0, format!("TYPE:{linkml_type}"));
                 }
 
                 // Add metadata about required status
                 if col.is_required() {
-                    attr_stats.value_samples.insert(0, "REQUIRED:true".to_string());
+                    attr_stats
+                        .value_samples
+                        .insert(0, "REQUIRED:true".to_string());
                 }
 
                 // Add enum constraint if detected
                 if let Some(enum_values) = col.detect_enum() {
                     let enum_str = enum_values.join("|");
-                    attr_stats.value_samples.insert(0, format!("ENUM:{enum_str}"));
+                    attr_stats
+                        .value_samples
+                        .insert(0, format!("ENUM:{enum_str}"));
                 }
 
                 // Add numeric range constraint if detected
                 if let Some((min, max)) = col.numeric_range() {
-                    attr_stats.value_samples.insert(0, format!("RANGE:{min}..{max}"));
+                    attr_stats
+                        .value_samples
+                        .insert(0, format!("RANGE:{min}..{max}"));
                 }
 
                 // Add relationship metadata if this column references another sheet
                 let relationship_key = (sheet.name.clone(), col.name.clone());
                 if let Some(target_sheet) = relationships.get(&relationship_key) {
                     let target_class = sanitize_name(target_sheet);
-                    attr_stats.value_samples.insert(0, format!("FK_TO:{target_class}"));
+                    attr_stats
+                        .value_samples
+                        .insert(0, format!("FK_TO:{target_class}"));
                 }
 
                 element_stats.attributes.insert(slot_name, attr_stats);
@@ -449,8 +461,13 @@ pub fn wire_excel_introspector(
 impl DataIntrospector for ExcelIntrospector {
     async fn analyze_file(&self, path: &Path) -> InferenceResult<DocumentStats> {
         // Open workbook using calamine
-        let mut workbook: Xlsx<_> = calamine::open_workbook(path)
-            .map_err(|e: calamine::XlsxError| InferenceError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())))?;
+        let mut workbook: Xlsx<_> =
+            calamine::open_workbook(path).map_err(|e: calamine::XlsxError| {
+                InferenceError::Io(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    e.to_string(),
+                ))
+            })?;
 
         let mut all_sheets = Vec::new();
 

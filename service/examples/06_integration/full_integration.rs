@@ -33,9 +33,7 @@ use restful_api_service::wiring::{ServiceDependencies, wire_restful_api};
 use shutdown_service::wiring::wire_shutdown;
 
 // LinkML service
-use linkml_service::{
-    cli_enhanced::commands::serve::create_linkml_router, wiring::wire_linkml,
-};
+use linkml_service::{cli_enhanced::commands::serve::create_linkml_router, wiring::wire_linkml};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -56,17 +54,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Phase 2: Create infrastructure services
     println!("Phase 2: Creating infrastructure services...");
     let task_manager = wire_task_management(timestamp.clone()).into_arc();
-    let error_handler = wire_error_handling(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
-    let cache = wire_cache(logger.clone(), timestamp.clone(), task_manager.clone(), error_handler.clone(), None).await?.into_arc();
+    let error_handler =
+        wire_error_handling(logger.clone(), timestamp.clone(), task_manager.clone())
+            .await?
+            .into_arc();
+    let cache = wire_cache(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        error_handler.clone(),
+        None,
+    )
+    .await?
+    .into_arc();
 
-    let monitor = wire_monitoring(logger.clone(), timestamp.clone(), task_manager.clone(), error_handler.clone(), None).await?.into_arc();
+    let monitor = wire_monitoring(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        error_handler.clone(),
+        None,
+    )
+    .await?
+    .into_arc();
 
-    let telemetry =
-        wire_telemetry(logger.clone(), timestamp.clone(), task_manager.clone(), None).await?.into_arc();
+    let telemetry = wire_telemetry(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        None,
+    )
+    .await?
+    .into_arc();
 
     // Phase 3: Create timeout service
     println!("Phase 3: Creating timeout service...");
-    let timeout = wire_timeout(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
+    let timeout = wire_timeout(logger.clone(), timestamp.clone(), task_manager.clone())
+        .await?
+        .into_arc();
 
     // Phase 4: Create data services
     println!("Phase 4: Creating data services...");
@@ -79,23 +104,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         monitor.clone(),
         config.clone(),
     )
-    .await?.into_arc();
+    .await?
+    .into_arc();
 
-    let vector_db =
-        wire_vector_database(logger.clone(), timestamp.clone(), cache.clone(), config.clone()).await?.into_arc();
+    let vector_db = wire_vector_database(
+        logger.clone(),
+        timestamp.clone(),
+        cache.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
 
-    let lakehouse =
-        wire_lakehouse(logger.clone(), timestamp.clone(), task_manager.clone(), cache.clone(), dbms.clone(), config.clone())
-            .await?.into_arc();
+    let lakehouse = wire_lakehouse(
+        logger.clone(),
+        timestamp.clone(),
+        task_manager.clone(),
+        cache.clone(),
+        dbms.clone(),
+        config.clone(),
+    )
+    .await?
+    .into_arc();
 
     // Phase 5: Create security services
     println!("Phase 5: Creating security services...");
-    let auth =
-        wire_authentication(logger.clone(), timestamp.clone(), config.clone(), cache.clone(), hash.clone())
-            .await?.into_arc();
+    let auth = wire_authentication(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+        cache.clone(),
+        hash.clone(),
+    )
+    .await?
+    .into_arc();
 
-    let rate_limiter =
-        wire_rate_limiting(logger.clone(), timestamp.clone(), config.clone(), cache.clone()).await?.into_arc();
+    let rate_limiter = wire_rate_limiting(
+        logger.clone(),
+        timestamp.clone(),
+        config.clone(),
+        cache.clone(),
+    )
+    .await?
+    .into_arc();
 
     // Phase 6: Create LinkML service with all dependencies
     println!("Phase 6: Creating LinkML service...");
@@ -111,7 +162,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         monitor.clone(),
         random.clone(),
     )
-    .await?.into_arc();
+    .await?
+    .into_arc();
 
     // Phase 7: Create REST API service dependencies
     println!("Phase 7: Preparing REST API service...");
@@ -187,8 +239,9 @@ classes:
 
     // Phase 11: Setup shutdown service
     println!("Phase 11: Setting up graceful shutdown...");
-    let shutdown =
-        wire_shutdown(logger.clone(), timestamp.clone(), task_manager.clone()).await?.into_arc();
+    let shutdown = wire_shutdown(logger.clone(), timestamp.clone(), task_manager.clone())
+        .await?
+        .into_arc();
 
     // Register shutdown hooks for all services
     shutdown.register_hook(

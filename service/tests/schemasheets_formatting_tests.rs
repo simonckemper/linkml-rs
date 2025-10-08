@@ -1,6 +1,8 @@
 //! Tests for SchemaSheets advanced formatting features
 
-use linkml_core::types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{
+    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+};
 use linkml_service::schemasheets::SchemaSheetsGenerator;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -28,7 +30,9 @@ async fn test_advanced_formatting_enabled() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     // Generate with advanced formatting
@@ -41,7 +45,10 @@ async fn test_advanced_formatting_enabled() {
     assert!(generator.alternating_row_colors);
     assert!(generator.auto_size_columns);
 
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -66,7 +73,9 @@ async fn test_formatting_disabled() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     let temp_dir = TempDir::new().unwrap();
@@ -78,7 +87,10 @@ async fn test_formatting_disabled() {
     generator.alternating_row_colors = false;
     generator.auto_size_columns = false;
 
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -125,13 +137,18 @@ async fn test_formatting_with_all_element_types() {
         name: "required".to_string(),
         ..Default::default()
     };
-    schema.subsets.insert("required".to_string(), required_subset);
+    schema
+        .subsets
+        .insert("required".to_string(), required_subset);
 
     let temp_dir = TempDir::new().unwrap();
     let output_path = temp_dir.path().join("all_types_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -146,4 +163,3 @@ fn test_default_generator_has_formatting() {
     assert!(generator.alternating_row_colors);
     assert!(generator.auto_size_columns);
 }
-

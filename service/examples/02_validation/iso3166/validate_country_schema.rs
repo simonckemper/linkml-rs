@@ -21,8 +21,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     env_logger::init();
 
-    println!("=== LinkML Country Schema Validation Example ===
-");
+    println!(
+        "=== LinkML Country Schema Validation Example ===
+"
+    );
 
     // Paths to schema and instance files
     let schema_base = PathBuf::from("/home/kempersc/apps/rootreal/domain/schema");
@@ -32,33 +34,45 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     println!("Loading schemas and instances:");
     println!("  - Country schema: {}", country_schema_path.display());
-    println!("  - Country instances: {}", country_instances_path.display());
-    println!("  - Identifier schema: {}", identifier_schema_path.display());
+    println!(
+        "  - Country instances: {}",
+        country_instances_path.display()
+    );
+    println!(
+        "  - Identifier schema: {}",
+        identifier_schema_path.display()
+    );
     println!();
 
     // Create LinkML service with configuration
     let config = HashMap::from([
-        ("base_path".to_string(), schema_base.to_string_lossy().to_string()),
+        (
+            "base_path".to_string(),
+            schema_base.to_string_lossy().to_string(),
+        ),
         ("enable_instance_validation".to_string(), "true".to_string()),
     ]);
-    
+
     let service = create_linkml_service_with_config(config)?;
 
     // ========================================================================
     // Part 1: Validate ISO3166Entity instances against their schema
     // ========================================================================
-    
+
     println!("Part 1: Validating ISO3166Entity instances");
-    println!("=" .repeat(50));
+    println!("=".repeat(50));
 
     // Load the country schema
     let country_schema = service.load_schema(&country_schema_path).await?;
-    
+
     // Load the country instances manually
     let instances_content = std::fs::read_to_string(&country_instances_path)?;
     let instances: serde_json::Value = serde_yaml::from_str(&instances_content)?;
-    
-    println!("Loaded {} country instances", instances.as_array().map_or(0, |a| a.len());
+
+    println!(
+        "Loaded {} country instances",
+        instances.as_array().map_or(0, |a| a.len())
+    );
 
     // Validate each instance against the ISO3166Entity class
     let mut valid_count = 0;
@@ -69,25 +83,35 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             let validation_result = service
                 .validate(instance, &country_schema, "ISO3166Entity")
                 .await?;
-            
+
             if validation_result.is_valid() {
                 valid_count += 1;
-                if idx < 3 {  // Show first few valid instances
+                if idx < 3 {
+                    // Show first few valid instances
                     println!(
                         "  ✓ Valid: {} - {}",
                         instance.get("id").and_then(|v| v.as_str()).unwrap_or("?"),
-                        instance.get("label").and_then(|v| v.as_str()).unwrap_or("?")
+                        instance
+                            .get("label")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("?")
                     );
                 }
             } else {
                 invalid_count += 1;
-                println!("  ✗ Invalid instance at index {}: {:?}", idx, validation_result.errors());
+                println!(
+                    "  ✗ Invalid instance at index {}: {:?}",
+                    idx,
+                    validation_result.errors()
+                );
             }
         }
     }
 
-    println!("
-Validation Summary:");
+    println!(
+        "
+Validation Summary:"
+    );
     println!("  - Valid instances: {}", valid_count);
     println!("  - Invalid instances: {}", invalid_count);
     println!();
@@ -95,10 +119,10 @@ Validation Summary:");
     // ========================================================================
     // Part 2: Validate CountryCodeAlpha2Identifier with instance-based permissible values
     // ========================================================================
-    
+
     println!("Part 2: Validating CountryCodeAlpha2Identifier");
-    println!("=" .repeat(50));
-    
+    println!("=".repeat(50));
+
     // Load the identifier schema
     let identifier_schema = service.load_schema(&identifier_schema_path).await?;
 
@@ -112,9 +136,15 @@ Validation Summary:");
             }
         }
     }
-    
-    println!("Extracted {} permissible country codes from instances", permissible_codes.len());
-    println!("Examples: {:?}", &permissible_codes[..5.min(permissible_codes.len())]);
+
+    println!(
+        "Extracted {} permissible country codes from instances",
+        permissible_codes.len()
+    );
+    println!(
+        "Examples: {:?}",
+        &permissible_codes[..5.min(permissible_codes.len())]
+    );
     println!();
 
     // Test cases for CountryCodeAlpha2Identifier validation
@@ -130,7 +160,7 @@ Validation Summary:");
     ];
 
     println!("Testing CountryCodeAlpha2Identifier validation:");
-    
+
     for (code, expected_valid, description) in test_cases {
         // Create test data with the identifier
         let test_data = json!({
@@ -142,7 +172,7 @@ Validation Summary:");
             .validate(
                 &test_data,
                 &identifier_schema,
-                "CountryCodeAlpha2Identifier"
+                "CountryCodeAlpha2Identifier",
             )
             .await?;
 
@@ -165,38 +195,41 @@ Validation Summary:");
             println!("      Error: {}", result.errors()[0]);
         }
     }
-    
+
     println!();
 
     // ========================================================================
     // Part 3: Demonstrate pattern validation with named capture groups
     // ========================================================================
-    
+
     println!("Part 3: Pattern Validation with Named Capture Groups");
-    println!("=" .repeat(50));
-    
+    println!("=".repeat(50));
+
     // The country_code_alpha2_identifier_pattern includes a named capture group
     // Pattern: (?P<CountryCodeAlpha2Identifier>[A-Z]{2})
-    
+
     let pattern_test = "GB";
     println!("Testing pattern matching for: '{}'", pattern_test);
-    
+
     // Validate that the pattern matches and extracts correctly
     let pattern_data = json!({
         "identifier": pattern_test
     });
-    
+
     let pattern_result = service
         .validate(
             &pattern_data,
             &identifier_schema,
-            "CountryCodeAlpha2Identifier"
+            "CountryCodeAlpha2Identifier",
         )
         .await?;
-    
+
     if pattern_result.is_valid() {
         println!("  ✓ Pattern matches successfully");
-        println!("  - Captured group 'CountryCodeAlpha2Identifier': {}", pattern_test);
+        println!(
+            "  - Captured group 'CountryCodeAlpha2Identifier': {}",
+            pattern_test
+        );
     } else {
         println!("  ✗ Pattern validation failed");
     }
@@ -206,28 +239,31 @@ Validation Summary:");
     // ========================================================================
     // Part 4: Demonstrate compound identifier validation
     // ========================================================================
-    
+
     println!("Part 4: Compound Identifier Validation");
-    println!("=" .repeat(50));
-    
+    println!("=".repeat(50));
+
     // The schema defines compound patterns like repository_identifier_compound
     // which combines multiple identifier patterns
-    
+
     let compound_test = "US-NY-NYC-g-smithsonian";
-    println!("Testing compound repository identifier: '{}'", compound_test);
+    println!(
+        "Testing compound repository identifier: '{}'",
+        compound_test
+    );
     println!("Expected components:");
     println!("  - Country: US (must be valid ISO 3166-1 code)");
     println!("  - Subdivision: NY");
     println!("  - Municipality: NYC");
     println!("  - GLAM type: g (gallery)");
     println!("  - ISIL: smithsonian");
-    
+
     // This would validate against the compound pattern
     // ensuring the country code component is a valid ISO3166Entity
-    
+
     println!();
     println!("=== Example Complete ===");
-    
+
     Ok(())
 }
 
@@ -242,14 +278,14 @@ impl ValidationReportExt for linkml_core::types::ValidationReport {
     fn is_valid(&self) -> bool {
         self.valid
     }
-    
+
     fn errors(&self) -> Vec<String> {
         self.errors
             .iter()
             .map(|e| format!("{}: {}", e.field.as_deref().unwrap_or(""), e.message))
             .collect()
     }
-    
+
     fn warnings(&self) -> Vec<String> {
         self.warnings
             .iter()

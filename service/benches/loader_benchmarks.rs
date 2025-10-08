@@ -2,7 +2,7 @@
 //!
 //! Tests loading performance for various workbook sizes and complexity.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use linkml_core::prelude::*;
 use linkml_service::loader::{DataLoader, ExcelLoader, LoadOptions};
 use logger_service::wiring::wire_logger;
@@ -156,7 +156,12 @@ fn bench_excel_loader_sizes(c: &mut Criterion) {
             b.iter(|| {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async {
-                    black_box(loader.load_file(&excel_path, &schema, &options).await.unwrap())
+                    black_box(
+                        loader
+                            .load_file(&excel_path, &schema, &options)
+                            .await
+                            .unwrap(),
+                    )
                 })
             });
         });
@@ -179,7 +184,12 @@ fn bench_excel_loader_1000_rows(c: &mut Criterion) {
         b.iter(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                black_box(loader.load_file(&excel_path, &schema, &options).await.unwrap())
+                black_box(
+                    loader
+                        .load_file(&excel_path, &schema, &options)
+                        .await
+                        .unwrap(),
+                )
             })
         });
     });
@@ -240,7 +250,12 @@ fn bench_excel_loader_multi_sheet(c: &mut Criterion) {
             b.iter(|| {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 rt.block_on(async {
-                    black_box(loader.load_file(&excel_path, &schema, &options).await.unwrap())
+                    black_box(
+                        loader
+                            .load_file(&excel_path, &schema, &options)
+                            .await
+                            .unwrap(),
+                    )
                 })
             });
         });
@@ -263,7 +278,12 @@ fn bench_excel_loader_type_conversion(c: &mut Criterion) {
         b.iter(|| {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
-                black_box(loader.load_file(&excel_path, &schema, &options).await.unwrap())
+                black_box(
+                    loader
+                        .load_file(&excel_path, &schema, &options)
+                        .await
+                        .unwrap(),
+                )
             })
         });
     });

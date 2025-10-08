@@ -17,6 +17,7 @@ use linkml_service::prelude::*;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
+#[path = "../../common/mod.rs"]
 mod common;
 use common::create_example_service;
 #[tokio::main]

@@ -1,6 +1,8 @@
 //! Unit tests for SchemaSheets generator
 
-use linkml_core::types::{ClassDefinition, EnumDefinition, PermissibleValue, PrefixDefinition, SchemaDefinition};
+use linkml_core::types::{
+    ClassDefinition, EnumDefinition, PermissibleValue, PrefixDefinition, SchemaDefinition,
+};
 use linkml_service::schemasheets::{SchemaSheetsGenerator, SchemaSheetsParser};
 use std::collections::HashMap;
 use tempfile::TempDir;
@@ -32,7 +34,9 @@ async fn test_generate_basic_schema() {
         required: Some(true),
         ..Default::default()
     };
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
 
     schema.classes.insert("Person".to_string(), person_class);
 
@@ -41,14 +45,20 @@ async fn test_generate_basic_schema() {
     let output_path = temp_dir.path().join("test_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists(), "Generated Excel file should exist");
 
     // Parse it back
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("test_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("test_schema"))
+        .await
+        .unwrap();
 
     // Verify basic properties
     assert_eq!(parsed_schema.id, schema.id);
@@ -83,10 +93,16 @@ async fn test_generate_with_enums() {
     let output_path = temp_dir.path().join("enum_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("enum_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("enum_schema"))
+        .await
+        .unwrap();
 
     // Verify enum was preserved
     assert!(parsed_schema.enums.contains_key("Status"));
@@ -119,10 +135,16 @@ async fn test_generate_with_types() {
     let output_path = temp_dir.path().join("type_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("type_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("type_schema"))
+        .await
+        .unwrap();
 
     // Verify type was preserved
     assert!(parsed_schema.types.contains_key("EmailType"));
@@ -157,14 +179,23 @@ async fn test_generate_metadata_sheets() {
     let output_path = temp_dir.path().join("metadata_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("metadata_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("metadata_schema"))
+        .await
+        .unwrap();
 
     // Verify metadata was preserved
     assert_eq!(parsed_schema.version, Some("2.0.0".to_string()));
-    assert_eq!(parsed_schema.description, Some("Schema with metadata".to_string()));
+    assert_eq!(
+        parsed_schema.description,
+        Some("Schema with metadata".to_string())
+    );
     assert!(parsed_schema.prefixes.contains_key("schema"));
     assert!(parsed_schema.prefixes.contains_key("foaf"));
 }
@@ -195,7 +226,9 @@ async fn test_generate_with_mappings() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     // Generate and parse
@@ -203,21 +236,39 @@ async fn test_generate_with_mappings() {
     let output_path = temp_dir.path().join("mapping_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("mapping_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("mapping_schema"))
+        .await
+        .unwrap();
 
     // Verify mappings were preserved
     let parsed_person = &parsed_schema.classes["Person"];
     assert!(!parsed_person.exact_mappings.is_empty());
-    assert!(parsed_person.exact_mappings.contains(&"schema:Person".to_string()));
+    assert!(
+        parsed_person
+            .exact_mappings
+            .contains(&"schema:Person".to_string())
+    );
     assert!(!parsed_person.close_mappings.is_empty());
-    assert!(parsed_person.close_mappings.contains(&"foaf:Person".to_string()));
+    assert!(
+        parsed_person
+            .close_mappings
+            .contains(&"foaf:Person".to_string())
+    );
 
     let parsed_name = &parsed_person.attributes["name"];
     assert!(!parsed_name.exact_mappings.is_empty());
-    assert!(parsed_name.exact_mappings.contains(&"schema:name".to_string()));
+    assert!(
+        parsed_name
+            .exact_mappings
+            .contains(&"schema:name".to_string())
+    );
 }
 
 /// Test roundtrip conversion
@@ -254,7 +305,9 @@ async fn test_roundtrip_conversion() {
     };
 
     person_class.attributes.insert("id".to_string(), id_slot);
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     // Add an enum
@@ -273,11 +326,17 @@ async fn test_roundtrip_conversion() {
     let output_path = temp_dir.path().join("roundtrip_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Parse it back
     let parser = SchemaSheetsParser::new();
-    let parsed_schema = parser.parse_file(&output_path, Some("roundtrip_schema")).await.unwrap();
+    let parsed_schema = parser
+        .parse_file(&output_path, Some("roundtrip_schema"))
+        .await
+        .unwrap();
 
     // Verify all elements are preserved
     assert_eq!(parsed_schema.id, schema.id);
@@ -297,4 +356,3 @@ async fn test_roundtrip_conversion() {
     assert_eq!(parsed_id.identifier, Some(true));
     assert_eq!(parsed_id.required, Some(true));
 }
-

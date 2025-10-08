@@ -4,7 +4,7 @@
 //! multi-sheet workbooks from LinkML schemas.
 
 use linkml_core::prelude::*;
-use linkml_service::generator::{ExcelGenerator, Generator, GeneratorOptions};
+use linkml_service::generator::ExcelGenerator;
 use std::collections::HashMap;
 use std::fs;
 
@@ -91,7 +91,6 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("Generating Excel workbook...");
 
     // Generate the Excel file
-    let options = GeneratorOptions::default();
     let output = generator.generate(&schema)?;
 
     // The output is base64 encoded, so we need to decode it
@@ -103,15 +102,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     fs::write(filename, decoded)?;
 
     println!("✅ Excel workbook generated: {}", filename);
-        println!("   - Summary sheet with schema statistics");
-        println!("   - Person sheet with headers, types, and descriptions");
-        println!("   - Enumerations sheet with PersonStatus values");
-        println!("   - Validation Info sheet with field constraints");
-        println!("
-Note: Due to rust_xlsxwriter v0.64 limitations:");
-        println!("   - Cell comments are shown as a description row");
-        println!("   - Data validation rules are documented in a separate sheet");
-    }
+    println!("   - Summary sheet with schema statistics");
+    println!("   - Person sheet with headers, types, and descriptions");
+    println!("   - Enumerations sheet with PersonStatus values");
+    println!("   - Validation Info sheet with field constraints");
+    println!();
+    println!("Note: rust_xlsxwriter applies cell notes and validation metadata at");
+    println!("generation time. Older Excel builds without REGEXMATCH support will");
+    println!("display the pattern requirements as notes instead of enforcing them.");
 
     Ok(())
 }

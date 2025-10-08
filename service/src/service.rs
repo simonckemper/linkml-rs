@@ -1273,8 +1273,7 @@ impl LinkMLService for MinimalLinkMLServiceImpl {
             report.errors.push(linkml_core::types::ValidationError {
                 message: format!(
                     "Expected object for class '{}', found {}",
-                    class_name,
-                    type_name
+                    class_name, type_name
                 ),
                 path: None,
                 expected: Some("object".to_string()),

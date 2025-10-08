@@ -48,7 +48,10 @@ async fn test_roundtrip_biolink_minimal() {
     let excel_path = temp_dir.path().join("biolink_minimal.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&original_schema, &excel_path).await.unwrap();
+    generator
+        .generate_file(&original_schema, &excel_path)
+        .await
+        .unwrap();
 
     // Parse it back
     let parser = SchemaSheetsParser::new();
@@ -116,7 +119,10 @@ async fn test_roundtrip_api_models() {
     let excel_path = temp_dir.path().join("api_models.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&original_schema, &excel_path).await.unwrap();
+    generator
+        .generate_file(&original_schema, &excel_path)
+        .await
+        .unwrap();
 
     let parser = SchemaSheetsParser::new();
     let roundtrip_schema = parser
@@ -206,8 +212,12 @@ async fn test_roundtrip_complex_schema() {
     };
 
     person_class.attributes.insert("id".to_string(), id_slot);
-    person_class.attributes.insert("name".to_string(), name_slot);
-    person_class.attributes.insert("email".to_string(), email_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("email".to_string(), email_slot);
 
     schema.classes.insert("Person".to_string(), person_class);
 
@@ -219,7 +229,9 @@ async fn test_roundtrip_complex_schema() {
         ..Default::default()
     };
 
-    schema.classes.insert("Employee".to_string(), employee_class);
+    schema
+        .classes
+        .insert("Employee".to_string(), employee_class);
 
     // Add an enum
     let status_enum = EnumDefinition {
@@ -260,7 +272,9 @@ async fn test_roundtrip_complex_schema() {
         ..Default::default()
     };
 
-    schema.subsets.insert("required".to_string(), required_subset);
+    schema
+        .subsets
+        .insert("required".to_string(), required_subset);
 
     // Generate Excel
     let temp_dir = TempDir::new().unwrap();
@@ -294,7 +308,10 @@ async fn test_roundtrip_complex_schema() {
 
     // Verify Person class details
     let roundtrip_person = &roundtrip_schema.classes["Person"];
-    assert_eq!(roundtrip_person.description, schema.classes["Person"].description);
+    assert_eq!(
+        roundtrip_person.description,
+        schema.classes["Person"].description
+    );
     assert!(!roundtrip_person.exact_mappings.is_empty());
     assert!(!roundtrip_person.close_mappings.is_empty());
 
@@ -336,4 +353,3 @@ async fn test_roundtrip_complex_schema() {
     assert_eq!(roundtrip_schema.subsets.len(), schema.subsets.len());
     assert!(roundtrip_schema.subsets.contains_key("required"));
 }
-

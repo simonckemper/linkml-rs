@@ -222,7 +222,8 @@ impl<S: linkml_core::traits::LinkMLService> InteractiveSession<S> {
             return Err(LinkMLError::service("Empty command"));
         }
 
-        let first_part = parts.first()
+        let first_part = parts
+            .first()
             .ok_or_else(|| LinkMLError::service("Empty command".to_string()))?;
 
         match first_part.to_lowercase().as_str() {

@@ -421,7 +421,9 @@ async fn main() -> Result<()> {
     println!("🚀 Step 4: Initializing schema inference engine...");
 
     // Create services needed for inference
-    let logger = logger_service::wiring::wire_logger(timestamp.clone()).await?.into_arc()?;
+    let logger = logger_service::wiring::wire_logger(timestamp.clone())
+        .await?
+        .into_arc()?;
     let timestamp = timestamp_service::wiring::wire_timestamp();
 
     // Create XML introspector for PAGE-XML analysis

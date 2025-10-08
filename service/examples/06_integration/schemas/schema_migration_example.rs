@@ -1,148 +1,141 @@
-//!  Example demonstrating LinkML to TypeQL schema migration //!  This example shows how to: //!  1. Compare two schema versions //!  2. Analyze the impact of changes //!  3. Generate migration scripts
+//! Compare two LinkML schemas to understand migration impact.
+//!
+//! This example builds two small schema versions programmatically and prints
+//! the structural differences between them. It is intentionally lightweight so
+//! the migration concepts are easy to follow without pulling in external
+//! tooling.
+
 use linkml_core::prelude::*;
-// Migration functionality not yet implemented
-// use linkml_service::generator::typeql_migration::{
-//     MigrationAnalyzer, MigrationGenerator, SchemaDiffer, SchemaVersion,
-// };
-fn main () {
-    let
-    mut v1_schema = SchemaDefinition ::default () ;
-    v1_schema . name = "ProductCatalog" . to_string () ;
-    v1_schema . version = Some ("1.0.0" . to_string ()) ;
-    let
-    mut product = ClassDefinition ::default () ;
-    product . description = Some ("A product in our catalog" . to_string ()) ;
-    product . slots . extend (vec ! ["name" . to_string () , "price" . to_string () , "description" . to_string () ,]) ;
-    let
-    mut name_slot = SlotDefinition ::default () ;
-    name_slot . required = Some (true) ;
-    product . slot_usage . insert ("name" . to_string (), name_slot) ;
-    v1_schema . classes . insert ("Product" . to_string (), product) ;
-    let
-    mut name = SlotDefinition ::default () ;
-    name . range = Some ("string" . to_string ()) ;
-    v1_schema . slots . insert ("name" . to_string (), name) ;
-    let
-    mut price = SlotDefinition ::default () ;
-    price . range = Some ("float" . to_string ()) ;
-    v1_schema . slots . insert ("price" . to_string (), price) ;
-    let
-    mut description = SlotDefinition ::default () ;
-    description . range = Some ("string" . to_string ()) ;
-    v1_schema . slots . insert ("description" . to_string (), description) ;
-    let mut v2_schema = v1_schema.clone();
-    v2_schema.version = Some("2.0.0".to_string());
-    if let Some(product) = v2_schema.classes.get_mut("Product") {
+use std::collections::{BTreeMap, BTreeSet};
+
+fn main() {
+    let v1 = build_v1();
+    let v2 = build_v2();
+
+    println!("=== Schema Migration Example ===\n");
+    println!(
+        "From version: {}",
+        v1.version.as_deref().unwrap_or("unknown")
+    );
+    println!(
+        "To version:   {}\n",
+        v2.version.as_deref().unwrap_or("unknown")
+    );
+
+    let class_diff = diff_map(v1.classes, v2.classes);
+    let slot_diff = diff_map(v1.slots, v2.slots);
+
+    report(&class_diff, "Classes");
+    report(&slot_diff, "Slots");
+
+    if !slot_diff.added.is_empty() {
+        println!("\nNew slot details:");
+        for name in &slot_diff.added {
+            println!("  - {}", name);
+        }
+    }
+}
+
+fn build_v1() -> SchemaDefinition {
+    let mut schema = SchemaDefinition::default();
+    schema.name = "ProductCatalog".to_string();
+    schema.version = Some("1.0.0".to_string());
+
+    let mut product = ClassDefinition::default();
+    product.description = Some("Product listing".to_string());
+    product.slots = vec![
+        "name".to_string(),
+        "price".to_string(),
+        "description".to_string(),
+    ];
+    schema.classes.insert("Product".to_string(), product);
+
+    schema
+        .slots
+        .insert("name".to_string(), make_slot("string", true));
+    schema
+        .slots
+        .insert("price".to_string(), make_slot("float", true));
+    schema
+        .slots
+        .insert("description".to_string(), make_slot("string", false));
+
+    schema
+}
+
+fn build_v2() -> SchemaDefinition {
+    let mut schema = build_v1();
+    schema.version = Some("2.0.0".to_string());
+
+    if let Some(product) = schema.classes.get_mut("Product") {
         product.slots.push("sku".to_string());
-        let mut sku_slot = SlotDefinition::default();
-        sku_slot.required = Some(true);
-        sku_slot.identifier = Some(true);
-        product.slot_usage.insert("sku".to_string(), sku_slot);
         product.slots.push("category".to_string());
-        product.slots.retain(|s| s != "description");
+        product.slots.retain(|slot| slot != "description");
     }
-    let mut sku = SlotDefinition::default();
-    sku.range = Some("string".to_string());
-    sku.pattern = Some(r"^SKU-\d{6}$".to_string());
-    v2_schema.slots.insert("sku".to_string(), sku);
-    let
-    mut category = SlotDefinition ::default () ;
-    category . range = Some ("string" . to_string ()) ;
-    v2_schema . slots . insert ("category" . to_string (), category) ;
-    v2_schema . slots . re
-    move ("description") ;
-    let
-    mut category_class = ClassDefinition ::default () ;
-    category_class . description = Some ("Product category" . to_string ()) ;
-    category_class . slots . push ("name" . to_string ()) ;
-    v2_schema . classes . insert ("Category" . to_string (), category_class) ;
-    println ! ("=== Schema Migration Example ===
-") ;
-    println ! ("1. Version Management") ;
-    let v1_version = SchemaVersion ::parse ("1.0.0") . expect ("Operation failed") ;
-    let v2_version = SchemaVersion ::parse ("2.0.0") . expect ("Operation failed") ;
-    println ! ("   - From version:{
-    }", v1_version) ;
-    println ! ("   - To version:{
-    }", v2_version) ;
-    println ! ("   - Is major version change:{
-    }", v2_version . is_breaking_change_from (& v1_version)) ;
-    println ! ("
-2. Schema Comparison") ;
-    let diff = SchemaDiffer ::compare (& v1_schema , & v2_schema) . expect ("Operation failed") ;
-    println ! ("   - Added types:{
-    }", diff . added_types . len ()) ;
-    println ! ("   - Modified types:{
-    }", diff . modified_types . len ()) ;
-    println ! ("   - Added attributes:{
-    }", diff . added_attributes . len ()) ;
-    println ! ("   - Removed attributes:{
-    }", diff . removed_attributes . len ()) ;
-    println ! ("
-3. Impact Analysis") ;
-    let impact = MigrationAnalyzer ::analyze_impact (& diff) . expect ("Operation failed") ;
-    println ! ("   - Category:{
-        :?
-    }", impact . category) ;
-    println ! ("   - Breaking changes:{
-    }", impact . breaking_changes . len ()) ;
-    println ! ("   - Warnings:{
-    }", impact . warnings . len ()) ;
-    println ! ("   - Safe changes:{
-    }", impact . safe_changes . len ()) ;
-    println ! ("   - Requires data migration:{
-    }", impact . requires_data_migration) ;
-    println ! ("   - Complexity score:{
-    }/10", impact . complexity_score) ;
-    if ! impact . breaking_changes . is_empty () {
-        println ! ("
-   Breaking changes:") ;
-        for change in & impact . breaking_changes {
-            println ! ("   - {
-            }", change) ;
-        }
+
+    schema
+        .slots
+        .insert("sku".to_string(), make_slot("string", true));
+    schema
+        .slots
+        .insert("category".to_string(), make_slot("Category", false));
+    schema.slots.remove("description");
+
+    let mut category = ClassDefinition::default();
+    category.description = Some("Product category".to_string());
+    category.slots = vec!["name".to_string()];
+    schema.classes.insert("Category".to_string(), category);
+
+    schema
+}
+
+fn make_slot(range: &str, required: bool) -> SlotDefinition {
+    let mut slot = SlotDefinition::default();
+    slot.range = Some(range.to_string());
+    slot.required = Some(required);
+    slot
+}
+
+struct MapDiff {
+    added: BTreeSet<String>,
+    removed: BTreeSet<String>,
+    shared: BTreeSet<String>,
+}
+
+fn diff_map<T>(before: BTreeMap<String, T>, after: BTreeMap<String, T>) -> MapDiff {
+    let before_keys: BTreeSet<_> = before.keys().cloned().collect();
+    let after_keys: BTreeSet<_> = after.keys().cloned().collect();
+
+    let added = after_keys.difference(&before_keys).cloned().collect();
+    let removed = before_keys.difference(&after_keys).cloned().collect();
+    let shared = before_keys.intersection(&after_keys).cloned().collect();
+
+    MapDiff {
+        added,
+        removed,
+        shared,
     }
-    if ! impact . warnings . is_empty () {
-        println ! ("
-   Warnings:") ;
-        for warning in & impact . warnings {
-            println ! ("   - {
-            }", warning) ;
+}
+
+fn report(diff: &MapDiff, label: &str) {
+    println!("{label} summary:");
+    println!("  + added:   {}", diff.added.len());
+    println!("  - removed: {}", diff.removed.len());
+    println!("    shared:  {}\n", diff.shared.len());
+
+    if !diff.added.is_empty() {
+        println!("  Added {label}:");
+        for item in &diff.added {
+            println!("    - {item}");
         }
-    } println ! ("
-4. Migration Script Generation") ;
-    let generator = MigrationGenerator ::new () ;
-    let migration = generator . generate (& diff , & impact , "1.0.0" , "2.0.0") . expect ("Operation failed") ;
-    println ! ("
-=== Forward Migration Script ===") ;
-    println ! ("{
-    }", migration . forward_script ()) ;
-    println ! ("
-=== Rollback Script ===") ;
-    println ! ("{
-    }", migration . rollback_script ()) ;
-    if ! migration . data_migrations . is_empty () {
-        println ! ("
-=== Data Migrations ===") ;
-        for (i, data_migration) in migration . data_migrations . iter () . enumerate () {
-            println ! ("
-Step {
-            }:{
-            }", i + 1, data_migration . description) ;
-            println ! ("Query:
-{
-            }", data_migration . query) ;
-            println ! ("Idempotent:{
-            }", data_migration . idempotent) ;
+        println!();
+    }
+
+    if !diff.removed.is_empty() {
+        println!("  Removed {label}:");
+        for item in &diff.removed {
+            println!("    - {item}");
         }
-    } println ! ("
-=== Migration Summary ===") ;
-    println ! ("- Migration is breaking:{
-    }", migration . metadata . is_breaking) ;
-    println ! ("- Complexity:{
-    }/10", migration . metadata . complexity) ;
-    println ! ("- Generated at:{
-    }", migration . metadata . generated_at) ;
-    println ! ("
-Migration planning complete!") ;
+        println!();
+    }
 }

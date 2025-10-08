@@ -4,7 +4,7 @@
 //! data instances with full schema validation.
 
 use async_trait::async_trait;
-use calamine::{open_workbook, Data, Range, Reader, Xlsx};
+use calamine::{Data, Range, Reader, Xlsx, open_workbook};
 use linkml_core::prelude::*;
 use logger_core::{LogLevel, LoggerError, LoggerService};
 use serde_json::Value as JsonValue;
@@ -14,9 +14,7 @@ use std::path::Path;
 use std::sync::Arc;
 use timestamp_core::{TimestampError, TimestampService};
 
-use super::traits::{
-    DataInstance, DataLoader, LoadOptions, LoaderError, LoaderResult,
-};
+use super::traits::{DataInstance, DataLoader, LoadOptions, LoaderError, LoaderResult};
 
 /// Options specific to Excel loading
 #[derive(Debug, Clone)]
@@ -124,9 +122,10 @@ impl ExcelLoader {
             .or_else(|| {
                 // Try to find class matching sheet name
                 let sanitized = self.sanitize_name(sheet_name);
-                schema.classes.keys().find(|k| {
-                    k.to_lowercase() == sanitized.to_lowercase()
-                })
+                schema
+                    .classes
+                    .keys()
+                    .find(|k| k.to_lowercase() == sanitized.to_lowercase())
             })
             .ok_or_else(|| {
                 LoaderError::Configuration(format!(
@@ -183,9 +182,7 @@ impl ExcelLoader {
                 .collect())
         } else {
             // Generate column names: col_0, col_1, ...
-            Ok((0..rows[0].len())
-                .map(|i| format!("col_{i}"))
-                .collect())
+            Ok((0..rows[0].len()).map(|i| format!("col_{i}")).collect())
         }
     }
 
@@ -203,9 +200,7 @@ impl ExcelLoader {
 
         // Get class definition
         let class_def = schema.classes.get(class_name).ok_or_else(|| {
-            LoaderError::SchemaValidation(format!(
-                "Class '{class_name}' not found in schema"
-            ))
+            LoaderError::SchemaValidation(format!("Class '{class_name}' not found in schema"))
         })?;
 
         // Process each cell
@@ -215,10 +210,7 @@ impl ExcelLoader {
             }
 
             let header = &headers[i];
-            let field_name = options
-                .field_mappings
-                .get(header)
-                .unwrap_or(header);
+            let field_name = options.field_mappings.get(header).unwrap_or(header);
 
             // Skip empty cells
             if matches!(cell, Data::Empty) {
@@ -233,12 +225,7 @@ impl ExcelLoader {
             }
 
             // Convert cell value based on slot type
-            let json_value = self.convert_cell_value(
-                cell,
-                field_name,
-                schema,
-                class_def,
-            )?;
+            let json_value = self.convert_cell_value(cell, field_name, schema, class_def)?;
 
             data.insert(field_name.clone(), json_value);
         }
@@ -277,12 +264,9 @@ impl ExcelLoader {
                     match range.as_str() {
                         "integer" | "int" => Ok(JsonValue::Number((*i).into())),
                         "float" | "double" => Ok(JsonValue::Number(
-                            serde_json::Number::from_f64(*i as f64)
-                                .ok_or_else(|| {
-                                    LoaderError::TypeConversion(
-                                        "Invalid float conversion".to_string()
-                                    )
-                                })?
+                            serde_json::Number::from_f64(*i as f64).ok_or_else(|| {
+                                LoaderError::TypeConversion("Invalid float conversion".to_string())
+                            })?,
                         )),
                         "string" => Ok(JsonValue::String(i.to_string())),
                         _ => Ok(JsonValue::Number((*i).into())),
@@ -301,22 +285,16 @@ impl ExcelLoader {
                         }
                         "string" => Ok(JsonValue::String(f.to_string())),
                         _ => Ok(JsonValue::Number(
-                            serde_json::Number::from_f64(*f)
-                                .ok_or_else(|| {
-                                    LoaderError::TypeConversion(
-                                        "Invalid float conversion".to_string()
-                                    )
-                                })?
+                            serde_json::Number::from_f64(*f).ok_or_else(|| {
+                                LoaderError::TypeConversion("Invalid float conversion".to_string())
+                            })?,
                         )),
                     }
                 } else {
                     Ok(JsonValue::Number(
-                        serde_json::Number::from_f64(*f)
-                            .ok_or_else(|| {
-                                LoaderError::TypeConversion(
-                                    "Invalid float conversion".to_string()
-                                )
-                            })?
+                        serde_json::Number::from_f64(*f).ok_or_else(|| {
+                            LoaderError::TypeConversion("Invalid float conversion".to_string())
+                        })?,
                     ))
                 }
             }
@@ -326,17 +304,11 @@ impl ExcelLoader {
                 // Format datetime as ISO 8601 string
                 Ok(JsonValue::String(format!("{dt:?}")))
             }
-            Data::DateTimeIso(dt_str) => {
-                Ok(JsonValue::String(dt_str.clone()))
-            }
-            Data::DurationIso(dur_str) => {
-                Ok(JsonValue::String(dur_str.clone()))
-            }
-            Data::Error(err) => {
-                Err(LoaderError::Parse(format!(
-                    "Excel error in field '{field_name}': {err:?}"
-                )))
-            }
+            Data::DateTimeIso(dt_str) => Ok(JsonValue::String(dt_str.clone())),
+            Data::DurationIso(dur_str) => Ok(JsonValue::String(dur_str.clone())),
+            Data::Error(err) => Err(LoaderError::Parse(format!(
+                "Excel error in field '{field_name}': {err:?}"
+            ))),
             Data::Empty => Ok(JsonValue::Null),
         }
     }
@@ -376,7 +348,13 @@ impl ExcelLoader {
     /// Sanitize sheet name to match LinkML class naming conventions
     fn sanitize_name(&self, name: &str) -> String {
         name.chars()
-            .map(|c| if c.is_alphanumeric() || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect::<String>()
             .trim_matches('_')
             .to_string()
@@ -403,10 +381,13 @@ impl DataLoader for ExcelLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let _ = self.logger.log(
-            LogLevel::Info,
-            &format!("Loading Excel file: {}", path.display()),
-        ).await;
+        let _ = self
+            .logger
+            .log(
+                LogLevel::Info,
+                &format!("Loading Excel file: {}", path.display()),
+            )
+            .await;
 
         // Open workbook with explicit XLSX type
         let mut workbook: Xlsx<_> = open_workbook(path)
@@ -425,21 +406,19 @@ impl DataLoader for ExcelLoader {
         // Process each target sheet
         for sheet_name in &target_sheets {
             if let Ok(range) = workbook.worksheet_range(sheet_name) {
-                let instances = self.process_range(
-                    &range,
-                    sheet_name,
-                    schema,
-                    options,
-                )?;
+                let instances = self.process_range(&range, sheet_name, schema, options)?;
 
-                let _ = self.logger.log(
-                    LogLevel::Debug,
-                    &format!(
-                        "Loaded {} instances from sheet '{}'",
-                        instances.len(),
-                        sheet_name
-                    ),
-                ).await;
+                let _ = self
+                    .logger
+                    .log(
+                        LogLevel::Debug,
+                        &format!(
+                            "Loaded {} instances from sheet '{}'",
+                            instances.len(),
+                            sheet_name
+                        ),
+                    )
+                    .await;
 
                 all_instances.extend(instances);
 
@@ -452,10 +431,13 @@ impl DataLoader for ExcelLoader {
             }
         }
 
-        let _ = self.logger.log(
-            LogLevel::Info,
-            &format!("Successfully loaded {} instances", all_instances.len()),
-        ).await;
+        let _ = self
+            .logger
+            .log(
+                LogLevel::Info,
+                &format!("Successfully loaded {} instances", all_instances.len()),
+            )
+            .await;
 
         Ok(all_instances)
     }
@@ -467,7 +449,7 @@ impl DataLoader for ExcelLoader {
         _options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
         Err(LoaderError::InvalidFormat(
-            "Excel files cannot be loaded from string. Use load_bytes instead.".to_string()
+            "Excel files cannot be loaded from string. Use load_bytes instead.".to_string(),
         ))
     }
 
@@ -477,10 +459,13 @@ impl DataLoader for ExcelLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
-        let _ = self.logger.log(
-            LogLevel::Info,
-            &format!("Loading Excel data from {} bytes", data.len()),
-        ).await;
+        let _ = self
+            .logger
+            .log(
+                LogLevel::Info,
+                &format!("Loading Excel data from {} bytes", data.len()),
+            )
+            .await;
 
         // Create workbook from bytes
         let cursor = Cursor::new(data);
@@ -499,12 +484,7 @@ impl DataLoader for ExcelLoader {
 
         for sheet_name in &target_sheets {
             if let Ok(range) = workbook.worksheet_range(sheet_name) {
-                let instances = self.process_range(
-                    &range,
-                    sheet_name,
-                    schema,
-                    options,
-                )?;
+                let instances = self.process_range(&range, sheet_name, schema, options)?;
                 all_instances.extend(instances);
 
                 if let Some(limit) = options.limit {
@@ -523,7 +503,7 @@ impl DataLoader for ExcelLoader {
         // Validate that schema has at least one class
         if schema.classes.is_empty() {
             return Err(LoaderError::SchemaValidation(
-                "Schema must contain at least one class".to_string()
+                "Schema must contain at least one class".to_string(),
             ));
         }
 
@@ -580,15 +560,33 @@ mod tests {
     impl LoggerService for MockLogger {
         type Error = LoggerError;
 
-        async fn debug(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
-        async fn info(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
-        async fn warn(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
-        async fn error(&self, _message: &str) -> Result<(), Self::Error> { Ok(()) }
-        async fn log(&self, _level: LogLevel, _message: &str) -> Result<(), Self::Error> { Ok(()) }
-        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> Result<(), Self::Error> { Ok(()) }
-        async fn set_level(&self, _level: LogLevel) -> Result<(), Self::Error> { Ok(()) }
-        async fn flush(&self) -> Result<(), Self::Error> { Ok(()) }
-        async fn shutdown(&self) -> Result<(), Self::Error> { Ok(()) }
+        async fn debug(&self, _message: &str) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn info(&self, _message: &str) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn warn(&self, _message: &str) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn error(&self, _message: &str) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn log(&self, _level: LogLevel, _message: &str) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn log_entry(&self, _entry: &logger_core::LogEntry) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn set_level(&self, _level: LogLevel) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn flush(&self) -> Result<(), Self::Error> {
+            Ok(())
+        }
+        async fn shutdown(&self) -> Result<(), Self::Error> {
+            Ok(())
+        }
     }
 
     struct MockTimestamp;
@@ -605,25 +603,48 @@ mod tests {
         async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
             Ok(std::time::SystemTime::now())
         }
-        async fn parse_iso8601(&self, timestamp: &str) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        async fn parse_iso8601(
+            &self,
+            timestamp: &str,
+        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             use chrono::DateTime;
             Ok(DateTime::parse_from_rfc3339(timestamp)
-                .map_err(|e| TimestampError::ParseError { message: e.to_string().into() })?
+                .map_err(|e| TimestampError::ParseError {
+                    message: e.to_string().into(),
+                })?
                 .with_timezone(&chrono::Utc))
         }
-        async fn format_iso8601(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<String, Self::Error> {
+        async fn format_iso8601(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+        ) -> Result<String, Self::Error> {
             Ok(timestamp.to_rfc3339())
         }
-        async fn duration_since(&self, timestamp: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+        async fn duration_since(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+        ) -> Result<chrono::Duration, Self::Error> {
             Ok(chrono::Utc::now() - *timestamp)
         }
-        async fn add_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        async fn add_duration(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+            duration: chrono::Duration,
+        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp + duration)
         }
-        async fn subtract_duration(&self, timestamp: &chrono::DateTime<chrono::Utc>, duration: chrono::Duration) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        async fn subtract_duration(
+            &self,
+            timestamp: &chrono::DateTime<chrono::Utc>,
+            duration: chrono::Duration,
+        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp - duration)
         }
-        async fn duration_between(&self, from: &chrono::DateTime<chrono::Utc>, to: &chrono::DateTime<chrono::Utc>) -> Result<chrono::Duration, Self::Error> {
+        async fn duration_between(
+            &self,
+            from: &chrono::DateTime<chrono::Utc>,
+            to: &chrono::DateTime<chrono::Utc>,
+        ) -> Result<chrono::Duration, Self::Error> {
             Ok(*to - *from)
         }
     }

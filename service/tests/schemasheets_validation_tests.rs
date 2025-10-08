@@ -1,6 +1,8 @@
 //! Tests for SchemaSheets data validation features
 
-use linkml_core::types::{ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition};
+use linkml_core::types::{
+    ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
+};
 use linkml_service::schemasheets::SchemaSheetsGenerator;
 use tempfile::TempDir;
 
@@ -8,7 +10,10 @@ use tempfile::TempDir;
 #[tokio::test]
 async fn test_data_validation_enabled_by_default() {
     let generator = SchemaSheetsGenerator::new();
-    assert!(generator.add_data_validation, "Data validation should be enabled by default");
+    assert!(
+        generator.add_data_validation,
+        "Data validation should be enabled by default"
+    );
 }
 
 /// Test generator with data validation enabled
@@ -53,8 +58,12 @@ async fn test_generate_with_data_validation() {
     };
 
     person_class.attributes.insert("id".to_string(), id_slot);
-    person_class.attributes.insert("name".to_string(), name_slot);
-    person_class.attributes.insert("status".to_string(), status_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("status".to_string(), status_slot);
 
     schema.classes.insert("Person".to_string(), person_class);
 
@@ -77,7 +86,10 @@ async fn test_generate_with_data_validation() {
     let generator = SchemaSheetsGenerator::new();
     assert!(generator.add_data_validation);
 
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -102,7 +114,9 @@ async fn test_generate_without_data_validation() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     let temp_dir = TempDir::new().unwrap();
@@ -111,7 +125,10 @@ async fn test_generate_without_data_validation() {
     let mut generator = SchemaSheetsGenerator::new();
     generator.add_data_validation = false;
 
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -167,8 +184,12 @@ async fn test_validation_with_multiple_enums() {
         ..Default::default()
     };
 
-    task_class.attributes.insert("status".to_string(), status_slot);
-    task_class.attributes.insert("priority".to_string(), priority_slot);
+    task_class
+        .attributes
+        .insert("status".to_string(), status_slot);
+    task_class
+        .attributes
+        .insert("priority".to_string(), priority_slot);
 
     schema.classes.insert("Task".to_string(), task_class);
 
@@ -176,7 +197,10 @@ async fn test_validation_with_multiple_enums() {
     let output_path = temp_dir.path().join("multi_enum_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -215,7 +239,10 @@ async fn test_validation_with_complex_permissible_values() {
     let output_path = temp_dir.path().join("complex_enum_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -254,9 +281,13 @@ async fn test_validation_includes_common_types() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     person_class.attributes.insert("age".to_string(), age_slot);
-    person_class.attributes.insert("active".to_string(), active_slot);
+    person_class
+        .attributes
+        .insert("active".to_string(), active_slot);
 
     schema.classes.insert("Person".to_string(), person_class);
 
@@ -264,9 +295,11 @@ async fn test_validation_includes_common_types() {
     let output_path = temp_dir.path().join("typed_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::new();
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
 }
-

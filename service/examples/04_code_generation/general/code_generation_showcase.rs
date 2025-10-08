@@ -1,27 +1,59 @@
 //! Code Generation Showcase
 //!
-//! This example demonstrates all the code generation capabilities of LinkML:
-//! - TypeQL for TypeDB
-//! - SQL DDL for various databases
-//! - GraphQL schemas
-//! - JSON Schema
-//! - Rust structs
-//! - Python dataclasses
-//! - And more!
+//! Demonstrates how to generate multiple artifacts from a LinkML schema using the
+//! built-in generator registry. The example keeps the schema inline to make the
+//! workflow copy/paste friendly.
 
-mod common;
-use common::create_example_service;
-
-use linkml_service::generator::{GeneratorOptions, sql_generator::SqlDialect};
-use linkml_service::prelude::*;
+use anyhow::Context;
+use linkml_core::prelude::SchemaDefinition;
+use linkml_service::generator::registry::GeneratorRegistry;
+use serde_yaml;
 
 #[tokio::main]
-async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Code Generation Showcase");
-    println!("==============================
-");
+    println!("================================\n");
 
-    // Example schema for code generation
+    let schema = load_schema()?;
+    let registry = GeneratorRegistry::with_defaults().await;
+
+    let highlights = [
+        ("Rust", "rust"),
+        ("Python (Pydantic)", "pydantic"),
+        ("JSON Schema", "jsonschema"),
+        ("GraphQL", "graphql"),
+        ("SQL (generic)", "sql"),
+        ("TypeQL", "typeql"),
+    ];
+
+    for (label, generator_name) in highlights {
+        println!("{label}");
+        println!("{}", "-".repeat(label.len()));
+
+        match registry.get(generator_name).await {
+            Some(generator) => {
+                generator.validate_schema(&schema).with_context(|| {
+                    format!("validating schema for generator '{generator_name}'")
+                })?;
+
+                let output = generator
+                    .generate(&schema)
+                    .with_context(|| format!("running generator '{generator_name}'"))?;
+
+                println!("• name: {}", generator.name());
+                println!("• extension: .{}", generator.get_file_extension());
+                println!("• preview:\n{}\n", truncate(&output, 400));
+            }
+            None => {
+                println!("(generator '{generator_name}' not available in this build)\n");
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn load_schema() -> Result<SchemaDefinition, Box<dyn std::error::Error>> {
     let schema_yaml = r#"
 id: https://example.com/library
 name: LibrarySystem
@@ -170,153 +202,17 @@ enums:
         description: Technical and educational
 "#;
 
-    // Parse schema
-    let parser = YamlParser::new();
-    let schema = parser.parse_str(schema_yaml)?;
-
-    // Create service
-    let service = create_example_linkml_service().await?;
-
-    // 1. TypeQL Generation
-    println!("1. TypeQL (TypeDB) Generation");
-    println!("-----------------------------");
-
-    let typeql = service
-        .generate_code(&schema, "typeql", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&typeql[0].content, 500));
-
-    // 2. SQL DDL Generation
-    println!("2. SQL DDL Generation");
-    println!("--------------------");
-
-    // PostgreSQL
-    let mut sql_options = GeneratorOptions::default();
-    sql_options.set_custom("dialect", "postgresql");
-    let postgresql = service.generate_code(&schema, "sql", &sql_options).await?;
-    println!("PostgreSQL:
-{}
-", truncate(&postgresql[0].content, 400));
-
-    // MySQL
-    sql_options.set_custom("dialect", "mysql");
-    let mysql = service.generate_code(&schema, "sql", &sql_options).await?;
-    println!("MySQL:
-{}
-", truncate(&mysql[0].content, 400));
-
-    // 3. GraphQL Schema
-    println!("3. GraphQL Schema Generation");
-    println!("---------------------------");
-
-    let graphql = service
-        .generate_code(&schema, "graphql", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&graphql[0].content, 500));
-
-    // 4. JSON Schema
-    println!("4. JSON Schema Generation");
-    println!("------------------------");
-
-    let json_schema = service
-        .generate_code(&schema, "jsonschema", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&json_schema[0].content, 500));
-
-    // 5. Rust Code Generation
-    println!("5. Rust Struct Generation");
-    println!("------------------------");
-
-    let rust_code = service
-        .generate_code(&schema, "rust", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&rust_code[0].content, 600));
-
-    // 6. Python Dataclasses
-    println!("6. Python Dataclass Generation");
-    println!("-----------------------------");
-
-    let python_code = service
-        .generate_code(&schema, "python", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&python_code[0].content, 500));
-
-    // 7. OWL/RDF
-    println!("7. OWL/RDF Generation");
-    println!("--------------------");
-
-    let owl = service
-        .generate_code(&schema, "owl", &GeneratorOptions::default())
-        .await?;
-    println!("{}
-", truncate(&owl[0].content, 400));
-
-    // 8. Performance comparison
-    println!("Performance Comparison");
-    println!("---------------------");
-
-    use std::time::Instant;
-
-    let generators = vec![
-        ("TypeQL", "typeql"),
-        ("SQL", "sql"),
-        ("GraphQL", "graphql"),
-        ("JSON Schema", "jsonschema"),
-        ("Rust", "rust"),
-        ("Python", "python"),
-    ];
-
-    for (name, gen_type) in generators {
-        let start = Instant::now();
-        let _ = service
-            .generate_code(&schema, gen_type, &GeneratorOptions::default())
-            .await?;
-        let duration = start.elapsed();
-        println!("{}: {:?}", name, duration);
-    }
-
-    // 9. Custom generation options
-    println!("
-
-Custom Generation Options");
-    println!("------------------------");
-
-    let mut custom_options = GeneratorOptions::default();
-    custom_options.include_docs = true;
-    custom_options.target_version = Some("3.0".to_string());
-    custom_options.set_custom("namespace", "com.example.library");
-    custom_options.set_custom("package_name", "library_system");
-
-    println!("Available options:");
-    println!("- include_docs: Include documentation comments");
-    println!("- target_version: Target language/framework version");
-    println!("- namespace: Custom namespace/package");
-    println!("- dialect: SQL dialect (postgresql, mysql, sqlite)");
-    println!("- naming_convention: snake_case, camelCase, PascalCase");
-
-    Ok(())
+    Ok(serde_yaml::from_str(schema_yaml)?)
 }
 
-fn truncate(s: &str, max_len: usize) -> String {
-    if s.len() <= max_len {
-        s.to_string()
-    } else {
-        format!(
-            "{}...
-[truncated {} more characters]",
-            &s[..max_len],
-            s.len() - max_len
-        )
+fn truncate(content: &str, max_len: usize) -> String {
+    if content.len() <= max_len {
+        return content.to_string();
     }
-}
 
-async fn create_example_linkml_service() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    // In a real application, this would initialize with all dependencies
-    create_example_service().await?;
-    Ok(())
+    format!(
+        "{}…\n[truncated {} characters]",
+        &content[..max_len],
+        content.len() - max_len
+    )
 }

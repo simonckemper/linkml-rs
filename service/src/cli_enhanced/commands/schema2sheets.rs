@@ -125,9 +125,7 @@ impl Schema2SheetsCommand {
         generator.include_all_metadata = self.include_metadata;
         generator.generate_metadata_sheets = self.metadata_sheets;
 
-        generator
-            .generate_file(&schema, &self.output)
-            .await?;
+        generator.generate_file(&schema, &self.output).await?;
 
         if let Some(ref pb) = progress {
             pb.inc(1);
@@ -136,7 +134,10 @@ impl Schema2SheetsCommand {
         // Step 3: Complete
         if let Some(ref pb) = progress {
             pb.inc(1);
-            pb.finish_with_message(format!("✓ SchemaSheets file generated: {}", self.output.display()));
+            pb.finish_with_message(format!(
+                "✓ SchemaSheets file generated: {}",
+                self.output.display()
+            ));
         } else {
             println!("SchemaSheets file generated: {}", self.output.display());
         }
@@ -149,8 +150,18 @@ impl Schema2SheetsCommand {
             eprintln!("  Enums: {}", schema.enums.len());
             eprintln!("  Types: {}", schema.types.len());
             eprintln!("  Subsets: {}", schema.subsets.len());
-            eprintln!("  Metadata: {}", if self.include_metadata { "included" } else { "basic only" });
-            eprintln!("  Metadata sheets: {}", if self.metadata_sheets { "yes" } else { "no" });
+            eprintln!(
+                "  Metadata: {}",
+                if self.include_metadata {
+                    "included"
+                } else {
+                    "basic only"
+                }
+            );
+            eprintln!(
+                "  Metadata sheets: {}",
+                if self.metadata_sheets { "yes" } else { "no" }
+            );
         }
 
         Ok(())
@@ -290,13 +301,11 @@ mod tests {
 
     #[test]
     fn test_command_builder() {
-        let cmd = Schema2SheetsCommand::new(
-            PathBuf::from("schema.yaml"),
-            PathBuf::from("template.xlsx"),
-        )
-        .with_metadata(false)
-        .with_metadata_sheets(false)
-        .with_verbose(true);
+        let cmd =
+            Schema2SheetsCommand::new(PathBuf::from("schema.yaml"), PathBuf::from("template.xlsx"))
+                .with_metadata(false)
+                .with_metadata_sheets(false)
+                .with_verbose(true);
 
         assert_eq!(cmd.schema, PathBuf::from("schema.yaml"));
         assert_eq!(cmd.output, PathBuf::from("template.xlsx"));
@@ -307,10 +316,8 @@ mod tests {
 
     #[test]
     fn test_default_options() {
-        let cmd = Schema2SheetsCommand::new(
-            PathBuf::from("schema.yaml"),
-            PathBuf::from("template.xlsx"),
-        );
+        let cmd =
+            Schema2SheetsCommand::new(PathBuf::from("schema.yaml"), PathBuf::from("template.xlsx"));
 
         assert!(cmd.include_metadata);
         assert!(cmd.metadata_sheets);
@@ -318,4 +325,3 @@ mod tests {
         assert!(!cmd.verbose);
     }
 }
-

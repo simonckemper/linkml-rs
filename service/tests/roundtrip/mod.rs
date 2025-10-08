@@ -22,9 +22,9 @@
 //! cargo test --test data_roundtrip
 //! ```
 
+pub mod data_roundtrip;
 pub mod equivalence;
 pub mod schema_roundtrip;
-pub mod data_roundtrip;
 
 // Re-export key types for convenience
-pub use equivalence::{compare_schemas, Difference, EquivalenceResult};
+pub use equivalence::{Difference, EquivalenceResult, compare_schemas};

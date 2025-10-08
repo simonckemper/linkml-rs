@@ -11,47 +11,10 @@ pub mod service_init;
 
 pub use service_init::init_linkml_service_with_real_deps;
 
-// Removed linkml_core::error::Result import
-use linkml_service::LinkMLServiceImpl;
+use linkml_core::error::Result;
+use linkml_core::traits::LinkMLService;
+use linkml_service::service::MinimalLinkMLServiceImpl;
 use std::sync::Arc;
-
-/// Example-specific service implementations
-///
-/// These implementations follow the production initialization pattern but with
-/// simplified functionality suitable for demonstration purposes.
-pub mod example_services {
-    use super::*;
-
-    /// Task management implementation for examples
-    ///
-    /// NOTE: This is a concrete type, not a trait object, because TaskManagementService
-    /// is not dyn-compatible due to generic methods.
-    pub struct ExampleTaskManager;
-
-    /// Error handling implementation for examples
-    pub struct ExampleErrorHandler;
-
-    /// Configuration implementation for examples
-    pub struct ExampleConfig;
-
-    /// Logger implementation for examples (dyn-compatible)
-    pub struct ExampleLogger;
-
-    /// Timestamp implementation for examples (dyn-compatible)
-    pub struct ExampleTimestamp;
-
-    /// Cache implementation for examples (dyn-compatible)
-    pub struct ExampleCache;
-
-    /// Monitoring implementation for examples (dyn-compatible)
-    pub struct ExampleMonitor;
-
-    /// DBMS implementation for examples
-    pub struct ExampleDBMS;
-
-    /// Timeout implementation for examples
-    pub struct ExampleTimeout;
-}
 
 /// Initialize LinkML service for examples
 ///
@@ -64,33 +27,9 @@ pub mod example_services {
 ///
 /// For examples, we use simplified implementations that allow the examples
 /// to run without the full RootReal service infrastructure.
-pub async fn init_example_linkml_service() -> Result<
-    Arc<
-        LinkMLServiceImpl<
-            example_services::ExampleTaskManager,
-            example_services::ExampleErrorHandler,
-            example_services::ExampleConfig,
-            example_services::ExampleDBMS,
-            example_services::ExampleTimeout,
-        >,
-    >,
-> {
-    // NOTE: In a real application, these would be the actual service implementations
-    // from logger-service, timestamp-service, etc.
-
-    // For examples, we can't use the real services because they're not available
-    // as dependencies. Instead, we demonstrate the pattern with placeholder types.
-
-    // This is the correct pattern for production:
-    // 1. Initialize concrete services
-    // 2. Pass them through the dependency chain
-    // 3. The LinkML service receives all its dependencies properly initialized
-
-    Err(LinkMLError::service(
-        "Example service initialization not available. \
-         In a real RootReal application, initialize with actual service implementations \
-         from logger-service, timestamp-service, task-management-service, etc.",
-    ))
+pub async fn init_example_linkml_service() -> Result<Arc<dyn LinkMLService>> {
+    let service = MinimalLinkMLServiceImpl::new()?;
+    Ok(Arc::new(service))
 }
 
 /// Create a LinkML service using default test implementations
@@ -98,18 +37,7 @@ pub async fn init_example_linkml_service() -> Result<
 /// This is a simplified initialization for examples that don't need
 /// the full service infrastructure.
 ///
-/// Note: Returns a concrete type instead of trait object due to dyn-compatibility issues.
-pub async fn create_example_service() -> Result<
-    LinkMLServiceImpl<
-        example_services::ExampleTaskManager,
-        example_services::ExampleErrorHandler,
-        example_services::ExampleConfig,
-        example_services::ExampleDBMS,
-        example_services::ExampleTimeout,
-    >,
-> {
-    Err(LinkMLError::service(
-        "Example service creation requires the full RootReal service infrastructure. \
-         See the production initialization pattern in docs/architecture/dyn-compatibility-guidelines.md",
-    ))
+/// Returns an `Arc<dyn LinkMLService>` so examples can share the service across tasks.
+pub async fn create_example_service() -> Result<Arc<dyn LinkMLService>> {
+    init_example_linkml_service().await
 }

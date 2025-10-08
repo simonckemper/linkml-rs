@@ -2,10 +2,10 @@
 
 use crate::schemasheets::config::SchemaSheetsConfig;
 use linkml_core::error::{LinkMLError, Result};
-use linkml_core::types::{
-    PermissibleValue, PrefixDefinition, SchemaDefinition,
+use linkml_core::types::{PermissibleValue, PrefixDefinition, SchemaDefinition};
+use rust_xlsxwriter::{
+    Color, DataValidation, Format, FormatAlign, FormatBorder, Workbook, XlsxError,
 };
-use rust_xlsxwriter::{Color, DataValidation, Format, FormatAlign, FormatBorder, Workbook, XlsxError};
 use std::path::Path;
 
 /// Helper trait to convert XlsxError to LinkMLError with context
@@ -170,7 +170,8 @@ impl SchemaSheetsGenerator {
 
         // Generate main schema sheet
         let sheet = workbook.add_worksheet();
-        sheet.set_name("Schema")
+        sheet
+            .set_name("Schema")
             .with_context("Failed to set worksheet name")?;
 
         // Create formats using configuration
@@ -201,11 +202,20 @@ impl SchemaSheetsGenerator {
             .set_background_color(Color::RGB(self.config.colors.alt_row_background_rgb()))
             .set_border(FormatBorder::Thin);
 
-        let normal_format = Format::new()
-            .set_border(FormatBorder::Thin);
+        let normal_format = Format::new().set_border(FormatBorder::Thin);
 
         // Write header
-        let mut headers = vec![">", "element_type", "field", "key", "multiplicity", "range", "desc", "is_a", "pattern"];
+        let mut headers = vec![
+            ">",
+            "element_type",
+            "field",
+            "key",
+            "multiplicity",
+            "range",
+            "desc",
+            "is_a",
+            "pattern",
+        ];
 
         // Add mapping columns if metadata is enabled
         if self.include_all_metadata {
@@ -219,10 +229,11 @@ impl SchemaSheetsGenerator {
         }
 
         for (col, header) in headers.iter().enumerate() {
-            sheet.write_with_format(0, col as u16, *header, &header_format)
+            sheet
+                .write_with_format(0, col as u16, *header, &header_format)
                 .with_context(format!("Failed to write header column {}", col))?;
         }
-        
+
         let mut row = 1;
 
         // Write classes
@@ -234,50 +245,111 @@ impl SchemaSheetsGenerator {
                 &normal_format
             };
 
-            sheet.write_with_format(row, 0, class_name, &class_format)
-                .with_context(format!("Failed to write class name '{}' at row {}", class_name, row))?;
-            sheet.write_with_format(row, 1, "class", &class_format)
-                .with_context(format!("Failed to write element_type for class '{}' at row {}", class_name, row))?;
+            sheet
+                .write_with_format(row, 0, class_name, &class_format)
+                .with_context(format!(
+                    "Failed to write class name '{}' at row {}",
+                    class_name, row
+                ))?;
+            sheet
+                .write_with_format(row, 1, "class", &class_format)
+                .with_context(format!(
+                    "Failed to write element_type for class '{}' at row {}",
+                    class_name, row
+                ))?;
             if let Some(ref desc) = class_def.description {
-                sheet.write_with_format(row, 6, desc, row_format)
-                    .with_context(format!("Failed to write description for class '{}' at row {}", class_name, row))?;
+                sheet
+                    .write_with_format(row, 6, desc, row_format)
+                    .with_context(format!(
+                        "Failed to write description for class '{}' at row {}",
+                        class_name, row
+                    ))?;
             }
             if let Some(ref parent) = class_def.is_a {
-                sheet.write_with_format(row, 7, parent, row_format)
-                    .with_context(format!("Failed to write is_a for class '{}' at row {}", class_name, row))?;
+                sheet
+                    .write_with_format(row, 7, parent, row_format)
+                    .with_context(format!(
+                        "Failed to write is_a for class '{}' at row {}",
+                        class_name, row
+                    ))?;
             }
 
             // Write mappings if metadata is enabled
             if self.include_all_metadata {
                 let mut col = 9;
                 if !class_def.exact_mappings.is_empty() {
-                    sheet.write_with_format(row, col, class_def.exact_mappings.join(", "), row_format)
-                        .with_context(format!("Failed to write exact_mappings for class '{}' at row {}", class_name, row))?;
+                    sheet
+                        .write_with_format(
+                            row,
+                            col,
+                            class_def.exact_mappings.join(", "),
+                            row_format,
+                        )
+                        .with_context(format!(
+                            "Failed to write exact_mappings for class '{}' at row {}",
+                            class_name, row
+                        ))?;
                 }
                 col += 1;
                 if !class_def.close_mappings.is_empty() {
-                    sheet.write_with_format(row, col, class_def.close_mappings.join(", "), row_format)
-                        .with_context(format!("Failed to write close_mappings for class '{}' at row {}", class_name, row))?;
+                    sheet
+                        .write_with_format(
+                            row,
+                            col,
+                            class_def.close_mappings.join(", "),
+                            row_format,
+                        )
+                        .with_context(format!(
+                            "Failed to write close_mappings for class '{}' at row {}",
+                            class_name, row
+                        ))?;
                 }
                 col += 1;
                 if !class_def.related_mappings.is_empty() {
-                    sheet.write_with_format(row, col, class_def.related_mappings.join(", "), row_format)
-                        .with_context(format!("Failed to write related_mappings for class '{}' at row {}", class_name, row))?;
+                    sheet
+                        .write_with_format(
+                            row,
+                            col,
+                            class_def.related_mappings.join(", "),
+                            row_format,
+                        )
+                        .with_context(format!(
+                            "Failed to write related_mappings for class '{}' at row {}",
+                            class_name, row
+                        ))?;
                 }
                 col += 1;
                 if !class_def.narrow_mappings.is_empty() {
-                    sheet.write_with_format(row, col, class_def.narrow_mappings.join(", "), row_format)
-                        .with_context(format!("Failed to write narrow_mappings for class '{}' at row {}", class_name, row))?;
+                    sheet
+                        .write_with_format(
+                            row,
+                            col,
+                            class_def.narrow_mappings.join(", "),
+                            row_format,
+                        )
+                        .with_context(format!(
+                            "Failed to write narrow_mappings for class '{}' at row {}",
+                            class_name, row
+                        ))?;
                 }
                 col += 1;
                 if !class_def.broad_mappings.is_empty() {
-                    sheet.write_with_format(row, col, class_def.broad_mappings.join(", "), row_format)
-                        .with_context(format!("Failed to write broad_mappings for class '{}' at row {}", class_name, row))?;
+                    sheet
+                        .write_with_format(
+                            row,
+                            col,
+                            class_def.broad_mappings.join(", "),
+                            row_format,
+                        )
+                        .with_context(format!(
+                            "Failed to write broad_mappings for class '{}' at row {}",
+                            class_name, row
+                        ))?;
                 }
             }
 
             row += 1;
-            
+
             // Write attributes
             for (attr_name, attr_def) in &class_def.attributes {
                 let row_format = if self.alternating_row_colors && row % 2 == 0 {
@@ -286,66 +358,138 @@ impl SchemaSheetsGenerator {
                     &normal_format
                 };
 
-                sheet.write_with_format(row, 2, attr_name, row_format)
-                    .with_context(format!("Failed to write attribute name '{}' for class '{}' at row {}", attr_name, class_name, row))?;
+                sheet
+                    .write_with_format(row, 2, attr_name, row_format)
+                    .with_context(format!(
+                        "Failed to write attribute name '{}' for class '{}' at row {}",
+                        attr_name, class_name, row
+                    ))?;
                 if attr_def.identifier == Some(true) {
-                    sheet.write_with_format(row, 3, "true", row_format)
-                        .with_context(format!("Failed to write identifier flag for attribute '{}' at row {}", attr_name, row))?;
+                    sheet
+                        .write_with_format(row, 3, "true", row_format)
+                        .with_context(format!(
+                            "Failed to write identifier flag for attribute '{}' at row {}",
+                            attr_name, row
+                        ))?;
                 }
-                let mult = match (attr_def.required.unwrap_or(false), attr_def.multivalued.unwrap_or(false)) {
+                let mult = match (
+                    attr_def.required.unwrap_or(false),
+                    attr_def.multivalued.unwrap_or(false),
+                ) {
                     (true, false) => "1",
                     (false, false) => "0..1",
                     (true, true) => "1..*",
                     (false, true) => "0..*",
                 };
-                sheet.write_with_format(row, 4, mult, row_format)
-                    .with_context(format!("Failed to write multiplicity for attribute '{}' at row {}", attr_name, row))?;
+                sheet
+                    .write_with_format(row, 4, mult, row_format)
+                    .with_context(format!(
+                        "Failed to write multiplicity for attribute '{}' at row {}",
+                        attr_name, row
+                    ))?;
                 if let Some(ref range) = attr_def.range {
-                    sheet.write_with_format(row, 5, range, row_format)
-                        .with_context(format!("Failed to write range for attribute '{}' at row {}", attr_name, row))?;
+                    sheet
+                        .write_with_format(row, 5, range, row_format)
+                        .with_context(format!(
+                            "Failed to write range for attribute '{}' at row {}",
+                            attr_name, row
+                        ))?;
                 }
                 if let Some(ref desc) = attr_def.description {
-                    sheet.write_with_format(row, 6, desc, row_format)
-                        .with_context(format!("Failed to write description for attribute '{}' at row {}", attr_name, row))?;
+                    sheet
+                        .write_with_format(row, 6, desc, row_format)
+                        .with_context(format!(
+                            "Failed to write description for attribute '{}' at row {}",
+                            attr_name, row
+                        ))?;
                 }
                 if let Some(ref pattern) = attr_def.pattern {
-                    sheet.write_with_format(row, 8, pattern, row_format)
-                        .with_context(format!("Failed to write pattern for attribute '{}' at row {}", attr_name, row))?;
+                    sheet
+                        .write_with_format(row, 8, pattern, row_format)
+                        .with_context(format!(
+                            "Failed to write pattern for attribute '{}' at row {}",
+                            attr_name, row
+                        ))?;
                 }
 
                 // Write mappings if metadata is enabled
                 if self.include_all_metadata {
                     let mut col = 9;
                     if !attr_def.exact_mappings.is_empty() {
-                        sheet.write_with_format(row, col, attr_def.exact_mappings.join(", "), row_format)
-                            .with_context(format!("Failed to write exact_mappings for attribute '{}' at row {}", attr_name, row))?;
+                        sheet
+                            .write_with_format(
+                                row,
+                                col,
+                                attr_def.exact_mappings.join(", "),
+                                row_format,
+                            )
+                            .with_context(format!(
+                                "Failed to write exact_mappings for attribute '{}' at row {}",
+                                attr_name, row
+                            ))?;
                     }
                     col += 1;
                     if !attr_def.close_mappings.is_empty() {
-                        sheet.write_with_format(row, col, attr_def.close_mappings.join(", "), row_format)
-                            .with_context(format!("Failed to write close_mappings for attribute '{}' at row {}", attr_name, row))?;
+                        sheet
+                            .write_with_format(
+                                row,
+                                col,
+                                attr_def.close_mappings.join(", "),
+                                row_format,
+                            )
+                            .with_context(format!(
+                                "Failed to write close_mappings for attribute '{}' at row {}",
+                                attr_name, row
+                            ))?;
                     }
                     col += 1;
                     if !attr_def.related_mappings.is_empty() {
-                        sheet.write_with_format(row, col, attr_def.related_mappings.join(", "), row_format)
-                            .with_context(format!("Failed to write related_mappings for attribute '{}' at row {}", attr_name, row))?;
+                        sheet
+                            .write_with_format(
+                                row,
+                                col,
+                                attr_def.related_mappings.join(", "),
+                                row_format,
+                            )
+                            .with_context(format!(
+                                "Failed to write related_mappings for attribute '{}' at row {}",
+                                attr_name, row
+                            ))?;
                     }
                     col += 1;
                     if !attr_def.narrow_mappings.is_empty() {
-                        sheet.write_with_format(row, col, attr_def.narrow_mappings.join(", "), row_format)
-                            .with_context(format!("Failed to write narrow_mappings for attribute '{}' at row {}", attr_name, row))?;
+                        sheet
+                            .write_with_format(
+                                row,
+                                col,
+                                attr_def.narrow_mappings.join(", "),
+                                row_format,
+                            )
+                            .with_context(format!(
+                                "Failed to write narrow_mappings for attribute '{}' at row {}",
+                                attr_name, row
+                            ))?;
                     }
                     col += 1;
                     if !attr_def.broad_mappings.is_empty() {
-                        sheet.write_with_format(row, col, attr_def.broad_mappings.join(", "), row_format)
-                            .with_context(format!("Failed to write broad_mappings for attribute '{}' at row {}", attr_name, row))?;
+                        sheet
+                            .write_with_format(
+                                row,
+                                col,
+                                attr_def.broad_mappings.join(", "),
+                                row_format,
+                            )
+                            .with_context(format!(
+                                "Failed to write broad_mappings for attribute '{}' at row {}",
+                                attr_name, row
+                            ))?;
                     }
                 }
 
                 row += 1;
             }
         }
-        
+
         // Write enums
         for (enum_name, enum_def) in &schema.enums {
             let row_format = if self.alternating_row_colors && row % 2 == 0 {
@@ -354,13 +498,25 @@ impl SchemaSheetsGenerator {
                 &normal_format
             };
 
-            sheet.write_with_format(row, 0, enum_name, &enum_format)
-                .with_context(format!("Failed to write enum name '{}' at row {}", enum_name, row))?;
-            sheet.write_with_format(row, 1, "enum", &enum_format)
-                .with_context(format!("Failed to write element_type for enum '{}' at row {}", enum_name, row))?;
+            sheet
+                .write_with_format(row, 0, enum_name, &enum_format)
+                .with_context(format!(
+                    "Failed to write enum name '{}' at row {}",
+                    enum_name, row
+                ))?;
+            sheet
+                .write_with_format(row, 1, "enum", &enum_format)
+                .with_context(format!(
+                    "Failed to write element_type for enum '{}' at row {}",
+                    enum_name, row
+                ))?;
             if let Some(ref desc) = enum_def.description {
-                sheet.write_with_format(row, 6, desc, row_format)
-                    .with_context(format!("Failed to write description for enum '{}' at row {}", enum_name, row))?;
+                sheet
+                    .write_with_format(row, 6, desc, row_format)
+                    .with_context(format!(
+                        "Failed to write description for enum '{}' at row {}",
+                        enum_name, row
+                    ))?;
             }
             row += 1;
 
@@ -373,13 +529,23 @@ impl SchemaSheetsGenerator {
 
                 let (value, desc) = match pv {
                     PermissibleValue::Simple(v) => (v.clone(), None),
-                    PermissibleValue::Complex { text, description, .. } => (text.clone(), description.clone()),
+                    PermissibleValue::Complex {
+                        text, description, ..
+                    } => (text.clone(), description.clone()),
                 };
-                sheet.write_with_format(row, 2, &value, row_format)
-                    .with_context(format!("Failed to write enum value '{}' for enum '{}' at row {}", value, enum_name, row))?;
+                sheet
+                    .write_with_format(row, 2, &value, row_format)
+                    .with_context(format!(
+                        "Failed to write enum value '{}' for enum '{}' at row {}",
+                        value, enum_name, row
+                    ))?;
                 if let Some(ref d) = desc {
-                    sheet.write_with_format(row, 6, d, row_format)
-                        .with_context(format!("Failed to write description for enum value '{}' at row {}", value, row))?;
+                    sheet
+                        .write_with_format(row, 6, d, row_format)
+                        .with_context(format!(
+                            "Failed to write description for enum value '{}' at row {}",
+                            value, row
+                        ))?;
                 }
                 row += 1;
             }
@@ -393,21 +559,41 @@ impl SchemaSheetsGenerator {
                 &normal_format
             };
 
-            sheet.write_with_format(row, 0, type_name, &type_format)
-                .with_context(format!("Failed to write type name '{}' at row {}", type_name, row))?;
-            sheet.write_with_format(row, 1, "type", &type_format)
-                .with_context(format!("Failed to write element_type for type '{}' at row {}", type_name, row))?;
+            sheet
+                .write_with_format(row, 0, type_name, &type_format)
+                .with_context(format!(
+                    "Failed to write type name '{}' at row {}",
+                    type_name, row
+                ))?;
+            sheet
+                .write_with_format(row, 1, "type", &type_format)
+                .with_context(format!(
+                    "Failed to write element_type for type '{}' at row {}",
+                    type_name, row
+                ))?;
             if let Some(ref desc) = type_def.description {
-                sheet.write_with_format(row, 6, desc, row_format)
-                    .with_context(format!("Failed to write description for type '{}' at row {}", type_name, row))?;
+                sheet
+                    .write_with_format(row, 6, desc, row_format)
+                    .with_context(format!(
+                        "Failed to write description for type '{}' at row {}",
+                        type_name, row
+                    ))?;
             }
             if let Some(ref base_type) = type_def.base_type {
-                sheet.write_with_format(row, 7, base_type, row_format)
-                    .with_context(format!("Failed to write base_type for type '{}' at row {}", type_name, row))?;
+                sheet
+                    .write_with_format(row, 7, base_type, row_format)
+                    .with_context(format!(
+                        "Failed to write base_type for type '{}' at row {}",
+                        type_name, row
+                    ))?;
             }
             if let Some(ref pattern) = type_def.pattern {
-                sheet.write_with_format(row, 8, pattern, row_format)
-                    .with_context(format!("Failed to write pattern for type '{}' at row {}", type_name, row))?;
+                sheet
+                    .write_with_format(row, 8, pattern, row_format)
+                    .with_context(format!(
+                        "Failed to write pattern for type '{}' at row {}",
+                        type_name, row
+                    ))?;
             }
             row += 1;
         }
@@ -420,26 +606,40 @@ impl SchemaSheetsGenerator {
                 &normal_format
             };
 
-            sheet.write_with_format(row, 0, subset_name, &subset_format)
-                .with_context(format!("Failed to write subset name '{}' at row {}", subset_name, row))?;
-            sheet.write_with_format(row, 1, "subset", &subset_format)
-                .with_context(format!("Failed to write element_type for subset '{}' at row {}", subset_name, row))?;
+            sheet
+                .write_with_format(row, 0, subset_name, &subset_format)
+                .with_context(format!(
+                    "Failed to write subset name '{}' at row {}",
+                    subset_name, row
+                ))?;
+            sheet
+                .write_with_format(row, 1, "subset", &subset_format)
+                .with_context(format!(
+                    "Failed to write element_type for subset '{}' at row {}",
+                    subset_name, row
+                ))?;
             if let Some(ref desc) = subset_def.description {
-                sheet.write_with_format(row, 6, desc, row_format)
-                    .with_context(format!("Failed to write description for subset '{}' at row {}", subset_name, row))?;
+                sheet
+                    .write_with_format(row, 6, desc, row_format)
+                    .with_context(format!(
+                        "Failed to write description for subset '{}' at row {}",
+                        subset_name, row
+                    ))?;
             }
             row += 1;
         }
 
         // Apply formatting to main schema sheet before creating new worksheets
         if self.freeze_headers {
-            sheet.set_freeze_panes(1, 0)
+            sheet
+                .set_freeze_panes(1, 0)
                 .with_context("Failed to freeze schema sheet headers")?;
         }
 
         if self.add_filters {
             let last_col = if self.include_all_metadata { 13 } else { 8 };
-            sheet.autofilter(0, 0, 0, last_col)
+            sheet
+                .autofilter(0, 0, 0, last_col)
                 .with_context("Failed to set autofilter on schema sheet")?;
         }
 
@@ -447,29 +647,39 @@ impl SchemaSheetsGenerator {
             // Set column widths using configuration
             let widths = &self.config.column_widths;
 
-            sheet.set_column_width(0, widths.element_name)
+            sheet
+                .set_column_width(0, widths.element_name)
                 .with_context("Failed to set element_name column width")?;
-            sheet.set_column_width(1, widths.element_type)
+            sheet
+                .set_column_width(1, widths.element_type)
                 .with_context("Failed to set element_type column width")?;
-            sheet.set_column_width(2, widths.field_name)
+            sheet
+                .set_column_width(2, widths.field_name)
                 .with_context("Failed to set field_name column width")?;
-            sheet.set_column_width(3, widths.key)
+            sheet
+                .set_column_width(3, widths.key)
                 .with_context("Failed to set key column width")?;
-            sheet.set_column_width(4, widths.multiplicity)
+            sheet
+                .set_column_width(4, widths.multiplicity)
                 .with_context("Failed to set multiplicity column width")?;
-            sheet.set_column_width(5, widths.range)
+            sheet
+                .set_column_width(5, widths.range)
                 .with_context("Failed to set range column width")?;
-            sheet.set_column_width(6, widths.description)
+            sheet
+                .set_column_width(6, widths.description)
                 .with_context("Failed to set description column width")?;
-            sheet.set_column_width(7, widths.is_a)
+            sheet
+                .set_column_width(7, widths.is_a)
                 .with_context("Failed to set is_a column width")?;
-            sheet.set_column_width(8, widths.pattern)
+            sheet
+                .set_column_width(8, widths.pattern)
                 .with_context("Failed to set pattern column width")?;
 
             // Set mapping column widths if metadata is included
             if self.include_all_metadata {
                 for col in 9..=13 {
-                    sheet.set_column_width(col, widths.mappings)
+                    sheet
+                        .set_column_width(col, widths.mappings)
                         .with_context(format!("Failed to set mapping column {} width", col))?;
                 }
             }
@@ -485,121 +695,166 @@ impl SchemaSheetsGenerator {
             // Prefixes sheet - use a block to ensure the borrow ends before creating settings sheet
             {
                 let prefixes_sheet = workbook.add_worksheet();
-                prefixes_sheet.set_name("prefixes")
+                prefixes_sheet
+                    .set_name("prefixes")
                     .with_context("Failed to set prefixes sheet name")?;
-                prefixes_sheet.write_with_format(0, 0, "prefix", &header_format)
+                prefixes_sheet
+                    .write_with_format(0, 0, "prefix", &header_format)
                     .with_context("Failed to write prefixes header 'prefix'")?;
-                prefixes_sheet.write_with_format(0, 1, "uri", &header_format)
+                prefixes_sheet
+                    .write_with_format(0, 1, "uri", &header_format)
                     .with_context("Failed to write prefixes header 'uri'")?;
                 let mut row = 1;
                 for (prefix, definition) in &schema.prefixes {
-                    prefixes_sheet.write(row, 0, prefix)
-                        .with_context(format!("Failed to write prefix '{}' at row {}", prefix, row))?;
+                    prefixes_sheet.write(row, 0, prefix).with_context(format!(
+                        "Failed to write prefix '{}' at row {}",
+                        prefix, row
+                    ))?;
                     let uri = match definition {
                         PrefixDefinition::Simple(uri) => uri.clone(),
-                        PrefixDefinition::Complex { prefix_reference, .. } => prefix_reference.clone().unwrap_or_default(),
+                        PrefixDefinition::Complex {
+                            prefix_reference, ..
+                        } => prefix_reference.clone().unwrap_or_default(),
                     };
-                    prefixes_sheet.write(row, 1, uri)
-                        .with_context(format!("Failed to write URI for prefix '{}' at row {}", prefix, row))?;
+                    prefixes_sheet.write(row, 1, uri).with_context(format!(
+                        "Failed to write URI for prefix '{}' at row {}",
+                        prefix, row
+                    ))?;
                     row += 1;
                 }
 
                 // Apply formatting to prefixes sheet
                 if self.freeze_headers {
-                    prefixes_sheet.set_freeze_panes(1, 0)
+                    prefixes_sheet
+                        .set_freeze_panes(1, 0)
                         .with_context("Failed to freeze prefixes sheet headers")?;
                 }
 
                 if self.add_filters {
-                    prefixes_sheet.autofilter(0, 0, 0, 1)
+                    prefixes_sheet
+                        .autofilter(0, 0, 0, 1)
                         .with_context("Failed to add autofilter to prefixes sheet")?;
                 }
 
                 if self.auto_size_columns {
-                    prefixes_sheet.set_column_width(0, 15)
+                    prefixes_sheet
+                        .set_column_width(0, 15)
                         .with_context("Failed to set prefix column width")?;
-                    prefixes_sheet.set_column_width(1, 50)
+                    prefixes_sheet
+                        .set_column_width(1, 50)
                         .with_context("Failed to set URI column width")?;
                 }
             } // prefixes_sheet borrow ends here
 
             // Settings sheet
             let settings_sheet = workbook.add_worksheet();
-            settings_sheet.set_name("settings")
+            settings_sheet
+                .set_name("settings")
                 .with_context("Failed to set settings sheet name")?;
-            settings_sheet.write_with_format(0, 0, "setting", &header_format)
+            settings_sheet
+                .write_with_format(0, 0, "setting", &header_format)
                 .with_context("Failed to write settings header 'setting'")?;
-            settings_sheet.write_with_format(0, 1, "value", &header_format)
+            settings_sheet
+                .write_with_format(0, 1, "value", &header_format)
                 .with_context("Failed to write settings header 'value'")?;
             let mut row = 1;
-            settings_sheet.write(row, 0, "id")
+            settings_sheet
+                .write(row, 0, "id")
                 .with_context("Failed to write 'id' setting name")?;
-            settings_sheet.write(row, 1, &schema.id)
+            settings_sheet
+                .write(row, 1, &schema.id)
                 .with_context("Failed to write schema ID value")?;
             row += 1;
-            settings_sheet.write(row, 0, "name")
+            settings_sheet
+                .write(row, 0, "name")
                 .with_context("Failed to write 'name' setting name")?;
-            settings_sheet.write(row, 1, &schema.name)
+            settings_sheet
+                .write(row, 1, &schema.name)
                 .with_context("Failed to write schema name value")?;
             row += 1;
             if let Some(ref version) = schema.version {
-                settings_sheet.write(row, 0, "version")
+                settings_sheet
+                    .write(row, 0, "version")
                     .with_context("Failed to write 'version' setting name")?;
-                settings_sheet.write(row, 1, version)
+                settings_sheet
+                    .write(row, 1, version)
                     .with_context("Failed to write schema version value")?;
                 row += 1;
             }
             if let Some(ref description) = schema.description {
-                settings_sheet.write(row, 0, "description")
+                settings_sheet
+                    .write(row, 0, "description")
                     .with_context("Failed to write 'description' setting name")?;
-                settings_sheet.write(row, 1, description)
+                settings_sheet
+                    .write(row, 1, description)
                     .with_context("Failed to write schema description value")?;
             }
 
             // Apply formatting to settings sheet
             if self.freeze_headers {
-                settings_sheet.set_freeze_panes(1, 0)
+                settings_sheet
+                    .set_freeze_panes(1, 0)
                     .with_context("Failed to freeze settings sheet headers")?;
             }
 
             if self.add_filters {
-                settings_sheet.autofilter(0, 0, 0, 1)
+                settings_sheet
+                    .autofilter(0, 0, 0, 1)
                     .with_context("Failed to add autofilter to settings sheet")?;
             }
 
             if self.auto_size_columns {
-                settings_sheet.set_column_width(0, 15)
+                settings_sheet
+                    .set_column_width(0, 15)
                     .with_context("Failed to set setting column width")?;
-                settings_sheet.set_column_width(1, 50)
+                settings_sheet
+                    .set_column_width(1, 50)
                     .with_context("Failed to set value column width")?;
             }
         }
 
-        workbook.save(output_path).map_err(|e| LinkMLError::other(format!("Failed to save Excel file: {e}")))?;
+        workbook
+            .save(output_path)
+            .map_err(|e| LinkMLError::other(format!("Failed to save Excel file: {e}")))?;
 
         Ok(())
     }
 
     /// Add data validation dropdowns to the schema sheet
-    fn add_data_validations(&self, sheet: &mut rust_xlsxwriter::Worksheet, schema: &SchemaDefinition) -> Result<()> {
+    fn add_data_validations(
+        &self,
+        sheet: &mut rust_xlsxwriter::Worksheet,
+        schema: &SchemaDefinition,
+    ) -> Result<()> {
         let validation_config = &self.config.validation;
         let limits = &self.config.limits;
 
         // 1. Add validation for element_type column (column 1)
-        let element_types: Vec<&str> = validation_config.element_types.iter().map(|s| s.as_str()).collect();
+        let element_types: Vec<&str> = validation_config
+            .element_types
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
         let element_type_validation = DataValidation::new()
             .allow_list_strings(&element_types)
-            .map_err(|e| LinkMLError::other(format!("Failed to create element type validation: {}", e)))?
+            .map_err(|e| {
+                LinkMLError::other(format!("Failed to create element type validation: {}", e))
+            })?
             .set_error_title("Invalid Element Type")
             .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
             .set_error_message(&validation_config.element_type_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 1, limits.max_rows, 1, &element_type_validation)
+        sheet
+            .add_data_validation(1, 1, limits.max_rows, 1, &element_type_validation)
             .with_context("Failed to add element_type validation")?;
 
         // 2. Add validation for key column (column 3) - boolean values
-        let boolean_values: Vec<&str> = validation_config.boolean_values.iter().map(|s| s.as_str()).collect();
+        let boolean_values: Vec<&str> = validation_config
+            .boolean_values
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
         let key_validation = DataValidation::new()
             .allow_list_strings(&boolean_values)
             .map_err(|e| LinkMLError::other(format!("Failed to create key validation: {}", e)))?
@@ -608,20 +863,28 @@ impl SchemaSheetsGenerator {
             .set_error_message(&validation_config.boolean_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 3, limits.max_rows, 3, &key_validation)
+        sheet
+            .add_data_validation(1, 3, limits.max_rows, 3, &key_validation)
             .with_context("Failed to add key validation")?;
 
         // 3. Add validation for multiplicity column (column 4)
-        let multiplicity_values: Vec<&str> = validation_config.multiplicity_values.iter().map(|s| s.as_str()).collect();
+        let multiplicity_values: Vec<&str> = validation_config
+            .multiplicity_values
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
         let multiplicity_validation = DataValidation::new()
             .allow_list_strings(&multiplicity_values)
-            .map_err(|e| LinkMLError::other(format!("Failed to create multiplicity validation: {}", e)))?
+            .map_err(|e| {
+                LinkMLError::other(format!("Failed to create multiplicity validation: {}", e))
+            })?
             .set_error_title("Invalid Multiplicity")
             .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
             .set_error_message(&validation_config.multiplicity_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 4, limits.max_rows, 4, &multiplicity_validation)
+        sheet
+            .add_data_validation(1, 4, limits.max_rows, 4, &multiplicity_validation)
             .with_context("Failed to add multiplicity validation")?;
 
         // 4. Add validation for range column (column 5) - enum types
@@ -633,13 +896,16 @@ impl SchemaSheetsGenerator {
         if !range_values.is_empty() {
             let range_validation = DataValidation::new()
                 .allow_list_strings(&range_values.iter().map(|s| s.as_str()).collect::<Vec<_>>())
-                .map_err(|e| LinkMLError::other(format!("Failed to create range validation: {}", e)))?
+                .map_err(|e| {
+                    LinkMLError::other(format!("Failed to create range validation: {}", e))
+                })?
                 .set_input_title("Select Range Type")
                 .map_err(|e| LinkMLError::other(format!("Failed to set input title: {}", e)))?
                 .set_input_message("Select a data type or enum name")
                 .map_err(|e| LinkMLError::other(format!("Failed to set input message: {}", e)))?;
 
-            sheet.add_data_validation(1, 5, limits.max_rows, 5, &range_validation)
+            sheet
+                .add_data_validation(1, 5, limits.max_rows, 5, &range_validation)
                 .with_context("Failed to add range validation")?;
         }
 

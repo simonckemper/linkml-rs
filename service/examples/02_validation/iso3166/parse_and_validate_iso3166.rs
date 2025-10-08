@@ -240,7 +240,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
         if result.is_valid {
             // For valid codes, also show the actual country name
-            let country = validator.get_country_label(&result.code).unwrap_or_default();
+            let country = validator
+                .get_country_label(&result.code)
+                .unwrap_or_default();
             println!(
                 "✓ {:3} - Valid   | {} ({}) [Pattern: ✓, Instance: ✓]",
                 result.code, country, description
@@ -288,7 +290,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 let city = address["city"].as_str().unwrap_or("Unknown");
 
                 if result.is_valid {
-                    let country_name = validator.get_country_label(&result.code).unwrap_or_default();
+                    let country_name = validator
+                        .get_country_label(&result.code)
+                        .unwrap_or_default();
                     println!(
                         "  Address {}: ✓ {} ({}) - {}",
                         idx + 1,

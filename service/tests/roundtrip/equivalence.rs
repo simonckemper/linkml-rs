@@ -4,8 +4,8 @@
 //! It handles order-independent collections, whitespace normalization, and provides
 //! detailed diff reporting for debugging failed round-trips.
 
-use linkml_core::prelude::*;
 use indexmap::IndexMap;
+use linkml_core::prelude::*;
 use std::collections::BTreeSet;
 
 /// Result of semantic equivalence check
@@ -153,7 +153,10 @@ impl EquivalenceResult {
 
 /// Compare two schemas for semantic equivalence
 #[must_use]
-pub fn compare_schemas(original: &SchemaDefinition, reconstructed: &SchemaDefinition) -> EquivalenceResult {
+pub fn compare_schemas(
+    original: &SchemaDefinition,
+    reconstructed: &SchemaDefinition,
+) -> EquivalenceResult {
     let mut differences = Vec::new();
 
     // Compare schema metadata
@@ -204,8 +207,14 @@ fn compare_schema_metadata(
     }
 
     // Compare description (optional, normalize whitespace)
-    let orig_desc = original.description.as_ref().map(|s| normalize_whitespace(s));
-    let recon_desc = reconstructed.description.as_ref().map(|s| normalize_whitespace(s));
+    let orig_desc = original
+        .description
+        .as_ref()
+        .map(|s| normalize_whitespace(s));
+    let recon_desc = reconstructed
+        .description
+        .as_ref()
+        .map(|s| normalize_whitespace(s));
     if orig_desc != recon_desc {
         differences.push(Difference::MetadataDifference {
             path: path.to_string(),
@@ -272,8 +281,14 @@ fn compare_class_definition(
     }
 
     // Compare description (optional, normalize whitespace)
-    let orig_desc = original.description.as_ref().map(|s| normalize_whitespace(s));
-    let recon_desc = reconstructed.description.as_ref().map(|s| normalize_whitespace(s));
+    let orig_desc = original
+        .description
+        .as_ref()
+        .map(|s| normalize_whitespace(s));
+    let recon_desc = reconstructed
+        .description
+        .as_ref()
+        .map(|s| normalize_whitespace(s));
     if orig_desc != recon_desc {
         differences.push(Difference::MetadataDifference {
             path: path.to_string(),
@@ -294,7 +309,12 @@ fn compare_class_definition(
     }
 
     // Compare attributes (order-independent)
-    compare_attributes(&original.attributes, &reconstructed.attributes, path, differences);
+    compare_attributes(
+        &original.attributes,
+        &reconstructed.attributes,
+        path,
+        differences,
+    );
 
     // Compare mixins (order-independent set comparison)
     let orig_mixins: BTreeSet<_> = original.mixins.iter().collect();
@@ -369,7 +389,11 @@ fn compare_slot_definition(
         differences.push(Difference::TypeMismatch {
             path: path.to_string(),
             expected: original.range.as_deref().unwrap_or("<none>").to_string(),
-            actual: reconstructed.range.as_deref().unwrap_or("<none>").to_string(),
+            actual: reconstructed
+                .range
+                .as_deref()
+                .unwrap_or("<none>")
+                .to_string(),
         });
     }
 
@@ -409,7 +433,11 @@ fn compare_slot_definition(
             path: path.to_string(),
             constraint_type: "pattern".to_string(),
             expected: original.pattern.as_deref().unwrap_or("<none>").to_string(),
-            actual: reconstructed.pattern.as_deref().unwrap_or("<none>").to_string(),
+            actual: reconstructed
+                .pattern
+                .as_deref()
+                .unwrap_or("<none>")
+                .to_string(),
         });
     }
 
@@ -527,14 +555,16 @@ fn compare_enum_definition(
 
     // Compare permissible values (order-independent)
     // permissible_values is now a Vec<PermissibleValue>, extract text values
-    let orig_values: BTreeSet<_> = original.permissible_values
+    let orig_values: BTreeSet<_> = original
+        .permissible_values
         .iter()
         .map(|pv| match pv {
             PermissibleValue::Simple(text) => text.as_str(),
             PermissibleValue::Complex { text, .. } => text.as_str(),
         })
         .collect();
-    let recon_values: BTreeSet<_> = reconstructed.permissible_values
+    let recon_values: BTreeSet<_> = reconstructed
+        .permissible_values
         .iter()
         .map(|pv| match pv {
             PermissibleValue::Simple(text) => text.as_str(),
@@ -555,7 +585,11 @@ fn compare_enum_definition(
 /// Normalize whitespace in strings for comparison
 #[must_use]
 fn normalize_whitespace(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ").trim().to_string()
+    s.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .trim()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -568,7 +602,10 @@ mod tests {
         let schema2 = create_test_schema();
 
         let result = compare_schemas(&schema1, &schema2);
-        assert!(result.is_equivalent, "Identical schemas should be equivalent");
+        assert!(
+            result.is_equivalent,
+            "Identical schemas should be equivalent"
+        );
     }
 
     #[test]
@@ -578,7 +615,10 @@ mod tests {
         schema2.name = "different_name".to_string();
 
         let result = compare_schemas(&schema1, &schema2);
-        assert!(!result.is_equivalent, "Different schema names should be detected");
+        assert!(
+            !result.is_equivalent,
+            "Different schema names should be detected"
+        );
         assert_eq!(result.differences.len(), 1);
     }
 
@@ -590,11 +630,18 @@ mod tests {
         // Add extra class to schema1
         let mut extra_class = ClassDefinition::new("ExtraClass");
         extra_class.name = "ExtraClass".to_string();
-        schema1.classes.insert("ExtraClass".to_string(), extra_class);
+        schema1
+            .classes
+            .insert("ExtraClass".to_string(), extra_class);
 
         let result = compare_schemas(&schema1, &schema2);
         assert!(!result.is_equivalent, "Missing class should be detected");
-        assert!(result.differences.iter().any(|d| matches!(d, Difference::MissingElement { .. })));
+        assert!(
+            result
+                .differences
+                .iter()
+                .any(|d| matches!(d, Difference::MissingElement { .. }))
+        );
     }
 
     #[test]

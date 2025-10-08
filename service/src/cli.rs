@@ -2363,7 +2363,10 @@ pub async fn run() -> linkml_core::error::Result<()> {
     })?;
 
     // Create and run CLI app
-    let app = CliApp::new(Arc::new(linkml_service), timestamp_service.clone().into_inner());
+    let app = CliApp::new(
+        Arc::new(linkml_service),
+        timestamp_service.clone().into_inner(),
+    );
     app.run().await
 }
 

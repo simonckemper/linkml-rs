@@ -1,27 +1,27 @@
 //! Tests for SchemaSheets configuration
 
 use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
-use linkml_service::schemasheets::{SchemaSheetsConfig, SchemaSheetsGenerator};
 use linkml_service::schemasheets::config::ColorSchemeConfig;
+use linkml_service::schemasheets::{SchemaSheetsConfig, SchemaSheetsGenerator};
 use tempfile::TempDir;
 
 /// Test default configuration
 #[tokio::test]
 async fn test_default_configuration() {
     let config = SchemaSheetsConfig::default();
-    
+
     // Verify default column widths
     assert_eq!(config.column_widths.element_name, 20.0);
     assert_eq!(config.column_widths.description, 40.0);
-    
+
     // Verify default colors
     assert_eq!(config.colors.header_background, "4472C4");
     assert_eq!(config.colors.class_background, "E7E6E6");
-    
+
     // Verify default validation
     assert_eq!(config.validation.element_types.len(), 4);
     assert_eq!(config.validation.common_types.len(), 8);
-    
+
     // Verify default limits
     assert_eq!(config.limits.max_rows, 1_048_575);
 }
@@ -32,7 +32,7 @@ async fn test_custom_column_widths() {
     let mut config = SchemaSheetsConfig::default();
     config.column_widths.element_name = 30.0;
     config.column_widths.description = 60.0;
-    
+
     assert_eq!(config.column_widths.element_name, 30.0);
     assert_eq!(config.column_widths.description, 60.0);
 }
@@ -43,7 +43,7 @@ async fn test_custom_color_scheme() {
     let mut config = SchemaSheetsConfig::default();
     config.colors.header_background = "FF0000".to_string();
     config.colors.class_background = "00FF00".to_string();
-    
+
     assert_eq!(config.colors.header_background_rgb(), 0xFF0000);
     assert_eq!(config.colors.class_background_rgb(), 0x00FF00);
 }
@@ -53,7 +53,7 @@ async fn test_custom_color_scheme() {
 async fn test_color_parsing_with_hash() {
     let mut config = SchemaSheetsConfig::default();
     config.colors.header_background = "#4472C4".to_string();
-    
+
     assert_eq!(config.colors.header_background_rgb(), 0x4472C4);
 }
 
@@ -61,10 +61,18 @@ async fn test_color_parsing_with_hash() {
 #[tokio::test]
 async fn test_custom_validation_config() {
     let mut config = SchemaSheetsConfig::default();
-    config.validation.common_types.push("custom_type".to_string());
+    config
+        .validation
+        .common_types
+        .push("custom_type".to_string());
     config.validation.element_type_error = "Custom error message".to_string();
-    
-    assert!(config.validation.common_types.contains(&"custom_type".to_string()));
+
+    assert!(
+        config
+            .validation
+            .common_types
+            .contains(&"custom_type".to_string())
+    );
     assert_eq!(config.validation.element_type_error, "Custom error message");
 }
 
@@ -74,9 +82,9 @@ async fn test_generator_with_custom_config() {
     let mut config = SchemaSheetsConfig::default();
     config.column_widths.element_name = 35.0;
     config.colors.header_background = "2E5090".to_string();
-    
+
     let generator = SchemaSheetsGenerator::with_config(config.clone());
-    
+
     assert_eq!(generator.config.column_widths.element_name, 35.0);
     assert_eq!(generator.config.colors.header_background, "2E5090");
 }
@@ -103,7 +111,9 @@ async fn test_generate_with_custom_config() {
         ..Default::default()
     };
 
-    person_class.attributes.insert("name".to_string(), name_slot);
+    person_class
+        .attributes
+        .insert("name".to_string(), name_slot);
     schema.classes.insert("Person".to_string(), person_class);
 
     // Create custom configuration
@@ -115,7 +125,10 @@ async fn test_generate_with_custom_config() {
     let output_path = temp_dir.path().join("custom_config_schema.xlsx");
 
     let generator = SchemaSheetsGenerator::with_config(config);
-    generator.generate_file(&schema, &output_path).await.unwrap();
+    generator
+        .generate_file(&schema, &output_path)
+        .await
+        .unwrap();
 
     // Verify file was created
     assert!(output_path.exists());
@@ -125,7 +138,7 @@ async fn test_generate_with_custom_config() {
 #[tokio::test]
 async fn test_config_serialization() {
     let config = SchemaSheetsConfig::default();
-    
+
     let yaml = serde_yaml::to_string(&config).unwrap();
     assert!(yaml.contains("column_widths"));
     assert!(yaml.contains("colors"));
@@ -186,7 +199,7 @@ limits:
 "#;
 
     let config: SchemaSheetsConfig = serde_yaml::from_str(yaml).unwrap();
-    
+
     assert_eq!(config.column_widths.element_name, 25.0);
     assert_eq!(config.colors.header_background, "2E5090");
     assert_eq!(config.validation.element_type_error, "Custom error");
@@ -199,7 +212,7 @@ async fn test_load_config_from_file() {
     // Create a temporary config file
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test_config.yaml");
-    
+
     let yaml = r#"
 column_widths:
   element_name: 30.0
@@ -211,13 +224,13 @@ validation:
 limits:
   max_rows: 1048575
 "#;
-    
+
     std::fs::write(&config_path, yaml).unwrap();
-    
+
     // Load configuration
     let contents = std::fs::read_to_string(&config_path).unwrap();
     let config: SchemaSheetsConfig = serde_yaml::from_str(&contents).unwrap();
-    
+
     assert_eq!(config.column_widths.element_name, 30.0);
     assert_eq!(config.colors.header_background, "FF0000");
 }
@@ -229,7 +242,7 @@ async fn test_invalid_color_parsing() {
         header_background: "INVALID".to_string(),
         ..Default::default()
     };
-    
+
     // Invalid colors should default to white (0xFFFFFF)
     assert_eq!(colors.header_background_rgb(), 0xFFFFFF);
 }
@@ -243,9 +256,18 @@ async fn test_extended_types_config() {
         "uriorcurie".to_string(),
         "ncname".to_string(),
     ]);
-    
-    assert!(config.validation.common_types.contains(&"time".to_string()));
-    assert!(config.validation.common_types.contains(&"uriorcurie".to_string()));
-    assert!(config.validation.common_types.contains(&"ncname".to_string()));
-}
 
+    assert!(config.validation.common_types.contains(&"time".to_string()));
+    assert!(
+        config
+            .validation
+            .common_types
+            .contains(&"uriorcurie".to_string())
+    );
+    assert!(
+        config
+            .validation
+            .common_types
+            .contains(&"ncname".to_string())
+    );
+}

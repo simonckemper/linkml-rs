@@ -3,7 +3,7 @@
 //! This example demonstrates that the RustGenerator now generates actual
 //! struct fields instead of TODO comments.
 
-use linkml_service::generator::{GeneratorRegistry};
+use linkml_service::generator::GeneratorRegistry;
 use linkml_service::parser::YamlParser;
 use std::error::Error;
 

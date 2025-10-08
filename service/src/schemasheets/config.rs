@@ -11,13 +11,13 @@ use serde::{Deserialize, Serialize};
 pub struct SchemaSheetsConfig {
     /// Column width configuration
     pub column_widths: ColumnWidthConfig,
-    
+
     /// Color scheme configuration
     pub colors: ColorSchemeConfig,
-    
+
     /// Data validation configuration
     pub validation: ValidationConfig,
-    
+
     /// Excel limits and constraints
     pub limits: ExcelLimitsConfig,
 }
@@ -39,34 +39,34 @@ impl Default for SchemaSheetsConfig {
 pub struct ColumnWidthConfig {
     /// Width for element name column (column 0)
     pub element_name: f64,
-    
+
     /// Width for element type column (column 1)
     pub element_type: f64,
-    
+
     /// Width for field/slot name column (column 2)
     pub field_name: f64,
-    
+
     /// Width for key/identifier column (column 3)
     pub key: f64,
-    
+
     /// Width for multiplicity column (column 4)
     pub multiplicity: f64,
-    
+
     /// Width for range/type column (column 5)
     pub range: f64,
-    
+
     /// Width for description column (column 6)
     pub description: f64,
-    
+
     /// Width for is_a/parent column (column 7)
     pub is_a: f64,
-    
+
     /// Width for pattern column (column 8)
     pub pattern: f64,
-    
+
     /// Width for mapping columns (columns 9-13)
     pub mappings: f64,
-    
+
     /// Default width for any other columns
     pub default: f64,
 }
@@ -95,22 +95,22 @@ impl Default for ColumnWidthConfig {
 pub struct ColorSchemeConfig {
     /// Header row color (RGB hex)
     pub header_background: String,
-    
+
     /// Header text color (RGB hex)
     pub header_text: String,
-    
+
     /// Class element background color (RGB hex)
     pub class_background: String,
-    
+
     /// Enum element background color (RGB hex)
     pub enum_background: String,
-    
+
     /// Type element background color (RGB hex)
     pub type_background: String,
-    
+
     /// Subset element background color (RGB hex)
     pub subset_background: String,
-    
+
     /// Alternating row background color (RGB hex)
     pub alt_row_background: String,
 }
@@ -134,37 +134,37 @@ impl ColorSchemeConfig {
     pub fn parse_hex_color(&self, hex: &str) -> u32 {
         u32::from_str_radix(hex.trim_start_matches('#'), 16).unwrap_or(0xFFFFFF)
     }
-    
+
     /// Get header background as RGB u32
     pub fn header_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.header_background)
     }
-    
+
     /// Get header text as RGB u32
     pub fn header_text_rgb(&self) -> u32 {
         self.parse_hex_color(&self.header_text)
     }
-    
+
     /// Get class background as RGB u32
     pub fn class_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.class_background)
     }
-    
+
     /// Get enum background as RGB u32
     pub fn enum_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.enum_background)
     }
-    
+
     /// Get type background as RGB u32
     pub fn type_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.type_background)
     }
-    
+
     /// Get subset background as RGB u32
     pub fn subset_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.subset_background)
     }
-    
+
     /// Get alternating row background as RGB u32
     pub fn alt_row_background_rgb(&self) -> u32 {
         self.parse_hex_color(&self.alt_row_background)
@@ -177,22 +177,22 @@ impl ColorSchemeConfig {
 pub struct ValidationConfig {
     /// Valid element types
     pub element_types: Vec<String>,
-    
+
     /// Valid multiplicity values
     pub multiplicity_values: Vec<String>,
-    
+
     /// Valid boolean values
     pub boolean_values: Vec<String>,
-    
+
     /// Common data types for range validation
     pub common_types: Vec<String>,
-    
+
     /// Error message for invalid element type
     pub element_type_error: String,
-    
+
     /// Error message for invalid multiplicity
     pub multiplicity_error: String,
-    
+
     /// Error message for invalid boolean value
     pub boolean_error: String,
 }
@@ -212,10 +212,7 @@ impl Default for ValidationConfig {
                 "1..*".to_string(),
                 "0..*".to_string(),
             ],
-            boolean_values: vec![
-                "true".to_string(),
-                "false".to_string(),
-            ],
+            boolean_values: vec!["true".to_string(), "false".to_string()],
             common_types: vec![
                 "string".to_string(),
                 "integer".to_string(),
@@ -239,7 +236,7 @@ impl Default for ValidationConfig {
 pub struct ExcelLimitsConfig {
     /// Maximum number of rows in Excel (Excel 2007+ limit)
     pub max_rows: u32,
-    
+
     /// Maximum number of columns in Excel
     pub max_columns: u16,
 }
@@ -247,8 +244,8 @@ pub struct ExcelLimitsConfig {
 impl Default for ExcelLimitsConfig {
     fn default() -> Self {
         Self {
-            max_rows: 1_048_575,  // Excel 2007+ limit (1,048,576 rows - 1 for header)
-            max_columns: 16_384,  // Excel 2007+ limit
+            max_rows: 1_048_575, // Excel 2007+ limit (1,048,576 rows - 1 for header)
+            max_columns: 16_384, // Excel 2007+ limit
         }
     }
 }
@@ -292,4 +289,3 @@ mod tests {
         assert!(validation.common_types.contains(&"string".to_string()));
     }
 }
-

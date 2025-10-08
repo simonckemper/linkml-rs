@@ -80,7 +80,8 @@ fn test_schema2sheets_sheets2schema_roundtrip() {
     assert!(output_schema_path.exists(), "Output schema was not created");
 
     // Verify the output schema can be parsed
-    let output_content = fs::read_to_string(&output_schema_path).expect("Failed to read output schema");
+    let output_content =
+        fs::read_to_string(&output_schema_path).expect("Failed to read output schema");
     let output_schema: SchemaDefinition =
         serde_yaml::from_str(&output_content).expect("Failed to parse output schema");
 
@@ -143,7 +144,8 @@ fn test_schema2sheets_invalid_schema() {
 
     // Create an invalid schema file
     let invalid_schema = temp_dir.path().join("invalid.yaml");
-    fs::write(&invalid_schema, "This is not a valid schema").expect("Failed to write invalid schema");
+    fs::write(&invalid_schema, "This is not a valid schema")
+        .expect("Failed to write invalid schema");
 
     let excel_path = temp_dir.path().join("output.xlsx");
     let output = Command::new(&binary)
@@ -176,9 +178,18 @@ fn test_schema2sheets_help() {
     assert!(output.status.success(), "Help command should succeed");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("schema2sheets"), "Help should mention command name");
-    assert!(stdout.contains("schema"), "Help should mention schema option");
-    assert!(stdout.contains("output"), "Help should mention output option");
+    assert!(
+        stdout.contains("schema2sheets"),
+        "Help should mention command name"
+    );
+    assert!(
+        stdout.contains("schema"),
+        "Help should mention schema option"
+    );
+    assert!(
+        stdout.contains("output"),
+        "Help should mention output option"
+    );
 }
 
 /// Test sheets2schema help message
@@ -195,7 +206,10 @@ fn test_sheets2schema_help() {
     assert!(output.status.success(), "Help command should succeed");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("sheets2schema"), "Help should mention command name");
+    assert!(
+        stdout.contains("sheets2schema"),
+        "Help should mention command name"
+    );
     assert!(stdout.contains("Excel"), "Help should mention Excel");
     assert!(stdout.contains("schema"), "Help should mention schema");
 }
@@ -280,4 +294,3 @@ fn create_test_schema() -> SchemaDefinition {
     schema.classes.insert("Person".to_string(), person_class);
     schema
 }
-

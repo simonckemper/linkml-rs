@@ -184,7 +184,8 @@ where
     R: RandomService + Send + Sync + 'static,
 {
     // Load configuration from configuration service
-    let service_config = crate::config_helpers::load_and_validate_configuration(&config_service).await?;
+    let service_config =
+        crate::config_helpers::load_and_validate_configuration(&config_service).await?;
 
     // Convert to core config
     let core_config = crate::config_helpers::convert_service_to_core_config(&service_config);

@@ -47,7 +47,11 @@ impl SchemaSheetsParser {
     /// - File cannot be read
     /// - File is not in SchemaSheets format
     /// - Format is invalid (in strict mode)
-    pub async fn parse_file(&self, path: &Path, schema_id: Option<&str>) -> Result<SchemaDefinition> {
+    pub async fn parse_file(
+        &self,
+        path: &Path,
+        schema_id: Option<&str>,
+    ) -> Result<SchemaDefinition> {
         // Read Excel file
         let file_bytes = std::fs::read(path)
             .map_err(|e| LinkMLError::io_error(format!("Failed to read file: {e}")))?;
@@ -133,7 +137,9 @@ impl SchemaSheetsParser {
             let uri = self.data_to_string(&row[1]);
 
             if !prefix.is_empty() && !uri.is_empty() {
-                schema.prefixes.insert(prefix, PrefixDefinition::Simple(uri));
+                schema
+                    .prefixes
+                    .insert(prefix, PrefixDefinition::Simple(uri));
             }
         }
 
@@ -230,7 +236,10 @@ impl SchemaSheetsParser {
                     // Unknown setting - log for debugging but don't fail
                     // SchemaDefinition doesn't have a generic metadata field,
                     // so we skip unknown settings gracefully
-                    eprintln!("Warning: Unknown setting '{}' with value '{}' in settings sheet", setting, value);
+                    eprintln!(
+                        "Warning: Unknown setting '{}' with value '{}' in settings sheet",
+                        setting, value
+                    );
                 }
             }
         }
@@ -295,7 +304,9 @@ impl SchemaSheetsParser {
             match parsed_row.row_type {
                 SchemaSheetType::ClassDefinition => {
                     // Save previous class if exists
-                    if let (Some(class_name), Some(class)) = (current_class.take(), class_def.take()) {
+                    if let (Some(class_name), Some(class)) =
+                        (current_class.take(), class_def.take())
+                    {
                         schema.classes.insert(class_name, class);
                     }
                     // Save previous enum if exists
@@ -324,7 +335,9 @@ impl SchemaSheetsParser {
                 }
                 SchemaSheetType::EnumDefinition => {
                     // Save previous class if exists
-                    if let (Some(class_name), Some(class)) = (current_class.take(), class_def.take()) {
+                    if let (Some(class_name), Some(class)) =
+                        (current_class.take(), class_def.take())
+                    {
                         schema.classes.insert(class_name, class);
                     }
                     // Save previous enum if exists
@@ -353,7 +366,9 @@ impl SchemaSheetsParser {
                 }
                 SchemaSheetType::TypeDefinition => {
                     // Save previous class if exists
-                    if let (Some(class_name), Some(class)) = (current_class.take(), class_def.take()) {
+                    if let (Some(class_name), Some(class)) =
+                        (current_class.take(), class_def.take())
+                    {
                         schema.classes.insert(class_name, class);
                     }
                     // Save previous enum if exists
@@ -460,7 +475,12 @@ impl SchemaSheetsParser {
     }
 
     /// Extract all fields from row into SchemaSheetRow
-    fn extract_fields(&self, parsed: &mut SchemaSheetRow, row: &[Data], col_mapping: &ColumnMapping) {
+    fn extract_fields(
+        &self,
+        parsed: &mut SchemaSheetRow,
+        row: &[Data],
+        col_mapping: &ColumnMapping,
+    ) {
         // Key/identifier
         if let Some(idx) = col_mapping.key_col {
             if let Some(cell) = row.get(idx) {
@@ -634,7 +654,10 @@ impl SchemaSheetsParser {
             PermissibleValue::Complex {
                 text: value.to_string(),
                 description: row.description.clone(),
-                meaning: row.mappings.get("meaning").cloned()
+                meaning: row
+                    .mappings
+                    .get("meaning")
+                    .cloned()
                     .or_else(|| row.mappings.values().next().cloned()),
             }
         } else {
@@ -774,7 +797,10 @@ impl SchemaSheetsParser {
     }
 
     /// Get headers from the first row of a range
-    fn get_headers(&self, range: &calamine::Range<Data>) -> Result<std::collections::HashMap<String, usize>> {
+    fn get_headers(
+        &self,
+        range: &calamine::Range<Data>,
+    ) -> Result<std::collections::HashMap<String, usize>> {
         let mut headers = std::collections::HashMap::new();
 
         if let Some(first_row) = range.rows().next() {
@@ -790,7 +816,12 @@ impl SchemaSheetsParser {
     }
 
     /// Get cell value from a row by column name
-    fn get_cell_value(&self, row: &[Data], headers: &std::collections::HashMap<String, usize>, column_name: &str) -> Result<String> {
+    fn get_cell_value(
+        &self,
+        row: &[Data],
+        headers: &std::collections::HashMap<String, usize>,
+        column_name: &str,
+    ) -> Result<String> {
         if let Some(&col_idx) = headers.get(column_name) {
             if col_idx < row.len() {
                 return Ok(self.data_to_string(&row[col_idx]));
@@ -833,4 +864,3 @@ impl Default for SchemaSheetsParser {
         Self::new()
     }
 }
-

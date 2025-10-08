@@ -8,8 +8,8 @@
 //! 2. **Data Introspection**: Analyzes data and infers schema structure
 //!    (generates new schema from data patterns)
 
-use crate::inference::introspectors::excel::ExcelIntrospector;
 use crate::inference::DataIntrospector;
+use crate::inference::introspectors::excel::ExcelIntrospector;
 use crate::schemasheets::SchemaSheetsParser;
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::error::{LinkMLError, Result};
@@ -156,7 +156,8 @@ impl Sheets2SchemaCommand {
         // Detect format and parse accordingly
         let schema = if self.force_schemasheets {
             // Force SchemaSheets format
-            self.parse_schemasheets_format(&schema_id, &progress).await?
+            self.parse_schemasheets_format(&schema_id, &progress)
+                .await?
         } else if self.force_introspection {
             // Force data introspection
             self.parse_via_introspection(&schema_id, &progress).await?
@@ -346,10 +347,12 @@ impl Sheets2SchemaCommand {
     /// Write schema to file in specified format
     fn write_schema(&self, schema: &SchemaDefinition, path: &Path) -> Result<()> {
         let content = match self.format {
-            SchemaFormat::Yaml => serde_yaml::to_string(schema)
-                .map_err(|e| LinkMLError::serialization(format!("YAML serialization failed: {e}")))?,
-            SchemaFormat::Json => serde_json::to_string_pretty(schema)
-                .map_err(|e| LinkMLError::serialization(format!("JSON serialization failed: {e}")))?,
+            SchemaFormat::Yaml => serde_yaml::to_string(schema).map_err(|e| {
+                LinkMLError::serialization(format!("YAML serialization failed: {e}"))
+            })?,
+            SchemaFormat::Json => serde_json::to_string_pretty(schema).map_err(|e| {
+                LinkMLError::serialization(format!("JSON serialization failed: {e}"))
+            })?,
         };
 
         std::fs::write(path, content)
@@ -398,4 +401,3 @@ mod tests {
         assert_eq!(cmd.determine_schema_id(), "custom_schema");
     }
 }
-

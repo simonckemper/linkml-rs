@@ -184,8 +184,10 @@ fn find_common_parent_type(type1: InferredType, type2: InferredType) -> Inferred
         | (InferredType::Float, InferredType::Integer) => InferredType::Float,
 
         // DateTime is more general than Date or Time
-        (InferredType::DateTime, InferredType::Date | InferredType::Time) |
-(InferredType::Date | InferredType::Time, InferredType::DateTime) => InferredType::DateTime,
+        (InferredType::DateTime, InferredType::Date | InferredType::Time)
+        | (InferredType::Date | InferredType::Time, InferredType::DateTime) => {
+            InferredType::DateTime
+        }
 
         // Date and Time have no common parent except String
         (InferredType::Date, InferredType::Time) | (InferredType::Time, InferredType::Date) => {

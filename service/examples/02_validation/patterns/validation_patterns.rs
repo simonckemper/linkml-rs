@@ -1,14 +1,11 @@
-mod common;
-use common::create_example_service;
-
-//! Validation Patterns Example
-//!
-//! This example demonstrates various validation patterns including:
-//! - Pattern matching with regex
-//! - Range constraints
-//! - Enum validation
-//! - Cross-field validation
-//! - Custom validation rules
+// Validation Patterns Example
+//
+// This example demonstrates various validation patterns including:
+// - Pattern matching with regex
+// - Range constraints
+// - Enum validation
+// - Cross-field validation
+// - Custom validation rules
 
 use linkml_core::prelude::*;
 use linkml_service::prelude::*;
@@ -17,8 +14,10 @@ use serde_json::json;
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Validation Patterns Example");
-    println!("=================================
-");
+    println!(
+        "=================================
+"
+    );
 
     // Comprehensive validation schema
     let schema_yaml = r#"
@@ -216,7 +215,7 @@ enums:
     let schema = parser.parse_str(schema_yaml)?;
 
     // Create LinkML service
-    let service = create_example_linkml_service().await?;
+    let service = create_linkml_service().await?;
 
     // Example 1: Valid person data
     println!("Example 1: Valid Person Data");
@@ -242,9 +241,11 @@ enums:
     }
 
     // Example 2: Invalid patterns
-    println!("
+    println!(
+        "
 
-Example 2: Pattern Validation Failures");
+Example 2: Pattern Validation Failures"
+    );
     println!("--------------------------------------");
 
     let invalid_patterns = json!({
@@ -258,7 +259,9 @@ Example 2: Pattern Validation Failures");
         "country_code": "US"
     });
 
-    let report = service.validate(&invalid_patterns, &schema, "Person").await?;
+    let report = service
+        .validate(&invalid_patterns, &schema, "Person")
+        .await?;
     if !report.valid {
         println!("✗ Pattern validation failures:");
         for error in &report.errors {
@@ -269,9 +272,11 @@ Example 2: Pattern Validation Failures");
     }
 
     // Example 3: Cross-field validation
-    println!("
+    println!(
+        "
 
-Example 3: Cross-field Validation");
+Example 3: Cross-field Validation"
+    );
     println!("---------------------------------");
 
     let password_mismatch = json!({
@@ -284,7 +289,9 @@ Example 3: Cross-field Validation");
         "country_code": "US"
     });
 
-    let report = service.validate(&password_mismatch, &schema, "Person").await?;
+    let report = service
+        .validate(&password_mismatch, &schema, "Person")
+        .await?;
     if !report.valid {
         println!("✗ Cross-field validation failed:");
         for error in &report.errors {
@@ -293,9 +300,11 @@ Example 3: Cross-field Validation");
     }
 
     // Example 4: Business rule validation
-    println!("
+    println!(
+        "
 
-Example 4: Business Rule Validation");
+Example 4: Business Rule Validation"
+    );
     println!("-----------------------------------");
 
     let product_with_loss = json!({
@@ -309,7 +318,9 @@ Example 4: Business Rule Validation");
         "discontinued": false
     });
 
-    let report = service.validate(&product_with_loss, &schema, "Product").await?;
+    let report = service
+        .validate(&product_with_loss, &schema, "Product")
+        .await?;
     if !report.valid {
         println!("✗ Business rule violations:");
         for error in &report.errors {
@@ -318,9 +329,11 @@ Example 4: Business Rule Validation");
     }
 
     // Example 5: Enum validation
-    println!("
+    println!(
+        "
 
-Example 5: Enum Validation");
+Example 5: Enum Validation"
+    );
     println!("--------------------------");
 
     let invalid_enum = json!({
@@ -342,9 +355,11 @@ Example 5: Enum Validation");
     }
 
     // Summary of validation patterns
-    println!("
+    println!(
+        "
 
-Validation Pattern Summary");
+Validation Pattern Summary"
+    );
     println!("=========================");
     println!("1. Pattern Matching: Use regex for format validation");
     println!("2. Range Constraints: Set min/max values for numbers");
@@ -353,13 +368,10 @@ Validation Pattern Summary");
     println!("5. Cross-field Rules: Validate field relationships");
     println!("6. Computed Fields: Calculate values from other fields");
     println!("7. Business Rules: Implement domain-specific logic");
-    println!("
-All patterns support clear error messages for user feedback!");
+    println!(
+        "
+All patterns support clear error messages for user feedback!"
+    );
 
     Ok(())
-}
-
-async fn create_example_linkml_service() -> std::result::Result<LinkMLService, Box<dyn std::error::Error>> {
-    // In a real application, this would initialize with all dependencies
-    create_example_service().await?
 }

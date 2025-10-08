@@ -14,8 +14,10 @@ use serde_json::json;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("LinkML Basic Usage API Demonstration");
-    println!("===================================
-");
+    println!(
+        "===================================
+"
+    );
 
     // Show basic schema structure
     demonstrate_schema_basics();
@@ -32,8 +34,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn demonstrate_schema_basics() {
-    println!("1. Basic Schema Structure:
-");
+    println!(
+        "1. Basic Schema Structure:
+"
+    );
 
     let _schema_yaml = r#"
 id: https://example.org/basic-schema
@@ -98,9 +102,11 @@ slots:
 }
 
 fn demonstrate_validation_basics() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
+    println!(
+        "
 2. Basic Validation Examples:
-");
+"
+    );
 
     // Valid data
     let valid_person = json!({
@@ -121,8 +127,10 @@ fn demonstrate_validation_basics() -> std::result::Result<(), Box<dyn std::error
         "age": 25
     });
 
-    println!("
-Invalid - Missing required 'name':");
+    println!(
+        "
+Invalid - Missing required 'name':"
+    );
     println!("{}", serde_json::to_string_pretty(&missing_name)?);
     println!("✗ Error: Required field 'name' is missing");
 
@@ -134,8 +142,10 @@ Invalid - Missing required 'name':");
         "age": 35
     });
 
-    println!("
-Invalid - Bad email format:");
+    println!(
+        "
+Invalid - Bad email format:"
+    );
     println!("{}", serde_json::to_string_pretty(&invalid_email)?);
     println!("✗ Error: 'not-an-email' doesn't match email pattern");
 
@@ -147,17 +157,21 @@ Invalid - Bad email format:");
         "age": 200
     });
 
-    println!("
-Invalid - Age out of range:");
+    println!(
+        "
+Invalid - Age out of range:"
+    );
     println!("{}", serde_json::to_string_pretty(&invalid_age)?);
     println!("✗ Error: Age 200 exceeds maximum value 150");
     Ok(())
 }
 
 fn demonstrate_validation_reports() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("
+    println!(
+        "
 3. Understanding Validation Reports:
-");
+"
+    );
 
     println!("A ValidationReport contains:");
     println!("- valid: boolean indicating overall validity");
@@ -189,15 +203,23 @@ fn demonstrate_validation_reports() -> std::result::Result<(), Box<dyn std::erro
         schema_id: Some("https://example.org/book-schema".to_string()),
     };
 
-    println!("
-Example validation report:");
+    println!(
+        "
+Example validation report:"
+    );
     println!("Valid: {}", example_report.valid);
     println!("Errors: {}", example_report.errors.len());
 
     for (i, error) in example_report.errors.iter().enumerate() {
-        println!("
-Error {}:", i + 1);
-        println!("  Path: {}", error.path.as_ref().unwrap_or(&"<unknown>".to_string());
+        println!(
+            "
+Error {}:",
+            i + 1
+        );
+        println!(
+            "  Path: {}",
+            error.path.as_ref().unwrap_or(&"<unknown>".to_string())
+        );
         println!("  Severity: {:?}", error.severity);
         println!("  Message: {}", error.message);
         if let Some(expected) = &error.expected {
@@ -208,9 +230,11 @@ Error {}:", i + 1);
 }
 
 fn demonstrate_schema_features() {
-    println!("
+    println!(
+        "
 4. Advanced Schema Features:
-");
+"
+    );
 
     println!("a) Inheritance:");
     let inheritance_example = r#"
@@ -229,8 +253,10 @@ classes:
 "#;
     println!("{}", inheritance_example);
 
-    println!("
-b) Enums:");
+    println!(
+        "
+b) Enums:"
+    );
     let enum_example = r#"
 enums:
   StatusEnum:
@@ -246,8 +272,10 @@ slots:
 "#;
     println!("{}", enum_example);
 
-    println!("
-c) Multivalued slots:");
+    println!(
+        "
+c) Multivalued slots:"
+    );
     let multivalued_example = r#"
 slots:
   tags:
@@ -258,8 +286,10 @@ slots:
 "#;
     println!("{}", multivalued_example);
 
-    println!("
-d) Complex patterns:");
+    println!(
+        "
+d) Complex patterns:"
+    );
     let pattern_example = r#"
 slots:
   phone:
@@ -275,9 +305,11 @@ slots:
 
 /// Show how to use the service in production
 fn _production_usage_example() {
-    println!("
+    println!(
+        "
 5. Production Usage Pattern:
-");
+"
+    );
 
     println!(
         r#"

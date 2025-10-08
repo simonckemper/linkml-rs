@@ -2,11 +2,11 @@
 //!
 //! Tests: Schema → Excel → Schema conversion with semantic equivalence validation
 
-use super::equivalence::{compare_schemas, EquivalenceResult};
+use super::equivalence::{EquivalenceResult, compare_schemas};
 use linkml_core::prelude::*;
 use linkml_service::generator::excel::ExcelGenerator;
-use linkml_service::inference::introspectors::excel::ExcelIntrospector;
 use linkml_service::inference::DataIntrospector;
+use linkml_service::inference::introspectors::excel::ExcelIntrospector;
 use logger_service::wiring::wire_logger;
 use serde_json::json;
 use std::path::PathBuf;
@@ -43,14 +43,19 @@ async fn test_simple_schema_roundtrip() -> std::result::Result<(), Box<dyn std::
     // Step 1: Schema → Excel (using generator)
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("simple_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+    generator
+        .generate_file(&original_schema, excel_path.to_str().unwrap())
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Step 2: Excel → Schema (using introspector)
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = introspector.analyze_file(&excel_path).await
+    let stats = introspector
+        .analyze_file(&excel_path)
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    let reconstructed_schema = introspector.generate_schema(&stats, "simple_schema").await
+    let reconstructed_schema = introspector
+        .generate_schema(&stats, "simple_schema")
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Step 3: Compare schemas for semantic equivalence
@@ -81,14 +86,19 @@ async fn test_complex_schema_roundtrip() -> std::result::Result<(), Box<dyn std:
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("complex_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+    generator
+        .generate_file(&original_schema, excel_path.to_str().unwrap())
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = introspector.analyze_file(&excel_path).await
+    let stats = introspector
+        .analyze_file(&excel_path)
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    let reconstructed_schema = introspector.generate_schema(&stats, "complex_schema").await
+    let reconstructed_schema = introspector
+        .generate_schema(&stats, "complex_schema")
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
@@ -109,7 +119,8 @@ async fn test_complex_schema_roundtrip() -> std::result::Result<(), Box<dyn std:
 
 /// Test schema with all LinkML constraint types
 #[tokio::test]
-async fn test_schema_with_constraints_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn test_schema_with_constraints_roundtrip()
+-> std::result::Result<(), Box<dyn std::error::Error>> {
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -119,14 +130,19 @@ async fn test_schema_with_constraints_roundtrip() -> std::result::Result<(), Box
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("constraints_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+    generator
+        .generate_file(&original_schema, excel_path.to_str().unwrap())
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = introspector.analyze_file(&excel_path).await
+    let stats = introspector
+        .analyze_file(&excel_path)
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    let reconstructed_schema = introspector.generate_schema(&stats, "constraints_schema").await
+    let reconstructed_schema = introspector
+        .generate_schema(&stats, "constraints_schema")
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
@@ -157,14 +173,19 @@ async fn test_schema_with_enums_roundtrip() -> std::result::Result<(), Box<dyn s
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("enums_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+    generator
+        .generate_file(&original_schema, excel_path.to_str().unwrap())
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = introspector.analyze_file(&excel_path).await
+    let stats = introspector
+        .analyze_file(&excel_path)
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    let reconstructed_schema = introspector.generate_schema(&stats, "enums_schema").await
+    let reconstructed_schema = introspector
+        .generate_schema(&stats, "enums_schema")
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
@@ -185,7 +206,8 @@ async fn test_schema_with_enums_roundtrip() -> std::result::Result<(), Box<dyn s
 
 /// Test multi-class schema with relationships
 #[tokio::test]
-async fn test_multi_class_schema_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>> {
+async fn test_multi_class_schema_roundtrip() -> std::result::Result<(), Box<dyn std::error::Error>>
+{
     let (logger, timestamp) = create_test_services();
     let temp_dir = setup_test_directory()?;
 
@@ -195,14 +217,19 @@ async fn test_multi_class_schema_roundtrip() -> std::result::Result<(), Box<dyn 
     // Schema → Excel
     let generator = ExcelGenerator::new();
     let excel_path = temp_dir.path().join("multi_class_schema.xlsx");
-    generator.generate_file(&original_schema, excel_path.to_str().unwrap())
+    generator
+        .generate_file(&original_schema, excel_path.to_str().unwrap())
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Excel → Schema
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = introspector.analyze_file(&excel_path).await
+    let stats = introspector
+        .analyze_file(&excel_path)
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    let reconstructed_schema = introspector.generate_schema(&stats, "multi_class_schema").await
+    let reconstructed_schema = introspector
+        .generate_schema(&stats, "multi_class_schema")
+        .await
         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     // Compare
@@ -326,7 +353,9 @@ fn create_complex_schema() -> SchemaDefinition {
 
     schema.classes.insert("Entity".to_string(), entity_class);
     schema.classes.insert("Person".to_string(), person_class);
-    schema.classes.insert("Organization".to_string(), organization_class);
+    schema
+        .classes
+        .insert("Organization".to_string(), organization_class);
 
     schema
 }
@@ -496,8 +525,12 @@ fn create_multi_class_schema() -> SchemaDefinition {
         },
     );
 
-    schema.classes.insert("Department".to_string(), department_class);
-    schema.classes.insert("Employee".to_string(), employee_class);
+    schema
+        .classes
+        .insert("Department".to_string(), department_class);
+    schema
+        .classes
+        .insert("Employee".to_string(), employee_class);
 
     schema
 }

@@ -118,7 +118,7 @@ impl SchemaSheetRow {
     pub fn is_multivalued(&self) -> bool {
         if let Some((_, max)) = self.parse_multiplicity() {
             match max {
-                None => true,        // Unbounded (*)
+                None => true,             // Unbounded (*)
                 Some(m) if m > 1 => true, // Max > 1
                 _ => false,
             }
@@ -218,7 +218,9 @@ impl ColumnMapping {
                 "pattern" | "regex" => mapping.pattern_col = Some(idx),
                 "minimum_value" | "min_value" | "min" => mapping.min_value_col = Some(idx),
                 "maximum_value" | "max_value" | "max" => mapping.max_value_col = Some(idx),
-                "element_type" | "element type" | "metatype" => mapping.element_type_col = Some(idx),
+                "element_type" | "element type" | "metatype" => {
+                    mapping.element_type_col = Some(idx)
+                }
                 _ => {
                     // Check if it's a mapping column (contains ":" or ends with "Match")
                     if header.contains(':') || header.ends_with("Match") || header.contains('.') {
@@ -300,4 +302,3 @@ mod tests {
         assert!(mapping.is_schemasheets_format());
     }
 }
-

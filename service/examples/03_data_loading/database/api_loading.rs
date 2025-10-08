@@ -8,8 +8,8 @@
 
 use linkml_core::prelude::*;
 use linkml_service::loader::{
-    ApiDumper, ApiLoader, ApiOptions, AuthConfig, EndpointConfig,
-    PaginationConfig, PaginationStyle, RetryConfig,
+    ApiDumper, ApiLoader, ApiOptions, AuthConfig, EndpointConfig, PaginationConfig,
+    PaginationStyle, RetryConfig,
 };
 use reqwest::Method;
 use std::collections::HashMap;

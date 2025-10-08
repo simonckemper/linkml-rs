@@ -416,9 +416,19 @@ fn bench_excel_introspector_sizes(c: &mut Criterion) {
                 // Data rows
                 for row in 1..=size {
                     worksheet.write_number(row as u32, 0, row as f64).unwrap();
-                    worksheet.write_string(row as u32, 1, &format!("Item {}", row)).unwrap();
-                    worksheet.write_number(row as u32, 2, (row as f64) * 1.5).unwrap();
-                    worksheet.write_string(row as u32, 3, if row % 2 == 0 { "active" } else { "inactive" }).unwrap();
+                    worksheet
+                        .write_string(row as u32, 1, &format!("Item {}", row))
+                        .unwrap();
+                    worksheet
+                        .write_number(row as u32, 2, (row as f64) * 1.5)
+                        .unwrap();
+                    worksheet
+                        .write_string(
+                            row as u32,
+                            3,
+                            if row % 2 == 0 { "active" } else { "inactive" },
+                        )
+                        .unwrap();
                 }
 
                 // Save to temp file
@@ -454,7 +464,10 @@ fn bench_excel_multi_sheet(c: &mut Criterion) {
                 let mut workbook = Workbook::new();
 
                 for sheet_idx in 0..sheets {
-                    let worksheet = workbook.add_worksheet().set_name(&format!("Sheet{}", sheet_idx + 1)).unwrap();
+                    let worksheet = workbook
+                        .add_worksheet()
+                        .set_name(&format!("Sheet{}", sheet_idx + 1))
+                        .unwrap();
 
                     // Headers
                     worksheet.write_string(0, 0, "id").unwrap();
@@ -463,7 +476,9 @@ fn bench_excel_multi_sheet(c: &mut Criterion) {
                     // 100 rows per sheet
                     for row in 1..=100 {
                         worksheet.write_number(row, 0, row as f64).unwrap();
-                        worksheet.write_string(row, 1, &format!("Data {}", row)).unwrap();
+                        worksheet
+                            .write_string(row, 1, &format!("Data {}", row))
+                            .unwrap();
                     }
                 }
 
@@ -506,9 +521,25 @@ fn bench_excel_schema_generation(c: &mut Criterion) {
             // 1000 rows
             for row in 1..=1000 {
                 worksheet.write_number(row, 0, row as f64).unwrap();
-                worksheet.write_string(row, 1, &format!("Person {}", row)).unwrap();
-                worksheet.write_number(row, 2, (25 + (row % 50)) as f64).unwrap();
-                worksheet.write_string(row, 3, if row % 3 == 0 { "active" } else if row % 3 == 1 { "inactive" } else { "pending" }).unwrap();
+                worksheet
+                    .write_string(row, 1, &format!("Person {}", row))
+                    .unwrap();
+                worksheet
+                    .write_number(row, 2, (25 + (row % 50)) as f64)
+                    .unwrap();
+                worksheet
+                    .write_string(
+                        row,
+                        3,
+                        if row % 3 == 0 {
+                            "active"
+                        } else if row % 3 == 1 {
+                            "inactive"
+                        } else {
+                            "pending"
+                        },
+                    )
+                    .unwrap();
             }
 
             let temp_file = NamedTempFile::new().unwrap();
@@ -516,7 +547,12 @@ fn bench_excel_schema_generation(c: &mut Criterion) {
 
             // Analyze and generate schema
             let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
-            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+            let _ = black_box(
+                introspector
+                    .generate_schema(&stats, "test_schema")
+                    .await
+                    .unwrap(),
+            );
         });
     });
 }
@@ -543,7 +579,9 @@ fn bench_excel_end_to_end(c: &mut Criterion) {
             customer.write_string(0, 1, "name").unwrap();
             for row in 1..=50 {
                 customer.write_number(row, 0, row as f64).unwrap();
-                customer.write_string(row, 1, &format!("Customer {}", row)).unwrap();
+                customer
+                    .write_string(row, 1, &format!("Customer {}", row))
+                    .unwrap();
             }
 
             // Order sheet with foreign key
@@ -556,7 +594,9 @@ fn bench_excel_end_to_end(c: &mut Criterion) {
                 order.write_number(row, 0, row as f64).unwrap();
                 order.write_number(row, 1, ((row % 50) + 1) as f64).unwrap();
                 order.write_number(row, 2, (row as f64) * 10.5).unwrap();
-                order.write_string(row, 3, if row % 2 == 0 { "completed" } else { "pending" }).unwrap();
+                order
+                    .write_string(row, 3, if row % 2 == 0 { "completed" } else { "pending" })
+                    .unwrap();
             }
 
             let temp_file = NamedTempFile::new().unwrap();
@@ -564,7 +604,12 @@ fn bench_excel_end_to_end(c: &mut Criterion) {
 
             // Complete workflow: analyze + generate schema
             let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
-            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+            let _ = black_box(
+                introspector
+                    .generate_schema(&stats, "test_schema")
+                    .await
+                    .unwrap(),
+            );
         });
     });
 }
@@ -586,7 +631,10 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
             let mut workbook = Workbook::new();
 
             for sheet_idx in 0..10 {
-                let worksheet = workbook.add_worksheet().set_name(&format!("Sheet{}", sheet_idx + 1)).unwrap();
+                let worksheet = workbook
+                    .add_worksheet()
+                    .set_name(&format!("Sheet{}", sheet_idx + 1))
+                    .unwrap();
 
                 // 5 columns
                 worksheet.write_string(0, 0, "id").unwrap();
@@ -598,10 +646,16 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
                 // 1000 rows
                 for row in 1..=1000 {
                     worksheet.write_number(row, 0, row as f64).unwrap();
-                    worksheet.write_string(row, 1, &format!("Item {}", row)).unwrap();
+                    worksheet
+                        .write_string(row, 1, &format!("Item {}", row))
+                        .unwrap();
                     worksheet.write_number(row, 2, (row as f64) * 1.5).unwrap();
-                    worksheet.write_string(row, 3, if row % 2 == 0 { "active" } else { "inactive" }).unwrap();
-                    worksheet.write_string(row, 4, &format!("Cat{}", row % 5)).unwrap();
+                    worksheet
+                        .write_string(row, 3, if row % 2 == 0 { "active" } else { "inactive" })
+                        .unwrap();
+                    worksheet
+                        .write_string(row, 4, &format!("Cat{}", row % 5))
+                        .unwrap();
                 }
             }
 
@@ -610,7 +664,12 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
 
             // Benchmark complete analysis
             let stats = introspector.analyze_file(temp_file.path()).await.unwrap();
-            let _ = black_box(introspector.generate_schema(&stats, "test_schema").await.unwrap());
+            let _ = black_box(
+                introspector
+                    .generate_schema(&stats, "test_schema")
+                    .await
+                    .unwrap(),
+            );
         });
     });
 }
@@ -619,7 +678,10 @@ fn bench_excel_typical_workbook(c: &mut Criterion) {
 use logger_service::wiring::wire_logger;
 use timestamp_service::wiring::wire_timestamp;
 
-fn create_logger_service() -> Result<std::sync::Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>, Box<dyn std::error::Error>> {
+fn create_logger_service() -> Result<
+    std::sync::Arc<dyn logger_core::LoggerService<Error = logger_core::LoggerError>>,
+    Box<dyn std::error::Error>,
+> {
     let timestamp = wire_timestamp().into_arc();
     Ok(wire_logger(timestamp).into_arc())
 }

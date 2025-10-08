@@ -272,7 +272,9 @@ impl GeneratorRegistry {
             let mut failed_plugins: Vec<String> = Vec::new();
 
             for plugin in generator_plugins {
-                let plugin_locked = if let Ok(guard) = plugin.lock() { guard } else {
+                let plugin_locked = if let Ok(guard) = plugin.lock() {
+                    guard
+                } else {
                     failed_plugins.push("Failed to lock plugin mutex".to_string());
                     continue;
                 };

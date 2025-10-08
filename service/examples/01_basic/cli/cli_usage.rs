@@ -2,7 +2,6 @@
 //!
 //! This example shows various ways to use the LinkML command-line interface.
 
-
 fn main() {
     println!(
         "=== LinkML CLI Usage Examples ===

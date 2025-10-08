@@ -296,4 +296,3 @@ pub fn create_api_models_excel(path: &Path) -> Result<(), Box<dyn std::error::Er
     workbook.save(path)?;
     Ok(())
 }
-
