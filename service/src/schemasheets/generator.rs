@@ -1,5 +1,6 @@
 //! SchemaSheets format generator - simplified version
 
+use crate::schemasheets::config::SchemaSheetsConfig;
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::types::{
     PermissibleValue, PrefixDefinition, SchemaDefinition,
@@ -64,6 +65,12 @@ pub struct SchemaSheetsGenerator {
     /// When `true`, adds dropdown lists for enum fields, element_type, multiplicity, and boolean fields.
     /// This improves data integrity and user experience.
     pub add_data_validation: bool,
+
+    /// Configuration for SchemaSheets generation
+    ///
+    /// Contains settings for column widths, colors, validation rules, and Excel limits.
+    /// Defaults to `SchemaSheetsConfig::default()` if not specified.
+    pub config: SchemaSheetsConfig,
 }
 
 impl SchemaSheetsGenerator {
@@ -91,6 +98,34 @@ impl SchemaSheetsGenerator {
             alternating_row_colors: true,
             auto_size_columns: true,
             add_data_validation: true,
+            config: SchemaSheetsConfig::default(),
+        }
+    }
+
+    /// Create a new generator with custom configuration
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Custom configuration for SchemaSheets generation
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linkml_service::schemasheets::{SchemaSheetsGenerator, SchemaSheetsConfig};
+    ///
+    /// let config = SchemaSheetsConfig::default();
+    /// let generator = SchemaSheetsGenerator::with_config(config);
+    /// ```
+    pub fn with_config(config: SchemaSheetsConfig) -> Self {
+        Self {
+            include_all_metadata: true,
+            generate_metadata_sheets: true,
+            freeze_headers: true,
+            add_filters: true,
+            alternating_row_colors: true,
+            auto_size_columns: true,
+            add_data_validation: true,
+            config,
         }
     }
 
@@ -138,32 +173,32 @@ impl SchemaSheetsGenerator {
         sheet.set_name("Schema")
             .with_context("Failed to set worksheet name")?;
 
-        // Create formats
+        // Create formats using configuration
         let header_format = Format::new()
             .set_bold()
-            .set_background_color(Color::RGB(0x4472C4))
-            .set_font_color(Color::White)
+            .set_background_color(Color::RGB(self.config.colors.header_background_rgb()))
+            .set_font_color(Color::RGB(self.config.colors.header_text_rgb()))
             .set_align(FormatAlign::Center)
             .set_border(FormatBorder::Thin);
 
         let class_format = Format::new()
-            .set_background_color(Color::RGB(0xE7E6E6))
+            .set_background_color(Color::RGB(self.config.colors.class_background_rgb()))
             .set_border(FormatBorder::Thin);
 
         let enum_format = Format::new()
-            .set_background_color(Color::RGB(0xFFF2CC))
+            .set_background_color(Color::RGB(self.config.colors.enum_background_rgb()))
             .set_border(FormatBorder::Thin);
 
         let type_format = Format::new()
-            .set_background_color(Color::RGB(0xD9E1F2))
+            .set_background_color(Color::RGB(self.config.colors.type_background_rgb()))
             .set_border(FormatBorder::Thin);
 
         let subset_format = Format::new()
-            .set_background_color(Color::RGB(0xE2EFDA))
+            .set_background_color(Color::RGB(self.config.colors.subset_background_rgb()))
             .set_border(FormatBorder::Thin);
 
         let alt_row_format = Format::new()
-            .set_background_color(Color::RGB(0xF2F2F2))
+            .set_background_color(Color::RGB(self.config.colors.alt_row_background_rgb()))
             .set_border(FormatBorder::Thin);
 
         let normal_format = Format::new()
@@ -409,21 +444,34 @@ impl SchemaSheetsGenerator {
         }
 
         if self.auto_size_columns {
-            for col in 0..=8 {
-                let width = match col {
-                    0 => 30.0, // Element name
-                    1 => 15.0, // Element type
-                    2 => 20.0, // Slot name
-                    3 => 15.0, // Range
-                    4 => 10.0, // Required
-                    5 => 10.0, // Multivalued
-                    6 => 40.0, // Description
-                    7 => 20.0, // Is_a
-                    8 => 20.0, // Pattern
-                    _ => 15.0,
-                };
-                sheet.set_column_width(col, width)
-                    .with_context(format!("Failed to set column {} width", col))?;
+            // Set column widths using configuration
+            let widths = &self.config.column_widths;
+
+            sheet.set_column_width(0, widths.element_name)
+                .with_context("Failed to set element_name column width")?;
+            sheet.set_column_width(1, widths.element_type)
+                .with_context("Failed to set element_type column width")?;
+            sheet.set_column_width(2, widths.field_name)
+                .with_context("Failed to set field_name column width")?;
+            sheet.set_column_width(3, widths.key)
+                .with_context("Failed to set key column width")?;
+            sheet.set_column_width(4, widths.multiplicity)
+                .with_context("Failed to set multiplicity column width")?;
+            sheet.set_column_width(5, widths.range)
+                .with_context("Failed to set range column width")?;
+            sheet.set_column_width(6, widths.description)
+                .with_context("Failed to set description column width")?;
+            sheet.set_column_width(7, widths.is_a)
+                .with_context("Failed to set is_a column width")?;
+            sheet.set_column_width(8, widths.pattern)
+                .with_context("Failed to set pattern column width")?;
+
+            // Set mapping column widths if metadata is included
+            if self.include_all_metadata {
+                for col in 9..=13 {
+                    sheet.set_column_width(col, widths.mappings)
+                        .with_context(format!("Failed to set mapping column {} width", col))?;
+                }
             }
         }
 
@@ -534,58 +582,52 @@ impl SchemaSheetsGenerator {
 
     /// Add data validation dropdowns to the schema sheet
     fn add_data_validations(&self, sheet: &mut rust_xlsxwriter::Worksheet, schema: &SchemaDefinition) -> Result<()> {
+        let validation_config = &self.config.validation;
+        let limits = &self.config.limits;
+
         // 1. Add validation for element_type column (column 1)
-        let element_types = vec!["class", "enum", "type", "subset"];
+        let element_types: Vec<&str> = validation_config.element_types.iter().map(|s| s.as_str()).collect();
         let element_type_validation = DataValidation::new()
             .allow_list_strings(&element_types)
             .map_err(|e| LinkMLError::other(format!("Failed to create element type validation: {}", e)))?
             .set_error_title("Invalid Element Type")
             .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
-            .set_error_message("Please select one of: class, enum, type, subset")
+            .set_error_message(&validation_config.element_type_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 1, 1_048_575, 1, &element_type_validation)
+        sheet.add_data_validation(1, 1, limits.max_rows, 1, &element_type_validation)
             .with_context("Failed to add element_type validation")?;
 
         // 2. Add validation for key column (column 3) - boolean values
-        let boolean_values = vec!["true", "false"];
+        let boolean_values: Vec<&str> = validation_config.boolean_values.iter().map(|s| s.as_str()).collect();
         let key_validation = DataValidation::new()
             .allow_list_strings(&boolean_values)
             .map_err(|e| LinkMLError::other(format!("Failed to create key validation: {}", e)))?
             .set_error_title("Invalid Key Value")
             .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
-            .set_error_message("Please select 'true' or 'false'")
+            .set_error_message(&validation_config.boolean_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 3, 1_048_575, 3, &key_validation)
+        sheet.add_data_validation(1, 3, limits.max_rows, 3, &key_validation)
             .with_context("Failed to add key validation")?;
 
         // 3. Add validation for multiplicity column (column 4)
-        let multiplicity_values = vec!["1", "0..1", "1..*", "0..*"];
+        let multiplicity_values: Vec<&str> = validation_config.multiplicity_values.iter().map(|s| s.as_str()).collect();
         let multiplicity_validation = DataValidation::new()
             .allow_list_strings(&multiplicity_values)
             .map_err(|e| LinkMLError::other(format!("Failed to create multiplicity validation: {}", e)))?
             .set_error_title("Invalid Multiplicity")
             .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
-            .set_error_message("Please select one of: 1, 0..1, 1..*, 0..*")
+            .set_error_message(&validation_config.multiplicity_error)
             .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
 
-        sheet.add_data_validation(1, 4, 1_048_575, 4, &multiplicity_validation)
+        sheet.add_data_validation(1, 4, limits.max_rows, 4, &multiplicity_validation)
             .with_context("Failed to add multiplicity validation")?;
 
         // 4. Add validation for range column (column 5) - enum types
-        // Collect all enum names and common types
+        // Collect all enum names and common types from configuration
         let mut range_values: Vec<String> = schema.enums.keys().cloned().collect();
-        range_values.extend_from_slice(&[
-            "string".to_string(),
-            "integer".to_string(),
-            "float".to_string(),
-            "double".to_string(),
-            "boolean".to_string(),
-            "date".to_string(),
-            "datetime".to_string(),
-            "uri".to_string(),
-        ]);
+        range_values.extend(validation_config.common_types.clone());
         range_values.sort();
 
         if !range_values.is_empty() {
@@ -597,7 +639,7 @@ impl SchemaSheetsGenerator {
                 .set_input_message("Select a data type or enum name")
                 .map_err(|e| LinkMLError::other(format!("Failed to set input message: {}", e)))?;
 
-            sheet.add_data_validation(1, 5, 1_048_575, 5, &range_validation)
+            sheet.add_data_validation(1, 5, limits.max_rows, 5, &range_validation)
                 .with_context("Failed to add range validation")?;
         }
 

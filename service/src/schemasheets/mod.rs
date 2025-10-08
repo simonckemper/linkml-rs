@@ -45,10 +45,12 @@
 //! - `generator`: Generate SchemaSheets format Excel files from LinkML schemas
 //! - `types`: Common types and utilities for SchemaSheets processing
 
+pub mod config;
 pub mod generator;
 pub mod parser;
 pub mod types;
 
+pub use config::SchemaSheetsConfig;
 pub use generator::SchemaSheetsGenerator;
 pub use parser::SchemaSheetsParser;
 pub use types::{SchemaSheetRow, SchemaSheetType};

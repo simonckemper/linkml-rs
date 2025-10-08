@@ -499,6 +499,10 @@ path = "tests/schemasheets_formatting_tests.rs"
 name = "schemasheets_validation_tests"
 path = "tests/schemasheets_validation_tests.rs"
 
+[[test]]
+name = "schemasheets_config_tests"
+path = "tests/schemasheets_config_tests.rs"
+
 [[bin]]
 name = "linkml"
 path = "src/bin/linkml.rs"
