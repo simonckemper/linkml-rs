@@ -152,7 +152,7 @@ impl SchemaSheetsParser {
         // Get header row to find column indices
         let headers = self.get_headers(range)?;
 
-        for (row_idx, row) in range.rows().enumerate().skip(1) {
+        for (_row_idx, row) in range.rows().enumerate().skip(1) {
             let element_name = self.get_cell_value(row, &headers, ">")?;
             let element_type = self.get_cell_value(row, &headers, "element_type")?;
 
@@ -771,6 +771,32 @@ impl SchemaSheetsParser {
         }
 
         slot
+    }
+
+    /// Get headers from the first row of a range
+    fn get_headers(&self, range: &calamine::Range<Data>) -> Result<std::collections::HashMap<String, usize>> {
+        let mut headers = std::collections::HashMap::new();
+
+        if let Some(first_row) = range.rows().next() {
+            for (col_idx, cell) in first_row.iter().enumerate() {
+                let header = self.data_to_string(cell);
+                if !header.is_empty() {
+                    headers.insert(header, col_idx);
+                }
+            }
+        }
+
+        Ok(headers)
+    }
+
+    /// Get cell value from a row by column name
+    fn get_cell_value(&self, row: &[Data], headers: &std::collections::HashMap<String, usize>, column_name: &str) -> Result<String> {
+        if let Some(&col_idx) = headers.get(column_name) {
+            if col_idx < row.len() {
+                return Ok(self.data_to_string(&row[col_idx]));
+            }
+        }
+        Ok(String::new())
     }
 
     /// Convert Data to String

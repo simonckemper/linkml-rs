@@ -4,7 +4,7 @@ use linkml_core::error::{LinkMLError, Result};
 use linkml_core::types::{
     PermissibleValue, PrefixDefinition, SchemaDefinition,
 };
-use rust_xlsxwriter::{Color, Format, FormatAlign, FormatBorder, Workbook, XlsxError};
+use rust_xlsxwriter::{Color, DataValidation, Format, FormatAlign, FormatBorder, Workbook, XlsxError};
 use std::path::Path;
 
 /// Helper trait to convert XlsxError to LinkMLError with context
@@ -58,6 +58,12 @@ pub struct SchemaSheetsGenerator {
     ///
     /// When `true`, column widths are automatically adjusted to fit content.
     pub auto_size_columns: bool,
+
+    /// Whether to add data validation dropdowns
+    ///
+    /// When `true`, adds dropdown lists for enum fields, element_type, multiplicity, and boolean fields.
+    /// This improves data integrity and user experience.
+    pub add_data_validation: bool,
 }
 
 impl SchemaSheetsGenerator {
@@ -84,6 +90,7 @@ impl SchemaSheetsGenerator {
             add_filters: true,
             alternating_row_colors: true,
             auto_size_columns: true,
+            add_data_validation: true,
         }
     }
 
@@ -388,29 +395,85 @@ impl SchemaSheetsGenerator {
             }
             row += 1;
         }
-        
+
+        // Apply formatting to main schema sheet before creating new worksheets
+        if self.freeze_headers {
+            sheet.set_freeze_panes(1, 0)
+                .with_context("Failed to freeze schema sheet headers")?;
+        }
+
+        if self.add_filters {
+            let last_col = if self.include_all_metadata { 13 } else { 8 };
+            sheet.autofilter(0, 0, 0, last_col)
+                .with_context("Failed to set autofilter on schema sheet")?;
+        }
+
+        if self.auto_size_columns {
+            for col in 0..=8 {
+                let width = match col {
+                    0 => 30.0, // Element name
+                    1 => 15.0, // Element type
+                    2 => 20.0, // Slot name
+                    3 => 15.0, // Range
+                    4 => 10.0, // Required
+                    5 => 10.0, // Multivalued
+                    6 => 40.0, // Description
+                    7 => 20.0, // Is_a
+                    8 => 20.0, // Pattern
+                    _ => 15.0,
+                };
+                sheet.set_column_width(col, width)
+                    .with_context(format!("Failed to set column {} width", col))?;
+            }
+        }
+
+        // Add data validation if enabled
+        if self.add_data_validation {
+            self.add_data_validations(sheet, schema)?;
+        }
+
         // Generate metadata sheets
         if self.generate_metadata_sheets {
-            // Prefixes sheet
-            let prefixes_sheet = workbook.add_worksheet();
-            prefixes_sheet.set_name("prefixes")
-                .with_context("Failed to set prefixes sheet name")?;
-            prefixes_sheet.write_with_format(0, 0, "prefix", &header_format)
-                .with_context("Failed to write prefixes header 'prefix'")?;
-            prefixes_sheet.write_with_format(0, 1, "uri", &header_format)
-                .with_context("Failed to write prefixes header 'uri'")?;
-            let mut row = 1;
-            for (prefix, definition) in &schema.prefixes {
-                prefixes_sheet.write(row, 0, prefix)
-                    .with_context(format!("Failed to write prefix '{}' at row {}", prefix, row))?;
-                let uri = match definition {
-                    PrefixDefinition::Simple(uri) => uri.clone(),
-                    PrefixDefinition::Complex { prefix_reference, .. } => prefix_reference.clone().unwrap_or_default(),
-                };
-                prefixes_sheet.write(row, 1, uri)
-                    .with_context(format!("Failed to write URI for prefix '{}' at row {}", prefix, row))?;
-                row += 1;
-            }
+            // Prefixes sheet - use a block to ensure the borrow ends before creating settings sheet
+            {
+                let prefixes_sheet = workbook.add_worksheet();
+                prefixes_sheet.set_name("prefixes")
+                    .with_context("Failed to set prefixes sheet name")?;
+                prefixes_sheet.write_with_format(0, 0, "prefix", &header_format)
+                    .with_context("Failed to write prefixes header 'prefix'")?;
+                prefixes_sheet.write_with_format(0, 1, "uri", &header_format)
+                    .with_context("Failed to write prefixes header 'uri'")?;
+                let mut row = 1;
+                for (prefix, definition) in &schema.prefixes {
+                    prefixes_sheet.write(row, 0, prefix)
+                        .with_context(format!("Failed to write prefix '{}' at row {}", prefix, row))?;
+                    let uri = match definition {
+                        PrefixDefinition::Simple(uri) => uri.clone(),
+                        PrefixDefinition::Complex { prefix_reference, .. } => prefix_reference.clone().unwrap_or_default(),
+                    };
+                    prefixes_sheet.write(row, 1, uri)
+                        .with_context(format!("Failed to write URI for prefix '{}' at row {}", prefix, row))?;
+                    row += 1;
+                }
+
+                // Apply formatting to prefixes sheet
+                if self.freeze_headers {
+                    prefixes_sheet.set_freeze_panes(1, 0)
+                        .with_context("Failed to freeze prefixes sheet headers")?;
+                }
+
+                if self.add_filters {
+                    prefixes_sheet.autofilter(0, 0, 0, 1)
+                        .with_context("Failed to add autofilter to prefixes sheet")?;
+                }
+
+                if self.auto_size_columns {
+                    prefixes_sheet.set_column_width(0, 15)
+                        .with_context("Failed to set prefix column width")?;
+                    prefixes_sheet.set_column_width(1, 50)
+                        .with_context("Failed to set URI column width")?;
+                }
+            } // prefixes_sheet borrow ends here
 
             // Settings sheet
             let settings_sheet = workbook.add_worksheet();
@@ -445,26 +508,18 @@ impl SchemaSheetsGenerator {
                     .with_context("Failed to write schema description value")?;
             }
 
-            // Apply formatting to metadata sheets
+            // Apply formatting to settings sheet
             if self.freeze_headers {
-                prefixes_sheet.set_freeze_panes(1, 0)
-                    .with_context("Failed to freeze prefixes sheet headers")?;
                 settings_sheet.set_freeze_panes(1, 0)
                     .with_context("Failed to freeze settings sheet headers")?;
             }
 
             if self.add_filters {
-                prefixes_sheet.autofilter(0, 0, 0, 1)
-                    .with_context("Failed to add autofilter to prefixes sheet")?;
                 settings_sheet.autofilter(0, 0, 0, 1)
                     .with_context("Failed to add autofilter to settings sheet")?;
             }
 
             if self.auto_size_columns {
-                prefixes_sheet.set_column_width(0, 15)
-                    .with_context("Failed to set prefix column width")?;
-                prefixes_sheet.set_column_width(1, 50)
-                    .with_context("Failed to set URI column width")?;
                 settings_sheet.set_column_width(0, 15)
                     .with_context("Failed to set setting column width")?;
                 settings_sheet.set_column_width(1, 50)
@@ -472,54 +527,79 @@ impl SchemaSheetsGenerator {
             }
         }
 
-        // Apply formatting to main schema sheet
-        if self.freeze_headers {
-            sheet.set_freeze_panes(1, 0)
-                .with_context("Failed to freeze schema sheet headers")?;
-        }
-
-        if self.add_filters {
-            let last_col = if self.include_all_metadata { 13 } else { 8 };
-            sheet.autofilter(0, 0, 0, last_col)
-                .with_context("Failed to add autofilter to schema sheet")?;
-        }
-
-        if self.auto_size_columns {
-            // Set optimal column widths
-            sheet.set_column_width(0, 20)  // > (element name)
-                .with_context("Failed to set element name column width")?;
-            sheet.set_column_width(1, 15)  // element_type
-                .with_context("Failed to set element_type column width")?;
-            sheet.set_column_width(2, 20)  // field
-                .with_context("Failed to set field column width")?;
-            sheet.set_column_width(3, 8)   // key
-                .with_context("Failed to set key column width")?;
-            sheet.set_column_width(4, 12)  // multiplicity
-                .with_context("Failed to set multiplicity column width")?;
-            sheet.set_column_width(5, 15)  // range
-                .with_context("Failed to set range column width")?;
-            sheet.set_column_width(6, 40)  // desc
-                .with_context("Failed to set desc column width")?;
-            sheet.set_column_width(7, 15)  // is_a
-                .with_context("Failed to set is_a column width")?;
-            sheet.set_column_width(8, 30)  // pattern
-                .with_context("Failed to set pattern column width")?;
-
-            if self.include_all_metadata {
-                sheet.set_column_width(9, 25)   // exact_mappings
-                    .with_context("Failed to set exact_mappings column width")?;
-                sheet.set_column_width(10, 25)  // close_mappings
-                    .with_context("Failed to set close_mappings column width")?;
-                sheet.set_column_width(11, 25)  // related_mappings
-                    .with_context("Failed to set related_mappings column width")?;
-                sheet.set_column_width(12, 25)  // narrow_mappings
-                    .with_context("Failed to set narrow_mappings column width")?;
-                sheet.set_column_width(13, 25)  // broad_mappings
-                    .with_context("Failed to set broad_mappings column width")?;
-            }
-        }
-
         workbook.save(output_path).map_err(|e| LinkMLError::other(format!("Failed to save Excel file: {e}")))?;
+
+        Ok(())
+    }
+
+    /// Add data validation dropdowns to the schema sheet
+    fn add_data_validations(&self, sheet: &mut rust_xlsxwriter::Worksheet, schema: &SchemaDefinition) -> Result<()> {
+        // 1. Add validation for element_type column (column 1)
+        let element_types = vec!["class", "enum", "type", "subset"];
+        let element_type_validation = DataValidation::new()
+            .allow_list_strings(&element_types)
+            .map_err(|e| LinkMLError::other(format!("Failed to create element type validation: {}", e)))?
+            .set_error_title("Invalid Element Type")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
+            .set_error_message("Please select one of: class, enum, type, subset")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
+
+        sheet.add_data_validation(1, 1, 1_048_575, 1, &element_type_validation)
+            .with_context("Failed to add element_type validation")?;
+
+        // 2. Add validation for key column (column 3) - boolean values
+        let boolean_values = vec!["true", "false"];
+        let key_validation = DataValidation::new()
+            .allow_list_strings(&boolean_values)
+            .map_err(|e| LinkMLError::other(format!("Failed to create key validation: {}", e)))?
+            .set_error_title("Invalid Key Value")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
+            .set_error_message("Please select 'true' or 'false'")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
+
+        sheet.add_data_validation(1, 3, 1_048_575, 3, &key_validation)
+            .with_context("Failed to add key validation")?;
+
+        // 3. Add validation for multiplicity column (column 4)
+        let multiplicity_values = vec!["1", "0..1", "1..*", "0..*"];
+        let multiplicity_validation = DataValidation::new()
+            .allow_list_strings(&multiplicity_values)
+            .map_err(|e| LinkMLError::other(format!("Failed to create multiplicity validation: {}", e)))?
+            .set_error_title("Invalid Multiplicity")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error title: {}", e)))?
+            .set_error_message("Please select one of: 1, 0..1, 1..*, 0..*")
+            .map_err(|e| LinkMLError::other(format!("Failed to set error message: {}", e)))?;
+
+        sheet.add_data_validation(1, 4, 1_048_575, 4, &multiplicity_validation)
+            .with_context("Failed to add multiplicity validation")?;
+
+        // 4. Add validation for range column (column 5) - enum types
+        // Collect all enum names and common types
+        let mut range_values: Vec<String> = schema.enums.keys().cloned().collect();
+        range_values.extend_from_slice(&[
+            "string".to_string(),
+            "integer".to_string(),
+            "float".to_string(),
+            "double".to_string(),
+            "boolean".to_string(),
+            "date".to_string(),
+            "datetime".to_string(),
+            "uri".to_string(),
+        ]);
+        range_values.sort();
+
+        if !range_values.is_empty() {
+            let range_validation = DataValidation::new()
+                .allow_list_strings(&range_values.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+                .map_err(|e| LinkMLError::other(format!("Failed to create range validation: {}", e)))?
+                .set_input_title("Select Range Type")
+                .map_err(|e| LinkMLError::other(format!("Failed to set input title: {}", e)))?
+                .set_input_message("Select a data type or enum name")
+                .map_err(|e| LinkMLError::other(format!("Failed to set input message: {}", e)))?;
+
+            sheet.add_data_validation(1, 5, 1_048_575, 5, &range_validation)
+                .with_context("Failed to add range validation")?;
+        }
 
         Ok(())
     }
