@@ -264,6 +264,11 @@ pub fn merge_slot_definitions(
         unique: override_def.unique.or(base.unique),
         ordered: override_def.ordered.or(base.ordered),
         unique_keys: merge_vec(&base.unique_keys, &override_def.unique_keys),
+        exact_mappings: merge_vec(&base.exact_mappings, &override_def.exact_mappings),
+        close_mappings: merge_vec(&base.close_mappings, &override_def.close_mappings),
+        related_mappings: merge_vec(&base.related_mappings, &override_def.related_mappings),
+        narrow_mappings: merge_vec(&base.narrow_mappings, &override_def.narrow_mappings),
+        broad_mappings: merge_vec(&base.broad_mappings, &override_def.broad_mappings),
     }
 }
 

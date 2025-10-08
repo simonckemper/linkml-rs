@@ -243,7 +243,15 @@ impl SchemaSheetsParser {
         let mut type_def: Option<TypeDefinition> = None;
 
         for row in rows.iter().skip(1) {
-            let parsed_row = self.parse_row(row, &col_mapping)?;
+            let mut parsed_row = self.parse_row(row, &col_mapping)?;
+
+            // Adjust row type based on context
+            if parsed_row.row_type == SchemaSheetType::AttributeDefinition {
+                // If we're in an enum context, this is an enum value
+                if current_enum.is_some() {
+                    parsed_row.row_type = SchemaSheetType::EnumValue;
+                }
+            }
 
             match parsed_row.row_type {
                 SchemaSheetType::ClassDefinition => {
@@ -539,8 +547,25 @@ impl SchemaSheetsParser {
             class.mixins = row.mixins.clone();
         }
 
-        // TODO: Handle mappings when ClassDefinition supports them
-        // For now, mappings are stored in annotations or metadata
+        // Handle mappings
+        for (mapping_type, mapping_value) in &row.mappings {
+            let mapping_type_lower = mapping_type.to_lowercase();
+
+            if mapping_type_lower.contains("exact") {
+                class.exact_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("close") {
+                class.close_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("related") {
+                class.related_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("narrow") {
+                class.narrow_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("broad") {
+                class.broad_mappings.push(mapping_value.clone());
+            } else {
+                // Default to exact mapping if type is unclear
+                class.exact_mappings.push(mapping_value.clone());
+            }
+        }
 
         class
     }
@@ -686,8 +711,25 @@ impl SchemaSheetsParser {
             }
         }
 
-        // TODO: Handle mappings when SlotDefinition supports them
-        // For now, mappings are stored in annotations or metadata
+        // Handle mappings
+        for (mapping_type, mapping_value) in &row.mappings {
+            let mapping_type_lower = mapping_type.to_lowercase();
+
+            if mapping_type_lower.contains("exact") {
+                slot.exact_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("close") {
+                slot.close_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("related") {
+                slot.related_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("narrow") {
+                slot.narrow_mappings.push(mapping_value.clone());
+            } else if mapping_type_lower.contains("broad") {
+                slot.broad_mappings.push(mapping_value.clone());
+            } else {
+                // Default to exact mapping if type is unclear
+                slot.exact_mappings.push(mapping_value.clone());
+            }
+        }
 
         slot
     }

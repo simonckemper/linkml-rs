@@ -217,6 +217,27 @@ pub struct ClassDefinition {
     /// Comments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comments: Vec<String>,
+
+    // Mapping fields
+    /// Exact mappings to external ontology terms
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub exact_mappings: Vec<String>,
+
+    /// Close mappings to external ontology terms
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub close_mappings: Vec<String>,
+
+    /// Related mappings
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub related_mappings: Vec<String>,
+
+    /// Narrow mappings (more specific terms)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub narrow_mappings: Vec<String>,
+
+    /// Broad mappings (more general terms)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub broad_mappings: Vec<String>,
 }
 
 /// Action to take when a slot value is absent
@@ -503,6 +524,27 @@ pub struct SlotDefinition {
     /// Unique key constraints for this slot
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub unique_keys: Vec<String>,
+
+    // Mapping fields
+    /// Exact mappings to external ontology terms
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub exact_mappings: Vec<String>,
+
+    /// Close mappings to external ontology terms
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub close_mappings: Vec<String>,
+
+    /// Related mappings
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub related_mappings: Vec<String>,
+
+    /// Narrow mappings (more specific terms)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub narrow_mappings: Vec<String>,
+
+    /// Broad mappings (more general terms)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub broad_mappings: Vec<String>,
 }
 
 /// Structured pattern for advanced pattern matching

@@ -479,6 +479,10 @@ path = "tests/roundtrip_tests.rs"
 name = "cli_integration_tests"
 path = "tests/cli_integration_tests.rs"
 
+[[test]]
+name = "schemasheets_parser_tests"
+path = "tests/schemasheets_parser_tests.rs"
+
 [[bin]]
 name = "linkml"
 path = "src/bin/linkml.rs"

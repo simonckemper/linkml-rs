@@ -920,6 +920,11 @@ where
                     see_also: vec![],
                     deprecated: None,
                     examples: vec![],
+                    exact_mappings: vec![],
+                    close_mappings: vec![],
+                    related_mappings: vec![],
+                    narrow_mappings: vec![],
+                    broad_mappings: vec![],
                 };
 
                 // Add the class to the schema

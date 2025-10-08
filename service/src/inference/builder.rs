@@ -427,6 +427,11 @@ impl ClassBuilder {
             todos: Vec::new(),
             notes: Vec::new(),
             comments: Vec::new(),
+            exact_mappings: Vec::new(),
+            close_mappings: Vec::new(),
+            related_mappings: Vec::new(),
+            narrow_mappings: Vec::new(),
+            broad_mappings: Vec::new(),
         };
 
         self.schema_builder
