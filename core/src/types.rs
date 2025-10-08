@@ -1129,7 +1129,9 @@ where
             M: de::MapAccess<'de>,
         {
             let mut values = Vec::new();
-            while let Some((key, value)) = map.next_entry::<String, Option<PermissibleValueMetadata>>()? {
+            while let Some((key, value)) =
+                map.next_entry::<String, Option<PermissibleValueMetadata>>()?
+            {
                 let pv = if let Some(metadata) = value {
                     PermissibleValue::Complex {
                         text: key,
