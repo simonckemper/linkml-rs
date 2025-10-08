@@ -304,8 +304,8 @@ pub enum LinkMLCommand {
         schema_name: Option<String>,
 
         /// Output format (yaml or json)
-        #[arg(short = 'f', long, default_value = "yaml")]
-        format: SchemaFormat,
+        #[arg(long = "schema-format", default_value = "yaml")]
+        schema_format: SchemaFormat,
 
         /// Show progress indicators
         #[arg(long, default_value = "true")]

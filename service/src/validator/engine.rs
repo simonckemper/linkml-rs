@@ -149,8 +149,8 @@ impl ValidationEngine {
     pub fn new(schema: &SchemaDefinition) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        // Use direct instantiation for sync timestamp service (no wiring function exists yet)
-        let timestamp_service = Arc::new(timestamp_core::factory::create_sync_chrono_timestamp_service());
+        // Use wiring function for sync timestamp service
+        let timestamp_service = timestamp_service::wiring::wire_sync_timestamp();
         let profiler = Arc::new(Profiler::new(
             timestamp_service::wiring::wire_timestamp().into_inner(),
         ));
@@ -205,8 +205,8 @@ impl ValidationEngine {
     ) -> Result<Self> {
         let schema = Arc::new(schema.clone());
         let registry = ValidatorRegistry::new(&schema)?;
-        // Use direct instantiation for sync timestamp service (no wiring function exists yet)
-        let timestamp_service = Arc::new(timestamp_core::factory::create_sync_chrono_timestamp_service());
+        // Use wiring function for sync timestamp service
+        let timestamp_service = timestamp_service::wiring::wire_sync_timestamp();
 
         Ok(Self {
             schema,

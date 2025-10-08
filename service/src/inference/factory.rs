@@ -264,12 +264,12 @@ pub async fn create_inference_engine_with_services(
         crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string())
     })?;
 
-    // Create introspectors
-    let xml_introspector = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    // Create introspectors using direct instantiation (avoiding deprecated factory functions)
+    let xml_introspector = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
-    let json_introspector = create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let json_introspector = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
-    let csv_introspector = create_csv_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let csv_introspector = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
     // Use default configuration
     let config = InferenceConfig::default();
@@ -332,12 +332,12 @@ pub async fn create_inference_engine_with_config(
         crate::inference::traits::InferenceError::FormatIdentificationFailed(e.to_string())
     })?;
 
-    // Create introspectors
-    let xml_introspector = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    // Create introspectors using direct instantiation (avoiding deprecated factory functions)
+    let xml_introspector = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
-    let json_introspector = create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let json_introspector = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
-    let csv_introspector = create_csv_introspector(Arc::clone(&logger), Arc::clone(&timestamp))?;
+    let csv_introspector = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp)));
 
     // Create inference engine with custom config
     Ok(Arc::new(InferenceEngine::new(
@@ -361,17 +361,15 @@ mod tests {
         let timestamp =
             timestamp_service::wire_timestamp().expect("Failed to create timestamp");
 
-        // Test XML introspector creation
-        let xml = create_xml_introspector(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(xml.is_ok());
+        // Test introspector creation using direct instantiation
+        let xml = Arc::new(XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        assert!(xml.introspect_bytes(b"<root/>").await.is_ok());
 
-        // Test JSON introspector creation
-        let json = create_json_introspector(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(json.is_ok());
+        let json = Arc::new(JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        assert!(json.introspect_bytes(b"{}").await.is_ok());
 
-        // Test CSV introspector creation
-        let csv = create_csv_introspector(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(csv.is_ok());
+        let csv = Arc::new(CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp.into_inner())));
+        assert!(csv.introspect_bytes(b"a,b,c\n1,2,3").await.is_ok());
     }
 
     #[tokio::test]

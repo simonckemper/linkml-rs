@@ -273,7 +273,7 @@ impl LinkMLApp {
                 output,
                 schema_id,
                 schema_name,
-                format,
+                schema_format,
                 progress,
             } => {
                 self.sheets2schema_command(
@@ -281,7 +281,7 @@ impl LinkMLApp {
                     output.as_ref(),
                     schema_id.as_ref(),
                     schema_name.as_ref(),
-                    *format,
+                    *schema_format,
                     *progress,
                 )
                 .await

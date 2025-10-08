@@ -24,6 +24,10 @@ linkml_full_tests = []
 linkml_examples = []
 test-utils = []  # Test utilities for external testing
 
+# Rust-idiomatic DI migration (Phase 1)
+idiomatic_di = []
+idiomatic_di_linkml = ["idiomatic_di"]
+
 [dependencies]
 
 # Async runtime

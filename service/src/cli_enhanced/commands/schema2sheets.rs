@@ -126,7 +126,7 @@ impl Schema2SheetsCommand {
             eprintln!("Loading schema from: {}", self.schema.display());
         }
 
-        let mut schema = self.load_schema(&self.schema)?;
+        let mut schema = self.load_schema(&self.schema).await?;
 
         // Post-process schema to populate name fields from map keys
         self.populate_names(&mut schema);
@@ -232,34 +232,84 @@ impl Schema2SheetsCommand {
                 type_def.name = type_name.clone();
             }
         }
+
+        // Populate subset names
+        for (subset_name, subset_def) in &mut schema.subsets {
+            if subset_def.name.is_empty() {
+                subset_def.name = subset_name.clone();
+            }
+        }
     }
 
-    /// Load schema from file (YAML or JSON)
-    fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
+    /// Load schema from file (YAML or JSON) and resolve imports
+    async fn load_schema(&self, path: &Path) -> Result<SchemaDefinition> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| LinkMLError::io_error(format!("Failed to read schema file: {e}")))?;
 
         // Try YAML first, capture error
         let yaml_result = serde_yaml::from_str::<SchemaDefinition>(&content);
-        if let Ok(schema) = yaml_result {
-            return Ok(schema);
-        }
-        let yaml_error = yaml_result.unwrap_err();
+        let mut schema = if let Ok(schema) = yaml_result {
+            schema
+        } else {
+            let yaml_error = yaml_result.unwrap_err();
 
-        // Try JSON, capture error
-        let json_result = serde_json::from_str::<SchemaDefinition>(&content);
-        if let Ok(schema) = json_result {
-            return Ok(schema);
-        }
-        let json_error = json_result.unwrap_err();
+            // Try JSON, capture error
+            let json_result = serde_json::from_str::<SchemaDefinition>(&content);
+            if let Ok(schema) = json_result {
+                schema
+            } else {
+                let json_error = json_result.unwrap_err();
 
-        // Return detailed error with both parsing attempts
-        Err(LinkMLError::deserialization(format!(
-            "Failed to parse schema as YAML or JSON.\n\
-             YAML parsing error: {}\n\
-             JSON parsing error: {}",
-            yaml_error, json_error
-        )))
+                // Return detailed error with both parsing attempts
+                return Err(LinkMLError::deserialization(format!(
+                    "Failed to parse schema as YAML or JSON.\n\
+                     YAML parsing error: {}\n\
+                     JSON parsing error: {}",
+                    yaml_error, json_error
+                )));
+            }
+        };
+
+        // Step 2: Resolve imports if present
+        if !schema.imports.is_empty() {
+            use crate::parser::import_resolver_v2::ImportResolverV2;
+            use linkml_core::settings::ImportSettings;
+
+            // Configure import settings with base path
+            let mut settings = ImportSettings::default();
+            if let Some(parent) = path.parent() {
+                settings
+                    .search_paths
+                    .push(parent.to_string_lossy().to_string());
+            }
+            // Also add current directory as fallback
+            settings.search_paths.push(".".to_string());
+
+            // Add standard LinkML aliases for common imports
+            // linkml:types resolves to the standard LinkML types schema
+            settings.aliases.insert(
+                "linkml:types".to_string(),
+                "https://w3id.org/linkml/types.yaml".to_string(),
+            );
+            settings.aliases.insert(
+                "linkml:mappings".to_string(),
+                "https://w3id.org/linkml/mappings.yaml".to_string(),
+            );
+            settings.aliases.insert(
+                "linkml:extensions".to_string(),
+                "https://w3id.org/linkml/extensions.yaml".to_string(),
+            );
+            settings.aliases.insert(
+                "linkml:annotations".to_string(),
+                "https://w3id.org/linkml/annotations.yaml".to_string(),
+            );
+
+            // Resolve imports
+            let resolver = ImportResolverV2::with_settings(settings);
+            schema = resolver.resolve_imports(&schema).await?;
+        }
+
+        Ok(schema)
     }
 }
 

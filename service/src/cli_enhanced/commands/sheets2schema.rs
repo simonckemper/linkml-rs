@@ -1,10 +1,16 @@
 //! `sheets2schema` command implementation
 //!
-//! Converts Excel SchemaSheets to LinkML schema by analyzing data and inferring
-//! types, constraints, and relationships.
+//! Converts Excel SchemaSheets to LinkML schema.
+//!
+//! Supports two modes:
+//! 1. **SchemaSheets Format**: Parses metadata from SchemaSheets-formatted Excel files
+//!    for lossless roundtrip conversion (preserves all schema metadata)
+//! 2. **Data Introspection**: Analyzes data and infers schema structure
+//!    (generates new schema from data patterns)
 
 use crate::inference::introspectors::excel::ExcelIntrospector;
 use crate::inference::DataIntrospector;
+use crate::schemasheets::SchemaSheetsParser;
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
@@ -24,6 +30,10 @@ pub struct Sheets2SchemaCommand {
     pub schema_name: Option<String>,
     /// Output format
     pub format: SchemaFormat,
+    /// Force SchemaSheets format parsing (default: auto-detect)
+    pub force_schemasheets: bool,
+    /// Force data introspection mode (default: auto-detect)
+    pub force_introspection: bool,
     /// Show progress indicators
     pub progress: bool,
     /// Verbose output
@@ -49,9 +59,25 @@ impl Sheets2SchemaCommand {
             schema_id: None,
             schema_name: None,
             format: SchemaFormat::Yaml,
+            force_schemasheets: false,
+            force_introspection: false,
             progress: true,
             verbose: false,
         }
+    }
+
+    /// Force SchemaSheets format parsing
+    #[must_use]
+    pub fn with_schemasheets_format(mut self, force: bool) -> Self {
+        self.force_schemasheets = force;
+        self
+    }
+
+    /// Force data introspection mode
+    #[must_use]
+    pub fn with_introspection_mode(mut self, force: bool) -> Self {
+        self.force_introspection = force;
+        self
     }
 
     /// Set schema ID
@@ -127,59 +153,24 @@ impl Sheets2SchemaCommand {
             None
         };
 
-        // Step 1: Read Excel file
-        if let Some(ref pb) = progress {
-            pb.set_message("Reading Excel file...");
-        } else if self.verbose {
-            eprintln!("Reading Excel file: {}", self.input.display());
-        }
+        // Detect format and parse accordingly
+        let schema = if self.force_schemasheets {
+            // Force SchemaSheets format
+            self.parse_schemasheets_format(&schema_id, &progress).await?
+        } else if self.force_introspection {
+            // Force data introspection
+            self.parse_via_introspection(&schema_id, &progress).await?
+        } else {
+            // Auto-detect format
+            self.auto_detect_and_parse(&schema_id, &progress).await?
+        };
 
-        // Wire services
-        let timestamp = wire_timestamp().into_arc();
-        let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
-            .map_err(|e| LinkMLError::service(format!("Failed to wire logger: {e}")))?
-            .into_arc();
-
-        let introspector = ExcelIntrospector::new(logger, timestamp);
-
-        if let Some(ref pb) = progress {
-            pb.inc(1);
-        }
-
-        // Step 2: Analyze Excel data
-        if let Some(ref pb) = progress {
-            pb.set_message("Analyzing data and inferring schema...");
-        } else if self.verbose {
-            eprintln!("Analyzing data and inferring schema...");
-        }
-
-        let stats = introspector
-            .analyze_file(&self.input)
-            .await
-            .map_err(|e| LinkMLError::service(format!("Failed to analyze Excel file: {e}")))?;
-
-        if let Some(ref pb) = progress {
-            pb.inc(1);
-        }
-
-        // Step 3: Generate schema
-        if let Some(ref pb) = progress {
-            pb.set_message("Generating LinkML schema...");
-        } else if self.verbose {
-            eprintln!("Generating LinkML schema...");
-        }
-
-        let schema = introspector
-            .generate_schema(&stats, &schema_id)
-            .await
-            .map_err(|e| LinkMLError::service(format!("Failed to generate schema: {e}")))?;
-
-        if let Some(ref pb) = progress {
+        if let Some(pb) = progress.as_ref() {
             pb.inc(1);
         }
 
         // Step 4: Write output
-        if let Some(ref pb) = progress {
+        if let Some(pb) = progress.as_ref() {
             pb.set_message(format!("Writing schema to {}...", output_path.display()));
         } else if self.verbose {
             eprintln!("Writing schema to: {}", output_path.display());
@@ -187,7 +178,7 @@ impl Sheets2SchemaCommand {
 
         self.write_schema(&schema, &output_path)?;
 
-        if let Some(ref pb) = progress {
+        if let Some(pb) = progress.as_ref() {
             pb.inc(1);
             pb.finish_with_message(format!("✓ Schema generated: {}", output_path.display()));
         } else {
@@ -205,6 +196,122 @@ impl Sheets2SchemaCommand {
         }
 
         Ok(())
+    }
+
+    /// Parse using SchemaSheets format parser
+    async fn parse_schemasheets_format(
+        &self,
+        schema_id: &str,
+        progress: &Option<ProgressBar>,
+    ) -> Result<SchemaDefinition> {
+        if let Some(pb) = progress.as_ref() {
+            pb.set_message("Parsing SchemaSheets format...");
+        } else if self.verbose {
+            eprintln!("Parsing SchemaSheets format...");
+        }
+
+        let parser = SchemaSheetsParser::new();
+        let schema = parser.parse_file(&self.input, Some(schema_id)).await?;
+
+        if let Some(pb) = progress.as_ref() {
+            pb.inc(3); // Skip to final step
+        }
+
+        Ok(schema)
+    }
+
+    /// Parse using data introspection
+    async fn parse_via_introspection(
+        &self,
+        schema_id: &str,
+        progress: &Option<ProgressBar>,
+    ) -> Result<SchemaDefinition> {
+        if let Some(pb) = progress.as_ref() {
+            pb.set_message("Reading Excel file...");
+        } else if self.verbose {
+            eprintln!("Reading Excel file: {}", self.input.display());
+        }
+
+        // Wire services
+        let timestamp = wire_timestamp().into_arc();
+        let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+            .map_err(|e| LinkMLError::service(format!("Failed to wire logger: {e}")))?
+            .into_arc();
+
+        let introspector = ExcelIntrospector::new(logger, timestamp);
+
+        if let Some(pb) = progress.as_ref() {
+            pb.inc(1);
+        }
+
+        // Analyze Excel data
+        if let Some(pb) = progress.as_ref() {
+            pb.set_message("Analyzing data and inferring schema...");
+        } else if self.verbose {
+            eprintln!("Analyzing data and inferring schema...");
+        }
+
+        let stats = introspector
+            .analyze_file(&self.input)
+            .await
+            .map_err(|e| LinkMLError::service(format!("Failed to analyze Excel file: {e}")))?;
+
+        if let Some(pb) = progress.as_ref() {
+            pb.inc(1);
+        }
+
+        // Generate schema
+        if let Some(pb) = progress.as_ref() {
+            pb.set_message("Generating LinkML schema...");
+        } else if self.verbose {
+            eprintln!("Generating LinkML schema...");
+        }
+
+        let schema = introspector
+            .generate_schema(&stats, schema_id)
+            .await
+            .map_err(|e| LinkMLError::service(format!("Failed to generate schema: {e}")))?;
+
+        if let Some(pb) = progress.as_ref() {
+            pb.inc(1);
+        }
+
+        Ok(schema)
+    }
+
+    /// Auto-detect format and parse accordingly
+    async fn auto_detect_and_parse(
+        &self,
+        schema_id: &str,
+        progress: &Option<ProgressBar>,
+    ) -> Result<SchemaDefinition> {
+        // Try SchemaSheets format first
+        if let Some(pb) = progress.as_ref() {
+            pb.set_message("Detecting format...");
+        } else if self.verbose {
+            eprintln!("Detecting format...");
+        }
+
+        // Attempt to parse as SchemaSheets
+        let parser = SchemaSheetsParser::new();
+        match parser.parse_file(&self.input, Some(schema_id)).await {
+            Ok(schema) => {
+                if self.verbose {
+                    eprintln!("✓ Detected SchemaSheets format");
+                }
+                if let Some(pb) = progress.as_ref() {
+                    pb.inc(3);
+                }
+                Ok(schema)
+            }
+            Err(_) => {
+                // Fall back to data introspection
+                if self.verbose {
+                    eprintln!("✓ Using data introspection mode");
+                }
+                self.parse_via_introspection(schema_id, progress).await
+            }
+        }
     }
 
     /// Determine output path based on input and options

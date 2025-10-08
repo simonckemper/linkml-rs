@@ -60,6 +60,7 @@ pub mod types;
 
 pub use builder::{BuilderResult, ClassBuilder, SchemaBuilder, SlotBuilder};
 pub use engine::InferenceEngine;
+#[allow(deprecated)]
 pub use factory::{
     create_csv_introspector, create_inference_engine, create_json_introspector,
     create_xml_introspector,

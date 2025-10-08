@@ -220,7 +220,7 @@ pub struct ClassDefinition {
 }
 
 /// Action to take when a slot value is absent
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum IfAbsentAction {
     /// Set to the slot name
@@ -243,6 +243,88 @@ pub enum IfAbsentAction {
     Int(i64),
     /// Evaluate an expression
     Expression(String),
+}
+
+// Custom deserialization for IfAbsentAction to handle both tagged and untagged formats
+impl<'de> serde::Deserialize<'de> for IfAbsentAction {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{self, Visitor};
+
+        struct IfAbsentActionVisitor;
+
+        impl<'de> Visitor<'de> for IfAbsentActionVisitor {
+            type Value = IfAbsentAction;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("an ifabsent action (string or tagged enum)")
+            }
+
+            fn visit_str<E>(self, value: &str) -> std::result::Result<IfAbsentAction, E>
+            where
+                E: de::Error,
+            {
+                // Try to match known variants first
+                match value {
+                    "slot_name" => Ok(IfAbsentAction::SlotName),
+                    "class_slot_curie" => Ok(IfAbsentAction::ClassSlotCurie),
+                    "class_name" => Ok(IfAbsentAction::ClassName),
+                    "bnode" => Ok(IfAbsentAction::Bnode),
+                    "default_value" => Ok(IfAbsentAction::DefaultValue),
+                    "date" => Ok(IfAbsentAction::Date),
+                    "datetime" => Ok(IfAbsentAction::Datetime),
+                    // For any other string, treat as a string expression
+                    _ => Ok(IfAbsentAction::String(value.to_string())),
+                }
+            }
+
+            fn visit_i64<E>(self, value: i64) -> std::result::Result<IfAbsentAction, E>
+            where
+                E: de::Error,
+            {
+                Ok(IfAbsentAction::Int(value))
+            }
+
+            fn visit_map<M>(self, map: M) -> std::result::Result<IfAbsentAction, M::Error>
+            where
+                M: de::MapAccess<'de>,
+            {
+                // For tagged format like { "string": "value" } or { "int": 42 }
+                #[derive(Deserialize)]
+                #[serde(rename_all = "snake_case")]
+                enum Tagged {
+                    SlotName,
+                    ClassSlotCurie,
+                    ClassName,
+                    Bnode,
+                    DefaultValue,
+                    String(String),
+                    Date,
+                    Datetime,
+                    Int(i64),
+                    Expression(String),
+                }
+
+                let tagged = Tagged::deserialize(de::value::MapAccessDeserializer::new(map))?;
+                Ok(match tagged {
+                    Tagged::SlotName => IfAbsentAction::SlotName,
+                    Tagged::ClassSlotCurie => IfAbsentAction::ClassSlotCurie,
+                    Tagged::ClassName => IfAbsentAction::ClassName,
+                    Tagged::Bnode => IfAbsentAction::Bnode,
+                    Tagged::DefaultValue => IfAbsentAction::DefaultValue,
+                    Tagged::String(s) => IfAbsentAction::String(s),
+                    Tagged::Date => IfAbsentAction::Date,
+                    Tagged::Datetime => IfAbsentAction::Datetime,
+                    Tagged::Int(i) => IfAbsentAction::Int(i),
+                    Tagged::Expression(e) => IfAbsentAction::Expression(e),
+                })
+            }
+        }
+
+        deserializer.deserialize_any(IfAbsentActionVisitor)
+    }
 }
 
 /// Slot definition
@@ -489,7 +571,11 @@ pub struct EnumDefinition {
     pub description: Option<String>,
 
     /// Permissible values
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_permissible_values"
+    )]
     pub permissible_values: Vec<PermissibleValue>,
 
     /// Code set
@@ -509,7 +595,21 @@ pub struct EnumDefinition {
     pub annotations: Option<Annotations>,
 }
 
-/// Permissible value
+/// Permissible value metadata
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+pub struct PermissibleValueMetadata {
+    /// Description of this permissible value
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Meaning URI
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meaning: Option<String>,
+    /// Title
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+}
+
+/// Permissible value (legacy enum, kept for backward compatibility)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum PermissibleValue {
@@ -547,6 +647,7 @@ pub enum PrefixDefinition {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct SubsetDefinition {
     /// Name of the subset
+    #[serde(default)]
     pub name: String,
 
     /// Description
@@ -948,6 +1049,61 @@ impl Annotatable for EnumDefinition {
     fn annotations_mut(&mut self) -> Option<&mut Annotations> {
         self.annotations.as_mut()
     }
+}
+
+/// Custom deserializer for permissible_values that handles both map and sequence formats
+fn deserialize_permissible_values<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Vec<PermissibleValue>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{self, Visitor};
+
+    struct PermissibleValuesVisitor;
+
+    impl<'de> Visitor<'de> for PermissibleValuesVisitor {
+        type Value = Vec<PermissibleValue>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a sequence or map of permissible values")
+        }
+
+        // Handle sequence format: ["value1", "value2"]
+        fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Vec<PermissibleValue>, A::Error>
+        where
+            A: de::SeqAccess<'de>,
+        {
+            let mut values = Vec::new();
+            while let Some(value) = seq.next_element::<PermissibleValue>()? {
+                values.push(value);
+            }
+            Ok(values)
+        }
+
+        // Handle map format: { "value1": null, "value2": { "description": "..." } }
+        fn visit_map<M>(self, mut map: M) -> std::result::Result<Vec<PermissibleValue>, M::Error>
+        where
+            M: de::MapAccess<'de>,
+        {
+            let mut values = Vec::new();
+            while let Some((key, value)) = map.next_entry::<String, Option<PermissibleValueMetadata>>()? {
+                let pv = if let Some(metadata) = value {
+                    PermissibleValue::Complex {
+                        text: key,
+                        description: metadata.description,
+                        meaning: metadata.meaning,
+                    }
+                } else {
+                    PermissibleValue::Simple(key)
+                };
+                values.push(pv);
+            }
+            Ok(values)
+        }
+    }
+
+    deserializer.deserialize_any(PermissibleValuesVisitor)
 }
 
 #[cfg(test)]

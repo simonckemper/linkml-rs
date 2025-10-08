@@ -271,6 +271,9 @@ pub mod prelude;
 /// Schema inference from data (data2linkmlschema)
 pub mod inference;
 
+/// SchemaSheets format support for lossless roundtrip conversion
+pub mod schemasheets;
+
 // Re-export service trait and types
 pub use factory::{create_linkml_service, create_linkml_service_with_config};
 pub use linkml_core::error::LinkMLError;
