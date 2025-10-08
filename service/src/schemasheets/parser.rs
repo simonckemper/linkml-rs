@@ -143,12 +143,50 @@ impl SchemaSheetsParser {
     /// Parse types sheet
     fn parse_types_sheet(
         &self,
-        _range: &calamine::Range<Data>,
-        _schema: &mut SchemaDefinition,
+        range: &calamine::Range<Data>,
+        schema: &mut SchemaDefinition,
     ) -> Result<()> {
         // Types sheet format similar to main schema sheet
-        // For now, we'll use default LinkML types
-        // TODO: Parse custom type definitions
+        // Parse custom type definitions from the types sheet
+
+        // Get header row to find column indices
+        let headers = self.get_headers(range)?;
+
+        for (row_idx, row) in range.rows().enumerate().skip(1) {
+            let element_name = self.get_cell_value(row, &headers, ">")?;
+            let element_type = self.get_cell_value(row, &headers, "element_type")?;
+
+            if element_type == "type" && !element_name.is_empty() {
+                let mut type_def = TypeDefinition {
+                    name: element_name.clone(),
+                    ..Default::default()
+                };
+
+                // Parse description
+                if let Ok(desc) = self.get_cell_value(row, &headers, "desc") {
+                    if !desc.is_empty() {
+                        type_def.description = Some(desc);
+                    }
+                }
+
+                // Parse base type (is_a column)
+                if let Ok(base_type) = self.get_cell_value(row, &headers, "is_a") {
+                    if !base_type.is_empty() {
+                        type_def.base_type = Some(base_type);
+                    }
+                }
+
+                // Parse pattern
+                if let Ok(pattern) = self.get_cell_value(row, &headers, "pattern") {
+                    if !pattern.is_empty() {
+                        type_def.pattern = Some(pattern);
+                    }
+                }
+
+                schema.types.insert(element_name, type_def);
+            }
+        }
+
         Ok(())
     }
 
@@ -189,8 +227,10 @@ impl SchemaSheetsParser {
                 "description" => schema.description = Some(value),
                 "license" => schema.license = Some(value),
                 _ => {
-                    // Store in metadata
-                    // TODO: Add metadata field to SchemaDefinition
+                    // Unknown setting - log for debugging but don't fail
+                    // SchemaDefinition doesn't have a generic metadata field,
+                    // so we skip unknown settings gracefully
+                    eprintln!("Warning: Unknown setting '{}' with value '{}' in settings sheet", setting, value);
                 }
             }
         }
