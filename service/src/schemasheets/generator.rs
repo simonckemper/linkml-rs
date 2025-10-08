@@ -2,20 +2,44 @@
 
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::types::{
-    ClassDefinition, EnumDefinition, PermissibleValue, PrefixDefinition, SchemaDefinition,
-    SlotDefinition, SubsetDefinition, TypeDefinition,
+    PermissibleValue, PrefixDefinition, SchemaDefinition,
 };
-use rust_xlsxwriter::{Format, Workbook, Worksheet};
+use rust_xlsxwriter::{Format, Workbook};
 use std::path::Path;
 
 /// Generator for SchemaSheets format Excel files
+///
+/// This generator creates Excel files in the SchemaSheets format from LinkML schemas,
+/// enabling bidirectional conversion and lossless roundtrip transformation.
 #[derive(Debug, Clone)]
 pub struct SchemaSheetsGenerator {
+    /// Whether to include all metadata columns (mappings, constraints, etc.)
+    ///
+    /// When `true`, the generator includes mapping columns (exact_mappings, close_mappings, etc.)
+    /// and other extended metadata. When `false`, only basic columns are included.
     pub include_all_metadata: bool,
+
+    /// Whether to generate metadata sheets (prefixes, settings)
+    ///
+    /// When `true`, the generator creates separate sheets for prefixes and settings.
+    /// When `false`, only the main schema sheet is generated.
     pub generate_metadata_sheets: bool,
 }
 
 impl SchemaSheetsGenerator {
+    /// Create a new generator with default settings
+    ///
+    /// Default settings include all metadata columns and metadata sheets.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use linkml_service::schemasheets::SchemaSheetsGenerator;
+    ///
+    /// let generator = SchemaSheetsGenerator::new();
+    /// assert!(generator.include_all_metadata);
+    /// assert!(generator.generate_metadata_sheets);
+    /// ```
     pub fn new() -> Self {
         Self {
             include_all_metadata: true,
@@ -23,6 +47,42 @@ impl SchemaSheetsGenerator {
         }
     }
 
+    /// Generate a SchemaSheets format Excel file from a schema
+    ///
+    /// This method creates an Excel file in the SchemaSheets format, which can be
+    /// parsed back into a schema using `SchemaSheetsParser`.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema` - The LinkML schema to convert to Excel format
+    /// * `output_path` - The path where the Excel file should be saved
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the file was successfully generated, or an error if
+    /// the operation failed.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use linkml_core::types::SchemaDefinition;
+    /// use linkml_service::schemasheets::SchemaSheetsGenerator;
+    /// use std::path::Path;
+    ///
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let schema = SchemaDefinition::default();
+    /// let generator = SchemaSheetsGenerator::new();
+    /// generator.generate_file(&schema, Path::new("schema.xlsx")).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The output path is invalid or inaccessible
+    /// - The Excel file cannot be created or written
+    /// - The schema contains invalid data
     pub async fn generate_file(&self, schema: &SchemaDefinition, output_path: &Path) -> Result<()> {
         let mut workbook = Workbook::new();
         
@@ -32,7 +92,19 @@ impl SchemaSheetsGenerator {
         
         // Write header
         let header_format = Format::new().set_bold();
-        let headers = vec![">", "element_type", "field", "key", "multiplicity", "range", "desc", "is_a", "pattern"];
+        let mut headers = vec![">", "element_type", "field", "key", "multiplicity", "range", "desc", "is_a", "pattern"];
+
+        // Add mapping columns if metadata is enabled
+        if self.include_all_metadata {
+            headers.extend_from_slice(&[
+                "schema.org:exactMatch",
+                "skos:closeMatch",
+                "skos:relatedMatch",
+                "skos:narrowMatch",
+                "skos:broadMatch",
+            ]);
+        }
+
         for (col, header) in headers.iter().enumerate() {
             sheet.write_with_format(0, col as u16, *header, &header_format).unwrap();
         }
@@ -49,6 +121,31 @@ impl SchemaSheetsGenerator {
             if let Some(ref parent) = class_def.is_a {
                 sheet.write(row, 7, parent).unwrap();
             }
+
+            // Write mappings if metadata is enabled
+            if self.include_all_metadata {
+                let mut col = 9;
+                if !class_def.exact_mappings.is_empty() {
+                    sheet.write(row, col, class_def.exact_mappings.join(", ")).unwrap();
+                }
+                col += 1;
+                if !class_def.close_mappings.is_empty() {
+                    sheet.write(row, col, class_def.close_mappings.join(", ")).unwrap();
+                }
+                col += 1;
+                if !class_def.related_mappings.is_empty() {
+                    sheet.write(row, col, class_def.related_mappings.join(", ")).unwrap();
+                }
+                col += 1;
+                if !class_def.narrow_mappings.is_empty() {
+                    sheet.write(row, col, class_def.narrow_mappings.join(", ")).unwrap();
+                }
+                col += 1;
+                if !class_def.broad_mappings.is_empty() {
+                    sheet.write(row, col, class_def.broad_mappings.join(", ")).unwrap();
+                }
+            }
+
             row += 1;
             
             // Write attributes
@@ -73,6 +170,31 @@ impl SchemaSheetsGenerator {
                 if let Some(ref pattern) = attr_def.pattern {
                     sheet.write(row, 8, pattern).unwrap();
                 }
+
+                // Write mappings if metadata is enabled
+                if self.include_all_metadata {
+                    let mut col = 9;
+                    if !attr_def.exact_mappings.is_empty() {
+                        sheet.write(row, col, attr_def.exact_mappings.join(", ")).unwrap();
+                    }
+                    col += 1;
+                    if !attr_def.close_mappings.is_empty() {
+                        sheet.write(row, col, attr_def.close_mappings.join(", ")).unwrap();
+                    }
+                    col += 1;
+                    if !attr_def.related_mappings.is_empty() {
+                        sheet.write(row, col, attr_def.related_mappings.join(", ")).unwrap();
+                    }
+                    col += 1;
+                    if !attr_def.narrow_mappings.is_empty() {
+                        sheet.write(row, col, attr_def.narrow_mappings.join(", ")).unwrap();
+                    }
+                    col += 1;
+                    if !attr_def.broad_mappings.is_empty() {
+                        sheet.write(row, col, attr_def.broad_mappings.join(", ")).unwrap();
+                    }
+                }
+
                 row += 1;
             }
         }

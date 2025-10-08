@@ -10,7 +10,6 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, PrefixDefinition, SchemaDefinition,
     SlotDefinition, SubsetDefinition, TypeDefinition,
 };
-use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path;
 
@@ -144,8 +143,8 @@ impl SchemaSheetsParser {
     /// Parse types sheet
     fn parse_types_sheet(
         &self,
-        range: &calamine::Range<Data>,
-        schema: &mut SchemaDefinition,
+        _range: &calamine::Range<Data>,
+        _schema: &mut SchemaDefinition,
     ) -> Result<()> {
         // Types sheet format similar to main schema sheet
         // For now, we'll use default LinkML types

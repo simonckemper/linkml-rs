@@ -1,9 +1,8 @@
 //! `schema2sheets` command implementation
 //!
-//! Converts LinkML schema to Excel SchemaSheets template with data validation,
-//! formatting, and examples.
+//! Converts LinkML schema to Excel SchemaSheets format.
 
-use crate::generator::excel::ExcelGenerator;
+use crate::schemasheets::SchemaSheetsGenerator;
 use indicatif::{ProgressBar, ProgressStyle};
 use linkml_core::error::{LinkMLError, Result};
 use linkml_core::prelude::*;
@@ -15,14 +14,10 @@ pub struct Schema2SheetsCommand {
     pub schema: PathBuf,
     /// Output Excel file path
     pub output: PathBuf,
-    /// Add data validation
-    pub validation: bool,
-    /// Include example data
-    pub examples: bool,
-    /// Freeze header rows
-    pub freeze_headers: bool,
-    /// Add auto-filters
-    pub filters: bool,
+    /// Include all metadata columns (mappings, constraints, etc.)
+    pub include_metadata: bool,
+    /// Generate metadata sheets (prefixes, settings)
+    pub metadata_sheets: bool,
     /// Show progress indicators
     pub progress: bool,
     /// Verbose output
@@ -36,40 +31,24 @@ impl Schema2SheetsCommand {
         Self {
             schema,
             output,
-            validation: false,
-            examples: false,
-            freeze_headers: true,
-            filters: true,
+            include_metadata: true,
+            metadata_sheets: true,
             progress: true,
             verbose: false,
         }
     }
 
-    /// Set data validation option
+    /// Set metadata inclusion option
     #[must_use]
-    pub fn with_validation(mut self, validation: bool) -> Self {
-        self.validation = validation;
+    pub fn with_metadata(mut self, include_metadata: bool) -> Self {
+        self.include_metadata = include_metadata;
         self
     }
 
-    /// Set examples option
+    /// Set metadata sheets option
     #[must_use]
-    pub fn with_examples(mut self, examples: bool) -> Self {
-        self.examples = examples;
-        self
-    }
-
-    /// Set freeze headers option
-    #[must_use]
-    pub fn with_freeze_headers(mut self, freeze_headers: bool) -> Self {
-        self.freeze_headers = freeze_headers;
-        self
-    }
-
-    /// Set filters option
-    #[must_use]
-    pub fn with_filters(mut self, filters: bool) -> Self {
-        self.filters = filters;
+    pub fn with_metadata_sheets(mut self, metadata_sheets: bool) -> Self {
+        self.metadata_sheets = metadata_sheets;
         self
     }
 
@@ -137,28 +116,18 @@ impl Schema2SheetsCommand {
 
         // Step 2: Generate Excel workbook
         if let Some(ref pb) = progress {
-            pb.set_message("Generating Excel workbook...");
+            pb.set_message("Generating SchemaSheets Excel file...");
         } else if self.verbose {
-            eprintln!("Generating Excel workbook...");
+            eprintln!("Generating SchemaSheets Excel file...");
         }
 
-        let mut generator = ExcelGenerator::new()
-            .with_frozen_headers(self.freeze_headers)
-            .with_filters(self.filters);
-
-        if self.validation {
-            generator = generator.with_validation(true);
-        }
-
-        if self.examples {
-            generator = generator.with_examples(true);
-        }
+        let mut generator = SchemaSheetsGenerator::new();
+        generator.include_all_metadata = self.include_metadata;
+        generator.generate_metadata_sheets = self.metadata_sheets;
 
         generator
-            .generate_file(&schema, self.output.to_str().ok_or_else(|| {
-                LinkMLError::io_error("Invalid output path")
-            })?)
-            .map_err(|e| LinkMLError::service(format!("Failed to generate Excel file: {e}")))?;
+            .generate_file(&schema, &self.output)
+            .await?;
 
         if let Some(ref pb) = progress {
             pb.inc(1);
@@ -167,19 +136,21 @@ impl Schema2SheetsCommand {
         // Step 3: Complete
         if let Some(ref pb) = progress {
             pb.inc(1);
-            pb.finish_with_message(format!("✓ Excel template generated: {}", self.output.display()));
+            pb.finish_with_message(format!("✓ SchemaSheets file generated: {}", self.output.display()));
         } else {
-            println!("Excel template generated: {}", self.output.display());
+            println!("SchemaSheets file generated: {}", self.output.display());
         }
 
         // Print summary if verbose
         if self.verbose {
-            eprintln!("\nTemplate Summary:");
+            eprintln!("\nSchemaSheets Summary:");
             eprintln!("  Schema: {}", schema.name);
             eprintln!("  Classes: {}", schema.classes.len());
-            eprintln!("  Sheets: {}", schema.classes.len());
-            eprintln!("  Validation: {}", if self.validation { "enabled" } else { "disabled" });
-            eprintln!("  Examples: {}", if self.examples { "included" } else { "not included" });
+            eprintln!("  Enums: {}", schema.enums.len());
+            eprintln!("  Types: {}", schema.types.len());
+            eprintln!("  Subsets: {}", schema.subsets.len());
+            eprintln!("  Metadata: {}", if self.include_metadata { "included" } else { "basic only" });
+            eprintln!("  Metadata sheets: {}", if self.metadata_sheets { "yes" } else { "no" });
         }
 
         Ok(())
@@ -323,18 +294,14 @@ mod tests {
             PathBuf::from("schema.yaml"),
             PathBuf::from("template.xlsx"),
         )
-        .with_validation(true)
-        .with_examples(true)
-        .with_freeze_headers(false)
-        .with_filters(false)
+        .with_metadata(false)
+        .with_metadata_sheets(false)
         .with_verbose(true);
 
         assert_eq!(cmd.schema, PathBuf::from("schema.yaml"));
         assert_eq!(cmd.output, PathBuf::from("template.xlsx"));
-        assert!(cmd.validation);
-        assert!(cmd.examples);
-        assert!(!cmd.freeze_headers);
-        assert!(!cmd.filters);
+        assert!(!cmd.include_metadata);
+        assert!(!cmd.metadata_sheets);
         assert!(cmd.verbose);
     }
 
@@ -345,10 +312,8 @@ mod tests {
             PathBuf::from("template.xlsx"),
         );
 
-        assert!(!cmd.validation);
-        assert!(!cmd.examples);
-        assert!(cmd.freeze_headers);
-        assert!(cmd.filters);
+        assert!(cmd.include_metadata);
+        assert!(cmd.metadata_sheets);
         assert!(cmd.progress);
         assert!(!cmd.verbose);
     }

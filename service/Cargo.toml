@@ -239,7 +239,7 @@ name = "array_support"
 path = "examples/03_data_loading/batch/array_support.rs"
 
 [[example]]
-name = "batch_processing"
+name = "linkml_batch_processing"
 path = "examples/03_data_loading/batch/batch_processing.rs"
 
 [[example]]
@@ -482,6 +482,14 @@ path = "tests/cli_integration_tests.rs"
 [[test]]
 name = "schemasheets_parser_tests"
 path = "tests/schemasheets_parser_tests.rs"
+
+[[test]]
+name = "schemasheets_generator_tests"
+path = "tests/schemasheets_generator_tests.rs"
+
+[[test]]
+name = "schemasheets_roundtrip_tests"
+path = "tests/schemasheets_roundtrip_tests.rs"
 
 [[bin]]
 name = "linkml"

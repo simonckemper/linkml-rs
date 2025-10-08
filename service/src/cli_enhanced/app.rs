@@ -878,19 +878,17 @@ impl LinkMLApp {
         &self,
         schema: &Path,
         output: &Path,
-        validation: bool,
-        examples: bool,
-        freeze_headers: bool,
-        filters: bool,
+        include_metadata: bool,
+        metadata_sheets: bool,
+        _freeze_headers: bool,
+        _filters: bool,
         progress: bool,
     ) -> Result<()> {
         use crate::cli_enhanced::commands::schema2sheets::Schema2SheetsCommand;
 
         let command = Schema2SheetsCommand::new(schema.to_path_buf(), output.to_path_buf())
-            .with_validation(validation)
-            .with_examples(examples)
-            .with_freeze_headers(freeze_headers)
-            .with_filters(filters)
+            .with_metadata(include_metadata)
+            .with_metadata_sheets(metadata_sheets)
             .with_progress(progress && !self.cli.quiet)
             .with_verbose(self.cli.verbose);
 
