@@ -382,20 +382,18 @@ impl DataIntrospector for XmlIntrospector {
                     }
 
                     // Process attributes (including namespace declarations)
-                    for attr in e.attributes() {
-                        if let Ok(attr) = attr {
-                            let attr_name = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-                            let attr_value = String::from_utf8_lossy(&attr.value).to_string();
+                    for attr in e.attributes().flatten() {
+                        let attr_name = String::from_utf8_lossy(attr.key.as_ref()).to_string();
+                        let attr_value = String::from_utf8_lossy(&attr.value).to_string();
 
-                            // Handle namespace declarations
-                            if attr_name == "xmlns" {
-                                stats.record_namespace(String::new(), attr_value.clone());
-                            } else if let Some(prefix) = attr_name.strip_prefix("xmlns:") {
-                                stats.record_namespace(prefix.to_string(), attr_value.clone());
-                            }
-
-                            stats.record_attribute(&local_name, &attr_name, attr_value);
+                        // Handle namespace declarations
+                        if attr_name == "xmlns" {
+                            stats.record_namespace(String::new(), attr_value.clone());
+                        } else if let Some(prefix) = attr_name.strip_prefix("xmlns:") {
+                            stats.record_namespace(prefix.to_string(), attr_value.clone());
                         }
+
+                        stats.record_attribute(&local_name, &attr_name, attr_value);
                     }
 
                     element_stack.push(local_name);
@@ -616,7 +614,12 @@ mod tests {
         Arc<dyn TimestampService<Error = TimestampError>>,
     ) {
         let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
-        let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
+        let logger = logger_service::wiring::wire_logger(
+            timestamp.clone(),
+            logger_core::LoggerConfig::default(),
+        )
+        .expect("Failed to wire logger")
+        .into_arc();
         (logger, timestamp)
     }
 
@@ -692,7 +695,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <root>
                 <level1>
                     <level2>
@@ -700,7 +703,7 @@ mod tests {
                     </level2>
                 </level1>
             </root>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -760,9 +763,8 @@ mod tests {
 
         // Check element has namespace information
         let element = stats.elements.get("element").unwrap();
-        assert_eq!(element.namespace_prefix, Some("custom".to_string()));
         assert_eq!(
-            element.namespace_uri,
+            element.namespace,
             Some("http://example.com/custom".to_string())
         );
     }
@@ -884,11 +886,11 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <paragraph>
                 This is some text with <emphasis>emphasized content</emphasis> mixed in.
             </paragraph>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -910,7 +912,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <script>
                 <![CDATA[
                     function test() {
@@ -918,7 +920,7 @@ mod tests {
                     }
                 ]]>
             </script>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -938,7 +940,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <library>
                 <book>
                     <title>Book 1</title>
@@ -949,7 +951,7 @@ mod tests {
                     <author>Author 2</author>
                 </book>
             </library>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -967,7 +969,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <library>
                 <book>
                     <title>Book 1</title>
@@ -977,7 +979,7 @@ mod tests {
                     <title>Book 2</title>
                 </book>
             </library>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -994,7 +996,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <library>
                 <book>
                     <title>Book 1</title>
@@ -1003,7 +1005,7 @@ mod tests {
                     <author>Author 3</author>
                 </book>
             </library>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
@@ -1014,8 +1016,8 @@ mod tests {
             author_child.is_multivalued(),
             "Author should be multivalued"
         );
-        assert_eq!(author_child.max_occurs, 3, "Max occurs should be 3");
-        assert_eq!(author_child.min_occurs, 3, "Min occurs should be 3");
+        assert_eq!(author_child.max_occurs, Some(3), "Max occurs should be 3");
+        assert_eq!(author_child.min_occurs, Some(3), "Min occurs should be 3");
     }
 
     #[tokio::test]
@@ -1023,7 +1025,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = XmlIntrospector::new(logger, timestamp);
 
-        let xml = br#"
+        let xml = br"
             <catalog>
                 <product>
                     <tag>electronics</tag>
@@ -1038,15 +1040,15 @@ mod tests {
                     <tag>android</tag>
                 </product>
             </catalog>
-        "#;
+        ";
 
         let stats = introspector.analyze_bytes(xml).await.unwrap();
 
         let product = stats.elements.get("product").unwrap();
         let tag_child = product.children.get("tag").unwrap();
 
-        assert_eq!(tag_child.min_occurs, 1, "Min occurs should be 1");
-        assert_eq!(tag_child.max_occurs, 3, "Max occurs should be 3");
+        assert_eq!(tag_child.min_occurs, Some(1), "Min occurs should be 1");
+        assert_eq!(tag_child.max_occurs, Some(3), "Max occurs should be 3");
         assert!(
             tag_child.is_required(),
             "Tag should be required (appears in all products)"

@@ -47,7 +47,7 @@ impl SchemaSheetsParser {
     /// - File cannot be read
     /// - File is not in SchemaSheets format
     /// - Format is invalid (in strict mode)
-    pub async fn parse_file(
+    pub fn parse_file(
         &self,
         path: &Path,
         schema_id: Option<&str>,
@@ -68,12 +68,14 @@ impl SchemaSheetsParser {
         });
 
         // Parse all sheets
-        let mut schema = SchemaDefinition::default();
-        schema.id = schema_id.to_string();
-        schema.name = schema_id.to_string();
+        let mut schema = SchemaDefinition {
+            id: schema_id.to_string(),
+            name: schema_id.to_string(),
+            ..Default::default()
+        };
 
         // Get sheet names
-        let sheet_names = workbook.sheet_names().to_vec();
+        let sheet_names = workbook.sheet_names().clone();
 
         for sheet_name in sheet_names {
             // Skip metadata sheets
@@ -122,7 +124,7 @@ impl SchemaSheetsParser {
         // | schema | http://schema.org/ |
         // | skos   | http://www.w3.org/2004/02/skos/core# |
 
-        let rows: Vec<Vec<Data>> = range.rows().map(|row| row.to_vec()).collect();
+        let rows: Vec<Vec<Data>> = range.rows().map(<[calamine::Data]>::to_vec).collect();
         if rows.is_empty() {
             return Ok(());
         }
@@ -208,7 +210,7 @@ impl SchemaSheetsParser {
         // | version | 1.0.0 |
         // | description | My schema |
 
-        let rows: Vec<Vec<Data>> = range.rows().map(|row| row.to_vec()).collect();
+        let rows: Vec<Vec<Data>> = range.rows().map(<[calamine::Data]>::to_vec).collect();
         if rows.is_empty() {
             return Ok(());
         }
@@ -258,7 +260,7 @@ impl SchemaSheetsParser {
             .worksheet_range(sheet_name)
             .map_err(|e| LinkMLError::parse(format!("Failed to read sheet '{sheet_name}': {e}")))?;
 
-        let rows: Vec<Vec<Data>> = range.rows().map(|row| row.to_vec()).collect();
+        let rows: Vec<Vec<Data>> = range.rows().map(<[calamine::Data]>::to_vec).collect();
         if rows.is_empty() {
             return Ok(());
         }
@@ -276,10 +278,9 @@ impl SchemaSheetsParser {
                     "Sheet '{}' is not in SchemaSheets format (missing required columns)",
                     sheet_name
                 )));
-            } else {
-                // Skip non-SchemaSheets sheets in non-strict mode
-                return Ok(());
             }
+            // Skip non-SchemaSheets sheets in non-strict mode
+            return Ok(());
         }
 
         // Parse rows
@@ -591,7 +592,7 @@ impl SchemaSheetsParser {
         let mut class = ClassDefinition::default();
 
         if let Some(ref name) = row.class_name {
-            class.name = name.clone();
+            class.name.clone_from(name);
         }
 
         if let Some(ref desc) = row.description {
@@ -603,7 +604,7 @@ impl SchemaSheetsParser {
         }
 
         if !row.mixins.is_empty() {
-            class.mixins = row.mixins.clone();
+            class.mixins.clone_from(&row.mixins);
         }
 
         // Handle mappings
@@ -634,7 +635,7 @@ impl SchemaSheetsParser {
         let mut enum_def = EnumDefinition::default();
 
         if let Some(ref name) = row.class_name {
-            enum_def.name = name.clone();
+            enum_def.name.clone_from(name);
         }
 
         if let Some(ref desc) = row.description {
@@ -670,7 +671,7 @@ impl SchemaSheetsParser {
         let mut type_def = TypeDefinition::default();
 
         if let Some(ref name) = row.class_name {
-            type_def.name = name.clone();
+            type_def.name.clone_from(name);
         }
 
         if let Some(ref desc) = row.description {
@@ -710,7 +711,7 @@ impl SchemaSheetsParser {
         let mut subset = SubsetDefinition::default();
 
         if let Some(ref name) = row.class_name {
-            subset.name = name.clone();
+            subset.name.clone_from(name);
         }
 
         if let Some(ref desc) = row.description {
@@ -725,7 +726,7 @@ impl SchemaSheetsParser {
         let mut slot = SlotDefinition::default();
 
         if let Some(ref name) = row.field_name {
-            slot.name = name.clone();
+            slot.name.clone_from(name);
         }
 
         if let Some(ref desc) = row.description {

@@ -272,8 +272,8 @@ impl JsonIntrospector {
 /// This is a basic heuristic that handles common cases. For production use,
 /// consider using a full inflection library.
 fn singularize(plural: &str) -> String {
-    if plural.ends_with("ies") {
-        format!("{}y", &plural[..plural.len() - 3])
+    if let Some(stripped) = plural.strip_suffix("ies") {
+        format!("{stripped}y")
     } else if plural.ends_with("sses") || plural.ends_with("shes") || plural.ends_with("ches") {
         plural[..plural.len() - 2].to_string()
     } else if plural.ends_with('s') && plural.len() > 1 {
@@ -463,7 +463,12 @@ mod tests {
         Arc<dyn TimestampService<Error = TimestampError>>,
     ) {
         let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
-        let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
+        let logger = logger_service::wiring::wire_logger(
+            timestamp.clone(),
+            logger_core::LoggerConfig::default(),
+        )
+        .expect("Failed to wire logger")
+        .into_arc();
         (logger, timestamp)
     }
 
@@ -674,7 +679,7 @@ mod tests {
         let (logger, timestamp) = create_test_services();
         let introspector = JsonIntrospector::new(logger, timestamp);
 
-        let json = r#"{}"#;
+        let json = r"{}";
 
         let stats = introspector.analyze_bytes(json.as_bytes()).await.unwrap();
 

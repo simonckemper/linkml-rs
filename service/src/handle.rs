@@ -161,7 +161,13 @@ impl<T> LinkMLHandle<T> {
     /// # }
     /// ```
     #[must_use]
-    pub fn as_ref(&self) -> &T {
+    pub fn as_service_ref(&self) -> &T {
+        &self.inner
+    }
+}
+
+impl<T> AsRef<T> for LinkMLHandle<T> {
+    fn as_ref(&self) -> &T {
         &self.inner
     }
 }
@@ -170,12 +176,6 @@ impl<T> std::ops::Deref for LinkMLHandle<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl<T> AsRef<T> for LinkMLHandle<T> {
-    fn as_ref(&self) -> &T {
         &self.inner
     }
 }

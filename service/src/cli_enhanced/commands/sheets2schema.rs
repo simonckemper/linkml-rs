@@ -212,7 +212,7 @@ impl Sheets2SchemaCommand {
         }
 
         let parser = SchemaSheetsParser::new();
-        let schema = parser.parse_file(&self.input, Some(schema_id)).await?;
+        let schema = parser.parse_file(&self.input, Some(schema_id))?;
 
         if let Some(pb) = progress.as_ref() {
             pb.inc(3); // Skip to final step
@@ -295,7 +295,7 @@ impl Sheets2SchemaCommand {
 
         // Attempt to parse as SchemaSheets
         let parser = SchemaSheetsParser::new();
-        match parser.parse_file(&self.input, Some(schema_id)).await {
+        match parser.parse_file(&self.input, Some(schema_id)) {
             Ok(schema) => {
                 if self.verbose {
                     eprintln!("✓ Detected SchemaSheets format");

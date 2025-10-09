@@ -472,13 +472,13 @@ mod tests {
 
         // Resolve inheritance
         let mut resolver = InheritanceResolver::new(&schema);
-        let resolved = resolver.resolve_class("Person")?;
+        let resolved_class = resolver.resolve_class("Person")?;
 
         // Check that all slots are inherited
-        assert!(resolved.slots.contains(&"id".to_string())); // From Entity
-        assert!(resolved.slots.contains(&"name".to_string())); // From Named mixin
-        assert!(resolved.slots.contains(&"age".to_string())); // From Aged mixin
-        assert!(resolved.slots.contains(&"email".to_string())); // Own slot
+        assert!(resolved_class.slots.contains(&"id".to_string())); // From Entity
+        assert!(resolved_class.slots.contains(&"name".to_string())); // From Named mixin
+        assert!(resolved_class.slots.contains(&"age".to_string())); // From Aged mixin
+        assert!(resolved_class.slots.contains(&"email".to_string())); // Own slot
         Ok(())
     }
 
@@ -519,16 +519,20 @@ mod tests {
 
         // Resolve inheritance
         let mut resolver = InheritanceResolver::new(&schema);
-        let resolved = resolver.resolve_class("D")?;
+        let resolved_class = resolver.resolve_class("D")?;
 
         // Check that all slots are inherited (A's slot should appear only once)
-        assert!(resolved.slots.contains(&"a_slot".to_string()));
-        assert!(resolved.slots.contains(&"b_slot".to_string()));
-        assert!(resolved.slots.contains(&"c_slot".to_string()));
-        assert!(resolved.slots.contains(&"d_slot".to_string()));
+        assert!(resolved_class.slots.contains(&"a_slot".to_string()));
+        assert!(resolved_class.slots.contains(&"b_slot".to_string()));
+        assert!(resolved_class.slots.contains(&"c_slot".to_string()));
+        assert!(resolved_class.slots.contains(&"d_slot".to_string()));
 
         // Check that A's slot appears only once
-        let a_count = resolved.slots.iter().filter(|s| *s == "a_slot").count();
+        let a_count = resolved_class
+            .slots
+            .iter()
+            .filter(|s| *s == "a_slot")
+            .count();
         assert_eq!(a_count, 1, "Diamond inheritance should not duplicate slots");
         Ok(())
     }
