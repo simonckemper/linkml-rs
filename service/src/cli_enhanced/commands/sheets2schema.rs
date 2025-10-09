@@ -156,14 +156,14 @@ impl Sheets2SchemaCommand {
         // Detect format and parse accordingly
         let schema = if self.force_schemasheets {
             // Force SchemaSheets format
-            self.parse_schemasheets_format(&schema_id, &progress)
+            self.parse_schemasheets_format(&schema_id, progress.as_ref())
                 .await?
         } else if self.force_introspection {
             // Force data introspection
-            self.parse_via_introspection(&schema_id, &progress).await?
+            self.parse_via_introspection(&schema_id, progress.as_ref()).await?
         } else {
             // Auto-detect format
-            self.auto_detect_and_parse(&schema_id, &progress).await?
+            self.auto_detect_and_parse(&schema_id, progress.as_ref()).await?
         };
 
         if let Some(pb) = progress.as_ref() {
@@ -200,12 +200,16 @@ impl Sheets2SchemaCommand {
     }
 
     /// Parse using SchemaSheets format parser
+    ///
+    /// Note: This function is async to maintain a consistent interface with other parsing methods,
+    /// even though it currently doesn't perform any async operations.
+    #[allow(clippy::unused_async)]
     async fn parse_schemasheets_format(
         &self,
         schema_id: &str,
-        progress: &Option<ProgressBar>,
+        progress: Option<&ProgressBar>,
     ) -> Result<SchemaDefinition> {
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.set_message("Parsing SchemaSheets format...");
         } else if self.verbose {
             eprintln!("Parsing SchemaSheets format...");
@@ -214,7 +218,7 @@ impl Sheets2SchemaCommand {
         let parser = SchemaSheetsParser::new();
         let schema = parser.parse_file(&self.input, Some(schema_id))?;
 
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.inc(3); // Skip to final step
         }
 
@@ -222,12 +226,16 @@ impl Sheets2SchemaCommand {
     }
 
     /// Parse using data introspection
+    ///
+    /// Note: This function is async to maintain a consistent interface with other parsing methods,
+    /// even though it currently doesn't perform any async operations.
+    #[allow(clippy::unused_async)]
     async fn parse_via_introspection(
         &self,
         schema_id: &str,
-        progress: &Option<ProgressBar>,
+        progress: Option<&ProgressBar>,
     ) -> Result<SchemaDefinition> {
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.set_message("Reading Excel file...");
         } else if self.verbose {
             eprintln!("Reading Excel file: {}", self.input.display());
@@ -241,12 +249,12 @@ impl Sheets2SchemaCommand {
 
         let introspector = ExcelIntrospector::new(logger, timestamp);
 
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.inc(1);
         }
 
         // Analyze Excel data
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.set_message("Analyzing data and inferring schema...");
         } else if self.verbose {
             eprintln!("Analyzing data and inferring schema...");
@@ -257,12 +265,12 @@ impl Sheets2SchemaCommand {
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to analyze Excel file: {e}")))?;
 
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.inc(1);
         }
 
         // Generate schema
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.set_message("Generating LinkML schema...");
         } else if self.verbose {
             eprintln!("Generating LinkML schema...");
@@ -273,7 +281,7 @@ impl Sheets2SchemaCommand {
             .await
             .map_err(|e| LinkMLError::service(format!("Failed to generate schema: {e}")))?;
 
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.inc(1);
         }
 
@@ -284,10 +292,10 @@ impl Sheets2SchemaCommand {
     async fn auto_detect_and_parse(
         &self,
         schema_id: &str,
-        progress: &Option<ProgressBar>,
+        progress: Option<&ProgressBar>,
     ) -> Result<SchemaDefinition> {
         // Try SchemaSheets format first
-        if let Some(pb) = progress.as_ref() {
+        if let Some(pb) = progress {
             pb.set_message("Detecting format...");
         } else if self.verbose {
             eprintln!("Detecting format...");
@@ -295,23 +303,20 @@ impl Sheets2SchemaCommand {
 
         // Attempt to parse as SchemaSheets
         let parser = SchemaSheetsParser::new();
-        match parser.parse_file(&self.input, Some(schema_id)) {
-            Ok(schema) => {
-                if self.verbose {
-                    eprintln!("✓ Detected SchemaSheets format");
-                }
-                if let Some(pb) = progress.as_ref() {
-                    pb.inc(3);
-                }
-                Ok(schema)
+        if let Ok(schema) = parser.parse_file(&self.input, Some(schema_id)) {
+            if self.verbose {
+                eprintln!("✓ Detected SchemaSheets format");
             }
-            Err(_) => {
-                // Fall back to data introspection
-                if self.verbose {
-                    eprintln!("✓ Using data introspection mode");
-                }
-                self.parse_via_introspection(schema_id, progress).await
+            if let Some(pb) = progress {
+                pb.inc(3);
             }
+            Ok(schema)
+        } else {
+            // Fall back to data introspection
+            if self.verbose {
+                eprintln!("✓ Using data introspection mode");
+            }
+            self.parse_via_introspection(schema_id, progress).await
         }
     }
 

@@ -45,6 +45,7 @@ pub trait SchemaParser: Send + Sync {
 }
 
 /// Main parser that delegates to format-specific parsers
+#[derive(Clone)]
 pub struct Parser {
     yaml: YamlParser,
     json: JsonParser,

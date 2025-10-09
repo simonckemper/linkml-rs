@@ -444,7 +444,6 @@ mod tests {
             Ok(v) => v,
             Err(e) => {
                 panic!("Failed to create pattern validator: {e}");
-                return;
             }
         };
         validator.add_structured_pattern("email", "email");
@@ -481,7 +480,6 @@ mod tests {
             Ok(v) => v,
             Err(e) => {
                 panic!("Failed to create pattern validator: {e}");
-                return Ok(());
             }
         };
 
@@ -525,7 +523,6 @@ mod tests {
             Ok(v) => v,
             Err(e) => {
                 panic!("Failed to create pattern validator: {e}");
-                return Ok(());
             }
         };
 

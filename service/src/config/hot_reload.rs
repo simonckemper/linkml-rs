@@ -222,6 +222,9 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[tokio::test]
+    #[allow(deprecated)]
+    // This test is deprecated in favor of configuration_integration module tests
+    // but kept for backwards compatibility during migration
     async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
         // Copy default config to temp file
         let temp_file = NamedTempFile::new()?;
@@ -239,6 +242,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(deprecated)]
+    // This test is deprecated in favor of configuration_integration module tests
+    // but kept for backwards compatibility during migration
     async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
         // Copy default config to temp file
         let temp_file = NamedTempFile::new()?;

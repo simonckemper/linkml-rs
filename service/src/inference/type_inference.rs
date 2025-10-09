@@ -22,6 +22,8 @@ use std::sync::Arc;
 /// 7. Uri (http://, https://, ftp://)
 /// 8. Email (contains @ with basic validation)
 /// 9. String (fallback)
+// Allow same postfix for clarity - these are all regex patterns
+#[allow(clippy::struct_field_names)]
 pub struct StandardTypeInferencer {
     email_regex: Regex,
     uri_regex: Regex,

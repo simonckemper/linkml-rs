@@ -1204,6 +1204,7 @@ where
 ///
 /// This is a simplified service that provides basic `LinkML` functionality
 /// without requiring all the heavy service dependencies.
+#[derive(Clone)]
 pub struct MinimalLinkMLServiceImpl {
     parser: Parser,
 }

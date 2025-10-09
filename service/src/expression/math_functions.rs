@@ -258,7 +258,7 @@ impl BuiltinFunction for LogFunction {
                 }
             };
 
-            if base <= 0.0 || base == 1.0 {
+            if base <= 0.0 || (base - 1.0).abs() < f64::EPSILON {
                 return Err(FunctionError::invalid_argument(
                     self.name(),
                     "base must be positive and not equal to 1",

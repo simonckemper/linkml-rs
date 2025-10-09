@@ -3,6 +3,7 @@
 use crate::config::LinkMLConfig;
 use configuration_core::{ConfigurationService, Validate};
 use linkml_core::{LinkMLError, Result};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -78,7 +79,7 @@ pub fn create_fallback_service_config() -> LinkMLConfig {
             output_directory: "./generated".to_string(),
             enable_formatting: true,
             include_docs: true,
-            generator_options: Default::default(),
+            generator_options: HashMap::default(),
         },
         cache: crate::config::CacheConfig {
             max_entries: 1000,

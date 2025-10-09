@@ -297,14 +297,8 @@ impl ShExGenerator {
         schema: &SchemaDefinition,
     ) -> GeneratorResult<()> {
         if let Some(range) = &slot_def.range {
-            // Check if it's a class reference
-            if schema.classes.contains_key(range) {
-                let schema_prefix = self.to_snake_case(&schema.name);
-                write!(output, "@{}:{}", schema_prefix, self.to_pascal_case(range))
-                    .map_err(Self::fmt_error_to_generator_error)?;
-            }
-            // Check if it's an enum
-            else if schema.enums.contains_key(range) {
+            // Check if it's a class reference or enum
+            if schema.classes.contains_key(range) || schema.enums.contains_key(range) {
                 let schema_prefix = self.to_snake_case(&schema.name);
                 write!(output, "@{}:{}", schema_prefix, self.to_pascal_case(range))
                     .map_err(Self::fmt_error_to_generator_error)?;

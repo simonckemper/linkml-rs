@@ -5,6 +5,7 @@
 
 use async_trait::async_trait;
 use linkml_core::prelude::*;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -96,7 +97,7 @@ impl LoaderOptionsV2 {
             strict: false,
             target_class: None,
             max_errors: 100,
-            custom: Default::default(),
+            custom: HashMap::default(),
         }
     }
 

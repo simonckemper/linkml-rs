@@ -813,9 +813,28 @@ impl SchemaSheetsGenerator {
             }
         }
 
-        workbook
-            .save(output_path)
-            .map_err(|e| LinkMLError::other(format!("Failed to save Excel file: {e}")))?;
+        // Generate workbook to buffer
+        let buffer = workbook
+            .save_to_buffer()
+            .map_err(|e| LinkMLError::other(format!("Failed to generate Excel file: {e}")))?;
+
+        // Ensure parent directory exists
+        if let Some(parent) = output_path.parent() {
+            tokio::fs::create_dir_all(parent).await.map_err(|e| {
+                LinkMLError::IoError(std::io::Error::new(
+                    e.kind(),
+                    format!("Failed to create parent directory: {e}"),
+                ))
+            })?;
+        }
+
+        // Write buffer to file asynchronously
+        tokio::fs::write(output_path, buffer).await.map_err(|e| {
+            LinkMLError::IoError(std::io::Error::new(
+                e.kind(),
+                format!("Failed to write Excel file to {}: {e}", output_path.display()),
+            ))
+        })?;
 
         Ok(())
     }
@@ -833,7 +852,7 @@ impl SchemaSheetsGenerator {
         let element_types: Vec<&str> = validation_config
             .element_types
             .iter()
-            .map(|s| s.as_str())
+            .map(String::as_str)
             .collect();
         let element_type_validation = DataValidation::new()
             .allow_list_strings(&element_types)
@@ -853,7 +872,7 @@ impl SchemaSheetsGenerator {
         let boolean_values: Vec<&str> = validation_config
             .boolean_values
             .iter()
-            .map(|s| s.as_str())
+            .map(String::as_str)
             .collect();
         let key_validation = DataValidation::new()
             .allow_list_strings(&boolean_values)
@@ -871,7 +890,7 @@ impl SchemaSheetsGenerator {
         let multiplicity_values: Vec<&str> = validation_config
             .multiplicity_values
             .iter()
-            .map(|s| s.as_str())
+            .map(String::as_str)
             .collect();
         let multiplicity_validation = DataValidation::new()
             .allow_list_strings(&multiplicity_values)
@@ -895,7 +914,7 @@ impl SchemaSheetsGenerator {
 
         if !range_values.is_empty() {
             let range_validation = DataValidation::new()
-                .allow_list_strings(&range_values.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+                .allow_list_strings(&range_values.iter().map(String::as_str).collect::<Vec<_>>())
                 .map_err(|e| {
                     LinkMLError::other(format!("Failed to create range validation: {}", e))
                 })?

@@ -11,7 +11,7 @@ impl ExcelGenerator {
         schema: &SchemaDefinition,
         header_format: &Format,
     ) -> Result<(), GeneratorError> {
-        let mut worksheet = workbook
+        let worksheet = workbook
             .add_worksheet()
             .set_name("Validation Info")
             .map_err(|e| GeneratorError::Generation(e.to_string()))?;
@@ -25,14 +25,14 @@ impl ExcelGenerator {
             .map_err(|e| GeneratorError::Generation(e.to_string()))?;
         row += 2;
 
-        self.write_validation_headers(&mut worksheet, row, header_format)?;
+        self.write_validation_headers(worksheet, row, header_format)?;
         row += 1;
 
         for (class_name, class_def) in &schema.classes {
             for slot_name in &class_def.slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     self.write_validation_row(
-                        &mut worksheet,
+                        worksheet,
                         schema,
                         row,
                         class_name,

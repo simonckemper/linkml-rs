@@ -475,7 +475,7 @@ impl DataLoader for ExcelLoader {
         let mut all_instances = Vec::new();
 
         // Process sheets
-        let sheet_names = workbook.sheet_names().clone();
+        let sheet_names = workbook.sheet_names();
         let target_sheets: Vec<String> = match &self.excel_options.target_sheet {
             None => vec![sheet_names.first().cloned().unwrap_or_default()],
             Some(name) if name == "*" => sheet_names,
@@ -655,6 +655,13 @@ mod tests {
             to: &chrono::DateTime<chrono::Utc>,
         ) -> std::result::Result<chrono::Duration, Self::Error> {
             Ok(*to - *from)
+        }
+        async fn unix_timestamp_to_datetime(
+            &self,
+            timestamp: i64,
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+            use chrono::TimeZone;
+            Ok(chrono::Utc.timestamp_opt(timestamp, 0).unwrap())
         }
     }
 }

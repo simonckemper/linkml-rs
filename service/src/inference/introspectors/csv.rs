@@ -348,7 +348,8 @@ impl CsvIntrospector {
         };
 
         // Process remaining rows
-        let mut row_count = if has_headers { 1 } else { 1 }; // Already processed first/second row
+        // Already processed first row (header or data)
+        let mut row_count = 1;
         for result in data_rows {
             let record = result.map_err(|e| {
                 InferenceError::ParseServiceError(format!(
@@ -567,8 +568,13 @@ mod tests {
         Arc<dyn LoggerService<Error = LoggerError>>,
         Arc<dyn TimestampService<Error = TimestampError>>,
     ) {
-        let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
-        let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
+        let timestamp = timestamp_service::wiring::wire_timestamp().into_inner();
+        let logger = logger_service::wiring::wire_logger(
+            timestamp.clone(),
+            logger_core::LoggerConfig::default(),
+        )
+        .expect("Failed to create logger")
+        .into_inner();
         (logger, timestamp)
     }
 

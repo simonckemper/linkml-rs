@@ -273,7 +273,7 @@ impl ExpressionEngineV2 {
         };
 
         // Decide whether to use compiled or interpreted evaluation
-        let result = if self.should_use_compiled(&compiled) {
+        let result = if self.should_use_compiled(compiled.as_ref()) {
             let compiled_expr = compiled.as_ref().ok_or_else(|| {
                 ExpressionError::Other(
                     "should have compiled expression when use_compiled is true".to_string(),
@@ -378,7 +378,7 @@ impl ExpressionEngineV2 {
     }
 
     /// Decide whether to use compiled evaluation
-    fn should_use_compiled(&self, compiled: &Option<Arc<CompiledExpression>>) -> bool {
+    fn should_use_compiled(&self, compiled: Option<&Arc<CompiledExpression>>) -> bool {
         if let Some(compiled) = compiled {
             // Use compiled if complexity is above threshold
             compiled.metadata.complexity as u64 >= self.config.compilation_threshold

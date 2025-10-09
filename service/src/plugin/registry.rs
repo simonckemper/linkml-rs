@@ -269,6 +269,15 @@ impl PluginRegistry {
     }
 
     /// Initialize a specific plugin
+    ///
+    /// Note: This function holds a `std::sync::MutexGuard` across an await point, which is
+    /// generally not recommended. However, this is intentional here because:
+    /// 1. The plugin trait requires synchronous locking (not async-aware)
+    /// 2. The lock is held for a very short duration (just the initialize call)
+    /// 3. Converting to `tokio::sync::Mutex` would require changing the plugin trait,
+    ///    which would be a breaking change for all plugin implementations
+    /// 4. The risk of deadlock is minimal as plugins are initialized sequentially
+    #[allow(clippy::await_holding_lock)]
     async fn initialize_plugin(&self, id: &str, context: PluginContext) -> Result<()> {
         let plugin = {
             let plugins = self.plugins.read().map_err(|_| {
@@ -283,9 +292,6 @@ impl PluginRegistry {
         };
 
         // Initialize the plugin
-        // Note: Using std::sync::Mutex across await points is not ideal, but required here
-        // due to the plugin trait design. Consider using tokio::sync::Mutex in future versions.
-        #[allow(clippy::await_holding_lock)]
         {
             let mut plugin_guard = plugin
                 .lock()
@@ -325,6 +331,15 @@ impl PluginRegistry {
     }
 
     /// Shutdown a specific plugin
+    ///
+    /// Note: This function holds a `std::sync::MutexGuard` across an await point, which is
+    /// generally not recommended. However, this is intentional here because:
+    /// 1. The plugin trait requires synchronous locking (not async-aware)
+    /// 2. The lock is held for a very short duration (just the shutdown call)
+    /// 3. Converting to `tokio::sync::Mutex` would require changing the plugin trait,
+    ///    which would be a breaking change for all plugin implementations
+    /// 4. The risk of deadlock is minimal as plugins are shut down sequentially
+    #[allow(clippy::await_holding_lock)]
     async fn shutdown_plugin(&self, id: &str) -> Result<()> {
         let plugin = {
             let plugins = self.plugins.read().map_err(|_| {
@@ -339,9 +354,6 @@ impl PluginRegistry {
         };
 
         // Shutdown the plugin
-        // Note: Using std::sync::Mutex across await points is not ideal, but required here
-        // due to the plugin trait design. Consider using tokio::sync::Mutex in future versions.
-        #[allow(clippy::await_holding_lock)]
         {
             let mut plugin_guard = plugin
                 .lock()
@@ -574,7 +586,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_plugin_registration() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let registry = PluginRegistry::new(timestamp_service);
 
         let plugin = Box::new(MockPlugin {
@@ -610,7 +622,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_plugin_lifecycle() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let timestamp_service = timestamp_service::wiring::wire_timestamp();
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let registry = PluginRegistry::new(timestamp_service);
 
         let plugin = Box::new(MockPlugin {

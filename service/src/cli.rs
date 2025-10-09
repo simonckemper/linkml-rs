@@ -1893,7 +1893,15 @@ Goodbye!"
                     return;
                 }
             },
-            Some("yaml" | "yml") | _ => match serde_yaml::to_string(schema) {
+            Some("yaml" | "yml") => match serde_yaml::to_string(schema) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("Failed to serialize to YAML: {e}");
+                    return;
+                }
+            },
+            // Default to YAML for unknown formats
+            _ => match serde_yaml::to_string(schema) {
                 Ok(c) => c,
                 Err(e) => {
                     eprintln!("Failed to serialize to YAML: {e}");
@@ -1932,7 +1940,15 @@ Goodbye!"
                         return;
                     }
                 },
-                Some("yaml" | "yml") | _ => match serde_yaml::from_str(&content) {
+                Some("yaml" | "yml") => match serde_yaml::from_str(&content) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("Failed to parse YAML: {e}");
+                        return;
+                    }
+                },
+                // Default to YAML for unknown formats
+                _ => match serde_yaml::from_str(&content) {
                     Ok(s) => s,
                     Err(e) => {
                         eprintln!("Failed to parse YAML: {e}");
@@ -2028,7 +2044,7 @@ Goodbye!"
                 String,
                 linkml_core::types::ClassDefinition,
             > = schema.classes.clone().into_iter().collect();
-            let depth = Self::calculate_inheritance_depth(&class.is_a, &classes_hashmap, 0);
+            let depth = Self::calculate_inheritance_depth(class.is_a.as_ref(), &classes_hashmap, 0);
             if depth > max_inheritance_depth {
                 max_inheritance_depth = depth;
             }
@@ -2070,7 +2086,7 @@ Goodbye!"
 
     /// Calculate inheritance depth for a class
     fn calculate_inheritance_depth(
-        parent: &Option<String>,
+        parent: Option<&String>,
         classes: &std::collections::HashMap<String, linkml_core::types::ClassDefinition>,
         current_depth: usize,
     ) -> usize {
@@ -2083,7 +2099,7 @@ Goodbye!"
             Some(parent_name) => {
                 if let Some(parent_class) = classes.get(parent_name) {
                     Self::calculate_inheritance_depth(
-                        &parent_class.is_a,
+                        parent_class.is_a.as_ref(),
                         classes,
                         current_depth + 1,
                     )

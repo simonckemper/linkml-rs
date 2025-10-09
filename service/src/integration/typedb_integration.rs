@@ -300,8 +300,10 @@ where
             "boolean" | "bool" => "boolean",
             // Temporal types
             "date" | "datetime" | "time" => "datetime",
-            // String types (including unknown types as fallback)
-            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" | _ => "string",
+            // String types
+            "string" | "str" | "uri" | "uriorcurie" | "curie" | "ncname" => "string",
+            // Unknown types default to string
+            _ => "string",
         }
     }
 

@@ -387,25 +387,31 @@ mod tests {
 
     #[test]
     fn test_wire_minimal_linkml_service() {
+        use logger_service::wiring::wire_logger;
         use random_service::wiring::wire_random;
         use timestamp_service::wiring::wire_timestamp;
 
         let timestamp = wire_timestamp();
-        let random = wire_random().expect("Should create random service");
+        let logger = wire_logger(timestamp.clone().into_inner(), logger_core::LoggerConfig::default())
+            .expect("Should create logger");
+        let random = wire_random(logger.into_inner(), timestamp.clone().into_inner(), None);
 
-        let result = wire_minimal_linkml_service(timestamp.into_arc(), random.into_arc());
+        let result = wire_minimal_linkml_service(timestamp.into_inner(), random.into_inner());
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_handle_ownership() {
+        use logger_service::wiring::wire_logger;
         use random_service::wiring::wire_random;
         use timestamp_service::wiring::wire_timestamp;
 
         let timestamp = wire_timestamp();
-        let random = wire_random().expect("Should create random service");
+        let logger = wire_logger(timestamp.clone().into_inner(), logger_core::LoggerConfig::default())
+            .expect("Should create logger");
+        let random = wire_random(logger.into_inner(), timestamp.clone().into_inner(), None);
 
-        let handle = wire_minimal_linkml_service(timestamp.into_arc(), random.into_arc())
+        let handle = wire_minimal_linkml_service(timestamp.into_inner(), random.into_inner())
             .expect("Should create minimal service");
 
         // Test that we can extract Arc from handle

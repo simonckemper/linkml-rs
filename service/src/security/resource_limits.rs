@@ -371,7 +371,7 @@ mod tests {
             max_validation_time: Duration::from_millis(100),
             ..Default::default()
         };
-        let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let mut monitor = ResourceMonitor::new(limits, timestamp_service);
 
         // Initialize the timestamp
@@ -393,7 +393,7 @@ mod tests {
 
     #[test]
     fn test_memory_tracking() {
-        let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let monitor = ResourceMonitor::new(ResourceLimits::default(), timestamp_service);
 
         // Allocate some memory
@@ -411,7 +411,7 @@ mod tests {
             max_parallel_validators: 2,
             ..Default::default()
         };
-        let timestamp_service = Arc::new(timestamp_service::wiring::wire_timestamp());
+        let timestamp_service = timestamp_service::wiring::wire_timestamp().into_inner();
         let monitor = Arc::new(ResourceMonitor::new(limits, timestamp_service));
 
         // Start two ops (should succeed)

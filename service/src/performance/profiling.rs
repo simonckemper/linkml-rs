@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_profiler() {
-        let profiler = Profiler::new(wire_timestamp());
+        let profiler = Profiler::new(wire_timestamp().into_inner());
 
         // Time some operations
         profiler.time("test_op", || {
@@ -325,7 +325,7 @@ mod tests {
 
     #[test]
     fn test_timing_guard() {
-        let profiler = Profiler::new(wire_timestamp());
+        let profiler = Profiler::new(wire_timestamp().into_inner());
 
         {
             let _guard = TimingGuard::new(&profiler, "test_scope");

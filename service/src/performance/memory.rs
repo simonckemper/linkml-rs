@@ -237,7 +237,7 @@ impl<T> MemorySize for Vec<T> {
     }
 }
 
-impl<K, V> MemorySize for HashMap<K, V> {
+impl<K, V, S> MemorySize for HashMap<K, V, S> {
     fn heap_size(&self) -> usize {
         // Approximate - actual size depends on load factor
         self.capacity() * (std::mem::size_of::<K>() + std::mem::size_of::<V>() + 24)

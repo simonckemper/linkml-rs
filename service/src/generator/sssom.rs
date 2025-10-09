@@ -182,8 +182,8 @@ impl SssomGenerator {
 
                     for target in targets {
                         if !target.is_empty() {
-                            mappings.push(self._create_mapping(
-                                &self._get_class_uri(class_name, class_def, schema),
+                            mappings.push(self.create_mapping(
+                                &self.get_class_uri(class_name, class_def, schema),
                                 &target,
                                 predicate,
                                 self.config.default_confidence,
@@ -230,8 +230,8 @@ impl SssomGenerator {
 
                     for target in targets {
                         if !target.is_empty() {
-                            mappings.push(self._create_mapping(
-                                &self._get_slot_uri(slot_name, slot_def, schema),
+                            mappings.push(self.create_mapping(
+                                &self.get_slot_uri(slot_name, slot_def, schema),
                                 &target,
                                 predicate,
                                 self.config.default_confidence,
@@ -271,7 +271,7 @@ impl SssomGenerator {
                                 .unwrap_or(self.config.default_confidence);
 
                             if !subject.is_empty() && !object.is_empty() {
-                                mappings.push(self._create_mapping(
+                                mappings.push(self.create_mapping(
                                     subject,
                                     object,
                                     predicate,
@@ -293,7 +293,7 @@ impl SssomGenerator {
 
     /// Create a mapping
     #[allow(clippy::too_many_arguments)]
-    fn _create_mapping(
+    fn create_mapping(
         &self,
         subject: &str,
         object: &str,
@@ -331,7 +331,7 @@ impl SssomGenerator {
     }
 
     /// Get URI for a class
-    fn _get_class_uri(
+    fn get_class_uri(
         &self,
         name: &str,
         class_def: &ClassDefinition,
@@ -355,12 +355,12 @@ impl SssomGenerator {
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
 
-            self._construct_uri(name, &id_prefixes, schema)
+            self.construct_uri(name, id_prefixes.as_ref(), schema)
         }
     }
 
     /// Get URI for a slot
-    fn _get_slot_uri(
+    fn get_slot_uri(
         &self,
         name: &str,
         slot_def: &SlotDefinition,
@@ -384,15 +384,15 @@ impl SssomGenerator {
                     value_str.split(',').map(|s| s.trim().to_string()).collect()
                 });
 
-            self._construct_uri(name, &id_prefixes, schema)
+            self.construct_uri(name, id_prefixes.as_ref(), schema)
         }
     }
 
     /// Construct URI from name and prefixes
-    fn _construct_uri(
+    fn construct_uri(
         &self,
         name: &str,
-        id_prefixes: &Option<Vec<String>>,
+        id_prefixes: Option<&Vec<String>>,
         schema: &SchemaDefinition,
     ) -> String {
         if let Some(prefixes) = id_prefixes

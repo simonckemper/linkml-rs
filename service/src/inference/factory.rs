@@ -377,25 +377,16 @@ mod tests {
     async fn test_create_introspectors() {
         let logger = logger_service::test_utils::create_test_logger_service()
             .expect("Failed to create logger");
-        let timestamp = timestamp_service::wire_timestamp().expect("Failed to create timestamp");
+        let timestamp = timestamp_service::wiring::wire_timestamp().into_inner();
 
         // Test introspector creation using direct instantiation
-        let xml = Arc::new(XmlIntrospector::new(
-            Arc::clone(&logger),
-            Arc::clone(&timestamp.into_inner()),
-        ));
+        let xml = XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
         assert!(xml.introspect_bytes(b"<root/>").await.is_ok());
 
-        let json = Arc::new(JsonIntrospector::new(
-            Arc::clone(&logger),
-            Arc::clone(&timestamp.into_inner()),
-        ));
+        let json = JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
         assert!(json.introspect_bytes(b"{}").await.is_ok());
 
-        let csv = Arc::new(CsvIntrospector::new(
-            Arc::clone(&logger),
-            Arc::clone(&timestamp.into_inner()),
-        ));
+        let csv = CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
         assert!(csv.introspect_bytes(b"a,b,c\n1,2,3").await.is_ok());
     }
 
@@ -414,7 +405,7 @@ mod tests {
     async fn test_create_inference_engine_with_custom_config() {
         let logger = logger_service::test_utils::create_test_logger_service()
             .expect("Failed to create logger");
-        let timestamp = timestamp_service::wire_timestamp().expect("Failed to create timestamp");
+        let timestamp = timestamp_service::wiring::wire_timestamp().into_inner();
 
         let config = InferenceConfig {
             min_samples_for_type_inference: 10,

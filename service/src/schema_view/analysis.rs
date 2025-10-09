@@ -198,13 +198,19 @@ impl<'a> SchemaAnalyzer<'a> {
     /// # Errors
     ///
     pub fn compute_statistics(&self) -> linkml_core::error::Result<SchemaStatistics> {
-        let mut stats = SchemaStatistics::default();
-
         // Basic counts
-        stats.class_count = self.schema_view.all_classes()?.len();
-        stats.slot_count = self.schema_view.all_slots()?.len();
-        stats.type_count = self.schema_view.all_types()?.len();
-        stats.enum_count = self.schema_view.all_enums()?.len();
+        let class_count = self.schema_view.all_classes()?.len();
+        let slot_count = self.schema_view.all_slots()?.len();
+        let type_count = self.schema_view.all_types()?.len();
+        let enum_count = self.schema_view.all_enums()?.len();
+
+        let mut stats = SchemaStatistics {
+            class_count,
+            slot_count,
+            type_count,
+            enum_count,
+            ..Default::default()
+        };
 
         // Class analysis
         let all_classes = self.schema_view.all_classes()?;

@@ -10,7 +10,7 @@ use std::path::Path;
 use super::SchemaParser;
 
 /// `JSON` parser implementation
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct JsonParser;
 
 impl JsonParser {

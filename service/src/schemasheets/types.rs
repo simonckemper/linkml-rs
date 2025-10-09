@@ -219,7 +219,7 @@ impl ColumnMapping {
                 "minimum_value" | "min_value" | "min" => mapping.min_value_col = Some(idx),
                 "maximum_value" | "max_value" | "max" => mapping.max_value_col = Some(idx),
                 "element_type" | "element type" | "metatype" => {
-                    mapping.element_type_col = Some(idx)
+                    mapping.element_type_col = Some(idx);
                 }
                 _ => {
                     // Check if it's a mapping column (contains ":" or ends with "Match")

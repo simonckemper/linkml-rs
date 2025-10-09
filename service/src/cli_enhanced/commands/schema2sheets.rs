@@ -182,14 +182,14 @@ impl Schema2SheetsCommand {
             // Populate attribute names
             for (attr_name, attr_def) in &mut class_def.attributes {
                 if attr_def.name.is_empty() {
-                    attr_def.name = attr_name.clone();
+                    attr_def.name.clone_from(attr_name);
                 }
             }
 
             // Populate slot_usage names
             for (slot_name, slot_def) in &mut class_def.slot_usage {
                 if slot_def.name.is_empty() {
-                    slot_def.name = slot_name.clone();
+                    slot_def.name.clone_from(slot_name);
                 }
             }
         }
@@ -197,28 +197,28 @@ impl Schema2SheetsCommand {
         // Populate slot names
         for (slot_name, slot_def) in &mut schema.slots {
             if slot_def.name.is_empty() {
-                slot_def.name = slot_name.clone();
+                slot_def.name.clone_from(slot_name);
             }
         }
 
         // Populate enum names
         for (enum_name, enum_def) in &mut schema.enums {
             if enum_def.name.is_empty() {
-                enum_def.name = enum_name.clone();
+                enum_def.name.clone_from(enum_name);
             }
         }
 
         // Populate type names
         for (type_name, type_def) in &mut schema.types {
             if type_def.name.is_empty() {
-                type_def.name = type_name.clone();
+                type_def.name.clone_from(type_name);
             }
         }
 
         // Populate subset names
         for (subset_name, subset_def) in &mut schema.subsets {
             if subset_def.name.is_empty() {
-                subset_def.name = subset_name.clone();
+                subset_def.name.clone_from(subset_name);
             }
         }
     }

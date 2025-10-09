@@ -104,7 +104,7 @@ impl SlotView {
             ancestors.push(parent_name.clone());
 
             if let Some(parent_slot) = schema_view.get_slot(parent_name)? {
-                current = parent_slot.is_a.clone();
+                current.clone_from(&parent_slot.is_a);
             } else {
                 current = None;
             }

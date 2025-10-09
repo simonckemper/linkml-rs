@@ -248,26 +248,17 @@ impl SparqlGenerator {
 
             let all_slots = self.collect_all_slots(class_name, class_def, schema);
             for slot_name in &all_slots {
-                if let Some(slot_def) = schema.slots.get(slot_name) {
+                if schema.slots.contains_key(slot_name) {
                     let prop_uri = self.get_property_uri(slot_name, schema);
 
-                    if slot_def.multivalued.unwrap_or(false) {
-                        writeln!(
-                            output,
-                            "  ?instance {} ?{} .",
-                            prop_uri,
-                            Self::to_var_name(slot_name)
-                        )
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                    } else {
-                        writeln!(
-                            output,
-                            "  ?instance {} ?{} .",
-                            prop_uri,
-                            Self::to_var_name(slot_name)
-                        )
-                        .map_err(Self::fmt_error_to_generator_error)?;
-                    }
+                    // Both multivalued and single-valued slots use the same pattern
+                    writeln!(
+                        output,
+                        "  ?instance {} ?{} .",
+                        prop_uri,
+                        Self::to_var_name(slot_name)
+                    )
+                    .map_err(Self::fmt_error_to_generator_error)?;
                 }
             }
 

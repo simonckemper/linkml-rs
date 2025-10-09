@@ -26,7 +26,7 @@ impl ExcelGenerator {
         type_format: &Format,
     ) -> GeneratorResult<()> {
         let sheet_name = Self::sanitize_sheet_name(class_name);
-        let mut worksheet = workbook
+        let worksheet = workbook
             .add_worksheet()
             .set_name(&sheet_name)
             .map_err(|e| GeneratorError::Generation(e.to_string()))?;
@@ -36,11 +36,11 @@ impl ExcelGenerator {
             return Ok(());
         }
 
-        self.write_headers(&mut worksheet, &slots, header_format)?;
-        self.write_type_row(&mut worksheet, &slots, type_format)?;
-        self.write_description_row(&mut worksheet, &slots)?;
+        self.write_headers(worksheet, &slots, header_format)?;
+        self.write_type_row(worksheet, &slots, type_format)?;
+        self.write_description_row(worksheet, &slots)?;
         self.write_sample_rows(
-            &mut worksheet,
+            worksheet,
             &slots,
             required_format,
             optional_format,
@@ -48,7 +48,7 @@ impl ExcelGenerator {
         )?;
 
         if self.add_validation() {
-            self.add_data_validations(&mut worksheet, &slots, schema, DATA_START_ROW)?;
+            self.add_data_validations(worksheet, &slots, schema, DATA_START_ROW)?;
         }
 
         if self.freeze_headers() {
@@ -313,13 +313,13 @@ impl ExcelGenerator {
                         .set_error_title("Pattern mismatch")
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
                     validation = validation
-                        .set_error_message(&format!("Value must match the pattern: {pattern}"))
+                        .set_error_message(format!("Value must match the pattern: {pattern}"))
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
                     validation = validation
                         .set_input_title("Pattern constraint")
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
                     validation = validation
-                        .set_input_message(&format!("Allowed pattern: {pattern}"))
+                        .set_input_message(format!("Allowed pattern: {pattern}"))
                         .map_err(|e| GeneratorError::Generation(e.to_string()))?;
 
                     if has_validation {

@@ -733,7 +733,7 @@ define
         }
 
         // Determine value type
-        let value_type = self.map_range_to_typeql(&slot.range, schema);
+        let value_type = self.map_range_to_typeql(slot.range.as_ref(), schema);
 
         write!(output, "{name} sub attribute, value {value_type}")
             .map_err(Self::fmt_error_to_generator_error)?;
@@ -1167,10 +1167,10 @@ define
     #[allow(clippy::only_used_in_recursion)]
     fn map_range_to_typeql(
         &self,
-        range: &Option<String>,
+        range: Option<&String>,
         schema: &SchemaDefinition,
     ) -> &'static str {
-        match range.as_deref() {
+        match range.map(String::as_str) {
             Some("string" | "str" | "uri" | "url" | "curie" | "ncname") => "string",
             Some("integer" | "int") => "long",
             Some("float" | "double" | "decimal" | "number") => "double",
@@ -1180,7 +1180,7 @@ define
                 // Check if it's a custom type definition
                 if let Some(type_def) = schema.types.get(custom) {
                     // Resolve base type
-                    self.map_range_to_typeql(&type_def.base_type, schema)
+                    self.map_range_to_typeql(type_def.base_type.as_ref(), schema)
                 } else {
                     "string" // Default fallback
                 }
@@ -1452,10 +1452,8 @@ define
 
     /// Format a value for `TypeQL` syntax
     fn format_value_for_typeql(value: &str) -> String {
-        // Check if it's a numeric value
-        if value.parse::<f64>().is_ok() {
-            value.to_string()
-        } else if value == "true" || value == "false" {
+        // Check if it's a numeric or boolean value (both can be used as-is)
+        if value.parse::<f64>().is_ok() || value == "true" || value == "false" {
             value.to_string()
         } else {
             // String value - needs quotes
@@ -1951,6 +1949,8 @@ impl CodeFormatter for EnhancedTypeQLGenerator {
             formatted.push('\n');
 
             // Increase indent after define, when, then, or opening braces
+            // Note: Multiple conditions with same action is intentional for clarity
+            #[allow(clippy::if_same_then_else)]
             if trimmed == "define" || trimmed == "undefine" {
                 indent_level += 1;
             } else if trimmed.starts_with("rule ") && trimmed.ends_with(" {") {

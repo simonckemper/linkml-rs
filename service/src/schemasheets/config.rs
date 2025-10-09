@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 /// Complete configuration for SchemaSheets generator
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(Default)]
 pub struct SchemaSheetsConfig {
     /// Column width configuration
     pub column_widths: ColumnWidthConfig,
@@ -22,16 +23,6 @@ pub struct SchemaSheetsConfig {
     pub limits: ExcelLimitsConfig,
 }
 
-impl Default for SchemaSheetsConfig {
-    fn default() -> Self {
-        Self {
-            column_widths: ColumnWidthConfig::default(),
-            colors: ColorSchemeConfig::default(),
-            validation: ValidationConfig::default(),
-            limits: ExcelLimitsConfig::default(),
-        }
-    }
-}
 
 /// Column width configuration for SchemaSheets
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,7 +123,7 @@ impl Default for ColorSchemeConfig {
 impl ColorSchemeConfig {
     /// Parse hex color string to RGB u32
     pub fn parse_hex_color(&self, hex: &str) -> u32 {
-        u32::from_str_radix(hex.trim_start_matches('#'), 16).unwrap_or(0xFFFFFF)
+        u32::from_str_radix(hex.trim_start_matches('#'), 16).unwrap_or(0x00FF_FFFF)
     }
 
     /// Get header background as RGB u32

@@ -11,12 +11,12 @@ impl ExcelGenerator {
         schema: &SchemaDefinition,
         header_format: &Format,
     ) -> Result<(), GeneratorError> {
-        let mut worksheet = workbook
+        let worksheet = workbook
             .add_worksheet()
             .set_name("Enumerations")
             .map_err(|e| GeneratorError::Generation(e.to_string()))?;
 
-        Self::write_enum_headers(&mut worksheet, header_format)?;
+        Self::write_enum_headers(worksheet, header_format)?;
         let mut row = 1;
 
         for (enum_name, enum_def) in &schema.enums {

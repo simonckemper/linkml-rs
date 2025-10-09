@@ -867,13 +867,15 @@ impl LinkMLApp {
         let cmd_format = match format {
             SchemaFormat::Yaml => CmdSchemaFormat::Yaml,
             SchemaFormat::Json => CmdSchemaFormat::Json,
-            _ => CmdSchemaFormat::Yaml,
+            SchemaFormat::JsonLd => CmdSchemaFormat::Yaml, // Default to YAML for JsonLd
         };
         command = command.with_format(cmd_format);
 
         command.execute().await
     }
 
+    // Allow multiple bools - this is a CLI command handler with multiple flags
+    #[allow(clippy::fn_params_excessive_bools)]
     async fn schema2sheets_command(
         &self,
         schema: &Path,

@@ -592,8 +592,9 @@ impl YamlValidatorGenerator {
             "float" | "double" => "float",
             "boolean" | "bool" => "boolean",
             "date" | "datetime" => "datetime",
-            // String types (including unknown types as fallback)
-            "string" | _ => "string",
+            "string" => "string",
+            // Unknown types default to string
+            _ => "string",
         }
     }
 

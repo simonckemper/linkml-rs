@@ -547,7 +547,7 @@ impl SQLGenerator {
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> GeneratorResult<String> {
-        let base_type = self.get_base_sql_type(&slot.range, schema, options);
+        let base_type = self.get_base_sql_type(slot.range.as_ref(), schema, options);
 
         // Handle multivalued slots (arrays)
         if slot.multivalued == Some(true) {
@@ -566,7 +566,7 @@ impl SQLGenerator {
     /// Get base `SQL` type from `LinkML` range
     fn get_base_sql_type(
         &self,
-        range: &Option<String>,
+        range: Option<&String>,
         schema: &SchemaDefinition,
         options: &GeneratorOptions,
     ) -> String {
@@ -574,7 +574,7 @@ impl SQLGenerator {
             .get_custom("dialect")
             .map_or("standard", std::string::String::as_str);
 
-        match range.as_deref() {
+        match range.map(String::as_str) {
             Some("string" | "str") => "VARCHAR(255)".to_string(),
             Some("integer" | "int") => "INTEGER".to_string(),
             Some("float" | "double") => "DOUBLE PRECISION".to_string(),

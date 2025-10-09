@@ -119,7 +119,7 @@ impl ColumnStats {
         let unique_count = self.unique_values.len();
 
         // Only consider enum if we have 2-20 unique values
-        if unique_count < 2 || unique_count > 20 {
+        if !(2..=20).contains(&unique_count) {
             return None;
         }
 
@@ -344,7 +344,7 @@ impl ExcelIntrospector {
                 let slot_name = sanitize_name(&col.name);
 
                 let mut attr_stats = AttributeStats::new(slot_name.clone());
-                attr_stats.value_samples = col.value_samples.clone();
+                attr_stats.value_samples.clone_from(&col.value_samples);
                 attr_stats.occurrence_count = col.non_empty_count;
                 attr_stats.unique_values = attr_stats.value_samples.len();
 
@@ -402,15 +402,17 @@ impl ExcelIntrospector {
 /// Converts spaces to underscores, removes special characters,
 /// and ensures the name starts with a letter.
 fn sanitize_name(name: &str) -> String {
-    let mut result = name
-        .replace(' ', "_")
-        .replace('-', "_")
+    let mut result: String = name
         .chars()
+        .map(|c| match c {
+            ' ' | '-' => '_',
+            _ => c,
+        })
         .filter(|c| c.is_alphanumeric() || *c == '_')
-        .collect::<String>();
+        .collect();
 
     // Ensure starts with letter or underscore
-    if result.is_empty() || result.chars().next().map_or(false, |c| c.is_numeric()) {
+    if result.is_empty() || result.chars().next().is_some_and(char::is_numeric) {
         result = format!("col_{result}");
     }
 
@@ -472,9 +474,9 @@ impl DataIntrospector for ExcelIntrospector {
         let mut all_sheets = Vec::new();
 
         // Process each sheet in the workbook
-        for sheet_name in workbook.sheet_names().to_vec() {
+        for sheet_name in workbook.sheet_names().clone() {
             if let Ok(range) = workbook.worksheet_range(&sheet_name) {
-                let rows = range.rows().map(|row| row.to_vec()).collect::<Vec<_>>();
+                let rows = range.rows().map(<[calamine::Data]>::to_vec).collect::<Vec<_>>();
                 let sheet_stats = self.process_sheet(sheet_name, rows.into_iter())?;
                 all_sheets.push(sheet_stats);
             }
@@ -493,9 +495,9 @@ impl DataIntrospector for ExcelIntrospector {
         let mut all_sheets = Vec::new();
 
         // Process each sheet in the workbook
-        for sheet_name in workbook.sheet_names().to_vec() {
+        for sheet_name in workbook.sheet_names().clone() {
             if let Ok(range) = workbook.worksheet_range(&sheet_name) {
-                let rows = range.rows().map(|row| row.to_vec()).collect::<Vec<_>>();
+                let rows = range.rows().map(<[calamine::Data]>::to_vec).collect::<Vec<_>>();
                 let sheet_stats = self.process_sheet(sheet_name, rows.into_iter())?;
                 all_sheets.push(sheet_stats);
             }
@@ -505,7 +507,7 @@ impl DataIntrospector for ExcelIntrospector {
         self.sheets_to_document_stats(all_sheets)
     }
 
-    fn format_name(&self) -> &str {
+    fn format_name(&self) -> &'static str {
         "excel"
     }
 

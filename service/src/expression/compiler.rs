@@ -588,24 +588,33 @@ impl Compiler {
 
     /// Check if an instruction produces a value
     fn produces_value(inst: &Instruction) -> bool {
-        match inst {
-            Instruction::Const(_) | Instruction::Load(_) | Instruction::Dup => true,
-            Instruction::Add
-            | Instruction::Subtract
-            | Instruction::Multiply
-            | Instruction::Divide => true,
-            Instruction::Modulo | Instruction::Power => true,
-            Instruction::Equal | Instruction::NotEqual => true,
-            Instruction::Less
-            | Instruction::LessEqual
-            | Instruction::Greater
-            | Instruction::GreaterEqual => true,
-            Instruction::And | Instruction::Or | Instruction::Not | Instruction::Negate => true,
-            Instruction::Call(_, _) => true,
-            Instruction::MakeArray(_) | Instruction::MakeObject(_) => true,
-            Instruction::Index | Instruction::GetField(_) => true,
-            _ => false,
-        }
+        matches!(
+            inst,
+            Instruction::Const(_)
+                | Instruction::Load(_)
+                | Instruction::Dup
+                | Instruction::Add
+                | Instruction::Subtract
+                | Instruction::Multiply
+                | Instruction::Divide
+                | Instruction::Modulo
+                | Instruction::Power
+                | Instruction::Equal
+                | Instruction::NotEqual
+                | Instruction::Less
+                | Instruction::LessEqual
+                | Instruction::Greater
+                | Instruction::GreaterEqual
+                | Instruction::And
+                | Instruction::Or
+                | Instruction::Not
+                | Instruction::Negate
+                | Instruction::Call(_, _)
+                | Instruction::MakeArray(_)
+                | Instruction::MakeObject(_)
+                | Instruction::Index
+                | Instruction::GetField(_)
+        )
     }
 
     /// Calculate compilation metadata

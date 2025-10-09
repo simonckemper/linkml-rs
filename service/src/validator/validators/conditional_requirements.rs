@@ -26,6 +26,9 @@ impl ConditionalRequirementValidator {
     }
 
     /// Check if a condition is satisfied
+    // Allow large error type - ValidationIssue contains detailed context information
+    // that is valuable for debugging validation failures
+    #[allow(clippy::result_large_err)]
     fn check_condition(
         &self,
         instance: &Value,

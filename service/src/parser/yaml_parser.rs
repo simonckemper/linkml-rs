@@ -10,7 +10,7 @@ use std::path::Path;
 use super::SchemaParser;
 
 /// `YAML` parser implementation
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct YamlParser;
 
 impl YamlParser {

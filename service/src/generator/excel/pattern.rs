@@ -27,7 +27,7 @@ pub(super) fn build_pattern_formula(
 }
 
 fn column_index_to_letter(column: u16) -> String {
-    let mut col = column as i32;
+    let mut col = i32::from(column);
     let mut letters = Vec::new();
 
     loop {

@@ -35,7 +35,7 @@ pub enum RdfSerializationFormat {
 
 impl RdfSerializationFormat {
     /// Convert to oxigraph `RdfFormat`
-    fn to_oxigraph_format(&self) -> RdfFormat {
+    fn to_oxigraph_format(self) -> RdfFormat {
         match self {
             Self::Turtle => RdfFormat::Turtle,
             Self::NTriples => RdfFormat::NTriples,
@@ -222,10 +222,7 @@ impl RdfLoader {
         let typed_subjects: Vec<NamedOrBlankNode> = store
             .quads_for_pattern(None, Some((&type_predicate).into()), None, None)
             .filter_map(std::result::Result::ok)
-            .filter_map(|quad| match quad.subject {
-                NamedOrBlankNode::NamedNode(node) => Some(NamedOrBlankNode::NamedNode(node)),
-                NamedOrBlankNode::BlankNode(node) => Some(NamedOrBlankNode::BlankNode(node)),
-            })
+            .map(|quad| quad.subject)
             .collect();
 
         // Process each subject
@@ -395,13 +392,18 @@ impl RdfLoader {
                 algorithm,
             } => {
                 // Generate hash-based URI from blank node content
+                // Currently only sha256 is supported, but the algorithm parameter
+                // is preserved for future extensibility
                 use sha2::{Digest, Sha256};
-                let hash = match algorithm.as_str() {
-                    "sha256" | _ => {
-                        let mut hasher = Sha256::new();
-                        hasher.update(blank_node.as_str().as_bytes());
-                        format!("{:x}", hasher.finalize())
-                    }
+                let hash = if algorithm.as_str() == "sha256" {
+                    let mut hasher = Sha256::new();
+                    hasher.update(blank_node.as_str().as_bytes());
+                    format!("{:x}", hasher.finalize())
+                } else {
+                    // Default to sha256 for unknown algorithms
+                    let mut hasher = Sha256::new();
+                    hasher.update(blank_node.as_str().as_bytes());
+                    format!("{:x}", hasher.finalize())
                 };
                 format!("{base_uri}/skolem/{hash}")
             }
@@ -936,9 +938,9 @@ impl RdfDumper {
         for instance in instances {
             // Create subject
             let subject = if let Some(id) = &instance.id {
-                if id.starts_with("_:") {
+                if let Some(stripped) = id.strip_prefix("_:") {
                     // Blank node
-                    NamedOrBlankNode::BlankNode(BlankNode::new(&id[2..]).map_err(|e| {
+                    NamedOrBlankNode::BlankNode(BlankNode::new(stripped).map_err(|e| {
                         DumperError::Serialization(format!("Invalid blank node ID: {e}"))
                     })?)
                 } else if id.starts_with("http://") || id.starts_with("https://") {
@@ -1103,8 +1105,8 @@ impl RdfDumper {
                 }
 
                 // Check if it's a blank node reference
-                if s.starts_with("_:") {
-                    let blank = BlankNode::new(&s[2..]).map_err(|e| {
+                if let Some(stripped) = s.strip_prefix("_:") {
+                    let blank = BlankNode::new(stripped).map_err(|e| {
                         DumperError::Serialization(format!("Invalid blank node: {e}"))
                     })?;
                     return Ok(Term::BlankNode(blank));
