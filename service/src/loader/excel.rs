@@ -106,14 +106,14 @@ impl ExcelLoader {
         let mut instances = Vec::new();
 
         // Extract rows from range
-        let rows: Vec<Vec<Data>> = range.rows().map(|row| row.to_vec()).collect();
+        let rows: Vec<Vec<Data>> = range.rows().map(<[calamine::Data]>::to_vec).collect();
         if rows.is_empty() {
             return Ok(instances);
         }
 
         // Extract headers
         let headers = self.extract_headers(&rows)?;
-        let data_start = if self.excel_options.has_headers { 1 } else { 0 };
+        let data_start = usize::from(self.excel_options.has_headers);
 
         // Determine target class
         let target_class = options
@@ -363,11 +363,11 @@ impl ExcelLoader {
 
 #[async_trait]
 impl DataLoader for ExcelLoader {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "excel"
     }
 
-    fn description(&self) -> &str {
+    fn description(&self) -> &'static str {
         "Excel/ODS data loader with schema validation"
     }
 
@@ -396,7 +396,7 @@ impl DataLoader for ExcelLoader {
         let mut all_instances = Vec::new();
 
         // Determine which sheets to process
-        let sheet_names = workbook.sheet_names().to_vec();
+        let sheet_names = workbook.sheet_names().clone();
         let target_sheets: Vec<String> = match &self.excel_options.target_sheet {
             None => vec![sheet_names.first().cloned().unwrap_or_default()],
             Some(name) if name == "*" => sheet_names,
@@ -475,7 +475,7 @@ impl DataLoader for ExcelLoader {
         let mut all_instances = Vec::new();
 
         // Process sheets
-        let sheet_names = workbook.sheet_names().to_vec();
+        let sheet_names = workbook.sheet_names().clone();
         let target_sheets: Vec<String> = match &self.excel_options.target_sheet {
             None => vec![sheet_names.first().cloned().unwrap_or_default()],
             Some(name) if name == "*" => sheet_names,
@@ -601,19 +601,21 @@ mod tests {
     impl TimestampService for MockTimestamp {
         type Error = TimestampError;
 
-        async fn now_utc(&self) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        async fn now_utc(&self) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(chrono::Utc::now())
         }
-        async fn now_local(&self) -> Result<chrono::DateTime<chrono::Local>, Self::Error> {
+        async fn now_local(
+            &self,
+        ) -> std::result::Result<chrono::DateTime<chrono::Local>, Self::Error> {
             Ok(chrono::Local::now())
         }
-        async fn system_time(&self) -> Result<std::time::SystemTime, Self::Error> {
+        async fn system_time(&self) -> std::result::Result<std::time::SystemTime, Self::Error> {
             Ok(std::time::SystemTime::now())
         }
         async fn parse_iso8601(
             &self,
             timestamp: &str,
-        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             use chrono::DateTime;
             Ok(DateTime::parse_from_rfc3339(timestamp)
                 .map_err(|e| TimestampError::ParseError {
@@ -624,34 +626,34 @@ mod tests {
         async fn format_iso8601(
             &self,
             timestamp: &chrono::DateTime<chrono::Utc>,
-        ) -> Result<String, Self::Error> {
+        ) -> std::result::Result<String, Self::Error> {
             Ok(timestamp.to_rfc3339())
         }
         async fn duration_since(
             &self,
             timestamp: &chrono::DateTime<chrono::Utc>,
-        ) -> Result<chrono::Duration, Self::Error> {
+        ) -> std::result::Result<chrono::Duration, Self::Error> {
             Ok(chrono::Utc::now() - *timestamp)
         }
         async fn add_duration(
             &self,
             timestamp: &chrono::DateTime<chrono::Utc>,
             duration: chrono::Duration,
-        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp + duration)
         }
         async fn subtract_duration(
             &self,
             timestamp: &chrono::DateTime<chrono::Utc>,
             duration: chrono::Duration,
-        ) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        ) -> std::result::Result<chrono::DateTime<chrono::Utc>, Self::Error> {
             Ok(*timestamp - duration)
         }
         async fn duration_between(
             &self,
             from: &chrono::DateTime<chrono::Utc>,
             to: &chrono::DateTime<chrono::Utc>,
-        ) -> Result<chrono::Duration, Self::Error> {
+        ) -> std::result::Result<chrono::Duration, Self::Error> {
             Ok(*to - *from)
         }
     }
