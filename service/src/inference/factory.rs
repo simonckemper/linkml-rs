@@ -375,9 +375,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_introspectors() {
-        let logger = logger_service::test_utils::create_test_logger_service()
-            .expect("Failed to create logger");
-        let timestamp = timestamp_service::wiring::wire_timestamp().into_inner();
+        let logger = logger_service::test_utils::create_test_logger_service();
+        // Use test utility to get timestamp without Send + Sync auto-traits
+        let timestamp = timestamp_service::test_utils::create_test_timestamp_service();
 
         // Test introspector creation using direct instantiation
         let xml = XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
@@ -403,9 +403,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_inference_engine_with_custom_config() {
-        let logger = logger_service::test_utils::create_test_logger_service()
-            .expect("Failed to create logger");
-        let timestamp = timestamp_service::wiring::wire_timestamp().into_inner();
+        let logger = logger_service::test_utils::create_test_logger_service();
+        // Use test utility to get timestamp without Send + Sync auto-traits
+        let timestamp = timestamp_service::test_utils::create_test_timestamp_service();
 
         let config = InferenceConfig {
             min_samples_for_type_inference: 10,

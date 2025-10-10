@@ -147,6 +147,7 @@ impl Generator for ExcelGenerator {
 #[cfg(test)]
 mod tests {
     use super::ExcelGenerator;
+    use crate::generator::traits::Generator;
     use linkml_core::types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {

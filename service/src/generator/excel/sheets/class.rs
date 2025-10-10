@@ -392,7 +392,10 @@ impl ExcelGenerator {
         }
     }
 
-    pub(super) fn sanitize_sheet_name(name: &str) -> String {
+    /// Sanitize sheet name by removing invalid characters
+    ///
+    /// Made `pub(crate)` to allow testing from workbook test module
+    pub(crate) fn sanitize_sheet_name(name: &str) -> String {
         let sanitized = name
             .chars()
             .filter(|c| !matches!(c, '\\' | '/' | '?' | '*' | '[' | ']'))
