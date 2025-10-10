@@ -3,7 +3,7 @@
 //
 // Simple, fast-compiling benchmark for Excel introspection performance
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use linkml_service::inference::{DataIntrospector, ExcelIntrospector};
 use logger_core::LoggerConfig;
 use rust_xlsxwriter::Workbook;
@@ -56,11 +56,11 @@ fn create_test_excel_file(rows: usize) -> NamedTempFile {
 
 fn bench_excel_small(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    
+
     // Create test file ONCE (not in the benchmark loop!)
     let temp_file = create_test_excel_file(10);
     let path = temp_file.path().to_path_buf();
-    
+
     c.bench_function("excel_introspect_10_rows", |b| {
         b.to_async(&runtime).iter(|| async {
             let (logger, timestamp) = create_test_services();
@@ -72,11 +72,11 @@ fn bench_excel_small(c: &mut Criterion) {
 
 fn bench_excel_medium(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    
+
     // Create test file ONCE
     let temp_file = create_test_excel_file(100);
     let path = temp_file.path().to_path_buf();
-    
+
     c.bench_function("excel_introspect_100_rows", |b| {
         b.to_async(&runtime).iter(|| async {
             let (logger, timestamp) = create_test_services();
@@ -88,11 +88,11 @@ fn bench_excel_medium(c: &mut Criterion) {
 
 fn bench_excel_large(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    
+
     // Create test file ONCE
     let temp_file = create_test_excel_file(1000);
     let path = temp_file.path().to_path_buf();
-    
+
     c.bench_function("excel_introspect_1000_rows", |b| {
         b.to_async(&runtime).iter(|| async {
             let (logger, timestamp) = create_test_services();
@@ -104,16 +104,15 @@ fn bench_excel_large(c: &mut Criterion) {
 
 fn bench_excel_schema_generation(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    
+
     // Create test file and analyze it ONCE
     let temp_file = create_test_excel_file(100);
     let path = temp_file.path().to_path_buf();
-    
+
     let (logger, timestamp) = create_test_services();
     let introspector = ExcelIntrospector::new(logger, timestamp);
-    let stats = runtime
-        .block_on(async { introspector.analyze_file(&path).await.unwrap() });
-    
+    let stats = runtime.block_on(async { introspector.analyze_file(&path).await.unwrap() });
+
     c.bench_function("excel_schema_generation_100_rows", |b| {
         b.to_async(&runtime).iter(|| async {
             let (logger, timestamp) = create_test_services();
@@ -137,4 +136,3 @@ criterion_group! {
 }
 
 criterion_main!(benches);
-
