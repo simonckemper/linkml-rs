@@ -7,7 +7,7 @@
 
 use crate::inference::engine::InferenceEngine;
 use crate::inference::introspectors::{CsvIntrospector, JsonIntrospector, XmlIntrospector};
-use crate::inference::traits::{DataIntrospector, InferenceResult};
+use crate::inference::traits::InferenceResult;
 use crate::inference::types::InferenceConfig;
 use format_identification_service::create_format_identification_service;
 use logger_core::{LoggerError, LoggerService};
@@ -372,6 +372,7 @@ pub async fn create_inference_engine_with_config(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::inference::traits::DataIntrospector;
 
     #[tokio::test]
     async fn test_create_introspectors() {

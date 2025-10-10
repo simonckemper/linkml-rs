@@ -155,10 +155,6 @@ struct SheetStats {
     columns: Vec<ColumnStats>,
     /// Total row count
     row_count: usize,
-    /// Whether first row was treated as header
-    /// Used in tests to verify header detection logic
-    #[allow(dead_code)]
-    has_header: bool,
 }
 
 /// Excel introspector implementation
@@ -207,7 +203,6 @@ impl ExcelIntrospector {
     {
         let mut columns: Vec<ColumnStats> = Vec::new();
         let mut row_count = 0;
-        let mut has_header = false;
 
         // Read first row to detect headers
         if let Some(first_row) = rows.next() {
@@ -218,7 +213,7 @@ impl ExcelIntrospector {
                 .iter()
                 .filter(|cell| matches!(cell, Data::String(_)))
                 .count();
-            has_header = string_count > first_row.len() / 2;
+            let has_header = string_count > first_row.len() / 2;
 
             if has_header {
                 // Initialize columns from header row
@@ -261,7 +256,6 @@ impl ExcelIntrospector {
             name: sheet_name,
             columns,
             row_count,
-            has_header,
         })
     }
 

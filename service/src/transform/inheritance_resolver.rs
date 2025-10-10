@@ -494,38 +494,6 @@ impl InheritanceResolver {
         }
     }
 
-    /// Merge enum attributes (used internally for future enum extension support)
-    #[allow(dead_code)]
-    fn merge_enum_attributes(&self, target: &mut EnumDefinition, source: &EnumDefinition) {
-        // Merge permissible values
-        let mut seen_values = HashSet::new();
-        for pv in &target.permissible_values {
-            let text = match pv {
-                PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            };
-            seen_values.insert(text);
-        }
-
-        for pv in &source.permissible_values {
-            let text = match pv {
-                PermissibleValue::Simple(s) => s.clone(),
-                PermissibleValue::Complex { text, .. } => text.clone(),
-            };
-            if !seen_values.contains(&text) {
-                target.permissible_values.push(pv.clone());
-            }
-        }
-
-        // Merge other properties
-        if target.description.is_none() {
-            target.description.clone_from(&source.description);
-        }
-
-        // Merge annotations
-        self.merge_annotations(&mut target.annotations, source.annotations.as_ref());
-    }
-
     /// Clear the resolution cache
     pub fn clear_cache(&mut self) {
         self.resolved_cache.clear();

@@ -62,7 +62,6 @@ impl Default for ExcelOptions {
 /// Excel data loader
 pub struct ExcelLoader {
     logger: Arc<dyn LoggerService<Error = LoggerError>>,
-    #[allow(dead_code)]
     timestamp: Arc<dyn TimestampService<Error = TimestampError>>,
     excel_options: ExcelOptions,
 }
@@ -381,6 +380,13 @@ impl DataLoader for ExcelLoader {
         schema: &SchemaDefinition,
         options: &LoadOptions,
     ) -> LoaderResult<Vec<DataInstance>> {
+        // Record start time for performance tracking
+        let start_time = self
+            .timestamp
+            .now_utc()
+            .await
+            .map_err(|e| LoaderError::Configuration(format!("Failed to get timestamp: {e}")))?;
+
         let _ = self
             .logger
             .log(
@@ -431,11 +437,23 @@ impl DataLoader for ExcelLoader {
             }
         }
 
+        // Calculate load duration
+        let end_time = self
+            .timestamp
+            .now_utc()
+            .await
+            .map_err(|e| LoaderError::Configuration(format!("Failed to get timestamp: {e}")))?;
+        let duration = end_time.signed_duration_since(start_time);
+
         let _ = self
             .logger
             .log(
                 LogLevel::Info,
-                &format!("Successfully loaded {} instances", all_instances.len()),
+                &format!(
+                    "Successfully loaded {} instances in {:.2}s",
+                    all_instances.len(),
+                    duration.num_milliseconds() as f64 / 1000.0
+                ),
             )
             .await;
 

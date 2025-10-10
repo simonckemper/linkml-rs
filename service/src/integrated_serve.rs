@@ -259,56 +259,6 @@ mod handlers {
     }
 }
 
-/// Example showing REAL integration usage
-///
-/// This is how `LinkML` should ACTUALLY be used in production - not as a
-/// standalone service but as part of the `RootReal` ecosystem.
-///
-/// # Errors
-/// Returns error if service instantiation or configuration fails.
-#[allow(dead_code)]
-pub fn example_real_integration() -> Result<()> {
-    // use configuration_service::factory::create_configuration_service;
-    // use logger_service::factory::create_logger_service;
-    // use shutdown_service::factory::create_shutdown_service;
-    // use timestamp_core::factory::create_timestamp_service;
-    // ... import all other factory functions
-
-    // Create all 17 service dependencies (abbreviated for clarity)
-    // let logger = create_logger_service().await?;
-    // let config = create_configuration_service().await?;
-    // let timestamp = wire_timestamp();
-    // let shutdown = create_shutdown_service(logger.clone(), timestamp.clone()).await?;
-    // ... create all other services
-
-    // Create REST API dependencies
-    // let rest_api_deps = RestApiDeps {
-    //     logger: logger.clone(),
-    //     config: config.clone(),
-    //     timestamp: timestamp.clone(),
-    //     // ... all 17 services
-    // };
-
-    // Create integrated LinkML service
-    // let linkml_service = IntegratedLinkMLService::new(
-    //     PathBuf::from("schema.yaml"),
-    //     rest_api_deps,
-    //     shutdown.clone(),
-    // )
-    // .await?;
-
-    // Mount LinkML routes on REST API service
-    // linkml_service.mount_routes("/api/v1/linkml").await?;
-
-    // Start the integrated service (REST API with LinkML)
-    // let addr = "0.0.0.0:8080"
-    //     .parse()
-    //     .map_err(|e| LinkMLError::ConfigurationError(format!("Invalid address: {}", e)))?;
-    // linkml_service.start(addr).await?;
-
-    Ok(())
-}
-
 /// CRITICAL: This is the ONLY correct way to serve `LinkML`
 ///
 /// The old `ServeCommand` that creates its own axum server is ARCHITECTURALLY
