@@ -18,7 +18,6 @@ async fn test_parse_enum_definition() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify enum was parsed
@@ -49,7 +48,6 @@ async fn test_parse_enum_values() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     let status_enum = &schema.enums["Status"];
@@ -84,7 +82,6 @@ async fn test_parse_type_definition() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify type was parsed
@@ -116,7 +113,6 @@ async fn test_parse_type_constraints() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     let email_type = &schema.types["EmailType"];
@@ -136,7 +132,6 @@ async fn test_parse_subset_definition() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify subset was parsed
@@ -163,7 +158,6 @@ async fn test_parse_class_with_is_a() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify Employee inherits from Person
@@ -188,7 +182,6 @@ async fn test_parse_slot_with_pattern() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     let person = &schema.classes["Person"];
@@ -219,7 +212,6 @@ async fn test_parse_exact_mappings() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     let person = &schema.classes["Person"];
@@ -258,7 +250,6 @@ async fn test_parse_all_mapping_types() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     let person = &schema.classes["Person"];
@@ -290,7 +281,6 @@ async fn test_parse_prefixes_sheet() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify prefixes were parsed
@@ -326,7 +316,6 @@ async fn test_parse_settings_sheet() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("person_schema"))
-        .await
         .unwrap();
 
     // Verify schema metadata
@@ -349,7 +338,6 @@ async fn test_parse_biolink_minimal() {
     let parser = SchemaSheetsParser::new();
     let schema = parser
         .parse_file(&test_file, Some("biolink_minimal"))
-        .await
         .unwrap();
 
     // Verify classes
@@ -382,10 +370,7 @@ async fn test_parse_api_models_with_subsets() {
     create_api_models_excel(&test_file).unwrap();
 
     let parser = SchemaSheetsParser::new();
-    let schema = parser
-        .parse_file(&test_file, Some("api_models"))
-        .await
-        .unwrap();
+    let schema = parser.parse_file(&test_file, Some("api_models")).unwrap();
 
     // Verify subsets
     assert!(

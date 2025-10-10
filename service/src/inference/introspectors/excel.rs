@@ -470,7 +470,10 @@ impl DataIntrospector for ExcelIntrospector {
         // Process each sheet in the workbook
         for sheet_name in workbook.sheet_names().clone() {
             if let Ok(range) = workbook.worksheet_range(&sheet_name) {
-                let rows = range.rows().map(<[calamine::Data]>::to_vec).collect::<Vec<_>>();
+                let rows = range
+                    .rows()
+                    .map(<[calamine::Data]>::to_vec)
+                    .collect::<Vec<_>>();
                 let sheet_stats = self.process_sheet(sheet_name, rows.into_iter())?;
                 all_sheets.push(sheet_stats);
             }
@@ -491,7 +494,10 @@ impl DataIntrospector for ExcelIntrospector {
         // Process each sheet in the workbook
         for sheet_name in workbook.sheet_names().clone() {
             if let Ok(range) = workbook.worksheet_range(&sheet_name) {
-                let rows = range.rows().map(<[calamine::Data]>::to_vec).collect::<Vec<_>>();
+                let rows = range
+                    .rows()
+                    .map(<[calamine::Data]>::to_vec)
+                    .collect::<Vec<_>>();
                 let sheet_stats = self.process_sheet(sheet_name, rows.into_iter())?;
                 all_sheets.push(sheet_stats);
             }

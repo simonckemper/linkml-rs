@@ -832,7 +832,10 @@ impl SchemaSheetsGenerator {
         tokio::fs::write(output_path, buffer).await.map_err(|e| {
             LinkMLError::IoError(std::io::Error::new(
                 e.kind(),
-                format!("Failed to write Excel file to {}: {e}", output_path.display()),
+                format!(
+                    "Failed to write Excel file to {}: {e}",
+                    output_path.display()
+                ),
             ))
         })?;
 

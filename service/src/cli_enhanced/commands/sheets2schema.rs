@@ -160,10 +160,12 @@ impl Sheets2SchemaCommand {
                 .await?
         } else if self.force_introspection {
             // Force data introspection
-            self.parse_via_introspection(&schema_id, progress.as_ref()).await?
+            self.parse_via_introspection(&schema_id, progress.as_ref())
+                .await?
         } else {
             // Auto-detect format
-            self.auto_detect_and_parse(&schema_id, progress.as_ref()).await?
+            self.auto_detect_and_parse(&schema_id, progress.as_ref())
+                .await?
         };
 
         if let Some(pb) = progress.as_ref() {

@@ -57,7 +57,6 @@ async fn test_roundtrip_biolink_minimal() {
     let parser = SchemaSheetsParser::new();
     let roundtrip_schema = parser
         .parse_file(&excel_path, Some(&original_schema.name))
-        .await
         .unwrap();
 
     // Verify basic properties
@@ -127,7 +126,6 @@ async fn test_roundtrip_api_models() {
     let parser = SchemaSheetsParser::new();
     let roundtrip_schema = parser
         .parse_file(&excel_path, Some(&original_schema.name))
-        .await
         .unwrap();
 
     // Verify schema metadata
@@ -287,7 +285,6 @@ async fn test_roundtrip_complex_schema() {
     let parser = SchemaSheetsParser::new();
     let roundtrip_schema = parser
         .parse_file(&excel_path, Some("complex_schema"))
-        .await
         .unwrap();
 
     // Verify all elements are preserved

@@ -23,7 +23,6 @@ pub struct SchemaSheetsConfig {
     pub limits: ExcelLimitsConfig,
 }
 
-
 /// Column width configuration for SchemaSheets
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]

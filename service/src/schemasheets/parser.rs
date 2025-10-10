@@ -47,11 +47,7 @@ impl SchemaSheetsParser {
     /// - File cannot be read
     /// - File is not in SchemaSheets format
     /// - Format is invalid (in strict mode)
-    pub fn parse_file(
-        &self,
-        path: &Path,
-        schema_id: Option<&str>,
-    ) -> Result<SchemaDefinition> {
+    pub fn parse_file(&self, path: &Path, schema_id: Option<&str>) -> Result<SchemaDefinition> {
         // Read Excel file
         let file_bytes = std::fs::read(path)
             .map_err(|e| LinkMLError::io_error(format!("Failed to read file: {e}")))?;

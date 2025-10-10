@@ -57,7 +57,6 @@ async fn test_generate_basic_schema() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("test_schema"))
-        .await
         .unwrap();
 
     // Verify basic properties
@@ -101,7 +100,6 @@ async fn test_generate_with_enums() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("enum_schema"))
-        .await
         .unwrap();
 
     // Verify enum was preserved
@@ -143,7 +141,6 @@ async fn test_generate_with_types() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("type_schema"))
-        .await
         .unwrap();
 
     // Verify type was preserved
@@ -187,7 +184,6 @@ async fn test_generate_metadata_sheets() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("metadata_schema"))
-        .await
         .unwrap();
 
     // Verify metadata was preserved
@@ -244,7 +240,6 @@ async fn test_generate_with_mappings() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("mapping_schema"))
-        .await
         .unwrap();
 
     // Verify mappings were preserved
@@ -335,7 +330,6 @@ async fn test_roundtrip_conversion() {
     let parser = SchemaSheetsParser::new();
     let parsed_schema = parser
         .parse_file(&output_path, Some("roundtrip_schema"))
-        .await
         .unwrap();
 
     // Verify all elements are preserved

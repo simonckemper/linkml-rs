@@ -32,12 +32,7 @@ impl ExcelGenerator {
             for slot_name in &class_def.slots {
                 if let Some(slot_def) = schema.slots.get(slot_name) {
                     self.write_validation_row(
-                        worksheet,
-                        schema,
-                        row,
-                        class_name,
-                        slot_name,
-                        slot_def,
+                        worksheet, schema, row, class_name, slot_name, slot_def,
                     )?;
                     row += 1;
                 }
