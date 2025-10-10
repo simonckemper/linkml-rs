@@ -364,9 +364,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_cache_key_generation() {
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test-schema".to_string();
-        schema.name = "TestSchema".to_string();
+        let schema = SchemaDefinition {
+            id: "test-schema".to_string(),
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         let options = CompilationOptions::default();
 
@@ -382,11 +384,15 @@ mod tests {
     async fn test_cache_operations() -> anyhow::Result<()> {
         let cache = CompiledValidatorCache::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test-schema".to_string();
+        let schema = SchemaDefinition {
+            id: "test-schema".to_string(),
+            ..Default::default()
+        };
 
-        let mut class = ClassDefinition::default();
-        class.name = "TestClass".to_string();
+        let class = ClassDefinition {
+            name: "TestClass".to_string(),
+            ..Default::default()
+        };
 
         let options = CompilationOptions::default();
         let key = ValidatorCacheKey::new(&schema, "TestClass", &options);

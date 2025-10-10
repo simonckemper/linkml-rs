@@ -191,8 +191,8 @@ mod tests {
         let service = Arc::new(MockLinkMLService);
         let handle = LinkMLHandle::new(service);
         assert!(std::ptr::eq(
-            handle.as_ref() as *const _,
-            &MockLinkMLService as *const _
+            std::ptr::from_ref(handle.as_ref()),
+            std::ptr::from_ref(&MockLinkMLService)
         ));
     }
 
@@ -208,6 +208,7 @@ mod tests {
     fn test_deref() {
         let service = Arc::new(MockLinkMLService);
         let handle = LinkMLHandle::new(service);
-        let _ref: &MockLinkMLService = &handle;
+        // Test that deref works by accessing the reference
+        let _: &MockLinkMLService = &handle;
     }
 }

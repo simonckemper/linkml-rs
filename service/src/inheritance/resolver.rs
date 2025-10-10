@@ -417,16 +417,20 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create parent class
-        let mut animal = ClassDefinition::default();
-        animal.name = "Animal".to_string();
-        animal.slots = vec!["name".to_string()];
+        let animal = ClassDefinition {
+            name: "Animal".to_string(),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Animal".to_string(), animal);
 
         // Create child class
-        let mut dog = ClassDefinition::default();
-        dog.name = "Dog".to_string();
-        dog.is_a = Some("Animal".to_string());
-        dog.slots = vec!["breed".to_string()];
+        let dog = ClassDefinition {
+            name: "Dog".to_string(),
+            is_a: Some("Animal".to_string()),
+            slots: vec!["breed".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Dog".to_string(), dog);
 
         // Resolve inheritance
@@ -445,29 +449,37 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create base classes
-        let mut named = ClassDefinition::default();
-        named.name = "Named".to_string();
-        named.slots = vec!["name".to_string()];
-        named.mixin = Some(true);
+        let named = ClassDefinition {
+            name: "Named".to_string(),
+            slots: vec!["name".to_string()],
+            mixin: Some(true),
+            ..Default::default()
+        };
         schema.classes.insert("Named".to_string(), named);
 
-        let mut aged = ClassDefinition::default();
-        aged.name = "Aged".to_string();
-        aged.slots = vec!["age".to_string()];
-        aged.mixin = Some(true);
+        let aged = ClassDefinition {
+            name: "Aged".to_string(),
+            slots: vec!["age".to_string()],
+            mixin: Some(true),
+            ..Default::default()
+        };
         schema.classes.insert("Aged".to_string(), aged);
 
-        let mut entity = ClassDefinition::default();
-        entity.name = "Entity".to_string();
-        entity.slots = vec!["id".to_string()];
+        let entity = ClassDefinition {
+            name: "Entity".to_string(),
+            slots: vec!["id".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Entity".to_string(), entity);
 
         // Create class with multiple inheritance
-        let mut person = ClassDefinition::default();
-        person.name = "Person".to_string();
-        person.is_a = Some("Entity".to_string());
-        person.mixins = vec!["Named".to_string(), "Aged".to_string()];
-        person.slots = vec!["email".to_string()];
+        let person = ClassDefinition {
+            name: "Person".to_string(),
+            is_a: Some("Entity".to_string()),
+            mixins: vec!["Named".to_string(), "Aged".to_string()],
+            slots: vec!["email".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person);
 
         // Resolve inheritance
@@ -493,28 +505,36 @@ mod tests {
         //    \ /
         //     D
 
-        let mut a = ClassDefinition::default();
-        a.name = "A".to_string();
-        a.slots = vec!["a_slot".to_string()];
+        let a = ClassDefinition {
+            name: "A".to_string(),
+            slots: vec!["a_slot".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("A".to_string(), a);
 
-        let mut b = ClassDefinition::default();
-        b.name = "B".to_string();
-        b.is_a = Some("A".to_string());
-        b.slots = vec!["b_slot".to_string()];
+        let b = ClassDefinition {
+            name: "B".to_string(),
+            is_a: Some("A".to_string()),
+            slots: vec!["b_slot".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("B".to_string(), b);
 
-        let mut c = ClassDefinition::default();
-        c.name = "C".to_string();
-        c.is_a = Some("A".to_string());
-        c.slots = vec!["c_slot".to_string()];
+        let c = ClassDefinition {
+            name: "C".to_string(),
+            is_a: Some("A".to_string()),
+            slots: vec!["c_slot".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("C".to_string(), c);
 
-        let mut d = ClassDefinition::default();
-        d.name = "D".to_string();
-        d.is_a = Some("B".to_string());
-        d.mixins = vec!["C".to_string()];
-        d.slots = vec!["d_slot".to_string()];
+        let d = ClassDefinition {
+            name: "D".to_string(),
+            is_a: Some("B".to_string()),
+            mixins: vec!["C".to_string()],
+            slots: vec!["d_slot".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("D".to_string(), d);
 
         // Resolve inheritance

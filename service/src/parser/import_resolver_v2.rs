@@ -682,13 +682,15 @@ imports:
             .parse_str(schema_a)
             .expect("should parse schema a: {}");
 
-        let mut settings = ImportSettings::default();
-        settings.search_paths = vec![
-            base_path
-                .to_str()
-                .ok_or_else(|| anyhow::anyhow!("Failed to convert path to string"))?
-                .to_string(),
-        ];
+        let settings = ImportSettings {
+            search_paths: vec![
+                base_path
+                    .to_str()
+                    .ok_or_else(|| anyhow::anyhow!("Failed to convert path to string"))?
+                    .to_string(),
+            ],
+            ..Default::default()
+        };
 
         let resolver = ImportResolverV2::with_settings(settings);
         let result = resolver.resolve_imports(&schema).await;

@@ -498,10 +498,9 @@ harness = false
 name = "validation_bench"
 harness = false
 
-# NOTE: inference_benchmarks temporarily disabled due to API changes
-# [[bench]]
-# name = "inference_benchmarks"
-# harness = false
+[[bench]]
+name = "inference_benchmarks"
+harness = false
 
 [[bench]]
 name = "loader_benchmarks"

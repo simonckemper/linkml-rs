@@ -974,18 +974,22 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Add a simple slot
-        let mut name_slot = SlotDefinition::default();
-        name_slot.name = "name".to_string();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
-        name_slot.pattern = Some("^[A-Za-z]+$".to_string());
+        let name_slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            pattern: Some("^[A-Za-z]+$".to_string()),
+            ..Default::default()
+        };
 
         schema.slots.insert("name".to_string(), name_slot);
 
         // Add a class
-        let mut person_class = ClassDefinition::default();
-        person_class.name = "Person".to_string();
-        person_class.slots = vec!["name".to_string()];
+        let person_class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
 
         // Compile validator
         let options = CompilationOptions::default();

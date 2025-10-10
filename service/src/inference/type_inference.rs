@@ -273,15 +273,15 @@ mod tests {
     fn test_infer_boolean() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec!["true".to_string(), "false".to_string()]),
+            inferencer.infer_from_samples(&["true".to_string(), "false".to_string()]),
             InferredType::Boolean
         );
         assert_eq!(
-            inferencer.infer_from_samples(&vec!["yes".to_string(), "no".to_string()]),
+            inferencer.infer_from_samples(&["yes".to_string(), "no".to_string()]),
             InferredType::Boolean
         );
         assert_eq!(
-            inferencer.infer_from_samples(&vec!["1".to_string(), "0".to_string()]),
+            inferencer.infer_from_samples(&["1".to_string(), "0".to_string()]),
             InferredType::Boolean
         );
     }
@@ -290,11 +290,7 @@ mod tests {
     fn test_infer_integer() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec![
-                "10".to_string(),
-                "20".to_string(),
-                "-5".to_string()
-            ]),
+            inferencer.infer_from_samples(&["10".to_string(), "20".to_string(), "-5".to_string()]),
             InferredType::Integer
         );
     }
@@ -303,7 +299,7 @@ mod tests {
     fn test_infer_float() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec![
+            inferencer.infer_from_samples(&[
                 "10.5".to_string(),
                 "20.3".to_string(),
                 "-5.7".to_string()
@@ -317,7 +313,7 @@ mod tests {
         let inferencer = StandardTypeInferencer::new();
         // Integer and Float should become Float
         assert_eq!(
-            inferencer.infer_from_samples(&vec!["10".to_string(), "20.5".to_string()]),
+            inferencer.infer_from_samples(&["10".to_string(), "20.5".to_string()]),
             InferredType::Float
         );
     }
@@ -326,7 +322,7 @@ mod tests {
     fn test_infer_uri() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec![
+            inferencer.infer_from_samples(&[
                 "https://example.com".to_string(),
                 "http://test.org".to_string()
             ]),
@@ -338,7 +334,7 @@ mod tests {
     fn test_infer_email() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec![
+            inferencer.infer_from_samples(&[
                 "test@example.com".to_string(),
                 "user@domain.org".to_string()
             ]),
@@ -350,7 +346,7 @@ mod tests {
     fn test_infer_string() {
         let inferencer = StandardTypeInferencer::new();
         assert_eq!(
-            inferencer.infer_from_samples(&vec!["hello".to_string(), "world".to_string()]),
+            inferencer.infer_from_samples(&["hello".to_string(), "world".to_string()]),
             InferredType::String
         );
     }
@@ -360,7 +356,7 @@ mod tests {
         let inferencer = StandardTypeInferencer::new();
 
         // All integers - 100% confidence
-        let (inferred, confidence) = inferencer.infer_with_confidence(&vec![
+        let (inferred, confidence) = inferencer.infer_with_confidence(&[
             "10".to_string(),
             "20".to_string(),
             "30".to_string(),
@@ -369,7 +365,7 @@ mod tests {
         assert_eq!(confidence, 1.0);
 
         // Mixed types - lower confidence
-        let (inferred, confidence) = inferencer.infer_with_confidence(&vec![
+        let (inferred, confidence) = inferencer.infer_with_confidence(&[
             "10".to_string(),
             "hello".to_string(),
             "30".to_string(),
@@ -381,16 +377,13 @@ mod tests {
     #[test]
     fn test_empty_samples() {
         let inferencer = StandardTypeInferencer::new();
-        assert_eq!(
-            inferencer.infer_from_samples(&vec![]),
-            InferredType::Unknown
-        );
+        assert_eq!(inferencer.infer_from_samples(&[]), InferredType::Unknown);
     }
 
     #[test]
     fn test_create_type_inferencer() {
         let inferencer = create_type_inferencer();
-        let result = inferencer.infer_from_samples(&vec!["42".to_string()]);
+        let result = inferencer.infer_from_samples(&["42".to_string()]);
         assert_eq!(result, InferredType::Integer);
     }
 

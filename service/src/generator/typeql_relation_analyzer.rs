@@ -391,16 +391,22 @@ mod tests {
             .insert("Organization".to_string(), ClassDefinition::default());
 
         // Add employment relation
-        let mut employment = ClassDefinition::default();
-        employment.slots = vec!["employee".to_string(), "employer".to_string()];
+        let employment = ClassDefinition {
+            slots: vec!["employee".to_string(), "employer".to_string()],
+            ..Default::default()
+        };
 
         // Add slots
-        let mut person_role_def = SlotDefinition::default();
-        person_role_def.range = Some("Person".to_string());
+        let person_role_def = SlotDefinition {
+            range: Some("Person".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("employee".to_string(), person_role_def);
 
-        let mut organization_role_def = SlotDefinition::default();
-        organization_role_def.range = Some("Organization".to_string());
+        let organization_role_def = SlotDefinition {
+            range: Some("Organization".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("employer".to_string(), organization_role_def);
@@ -424,34 +430,44 @@ mod tests {
             .insert("Instructor".to_string(), ClassDefinition::default());
 
         // Add enrollment relation
-        let mut enrollment = ClassDefinition::default();
-        enrollment.slots = vec![
-            "student".to_string(),
-            "course".to_string(),
-            "instructor".to_string(),
-            "grade".to_string(),
-        ];
+        let enrollment = ClassDefinition {
+            slots: vec![
+                "student".to_string(),
+                "course".to_string(),
+                "instructor".to_string(),
+                "grade".to_string(),
+            ],
+            ..Default::default()
+        };
 
         // Add role slots
-        let mut learner_role_def = SlotDefinition::default();
-        learner_role_def.range = Some("Student".to_string());
+        let learner_role_def = SlotDefinition {
+            range: Some("Student".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("student".to_string(), learner_role_def);
 
-        let mut academic_subject_def = SlotDefinition::default();
-        academic_subject_def.range = Some("Course".to_string());
+        let academic_subject_def = SlotDefinition {
+            range: Some("Course".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("course".to_string(), academic_subject_def);
 
-        let mut teacher_role_def = SlotDefinition::default();
-        teacher_role_def.range = Some("Instructor".to_string());
+        let teacher_role_def = SlotDefinition {
+            range: Some("Instructor".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("instructor".to_string(), teacher_role_def);
 
         // Add attribute slot
-        let mut grade_attribute_def = SlotDefinition::default();
-        grade_attribute_def.range = Some("string".to_string());
+        let grade_attribute_def = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("grade".to_string(), grade_attribute_def);

@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = SchemaSheetsConfig::default();
-        assert_eq!(config.column_widths.element_name, 20.0);
+        assert!((config.column_widths.element_name - 20.0).abs() < f64::EPSILON);
         assert_eq!(config.colors.header_background, "4472C4");
         assert_eq!(config.validation.element_types.len(), 4);
         assert_eq!(config.limits.max_rows, 1_048_575);
@@ -256,9 +256,9 @@ mod tests {
     #[test]
     fn test_color_parsing() {
         let colors = ColorSchemeConfig::default();
-        assert_eq!(colors.header_background_rgb(), 0x4472C4);
-        assert_eq!(colors.class_background_rgb(), 0xE7E6E6);
-        assert_eq!(colors.enum_background_rgb(), 0xFFF2CC);
+        assert_eq!(colors.header_background_rgb(), 0x0044_72C4);
+        assert_eq!(colors.class_background_rgb(), 0x00E7_E6E6);
+        assert_eq!(colors.enum_background_rgb(), 0x00FF_F2CC);
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod tests {
             header_background: "#4472C4".to_string(),
             ..Default::default()
         };
-        assert_eq!(colors.header_background_rgb(), 0x4472C4);
+        assert_eq!(colors.header_background_rgb(), 0x0044_72C4);
     }
 
     #[test]

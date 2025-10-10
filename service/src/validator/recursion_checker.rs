@@ -248,20 +248,26 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a self-referential class
-        let mut node_class = ClassDefinition::default();
-        node_class.name = "Node".to_string();
-        node_class.slots = vec!["value".to_string(), "next".to_string()];
+        let node_class = ClassDefinition {
+            name: "Node".to_string(),
+            slots: vec!["value".to_string(), "next".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Node".to_string(), node_class);
 
         // Create slots
-        let mut value_slot = SlotDefinition::default();
-        value_slot.name = "value".to_string();
-        value_slot.range = Some("string".to_string());
+        let value_slot = SlotDefinition {
+            name: "value".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("value".to_string(), value_slot);
 
-        let mut next_slot = SlotDefinition::default();
-        next_slot.name = "next".to_string();
-        next_slot.range = Some("Node".to_string()); // Self-reference
+        let next_slot = SlotDefinition {
+            name: "next".to_string(),
+            range: Some("Node".to_string()), // Self-reference
+            ..Default::default()
+        };
         schema.slots.insert("next".to_string(), next_slot);
 
         let tracker = RecursionTracker::new(&schema);
@@ -273,19 +279,23 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a recursive class with depth limit
-        let mut tree_class = ClassDefinition::default();
-        tree_class.name = "Tree".to_string();
-        tree_class.slots = vec!["children".to_string()];
-        tree_class.recursion_options = Some(RecursionOptions {
-            use_box: true,
-            max_depth: Some(3),
-        });
+        let tree_class = ClassDefinition {
+            name: "Tree".to_string(),
+            slots: vec!["children".to_string()],
+            recursion_options: Some(RecursionOptions {
+                use_box: true,
+                max_depth: Some(3),
+            }),
+            ..Default::default()
+        };
         schema.classes.insert("Tree".to_string(), tree_class);
 
-        let mut children_slot = SlotDefinition::default();
-        children_slot.name = "children".to_string();
-        children_slot.range = Some("Tree".to_string());
-        children_slot.multivalued = Some(true);
+        let children_slot = SlotDefinition {
+            name: "children".to_string(),
+            range: Some("Tree".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("children".to_string(), children_slot);
 
         let mut tracker = RecursionTracker::new(&schema);
@@ -304,14 +314,18 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a non-recursive class (no self-referencing slots)
-        let mut person_class = ClassDefinition::default();
-        person_class.name = "Person".to_string();
-        person_class.slots = vec!["name".to_string()];
+        let person_class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.name = "name".to_string();
-        name_slot.range = Some("string".to_string());
+        let name_slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
         let mut tracker = RecursionTracker::new(&schema);

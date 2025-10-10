@@ -828,7 +828,7 @@ mod tests {
     #[test]
     fn test_type_votes_simple_inference() {
         let mut votes = TypeVotes::new();
-        votes.add_samples(&vec!["10".to_string(), "20".to_string(), "30".to_string()]);
+        votes.add_samples(&["10".to_string(), "20".to_string(), "30".to_string()]);
 
         assert_eq!(votes.majority_type(), InferredType::Integer);
         assert_eq!(votes.confidence(), 1.0); // All samples agree
@@ -837,11 +837,7 @@ mod tests {
     #[test]
     fn test_type_votes_mixed_types() {
         let mut votes = TypeVotes::new();
-        votes.add_samples(&vec![
-            "10".to_string(),
-            "20".to_string(),
-            "hello".to_string(),
-        ]);
+        votes.add_samples(&["10".to_string(), "20".to_string(), "hello".to_string()]);
 
         // Integer has 2 votes, String has 1 vote
         assert_eq!(votes.majority_type(), InferredType::Integer);
@@ -852,11 +848,7 @@ mod tests {
     #[test]
     fn test_type_votes_boolean() {
         let mut votes = TypeVotes::new();
-        votes.add_samples(&vec![
-            "true".to_string(),
-            "false".to_string(),
-            "TRUE".to_string(),
-        ]);
+        votes.add_samples(&["true".to_string(), "false".to_string(), "TRUE".to_string()]);
 
         assert_eq!(votes.majority_type(), InferredType::Boolean);
         assert_eq!(votes.confidence(), 1.0);
@@ -865,7 +857,7 @@ mod tests {
     #[test]
     fn test_type_votes_uri() {
         let mut votes = TypeVotes::new();
-        votes.add_samples(&vec![
+        votes.add_samples(&[
             "https://example.com".to_string(),
             "http://test.org".to_string(),
         ]);
