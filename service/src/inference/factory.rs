@@ -7,7 +7,7 @@
 
 use crate::inference::engine::InferenceEngine;
 use crate::inference::introspectors::{CsvIntrospector, JsonIntrospector, XmlIntrospector};
-use crate::inference::traits::InferenceResult;
+use crate::inference::traits::{DataIntrospector, InferenceResult};
 use crate::inference::types::InferenceConfig;
 use format_identification_service::create_format_identification_service;
 use logger_core::{LoggerError, LoggerService};
@@ -380,14 +380,15 @@ mod tests {
         let timestamp = timestamp_service::test_utils::create_test_timestamp_service();
 
         // Test introspector creation using direct instantiation
+        // Note: Using analyze_bytes (correct method name from DataIntrospector trait)
         let xml = XmlIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(xml.introspect_bytes(b"<root/>").await.is_ok());
+        assert!(xml.analyze_bytes(b"<root/>").await.is_ok());
 
         let json = JsonIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(json.introspect_bytes(b"{}").await.is_ok());
+        assert!(json.analyze_bytes(b"{}").await.is_ok());
 
         let csv = CsvIntrospector::new(Arc::clone(&logger), Arc::clone(&timestamp));
-        assert!(csv.introspect_bytes(b"a,b,c\n1,2,3").await.is_ok());
+        assert!(csv.analyze_bytes(b"a,b,c\n1,2,3").await.is_ok());
     }
 
     #[tokio::test]
