@@ -825,6 +825,7 @@ impl Generator for GoGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indexmap::IndexMap;
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {

@@ -148,6 +148,7 @@ impl Generator for ExcelGenerator {
 mod tests {
     use super::ExcelGenerator;
     use crate::generator::traits::Generator;
+    use indexmap::IndexMap;
     use linkml_core::types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {

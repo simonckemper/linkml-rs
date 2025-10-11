@@ -710,6 +710,7 @@ impl Generator for GraphvizGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indexmap::IndexMap;
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
