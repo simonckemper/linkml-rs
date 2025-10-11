@@ -123,7 +123,7 @@ async fn test_all_types_data_roundtrip() -> std::result::Result<(), Box<dyn std:
     );
     assert_eq!(
         record1.data.get("float_field").and_then(|v| v.as_f64()),
-        Some(3.14)
+        Some(std::f64::consts::PI)
     );
     assert_eq!(
         record1.data.get("bool_field").and_then(|v| v.as_bool()),
@@ -384,13 +384,13 @@ fn create_all_types_excel(
     worksheet.write_number(1, 0, 1.0)?;
     worksheet.write_string(1, 1, "Hello")?;
     worksheet.write_number(1, 2, 42.0)?;
-    worksheet.write_number(1, 3, 3.14)?;
+    worksheet.write_number(1, 3, std::f64::consts::PI)?;
     worksheet.write_boolean(1, 4, true)?;
 
     worksheet.write_number(2, 0, 2.0)?;
     worksheet.write_string(2, 1, "World")?;
     worksheet.write_number(2, 2, 99.0)?;
-    worksheet.write_number(2, 3, 2.718)?;
+    worksheet.write_number(2, 3, std::f64::consts::E)?;
     worksheet.write_boolean(2, 4, false)?;
 
     workbook.save(path)?;

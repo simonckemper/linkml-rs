@@ -953,7 +953,7 @@ mod tests {
     async fn test_class_diagram_generation() -> anyhow::Result<()> {
         let schema = create_test_schema();
         let generator = PlantUmlGenerator::new();
-        let options = GeneratorOptions::default();
+        let _options = GeneratorOptions::default();
 
         let output = generator
             .generate(&schema)
@@ -973,7 +973,7 @@ mod tests {
         let schema = create_test_schema();
         let generator =
             PlantUmlGenerator::new().with_diagram_type(PlantUmlDiagramType::EntityRelationship);
-        let options = GeneratorOptions::default();
+        let _options = GeneratorOptions::default();
 
         let output = generator
             .generate(&schema)
