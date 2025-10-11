@@ -18,7 +18,9 @@ fn create_test_services() -> (
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = timestamp_service::wiring::wire_timestamp().into_arc();
-    let logger = logger_service::wiring::wire_logger(timestamp.clone()).into_arc();
+    let logger = logger_service::wiring::wire_logger(timestamp.clone(), logger_core::types::LoggerConfig::default())
+        .expect("Failed to wire logger")
+        .into_arc();
     (logger, timestamp)
 }
 
@@ -91,7 +93,7 @@ proptest! {
     ) {
         let mut xml = String::from(r#"<?xml version="1.0"?><root>"#);
         for _ in 0..count {
-            xml.push_str(&format!("<{}>text</{}>"element_name, element_name));
+            xml.push_str(&format!("<{}>text</{}>", element_name, element_name));
         }
         xml.push_str("</root>");
 
@@ -382,7 +384,7 @@ proptest! {
         let mut xml = String::from(r#"<?xml version="1.0"?><root>"#);
 
         for element in &elements {
-            xml.push_str(&format!("<{}>text</{}>"element, element));
+            xml.push_str(&format!("<{}>text</{}>", element, element));
         }
         xml.push_str("</root>");
 

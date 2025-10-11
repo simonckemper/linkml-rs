@@ -171,7 +171,7 @@ type TimestampArc =
 
 fn create_inference_services() -> (LoggerArc, TimestampArc) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone(), LoggerConfig::default())
+    let logger = wire_logger(timestamp.clone())
         .expect("Failed to wire logger for inference benchmarks")
         .into_arc();
     (logger, timestamp)
@@ -216,7 +216,7 @@ fn bench_xml_introspector_sizes(c: &mut Criterion) {
 
             b.iter(|| {
                 runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                    black_box(introspector.analyze_bytes(data).await.unwrap())
                 })
             });
         });
@@ -239,7 +239,7 @@ fn bench_xml_introspector_depth(c: &mut Criterion) {
 
             b.iter(|| {
                 runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                    black_box(introspector.analyze_bytes(data).await.unwrap())
                 })
             });
         });
@@ -257,7 +257,7 @@ fn bench_xml_page_xml_analysis(c: &mut Criterion) {
 
         b.iter(|| {
             runtime.block_on(async {
-                black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                black_box(introspector.analyze_bytes(data).await.unwrap())
             })
         });
     });
@@ -277,7 +277,7 @@ fn bench_xml_schema_generation(c: &mut Criterion) {
             runtime.block_on(async {
                 black_box(
                     introspector
-                        .generate_schema(black_box(&stats), "bench_schema")
+                        .generate_schema(&stats, "bench_schema")
                         .await
                         .unwrap(),
                 )
@@ -301,7 +301,7 @@ fn bench_json_introspector_sizes(c: &mut Criterion) {
 
             b.iter(|| {
                 runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                    black_box(introspector.analyze_bytes(data).await.unwrap())
                 })
             });
         });
@@ -324,7 +324,7 @@ fn bench_json_introspector_depth(c: &mut Criterion) {
 
             b.iter(|| {
                 runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                    black_box(introspector.analyze_bytes(data).await.unwrap())
                 })
             });
         });
@@ -342,7 +342,7 @@ fn bench_json_complex_schema(c: &mut Criterion) {
 
         b.iter(|| {
             runtime.block_on(async {
-                black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                black_box(introspector.analyze_bytes(data).await.unwrap())
             })
         });
     });
@@ -386,7 +386,7 @@ fn bench_csv_introspector_sizes(c: &mut Criterion) {
 
             b.iter(|| {
                 runtime.block_on(async {
-                    black_box(introspector.analyze_bytes(black_box(data)).await.unwrap())
+                    black_box(introspector.analyze_bytes(data).await.unwrap())
                 })
             });
         });
@@ -405,10 +405,10 @@ fn bench_xml_end_to_end(c: &mut Criterion) {
 
         b.iter(|| {
             runtime.block_on(async {
-                let stats = introspector.analyze_bytes(black_box(data)).await.unwrap();
+                let stats = introspector.analyze_bytes(data).await.unwrap();
                 black_box(
                     introspector
-                        .generate_schema(black_box(&stats), "bench_schema")
+                        .generate_schema(&stats, "bench_schema")
                         .await
                         .unwrap(),
                 )
@@ -427,10 +427,10 @@ fn bench_json_end_to_end(c: &mut Criterion) {
 
         b.iter(|| {
             runtime.block_on(async {
-                let stats = introspector.analyze_bytes(black_box(data)).await.unwrap();
+                let stats = introspector.analyze_bytes(data).await.unwrap();
                 black_box(
                     introspector
-                        .generate_schema(black_box(&stats), "bench_schema")
+                        .generate_schema(&stats, "bench_schema")
                         .await
                         .unwrap(),
                 )

@@ -656,3 +656,135 @@ mod tests {
         assert_eq!(result, "val1 and val2");
     }
 }
+
+/// Test helpers for creating valid configuration instances
+#[cfg(test)]
+pub mod test_helpers {
+    use super::*;
+
+    /// Create a valid test configuration with reasonable defaults
+    pub fn create_test_config() -> LinkMLConfig {
+        LinkMLConfig {
+            typedb: TypeDBConfig {
+                server_address: "localhost:1729".to_string(),
+                default_database: "linkml_test".to_string(),
+                batch_size: 1000,
+                connection_timeout_ms: 5000,
+                query_timeout_ms: 30000,
+                max_retries: 3,
+                retry_delay_ms: 1000,
+                pool_size: 10,
+                include_inferred: false,
+            },
+            parser: ParserConfig {
+                max_recursion_depth: 100,
+                enable_cache: true,
+                cache_ttl_seconds: 3600,
+                max_file_size_bytes: 10_000_000,
+                supported_formats: vec![
+                    "yaml".to_string(),
+                    "json".to_string(),
+                    "xml".to_string(),
+                ],
+                max_import_depth: 10,
+            },
+            validator: ValidatorConfig {
+                enable_parallel: true,
+                thread_count: 4,
+                batch_size: 100,
+                timeout_ms: 5000,
+                max_errors: 100,
+                fail_fast: false,
+                compiled_cache_size: 1000,
+            },
+            generator: GeneratorConfig {
+                output_directory: "generated".to_string(),
+                enable_formatting: true,
+                include_docs: true,
+                generator_options: HashMap::new(),
+            },
+            cache: CacheConfig {
+                max_entries: 10000,
+                ttl_seconds: 3600,
+                enable_compression: false,
+                eviction_policy: "lru".to_string(),
+                expression_cache: CacheSettings {
+                    max_entries: 5000,
+                    ttl_seconds: 1800,
+                },
+                rule_cache: CacheSettings {
+                    max_entries: 5000,
+                    ttl_seconds: 1800,
+                },
+            },
+            performance: PerformanceConfig {
+                features: PerformanceFeatures::default(),
+                memory_limit_bytes: 2_000_000_000,
+                cpu_limit_percent: 80,
+                string_pool_size: 10000,
+                background_task_interval_secs: 60,
+                string_cache: StringCacheConfig {
+                    max_entries: 10000,
+                    max_string_length: 1024,
+                },
+                memory_pool: MemoryPoolConfig {
+                    max_size_bytes: 1_000_000_000,
+                    chunk_size_bytes: 4096,
+                },
+                cache_ttl_levels: CacheTtlLevels {
+                    l1_seconds: 300,
+                    l2_seconds: 1800,
+                    l3_seconds: 7200,
+                    min_ttl_seconds: 60,
+                    max_ttl_seconds: 86400,
+                },
+            },
+            security_limits: SecurityLimits {
+                max_string_length: 10000,
+                max_expression_depth: 50,
+                max_constraint_count: 1000,
+                max_cache_entries: 100000,
+                max_function_args: 20,
+                max_identifier_length: 256,
+                max_json_size_bytes: 10_000_000,
+                max_slots_per_class: 1000,
+                max_classes_per_schema: 10000,
+                max_validation_time_ms: 30000,
+                max_memory_usage_bytes: 2_000_000_000,
+                max_parallel_validators: 10,
+                max_cache_memory_bytes: 500_000_000,
+                max_expression_time_ms: 5000,
+                max_validation_errors: 1000,
+            },
+            network: NetworkConfig {
+                default_host: "localhost".to_string(),
+                default_port: 8080,
+                api_timeout_seconds: 30,
+            },
+            expression: ExpressionConfig {
+                enable_cache: true,
+                enable_compilation: true,
+                cache_size: 5000,
+                timeout_seconds: 5,
+                max_recursion_depth: 50,
+            },
+            pattern_validator: PatternValidatorConfig {
+                default_cache_size: 1000,
+            },
+            multi_layer_cache: MultiLayerCacheConfig {
+                l3_max_size_bytes: 100_000_000,
+            },
+            background_services: BackgroundServicesConfig {
+                cache_ttl_check_interval_secs: 60,
+                memory_cleanup_interval_secs: 300,
+                panic_recovery_timeout_secs: 10,
+                error_recovery_timeout_secs: 5,
+            },
+            cli: CliConfig {
+                default_iterations: 100,
+                progress_bar_template: "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})".to_string(),
+                progress_bar_finish_template: "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}".to_string(),
+            },
+        }
+    }
+}

@@ -4,7 +4,8 @@
 // Simple, fast-compiling benchmark for Excel introspection performance
 
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use linkml_service::inference::{DataIntrospector, ExcelIntrospector};
+use linkml_service::inference::traits::DataIntrospector;
+use linkml_service::inference::introspectors::ExcelIntrospector;
 use logger_core::LoggerConfig;
 use rust_xlsxwriter::Workbook;
 use std::time::Duration;

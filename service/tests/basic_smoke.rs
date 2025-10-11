@@ -10,19 +10,28 @@ async fn validates_simple_instance() -> linkml_core::error::Result<()> {
     schema.id = "https://example.org/smoke".to_string();
     schema.name = "SmokeTest".to_string();
 
-    let mut person = ClassDefinition::new("Person");
-    person.slots = vec!["id".to_string(), "name".to_string()];
+    let person = ClassDefinition {
+        name: "Person".to_string(),
+        slots: vec!["id".to_string(), "name".to_string()],
+        ..Default::default()
+    };
     schema.classes.insert("Person".to_string(), person);
 
-    let mut id_slot = SlotDefinition::new("id");
-    id_slot.identifier = Some(true);
-    id_slot.required = Some(true);
-    id_slot.range = Some("string".to_string());
+    let id_slot = SlotDefinition {
+        name: "id".to_string(),
+        identifier: Some(true),
+        required: Some(true),
+        range: Some("string".to_string()),
+        ..Default::default()
+    };
     schema.slots.insert("id".to_string(), id_slot);
 
-    let mut name_slot = SlotDefinition::new("name");
-    name_slot.required = Some(true);
-    name_slot.range = Some("string".to_string());
+    let name_slot = SlotDefinition {
+        name: "name".to_string(),
+        required: Some(true),
+        range: Some("string".to_string()),
+        ..Default::default()
+    };
     schema.slots.insert("name".to_string(), name_slot);
 
     let engine = ValidationEngine::new(&schema)?;

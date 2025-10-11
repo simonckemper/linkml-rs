@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! # `LinkML` Core
 //!
 //! Core types and traits for `LinkML` schema validation in Rust.

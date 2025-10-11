@@ -141,10 +141,11 @@ pub fn validate_values(config: &LinkMLConfig) -> linkml_core::error::Result<()> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::test_helpers::create_test_config;
 
     #[tokio::test]
     async fn test_validate_default_config() -> std::result::Result<(), anyhow::Error> {
-        let config = crate::config::load_default_config().expect("should load default config: {}");
+        let config = create_test_config();
 
         validate_values(&config).expect("default config should be valid: {}");
 
@@ -155,8 +156,7 @@ mod tests {
 
     #[test]
     fn test_validate_ttl_ordering() -> std::result::Result<(), anyhow::Error> {
-        let mut config =
-            crate::config::load_default_config().expect("should load default config: {}");
+        let mut config = create_test_config();
 
         // Break TTL ordering
         config.performance.cache_ttl_levels.l1_seconds = 7200;
@@ -170,8 +170,7 @@ mod tests {
 
     #[test]
     fn test_validate_memory_limits() -> std::result::Result<(), anyhow::Error> {
-        let mut config =
-            crate::config::load_default_config().expect("should load default config: {}");
+        let mut config = create_test_config();
 
         // Set memory pool larger than total limit
         config.performance.memory_limit_bytes = 1_000_000_000; // 1GB

@@ -229,9 +229,10 @@ mod tests {
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
-        // Copy default config to temp file
+        // Create a test config and serialize it to a temp file
         let temp_file = NamedTempFile::new()?;
-        let config_content = fs::read_to_string("config/default.yaml")?;
+        let test_config = crate::config::test_helpers::create_test_config();
+        let config_content = serde_yaml::to_string(&test_config)?;
         fs::write(temp_file.path(), &config_content)?;
 
         // Create hot reloader
@@ -240,7 +241,7 @@ mod tests {
 
         let reloader = reloader?;
         let config = reloader.get_config();
-        assert_eq!(config.typedb.default_database, "linkml");
+        assert_eq!(config.typedb.default_database, "linkml_test");
         Ok(())
     }
 
@@ -251,9 +252,10 @@ mod tests {
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
-        // Copy default config to temp file
+        // Create a test config and serialize it to a temp file
         let temp_file = NamedTempFile::new()?;
-        let config_content = fs::read_to_string("config/default.yaml")?;
+        let test_config = crate::config::test_helpers::create_test_config();
+        let config_content = serde_yaml::to_string(&test_config)?;
         fs::write(temp_file.path(), &config_content)?;
 
         // Create and start hot reloader

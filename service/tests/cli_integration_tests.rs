@@ -40,7 +40,7 @@ fn test_schema2sheets_sheets2schema_roundtrip() {
     // Step 1: schema2sheets - Generate Excel template
     let excel_path = temp_dir.path().join("template.xlsx");
     let output = Command::new(&binary)
-        .args(&[
+        .args([
             "schema2sheets",
             schema_path.to_str().unwrap(),
             "-o",
@@ -61,7 +61,7 @@ fn test_schema2sheets_sheets2schema_roundtrip() {
     // Step 2: sheets2schema - Generate schema from Excel
     let output_schema_path = temp_dir.path().join("output_schema.yaml");
     let output = Command::new(&binary)
-        .args(&[
+        .args([
             "sheets2schema",
             excel_path.to_str().unwrap(),
             "-o",
@@ -102,7 +102,7 @@ fn test_sheets2schema_invalid_file() {
     fs::write(&invalid_file, "This is not an Excel file").expect("Failed to write invalid file");
 
     let output = Command::new(&binary)
-        .args(&["sheets2schema", invalid_file.to_str().unwrap()])
+        .args(["sheets2schema", invalid_file.to_str().unwrap()])
         .output()
         .expect("Failed to execute sheets2schema");
 
@@ -119,7 +119,7 @@ fn test_sheets2schema_missing_file() {
     let binary = get_linkml_binary();
 
     let output = Command::new(&binary)
-        .args(&["sheets2schema", "/nonexistent/file.xlsx"])
+        .args(["sheets2schema", "/nonexistent/file.xlsx"])
         .output()
         .expect("Failed to execute sheets2schema");
 
@@ -149,7 +149,7 @@ fn test_schema2sheets_invalid_schema() {
 
     let excel_path = temp_dir.path().join("output.xlsx");
     let output = Command::new(&binary)
-        .args(&[
+        .args([
             "schema2sheets",
             invalid_schema.to_str().unwrap(),
             "-o",
@@ -171,7 +171,7 @@ fn test_schema2sheets_help() {
     let binary = get_linkml_binary();
 
     let output = Command::new(&binary)
-        .args(&["schema2sheets", "--help"])
+        .args(["schema2sheets", "--help"])
         .output()
         .expect("Failed to execute schema2sheets --help");
 
@@ -199,7 +199,7 @@ fn test_sheets2schema_help() {
     let binary = get_linkml_binary();
 
     let output = Command::new(&binary)
-        .args(&["sheets2schema", "--help"])
+        .args(["sheets2schema", "--help"])
         .output()
         .expect("Failed to execute sheets2schema --help");
 
@@ -228,7 +228,7 @@ fn test_schema2sheets_all_options() {
 
     let excel_path = temp_dir.path().join("full_template.xlsx");
     let output = Command::new(&binary)
-        .args(&[
+        .args([
             "schema2sheets",
             schema_path.to_str().unwrap(),
             "-o",

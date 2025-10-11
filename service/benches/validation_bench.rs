@@ -415,8 +415,10 @@ fn bench_validation_options(c: &mut Criterion) {
     });
 
     // Fail fast enabled
-    let mut fail_fast_options = ValidationOptions::default();
-    fail_fast_options.fail_fast = Some(true);
+    let fail_fast_options = ValidationOptions {
+        fail_fast: Some(true),
+        ..Default::default()
+    };
 
     group.bench_function("fail_fast", |b| {
         b.to_async(&runtime).iter(|| async {
@@ -432,8 +434,10 @@ fn bench_validation_options(c: &mut Criterion) {
     });
 
     // Permissible checks disabled
-    let mut no_permissible_options = ValidationOptions::default();
-    no_permissible_options.check_permissibles = Some(false);
+    let no_permissible_options = ValidationOptions {
+        check_permissibles: Some(false),
+        ..Default::default()
+    };
 
     group.bench_function("no_permissibles", |b| {
         b.to_async(&runtime).iter(|| async {

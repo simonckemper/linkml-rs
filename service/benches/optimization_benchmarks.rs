@@ -66,9 +66,7 @@ fn bench_small_vec_optimization(c: &mut Criterion) {
     // Benchmark regular Vec
     group.bench_function("regular_vec_small", |b| {
         b.iter(|| {
-            let mut v = Vec::new();
-            v.push("error1");
-            v.push("error2");
+            let v = vec!["error1", "error2"];
             black_box(v)
         })
     });

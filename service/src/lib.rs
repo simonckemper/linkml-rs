@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! # LinkML Service
 //!
 //! High-performance LinkML schema validation and code generation service for Rust.

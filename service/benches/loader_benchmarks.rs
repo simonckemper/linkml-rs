@@ -17,7 +17,9 @@ fn create_test_services() -> (
     Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone()).into_arc();
+    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+        .expect("Failed to wire logger")
+        .into_arc();
     (logger, timestamp)
 }
 
@@ -79,7 +81,7 @@ fn create_test_schema() -> SchemaDefinition {
 }
 
 /// Create an Excel file with specified number of rows
-fn create_test_excel(rows: usize) -> Result<TempDir, Box<dyn std::error::Error>> {
+fn create_test_excel(rows: usize) -> std::result::Result<TempDir, Box<dyn std::error::Error>> {
     let temp_dir = tempfile::tempdir()?;
     let excel_path = temp_dir.path().join("benchmark.xlsx");
 
@@ -111,7 +113,7 @@ fn create_test_excel(rows: usize) -> Result<TempDir, Box<dyn std::error::Error>>
 fn create_multi_sheet_excel(
     sheets: usize,
     rows_per_sheet: usize,
-) -> Result<TempDir, Box<dyn std::error::Error>> {
+) -> std::result::Result<TempDir, Box<dyn std::error::Error>> {
     let temp_dir = tempfile::tempdir()?;
     let excel_path = temp_dir.path().join("multi_benchmark.xlsx");
 
@@ -149,8 +151,10 @@ fn bench_excel_loader_sizes(c: &mut Criterion) {
         let (logger, timestamp) = create_test_services();
         let loader = ExcelLoader::new(logger, timestamp);
         let schema = create_test_schema();
-        let mut options = LoadOptions::default();
-        options.target_class = Some("Data".to_string());
+        let options = LoadOptions {
+            target_class: Some("Data".to_string()),
+            ..Default::default()
+        };
 
         group.bench_with_input(BenchmarkId::from_parameter(size), size, |b, _| {
             b.iter(|| {

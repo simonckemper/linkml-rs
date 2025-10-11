@@ -86,12 +86,11 @@ fn bench_schema_roundtrip_sizes(c: &mut Criterion) {
                         // Excel → Schema
                         let introspector =
                             ExcelIntrospector::new(logger.clone(), timestamp.clone());
-                        black_box(
-                            introspector
-                                .analyze_file(&excel_path)
-                                .await
-                                .expect("Failed to analyze"),
-                        )
+                        let result = introspector
+                            .analyze_file(&excel_path)
+                            .await
+                            .expect("Failed to analyze");
+                        black_box(result)
                     })
                 });
             },

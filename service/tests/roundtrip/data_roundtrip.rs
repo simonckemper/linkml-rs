@@ -12,7 +12,6 @@ use linkml_service::loader::{DataLoader, LoadOptions};
 use logger_service::wiring::wire_logger;
 use rust_xlsxwriter::Workbook;
 use serde_json::json;
-use std::collections::HashMap;
 use tempfile::TempDir;
 use timestamp_service::wiring::wire_timestamp;
 
@@ -22,7 +21,7 @@ fn create_test_services() -> (
     std::sync::Arc<dyn timestamp_core::TimestampService<Error = timestamp_core::TimestampError>>,
 ) {
     let timestamp = wire_timestamp().into_arc();
-    let logger = wire_logger(timestamp.clone(), logger_core::LoggerConfig::default())
+    let logger = wire_logger(timestamp.clone(), logger_core::types::LoggerConfig::default())
         .expect("Failed to wire logger")
         .into_arc();
     (logger, timestamp)
@@ -49,8 +48,10 @@ async fn test_simple_data_roundtrip() -> std::result::Result<(), Box<dyn std::er
 
     // Load data from Excel
     let loader = ExcelLoader::new(logger.clone(), timestamp.clone());
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Person".to_string());
+    let options = LoadOptions {
+        target_class: Some("Person".to_string()),
+        ..Default::default()
+    };
 
     let instances = loader.load_file(&excel_path, &schema, &options).await?;
 
@@ -103,8 +104,10 @@ async fn test_all_types_data_roundtrip() -> std::result::Result<(), Box<dyn std:
 
     // Load data
     let loader = ExcelLoader::new(logger, timestamp);
-    let mut options = LoadOptions::default();
-    options.target_class = Some("AllTypes".to_string());
+    let options = LoadOptions {
+        target_class: Some("AllTypes".to_string()),
+        ..Default::default()
+    };
 
     let instances = loader.load_file(&excel_path, &schema, &options).await?;
 
@@ -148,8 +151,10 @@ async fn test_constraints_data_roundtrip() -> std::result::Result<(), Box<dyn st
 
     // Load data
     let loader = ExcelLoader::new(logger, timestamp);
-    let mut options = LoadOptions::default();
-    options.target_class = Some("Product".to_string());
+    let options = LoadOptions {
+        target_class: Some("Product".to_string()),
+        ..Default::default()
+    };
 
     let instances = loader.load_file(&excel_path, &schema, &options).await?;
 
@@ -159,7 +164,7 @@ async fn test_constraints_data_roundtrip() -> std::result::Result<(), Box<dyn st
     let product1 = &instances[0];
     let price1 = product1.data.get("price").and_then(|v| v.as_f64()).unwrap();
     assert!(
-        price1 >= 0.0 && price1 <= 99999.99,
+        (0.0..=99999.99).contains(&price1),
         "Price should be within range"
     );
 
