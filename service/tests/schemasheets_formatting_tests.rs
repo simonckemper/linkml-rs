@@ -4,7 +4,6 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, SchemaDefinition, SlotDefinition,
 };
 use linkml_service::schemasheets::SchemaSheetsGenerator;
-use std::path::PathBuf;
 use tempfile::TempDir;
 
 /// Test that generator creates file with advanced formatting

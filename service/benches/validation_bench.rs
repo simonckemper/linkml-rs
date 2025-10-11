@@ -144,7 +144,7 @@ fn generate_test_data(count: usize, complex: bool) -> Vec<Value> {
                     2 => "Marketing",
                     _ => "Support"
                 },
-                "salary": 50000.0 + (f64::from(i) * 1000.0)
+                "salary": 50000.0 + (i as f64 * 1000.0)
             })
         } else {
             json!({

@@ -127,7 +127,7 @@ fn bench_rule_engine(c: &mut Criterion) {
             }),
             else_conditions: None,
             deactivated: Some(false),
-            priority: Some(i32::try_from(i).unwrap_or(0)),
+            priority: Some(i as i32),
         };
         entity_class.rules.push(rule);
     }
