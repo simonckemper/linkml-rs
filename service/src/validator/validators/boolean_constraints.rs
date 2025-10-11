@@ -782,12 +782,12 @@ impl Validator for NoneOfValidator {
 mod tests {
     use super::*;
     use crate::validator::report::Severity;
-    use linkml_core::types::AnonymousSlotExpression;
+    use linkml_core::types::{AnonymousSlotExpression, SchemaDefinition};
 
     #[test]
     fn test_any_of_validator_success() {
         let validator = AnyOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -817,7 +817,7 @@ mod tests {
     #[test]
     fn test_any_of_validator_failure() {
         let validator = AnyOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -847,7 +847,7 @@ mod tests {
     #[test]
     fn test_all_of_validator_success() {
         let validator = AllOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -874,7 +874,7 @@ mod tests {
     #[test]
     fn test_all_of_validator_failure() {
         let validator = AllOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -907,7 +907,7 @@ mod tests {
     #[test]
     fn test_exactly_one_of_validator_success() {
         let validator = ExactlyOneOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -933,7 +933,7 @@ mod tests {
     #[test]
     fn test_exactly_one_of_validator_multiple_satisfied() {
         let validator = ExactlyOneOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -963,7 +963,7 @@ mod tests {
     #[test]
     fn test_none_of_validator_success() {
         let validator = NoneOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -989,7 +989,7 @@ mod tests {
     #[test]
     fn test_none_of_validator_failure() {
         let validator = NoneOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -1018,7 +1018,7 @@ mod tests {
 
     #[test]
     fn test_validators_only_trigger_when_constraints_present() {
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         // Slot without any boolean constraints
@@ -1058,7 +1058,7 @@ mod tests {
     #[test]
     fn test_complex_any_of_with_patterns() {
         let validator = AnyOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -1092,7 +1092,7 @@ mod tests {
     #[test]
     fn test_all_of_with_overlapping_ranges() {
         let validator = AllOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -1135,7 +1135,7 @@ mod tests {
     fn test_all_of_parallel_evaluation() {
         // Test with more than 3 constraints to trigger parallel evaluation
         let validator = AllOfValidator::with_parallel_threshold(3);
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         let slot = SlotDefinition {
@@ -1181,7 +1181,7 @@ mod tests {
     #[test]
     fn test_none_of_early_exit_optimization() {
         let validator = NoneOfValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         // Create a slot with many none_of constraints
@@ -1220,6 +1220,7 @@ mod tests {
 
         // Float value should pass (no constraint satisfied)
         // 3.14 is a float/double, not integer, string, boolean, array, or object
+        #[allow(clippy::approx_constant)]
         let issues = validator.validate(&json!(3.14), &slot, &mut context);
         assert!(issues.is_empty());
     }

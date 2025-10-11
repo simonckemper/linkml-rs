@@ -511,6 +511,7 @@ mod tests {
         let mut int_slot = SlotDefinition::new("count");
         int_slot.range = Some("integer".to_string());
 
+        #[allow(clippy::approx_constant)]
         let value = Value::Number(
             serde_json::Number::from_f64(3.14)
                 .ok_or_else(|| anyhow::anyhow!("should create number from f64"))?,

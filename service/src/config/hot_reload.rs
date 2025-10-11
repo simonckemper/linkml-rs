@@ -216,13 +216,16 @@ pub async fn subscribe_to_updates() -> linkml_core::error::Result<watch::Receive
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
     use std::fs;
     use tempfile::NamedTempFile;
 
     #[tokio::test]
-    #[allow(deprecated)]
+    #[deprecated(
+        note = "Use configuration_integration module instead for proper RootReal integration"
+    )]
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_creation() -> std::result::Result<(), anyhow::Error> {
@@ -242,7 +245,9 @@ mod tests {
     }
 
     #[tokio::test]
-    #[allow(deprecated)]
+    #[deprecated(
+        note = "Use configuration_integration module instead for proper RootReal integration"
+    )]
     // This test is deprecated in favor of configuration_integration module tests
     // but kept for backwards compatibility during migration
     async fn test_hot_reload_watching() -> std::result::Result<(), anyhow::Error> {
@@ -269,7 +274,7 @@ mod tests {
 
         // Wait a bit for file system events and check for update
         tokio::select! {
-            _ = tokio::time::sleep(std::time::Duration::from_millis(500)) => {
+            () = tokio::time::sleep(std::time::Duration::from_millis(500)) => {
                 // File watching might not trigger in test environment,
                 // but we should still check if config was reloaded
                 let updated_config = reloader.get_config();

@@ -660,39 +660,51 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.id = "http://example.org/test".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            id: "http://example.org/test".to_string(),
+            ..Default::default()
+        };
 
         // Person class
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec!["name".to_string(), "age".to_string(), "friends".to_string()];
+        let person_class = ClassDefinition {
+            slots: vec!["name".to_string(), "age".to_string(), "friends".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Define slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
-        name_slot.pattern = Some(r"^[A-Za-z ]+$".to_string());
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            pattern: Some(r"^[A-Za-z ]+$".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
-        age_slot.minimum_value = Some(serde_json::json!(0));
-        age_slot.maximum_value = Some(serde_json::json!(150));
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            minimum_value: Some(serde_json::json!(0)),
+            maximum_value: Some(serde_json::json!(150)),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
-        let mut friends_slot = SlotDefinition::default();
-        friends_slot.range = Some("Person".to_string());
-        friends_slot.multivalued = Some(true);
+        let friends_slot = SlotDefinition {
+            range: Some("Person".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("friends".to_string(), friends_slot);
 
         // Add an enum
-        let mut status_enum = EnumDefinition::default();
-        status_enum.permissible_values = vec![
-            PermissibleValue::Simple("ACTIVE".to_string()),
-            PermissibleValue::Simple("INACTIVE".to_string()),
-        ];
+        let status_enum = EnumDefinition {
+            permissible_values: vec![
+                PermissibleValue::Simple("ACTIVE".to_string()),
+                PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
         schema.enums.insert("Status".to_string(), status_enum);
 
         schema
@@ -725,16 +737,18 @@ mod tests {
             .expect("should generate ShEx: {}");
 
         // Check cardinality markers
-        assert!(output.contains("?")); // optional age
-        assert!(output.contains("*")); // multiple friends
+        assert!(output.contains('?')); // optional age
+        assert!(output.contains('*')); // multiple friends
         Ok(())
     }
 
     #[test]
     fn test_closed_shapes() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let schema = create_test_schema();
-        let mut options = ShExOptions::default();
-        options.closed_shapes = true;
+        let options = ShExOptions {
+            closed_shapes: true,
+            ..Default::default()
+        };
 
         let generator = ShExGenerator::with_options(options);
         let output = generator

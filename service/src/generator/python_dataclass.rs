@@ -717,24 +717,32 @@ mod tests {
 
     #[test]
     fn test_basic_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "test_schema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "test_schema".to_string(),
+            ..Default::default()
+        };
 
-        let mut person_class = ClassDefinition::default();
-        person_class.name = "Person".to_string();
-        person_class.description = Some("A person".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            name: "Person".to_string(),
+            description: Some("A person".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
 
         schema.classes.insert("Person".to_string(), person_class);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.name = "name".to_string();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.name = "age".to_string();
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
 
         schema.slots.insert("name".to_string(), name_slot);
         schema.slots.insert("age".to_string(), age_slot);

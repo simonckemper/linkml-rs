@@ -713,29 +713,39 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Create a base class
-        let mut animal_class = ClassDefinition::default();
-        animal_class.abstract_ = Some(true);
-        animal_class.slots = vec!["name".to_string()];
+        let animal_class = ClassDefinition {
+            abstract_: Some(true),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Animal".to_string(), animal_class);
 
         // Create a derived class
-        let mut dog_class = ClassDefinition::default();
-        dog_class.is_a = Some("Animal".to_string());
-        dog_class.slots = vec!["breed".to_string()];
+        let dog_class = ClassDefinition {
+            is_a: Some("Animal".to_string()),
+            slots: vec!["breed".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Dog".to_string(), dog_class);
 
         // Create slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut breed_slot = SlotDefinition::default();
-        breed_slot.range = Some("string".to_string());
+        let breed_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("breed".to_string(), breed_slot);
 
         schema

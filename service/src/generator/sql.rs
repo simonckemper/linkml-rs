@@ -969,22 +969,28 @@ mod tests {
     async fn test_sql_generation() {
         let generator = SQLGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test".to_string();
-        schema.name = "test_schema".to_string();
+        let mut schema = SchemaDefinition {
+            id: "test".to_string(),
+            name: "test_schema".to_string(),
+            ..Default::default()
+        };
 
         // Add a slot
-        let mut slot = SlotDefinition::default();
-        slot.name = "name".to_string();
-        slot.range = Some("string".to_string());
-        slot.required = Some(true);
+        let slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
 
         schema.slots.insert("name".to_string(), slot);
 
         // Add a class
-        let mut class = ClassDefinition::default();
-        class.name = "Person".to_string();
-        class.slots = vec!["name".to_string()];
+        let class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
 
         schema.classes.insert("Person".to_string(), class);
 

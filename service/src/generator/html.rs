@@ -967,15 +967,19 @@ mod tests {
     async fn test_html_generation() -> anyhow::Result<()> {
         let generator = HtmlGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test".to_string();
-        schema.name = "Test Schema".to_string();
-        schema.description = Some("A test schema for HTML generation".to_string());
+        let mut schema = SchemaDefinition {
+            id: "test".to_string(),
+            name: "Test Schema".to_string(),
+            description: Some("A test schema for HTML generation".to_string()),
+            ..Default::default()
+        };
 
         // Add a class
-        let mut class = ClassDefinition::default();
-        class.name = "Person".to_string();
-        class.description = Some("Represents a person".to_string());
+        let class = ClassDefinition {
+            name: "Person".to_string(),
+            description: Some("Represents a person".to_string()),
+            ..Default::default()
+        };
 
         schema.classes.insert("Person".to_string(), class);
 

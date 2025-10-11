@@ -311,11 +311,11 @@ mod tests {
             Ok(String::new())
         }
 
-        fn get_file_extension(&self) -> &str {
+        fn get_file_extension(&self) -> &'static str {
             "test"
         }
 
-        fn get_default_filename(&self) -> &str {
+        fn get_default_filename(&self) -> &'static str {
             "test.test"
         }
 

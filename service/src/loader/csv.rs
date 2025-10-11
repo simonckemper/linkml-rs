@@ -984,43 +984,57 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Person class
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec![
-            "id".to_string(),
-            "name".to_string(),
-            "age".to_string(),
-            "email".to_string(),
-            "tags".to_string(),
-        ];
+        let person_class = ClassDefinition {
+            slots: vec![
+                "id".to_string(),
+                "name".to_string(),
+                "age".to_string(),
+                "email".to_string(),
+                "tags".to_string(),
+            ],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Define slots
-        let mut id_slot = SlotDefinition::default();
-        id_slot.identifier = Some(true);
-        id_slot.range = Some("string".to_string());
+        let id_slot = SlotDefinition {
+            identifier: Some(true),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), id_slot);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
-        let mut email_slot = SlotDefinition::default();
-        email_slot.range = Some("string".to_string());
-        email_slot.pattern = Some(r"^[^@]+@[^@]+\.[^@]+$".to_string());
+        let email_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            pattern: Some(r"^[^@]+@[^@]+\.[^@]+$".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("email".to_string(), email_slot);
 
-        let mut tags_slot = SlotDefinition::default();
-        tags_slot.range = Some("string".to_string());
-        tags_slot.multivalued = Some(true);
+        let tags_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("tags".to_string(), tags_slot);
 
         schema

@@ -828,38 +828,48 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Add a class
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person entity".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            description: Some("A person entity".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Add slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
-        age_slot.minimum_value = Some(serde_json::json!(0));
-        age_slot.maximum_value = Some(serde_json::json!(150));
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            minimum_value: Some(serde_json::json!(0)),
+            maximum_value: Some(serde_json::json!(150)),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
         // Add an enum
-        let mut status_enum = EnumDefinition::default();
-        status_enum.description = Some("Status values".to_string());
-        status_enum.permissible_values = vec![
-            linkml_core::types::PermissibleValue::Complex {
-                text: "ACTIVE".to_string(),
-                description: Some("Active status".to_string()),
-                meaning: None,
-            },
-            linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
-        ];
+        let status_enum = EnumDefinition {
+            description: Some("Status values".to_string()),
+            permissible_values: vec![
+                linkml_core::types::PermissibleValue::Complex {
+                    text: "ACTIVE".to_string(),
+                    description: Some("Active status".to_string()),
+                    meaning: None,
+                },
+                linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
         schema.enums.insert("Status".to_string(), status_enum);
 
         schema

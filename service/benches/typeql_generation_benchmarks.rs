@@ -24,29 +24,39 @@ where
 
 /// Create a simple schema with the specified number of classes
 fn create_schema(num_classes: usize) -> SchemaDefinition {
-    let mut schema = SchemaDefinition::default();
-    schema.name = format!("BenchmarkSchema{}", num_classes);
-    schema.id = format!("https://example.org/schemas/benchmark{}", num_classes);
+    let mut schema = SchemaDefinition {
+        name: format!("BenchmarkSchema{}", num_classes),
+        id: format!("https://example.org/schemas/benchmark{}", num_classes),
+        ..Default::default()
+    };
 
     // Add common slots
-    let mut name_slot = SlotDefinition::default();
-    name_slot.range = Some("string".to_string());
-    name_slot.required = Some(true);
+    let name_slot = SlotDefinition {
+        range: Some("string".to_string()),
+        required: Some(true),
+        ..Default::default()
+    };
     schema.slots.insert("name".to_string(), name_slot);
 
-    let mut id_slot = SlotDefinition::default();
-    id_slot.range = Some("string".to_string());
-    id_slot.identifier = Some(true);
+    let id_slot = SlotDefinition {
+        range: Some("string".to_string()),
+        identifier: Some(true),
+        ..Default::default()
+    };
     schema.slots.insert("id".to_string(), id_slot);
 
-    let mut created_at = SlotDefinition::default();
-    created_at.range = Some("datetime".to_string());
+    let created_at = SlotDefinition {
+        range: Some("datetime".to_string()),
+        ..Default::default()
+    };
     schema.slots.insert("created_at".to_string(), created_at);
 
     // Create classes
     for i in 0..num_classes {
-        let mut class = ClassDefinition::default();
-        class.description = Some(format!("Test class {}", i));
+        let mut class = ClassDefinition {
+            description: Some(format!("Test class {}", i)),
+            ..Default::default()
+        };
 
         // Add slots
         class.slots.extend(vec![
@@ -64,9 +74,11 @@ fn create_schema(num_classes: usize) -> SchemaDefinition {
         if i % 5 == 0 && i > 0 {
             class.slots.push(format!("related_to_{}", i - 1));
 
-            let mut rel_slot = SlotDefinition::default();
-            rel_slot.range = Some(format!("Class{}", i - 1));
-            rel_slot.multivalued = Some(true);
+            let rel_slot = SlotDefinition {
+                range: Some(format!("Class{}", i - 1)),
+                multivalued: Some(true),
+                ..Default::default()
+            };
             schema
                 .slots
                 .insert(format!("related_to_{}", i - 1), rel_slot);
@@ -80,28 +92,36 @@ fn create_schema(num_classes: usize) -> SchemaDefinition {
 
 /// Create a schema with complex relationships
 fn create_complex_schema(num_relations: usize) -> SchemaDefinition {
-    let mut schema = SchemaDefinition::default();
-    schema.name = "ComplexRelationshipSchema".to_string();
+    let mut schema = SchemaDefinition {
+        name: "ComplexRelationshipSchema".to_string(),
+        ..Default::default()
+    };
 
     // Create base entity classes
     for i in 0..5 {
-        let mut class = ClassDefinition::default();
-        class.slots.push("id".to_string());
+        let mut class = ClassDefinition {
+            slots: vec!["id".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert(format!("Entity{}", i), class);
     }
 
     // Create relation classes
     for i in 0..num_relations {
-        let mut rel_class = ClassDefinition::default();
-        rel_class.description = Some("Complex multi-way relation".to_string());
+        let mut rel_class = ClassDefinition {
+            description: Some("Complex multi-way relation".to_string()),
+            ..Default::default()
+        };
 
         // Add 3-5 role players
         let num_roles = 3 + (i % 3);
         for j in 0..num_roles {
             rel_class.slots.push(format!("role_{}", j));
 
-            let mut role_slot = SlotDefinition::default();
-            role_slot.range = Some(format!("Entity{}", j % 5));
+            let role_slot = SlotDefinition {
+                range: Some(format!("Entity{}", j % 5)),
+                ..Default::default()
+            };
             schema
                 .slots
                 .insert(format!("relation_{}_role_{}", i, j), role_slot);
@@ -124,26 +144,35 @@ fn create_rule_heavy_schema(num_rules: usize) -> SchemaDefinition {
         }
 
         // Add validation rules
-        let mut rule = Rule::default();
+        let pre_slot_condition = SlotCondition {
+            equals_string: Some("".to_string()),
+            ..Default::default()
+        };
 
-        let mut pre_slot_condition = SlotCondition::default();
-        pre_slot_condition.equals_string = Some("".to_string());
-
-        let mut preconditions = RuleConditions::default();
         let mut pre_map = IndexMap::new();
         pre_map.insert("name".to_string(), pre_slot_condition);
-        preconditions.slot_conditions = Some(pre_map);
+        let preconditions = RuleConditions {
+            slot_conditions: Some(pre_map),
+            ..Default::default()
+        };
 
-        let mut post_slot_condition = SlotCondition::default();
-        post_slot_condition.required = Some(true);
+        let post_slot_condition = SlotCondition {
+            required: Some(true),
+            ..Default::default()
+        };
 
-        let mut postconditions = RuleConditions::default();
         let mut post_map = IndexMap::new();
         post_map.insert("created_at".to_string(), post_slot_condition);
-        postconditions.slot_conditions = Some(post_map);
+        let postconditions = RuleConditions {
+            slot_conditions: Some(post_map),
+            ..Default::default()
+        };
 
-        rule.preconditions = Some(preconditions);
-        rule.postconditions = Some(postconditions);
+        let rule = Rule {
+            preconditions: Some(preconditions),
+            postconditions: Some(postconditions),
+            ..Default::default()
+        };
 
         class.rules.push(rule);
 

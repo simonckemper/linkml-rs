@@ -821,48 +821,66 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Create a base class
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec!["id".to_string(), "name".to_string(), "address".to_string()];
+        let person_class = ClassDefinition {
+            slots: vec!["id".to_string(), "name".to_string(), "address".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Create address class
-        let mut address_class = ClassDefinition::default();
-        address_class.slots = vec!["street".to_string(), "city".to_string()];
+        let address_class = ClassDefinition {
+            slots: vec!["street".to_string(), "city".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Address".to_string(), address_class);
 
         // Create slots
-        let mut id_slot = SlotDefinition::default();
-        id_slot.identifier = Some(true);
-        id_slot.range = Some("string".to_string());
+        let id_slot = SlotDefinition {
+            identifier: Some(true),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), id_slot);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut address_slot = SlotDefinition::default();
-        address_slot.range = Some("Address".to_string());
+        let address_slot = SlotDefinition {
+            range: Some("Address".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("address".to_string(), address_slot);
 
-        let mut street_slot = SlotDefinition::default();
-        street_slot.range = Some("string".to_string());
+        let street_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("street".to_string(), street_slot);
 
-        let mut city_slot = SlotDefinition::default();
-        city_slot.range = Some("string".to_string());
+        let city_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("city".to_string(), city_slot);
 
         // Add an enum
-        let mut status_enum = EnumDefinition::default();
-        status_enum.permissible_values = vec![
-            PermissibleValue::Simple("ACTIVE".to_string()),
-            PermissibleValue::Simple("INACTIVE".to_string()),
-        ];
+        let status_enum = EnumDefinition {
+            permissible_values: vec![
+                PermissibleValue::Simple("ACTIVE".to_string()),
+                PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
         schema.enums.insert("PersonStatus".to_string(), status_enum);
 
         schema

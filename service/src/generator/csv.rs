@@ -431,34 +431,46 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Base class
-        let mut entity_class = ClassDefinition::default();
-        entity_class.abstract_ = Some(true);
-        entity_class.slots = vec!["id".to_string()];
+        let entity_class = ClassDefinition {
+            abstract_: Some(true),
+            slots: vec!["id".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Entity".to_string(), entity_class);
 
         // Person class
-        let mut person_class = ClassDefinition::default();
-        person_class.is_a = Some("Entity".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            is_a: Some("Entity".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Slots
-        let mut id_slot = SlotDefinition::default();
-        id_slot.range = Some("string".to_string());
-        id_slot.required = Some(true);
+        let id_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), id_slot);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
         schema

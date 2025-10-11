@@ -458,9 +458,9 @@ mod tests {
         let mut issues = Vec::new();
         for i in 0..100 {
             let issue = InternedValidationIssue::error(
-                "Required field is missing",   // Same message
-                &format!("$.items[{i}].name"), // Different paths
-                "RequiredValidator",           // Same validator
+                "Required field is missing",  // Same message
+                format!("$.items[{i}].name"), // Different paths
+                "RequiredValidator",          // Same validator
             );
             issues.push(issue);
         }

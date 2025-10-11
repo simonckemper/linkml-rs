@@ -267,7 +267,6 @@ async fn test_roundtrip_complex_schema() {
     let required_subset = SubsetDefinition {
         name: "required".to_string(),
         description: Some("Required fields".to_string()),
-        ..Default::default()
     };
 
     schema

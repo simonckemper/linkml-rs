@@ -1095,19 +1095,25 @@ mod tests {
 
     #[test]
     fn test_summary_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.description = Some("A test schema".to_string());
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            description: Some("A test schema".to_string()),
+            ..Default::default()
+        };
 
         // Add some classes
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person".to_string());
-        person_class.abstract_ = Some(false);
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            description: Some("A person".to_string()),
+            abstract_: Some(false),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
 
-        let mut abstract_class = ClassDefinition::default();
-        abstract_class.abstract_ = Some(true);
-        abstract_class.description = Some("An abstract class".to_string());
+        let abstract_class = ClassDefinition {
+            abstract_: Some(true),
+            description: Some("An abstract class".to_string()),
+            ..Default::default()
+        };
 
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
@@ -1115,12 +1121,16 @@ mod tests {
         schema.classes = classes;
 
         // Add some slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.required = Some(true);
-        name_slot.description = Some("Name of the entity".to_string());
+        let name_slot = SlotDefinition {
+            required: Some(true),
+            description: Some("Name of the entity".to_string()),
+            ..Default::default()
+        };
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
 
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);

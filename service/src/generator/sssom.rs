@@ -700,13 +700,13 @@ mod tests {
 
     #[test]
     fn test_sssom_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.id = "https://example.com/test-schema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            id: "https://example.com/test-schema".to_string(),
+            ..Default::default()
+        };
 
         // Add a class with mappings
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person".to_string());
         // Add mapping annotations (temporary until mapping fields are available)
         let mut annotations = indexmap::IndexMap::new();
         annotations.insert(
@@ -719,7 +719,12 @@ mod tests {
             "close_mappings".to_string(),
             linkml_core::annotations::AnnotationValue::String("dbo:Person".to_string()),
         );
-        person_class.annotations = Some(annotations);
+
+        let person_class = ClassDefinition {
+            description: Some("A person".to_string()),
+            annotations: Some(annotations),
+            ..Default::default()
+        };
 
         let mut classes = indexmap::IndexMap::new();
         classes.insert("Person".to_string(), person_class);

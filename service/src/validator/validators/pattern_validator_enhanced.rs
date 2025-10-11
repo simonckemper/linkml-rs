@@ -327,9 +327,11 @@ mod tests {
     #[test]
     fn test_pattern_violation_reports_issue() {
         let validator = EnhancedPatternValidator::new();
-        let mut slot = SlotDefinition::default();
-        slot.name = "code".to_string();
-        slot.pattern = Some(r"^[A-Z]{3}$".to_string());
+        let slot = SlotDefinition {
+            name: "code".to_string(),
+            pattern: Some(r"^[A-Z]{3}$".to_string()),
+            ..Default::default()
+        };
 
         let schema = SchemaDefinition {
             id: "test".to_string(),

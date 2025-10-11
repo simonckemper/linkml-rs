@@ -1038,16 +1038,22 @@ mod tests {
 
     #[test]
     fn test_yaml_validator_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchemaDefinition".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchemaDefinition".to_string(),
+            ..Default::default()
+        };
 
         // Add a simple class
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person".to_string());
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let mut person_class = ClassDefinition {
+            description: Some("A person".to_string()),
+            ..Default::default()
+        };
 
         person_class
             .attributes

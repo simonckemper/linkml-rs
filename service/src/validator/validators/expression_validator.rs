@@ -183,13 +183,14 @@ impl TypeName for Value {
 mod tests {
     use super::*;
     use crate::validator::report::Severity;
+    use linkml_core::types::SchemaDefinition;
     use serde_json::json;
     use std::sync::Arc;
 
     #[test]
     fn test_equals_expression_validation() {
         let validator = ExpressionValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         // Set up parent context
@@ -224,7 +225,7 @@ mod tests {
     #[test]
     fn test_rules_validation() {
         let validator = ExpressionValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         // Slot with validation rules
@@ -255,7 +256,7 @@ mod tests {
     #[test]
     fn test_complex_rule_expressions() {
         let validator = ExpressionValidator::new();
-        let schema = Default::default();
+        let schema = SchemaDefinition::default();
         let mut context = ValidationContext::new(Arc::new(schema));
 
         // Set up parent context with password policy

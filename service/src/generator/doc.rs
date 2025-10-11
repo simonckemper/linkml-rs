@@ -459,15 +459,19 @@ mod tests {
     fn test_doc_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let generator = DocGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test".to_string();
-        schema.name = "test_schema".to_string();
-        schema.description = Some("A test schema".to_string());
+        let mut schema = SchemaDefinition {
+            id: "test".to_string(),
+            name: "test_schema".to_string(),
+            description: Some("A test schema".to_string()),
+            ..Default::default()
+        };
 
         // Add a class
-        let mut class = ClassDefinition::default();
-        class.name = "Person".to_string();
-        class.description = Some("A person entity".to_string());
+        let class = ClassDefinition {
+            name: "Person".to_string(),
+            description: Some("A person entity".to_string()),
+            ..Default::default()
+        };
 
         schema.classes.insert("Person".to_string(), class);
 

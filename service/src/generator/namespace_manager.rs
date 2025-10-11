@@ -2596,8 +2596,10 @@ mod tests {
 
     #[test]
     fn test_namespace_manager_generation() -> anyhow::Result<(), LinkMLError> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Add prefixes
         use indexmap::IndexMap;

@@ -680,33 +680,43 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.title = Some("Test Schema".to_string());
-        schema.description = Some("A test schema for documentation".to_string());
-        schema.version = Some("1.0.0".to_string());
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            title: Some("Test Schema".to_string()),
+            description: Some("A test schema for documentation".to_string()),
+            version: Some("1.0.0".to_string()),
+            ..Default::default()
+        };
 
         // Add a class
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person entity".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            description: Some("A person entity".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Add slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.description = Some("The person's name".to_string());
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            description: Some("The person's name".to_string()),
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.description = Some("The person's age".to_string());
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            description: Some("The person's age".to_string()),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
         // Add an enum
-        let mut status_enum = EnumDefinition::default();
-        status_enum.description = Some("Employment status".to_string());
+        let mut status_enum = EnumDefinition {
+            description: Some("Employment status".to_string()),
+            ..Default::default()
+        };
 
         status_enum
             .permissible_values
@@ -753,9 +763,11 @@ mod tests {
 
     #[test]
     fn test_example_generation() {
-        let mut slot = SlotDefinition::default();
+        let mut slot = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
 
-        slot.range = Some("string".to_string());
         assert_eq!(
             MarkdownGenerator::generate_example_value(&slot),
             "\"example string\""

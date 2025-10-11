@@ -534,8 +534,10 @@ mod tests {
 
     #[test]
     fn test_jsonld_context_generation() -> anyhow::Result<()> {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Add prefixes
         let mut prefixes = IndexMap::new();
@@ -551,22 +553,28 @@ mod tests {
         schema.default_prefix = Some("ex".to_string());
 
         // Add a class
-        let mut person_class = ClassDefinition::default();
-        person_class.description = Some("A person".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            description: Some("A person".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
 
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
         schema.classes = classes;
 
         // Add slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.description = Some("The person's name".to_string());
-        name_slot.range = Some("string".to_string());
+        let name_slot = SlotDefinition {
+            description: Some("The person's name".to_string()),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.description = Some("The person's age".to_string());
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            description: Some("The person's age".to_string()),
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
 
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);

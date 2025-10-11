@@ -288,6 +288,7 @@ pub mod test_utils {
     use async_trait::async_trait;
 
     /// Mock LinkML service for testing
+    #[derive(Default)]
     pub struct MockLinkMLService {
         fail_on_load: bool,
         fail_on_validate: bool,
@@ -310,13 +311,9 @@ pub mod test_utils {
         /// let mock = MockLinkMLService::new();
         /// // Service will succeed on load_schema and validate operations
         /// ```
+        #[must_use]
         pub fn new() -> Self {
-            Self {
-                fail_on_load: false,
-                fail_on_validate: false,
-                custom_errors: Vec::new(),
-                custom_warnings: Vec::new(),
-            }
+            Self::default()
         }
 
         /// Configures the mock to fail on schema loading operations.

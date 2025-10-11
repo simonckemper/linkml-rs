@@ -785,6 +785,7 @@ impl DiskCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::validator::compiled::CompilationOptions;
     use linkml_core::types::SchemaDefinition;
 
     #[tokio::test]
@@ -797,7 +798,7 @@ mod tests {
             ..Default::default()
         };
 
-        let key = ValidatorCacheKey::new(&schema, "TestClass", &Default::default());
+        let key = ValidatorCacheKey::new(&schema, "TestClass", &CompilationOptions::default());
         let validator = Arc::new(CompiledValidator::new());
 
         // Put and get
@@ -825,7 +826,7 @@ mod tests {
             ..Default::default()
         };
 
-        let key = ValidatorCacheKey::new(&schema, "TestClass", &Default::default());
+        let key = ValidatorCacheKey::new(&schema, "TestClass", &CompilationOptions::default());
         let validator = Arc::new(CompiledValidator::new());
 
         // Put, invalidate, and try to get

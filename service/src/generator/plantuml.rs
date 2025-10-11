@@ -894,42 +894,56 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Base class
-        let mut base_class = ClassDefinition::default();
-        base_class.abstract_ = Some(true);
-        base_class.slots = vec!["id".to_string()];
+        let base_class = ClassDefinition {
+            abstract_: Some(true),
+            slots: vec!["id".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Base".to_string(), base_class);
 
         // Derived class
-        let mut person_class = ClassDefinition::default();
-        person_class.is_a = Some("Base".to_string());
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            is_a: Some("Base".to_string()),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Define slots
-        let mut id_slot = SlotDefinition::default();
-        id_slot.identifier = Some(true);
-        id_slot.range = Some("string".to_string());
+        let id_slot = SlotDefinition {
+            identifier: Some(true),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), id_slot);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
         // Add enum
-        let mut status_enum = EnumDefinition::default();
-        status_enum.permissible_values = vec![
-            PermissibleValue::Simple("ACTIVE".to_string()),
-            PermissibleValue::Simple("INACTIVE".to_string()),
-        ];
+        let status_enum = EnumDefinition {
+            permissible_values: vec![
+                PermissibleValue::Simple("ACTIVE".to_string()),
+                PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
         schema.enums.insert("Status".to_string(), status_enum);
 
         schema
@@ -944,9 +958,6 @@ mod tests {
         let output = generator
             .generate(&schema)
             .expect("should generate PlantUML: {}");
-
-        // Validate that options are properly configured
-        assert!(options.include_docs == false || options.include_docs == true); // options validation
 
         // Check content
         assert!(output.contains("@startuml"));
@@ -967,9 +978,6 @@ mod tests {
         let output = generator
             .generate(&schema)
             .expect("should generate PlantUML: {}");
-
-        // Use options for validation
-        assert!(options.include_docs == false || options.include_docs == true); // options validation
 
         assert!(output.contains("@startuml"));
         assert!(output.contains("!define ENTITY"));
@@ -993,9 +1001,6 @@ mod tests {
         }
 
         assert!(output.contains("@startmindmap"));
-        // Validate options configuration
-        assert!(options.generate_tests == false || options.generate_tests == true); // options validation
-
         assert!(output.contains("@startuml"));
         assert!(output.contains("@endmindmap"));
         assert!(output.contains("** Classes"));

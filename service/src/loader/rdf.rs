@@ -1388,27 +1388,37 @@ mod tests {
     use serde_json::json;
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            ..Default::default()
+        };
 
         // Person class
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec!["id".to_string(), "name".to_string(), "knows".to_string()];
+        let person_class = ClassDefinition {
+            slots: vec!["id".to_string(), "name".to_string(), "knows".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Define slots
-        let mut id_slot = SlotDefinition::default();
-        id_slot.identifier = Some(true);
-        id_slot.range = Some("string".to_string());
+        let id_slot = SlotDefinition {
+            identifier: Some(true),
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("id".to_string(), id_slot);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut knows_slot = SlotDefinition::default();
-        knows_slot.range = Some("Person".to_string());
-        knows_slot.multivalued = Some(true);
+        let knows_slot = SlotDefinition {
+            range: Some("Person".to_string()),
+            multivalued: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("knows".to_string(), knows_slot);
 
         schema

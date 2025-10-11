@@ -2265,30 +2265,38 @@ mod tests {
     async fn test_enhanced_typeql_generation() -> anyhow::Result<()> {
         let generator = EnhancedTypeQLGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test".to_string();
-        schema.name = "TestSchema".to_string();
-        schema.version = Some("1.0.0".to_string());
+        let mut schema = SchemaDefinition {
+            id: "test".to_string(),
+            name: "TestSchema".to_string(),
+            version: Some("1.0.0".to_string()),
+            ..Default::default()
+        };
 
         // Add slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.name = "name".to_string();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
-        name_slot.identifier = Some(true);
+        let name_slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            identifier: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.name = "age".to_string();
-        age_slot.range = Some("integer".to_string());
-        age_slot.minimum_value = Some(json!(0));
-        age_slot.maximum_value = Some(json!(150));
+        let age_slot = SlotDefinition {
+            name: "age".to_string(),
+            range: Some("integer".to_string()),
+            minimum_value: Some(json!(0)),
+            maximum_value: Some(json!(150)),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
         // Add classes
-        let mut person_class = ClassDefinition::default();
-        person_class.name = "Person".to_string();
-        person_class.slots = vec!["name".to_string(), "age".to_string()];
+        let person_class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         let options = GeneratorOptions::default();
@@ -2328,25 +2336,31 @@ mod tests {
         let mut schema = SchemaDefinition::default();
 
         // Create a relation-like class
-        let mut employment = ClassDefinition::default();
-        employment.name = "Employment".to_string();
-        employment.slots = vec![
-            "employee".to_string(),
-            "employer".to_string(),
-            "start_date".to_string(),
-        ];
+        let employment = ClassDefinition {
+            name: "Employment".to_string(),
+            slots: vec![
+                "employee".to_string(),
+                "employer".to_string(),
+                "start_date".to_string(),
+            ],
+            ..Default::default()
+        };
 
         // Add slots
-        let mut employee_person_slot = SlotDefinition::default();
-        employee_person_slot.name = "employee".to_string();
-        employee_person_slot.range = Some("Person".to_string());
+        let employee_person_slot = SlotDefinition {
+            name: "employee".to_string(),
+            range: Some("Person".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("employee".to_string(), employee_person_slot);
 
-        let mut employer_organization_slot = SlotDefinition::default();
-        employer_organization_slot.name = "employer".to_string();
-        employer_organization_slot.range = Some("Organization".to_string());
+        let employer_organization_slot = SlotDefinition {
+            name: "employer".to_string(),
+            range: Some("Organization".to_string()),
+            ..Default::default()
+        };
         schema
             .slots
             .insert("employer".to_string(), employer_organization_slot);

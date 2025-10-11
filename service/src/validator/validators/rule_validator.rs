@@ -154,7 +154,7 @@ mod tests {
         no_guardian_conditions.insert(
             "guardian_name".to_string(),
             SlotCondition {
-                equals_string: Some("".to_string()),
+                equals_string: Some(String::new()),
                 ..Default::default()
             },
         );

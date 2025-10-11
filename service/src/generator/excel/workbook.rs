@@ -151,27 +151,37 @@ mod tests {
     use linkml_core::types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.description = Some("A test schema for Excel generation".to_string());
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            description: Some("A test schema for Excel generation".to_string()),
+            ..Default::default()
+        };
 
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec!["name".to_string(), "age".to_string(), "status".to_string()];
+        let person_class = ClassDefinition {
+            slots: vec!["name".to_string(), "age".to_string(), "status".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
-        age_slot.minimum_value = Some(serde_json::json!(0));
-        age_slot.maximum_value = Some(serde_json::json!(150));
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            minimum_value: Some(serde_json::json!(0)),
+            maximum_value: Some(serde_json::json!(150)),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
-        let mut status_slot = SlotDefinition::default();
-        status_slot.range = Some("Status".to_string());
+        let status_slot = SlotDefinition {
+            range: Some("Status".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("status".to_string(), status_slot);
 
         let mut status_enum = EnumDefinition::default();

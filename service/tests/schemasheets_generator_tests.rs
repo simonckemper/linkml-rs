@@ -4,7 +4,6 @@ use linkml_core::types::{
     ClassDefinition, EnumDefinition, PermissibleValue, PrefixDefinition, SchemaDefinition,
 };
 use linkml_service::schemasheets::{SchemaSheetsGenerator, SchemaSheetsParser};
-use std::collections::HashMap;
 use tempfile::TempDir;
 
 /// Test generating a basic schema
@@ -27,7 +26,7 @@ async fn test_generate_basic_schema() {
     };
 
     // Add an attribute
-    let mut name_slot = linkml_core::types::SlotDefinition {
+    let name_slot = linkml_core::types::SlotDefinition {
         name: "name".to_string(),
         description: Some("Person's name".to_string()),
         range: Some("string".to_string()),
@@ -75,7 +74,7 @@ async fn test_generate_with_enums() {
     };
 
     // Add an enum
-    let mut status_enum = EnumDefinition {
+    let status_enum = EnumDefinition {
         name: "Status".to_string(),
         description: Some("Status values".to_string()),
         permissible_values: vec![
@@ -215,7 +214,7 @@ async fn test_generate_with_mappings() {
     };
 
     // Add an attribute with mappings
-    let mut name_slot = linkml_core::types::SlotDefinition {
+    let name_slot = linkml_core::types::SlotDefinition {
         name: "name".to_string(),
         description: Some("Name".to_string()),
         exact_mappings: vec!["schema:name".to_string()],

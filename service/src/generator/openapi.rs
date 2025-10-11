@@ -852,15 +852,19 @@ mod tests {
     fn test_openapi_generation() -> anyhow::Result<()> {
         let generator = OpenApiGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test".to_string();
-        schema.name = "Test API".to_string();
-        schema.version = Some("1.0.0".to_string());
+        let mut schema = SchemaDefinition {
+            id: "test".to_string(),
+            name: "Test API".to_string(),
+            version: Some("1.0.0".to_string()),
+            ..Default::default()
+        };
 
         // Add a class
-        let mut class = ClassDefinition::default();
-        class.name = "User".to_string();
-        class.description = Some("User account".to_string());
+        let class = ClassDefinition {
+            name: "User".to_string(),
+            description: Some("User account".to_string()),
+            ..Default::default()
+        };
 
         schema.classes.insert("User".to_string(), class);
 

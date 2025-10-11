@@ -420,15 +420,19 @@ mod tests {
     async fn test_cache_eviction() -> anyhow::Result<()> {
         let cache = CompiledValidatorCache::with_config(2, 1024 * 1024);
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "test-schema".to_string();
+        let schema = SchemaDefinition {
+            id: "test-schema".to_string(),
+            ..Default::default()
+        };
 
         let options = CompilationOptions::default();
 
         // Add 3 validators to a cache with capacity 2
         for i in 0..3 {
-            let mut class = ClassDefinition::default();
-            class.name = format!("Class{i}");
+            let class = ClassDefinition {
+                name: format!("Class{i}"),
+                ..Default::default()
+            };
 
             let key = ValidatorCacheKey::new(&schema, &class.name, &options);
             let validator = CompiledValidator::compile_class(&schema, &class.name, &class, options)

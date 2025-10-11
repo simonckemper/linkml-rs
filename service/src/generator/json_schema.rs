@@ -465,32 +465,40 @@ mod tests {
     async fn test_json_schema_generation() -> anyhow::Result<()> {
         let generator = JsonSchemaGenerator::new();
 
-        let mut schema = SchemaDefinition::default();
-        schema.id = "https://example.com/schemas/test".to_string();
-        schema.name = "test_schema".to_string();
+        let mut schema = SchemaDefinition {
+            id: "https://example.com/schemas/test".to_string(),
+            name: "test_schema".to_string(),
+            ..Default::default()
+        };
 
         // Add a slot
-        let mut slot = SlotDefinition::default();
-        slot.name = "name".to_string();
-        slot.range = Some("string".to_string());
-        slot.required = Some(true);
-        slot.pattern = Some("^[A-Za-z]+$".to_string());
+        let slot = SlotDefinition {
+            name: "name".to_string(),
+            range: Some("string".to_string()),
+            required: Some(true),
+            pattern: Some("^[A-Za-z]+$".to_string()),
+            ..Default::default()
+        };
 
         schema.slots.insert("name".to_string(), slot);
 
         // Add an enum
-        let mut enum_def = EnumDefinition::default();
-        enum_def.permissible_values = vec![
-            PermissibleValue::Simple("ACTIVE".to_string()),
-            PermissibleValue::Simple("INACTIVE".to_string()),
-        ];
+        let enum_def = EnumDefinition {
+            permissible_values: vec![
+                PermissibleValue::Simple("ACTIVE".to_string()),
+                PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
 
         schema.enums.insert("Status".to_string(), enum_def);
 
         // Add a class
-        let mut class = ClassDefinition::default();
-        class.name = "Person".to_string();
-        class.slots = vec!["name".to_string()];
+        let class = ClassDefinition {
+            name: "Person".to_string(),
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
 
         schema.classes.insert("Person".to_string(), class);
 

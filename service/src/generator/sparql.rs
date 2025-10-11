@@ -756,30 +756,40 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "TestSchema".to_string();
-        schema.id = "http://example.org/test".to_string();
+        let mut schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            id: "http://example.org/test".to_string(),
+            ..Default::default()
+        };
 
         // Person class
-        let mut person_class = ClassDefinition::default();
-        person_class.slots = vec!["name".to_string(), "age".to_string(), "email".to_string()];
+        let person_class = ClassDefinition {
+            slots: vec!["name".to_string(), "age".to_string(), "email".to_string()],
+            ..Default::default()
+        };
         schema.classes.insert("Person".to_string(), person_class);
 
         // Define slots
-        let mut name_slot = SlotDefinition::default();
-        name_slot.range = Some("string".to_string());
-        name_slot.required = Some(true);
+        let name_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            required: Some(true),
+            ..Default::default()
+        };
         schema.slots.insert("name".to_string(), name_slot);
 
-        let mut age_slot = SlotDefinition::default();
-        age_slot.range = Some("integer".to_string());
-        age_slot.minimum_value = Some(serde_json::json!(0));
-        age_slot.maximum_value = Some(serde_json::json!(150));
+        let age_slot = SlotDefinition {
+            range: Some("integer".to_string()),
+            minimum_value: Some(serde_json::json!(0)),
+            maximum_value: Some(serde_json::json!(150)),
+            ..Default::default()
+        };
         schema.slots.insert("age".to_string(), age_slot);
 
-        let mut email_slot = SlotDefinition::default();
-        email_slot.range = Some("string".to_string());
-        email_slot.pattern = Some(r"^\S+@\S+\.\S+$".to_string());
+        let email_slot = SlotDefinition {
+            range: Some("string".to_string()),
+            pattern: Some(r"^\S+@\S+\.\S+$".to_string()),
+            ..Default::default()
+        };
         schema.slots.insert("email".to_string(), email_slot);
 
         schema
