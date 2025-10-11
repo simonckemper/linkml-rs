@@ -641,6 +641,7 @@ impl CodeFormatter for PydanticGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indexmap::IndexMap;
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     #[test]

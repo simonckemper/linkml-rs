@@ -981,6 +981,7 @@ Classes:
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indexmap::IndexMap;
     use linkml_core::types::{ClassDefinition, SchemaDefinition};
 
     #[test]

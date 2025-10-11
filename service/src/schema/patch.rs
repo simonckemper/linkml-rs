@@ -494,6 +494,7 @@ pub fn create_patch_from_diff(diff: &DiffResult) -> SchemaPatch {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use indexmap::IndexMap;
     use linkml_core::types::{SchemaDefinition, SlotDefinition};
 
     #[test]
