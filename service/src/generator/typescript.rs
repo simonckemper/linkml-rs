@@ -760,11 +760,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_basic_generation() {
-        let mut schema = SchemaDefinition {
-            name: "test_schema".to_string(),
-            ..Default::default()
-        };
-
         let person_class = ClassDefinition {
             name: "Person".to_string(),
             description: Some("A person".to_string()),
@@ -772,7 +767,8 @@ mod tests {
             ..Default::default()
         };
 
-        schema.classes.insert("Person".to_string(), person_class);
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
 
         let name_slot = SlotDefinition {
             name: "name".to_string(),
@@ -787,8 +783,16 @@ mod tests {
             ..Default::default()
         };
 
-        schema.slots.insert("name".to_string(), name_slot);
-        schema.slots.insert("age".to_string(), age_slot);
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+
+        let schema = SchemaDefinition {
+            name: "test_schema".to_string(),
+            classes,
+            slots,
+            ..Default::default()
+        };
 
         let generator = TypeScriptGenerator::new();
         let options = GeneratorOptions::new();

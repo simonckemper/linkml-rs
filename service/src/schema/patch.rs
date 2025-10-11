@@ -498,8 +498,10 @@ mod tests {
 
     #[test]
     fn test_add_class() {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "test".to_string();
+        let schema = SchemaDefinition {
+            name: "test".to_string(),
+            ..Default::default()
+        };
 
         let patcher = SchemaPatcher::new(PatchOptions::default());
 
@@ -527,12 +529,19 @@ mod tests {
 
     #[test]
     fn test_remove_slot() {
-        let mut schema = SchemaDefinition::default();
-        schema.name = "test".to_string();
+        let slot = SlotDefinition {
+            name: "old_slot".to_string(),
+            ..Default::default()
+        };
 
-        let mut slot = SlotDefinition::default();
-        slot.name = "old_slot".to_string();
-        schema.slots.insert("old_slot".to_string(), slot);
+        let mut slots = IndexMap::new();
+        slots.insert("old_slot".to_string(), slot);
+
+        let schema = SchemaDefinition {
+            name: "test".to_string(),
+            slots,
+            ..Default::default()
+        };
 
         let patch = SchemaPatch {
             operations: vec![PatchOperation::Remove {
@@ -544,8 +553,10 @@ mod tests {
             breaking: true,
         };
 
-        let mut options = PatchOptions::default();
-        options.allow_breaking = true;
+        let options = PatchOptions {
+            allow_breaking: true,
+            ..Default::default()
+        };
         let patcher = SchemaPatcher::new(options);
 
         let result = patcher

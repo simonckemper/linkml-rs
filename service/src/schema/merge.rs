@@ -498,19 +498,33 @@ mod tests {
 
     #[test]
     fn test_merge_union() -> Result<()> {
-        let mut schema1 = SchemaDefinition::default();
-        schema1.name = "Schema1".to_string();
+        let class1 = ClassDefinition {
+            slots: vec!["name".to_string()],
+            ..Default::default()
+        };
 
-        let mut class1 = ClassDefinition::default();
-        class1.slots = vec!["name".to_string()];
-        schema1.classes.insert("Person".to_string(), class1);
+        let mut classes1 = IndexMap::new();
+        classes1.insert("Person".to_string(), class1);
 
-        let mut schema2 = SchemaDefinition::default();
-        schema2.name = "Schema2".to_string();
+        let schema1 = SchemaDefinition {
+            name: "Schema1".to_string(),
+            classes: classes1,
+            ..Default::default()
+        };
 
-        let mut class2 = ClassDefinition::default();
-        class2.slots = vec!["brand".to_string()];
-        schema2.classes.insert("Car".to_string(), class2);
+        let class2 = ClassDefinition {
+            slots: vec!["brand".to_string()],
+            ..Default::default()
+        };
+
+        let mut classes2 = IndexMap::new();
+        classes2.insert("Car".to_string(), class2);
+
+        let schema2 = SchemaDefinition {
+            name: "Schema2".to_string(),
+            classes: classes2,
+            ..Default::default()
+        };
 
         let options = MergeOptions {
             strategy: MergeStrategy::Union,

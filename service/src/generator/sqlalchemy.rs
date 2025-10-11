@@ -780,11 +780,6 @@ mod tests {
 
     #[test]
     fn test_sqlalchemy_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            ..Default::default()
-        };
-
         // Add a simple class
         let person_class = ClassDefinition {
             description: Some("A person".to_string()),
@@ -794,7 +789,6 @@ mod tests {
 
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
-        schema.classes = classes;
 
         // Add slots
         let name_slot = SlotDefinition {
@@ -813,7 +807,13 @@ mod tests {
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);
         slots.insert("age".to_string(), age_slot);
-        schema.slots = slots;
+
+        let schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            classes,
+            slots,
+            ..Default::default()
+        };
 
         let config = SQLAlchemyGeneratorConfig::default();
         let generator = SQLAlchemyGenerator::new(config);

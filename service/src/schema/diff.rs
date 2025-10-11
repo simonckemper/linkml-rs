@@ -985,18 +985,27 @@ mod tests {
 
     #[test]
     fn test_schema_diff_basic() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema1 = SchemaDefinition::default();
-        schema1.name = "TestSchema".to_string();
+        let class1 = ClassDefinition {
+            slots: vec!["name".to_string(), "age".to_string()],
+            ..Default::default()
+        };
 
-        let mut class1 = ClassDefinition::default();
-        class1.slots = vec!["name".to_string(), "age".to_string()];
-        schema1.classes.insert("Person".to_string(), class1);
+        let mut classes1 = IndexMap::new();
+        classes1.insert("Person".to_string(), class1);
+
+        let schema1 = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            classes: classes1,
+            ..Default::default()
+        };
 
         let mut schema2 = schema1.clone();
 
         // Add a new class
-        let mut class2 = ClassDefinition::default();
-        class2.slots = vec!["brand".to_string()];
+        let class2 = ClassDefinition {
+            slots: vec!["brand".to_string()],
+            ..Default::default()
+        };
         schema2.classes.insert("Car".to_string(), class2);
 
         // Modify existing class
