@@ -713,18 +713,12 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            ..Default::default()
-        };
-
         // Create a base class
         let animal_class = ClassDefinition {
             abstract_: Some(true),
             slots: vec!["name".to_string()],
             ..Default::default()
         };
-        schema.classes.insert("Animal".to_string(), animal_class);
 
         // Create a derived class
         let dog_class = ClassDefinition {
@@ -732,7 +726,10 @@ mod tests {
             slots: vec!["breed".to_string()],
             ..Default::default()
         };
-        schema.classes.insert("Dog".to_string(), dog_class);
+
+        let mut classes = IndexMap::new();
+        classes.insert("Animal".to_string(), animal_class);
+        classes.insert("Dog".to_string(), dog_class);
 
         // Create slots
         let name_slot = SlotDefinition {
@@ -740,15 +737,22 @@ mod tests {
             required: Some(true),
             ..Default::default()
         };
-        schema.slots.insert("name".to_string(), name_slot);
 
         let breed_slot = SlotDefinition {
             range: Some("string".to_string()),
             ..Default::default()
         };
-        schema.slots.insert("breed".to_string(), breed_slot);
 
-        schema
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("breed".to_string(), breed_slot);
+
+        SchemaDefinition {
+            name: "TestSchema".to_string(),
+            classes,
+            slots,
+            ..Default::default()
+        }
     }
 
     #[test]

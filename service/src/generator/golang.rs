@@ -828,18 +828,15 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            ..Default::default()
-        };
-
         // Add a class
         let person_class = ClassDefinition {
             description: Some("A person entity".to_string()),
             slots: vec!["name".to_string(), "age".to_string()],
             ..Default::default()
         };
-        schema.classes.insert("Person".to_string(), person_class);
+
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
 
         // Add slots
         let name_slot = SlotDefinition {
@@ -847,7 +844,6 @@ mod tests {
             required: Some(true),
             ..Default::default()
         };
-        schema.slots.insert("name".to_string(), name_slot);
 
         let age_slot = SlotDefinition {
             range: Some("integer".to_string()),
@@ -855,7 +851,10 @@ mod tests {
             maximum_value: Some(serde_json::json!(150)),
             ..Default::default()
         };
-        schema.slots.insert("age".to_string(), age_slot);
+
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
 
         // Add an enum
         let status_enum = EnumDefinition {
@@ -870,9 +869,17 @@ mod tests {
             ],
             ..Default::default()
         };
-        schema.enums.insert("Status".to_string(), status_enum);
 
-        schema
+        let mut enums = IndexMap::new();
+        enums.insert("Status".to_string(), status_enum);
+
+        SchemaDefinition {
+            name: "TestSchema".to_string(),
+            classes,
+            slots,
+            enums,
+            ..Default::default()
+        }
     }
 
     #[test]

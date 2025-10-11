@@ -756,18 +756,14 @@ mod tests {
     use linkml_core::types::{ClassDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            id: "http://example.org/test".to_string(),
-            ..Default::default()
-        };
-
         // Person class
         let person_class = ClassDefinition {
             slots: vec!["name".to_string(), "age".to_string(), "email".to_string()],
             ..Default::default()
         };
-        schema.classes.insert("Person".to_string(), person_class);
+
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
 
         // Define slots
         let name_slot = SlotDefinition {
@@ -775,7 +771,6 @@ mod tests {
             required: Some(true),
             ..Default::default()
         };
-        schema.slots.insert("name".to_string(), name_slot);
 
         let age_slot = SlotDefinition {
             range: Some("integer".to_string()),
@@ -783,16 +778,25 @@ mod tests {
             maximum_value: Some(serde_json::json!(150)),
             ..Default::default()
         };
-        schema.slots.insert("age".to_string(), age_slot);
 
         let email_slot = SlotDefinition {
             range: Some("string".to_string()),
             pattern: Some(r"^\S+@\S+\.\S+$".to_string()),
             ..Default::default()
         };
-        schema.slots.insert("email".to_string(), email_slot);
 
-        schema
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+        slots.insert("email".to_string(), email_slot);
+
+        SchemaDefinition {
+            name: "TestSchema".to_string(),
+            id: "http://example.org/test".to_string(),
+            classes,
+            slots,
+            ..Default::default()
+        }
     }
 
     #[tokio::test]

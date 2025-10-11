@@ -1095,12 +1095,6 @@ mod tests {
 
     #[test]
     fn test_summary_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            description: Some("A test schema".to_string()),
-            ..Default::default()
-        };
-
         // Add some classes
         let person_class = ClassDefinition {
             description: Some("A person".to_string()),
@@ -1118,7 +1112,6 @@ mod tests {
         let mut classes = IndexMap::new();
         classes.insert("Person".to_string(), person_class);
         classes.insert("NamedThing".to_string(), abstract_class);
-        schema.classes = classes;
 
         // Add some slots
         let name_slot = SlotDefinition {
@@ -1135,7 +1128,14 @@ mod tests {
         let mut slots = IndexMap::new();
         slots.insert("name".to_string(), name_slot);
         slots.insert("age".to_string(), age_slot);
-        schema.slots = slots;
+
+        let schema = SchemaDefinition {
+            name: "TestSchema".to_string(),
+            description: Some("A test schema".to_string()),
+            classes,
+            slots,
+            ..Default::default()
+        };
 
         // Test TSV generation
         let config = SummaryGeneratorConfig::default();

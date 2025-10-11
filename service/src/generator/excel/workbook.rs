@@ -151,24 +151,19 @@ mod tests {
     use linkml_core::types::{ClassDefinition, EnumDefinition, SchemaDefinition, SlotDefinition};
 
     fn create_test_schema() -> SchemaDefinition {
-        let mut schema = SchemaDefinition {
-            name: "TestSchema".to_string(),
-            description: Some("A test schema for Excel generation".to_string()),
-            ..Default::default()
-        };
-
         let person_class = ClassDefinition {
             slots: vec!["name".to_string(), "age".to_string(), "status".to_string()],
             ..Default::default()
         };
-        schema.classes.insert("Person".to_string(), person_class);
+
+        let mut classes = IndexMap::new();
+        classes.insert("Person".to_string(), person_class);
 
         let name_slot = SlotDefinition {
             range: Some("string".to_string()),
             required: Some(true),
             ..Default::default()
         };
-        schema.slots.insert("name".to_string(), name_slot);
 
         let age_slot = SlotDefinition {
             range: Some("integer".to_string()),
@@ -176,28 +171,36 @@ mod tests {
             maximum_value: Some(serde_json::json!(150)),
             ..Default::default()
         };
-        schema.slots.insert("age".to_string(), age_slot);
 
         let status_slot = SlotDefinition {
             range: Some("Status".to_string()),
             ..Default::default()
         };
-        schema.slots.insert("status".to_string(), status_slot);
 
-        let mut status_enum = EnumDefinition::default();
-        status_enum
-            .permissible_values
-            .push(linkml_core::types::PermissibleValue::Simple(
-                "ACTIVE".to_string(),
-            ));
-        status_enum
-            .permissible_values
-            .push(linkml_core::types::PermissibleValue::Simple(
-                "INACTIVE".to_string(),
-            ));
-        schema.enums.insert("Status".to_string(), status_enum);
+        let mut slots = IndexMap::new();
+        slots.insert("name".to_string(), name_slot);
+        slots.insert("age".to_string(), age_slot);
+        slots.insert("status".to_string(), status_slot);
 
-        schema
+        let status_enum = EnumDefinition {
+            permissible_values: vec![
+                linkml_core::types::PermissibleValue::Simple("ACTIVE".to_string()),
+                linkml_core::types::PermissibleValue::Simple("INACTIVE".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut enums = IndexMap::new();
+        enums.insert("Status".to_string(), status_enum);
+
+        SchemaDefinition {
+            name: "TestSchema".to_string(),
+            description: Some("A test schema for Excel generation".to_string()),
+            classes,
+            slots,
+            enums,
+            ..Default::default()
+        }
     }
 
     #[test]

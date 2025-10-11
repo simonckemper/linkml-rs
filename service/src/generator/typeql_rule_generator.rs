@@ -593,9 +593,11 @@ mod tests {
     #[test]
     fn test_range_rule_generation() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let mut generator = RuleGenerator::new();
-        let mut slot = SlotDefinition::default();
-        slot.minimum_value = Some(Value::Number(serde_json::Number::from(0)));
-        slot.maximum_value = Some(Value::Number(serde_json::Number::from(150)));
+        let slot = SlotDefinition {
+            minimum_value: Some(Value::Number(serde_json::Number::from(0))),
+            maximum_value: Some(Value::Number(serde_json::Number::from(150))),
+            ..Default::default()
+        };
 
         let rule = generator
             .generate_range_rule("Person", "age", &slot)

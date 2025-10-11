@@ -349,8 +349,10 @@ mod tests {
         let person = ClassDefinition::default();
         schema.classes.insert("Person".to_string(), person);
 
-        let mut student = ClassDefinition::default();
-        student.is_a = Some("Person".to_string());
+        let student = ClassDefinition {
+            is_a: Some("Person".to_string()),
+            ..Default::default()
+        };
         schema.classes.insert("Student".to_string(), student);
 
         let resolver = RoleInheritanceResolver::new();

@@ -289,25 +289,31 @@ mod tests {
         let translator = TypeQLConstraintTranslator::new();
 
         // Test required single-valued (default)
-        let mut slot = SlotDefinition::default();
-        slot.required = Some(true);
-        slot.multivalued = Some(false);
+        let slot = SlotDefinition {
+            required: Some(true),
+            multivalued: Some(false),
+            ..Default::default()
+        };
         assert_eq!(translator.translate_cardinality(&slot), None);
 
         // Test optional multi-valued
-        let mut slot = SlotDefinition::default();
-        slot.required = Some(false);
-        slot.multivalued = Some(true);
+        let slot = SlotDefinition {
+            required: Some(false),
+            multivalued: Some(true),
+            ..Default::default()
+        };
         assert_eq!(
             translator.translate_cardinality(&slot),
             Some("@card(0..)".to_string())
         );
 
         // Test required multi-valued with max
-        let mut slot = SlotDefinition::default();
-        slot.required = Some(true);
-        slot.multivalued = Some(true);
-        slot.maximum_value = Some(serde_json::json!(5));
+        let slot = SlotDefinition {
+            required: Some(true),
+            multivalued: Some(true),
+            maximum_value: Some(serde_json::json!(5)),
+            ..Default::default()
+        };
         assert_eq!(
             translator.translate_cardinality(&slot),
             Some("@card(1..5)".to_string())
@@ -317,19 +323,25 @@ mod tests {
     #[test]
     fn test_unique_detection() {
         // Test ID-like names
-        let mut slot = SlotDefinition::default();
-        slot.name = "user_id".to_string();
+        let slot = SlotDefinition {
+            name: "user_id".to_string(),
+            ..Default::default()
+        };
         assert!(TypeQLConstraintTranslator::is_unique_constraint(&slot));
 
         // Test description-based detection
-        let mut slot = SlotDefinition::default();
-        slot.name = "email".to_string();
-        slot.description = Some("Unique email address".to_string());
+        let slot = SlotDefinition {
+            name: "email".to_string(),
+            description: Some("Unique email address".to_string()),
+            ..Default::default()
+        };
         assert!(TypeQLConstraintTranslator::is_unique_constraint(&slot));
 
         // Test non-unique
-        let mut slot = SlotDefinition::default();
-        slot.name = "name".to_string();
+        let slot = SlotDefinition {
+            name: "name".to_string(),
+            ..Default::default()
+        };
         assert!(!TypeQLConstraintTranslator::is_unique_constraint(&slot));
     }
 
